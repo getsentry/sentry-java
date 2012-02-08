@@ -8,7 +8,9 @@ Installation
 ------------
 Copy the raven-java-0.1.jar file to your java classpath and then configure log4j to use the SentryAppender.
 
-There is an example project checked into github where you can see an example log4j config file.
+The raven-java-0.1.jar is a self contained jar file, all dependencies are included, so this jar should be all you need.
+
+There is an example project checked into github.com where you can see an example log4j config file.
 
 You will need to add the SentryAppender and the sentry_dsn properties.
 

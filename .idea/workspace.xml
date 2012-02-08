@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6e407ccd-7f96-45ec-9596-d66f1115e9e8" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.rst" afterPath="$PROJECT_DIR$/README.rst" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/example/log4j_configuration.txt" afterPath="$PROJECT_DIR$/example/log4j_configuration.txt" />
     </list>
     <ignored path="raven-java.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -135,7 +133,7 @@
       <file leaf-file-name="README.rst" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/README.rst">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="33" column="163" selection-start="1546" selection-end="1546" vertical-scroll-proportion="0.6218593">
+            <state line="12" column="51" selection-start="595" selection-end="595" vertical-scroll-proportion="0.22613065">
               <folding />
             </state>
           </provider>
@@ -717,7 +715,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/README.rst">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="33" column="163" selection-start="1546" selection-end="1546" vertical-scroll-proportion="0.6218593">
+        <state line="12" column="51" selection-start="595" selection-end="595" vertical-scroll-proportion="0.22613065">
           <folding />
         </state>
       </provider>
