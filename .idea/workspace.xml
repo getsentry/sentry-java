@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6e407ccd-7f96-45ec-9596-d66f1115e9e8" name="Default" comment="" />
+    <list default="true" id="6e407ccd-7f96-45ec-9596-d66f1115e9e8" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.rst" afterPath="$PROJECT_DIR$/README.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/example/log4j_configuration.txt" afterPath="$PROJECT_DIR$/example/log4j_configuration.txt" />
+    </list>
     <ignored path="raven-java.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -81,17 +85,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="RavenClient.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/net/kencochrane/sentry/RavenClient.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="240" column="59" selection-start="8402" selection-end="8402" vertical-scroll-proportion="-13.923077">
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="SentryExample.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/example/src/net/kencochrane/sentry/SentryExample.java">
           <provider selected="true" editor-type-id="text-editor">
@@ -130,10 +123,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="run2.sh" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="run2.sh" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/example/run2.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="2" column="37" selection-start="58" selection-end="58" vertical-scroll-proportion="0.037082817">
+            <state line="3" column="40" selection-start="120" selection-end="120" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.rst" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.rst">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="33" column="163" selection-start="1546" selection-end="1546" vertical-scroll-proportion="0.6218593">
               <folding />
             </state>
           </provider>
@@ -151,7 +153,7 @@
       <file leaf-file-name="log4j_configuration.txt" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/example/log4j_configuration.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="19" column="44" selection-start="587" selection-end="587" vertical-scroll-proportion="0.0">
+            <state line="12" column="65" selection-start="436" selection-end="436" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -177,10 +179,11 @@
         <option value="$PROJECT_DIR$/src/net/kencochrane/sentry/RavenClient.java" />
         <option value="$PROJECT_DIR$/src/net/kencochrane/sentry/SentryAppender.java" />
         <option value="$PROJECT_DIR$/src/net/kencochrane/sentry/RavenConfig.java" />
-        <option value="$PROJECT_DIR$/example/log4j_configuration.txt" />
         <option value="$PROJECT_DIR$/example/src/run.sh" />
         <option value="$PROJECT_DIR$/example/run.sh" />
         <option value="$PROJECT_DIR$/example/run2.sh" />
+        <option value="$PROJECT_DIR$/example/log4j_configuration.txt" />
+        <option value="$PROJECT_DIR$/README.rst" />
       </list>
     </option>
   </component>
@@ -361,20 +364,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="lib" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="raven-java" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="raven-java" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="example" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -396,7 +385,7 @@
     <property name="recentsLimit" value="5" />
     <property name="GenerateAntBuildDialog.inclineRuntiemClasspath" value="false" />
     <property name="GenerateAntBuildDialog.forceTargetJdk" value="true" />
-    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="project.structure.side.proportion" value="0.11189359" />
     <property name="GenerateAntBuildDialog.outputFileNameProperty" value="raven-java" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GenerateAntBuildDialog.enableUiFormCompile" value="false" />
@@ -540,7 +529,7 @@
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32867134" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24983028" sideWeight="0.67132866" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24983028" sideWeight="0.67132866" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32867134" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
@@ -613,13 +602,6 @@
     </buildFile>
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar://$PROJECT_DIR$/lib/commons-codec-1.4.jar!/org/apache/commons/codec/binary/Base64.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="63" column="35" selection-start="2412" selection-end="2412" vertical-scroll-proportion="0.34442836">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar:///System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/classes.jar!/java/util/UUID.class">
       <provider selected="true" editor-type-id="text-editor">
         <state line="21" column="43" selection-start="829" selection-end="839" vertical-scroll-proportion="0.3328592">
@@ -682,13 +664,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/example/log4j_configuration.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="44" selection-start="587" selection-end="587" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/example/src/net/kencochrane/sentry/SentryExample.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="6" column="37" selection-start="96" selection-end="96" vertical-scroll-proportion="0.0">
@@ -728,7 +703,21 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/example/run2.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="2" column="37" selection-start="58" selection-end="58" vertical-scroll-proportion="0.037082817">
+        <state line="3" column="40" selection-start="120" selection-end="120" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/example/log4j_configuration.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="12" column="65" selection-start="436" selection-end="436" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.rst">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="33" column="163" selection-start="1546" selection-end="1546" vertical-scroll-proportion="0.6218593">
           <folding />
         </state>
       </provider>
@@ -738,12 +727,18 @@
     <states>
       <state key="ArtifactsStructureConfigurable.UI">
         <settings>
-          <artifact-editor />
+          <artifact-editor>
+            <show-content>
+              <type id="library" />
+              <type id="artifact" />
+            </show-content>
+          </artifact-editor>
           <last-edited>raven-java:jar</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.11189359" />
+                <option value="0.5" />
               </list>
             </option>
           </splitter-proportions>
