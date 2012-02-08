@@ -2,6 +2,7 @@ package net.kencochrane.sentry;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+
 /**
  * User: ken cochrane
  * Date: 2/8/12
@@ -14,10 +15,9 @@ public class RavenConfig {
 
     public RavenConfig(String sentryDSN) {
 
-    //'{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
+        //'{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
 
         try {
-            System.out.println("Sentry DSN = '" + sentryDSN + "' ");
             URL url = new URL(sentryDSN);
             this.host = url.getHost();
             this.protocol = url.getProtocol();
@@ -26,7 +26,7 @@ public class RavenConfig {
             this.path = urlPath;
             this.projectId = urlParts[1];
 
-            String userInfo =  url.getUserInfo();
+            String userInfo = url.getUserInfo();
             String[] userParts = userInfo.split(":");
 
             this.secretKey = userParts[1];
@@ -41,12 +41,12 @@ public class RavenConfig {
 
     }
 
-    public String getSentryURL(){
+    public String getSentryURL() {
         StringBuilder serverUrl = new StringBuilder();
         serverUrl.append(getProtocol());
         serverUrl.append("://");
         serverUrl.append(getHost());
-        if ((getPort() != 0) && (getPort() != 80)){
+        if ((getPort() != 0) && (getPort() != 80)) {
             serverUrl.append(":").append(getPort());
         }
         serverUrl.append("/api/store/");

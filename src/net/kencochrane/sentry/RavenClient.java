@@ -1,45 +1,31 @@
 package net.kencochrane.sentry;
 
-import org.apache.commons.codec.binary.Hex;
-import org.json.simple.JSONObject;
-
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.UUID;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.http.*;
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONObject;
 
-import java.io.*;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SignatureException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 import java.util.zip.GZIPOutputStream;
 
-
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 /**
- * User: kcochrane
+ * User: ken cochrane
  * Date: 2/6/12
  * Time: 11:59 AM
  */
@@ -49,6 +35,7 @@ public class RavenClient {
 
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
     public static SimpleDateFormat ISO8601FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    public static final String RAVEN_JAVA_VERSION = "Raven-Java 0.1";
 
     /**
      * Computes RFC 2104-compliant HMAC signature.
@@ -120,20 +107,14 @@ public class RavenClient {
     }
 
     public String getSignature(String message, long timestamp, String key) {
-        //System.out.println("message = '" + message + "'");
-        //System.out.println("timestamp = " + timestamp);
-       // System.out.println("key = " + key);
         String full_message = timestamp + " " + message;
-        //System.out.println("full_message = " + full_message);
         String hmac = null;
-
         try {
             hmac = calculateHMAC(full_message, key);
 
         } catch (SignatureException e) {
             e.printStackTrace();
         }
-        //System.out.println("hmac = " + hmac);
         return hmac;
     }
 
@@ -151,8 +132,7 @@ public class RavenClient {
     static private String hexEncode(byte[] aInput) {
         StringBuilder result = new StringBuilder();
         char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-        for (int idx = 0; idx < aInput.length; ++idx) {
-            byte b = aInput[idx];
+        for (byte b : aInput) {
             result.append(digits[(b & 0xf0) >> 4]);
             result.append(digits[b & 0x0f]);
         }
@@ -217,7 +197,7 @@ public class RavenClient {
     public String buildMessageBody(String jsonMessage) {
         //need to zip and then base64 encode the message.
         // compressing doesn't work right now, sentry isn't decompressing correctly.
-         // come back to it later.
+        // come back to it later.
         //return compressAndEncode(jsonMessage);
 
         // in the meantime just base64 encode it.
@@ -228,50 +208,42 @@ public class RavenClient {
 
     public void sendMessage(String serverURL, String messageBody, String hmacSignature, String key, long timestamp) {
 
-        DefaultHttpClient httpclient = new DefaultHttpClient();
+        DefaultHttpClient httpClient = new DefaultHttpClient();
         try {
-            System.out.println("hmacSignature '" + hmacSignature + "'");
-            System.out.println("timestamp " + timestamp);
-            System.out.println("sentry_key " + key);
             HttpPost httppost = new HttpPost(serverURL);
-            String header = "Sentry sentry_version=2.0,sentry_signature=" +
-                    hmacSignature + ",sentry_timestamp=" + timestamp + ",sentry_key="
-                    + key + ",sentry_client=Raven-Java 0.1"; //TODO don't hard code raven client version
+            StringBuilder header = new StringBuilder();
+            header.append("Sentry sentry_version=2.0,sentry_signature=");
+            header.append(hmacSignature);
+            header.append(",sentry_timestamp=");
+            header.append(timestamp);
+            header.append(",sentry_key=");
+            header.append(key);
+            header.append(",sentry_client=");
+            header.append(RAVEN_JAVA_VERSION);
 
-            System.out.println("header '" + header + "'");
-            httppost.addHeader("X-Sentry-Auth", header);
+            httppost.addHeader("X-Sentry-Auth", header.toString());
 
             StringEntity reqEntity = new StringEntity(messageBody);
 
             httppost.setEntity(reqEntity);
 
-            System.out.println("executing request " + httppost.getRequestLine());
-            HttpResponse response = httpclient.execute(httppost);
+            HttpResponse response = httpClient.execute(httppost);
             HttpEntity resEntity = response.getEntity();
 
-            System.out.println("----------------------------------------");
-            System.out.println(response.getStatusLine());
-            if (resEntity != null) {
-                String content = EntityUtils.toString(resEntity);
-                System.out.println(content);
-                System.out.println("Response content length: " + resEntity.getContentLength());
-                System.out.println("Chunked?: " + resEntity.isChunked());
-            }
+            // not needed right now, keeping around for debugging purposes
+            //if (resEntity != null) {
+                //String content = EntityUtils.toString(resEntity);
+                //System.out.println(content);
+            //}
             EntityUtils.consume(resEntity);
-        } catch (ClientProtocolException e) {
-            System.out.println(e);
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (UnsupportedEncodingException e) {
-            System.out.println(e);
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (IOException e) {
-            System.out.println(e);
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (Exception e) {
+            // Eat the errors, we don't want to cause problems if there are major issues.
+            e.printStackTrace();
         } finally {
             // When HttpClient instance is no longer needed,
             // shut down the connection manager to ensure
             // immediate deallocation of all system resources
-            httpclient.getConnectionManager().shutdown();
+            httpClient.getConnectionManager().shutdown();
         }
 
     }

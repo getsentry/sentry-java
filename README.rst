@@ -25,6 +25,10 @@ Log4j Config example::
     log4j.appender.sentry.sentry_dsn=http://b4935bdd78624092ac2bc70fdcdb6f5a:7a37d9ad4765428180316bfec91a27ef@localhost:8000/1
 
 
+Sentry Versions Supported
+-------------------------
+This client has been tested with Sentry 2.7, and only very briefly.
+
 TODO
 ----
 - Add a ant task to build the jar files (I made this first one from intellij (10.5 community edition) File->  Project structure -> artifacts.
