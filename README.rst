@@ -44,4 +44,5 @@ TODO
 History
 -------
 0.2 - code refactor and cleanup
+
 0.1 - initial version
