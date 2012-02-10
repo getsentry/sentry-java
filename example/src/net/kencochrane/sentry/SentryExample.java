@@ -10,11 +10,14 @@ package net.kencochrane.sentry;
  import org.apache.log4j.Logger;
  import org.apache.log4j.PropertyConfigurator;
 
+/**
+ * Simple example used to test out the sentry logger.
+ */
  public class SentryExample {
 
    // Define a static logger variable so that it references the
    // Logger instance named "MyApp".
-   static Logger logger = Logger.getLogger(SentryExample.class);
+   static final Logger logger = Logger.getLogger(SentryExample.class);
 
    public static void main(String[] args) {
 
