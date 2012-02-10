@@ -13,9 +13,12 @@ public class RavenConfig {
     private String host, protocol, publicKey, secretKey, path, projectId;
     private int port;
 
+    /**
+     * Takes in a sentryDSN and builds up the configuration
+     *
+     * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
+     */
     public RavenConfig(String sentryDSN) {
-
-        //'{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
 
         try {
             URL url = new URL(sentryDSN);
@@ -41,6 +44,10 @@ public class RavenConfig {
 
     }
 
+    /**
+     * The Sentry server URL that we post the message to.
+     * @return sentry server url
+     */
     public String getSentryURL() {
         StringBuilder serverUrl = new StringBuilder();
         serverUrl.append(getProtocol());
@@ -53,6 +60,10 @@ public class RavenConfig {
         return serverUrl.toString();
     }
 
+    /**
+     * The sentry server host
+     * @return server host
+     */
     public String getHost() {
         return host;
     }
@@ -61,6 +72,10 @@ public class RavenConfig {
         this.host = host;
     }
 
+    /**
+     * Sentry server protocol http https?
+     * @return http or https
+     */
     public String getProtocol() {
         return protocol;
     }
@@ -69,6 +84,10 @@ public class RavenConfig {
         this.protocol = protocol;
     }
 
+    /**
+     * The Sentry public key
+     * @return Sentry public key
+     */
     public String getPublicKey() {
         return publicKey;
     }
@@ -77,6 +96,10 @@ public class RavenConfig {
         this.publicKey = publicKey;
     }
 
+    /**
+     * The Sentry secret key
+     * @return Sentry secret key
+     */
     public String getSecretKey() {
         return secretKey;
     }
@@ -85,6 +108,10 @@ public class RavenConfig {
         this.secretKey = secretKey;
     }
 
+    /**
+     * sentry url path
+     * @return url path
+     */
     public String getPath() {
         return path;
     }
@@ -93,6 +120,10 @@ public class RavenConfig {
         this.path = path;
     }
 
+    /**
+     * Sentry project Id
+     * @return project Id
+     */
     public String getProjectId() {
         return projectId;
     }
@@ -101,6 +132,10 @@ public class RavenConfig {
         this.projectId = projectId;
     }
 
+    /**
+     * sentry server port
+     * @return server port
+     */
     public int getPort() {
         return port;
     }

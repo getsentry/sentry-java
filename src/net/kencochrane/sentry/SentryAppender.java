@@ -28,23 +28,22 @@ public class SentryAppender extends AppenderSkeleton {
             return;
         }
 
-        RavenConfig config = new RavenConfig(getSentry_dsn());
-
         synchronized (this) {
             try {
-                RavenClient client = new RavenClient();
-                String message = loggingEvent.getRenderedMessage();
-
+                // get timestamp and timestamp in correct string format.
                 long timestamp = loggingEvent.getTimeStamp();
-                String timestampDate = client.getTimestampString(timestamp);
+
+                // get the log and info about the log.
+                String logMessage = loggingEvent.getRenderedMessage();
                 String loggingClass = loggingEvent.getLogger().getName();
                 int logLevel = (loggingEvent.getLevel().toInt() / 1000);  //Need to divide by 1000 to keep consistent with sentry
                 String culprit = loggingEvent.getLoggerName();
 
-                String jsonMessage = client.buildJSON(message, timestampDate, loggingClass, logLevel, culprit, config.getProjectId());
-                String messageBody = client.buildMessageBody(jsonMessage);
-                String hmacSignature = client.getSignature(messageBody, timestamp, config.getSecretKey());
-                client.sendMessage(config.getSentryURL(), messageBody, hmacSignature, config.getPublicKey(), timestamp);
+                // create the client passing in the sentry DSN from the log4j properties file.
+                RavenClient client = new RavenClient(getSentry_dsn());
+
+                // send the message to the sentry server
+                client.logMessage(logMessage, timestamp, loggingClass, logLevel, culprit);
 
             } catch (Exception e) {
                 System.err.println(e);
@@ -54,7 +53,7 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     public void close() {
-        //TODO: cleannup goes here. Is there any?
+        // clean up normally goes here. but there isn't any
     }
 
     public boolean requiresLayout() {
