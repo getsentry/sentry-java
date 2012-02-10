@@ -6,9 +6,9 @@ This is a very raw project at the moment it still needs some more TLC and testin
 
 Installation
 ------------
-Copy the raven-java-0.1.jar file to your java classpath and then configure log4j to use the SentryAppender.
+Copy the raven-java-0.2.jar file to your java classpath and then configure log4j to use the SentryAppender.
 
-The raven-java-0.1.jar is a self contained jar file, all dependencies are included, so this jar should be all you need.
+The raven-java-0.2.jar is a self contained jar file, all dependencies are included, so this jar should be all you need.
 
 There is an example project checked into github.com where you can see an example log4j config file.
 
@@ -27,7 +27,7 @@ Log4j Config example::
 
 Sentry Versions Supported
 -------------------------
-This client has been tested with Sentry 2.7, and only very briefly.
+This client has been tested with Sentry 2.7 and 2.8, and only very briefly.
 
 TODO
 ----
@@ -38,3 +38,10 @@ TODO
 - Add more examples
 - Add more documentation
 - Get compression to work on message body, it isn't working now,not sure if it is sentry server or raven-java. Might be incompatible versions of zlib Java->python.
+
+
+
+History
+-------
+0.2 - code refactor and cleanup
+0.1 - initial version
