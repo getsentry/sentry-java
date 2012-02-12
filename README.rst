@@ -62,7 +62,6 @@ TODO
 - Create better documentation
 - Add unit tests
 - Add more examples
-- Add more documentation
 - Get compression to work on message body, it isn't working now,not sure if it is sentry server or raven-java. Might be incompatible versions of zlib Java->python.
 
 
