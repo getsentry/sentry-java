@@ -1,7 +1,6 @@
 package net.kencochrane.sentry;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 
 /**
  * User: ken cochrane
@@ -12,6 +11,8 @@ public class RavenConfig {
 
     private String host, protocol, publicKey, secretKey, path, projectId;
     private int port;
+    private String proxyType, proxyHost;
+    private int proxyPort;
 
     /**
      * Takes in a sentryDSN and builds up the configuration
@@ -19,6 +20,16 @@ public class RavenConfig {
      * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
      */
     public RavenConfig(String sentryDSN) {
+        this(sentryDSN, null);
+    }
+
+    /**
+     * Takes in a sentryDSN and builds up the configuration
+     *
+     * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
+     * @param proxy     proxy to use for the HTTP connections; blank or null when no proxy is to be used
+     */
+    public RavenConfig(String sentryDSN, String proxy) {
 
         try {
             URL url = new URL(sentryDSN);
@@ -37,6 +48,13 @@ public class RavenConfig {
 
             this.port = url.getPort();
 
+            if (proxy != null && !proxy.isEmpty()) {
+                String[] proxyParts = proxy.split(":");
+                this.proxyType = proxyParts[0];
+                this.proxyHost = proxyParts[1];
+                this.proxyPort = Integer.parseInt(proxyParts[2]);
+            }
+
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -46,6 +64,7 @@ public class RavenConfig {
 
     /**
      * The Sentry server URL that we post the message to.
+     *
      * @return sentry server url
      */
     public String getSentryURL() {
@@ -60,8 +79,17 @@ public class RavenConfig {
         return serverUrl.toString();
     }
 
+    public Proxy getProxy() {
+        if (proxyType == null || Proxy.Type.DIRECT.name().equals(proxyType)) {
+            return Proxy.NO_PROXY;
+        }
+        SocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
+        return new Proxy(Proxy.Type.valueOf(proxyType), proxyAddress);
+    }
+
     /**
      * The sentry server host
+     *
      * @return server host
      */
     public String getHost() {
@@ -74,6 +102,7 @@ public class RavenConfig {
 
     /**
      * Sentry server protocol http https?
+     *
      * @return http or https
      */
     public String getProtocol() {
@@ -86,6 +115,7 @@ public class RavenConfig {
 
     /**
      * The Sentry public key
+     *
      * @return Sentry public key
      */
     public String getPublicKey() {
@@ -98,6 +128,7 @@ public class RavenConfig {
 
     /**
      * The Sentry secret key
+     *
      * @return Sentry secret key
      */
     public String getSecretKey() {
@@ -110,6 +141,7 @@ public class RavenConfig {
 
     /**
      * sentry url path
+     *
      * @return url path
      */
     public String getPath() {
@@ -122,6 +154,7 @@ public class RavenConfig {
 
     /**
      * Sentry project Id
+     *
      * @return project Id
      */
     public String getProjectId() {
@@ -134,6 +167,7 @@ public class RavenConfig {
 
     /**
      * sentry server port
+     *
      * @return server port
      */
     public int getPort() {

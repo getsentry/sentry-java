@@ -11,6 +11,7 @@ import org.apache.log4j.spi.LoggingEvent;
 public class SentryAppender extends AppenderSkeleton {
 
     private String sentry_dsn;
+    private String proxy;
 
     public String getSentry_dsn() {
         return sentry_dsn;
@@ -18,6 +19,14 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setSentry_dsn(String sentry_dsn) {
         this.sentry_dsn = sentry_dsn;
+    }
+
+    public String getProxy() {
+        return proxy;
+    }
+
+    public void setProxy(String proxy) {
+        this.proxy = proxy;
     }
 
     @Override
@@ -40,7 +49,7 @@ public class SentryAppender extends AppenderSkeleton {
                 String culprit = loggingEvent.getLoggerName();
 
                 // create the client passing in the sentry DSN from the log4j properties file.
-                RavenClient client = new RavenClient(getSentry_dsn());
+                RavenClient client = new RavenClient(getSentry_dsn(), getProxy());
 
                 // send the message to the sentry server
                 client.logMessage(logMessage, timestamp, loggingClass, logLevel, culprit);
