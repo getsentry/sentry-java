@@ -26,12 +26,11 @@ you'll find in the target directory of the project.
 
 **Option 3**: add the self contained jar file to your classpath
 
+Log4J configuration
+-------------------
 Check out src/test/java/resources/log4j_configuration.txt where you can see an example log4j config file.
 
 You will need to add the SentryAppender and the sentry_dsn properties.
-
-Log4J configuration
--------------------
 
 sentry_dsn
 ~~~~~~~~~~
