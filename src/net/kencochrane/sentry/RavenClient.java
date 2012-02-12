@@ -1,12 +1,12 @@
 package net.kencochrane.sentry;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
@@ -25,6 +25,11 @@ class RavenClient {
     public RavenClient(String sentryDSN) {
         this.sentryDSN = sentryDSN;
         this.config = new RavenConfig(sentryDSN);
+    }
+
+    public RavenClient(String sentryDSN, String proxy) {
+        this.sentryDSN = sentryDSN;
+        this.config = new RavenConfig(sentryDSN, proxy);
     }
 
     public RavenConfig getConfig() {
@@ -143,12 +148,8 @@ class RavenClient {
      * @param timestamp   the timestamp of the message
      */
     private void sendMessage(String messageBody, long timestamp) {
-
-        DefaultHttpClient httpClient = new DefaultHttpClient();
+        HttpURLConnection connection = null;
         try {
-
-            // build up the Post method
-            HttpPost httppost = new HttpPost(getConfig().getSentryURL());
 
             // get the hmac Signature for the header
             String hmacSignature = RavenUtils.getSignature(messageBody, timestamp, config.getSecretKey());
@@ -156,35 +157,22 @@ class RavenClient {
             // get the auth header
             String authHeader = buildAuthHeader(hmacSignature, timestamp, getConfig().getPublicKey());
 
-            // add auth header to http post
-            httppost.addHeader("X-Sentry-Auth", authHeader);
-
-            // set the body into the post
-            StringEntity reqEntity = new StringEntity(messageBody);
-            httppost.setEntity(reqEntity);
-
-            // call the server and get response
-            HttpResponse response = httpClient.execute(httppost);
-            HttpEntity resEntity = response.getEntity();
-
-            // not needed right now, keeping around for debugging purposes
-            //if (resEntity != null) {
-            //String content = EntityUtils.toString(resEntity);
-            //System.out.println(content);
-            //}
-
-            // need to consume the response
-            EntityUtils.consume(resEntity);
-        } catch (Exception e) {
+            URL endpoint = new URL(getConfig().getSentryURL());
+            connection = (HttpURLConnection) endpoint.openConnection(getConfig().getProxy());
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setReadTimeout(10000);
+            connection.setRequestProperty("X-Sentry-Auth", authHeader);
+            OutputStream output = connection.getOutputStream();
+            output.write(messageBody.getBytes());
+            output.close();
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            input.close();
+        } catch (IOException e) {
             // Eat the errors, we don't want to cause problems if there are major issues.
             e.printStackTrace();
-        } finally {
-            // When HttpClient instance is no longer needed,
-            // shut down the connection manager to ensure
-            // immediate de-allocation of all system resources
-            httpClient.getConnectionManager().shutdown();
         }
-
     }
 
     /**
