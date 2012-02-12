@@ -27,7 +27,7 @@ Log4j Config example::
 
 Sentry Versions Supported
 -------------------------
-This client has been tested with Sentry 2.7 and 2.8, and only very briefly.
+This client supports Sentry protocol version 2.0 (which is Sentry >= 2.0)
 
 TODO
 ----
