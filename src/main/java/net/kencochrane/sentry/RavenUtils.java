@@ -1,5 +1,7 @@
 package net.kencochrane.sentry;
 
+import org.apache.commons.lang.time.DateFormatUtils;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
@@ -7,7 +9,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SignatureException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 import java.util.zip.CRC32;
@@ -25,7 +26,6 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 public class RavenUtils {
 
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
-    private static final SimpleDateFormat ISO8601FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     /**
      * Computes RFC 2104-compliant HMAC signature.
@@ -83,10 +83,7 @@ public class RavenUtils {
      * @return ISO8601 formatted date as a String
      */
     public static String getDateAsISO8601String(Date date) {
-        String result = ISO8601FORMAT.format(date);
-        result = result.substring(0, result.length() - 2)
-                + ":" + result.substring(result.length() - 2);
-        return result;
+        return DateFormatUtils.ISO_DATETIME_FORMAT.format(date);
     }
 
     /**
@@ -95,8 +92,7 @@ public class RavenUtils {
      * @return timestamp for now as long
      */
     public static long getTimestampLong() {
-        java.util.Date date = new java.util.Date();
-        return date.getTime();
+        return System.currentTimeMillis();
     }
 
     /**

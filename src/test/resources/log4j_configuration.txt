@@ -20,3 +20,4 @@ log4j.appender.R.layout.ConversionPattern=%p %t %c - %m%n
 log4j.appender.sentry=net.kencochrane.sentry.SentryAppender
 log4j.appender.sentry.sentry_dsn=http://b4935bdd78624092ac2bc70fdcdb6f5a:7a37d9ad4765428180316bfec91a27ef@localhost:8000/1
 
+
