@@ -1,5 +1,6 @@
 package net.kencochrane.sentry;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
@@ -58,11 +59,17 @@ class RavenClient {
      * @param culprit     Who we think caused the problem.
      * @return JSON String of message body
      */
-    private String buildJSON(String message, String timestamp, String loggerClass, int logLevel, String culprit) {
+    private String buildJSON(String message, String timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         JSONObject obj = new JSONObject();
         obj.put("event_id", RavenUtils.getRandomUUID()); //Hexadecimal string representing a uuid4 value.
         obj.put("checksum", RavenUtils.calculateChecksum(message));
-        obj.put("culprit", culprit);
+        if (exception == null) {
+            obj.put("culprit", culprit);
+        } else {
+            obj.put("culprit", determineCulprit(exception));
+            obj.put("sentry.interfaces.Exception", buildException(exception));
+            obj.put("sentry.interfaces.Stacktrace", buildStacktrace(exception));
+        }
         obj.put("timestamp", timestamp);
         obj.put("message", message);
         obj.put("project", getConfig().getProjectId());
@@ -72,6 +79,63 @@ class RavenClient {
         return obj.toJSONString();
     }
 
+    /**
+     * Determines the class and method name where the root cause exception occurred.
+     *
+     * @param exception exception
+     * @return the culprit
+     */
+    private String determineCulprit(Throwable exception) {
+        Throwable cause = exception;
+        String culprit = null;
+        while (cause != null) {
+            StackTraceElement[] elements = cause.getStackTrace();
+            if (elements.length > 0) {
+                StackTraceElement trace = elements[0];
+                culprit = trace.getClassName() + "." + trace.getMethodName();
+            }
+            cause = cause.getCause();
+        }
+        return culprit;
+    }
+
+    private JSONObject buildException(Throwable exception) {
+        JSONObject json = new JSONObject();
+        json.put("type", exception.getClass().getSimpleName());
+        json.put("value", exception.getMessage());
+        json.put("module", exception.getClass().getPackage().getName());
+        return json;
+    }
+
+    private JSONObject buildStacktrace(Throwable exception) {
+        JSONArray array = new JSONArray();
+        Throwable cause = exception;
+        while (cause != null) {
+            StackTraceElement[] elements = cause.getStackTrace();
+            for (int index = 0; index < elements.length; ++index) {
+                if (index == 0) {
+                    JSONObject causedByFrame = new JSONObject();
+                    String msg = "Caused by: " + cause.getClass().getName();
+                    if (cause.getMessage() != null) {
+                        msg += " (\"" + cause.getMessage() + "\")";
+                    }
+                    causedByFrame.put("filename", msg);
+                    causedByFrame.put("lineno", -1);
+                    array.add(causedByFrame);
+                }
+                StackTraceElement element = elements[index];
+                JSONObject frame = new JSONObject();
+                frame.put("filename", element.getClassName());
+                frame.put("function", element.getMethodName());
+                frame.put("lineno", element.getLineNumber());
+                array.add(frame);
+            }
+            cause = cause.getCause();
+        }
+        JSONObject stacktrace = new JSONObject();
+        stacktrace.put("frames", array);
+        return stacktrace;
+    }
 
     /**
      * Take the raw message body and get it ready for sending. Encode and compress it.
@@ -98,11 +162,12 @@ class RavenClient {
      * @param loggerClass The class associated with the log message
      * @param logLevel    int value for Log level for message (DEBUG, ERROR, INFO, etc.)
      * @param culprit     Who we think caused the problem.
+     * @param exception   exception causing the problem
      * @return Encode and compressed version of the JSON Message body
      */
-    private String buildMessage(String message, String timestamp, String loggerClass, int logLevel, String culprit) {
+    private String buildMessage(String message, String timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         // get the json version of the body
-        String jsonMessage = buildJSON(message, timestamp, loggerClass, logLevel, culprit);
+        String jsonMessage = buildJSON(message, timestamp, loggerClass, logLevel, culprit, exception);
 
         // compress and encode the json message.
         return buildMessageBody(jsonMessage);
@@ -183,11 +248,13 @@ class RavenClient {
      * @param loggerClass   The class associated with the log message
      * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
      * @param culprit       Who we think caused the problem.
+     * @param exception     exception that occurred
      */
-    public void logMessage(String theLogMessage, long timestamp, String loggerClass, int logLevel, String culprit) {
+    public void logMessage(String theLogMessage, long timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         String timestampDate = RavenUtils.getTimestampString(timestamp);
 
-        String message = buildMessage(theLogMessage, timestampDate, loggerClass, logLevel, culprit);
+        String message = buildMessage(theLogMessage, timestampDate, loggerClass, logLevel, culprit, exception);
         sendMessage(message, timestamp);
     }
+
 }

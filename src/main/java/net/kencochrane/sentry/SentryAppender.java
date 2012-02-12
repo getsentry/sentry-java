@@ -2,6 +2,7 @@ package net.kencochrane.sentry;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.log4j.spi.ThrowableInformation;
 
 /**
  * User: ken cochrane
@@ -52,7 +53,9 @@ public class SentryAppender extends AppenderSkeleton {
                 RavenClient client = new RavenClient(getSentry_dsn(), getProxy());
 
                 // send the message to the sentry server
-                client.logMessage(logMessage, timestamp, loggingClass, logLevel, culprit);
+                ThrowableInformation throwableInformation = loggingEvent.getThrowableInformation();
+                Throwable throwable = (throwableInformation == null ? null : throwableInformation.getThrowable());
+                client.logMessage(logMessage, timestamp, loggingClass, logLevel, culprit, throwable);
 
             } catch (Exception e) {
                 System.err.println(e);
