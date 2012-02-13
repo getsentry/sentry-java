@@ -1,5 +1,6 @@
-*.pyc
 *.DS_Store
 out/*
 target/*
 .idea/*
+*.iml
+example.log

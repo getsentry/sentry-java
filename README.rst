@@ -19,7 +19,7 @@ you'll find in the target directory of the project.
     <dependency>
         <groupId>net.kencochrane</groupId>
         <artifactId>raven-java</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.3-SNAPSHOT</version>
     </dependency>
 
 **Option 2**: add the plain jar and the jar files of all dependencies to your classpath
@@ -60,16 +60,24 @@ docs from the target directory of the project.
 TODO
 ----
 - Create better documentation
-- Add unit tests
+- Add more unit tests
 - Add more examples
-- Get compression to work on message body, it isn't working now,not sure if it is sentry server or raven-java. Might be incompatible versions of zlib Java->python.
+- Get compression to work on message body, it isn't working now, not sure if it is sentry server or raven-java. Might be incompatible versions of zlib Java->python.
 
 
 History
 -------
-0.2 - code refactor and cleanup
+- 0.3
+    - Added Maven support
+    - Merged with log4sentry project by Kevin Wetzels
+    - Added Proxy support
+    - Added full stack trace to logs
 
-0.1 - initial version
+- 0.2
+    - code refactor and cleanup
+
+- 0.1
+    - initial version
 
 Contributors
 ------------
