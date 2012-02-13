@@ -73,5 +73,5 @@ History
 
 Contributors
 ------------
-Ken Cochrane (@KenCochrane)
-Kevin Wetzels (@roambe)
+- Ken Cochrane (@KenCochrane)
+- Kevin Wetzels (@roambe)
