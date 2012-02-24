@@ -40,7 +40,7 @@ Configuration
 
 Log4J configuration
 ~~~~~~~~~~~~~~~~~~~
-Check out src/test/java/resources/log4j_configuration.txt where you can see an example log4j config file.
+Check out ``src/test/java/resources/log4j_configuration.txt`` where you can see an example log4j config file.
 
 You will need to add the SentryAppender and the sentry_dsn properties.
 
