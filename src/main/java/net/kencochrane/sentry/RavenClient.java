@@ -23,6 +23,14 @@ class RavenClient {
     private RavenConfig config;
     private String sentryDSN;
 
+    public RavenClient() {
+        this.sentryDSN = System.getenv("SENTRY_DSN");
+        if (this.sentryDSN == null || this.sentryDSN.length() == 0) {
+            throw new RuntimeException("You must provide a DSN to RavenClient");
+        }
+        this.config = new RavenConfig(this.sentryDSN);
+    }
+
     public RavenClient(String sentryDSN) {
         this.sentryDSN = sentryDSN;
         this.config = new RavenConfig(sentryDSN);
