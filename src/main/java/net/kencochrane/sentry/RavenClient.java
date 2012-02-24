@@ -22,6 +22,15 @@ class RavenClient {
     private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.2";
     private RavenConfig config;
     private String sentryDSN;
+    private String lastID;
+
+    public RavenClient() {
+        this.sentryDSN = System.getenv("SENTRY_DSN");
+        if (this.sentryDSN == null || this.sentryDSN.length() == 0) {
+            throw new RuntimeException("You must provide a DSN to RavenClient");
+        }
+        this.config = new RavenConfig(this.sentryDSN);
+    }
 
     public RavenClient(String sentryDSN) {
         this.sentryDSN = sentryDSN;
@@ -49,6 +58,14 @@ class RavenClient {
         this.sentryDSN = sentryDSN;
     }
 
+    public void setLastID(String lastID) {
+        this.lastID = lastID;
+    }
+
+    public String getLastID() {
+        return lastID;
+    }
+
     /**
      * Build up the JSON body for the POST that is sent to sentry
      *
@@ -61,7 +78,8 @@ class RavenClient {
      */
     private String buildJSON(String message, String timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         JSONObject obj = new JSONObject();
-        obj.put("event_id", RavenUtils.getRandomUUID()); //Hexadecimal string representing a uuid4 value.
+        String lastID = RavenUtils.getRandomUUID();
+        obj.put("event_id", lastID); //Hexadecimal string representing a uuid4 value.
         obj.put("checksum", RavenUtils.calculateChecksum(message));
         if (exception == null) {
             obj.put("culprit", culprit);
@@ -76,6 +94,7 @@ class RavenClient {
         obj.put("level", logLevel);
         obj.put("logger", loggerClass);
         obj.put("server_name", RavenUtils.getHostname());
+        setLastID(lastID);
         return obj.toJSONString();
     }
 
@@ -243,6 +262,9 @@ class RavenClient {
     /**
      * Send the log message to the sentry server.
      *
+     * This method is deprecated. You should use captureMessage instead.
+     *
+     * @deprecated
      * @param theLogMessage The log message
      * @param timestamp     unix timestamp
      * @param loggerClass   The class associated with the log message
@@ -257,4 +279,48 @@ class RavenClient {
         sendMessage(message, timestamp);
     }
 
+
+    /**
+     * Send the log message to the sentry server.
+     *
+     * @param message       The log message
+     * @param timestamp     unix timestamp
+     * @param loggerClass   The class associated with the log message
+     * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
+     * @param culprit       Who we think caused the problem.
+     */
+    public String captureMessage(String message, long timestamp, String loggerClass, int logLevel, String culprit) {
+        String timestampDate = RavenUtils.getTimestampString(timestamp);
+
+        String body = buildMessage(message, timestampDate, loggerClass, logLevel, culprit, null);
+        sendMessage(body, timestamp);
+        return getLastID();
+    }
+
+    public String captureMessage(String message) {
+        long timestamp = System.currentTimeMillis() / 1000L;
+        return captureMessage(message, timestamp, "root", 50, null);
+    }
+
+    /**
+     * Send the log message to the sentry server.
+     *
+     * @param exception     exception that occurred
+     * @param timestamp     unix timestamp
+     * @param loggerClass   The class associated with the log message
+     * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
+     * @param culprit       Who we think caused the problem.
+     */
+    public String captureException(Throwable exception, long timestamp, String loggerClass, int logLevel, String culprit) {
+        String timestampDate = RavenUtils.getTimestampString(timestamp);
+
+        String body = buildMessage(exception.getMessage(), timestampDate, loggerClass, logLevel, culprit, exception);
+        sendMessage(body, timestamp);
+        return getLastID();
+    }
+
+    public String captureException(Throwable exception) {
+        long timestamp = System.currentTimeMillis() / 1000L;
+        return captureException(exception, timestamp, "root", 50, null);
+    }
 }
