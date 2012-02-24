@@ -52,7 +52,7 @@ Don't put quotes around it, because it will mess it up, just put it like you see
 Log4j Config example::
 
     log4j.appender.sentry=net.kencochrane.sentry.SentryAppender
-    log4j.appender.sentry.sentry_dsn=http://b4935bdd78624092ac2bc70fdcdb6f5a:7a37d9ad4765428180316bfec91a27ef@localhost:8000/1
+    log4j.appender.sentry.sentry_dsn=http://b4935bdd7862409:7a37d9ad47654281@localhost:8000/1
 
 Proxy
 ^^^^^
@@ -69,9 +69,10 @@ Raven-Java will first look to see if there is an environment variable called ``S
 3. It allows you to use the RavenClient directly outside of log4J, without having to hard code the Sentry DSN in your source code.
 
 Linux example::
-    # put this in your profile, or add it to a shell script that calls your java program.
 
-    export SENTRY_DSN=http://b4935bdd78624092a:7a37d9ad47654281803f@localhost:8000/1
+    # put this in your profile, or add it to a shell script that calls your java program.
+    
+    $ export SENTRY_DSN=http://b4935bdd78624092a:7a37d9ad47654281803f@localhost:8000/1
 
 Usage
 -----
@@ -100,7 +101,7 @@ RavenClient
 ~~~~~~~~~~~
 Set the SENTRY_DSN Environment Variable with your sentry DSN.
 
-Create an instance of the client:
+Create an instance of the client::
 
     RavenClient client = new RavenClient();
     
@@ -129,7 +130,10 @@ docs from the target directory of the project.
 
 Running Tests
 -------------
-We are using maven, so all that you need to do in order to run the test is run ``mvn test``.
+We are using maven, so all that you need to do in order to run the test is run the following::
+
+    $ cd raven-java
+    $ mvn test
 
 TODO
 ----
