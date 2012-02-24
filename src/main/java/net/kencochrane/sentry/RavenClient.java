@@ -19,7 +19,7 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 class RavenClient {
 
-    private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.2";
+    private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.4";
     private RavenConfig config;
     private String sentryDSN;
     private String lastID;
@@ -262,7 +262,7 @@ class RavenClient {
     /**
      * Send the log message to the sentry server.
      *
-     * This method is deprecated. You should use captureMessage instead.
+     * This method is deprecated. You should use captureMessage or captureException instead.
      *
      * @deprecated
      * @param theLogMessage The log message
@@ -273,9 +273,7 @@ class RavenClient {
      * @param exception     exception that occurred
      */
     public void logMessage(String theLogMessage, long timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
-        String timestampDate = RavenUtils.getTimestampString(timestamp);
-
-        String message = buildMessage(theLogMessage, timestampDate, loggerClass, logLevel, culprit, exception);
+        String message = buildMessage(theLogMessage, RavenUtils.getTimestampString(timestamp), loggerClass, logLevel, culprit, exception);
         sendMessage(message, timestamp);
     }
 
@@ -288,39 +286,48 @@ class RavenClient {
      * @param loggerClass   The class associated with the log message
      * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
      * @param culprit       Who we think caused the problem.
+     * @return lastID       The ID for the last message.
      */
     public String captureMessage(String message, long timestamp, String loggerClass, int logLevel, String culprit) {
-        String timestampDate = RavenUtils.getTimestampString(timestamp);
-
-        String body = buildMessage(message, timestampDate, loggerClass, logLevel, culprit, null);
+        String body = buildMessage(message, RavenUtils.getTimestampString(timestamp), loggerClass, logLevel, culprit, null);
         sendMessage(body, timestamp);
         return getLastID();
-    }
-
-    public String captureMessage(String message) {
-        long timestamp = System.currentTimeMillis() / 1000L;
-        return captureMessage(message, timestamp, "root", 50, null);
     }
 
     /**
      * Send the log message to the sentry server.
      *
-     * @param exception     exception that occurred
+     * @param message       The log message
+     * @return lastID       The ID for the last message.
+     */
+    public String captureMessage(String message) {
+        return captureMessage(message, RavenUtils.getTimestampLong(), "root", 50, null);
+    }
+
+    /**
+     * Send the exception to the sentry server.
+     *
+     * @param message       The log message
      * @param timestamp     unix timestamp
      * @param loggerClass   The class associated with the log message
      * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
      * @param culprit       Who we think caused the problem.
+     * @param exception     exception that occurred
+     * @return lastID       The ID for the last message.
      */
-    public String captureException(Throwable exception, long timestamp, String loggerClass, int logLevel, String culprit) {
-        String timestampDate = RavenUtils.getTimestampString(timestamp);
-
-        String body = buildMessage(exception.getMessage(), timestampDate, loggerClass, logLevel, culprit, exception);
+    public String captureException(String message, long timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
+        String body = buildMessage(message, RavenUtils.getTimestampString(timestamp), loggerClass, logLevel, culprit, exception);
         sendMessage(body, timestamp);
         return getLastID();
     }
 
+    /**
+     * Send an exception to the sentry server.
+     *
+     * @param exception     exception that occurred
+     * @return lastID       The ID for the last message. 
+     */
     public String captureException(Throwable exception) {
-        long timestamp = System.currentTimeMillis() / 1000L;
-        return captureException(exception, timestamp, "root", 50, null);
+        return captureException(exception.getMessage(), RavenUtils.getTimestampLong(), "root", 50, null, exception);
     }
 }

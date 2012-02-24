@@ -6,6 +6,15 @@ This is a very raw project at the moment it still needs some more TLC and testin
 
 Installation
 ------------
+
+Download Jars
+~~~~~~~~~~~~~
+Precompiled jars are available for download directly from github.
+
+    https://github.com/kencochrane/raven-java/downloads
+
+Build Jars yourself
+~~~~~~~~~~~~~~~~~~~
 You'll need Maven 2 to build the project::
 
     $ cd raven-java
@@ -19,15 +28,18 @@ you'll find in the target directory of the project.
     <dependency>
         <groupId>net.kencochrane</groupId>
         <artifactId>raven-java</artifactId>
-        <version>0.3-SNAPSHOT</version>
+        <version>0.4-SNAPSHOT</version>
     </dependency>
 
 **Option 2**: add the plain jar and the jar files of all dependencies to your classpath
 
 **Option 3**: add the self contained jar file to your classpath
 
+Configuration
+-------------
+
 Log4J configuration
--------------------
+*******************
 Check out src/test/java/resources/log4j_configuration.txt where you can see an example log4j config file.
 
 You will need to add the SentryAppender and the sentry_dsn properties.
@@ -48,6 +60,63 @@ If you need to use a proxy for HTTP transport, you can configure it as well::
 
     log4j.appender.sentry.proxy=HTTP:proxyhost:proxyport
 
+SENTRY_DSN Environment Variable
+*******************************
+Raven-Java will first look to see if there is an environment variable called ``SENTRY_DSN`` set before it looks at the log4j config. If the environment variable is set, it will use that value instead of the one set in ``log4j.appender.sentry.sentry_dsn``. This is for a few reasons.
+
+1. Some hosting providers (Heroku, etc) have http://GetSentry.com plugins and they expose your Sentry settings via an environment variable. 
+2. This allows you to specify your Sentry config by server. You could put a development Sentry server in your log4j properties file and then on each server override those values to point to different sentry servers if you need to.
+3. It allows you to use the RavenClient directly outside of log4J, without having to hard code the Sentry DSN in your source code.
+
+Linux example::
+    # put this in your profile, or add it to a shell script that calls your java program.
+    export SENTRY_DSN=http://b4935bdd78624092ac2bc70fdcdb6f5a:7a37d9ad4765428180316bfec91a27ef@localhost:8000/1
+
+Usage
+-----
+
+Log4J
+~~~~~
+
+If you configure log4j to only error messages to Sentry, it will ignore all other message levels and only send the logger.error() messages
+
+Example::
+
+    // configure log4j the normal way, and then just use it like you normally would.
+    
+    logger.debug("Debug example"); // ignored
+    logger.error("Error example"); // sent to sentry
+    logger.info("info Example"); // ignored
+    
+    try {
+        throw new RuntimeException("Uh oh!");
+    } catch (RuntimeException e) {
+        logger.error("Error example with stacktrace", e); //sent to sentry
+    }
+
+
+RavenClient
+~~~~~~~~~~~
+Set the SENTRY_DSN Environment Variable with your sentry DSN.
+
+Create an instance of the client:
+
+    RavenClient client = new RavenClient();
+    
+Now call out to the raven client to capture events::
+
+    // record a simple message
+    client.captureMessage('hello world!')
+
+    // capture an exception
+    try {
+        throw new RuntimeException("Uh oh!");
+    }
+    catch (Throwable e) {
+        client.captureException(e);
+    }
+
+
 Sentry Versions Supported
 -------------------------
 This client supports Sentry protocol version 2.0 (which is Sentry >= 2.0)
@@ -56,6 +125,10 @@ Other
 -----
 If you want to generate the javadocs for this project, simply run ``mvn javadoc:javadoc`` and you'll be able to browse the
 docs from the target directory of the project.
+
+Running Tests
+-------------
+We are using maven, so all that you need to do in order to run the test is run ``mvn test``.
 
 TODO
 ----
@@ -67,6 +140,10 @@ TODO
 
 History
 -------
+- 0.4
+    - Added the ability to get the SENTRY_DSN from the ENV
+    - Added RavenClient.captureMessage
+    - Added RavenClient.captureException
 - 0.3
     - Added Maven support
     - Merged with log4sentry project by Kevin Wetzels
@@ -83,3 +160,4 @@ Contributors
 ------------
 - Ken Cochrane (@KenCochrane)
 - Kevin Wetzels (@roambe)
+- David Cramer (@zeeg)

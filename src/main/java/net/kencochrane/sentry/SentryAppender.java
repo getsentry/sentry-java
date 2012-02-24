@@ -30,13 +30,26 @@ public class SentryAppender extends AppenderSkeleton {
         this.proxy = proxy;
     }
 
+    /**
+    * Look for the ENV variable first, and if it isn't there, then look in the log4j properties
+    *
+    */
+    private String findSentryDSN(){
+        String sentryDSN = System.getenv("SENTRY_DSN");
+        if (sentryDSN == null || sentryDSN.length() == 0) {
+            sentryDSN = getSentry_dsn();
+            if (sentryDSN == null) {
+                throw new RuntimeException("ERROR: You do not have a Sentry DSN configured! make sure you add sentry_dsn to your log4j properties, or have set SENTRY_DSN as an envirornment variable.");
+            }
+        }
+        return sentryDSN;
+    }
+
     @Override
     protected void append(LoggingEvent loggingEvent) {
 
-        if (getSentry_dsn() == null) {
-            System.err.println("ERROR: You do not have a Sentry DSN configured! make sure you add sentry_dsn to your log4j properties ");
-            return;
-        }
+        //find the sentry DSN.
+        String sentryDSN = findSentryDSN();
 
         synchronized (this) {
             try {
@@ -50,12 +63,17 @@ public class SentryAppender extends AppenderSkeleton {
                 String culprit = loggingEvent.getLoggerName();
 
                 // create the client passing in the sentry DSN from the log4j properties file.
-                RavenClient client = new RavenClient(getSentry_dsn(), getProxy());
+                RavenClient client = new RavenClient(sentryDSN, getProxy());
 
-                // send the message to the sentry server
+                // is it an exception?
                 ThrowableInformation throwableInformation = loggingEvent.getThrowableInformation();
-                Throwable throwable = (throwableInformation == null ? null : throwableInformation.getThrowable());
-                client.logMessage(logMessage, timestamp, loggingClass, logLevel, culprit, throwable);
+                
+                // send the message to the sentry server
+                if (throwableInformation == null){
+                    client.captureMessage(logMessage, timestamp, loggingClass, logLevel, culprit);
+                }else{
+                    client.captureException(logMessage, timestamp, loggingClass, logLevel, culprit, throwableInformation.getThrowable());
+                }
 
             } catch (Exception e) {
                 System.err.println(e);
