@@ -17,7 +17,7 @@ public class RavenConfig {
     /**
      * Takes in a sentryDSN and builds up the configuration
      *
-     * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
+     * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}/{PROJECT_ID}'
      */
     public RavenConfig(String sentryDSN) {
         this(sentryDSN, null);
@@ -26,7 +26,7 @@ public class RavenConfig {
     /**
      * Takes in a sentryDSN and builds up the configuration
      *
-     * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}'
+     * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}/{PROJECT_ID}'
      * @param proxy     proxy to use for the HTTP connections; blank or null when no proxy is to be used
      */
     public RavenConfig(String sentryDSN, String proxy) {
@@ -36,9 +36,11 @@ public class RavenConfig {
             this.host = url.getHost();
             this.protocol = url.getProtocol();
             String urlPath = url.getPath();
-            String[] urlParts = urlPath.split("/");
-            this.path = urlPath;
-            this.projectId = urlParts[1];
+
+            int lastSlash = urlPath.lastIndexOf("/");
+            this.path = urlPath.substring(0, lastSlash);
+            // ProjectId is the integer after the last slash in the path
+            this.projectId = urlPath.substring(lastSlash+1);
 
             String userInfo = url.getUserInfo();
             String[] userParts = userInfo.split(":");
@@ -72,9 +74,10 @@ public class RavenConfig {
         serverUrl.append(getProtocol());
         serverUrl.append("://");
         serverUrl.append(getHost());
-        if ((getPort() != 0) && (getPort() != 80)) {
+        if ((getPort() != 0) && (getPort() != 80) && getPort() != -1) {
             serverUrl.append(":").append(getPort());
         }
+        serverUrl.append(getPath());
         serverUrl.append("/api/store/");
         return serverUrl.toString();
     }
