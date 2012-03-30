@@ -51,42 +51,16 @@ public class SentryAppender extends AppenderSkeleton {
         //find the sentry DSN.
         String sentryDSN = findSentryDSN();
 
-        synchronized (this) {
-            try {
-                // get timestamp and timestamp in correct string format.
-                long timestamp = loggingEvent.getTimeStamp();
-
-                // get the log and info about the log.
-                String logMessage = loggingEvent.getRenderedMessage();
-                String loggingClass = loggingEvent.getLogger().getName();
-                int logLevel = (loggingEvent.getLevel().toInt() / 1000);  //Need to divide by 1000 to keep consistent with sentry
-                String culprit = loggingEvent.getLoggerName();
-
-                // create the client passing in the sentry DSN from the log4j properties file.
-                RavenClient client = new RavenClient(sentryDSN, getProxy());
-
-                // is it an exception?
-                ThrowableInformation throwableInformation = loggingEvent.getThrowableInformation();
-                
-                // send the message to the sentry server
-                if (throwableInformation == null){
-                    client.captureMessage(logMessage, timestamp, loggingClass, logLevel, culprit);
-                }else{
-                    client.captureException(logMessage, timestamp, loggingClass, logLevel, culprit, throwableInformation.getThrowable());
-                }
-
-            } catch (Exception e) {
-                System.err.println(e);
-            }
-        }
-
+        SentryQueue.getInstance().addEvent(loggingEvent, sentryDSN, getProxy());
     }
 
-    public void close() {
-        // clean up normally goes here. but there isn't any
+    public void close()
+    {
+        SentryQueue.getInstance().shutdown();
     }
 
-    public boolean requiresLayout() {
+    public boolean requiresLayout()
+    {
         return false;
     }
 }
