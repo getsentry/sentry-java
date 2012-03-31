@@ -15,6 +15,7 @@ public class SentryQueue
     private static BlockingQueue<LoggingEvent> queue;
 
     private SentryWorker worker;
+    private boolean blocking;
 
     public static SentryQueue getInstance()
     {
@@ -23,9 +24,10 @@ public class SentryQueue
 
     private SentryQueue()
     {
-        queue = new LinkedBlockingQueue<LoggingEvent>();
+        queue = null;
 
         worker = null;
+
     }
 
     public void shutdown()
@@ -34,19 +36,40 @@ public class SentryQueue
         worker.interrupt();
     }
 
-    public void addEvent(LoggingEvent le, String sentryDSN, String proxy)
+    public synchronized boolean isSetup()
     {
-        // There might be a better way to do this before, rather than
-        // always sending the sentry connection information
-        synchronized (this)
+        return (queue != null);
+    }
+
+    public synchronized void setup(String sentryDSN, String proxy, int queueSize, boolean blocking)
+    {
+        queue = new LinkedBlockingQueue<LoggingEvent>(queueSize);
+        this.blocking = blocking;
+
+        worker = new SentryWorker(queue, sentryDSN, proxy);
+        worker.start();
+    }
+
+    public void addEvent(LoggingEvent le)
+    {
+        try
         {
-            if(worker == null)
+            if(blocking)
             {
-                worker = new SentryWorker(queue, sentryDSN, proxy);
-                worker.start();
+                queue.put(le);
+            }
+            else
+            {
+                queue.add(le);
             }
         }
-
-        queue.add(le);
+        catch(IllegalStateException e)
+        {
+            System.err.println("Sentry Queue Full :: " + le);
+        }
+        catch(InterruptedException e)
+        {
+            System.err.println("Sentry Queue Interrupted :: "+ le);
+        }
     }
 }
