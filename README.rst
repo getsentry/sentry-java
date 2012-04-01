@@ -64,14 +64,14 @@ If you need to use a proxy for HTTP transport, you can configure it as well::
 
 Queue Size
 ^^^^^^^^^^
-By default, the appender is configured with a queue of 1000 events.  To tune this parameter:
+By default, the appender is configured with a queue of 1000 events.  To tune this parameter::
 
     log4j.appender.sentry.queue_size=100
 
 Blocking
 ^^^^^^^^
 By default, the appender is non-blocking.  If the queue is filled then log events will be written to Standard Error.
-If you want to make sure log events always reach sentry, you can turn blocking on:
+If you want to make sure log events always reach sentry, you can turn blocking on::
 
     log4j.appender.sentry.blocking=true
 
