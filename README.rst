@@ -165,6 +165,7 @@ History
 -------
 - 0.5
     - Added async support
+    - Fixed issue with parsing of path and port in DSN
 - 0.4
     - Added the ability to get the SENTRY_DSN from the ENV
     - Added RavenClient.captureMessage
