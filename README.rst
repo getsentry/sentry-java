@@ -4,6 +4,8 @@ Raven-java is a Java client for Sentry. It is a basic log4j appender that will s
 
 This is a very raw project at the moment it still needs some more TLC and testing before I would consider it production ready.
 
+The log4j appender is asyncronous by design so there is no need to put it in a AsyncAppender.
+
 Installation
 ------------
 
@@ -28,7 +30,7 @@ you'll find in the target directory of the project.
     <dependency>
         <groupId>net.kencochrane</groupId>
         <artifactId>raven-java</artifactId>
-        <version>0.4-SNAPSHOT</version>
+        <version>0.5-SNAPSHOT</version>
     </dependency>
 
 **Option 2**: add the plain jar and the jar files of all dependencies to your classpath
@@ -59,6 +61,22 @@ Proxy
 If you need to use a proxy for HTTP transport, you can configure it as well::
 
     log4j.appender.sentry.proxy=HTTP:proxyhost:proxyport
+
+Queue Size
+^^^^^^^^^^
+By default, the appender is configured with a queue of 1000 events.  To tune this parameter:
+
+    log4j.appender.sentry.queue_size=100
+
+Blocking
+^^^^^^^^
+By default, the appender is non-blocking.  If the queue is filled then log events will be written to Standard Error.
+If you want to make sure log events always reach sentry, you can turn blocking on:
+
+    log4j.appender.sentry.blocking=true
+
+WARNING: By setting blocking true, you will effectively lock up the thread doing the logging! Use with care.
+
 
 SENTRY_DSN Environment Variable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,6 +163,8 @@ TODO
 
 History
 -------
+- 0.5
+    - Added async support
 - 0.4
     - Added the ability to get the SENTRY_DSN from the ENV
     - Added RavenClient.captureMessage
@@ -166,3 +186,4 @@ Contributors
 - Ken Cochrane (@KenCochrane)
 - Kevin Wetzels (@roambe)
 - David Cramer (@zeeg)
+- Mark Philpot (@griphiam)

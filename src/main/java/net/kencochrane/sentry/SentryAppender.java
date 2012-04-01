@@ -13,6 +13,14 @@ public class SentryAppender extends AppenderSkeleton {
 
     private String sentry_dsn;
     private String proxy;
+    private int queue_size;
+    private boolean blocking;
+
+    public SentryAppender()
+    {
+        queue_size = 1000;
+        blocking = false;
+    }
 
     public String getSentry_dsn() {
         return sentry_dsn;
@@ -28,6 +36,22 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setProxy(String proxy) {
         this.proxy = proxy;
+    }
+
+    public int getQueue_size() {
+        return queue_size;
+    }
+
+    public void setQueue_size(int queue_size) {
+        this.queue_size = queue_size;
+    }
+
+    public boolean getBlocking() {
+        return blocking;
+    }
+
+    public void setBlocking(boolean blocking) {
+        this.blocking = blocking;
     }
 
     /**
@@ -51,42 +75,24 @@ public class SentryAppender extends AppenderSkeleton {
         //find the sentry DSN.
         String sentryDSN = findSentryDSN();
 
-        synchronized (this) {
-            try {
-                // get timestamp and timestamp in correct string format.
-                long timestamp = loggingEvent.getTimeStamp();
-
-                // get the log and info about the log.
-                String logMessage = loggingEvent.getRenderedMessage();
-                String loggingClass = loggingEvent.getLogger().getName();
-                int logLevel = (loggingEvent.getLevel().toInt() / 1000);  //Need to divide by 1000 to keep consistent with sentry
-                String culprit = loggingEvent.getLoggerName();
-
-                // create the client passing in the sentry DSN from the log4j properties file.
-                RavenClient client = new RavenClient(sentryDSN, getProxy());
-
-                // is it an exception?
-                ThrowableInformation throwableInformation = loggingEvent.getThrowableInformation();
-                
-                // send the message to the sentry server
-                if (throwableInformation == null){
-                    client.captureMessage(logMessage, timestamp, loggingClass, logLevel, culprit);
-                }else{
-                    client.captureException(logMessage, timestamp, loggingClass, logLevel, culprit, throwableInformation.getThrowable());
-                }
-
-            } catch (Exception e) {
-                System.err.println(e);
+        synchronized (this)
+        {
+            if(!SentryQueue.getInstance().isSetup())
+            {
+                SentryQueue.getInstance().setup(sentryDSN, getProxy(), queue_size, blocking);
             }
         }
 
+        SentryQueue.getInstance().addEvent(loggingEvent);
     }
 
-    public void close() {
-        // clean up normally goes here. but there isn't any
+    public void close()
+    {
+        SentryQueue.getInstance().shutdown();
     }
 
-    public boolean requiresLayout() {
+    public boolean requiresLayout()
+    {
         return false;
     }
 }
