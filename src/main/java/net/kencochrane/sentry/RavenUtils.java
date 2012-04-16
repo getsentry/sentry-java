@@ -76,14 +76,14 @@ public class RavenUtils {
     }
 
     /**
-     * Convert a java date into the ISO8601 format YYYYMMDDTHH:mm:ss+HH:00
-     * note the added colon for the Timezone
+     * Convert a java date into the ISO8601 format YYYYMMDDTHH:mm:ss
+     * in timezone UTC
      *
      * @param date the date to convert
      * @return ISO8601 formatted date as a String
      */
     public static String getDateAsISO8601String(Date date) {
-        return DateFormatUtils.ISO_DATETIME_FORMAT.format(date);
+        return DateFormatUtils.formatUTC(date, DateFormatUtils.ISO_DATETIME_FORMAT.getPattern());
     }
 
     /**
