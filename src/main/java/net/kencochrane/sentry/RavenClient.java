@@ -17,7 +17,7 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
  * Time: 11:59 AM
  */
 
-class RavenClient {
+public class RavenClient {
 
     private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.4";
     private RavenConfig config;
