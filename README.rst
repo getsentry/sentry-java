@@ -126,7 +126,7 @@ Create an instance of the client::
 Now call out to the raven client to capture events::
 
     // record a simple message
-    client.captureMessage('hello world!')
+    client.captureMessage("hello world!");
 
     // capture an exception
     try {
