@@ -2,7 +2,7 @@ Raven-java
 ==========
 Raven-java is a Java client for Sentry. It is a basic log4j appender that will send your log messages to a sentry server of your choice.
 
-This is a very raw project at the moment it still needs some more TLC and testing before I would consider it production ready.
+It is officially recognized as production-ready by Sentry: http://sentry.readthedocs.org/en/latest/client/index.html
 
 The log4j appender is asyncronous by design so there is no need to put it in a AsyncAppender.
 
