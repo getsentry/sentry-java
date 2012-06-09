@@ -15,6 +15,7 @@ public class SentryAppender extends AppenderSkeleton {
     private String proxy;
     private int queue_size;
     private boolean blocking;
+    private boolean naiveSsl;
 
     public SentryAppender()
     {
@@ -54,6 +55,14 @@ public class SentryAppender extends AppenderSkeleton {
         this.blocking = blocking;
     }
 
+    public boolean isNaiveSsl() {
+        return naiveSsl;
+    }
+
+    public void setNaiveSsl(boolean naiveSsl) {
+        this.naiveSsl = naiveSsl;
+    }
+
     /**
     * Look for the ENV variable first, and if it isn't there, then look in the log4j properties
     *
@@ -79,7 +88,7 @@ public class SentryAppender extends AppenderSkeleton {
         {
             if(!SentryQueue.getInstance().isSetup())
             {
-                SentryQueue.getInstance().setup(sentryDSN, getProxy(), queue_size, blocking);
+                SentryQueue.getInstance().setup(sentryDSN, getProxy(), queue_size, blocking, naiveSsl);
             }
         }
 

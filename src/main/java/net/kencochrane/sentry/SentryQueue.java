@@ -41,12 +41,12 @@ public class SentryQueue
         return (queue != null);
     }
 
-    public synchronized void setup(String sentryDSN, String proxy, int queueSize, boolean blocking)
+    public synchronized void setup(String sentryDSN, String proxy, int queueSize, boolean blocking, boolean naiveSsl)
     {
         queue = new LinkedBlockingQueue<LoggingEvent>(queueSize);
         this.blocking = blocking;
 
-        worker = new SentryWorker(queue, sentryDSN, proxy);
+        worker = new SentryWorker(queue, sentryDSN, proxy, naiveSsl);
         worker.start();
     }
 
