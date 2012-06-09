@@ -77,6 +77,16 @@ If you want to make sure log events always reach sentry, you can turn blocking o
 
 WARNING: By setting blocking true, you will effectively lock up the thread doing the logging! Use with care.
 
+Naive SSL
+^^^^^^^^^
+If you're using Java 6 or earlier, you might encounter errors when connecting to a Sentry instance using a TLS (https)
+connection since Server Name Indication (SNI) support has only been available in Java since Java 7. You can either add
+the corresponding certificate to your keystore (recommended!) or enable ``naiveSsl`` on the Sentry appender. This will
+make the Raven client use a custom hostname verifier that *will* allow the JVM to connect with the host - in fact it
+will let the Raven client connect to any host even if the certificate is invalid. Use at your own risk::
+
+    log4j.appender.sentry.naiveSsl=true
+
 
 SENTRY_DSN Environment Variable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

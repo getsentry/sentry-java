@@ -13,6 +13,7 @@ public class RavenConfig {
     private int port;
     private String proxyType, proxyHost;
     private int proxyPort;
+    private boolean naiveSsl;
 
     /**
      * Takes in a sentryDSN and builds up the configuration
@@ -20,7 +21,7 @@ public class RavenConfig {
      * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}/{PROJECT_ID}'
      */
     public RavenConfig(String sentryDSN) {
-        this(sentryDSN, null);
+        this(sentryDSN, null, false);
     }
 
     /**
@@ -28,9 +29,10 @@ public class RavenConfig {
      *
      * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}/{PROJECT_ID}'
      * @param proxy     proxy to use for the HTTP connections; blank or null when no proxy is to be used
+     * @param naiveSsl use a hostname verifier for SSL connections that allows all connections
      */
-    public RavenConfig(String sentryDSN, String proxy) {
-
+    public RavenConfig(String sentryDSN, String proxy, boolean naiveSsl) {
+        this.naiveSsl = naiveSsl;
         try {
             URL url = new URL(sentryDSN);
             this.host = url.getHost();
@@ -181,6 +183,14 @@ public class RavenConfig {
         this.port = port;
     }
 
+    public boolean isNaiveSsl() {
+        return naiveSsl;
+    }
+
+    public void setNaiveSsl(boolean naiveSsl) {
+        this.naiveSsl = naiveSsl;
+    }
+
     @Override
     public String toString() {
         return "RavenConfig{" +
@@ -190,6 +200,7 @@ public class RavenConfig {
                 ", secretKey='" + secretKey + '\'' +
                 ", path='" + path + '\'' +
                 ", projectId='" + projectId + '\'' +
+                ", naiveSsl='" + naiveSsl + '\'' +
                 ", SentryUrl='" + getSentryURL() + '\'' +
                 '}';
     }
