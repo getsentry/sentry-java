@@ -3,10 +3,14 @@ package net.kencochrane.sentry;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -23,23 +27,24 @@ public class RavenClient {
     private RavenConfig config;
     private String sentryDSN;
     private String lastID;
+    private MessageSender messageSender;
 
     public RavenClient() {
         this.sentryDSN = System.getenv("SENTRY_DSN");
         if (this.sentryDSN == null || this.sentryDSN.length() == 0) {
             throw new RuntimeException("You must provide a DSN to RavenClient");
         }
-        this.config = new RavenConfig(this.sentryDSN);
+        setConfig(new RavenConfig(this.sentryDSN));
     }
 
     public RavenClient(String sentryDSN) {
         this.sentryDSN = sentryDSN;
-        this.config = new RavenConfig(sentryDSN);
+        setConfig(new RavenConfig(sentryDSN));
     }
 
-    public RavenClient(String sentryDSN, String proxy) {
+    public RavenClient(String sentryDSN, String proxy, boolean naiveSsl) {
         this.sentryDSN = sentryDSN;
-        this.config = new RavenConfig(sentryDSN, proxy);
+        setConfig(new RavenConfig(sentryDSN, proxy, naiveSsl));
     }
 
     public RavenConfig getConfig() {
@@ -48,6 +53,16 @@ public class RavenClient {
 
     public void setConfig(RavenConfig config) {
         this.config = config;
+        try {
+            URL endpoint = new URL(config.getSentryURL());
+            if (config.isNaiveSsl() && "https".equals(endpoint.getProtocol())) {
+                messageSender = new NaiveHttpsMessageSender(config, endpoint);
+            } else {
+                messageSender = new MessageSender(config, endpoint);
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Sentry URL is malformed", e);
+        }
     }
 
     public String getSentryDSN() {
@@ -192,39 +207,6 @@ public class RavenClient {
         return buildMessageBody(jsonMessage);
     }
 
-
-    /**
-     * build up the sentry auth header in the following format
-     * <p/>
-     * The header is composed of a SHA1-signed HMAC, the timestamp from when the message was generated, and an
-     * arbitrary client version string. The client version should be something distinct to your client,
-     * and is simply for reporting purposes.
-     * <p/>
-     * X-Sentry-Auth: Sentry sentry_version=2.0,
-     * sentry_signature=<hmac signature>,
-     * sentry_timestamp=<signature timestamp>[,
-     * sentry_key=<public api key>,[
-     * sentry_client=<client version, arbitrary>]]
-     *
-     * @param hmacSignature SHA1-signed HMAC
-     * @param timestamp     is the timestamp of which this message was generated
-     * @param publicKey     is either the public_key or the shared global key between client and server.
-     * @return String version of the sentry auth header
-     */
-    private String buildAuthHeader(String hmacSignature, long timestamp, String publicKey) {
-        StringBuilder header = new StringBuilder();
-        header.append("Sentry sentry_version=2.0,sentry_signature=");
-        header.append(hmacSignature);
-        header.append(",sentry_timestamp=");
-        header.append(timestamp);
-        header.append(",sentry_key=");
-        header.append(publicKey);
-        header.append(",sentry_client=");
-        header.append(RAVEN_JAVA_VERSION);
-
-        return header.toString();
-    }
-
     /**
      * Send the message to the sentry server.
      *
@@ -232,27 +214,8 @@ public class RavenClient {
      * @param timestamp   the timestamp of the message
      */
     private void sendMessage(String messageBody, long timestamp) {
-        HttpURLConnection connection = null;
         try {
-
-            // get the hmac Signature for the header
-            String hmacSignature = RavenUtils.getSignature(messageBody, timestamp, config.getSecretKey());
-
-            // get the auth header
-            String authHeader = buildAuthHeader(hmacSignature, timestamp, getConfig().getPublicKey());
-
-            URL endpoint = new URL(getConfig().getSentryURL());
-            connection = (HttpURLConnection) endpoint.openConnection(getConfig().getProxy());
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
-            connection.setReadTimeout(10000);
-            connection.setRequestProperty("X-Sentry-Auth", authHeader);
-            OutputStream output = connection.getOutputStream();
-            output.write(messageBody.getBytes());
-            output.close();
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            input.close();
+            messageSender.send(messageBody, timestamp);
         } catch (IOException e) {
             // Eat the errors, we don't want to cause problems if there are major issues.
             e.printStackTrace();
@@ -261,16 +224,16 @@ public class RavenClient {
 
     /**
      * Send the log message to the sentry server.
-     *
+     * <p/>
      * This method is deprecated. You should use captureMessage or captureException instead.
      *
-     * @deprecated
      * @param theLogMessage The log message
      * @param timestamp     unix timestamp
      * @param loggerClass   The class associated with the log message
      * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
      * @param culprit       Who we think caused the problem.
      * @param exception     exception that occurred
+     * @deprecated
      */
     public void logMessage(String theLogMessage, long timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         String message = buildMessage(theLogMessage, RavenUtils.getTimestampString(timestamp), loggerClass, logLevel, culprit, exception);
@@ -281,11 +244,11 @@ public class RavenClient {
     /**
      * Send the log message to the sentry server.
      *
-     * @param message       The log message
-     * @param timestamp     unix timestamp
-     * @param loggerClass   The class associated with the log message
-     * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
-     * @param culprit       Who we think caused the problem.
+     * @param message     The log message
+     * @param timestamp   unix timestamp
+     * @param loggerClass The class associated with the log message
+     * @param logLevel    int value for Log level for message (DEBUG, ERROR, INFO, etc.)
+     * @param culprit     Who we think caused the problem.
      * @return lastID       The ID for the last message.
      */
     public String captureMessage(String message, long timestamp, String loggerClass, int logLevel, String culprit) {
@@ -297,7 +260,7 @@ public class RavenClient {
     /**
      * Send the log message to the sentry server.
      *
-     * @param message       The log message
+     * @param message The log message
      * @return lastID       The ID for the last message.
      */
     public String captureMessage(String message) {
@@ -307,12 +270,12 @@ public class RavenClient {
     /**
      * Send the exception to the sentry server.
      *
-     * @param message       The log message
-     * @param timestamp     unix timestamp
-     * @param loggerClass   The class associated with the log message
-     * @param logLevel      int value for Log level for message (DEBUG, ERROR, INFO, etc.)
-     * @param culprit       Who we think caused the problem.
-     * @param exception     exception that occurred
+     * @param message     The log message
+     * @param timestamp   unix timestamp
+     * @param loggerClass The class associated with the log message
+     * @param logLevel    int value for Log level for message (DEBUG, ERROR, INFO, etc.)
+     * @param culprit     Who we think caused the problem.
+     * @param exception   exception that occurred
      * @return lastID       The ID for the last message.
      */
     public String captureException(String message, long timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
@@ -324,10 +287,102 @@ public class RavenClient {
     /**
      * Send an exception to the sentry server.
      *
-     * @param exception     exception that occurred
-     * @return lastID       The ID for the last message. 
+     * @param exception exception that occurred
+     * @return lastID       The ID for the last message.
      */
     public String captureException(Throwable exception) {
         return captureException(exception.getMessage(), RavenUtils.getTimestampLong(), "root", 50, null, exception);
     }
+
+    public static class MessageSender {
+
+        public final RavenConfig config;
+        public final URL endpoint;
+
+        public MessageSender(RavenConfig config, URL endpoint) {
+            this.config = config;
+            this.endpoint = endpoint;
+        }
+
+        public void send(String messageBody, long timestamp) throws IOException {
+            // get the hmac Signature for the header
+            String hmacSignature = RavenUtils.getSignature(messageBody, timestamp, config.getSecretKey());
+
+            // get the auth header
+            String authHeader = buildAuthHeader(hmacSignature, timestamp, config.getPublicKey());
+
+            HttpURLConnection connection = getConnection();
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setReadTimeout(10000);
+            connection.setRequestProperty("X-Sentry-Auth", authHeader);
+            OutputStream output = connection.getOutputStream();
+            output.write(messageBody.getBytes());
+            output.close();
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            input.close();
+        }
+
+        /**
+         * Build up the sentry auth header in the following format.
+         * <p/>
+         * The header is composed of a SHA1-signed HMAC, the timestamp from when the message was generated, and an
+         * arbitrary client version string. The client version should be something distinct to your client,
+         * and is simply for reporting purposes.
+         * <p/>
+         * X-Sentry-Auth: Sentry sentry_version=2.0,
+         * sentry_signature=<hmac signature>,
+         * sentry_timestamp=<signature timestamp>[,
+         * sentry_key=<public api key>,[
+         * sentry_client=<client version, arbitrary>]]
+         *
+         * @param hmacSignature SHA1-signed HMAC
+         * @param timestamp     is the timestamp of which this message was generated
+         * @param publicKey     is either the public_key or the shared global key between client and server.
+         * @return String version of the sentry auth header
+         */
+        protected String buildAuthHeader(String hmacSignature, long timestamp, String publicKey) {
+            StringBuilder header = new StringBuilder();
+            header.append("Sentry sentry_version=2.0,sentry_signature=");
+            header.append(hmacSignature);
+            header.append(",sentry_timestamp=");
+            header.append(timestamp);
+            header.append(",sentry_key=");
+            header.append(publicKey);
+            header.append(",sentry_client=");
+            header.append(RAVEN_JAVA_VERSION);
+
+            return header.toString();
+        }
+
+        protected HttpURLConnection getConnection() throws IOException {
+            return (HttpURLConnection) endpoint.openConnection(config.getProxy());
+        }
+    }
+
+    public static class NaiveHttpsMessageSender extends MessageSender {
+
+        public final HostnameVerifier hostnameVerifier;
+
+        public NaiveHttpsMessageSender(RavenConfig config, URL endpoint) {
+            super(config, endpoint);
+            this.hostnameVerifier = new AcceptAllHostnameVerifier();
+        }
+
+        @Override
+        protected HttpURLConnection getConnection() throws IOException {
+            HttpsURLConnection connection = (HttpsURLConnection) endpoint.openConnection(config.getProxy());
+            connection.setHostnameVerifier(hostnameVerifier);
+            return connection;
+        }
+    }
+
+    public static class AcceptAllHostnameVerifier implements HostnameVerifier {
+        @Override
+        public boolean verify(String hostname, SSLSession sslSession) {
+            return true;
+        }
+    }
+
 }

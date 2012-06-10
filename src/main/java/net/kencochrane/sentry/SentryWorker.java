@@ -17,11 +17,11 @@ public class SentryWorker extends Thread
 
     private BlockingQueue<LoggingEvent> queue;
 
-    public SentryWorker(BlockingQueue<LoggingEvent> queue, String sentryDSN, String proxy)
+    public SentryWorker(BlockingQueue<LoggingEvent> queue, String sentryDSN, String proxy, boolean naiveSsl)
     {
         this.shouldShutdown = false;
         this.queue = queue;
-        this.client = new RavenClient(sentryDSN, proxy);
+        this.client = new RavenClient(sentryDSN, proxy, naiveSsl);
     }
 
     @Override
