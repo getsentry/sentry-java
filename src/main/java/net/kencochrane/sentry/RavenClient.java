@@ -9,9 +9,7 @@ import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
@@ -23,7 +21,7 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 public class RavenClient {
 
-    private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.4";
+    private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.6";
     private RavenConfig config;
     private String sentryDSN;
     private String lastID;
@@ -54,11 +52,16 @@ public class RavenClient {
     public void setConfig(RavenConfig config) {
         this.config = config;
         try {
-            URL endpoint = new URL(config.getSentryURL());
-            if (config.isNaiveSsl() && "https".equals(endpoint.getProtocol())) {
-                messageSender = new NaiveHttpsMessageSender(config, endpoint);
+            String protocol = config.getProtocol();
+            if ("udp".equals(protocol)) {
+                messageSender = new UdpMessageSender(config, null);
             } else {
-                messageSender = new MessageSender(config, endpoint);
+                URL endpoint = new URL(config.getSentryURL());
+                if (config.isNaiveSsl() && "https".equals(protocol)) {
+                    messageSender = new NaiveHttpsMessageSender(config, endpoint);
+                } else {
+                    messageSender = new MessageSender(config, endpoint);
+                }
             }
         } catch (MalformedURLException e) {
             throw new RuntimeException("Sentry URL is malformed", e);
@@ -311,6 +314,10 @@ public class RavenClient {
             // get the auth header
             String authHeader = buildAuthHeader(hmacSignature, timestamp, config.getPublicKey());
 
+            doSend(messageBody, authHeader);
+        }
+
+        protected void doSend(String messageBody, String authHeader) throws IOException {
             HttpURLConnection connection = getConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
@@ -376,6 +383,29 @@ public class RavenClient {
             connection.setHostnameVerifier(hostnameVerifier);
             return connection;
         }
+    }
+
+    public static class UdpMessageSender extends MessageSender {
+
+        private final DatagramSocket socket;
+
+        public UdpMessageSender(RavenConfig config, URL endpoint) {
+            super(config, endpoint);
+            try {
+                socket = new DatagramSocket();
+                socket.connect(new InetSocketAddress(config.getHost(), config.getPort()));
+            } catch (SocketException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        protected void doSend(String messageBody, String authHeader) throws IOException {
+            byte[] message = (authHeader + "\n\n" + messageBody).getBytes("UTF-8");
+            DatagramPacket packet = new DatagramPacket(message, message.length);
+            socket.send(packet);
+        }
+
     }
 
     public static class AcceptAllHostnameVerifier implements HostnameVerifier {
