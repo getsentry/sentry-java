@@ -51,5 +51,11 @@ public class SentryExample {
         } catch (RuntimeException e) {
             logger.error("Error example with stacktrace", e);
         }
+        // This really shouldn't be necessary
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

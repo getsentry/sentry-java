@@ -6,7 +6,7 @@
 
     <groupId>net.kencochrane</groupId>
     <artifactId>raven-java</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>raven-java</name>
     <description>Java Raven client and log4j appender.</description>

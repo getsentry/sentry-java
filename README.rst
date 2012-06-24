@@ -30,7 +30,7 @@ you'll find in the target directory of the project.
     <dependency>
         <groupId>net.kencochrane</groupId>
         <artifactId>raven-java</artifactId>
-        <version>0.5-SNAPSHOT</version>
+        <version>0.6-SNAPSHOT</version>
     </dependency>
 
 **Option 2**: add the plain jar and the jar files of all dependencies to your classpath
@@ -173,6 +173,8 @@ TODO
 
 History
 -------
+- 0.6
+    - Added support for sending messages through UDP
 - 0.5
     - Added async support
     - Fixed issue with parsing of path and port in DSN

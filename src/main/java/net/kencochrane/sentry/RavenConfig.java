@@ -29,20 +29,26 @@ public class RavenConfig {
      *
      * @param sentryDSN '{PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}/{PROJECT_ID}'
      * @param proxy     proxy to use for the HTTP connections; blank or null when no proxy is to be used
-     * @param naiveSsl use a hostname verifier for SSL connections that allows all connections
+     * @param naiveSsl  use a hostname verifier for SSL connections that allows all connections
      */
     public RavenConfig(String sentryDSN, String proxy, boolean naiveSsl) {
         this.naiveSsl = naiveSsl;
         try {
+            boolean udp = sentryDSN.startsWith("udp://");
+            if (udp) {
+                // So either we have to start registering protocol handlers which is a PITA to do decently in Java
+                // without causing problems for the actual application, or we hack our way around it.
+                sentryDSN = sentryDSN.replace("udp://", "http://");
+            }
             URL url = new URL(sentryDSN);
             this.host = url.getHost();
-            this.protocol = url.getProtocol();
+            this.protocol = udp ? "udp" : url.getProtocol();
             String urlPath = url.getPath();
 
             int lastSlash = urlPath.lastIndexOf("/");
             this.path = urlPath.substring(0, lastSlash);
             // ProjectId is the integer after the last slash in the path
-            this.projectId = urlPath.substring(lastSlash+1);
+            this.projectId = urlPath.substring(lastSlash + 1);
 
             String userInfo = url.getUserInfo();
             String[] userParts = userInfo.split(":");
@@ -58,7 +64,6 @@ public class RavenConfig {
                 this.proxyHost = proxyParts[1];
                 this.proxyPort = Integer.parseInt(proxyParts[2]);
             }
-
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
