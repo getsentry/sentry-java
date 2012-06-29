@@ -119,6 +119,10 @@ public class Client {
             JSONObject exceptionJson = Events.exception(exception);
             obj.putAll(exceptionJson);
         }
+        if (message == null) {
+            message = (exception == null ? null : exception.getMessage());
+            message = "(empty)";
+        }
         obj.put("event_id", eventId);
         obj.put("checksum", RavenUtils.calculateChecksum(message));
         obj.put("timestamp", timestamp);

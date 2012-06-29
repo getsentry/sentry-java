@@ -12,7 +12,7 @@
     <description>Java Raven client and loggers.</description>
 
     <modules>
-        <module>raven</module>
+        <module>raven-client</module>
         <module>raven-log4j</module>
     </modules>
 
