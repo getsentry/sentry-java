@@ -1,6 +1,5 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.sentry.RavenUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.net.ssl.HostnameVerifier;
@@ -14,7 +13,8 @@ import java.net.*;
 /**
  * Transport class with default implementations for the only/popular Sentry transport methods.
  * <p>
- * As a user of this class you are responsible to select the correct transport layer depending on the Sentry DSN.
+ * As a user of this class you are responsible for selecting the correct transport layer depending on the Sentry DSN.
+ * The {@link Client} will select the correct transport layer based on its registry of transport layers.
  * </p>
  * <p>
  * Usage example:
@@ -27,27 +27,69 @@ import java.net.*;
  */
 public abstract class Transport {
 
+    /**
+     * General transport options.
+     */
     public interface Option {
+
+        /**
+         * Sending the HMAC signature along with the message has been deprecated but you can still enable through the
+         * {@link SentryDsn#options}. Set this option to <code>true</code> to send the signature.
+         */
         String INCLUDE_SIGNATURE = "raven.includeSignature";
     }
 
+    /**
+     * The DSN used by this transport.
+     */
     public final SentryDsn dsn;
+
+    /**
+     * Whether the signature should be included or not.
+     */
     public final boolean includeSignature;
+
+    /**
+     * Whether the transport has started.
+     * <p>
+     * This is mostly provided because the {@link AsyncTransport} wrapper should allow users of this class to control
+     * the lifecycle through the {@link #start()} and {@link #stop()} methods.
+     * </p>
+     */
     protected boolean started;
 
+    /**
+     * The required transport constructor.
+     * <p>
+     * Each transport class registered with the {@link Client} must provide a similar constructor.
+     * </p>
+     *
+     * @param dsn the Sentry DSN
+     */
     public Transport(SentryDsn dsn) {
         this.dsn = dsn;
         this.includeSignature = dsn.getOptionAsBoolean(Option.INCLUDE_SIGNATURE, false);
     }
 
+    /**
+     * Starts the transport layer.
+     */
     public void start() {
         started = true;
     }
 
+    /**
+     * Indicates whether the transport layer has been started.
+     *
+     * @return <code>true</code> when started
+     */
     public boolean isStarted() {
         return started;
     }
 
+    /**
+     * Stops the transport layer.
+     */
     public void stop() {
         started = false;
     }
@@ -64,7 +106,7 @@ public abstract class Transport {
      */
     public void send(String messageBody, long timestamp) throws IOException {
         if (includeSignature) {
-            String hmacSignature = RavenUtils.getSignature(messageBody, timestamp, dsn.secretKey);
+            String hmacSignature = Client.sign(messageBody, timestamp, dsn.secretKey);
             String authHeader = buildAuthHeader(hmacSignature, timestamp, dsn.publicKey);
             doSend(messageBody, authHeader);
         } else {
@@ -83,10 +125,26 @@ public abstract class Transport {
         throw new UnsupportedOperationException("Nothing to do here...");
     }
 
+    /**
+     * Constructs the <code>X-Sentry-Auth</code> header.
+     *
+     * @param timestamp timestamp
+     * @param publicKey public key
+     * @return the value for the <code>X-Sentry-Auth</code> header.
+     */
     public static String buildAuthHeader(long timestamp, String publicKey) {
         return buildAuthHeader(null, timestamp, publicKey);
     }
 
+    /**
+     * Constructs the <code>X-Sentry-Auth</code> header.
+     *
+     * @param hmacSignature the HMAC signature of the message
+     * @param timestamp     timestamp
+     * @param publicKey     public key
+     * @return the value for the <code>X-Sentry-Auth</code> header.
+     * @deprecated Usage of the signature has been deprecated in Sentry versions 4.6 and higher.
+     */
     @Deprecated
     public static String buildAuthHeader(String hmacSignature, long timestamp, String publicKey) {
         StringBuilder header = new StringBuilder();
@@ -99,7 +157,7 @@ public abstract class Transport {
         header.append(",sentry_key=");
         header.append(publicKey);
         header.append(",sentry_client=");
-        header.append(RavenUtils.RAVEN_JAVA_VERSION);
+        header.append(Utils.Client.NAME);
         return header.toString();
     }
 
@@ -108,14 +166,37 @@ public abstract class Transport {
      */
     public static class Http extends Transport {
 
+        /**
+         * Options for this transport.
+         */
         public interface Option {
+
+            /**
+             * The connect timeout option key.
+             */
             String TIMEOUT = "raven.timeout";
+
+            /**
+             * The default timeout applied to connections.
+             */
             int TIMEOUT_DEFAULT = 10000;
         }
 
+        /**
+         * The URL to post to.
+         */
         public final URL url;
+
+        /**
+         * The timeout applied to connections originating from this instance.
+         */
         public final int timeout;
 
+        /**
+         * Constructor.
+         *
+         * @param dsn the Sentry dsn
+         */
         public Http(SentryDsn dsn) {
             super(dsn);
             try {
@@ -193,7 +274,7 @@ public abstract class Transport {
 
         @Override
         protected void doSend(String messageBody, String authHeader) throws IOException {
-            byte[] message = RavenUtils.toUtf8(authHeader + "\n\n" + messageBody);
+            byte[] message = Utils.toUtf8(authHeader + "\n\n" + messageBody);
             DatagramPacket packet = new DatagramPacket(message, message.length);
             socket.send(packet);
         }

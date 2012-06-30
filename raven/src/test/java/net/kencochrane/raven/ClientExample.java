@@ -1,11 +1,16 @@
 package net.kencochrane.raven;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.LogManager;
+
 /**
  * Simple client example.
  */
 public class ClientExample {
 
     public static void main(String[] args) {
+        initialize();
         String dsnString = null;
         if (args.length > 0) {
             dsnString = args[0];
@@ -27,6 +32,21 @@ public class ClientExample {
         }
         client.stop();
         System.out.println("Stopped client");
+    }
+
+    protected static void initialize() {
+        InputStream input = ClientExample.class.getResourceAsStream("/java.util.logging.properties");
+        try {
+            LogManager.getLogManager().readConfiguration(input);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                input.close();
+            } catch (IOException e) {
+                // Oh shut up
+            }
+        }
     }
 
 

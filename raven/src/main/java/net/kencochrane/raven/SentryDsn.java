@@ -13,6 +13,17 @@ import static org.apache.commons.lang.StringUtils.defaultString;
  * <p>
  * Use this class to extract the interesting parts from the DSN.
  * </p>
+ * <p>
+ * To provide flexible configuration, you can specify configuration options though a query string. For example, to
+ * enable the sending of the (deprecated) HMAC signature to Sentry, your DSN should look a bit like this:
+ * </p>
+ * <pre><code>http://public:private@host:port/path/projectid?raven.includeSignature=true</code></pre>
+ * <p>
+ * The options that are taken into account depend on the selected transport layer.
+ * </p>
+ *
+ * @see Transport.Option#INCLUDE_SIGNATURE
+ * @see Transport.Http.Option#TIMEOUT
  */
 public class SentryDsn {
 
@@ -56,6 +67,9 @@ public class SentryDsn {
      */
     public final int port;
 
+    /**
+     * Extra Raven client options.
+     */
     public final Map<String, String> options;
 
     public SentryDsn(String scheme, String[] variants, String host, String publicKey, String secretKey, String path, String projectId, int port, Map<String, String> options) {
@@ -121,7 +135,7 @@ public class SentryDsn {
         if (!full) {
             return String.format("%s://%s%s", protocol, fullHost, fullPath);
         }
-        fullPath +=  "/" + projectId;
+        fullPath += "/" + projectId;
         String user = (StringUtils.isBlank(secretKey) ? publicKey : publicKey + ":" + secretKey);
         return String.format("%s://%s@%s%s", protocol, user, fullHost, fullPath);
     }

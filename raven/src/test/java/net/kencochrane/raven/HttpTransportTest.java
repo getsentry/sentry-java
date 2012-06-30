@@ -2,7 +2,6 @@ package net.kencochrane.raven;
 
 import mockit.Expectations;
 import mockit.Mocked;
-import net.kencochrane.sentry.RavenUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +35,7 @@ public class HttpTransportTest {
         // Verify
         assertEquals(Transport.Http.Option.TIMEOUT_DEFAULT, connection.connectTimeout);
         byte[] data = connection.output.toByteArray();
-        assertEquals(messageBody, RavenUtils.fromUtf8(data));
+        assertEquals(messageBody, Utils.fromUtf8(data));
         assertEquals(Transport.buildAuthHeader(timestamp, "public"), connection.authHeader);
     }
 
@@ -64,7 +63,7 @@ public class HttpTransportTest {
         assertTrue(dsn.getOptionAsBoolean(Transport.Option.INCLUDE_SIGNATURE, false));
         assertEquals(timeout, transport.timeout);
         assertEquals(timeout, connection.connectTimeout);
-        String signature = RavenUtils.getSignature(messageBody, timestamp, "private");
+        String signature = Client.sign(messageBody, timestamp, "private");
         assertEquals(Transport.buildAuthHeader(signature, timestamp, "public"), connection.authHeader);
     }
 

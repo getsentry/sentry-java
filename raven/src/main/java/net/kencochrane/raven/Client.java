@@ -1,20 +1,27 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.sentry.RavenUtils;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.json.simple.JSONObject;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
-import static net.kencochrane.sentry.RavenUtils.getTimestampString;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 /**
@@ -73,19 +80,19 @@ public class Client {
     }
 
     public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit) {
-        timestamp = (timestamp == null ? RavenUtils.getTimestampLong() : timestamp);
-        Message msg = buildMessage(message, RavenUtils.getTimestampString(timestamp), loggerClass, logLevel, culprit, null);
+        timestamp = (timestamp == null ? Utils.now() : timestamp);
+        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null);
         send(msg, timestamp);
         return msg.eventId;
     }
 
     public String captureException(Throwable exception) {
-        long timestamp = RavenUtils.getTimestampLong();
+        long timestamp = Utils.now();
         return captureException(exception.getMessage(), timestamp, null, null, null, exception);
     }
 
     public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception) {
-        Message message = buildMessage(logMessage, getTimestampString(timestamp), loggerName, logLevel, culprit, exception);
+        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception);
         send(message, timestamp);
         return message.eventId;
     }
@@ -111,7 +118,7 @@ public class Client {
 
     @SuppressWarnings("unchecked")
     protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception) {
-        String eventId = RavenUtils.getRandomUUID();
+        String eventId = generateEventId();
         JSONObject obj = new JSONObject();
         if (exception == null) {
             obj.put("culprit", culprit);
@@ -121,16 +128,16 @@ public class Client {
         }
         if (message == null) {
             message = (exception == null ? null : exception.getMessage());
-            message = "(empty)";
+            message = (message == null ? "(empty)" : message);
         }
         obj.put("event_id", eventId);
-        obj.put("checksum", RavenUtils.calculateChecksum(message));
+        obj.put("checksum", calculateChecksum(message));
         obj.put("timestamp", timestamp);
         obj.put("message", message);
         obj.put("project", dsn.projectId);
         obj.put("level", logLevel == null ? Events.LogLevel.ERROR.intValue : logLevel);
         obj.put("logger", loggerClass == null ? "root" : loggerClass);
-        obj.put("server_name", RavenUtils.getHostname());
+        obj.put("server_name", Utils.hostname());
         return new Message(obj, eventId);
     }
 
@@ -146,6 +153,20 @@ public class Client {
         } catch (IOException e) {
             LOG.log(Level.SEVERE, e.getMessage(), e);
         }
+    }
+
+    /**
+     * Generate a unique event id.
+     *
+     * @return hexadecimal UUID4 String
+     */
+    protected String generateEventId() {
+        // If we keep the -'s in the uuid, it is too long, remove them
+        return UUID.randomUUID().toString().replaceAll("-", "");
+    }
+
+    protected String formatTimestamp(long timestamp) {
+        return DateFormatUtils.formatUTC(timestamp, DateFormatUtils.ISO_DATETIME_FORMAT.getPattern());
     }
 
     public static Transport newTransport(SentryDsn dsn) {
@@ -201,6 +222,50 @@ public class Client {
         return TRANSPORT_REGISTRY.put(scheme, transportClass);
     }
 
+    /**
+     * Builds the HMAC sentry signature.
+     * <p/>
+     * The header is composed of a SHA1-signed HMAC, the timestamp from when the message was generated,
+     * and an arbitrary client version string.
+     * <p/>
+     * The client version should be something distinct to your client, and is simply for reporting purposes.
+     * To generate the HMAC signature, take the following example (in Python):
+     * <p/>
+     * hmac.new(public_key, '%s %s' % (timestamp, message), hashlib.sha1).hexdigest()
+     *
+     * @param message   the error message to send to sentry
+     * @param timestamp the timestamp for when the message was created
+     * @param key       sentry public key
+     * @return SHA1-signed HMAC string
+     */
+    public static String sign(String message, long timestamp, String key) {
+        final String algo = "HmacSHA1";
+        try {
+            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), algo);
+            Mac mac = Mac.getInstance(algo);
+            mac.init(signingKey);
+            byte[] rawHmac = mac.doFinal((timestamp + " " + message).getBytes());
+            return new String(Hex.encodeHex(rawHmac));
+        } catch (NoSuchAlgorithmException e) {
+            throw new InvalidConfig("Could not sign message: " + e.getMessage(), e);
+        } catch (InvalidKeyException e) {
+            throw new InvalidConfig("Could not sign message: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * An almost-unique hash identifying the this event to improve aggregation.
+     *
+     * @param message The message we are sending to sentry
+     * @return CRC32 Checksum string
+     */
+    public static String calculateChecksum(String message) {
+        byte bytes[] = message.getBytes();
+        Checksum checksum = new CRC32();
+        checksum.update(bytes, 0, bytes.length);
+        return String.valueOf(checksum.getValue());
+    }
+
     public static class InvalidConfig extends RuntimeException {
 
         public InvalidConfig(String msg) {
@@ -224,7 +289,7 @@ public class Client {
         }
 
         public String encoded() {
-            return encodeBase64String(RavenUtils.toUtf8(json.toJSONString()));
+            return encodeBase64String(Utils.toUtf8(json.toJSONString()));
         }
 
         @Override

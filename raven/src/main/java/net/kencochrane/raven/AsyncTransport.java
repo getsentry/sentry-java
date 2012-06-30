@@ -11,11 +11,26 @@ import java.util.logging.Logger;
  */
 public abstract class AsyncTransport extends Transport {
 
-    private static final Logger LOG = Logger.getLogger("raven.client");
+    private static final Logger LOG = Logger.getLogger("raven.transport");
 
+    /**
+     * Options for the async transport layer.
+     */
     public interface Option {
+
+        /**
+         * Option indicating whether the client should block when the queue is full.
+         */
         String WAIT_WHEN_FULL = "raven.waitWhenFull";
-        boolean WAIT_WHEN_FULL_DEFAULT = true;
+
+        /**
+         * Default value for {@link #WAIT_WHEN_FULL}: no, do not block the queue.
+         */
+        boolean WAIT_WHEN_FULL_DEFAULT = false;
+
+        /**
+         * Option to limit the capacity of the underlying queue.
+         */
         String CAPACITY = "raven.capacity";
     }
 
@@ -36,8 +51,10 @@ public abstract class AsyncTransport extends Transport {
 
     @Override
     public void start() {
+        final String name = "Raven-" + workerThread.getName();
+        LOG.log(Level.FINE, "Starting thread " + name);
         workerThread.setDaemon(true);
-        workerThread.setName("Raven-" + workerThread.getName());
+        workerThread.setName(name);
         workerThread.start();
         super.start();
     }
@@ -56,15 +73,41 @@ public abstract class AsyncTransport extends Transport {
         }
     }
 
+    /**
+     * Builds an async transport wrapper for concrete transport layers.
+     * <p>
+     * Any other async transport wrapper that's supposed to be registered with the {@link Client} should provide a
+     * public static <code>build</code> method, accepting the transport instance to wrap.
+     * </p>
+     * <p>
+     * This method will apply the {@link Option#WAIT_WHEN_FULL} and {@link Option#CAPACITY} options specified in the
+     * {@link SentryDsn} of the transport or use the default values.
+     * </p>
+     *
+     * @param transport transport to wrap
+     * @return the async transport wrapper
+     */
     public static AsyncTransport build(Transport transport) {
         int capacity = transport.dsn.getOptionAsInt(Option.CAPACITY, -1);
+        boolean waitWhenFull = transport.dsn.getOptionAsBoolean(Option.WAIT_WHEN_FULL, Option.WAIT_WHEN_FULL_DEFAULT);
+        return build(transport, waitWhenFull, capacity);
+    }
+
+    /**
+     * Convenience method for building an async transport wrapper.
+     *
+     * @param transport    transport to wrap
+     * @param waitWhenFull whether the underlying queue should block when full
+     * @param capacity     the capacity of the underlying queue - a negative value means use the maximum capacity possible
+     * @return the async transport wrapper
+     */
+    public static AsyncTransport build(Transport transport, boolean waitWhenFull, int capacity) {
         BlockingQueue<Message> queue = null;
         if (capacity < 0) {
             queue = new LinkedBlockingDeque<Message>();
         } else {
             queue = new LinkedBlockingDeque<Message>(capacity);
         }
-        boolean waitWhenFull = transport.dsn.getOptionAsBoolean(Option.WAIT_WHEN_FULL, Option.WAIT_WHEN_FULL_DEFAULT);
         if (waitWhenFull) {
             return new WaitingAsyncTransport(transport, queue);
         }

@@ -2,7 +2,6 @@ package net.kencochrane.raven;
 
 import mockit.Expectations;
 import mockit.Mocked;
-import net.kencochrane.sentry.RavenUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,12 +37,12 @@ public class UdpTransportTest {
         // Verify
         assertEquals(1, socket.packets.size());
         byte[] data = socket.packets.get(0).getData();
-        assertEquals(authHeader + "\n\n" + messageBody, RavenUtils.fromUtf8(data));
+        assertEquals(authHeader + "\n\n" + messageBody, Utils.fromUtf8(data));
     }
 
     @Test
     public void verifyPacketStructure_withAuthHeader() throws IOException {
-        String signature = RavenUtils.getSignature(messageBody, timestamp, "private");
+        String signature = Client.sign(messageBody, timestamp, "private");
         authHeader = Transport.buildAuthHeader(signature, timestamp, "public");
 
         // Actual testing
@@ -54,7 +53,7 @@ public class UdpTransportTest {
         // Verify
         assertEquals(1, socket.packets.size());
         byte[] data = socket.packets.get(0).getData();
-        assertEquals(authHeader + "\n\n" + messageBody, RavenUtils.fromUtf8(data));
+        assertEquals(authHeader + "\n\n" + messageBody, Utils.fromUtf8(data));
     }
 
     @Before
