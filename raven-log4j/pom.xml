@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>raven-client</artifactId>
+            <artifactId>raven</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

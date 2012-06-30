@@ -9,9 +9,9 @@
         <artifactId>raven-all</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>raven-client</artifactId>
+    <artifactId>raven</artifactId>
     <packaging>jar</packaging>
-    <name>raven-client</name>
+    <name>The Java Raven client</name>
     <description>Java Raven client.</description>
 
     <dependencies>
