@@ -1,8 +1,11 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.raven.SentryDsn;
+import mockit.*;
+import org.junit.After;
 import org.junit.Test;
 
+import static net.kencochrane.raven.SentryDsn.DefaultLookUps;
+import static net.kencochrane.raven.SentryDsn.LookUp;
 import static org.junit.Assert.*;
 
 /**
@@ -93,5 +96,43 @@ public class SentryDsnTest {
         assertNull(dsn.options.get("raven.go"));
         assertEquals("true", dsn.options.get("raven.wait"));
     }
+
+    @Test
+    public void applyOverrides() {
+        final String envDsn = "http://a:b@host/path/1";
+        final String systemPropertyDsn = "naive+https://k:l@domain/woah/there/15";
+        final String suppliedDsn = "https://x:y@localhost/2";
+        Mockit.setUpMock(MockSystem.class);
+        MockSystem.dsn = envDsn;
+        System.setProperty(Utils.SENTRY_DSN, systemPropertyDsn);
+        SentryDsn dsn = SentryDsn.build();
+        assertEquals(dsn.toString(true), envDsn);
+        dsn = SentryDsn.build(suppliedDsn);
+        assertEquals(dsn.toString(true), envDsn);
+        dsn = SentryDsn.build(suppliedDsn, new LookUp[]{DefaultLookUps.SYSTEM_PROPERTY, DefaultLookUps.ENV}, null);
+        assertEquals(dsn.toString(true), systemPropertyDsn);
+        dsn = SentryDsn.build(suppliedDsn, null, null);
+        assertEquals(dsn.toString(true), suppliedDsn);
+    }
+
+    @After
+    public void tearDown() {
+        System.setProperty(Utils.SENTRY_DSN, "");
+    }
+
+    @MockClass(realClass = System.class)
+    public static class MockSystem {
+
+        public static String dsn;
+
+        @Mock
+        public static String getenv(String s) {
+            if (Utils.SENTRY_DSN.equals(s)) {
+                return dsn;
+            }
+            return null;
+        }
+    }
+
 
 }

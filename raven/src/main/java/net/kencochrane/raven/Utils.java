@@ -11,6 +11,8 @@ import java.util.Map;
  */
 public abstract class Utils {
 
+    public static final String SENTRY_DSN = "SENTRY_DSN";
+
     private static final Map<String, CacheEntry> CACHE = new HashMap<String, CacheEntry>();
 
     public interface Client {

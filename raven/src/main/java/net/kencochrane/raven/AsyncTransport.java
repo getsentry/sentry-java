@@ -11,6 +11,7 @@ import java.util.logging.Logger;
  */
 public abstract class AsyncTransport extends Transport {
 
+    public static final long WAIT_FOR_SHUTDOWN = 3000;
     private static final Logger LOG = Logger.getLogger("raven.transport");
 
     /**
@@ -67,10 +68,15 @@ public abstract class AsyncTransport extends Transport {
         super.stop();
         workerThread.interrupt();
         try {
-            workerThread.join(3000);
+            workerThread.join(WAIT_FOR_SHUTDOWN);
         } catch (InterruptedException e) {
             LOG.log(Level.WARNING, e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void send(String messageBody, long timestamp) throws IOException {
+        throw new UnsupportedOperationException("You probably need a subclass of " + AsyncTransport.class);
     }
 
     /**

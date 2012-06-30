@@ -72,6 +72,22 @@ public class SentryDsn {
      */
     public final Map<String, String> options;
 
+    /**
+     * Constructor for your convenience.
+     * <p>
+     * It's recommended to use one of the {@link #build()} methods instead.
+     * </p>
+     *
+     * @param scheme    scheme
+     * @param variants  scheme variants (e.g. naive, async)
+     * @param host      host
+     * @param publicKey public key
+     * @param secretKey private key
+     * @param path      path
+     * @param projectId project id
+     * @param port      the port
+     * @param options   miscellaneous options
+     */
     public SentryDsn(String scheme, String[] variants, String host, String publicKey, String secretKey, String path, String projectId, int port, Map<String, String> options) {
         this.scheme = scheme;
         this.variants = (variants == null ? new String[0] : variants);
@@ -88,6 +104,16 @@ public class SentryDsn {
         }
     }
 
+    /**
+     * Gets the value of an option as a boolean.
+     * <p>
+     * In case no option is specified, the default value is returned.
+     * </p>
+     *
+     * @param key          key of the option
+     * @param defaultValue default value to return when no matching option value was found
+     * @return the value of the option or the default value when absent
+     */
     public boolean getOptionAsBoolean(String key, boolean defaultValue) {
         String value = options.get(key);
         if (value == null) {
@@ -96,6 +122,13 @@ public class SentryDsn {
         return Boolean.parseBoolean(value);
     }
 
+    /**
+     * Gets the value of an option as an int.
+     *
+     * @param key          key of the option
+     * @param defaultValue value to return when the option was not specified
+     * @return the value of the option or the default value when absent
+     */
     public int getOptionAsInt(String key, int defaultValue) {
         String value = options.get(key);
         if (value == null) {
@@ -108,10 +141,26 @@ public class SentryDsn {
         }
     }
 
+    /**
+     * Checks whether the scheme variant is specified in this dsn.
+     *
+     * @param variant variant
+     * @return <code>true</code> when the variant was specified
+     */
     public boolean isVariantIncluded(String variant) {
         return Arrays.binarySearch(variants, variant) >= 0;
     }
 
+    /**
+     * Gets the full scheme, optionally excluding some parts.
+     * <p>
+     * This allows the async transport layer to get the actual underlying transport layer to use, ignoring the async
+     * variant.
+     * </p>
+     *
+     * @param excludes variants to exclude from the full scheme
+     * @return the full scheme
+     */
     public String getFullScheme(String... excludes) {
         Set<String> excludedSchemes = Collections.emptySet();
         if (excludes != null && excludes.length > 0) {
@@ -128,6 +177,12 @@ public class SentryDsn {
         return StringUtils.join(parts, '+');
     }
 
+    /**
+     * Returns the full dsn or the derived dsn typically used for transport.
+     *
+     * @param full whether to generate the full or the derived dsn
+     * @return the full or derived dsn
+     */
     public String toString(boolean full) {
         String protocol = (!full || variants.length == 0 ? scheme : StringUtils.join(variants, '+') + "+" + scheme);
         String fullHost = (port < 0 ? host : host + ":" + port);
@@ -145,25 +200,56 @@ public class SentryDsn {
         return toString(true);
     }
 
+    /**
+     * Builds the Sentry dsn based on the default lookups as specified by {@link DefaultLookUps}.
+     * <p>
+     * PaaS providers such as Heroku prefer environment variables. This method will first examine the environment and
+     * then the system properties to find a Sentry dsn value.
+     * </p>
+     *
+     * @return the Sentry dsn when found
+     */
     public static SentryDsn build() {
         return build(null, DefaultLookUps.values(), null);
     }
 
+    /**
+     * Builds the Sentry dsn.
+     * <p>
+     * In case a Sentry dsn is specified in the environment or system properties, that value takes precedence over the
+     * <code>fullDsn</code> parameter.
+     * </p>
+     *
+     * @param fullDsn dsn
+     * @return the dsn found in either the environment, system properties or derived from the parameter <code>fullDsn</code>
+     */
     public static SentryDsn build(String fullDsn) {
         return build(fullDsn, DefaultLookUps.values(), null);
     }
 
-    public static SentryDsn build(String fullDsn, LookUp[] overrides, LookUp[] fallbacks) {
+    /**
+     * Builds the dsn.
+     * <p>
+     * The overrides take precedence over the dsn parameter, while the fallbacks provide a way to look for the dsn when
+     * the dsn parameter was empty.
+     * </p>
+     *
+     * @param fullDsn   the supplied dsn
+     * @param overrides places to check for a dsn value before using the supplied dsn
+     * @param fallbacks places to check for a dsn value when the supplied dsn is an empty or null string
+     * @return the built Sentry dsn
+     */
+    public static SentryDsn build(final String fullDsn, LookUp[] overrides, LookUp[] fallbacks) {
         String dsn = defaultString(firstResult(overrides), defaultString(fullDsn, firstResult(fallbacks)));
+        if (StringUtils.isBlank(dsn)) {
+            throw new InvalidDsnException("No valid Sentry DSN found");
+        }
         int schemeEnd = dsn.indexOf("://");
         if (schemeEnd <= 0) {
             throw new InvalidDsnException("Expected to discover a scheme in the Sentry DSN");
         }
-        String fullScheme = fullDsn.substring(0, schemeEnd);
+        String fullScheme = dsn.substring(0, schemeEnd);
         String[] schemeParts = StringUtils.split(fullScheme, '+');
-        if (schemeParts.length > 2) {
-            throw new InvalidDsnException("Scheme " + fullScheme + " is not supported");
-        }
         String scheme = fullScheme;
         String[] variants = null;
         if (schemeParts.length > 1) {
@@ -252,14 +338,14 @@ public class SentryDsn {
         ENV {
             @Override
             public String findDsn() {
-                return System.getenv("SENTRY_DSN");
+                return System.getenv(Utils.SENTRY_DSN);
             }
         },
 
         SYSTEM_PROPERTY {
             @Override
             public String findDsn() {
-                return System.getProperty("SENTRY_DSN");
+                return System.getProperty(Utils.SENTRY_DSN);
             }
         }
 

@@ -26,15 +26,48 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 /**
  * Raven client for Java, allowing sending of messages to Sentry.
- * <p/>
+ * <p>
+ * Clients will typically automatically start the underlying transport layer once instantiated. The default client
+ * configuration relies on the following mapping of schemes to transport classes:
+ * </p>
+ * <ul>
+ * <li>http: {@link Transport.Http}</li>
+ * <li>https: {@link Transport.Http}</li>
+ * <li>naive+https: {@link Transport.NaiveHttps}</li>
+ * <li>udp: {@link Transport.Udp}</li>
+ * </ul>
+ * <p>
+ * Any of this schemes can be prefixed with <code>async+</code> in which case the transport built using the original
+ * scheme will be wrapped in the transport class registered for {@link #VARIANT_ASYNC}, which is {@link AsyncTransport}
+ * by default.
+ * </p>
  */
 public class Client {
 
+    /**
+     * Async transport layers require some extra work when instantiating.
+     */
     public static final String VARIANT_ASYNC = "async";
-    private static final Logger LOG = Logger.getLogger("raven.client");
-    public final SentryDsn dsn;
-    protected Transport transport;
+
+    /**
+     * The registry mapping schemes to transport layer classes.
+     */
     protected static final Map<String, Class<? extends Transport>> TRANSPORT_REGISTRY = new HashMap<String, Class<? extends Transport>>();
+
+    /**
+     * Logger.
+     */
+    private static final Logger LOG = Logger.getLogger("raven.client");
+
+    /**
+     * The dsn used by this client.
+     */
+    public final SentryDsn dsn;
+
+    /**
+     * The transport layer used by this client.
+     */
+    protected Transport transport;
 
     static {
         TRANSPORT_REGISTRY.put("http", Transport.Http.class);
@@ -44,18 +77,49 @@ public class Client {
         TRANSPORT_REGISTRY.put(VARIANT_ASYNC, AsyncTransport.class);
     }
 
+    /**
+     * Default, easy constructor.
+     * <p>
+     * A client instance instantiated through this constructor will use the Sentry DSN returned by
+     * {@link net.kencochrane.raven.SentryDsn#build()} and perform an automatic start.
+     * </p>
+     */
     public Client() {
         this(true);
     }
 
+    /**
+     * Extension of the easy constructor {@link #Client()} that allows you to turn off the autostart behavior.
+     *
+     * @param autoStart whether to start the underlying transport automatically or not
+     */
     public Client(boolean autoStart) {
         this(SentryDsn.build(), autoStart);
     }
 
+    /**
+     * Constructor that performs an autostart using the transport determined by the supplied dsn.
+     * <p>
+     * Watch out: this constructor will always use the supplied dsn and not look for a Sentry DSN in other locations
+     * such as an environment variable or system property.
+     * </p>
+     *
+     * @param dsn dsn to use
+     */
     public Client(SentryDsn dsn) {
         this(dsn, true);
     }
 
+    /**
+     * Constructor using the transport determined by the supplied dsn.
+     * <p>
+     * Watch out: this constructor will always use the supplied dsn and not look for a Sentry DSN in other locations
+     * such as an environment variable or system property.
+     * </p>
+     *
+     * @param dsn       dsn to use
+     * @param autoStart whether to start the underlying transport layer automatically
+     */
     public Client(SentryDsn dsn, boolean autoStart) {
         this.dsn = dsn;
         if (autoStart) {
@@ -63,10 +127,21 @@ public class Client {
         }
     }
 
+    /**
+     * Construct a client using the given transport.
+     *
+     * @param transport transport to use
+     */
     public Client(Transport transport) {
         this(transport, true);
     }
 
+    /**
+     * Construct a client using the given transport.
+     *
+     * @param transport transport to use
+     * @param autoStart whether to start the transport automatically
+     */
     public Client(Transport transport, boolean autoStart) {
         this.dsn = transport.dsn;
         this.transport = transport;
@@ -156,7 +231,7 @@ public class Client {
     }
 
     /**
-     * Generate a unique event id.
+     * Generates a unique event id.
      *
      * @return hexadecimal UUID4 String
      */
@@ -165,10 +240,23 @@ public class Client {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
+    /**
+     * Formats a timestamp in the format expected by Sentry.
+     *
+     * @param timestamp timestamp to format
+     * @return formatted timestamp
+     */
     protected String formatTimestamp(long timestamp) {
         return DateFormatUtils.formatUTC(timestamp, DateFormatUtils.ISO_DATETIME_FORMAT.getPattern());
     }
 
+    /**
+     * Builds a new transport instance, using a transport class, registered in the {@link #TRANSPORT_REGISTRY}
+     * through the {@link #register(String, Class)} method, matching the scheme of the dsn.
+     *
+     * @param dsn dsn
+     * @return transport layer for the given dsn
+     */
     public static Transport newTransport(SentryDsn dsn) {
         String fullScheme = dsn.getFullScheme(VARIANT_ASYNC);
         Class<? extends Transport> transportClass = TRANSPORT_REGISTRY.get(fullScheme);
@@ -193,6 +281,12 @@ public class Client {
         }
     }
 
+    /**
+     * Builds a new async transport layer, wrapping the original transport.
+     *
+     * @param transport transport to wrap in an async layer
+     * @return the async transport wrapper
+     */
     public static Transport newAsyncTransport(Transport transport) {
         Class<? extends Transport> transportClass = TRANSPORT_REGISTRY.get(VARIANT_ASYNC);
         if (transportClass == null) {
@@ -218,6 +312,13 @@ public class Client {
         }
     }
 
+    /**
+     * Registers the transport class for the given scheme.
+     *
+     * @param scheme         scheme to register for
+     * @param transportClass transport class to register for the scheme
+     * @return the previously registered transport class for the scheme, if any
+     */
     public static Class<? extends Transport> register(String scheme, Class<? extends Transport> transportClass) {
         return TRANSPORT_REGISTRY.put(scheme, transportClass);
     }
