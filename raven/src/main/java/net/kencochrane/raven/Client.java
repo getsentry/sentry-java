@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.ConnectException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -37,7 +38,7 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
  * <li>udp: {@link Transport.Udp}</li>
  * </ul>
  * <p>
- * Any of this schemes can be prefixed with <code>async+</code> in which case the transport built using the original
+ * Any of these schemes can be prefixed with <code>async+</code> in which case the transport built using the original
  * scheme will be wrapped in the transport class registered for {@link #VARIANT_ASYNC}, which is {@link AsyncTransport}
  * by default.
  * </p>
@@ -70,11 +71,7 @@ public class Client {
     protected Transport transport;
 
     static {
-        TRANSPORT_REGISTRY.put("http", Transport.Http.class);
-        TRANSPORT_REGISTRY.put("https", Transport.Http.class);
-        TRANSPORT_REGISTRY.put("naive+https", Transport.NaiveHttps.class);
-        TRANSPORT_REGISTRY.put("udp", Transport.Udp.class);
-        TRANSPORT_REGISTRY.put(VARIANT_ASYNC, AsyncTransport.class);
+        registerDefaults();
     }
 
     /**
@@ -292,8 +289,13 @@ public class Client {
         if (transportClass == null) {
             throw new InvalidConfig("No async transport registered");
         }
+        final String invalidSignature = "The async transport handler should contain a public static \"build\" method " + //
+                "with a single parameter of type " + Transport.class + " and returning a new " + Transport.class + " instance.";
         try {
             Method method = transportClass.getMethod("build", Transport.class);
+            if (!Modifier.isStatic(method.getModifiers())) {
+                throw new InvalidConfig(invalidSignature);
+            }
             Object result = method.invoke(null, transport);
             if (!(result instanceof Transport)) {
                 throw new InvalidConfig("The build method of the async transport layer should return an instance of " + Transport.class);
@@ -302,13 +304,9 @@ public class Client {
         } catch (InvocationTargetException e) {
             throw new InvalidConfig("Could not invoke the static build method of " + transportClass.getName(), e);
         } catch (NoSuchMethodException e) {
-            String msg = "The async transport handler should contain a publci static \"build\" method with a single " + //
-                    "parameter of type " + Transport.class + " and returning a new " + Transport.class + " instance.";
-            throw new InvalidConfig(msg, e);
+            throw new InvalidConfig(invalidSignature, e);
         } catch (IllegalAccessException e) {
-            String msg = "The async transport handler should contain a publci static \"build\" method with a single " + //
-                    "parameter of type " + Transport.class + " and returning a new " + Transport.class + " instance.";
-            throw new InvalidConfig(msg, e);
+            throw new InvalidConfig(invalidSignature, e);
         }
     }
 
@@ -321,6 +319,17 @@ public class Client {
      */
     public static Class<? extends Transport> register(String scheme, Class<? extends Transport> transportClass) {
         return TRANSPORT_REGISTRY.put(scheme, transportClass);
+    }
+
+    /**
+     * Registers the default transport classes.
+     */
+    public static void registerDefaults() {
+        TRANSPORT_REGISTRY.put("http", Transport.Http.class);
+        TRANSPORT_REGISTRY.put("https", Transport.Http.class);
+        TRANSPORT_REGISTRY.put("naive+https", Transport.NaiveHttps.class);
+        TRANSPORT_REGISTRY.put("udp", Transport.Udp.class);
+        TRANSPORT_REGISTRY.put(VARIANT_ASYNC, AsyncTransport.class);
     }
 
     /**

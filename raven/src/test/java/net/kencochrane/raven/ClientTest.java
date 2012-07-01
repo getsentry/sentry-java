@@ -3,7 +3,7 @@ package net.kencochrane.raven;
 import org.junit.After;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Test cases for {@link Client}.
@@ -58,9 +58,99 @@ public class ClientTest {
         verifyClient(new Client(dsn, false), Transport.Http.class, false, false);
     }
 
+    @Test
+    public void newTransport() {
+        // HTTP
+        String dsn = "http://public:private@localhost/1";
+        Transport transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof Transport.Http);
+
+        // HTTP with custom transport
+        Client.register("http", DummyTransport.class);
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof DummyTransport);
+
+        // HTTPS
+        dsn = "https://public:private@localhost/1";
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof Transport.Http);
+
+        // HTTPS with custom transport
+        Client.register("https", DummyTransport.class);
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof DummyTransport);
+
+        // Naive HTTPS
+        dsn = "naive+https://public:private@localhost/1";
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof Transport.NaiveHttps);
+
+        // Naive HTTPS with custom transport
+        Client.register("naive+https", DummyTransport.class);
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof DummyTransport);
+
+        // UDP
+        dsn = "udp://public:private@localhost:9000/1";
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof Transport.Udp);
+
+        // UDP with custom transport
+        Client.register("udp", DummyTransport.class);
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof DummyTransport);
+
+        // Custom
+        dsn = "custom://public:private@localhost:9000/1";
+        try {
+            Client.newTransport(SentryDsn.build(dsn));
+            fail("Expected an exception");
+        } catch (Client.InvalidConfig e) {
+            // Ok
+        }
+
+        Client.register("custom", DummyTransport.class);
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof DummyTransport);
+
+        // Async
+        Client.register("udp", Transport.Udp.class);
+        dsn = "async+udp://public:private@localhost:9000/1";
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof AsyncTransport);
+        assertTrue(((AsyncTransport) transport).transport instanceof Transport.Udp);
+
+        // Async with custom transport
+        Client.register("async", DummyTransport.class);
+        try {
+            Client.newTransport(SentryDsn.build(dsn));
+            fail("Expected an exception because " + DummyTransport.class + " does not have the right signature");
+        } catch (Client.InvalidConfig e) {
+            // Ok
+        }
+
+        // Async with valid custom transport
+        Client.register("async", DummyAsyncTransport.class);
+        transport = Client.newTransport(SentryDsn.build(dsn));
+        assertNotNull(transport);
+        assertTrue(transport instanceof DummyAsyncTransport);
+        assertTrue(((DummyAsyncTransport) transport).transport instanceof Transport.Udp);
+    }
+
     @After
     public void tearDown() {
         System.setProperty(Utils.SENTRY_DSN, "");
+        Client.registerDefaults();
     }
 
     protected void verifyClient(Client client, Class<? extends Transport> transportClass, boolean async) {
@@ -78,6 +168,29 @@ public class ClientTest {
             }
             assertTrue(client.transport.getClass().isAssignableFrom(transportClass));
         }
+    }
+
+    protected static class DummyTransport extends Transport {
+
+        public DummyTransport(SentryDsn dsn) {
+            super(dsn);
+        }
+
+    }
+
+    protected static class DummyAsyncTransport extends Transport {
+
+        public final Transport transport;
+
+        public DummyAsyncTransport(Transport transport) {
+            super(transport.dsn);
+            this.transport = transport;
+        }
+
+        public static Transport build(Transport transport) {
+            return new DummyAsyncTransport(transport);
+        }
+
     }
 
 }
