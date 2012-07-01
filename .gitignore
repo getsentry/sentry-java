@@ -5,3 +5,4 @@ target/*
 .idea/*
 *.iml
 example.log
+raven-integration-tests/src/main/resources/sentry.db

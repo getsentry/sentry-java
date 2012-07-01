@@ -45,6 +45,12 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
  */
 public class Client {
 
+    public interface Default {
+        String LOGGER = "root";
+        int LOG_LEVEL = Events.LogLevel.ERROR.intValue;
+        String EMPTY_MESSAGE = "(empty)";
+    }
+
     /**
      * Async transport layers require some extra work when instantiating.
      */
@@ -200,15 +206,15 @@ public class Client {
         }
         if (message == null) {
             message = (exception == null ? null : exception.getMessage());
-            message = (message == null ? "(empty)" : message);
+            message = (message == null ? Default.EMPTY_MESSAGE : message);
         }
         obj.put("event_id", eventId);
         obj.put("checksum", calculateChecksum(message));
         obj.put("timestamp", timestamp);
         obj.put("message", message);
         obj.put("project", dsn.projectId);
-        obj.put("level", logLevel == null ? Events.LogLevel.ERROR.intValue : logLevel);
-        obj.put("logger", loggerClass == null ? "root" : loggerClass);
+        obj.put("level", logLevel == null ? Default.LOG_LEVEL : logLevel);
+        obj.put("logger", loggerClass == null ? Default.LOGGER : loggerClass);
         obj.put("server_name", Utils.hostname());
         return new Message(obj, eventId);
     }
