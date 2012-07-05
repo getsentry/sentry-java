@@ -1,4 +1,7 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.integration;
+
+import net.kencochrane.raven.SentryApi;
+import net.kencochrane.raven.SentryDsn;
 
 import java.io.IOException;
 
