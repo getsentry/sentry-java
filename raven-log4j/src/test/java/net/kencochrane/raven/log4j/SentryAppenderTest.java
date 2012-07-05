@@ -151,7 +151,7 @@ public class SentryAppenderTest {
     }
 
     protected static byte[] fetchMessage() throws IOException {
-        DatagramPacket packet = new DatagramPacket(new byte[5048], 5048);
+        DatagramPacket packet = new DatagramPacket(new byte[10000], 10000);
         serverSocket.receive(packet);
         return packet.getData();
     }
