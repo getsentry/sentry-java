@@ -1,7 +1,6 @@
 package net.kencochrane.raven.integration;
 
 import net.kencochrane.raven.Client;
-import net.kencochrane.raven.IntegrationContext;
 import net.kencochrane.raven.SentryApi;
 import org.junit.Before;
 import org.junit.Test;
