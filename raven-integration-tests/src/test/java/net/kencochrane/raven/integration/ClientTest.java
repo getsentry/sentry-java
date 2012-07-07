@@ -6,6 +6,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -23,6 +25,16 @@ public class ClientTest {
         Client client = new Client(IntegrationContext.httpDsn);
         String message = ClientTest.class.getName() + ".captureMessage_http says hi!";
         captureMessage(client, message, false);
+    }
+
+    @Test
+    public void captureMessage_withTags() throws IOException, InterruptedException {
+        Client client = new Client(IntegrationContext.httpDsn);
+        String message = ClientTest.class.getName() + ".captureMessage_withTags says hi!";
+        Map<String, Object> tags = new HashMap<String, Object>();
+        tags.put("release", "1.2.0");
+        tags.put("uptime", 60000L);
+        captureMessage(client, message, false, tags);
     }
 
     @Test
@@ -70,7 +82,11 @@ public class ClientTest {
     }
 
     protected void captureMessage(Client client, String message, boolean wait) throws IOException, InterruptedException {
-        client.captureMessage(message);
+        captureMessage(client, message, wait, null);
+    }
+
+    protected void captureMessage(Client client, String message, boolean wait, Map<String, ?> tags) throws IOException, InterruptedException {
+        client.captureMessage(message, tags);
         if (wait) {
             // Wait a bit in case of UDP transport
             Thread.sleep(1000);
@@ -85,7 +101,7 @@ public class ClientTest {
         assertEquals(Client.Default.LOGGER, event.logger);
 
         // Log the same message; the count should be incremented
-        client.captureMessage(message);
+        client.captureMessage(message, tags);
         if (wait) {
             Thread.sleep(1000);
         }
@@ -97,6 +113,8 @@ public class ClientTest {
         assertEquals(message, event.message);
         assertEquals(message, event.title);
         assertEquals(Client.Default.LOGGER, event.logger);
+
+        // TODO Verify tags when it's a bit more stable on the Sentry side
     }
 
     @Before

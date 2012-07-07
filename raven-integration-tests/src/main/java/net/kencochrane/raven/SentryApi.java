@@ -92,6 +92,9 @@ public class SentryApi {
         Elements items = doc.select("ul#event_list li.event");
         List<Event> events = new LinkedList<Event>();
         for (Element item : items) {
+            if (item.hasClass("resolved")) {
+                continue;
+            }
             int count = Integer.parseInt(item.attr("data-count"));
             int level = extractLevel(item.classNames());
             Element anchor = item.select("h3 a").get(0);
