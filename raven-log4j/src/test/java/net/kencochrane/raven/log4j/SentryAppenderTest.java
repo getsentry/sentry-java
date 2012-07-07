@@ -29,19 +29,17 @@ import static org.junit.Assert.assertTrue;
  */
 public class SentryAppenderTest {
 
-    private static DatagramSocket serverSocket;
-    private static String host = "localhost";
-    private static int port = 9505;
+    protected static SentryMock sentry;
 
     @BeforeClass
     public static void beforeClass() throws SocketException {
-        serverSocket = new DatagramSocket(new InetSocketAddress(host, port));
+        sentry = new SentryMock();
     }
 
     @AfterClass
     public static void afterClass() throws SocketException {
         System.setProperty(Utils.SENTRY_DSN, "");
-        serverSocket.close();
+        sentry.stop();
     }
 
     @Test
@@ -52,8 +50,8 @@ public class SentryAppenderTest {
         final String message = "hi there!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", host, port, projectId));
-        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
         Logger.getLogger(loggerName).debug(message);
 
         // Verify log message
@@ -68,8 +66,8 @@ public class SentryAppenderTest {
         final String message = "This message will self-destruct in 5...4...3...";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", host, port, projectId));
-        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
         Logger.getLogger(loggerName).info(message);
 
         // And verify
@@ -84,8 +82,8 @@ public class SentryAppenderTest {
         final String message = "Warning! Warning! WARNING! Oh, come on!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", host, port, projectId));
-        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
         Logger.getLogger(loggerName).warn(message);
 
         // And verify
@@ -100,8 +98,8 @@ public class SentryAppenderTest {
         final String message = "D'oh!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", host, port, projectId));
-        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
         Logger.getLogger(loggerName).error(message);
 
         // Verify
@@ -112,14 +110,14 @@ public class SentryAppenderTest {
     public void errorLevel_withException() throws IOException, ParseException {
         final String loggerName = "org.apache.commons.httpclient.andStuff";
         // When an exception is logged, the culprit should be the class+method where the exception occurred
-        final String culprit = this.getClass().getName() + ".errorLevel_withException";
+        final String culprit = getClass().getName() + ".errorLevel_withException";
         final long logLevel = (long) Level.ERROR_INT / 1000;
         final String projectId = "5";
         final String message = "D'oh!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", host, port, projectId));
-        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
         NullPointerException npe = new NullPointerException("Damn you!");
         Logger.getLogger(loggerName).error(message, npe);
 
@@ -137,8 +135,17 @@ public class SentryAppenderTest {
         assertEquals(NullPointerException.class.getPackage().getName(), exception.get("module"));
     }
 
-    protected JSONObject verifyMessage(String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
-        String payload = Utils.fromUtf8(fetchMessage());
+    protected void configureLog4J() {
+        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+    }
+
+    protected
+    JSONObject verifyMessage(String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
+        return verifyMessage(sentry, culprit, logLevel, projectId, message);
+    }
+
+    protected static JSONObject verifyMessage(SentryMock sentry, String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
+        String payload = Utils.fromUtf8(sentry.fetchMessage());
         String[] payloadParts = StringUtils.split(payload, "\n\n");
         assertEquals(2, payloadParts.length);
         String raw = Utils.fromUtf8(Base64.decodeBase64(payloadParts[1]));
@@ -150,10 +157,31 @@ public class SentryAppenderTest {
         return json;
     }
 
-    protected static byte[] fetchMessage() throws IOException {
-        DatagramPacket packet = new DatagramPacket(new byte[10000], 10000);
-        serverSocket.receive(packet);
-        return packet.getData();
+    public static class SentryMock {
+        public final DatagramSocket serverSocket;
+        public final String host;
+        public final int port;
+
+        public SentryMock() throws SocketException {
+            this("localhost", 9505);
+        }
+
+        public SentryMock(String host, int port) throws SocketException {
+            this.host = host;
+            this.port = port;
+            serverSocket = new DatagramSocket(new InetSocketAddress(host, port));
+        }
+
+        public void stop() {
+            serverSocket.close();
+        }
+
+        public byte[] fetchMessage() throws IOException {
+            DatagramPacket packet = new DatagramPacket(new byte[10000], 10000);
+            serverSocket.receive(packet);
+            return packet.getData();
+        }
+
     }
 
 }

@@ -24,13 +24,16 @@ public class SentryAppender extends AppenderSkeleton {
             if (client != null) {
                 client.stop();
             }
+            // Create a client that start automatically
             client = new Client(SentryDsn.build(sentryDsn));
         }
     }
 
     @Override
     public void close() {
-        client.stop();
+        if (client != null) {
+            client.stop();
+        }
     }
 
     @Override
@@ -40,6 +43,7 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     protected void append(LoggingEvent event) {
+        Client client = fetchClient();
         // get timestamp and timestamp in correct string format.
         long timestamp = event.getTimeStamp();
 
@@ -59,4 +63,20 @@ public class SentryAppender extends AppenderSkeleton {
             client.captureException(message, timestamp, logger, level, culprit, info.getThrowable());
         }
     }
+
+    /**
+     * Use this to refer to the client instead of using {@link #client} directly.
+     * <p>
+     * This makes sure a client is available.
+     * </p>
+     *
+     * @return the client
+     */
+    protected synchronized Client fetchClient() {
+        if (client == null) {
+            client = new Client();
+        }
+        return client;
+    }
+
 }

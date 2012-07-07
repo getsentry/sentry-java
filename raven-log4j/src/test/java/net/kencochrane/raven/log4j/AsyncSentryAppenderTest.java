@@ -1,11 +1,144 @@
 package net.kencochrane.raven.log4j;
 
+import net.kencochrane.raven.Utils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.SocketException;
+
+import static org.junit.Assert.*;
+
 /**
- * Created by IntelliJ IDEA.
- * User: kevin
- * Date: 07/07/12
- * Time: 11:39
- * To change this template use File | Settings | File Templates.
+ * Test cases for {@link AsyncSentryAppender}.
  */
 public class AsyncSentryAppenderTest {
+
+    protected static SentryAppenderTest.SentryMock sentry;
+
+    @BeforeClass
+    public static void beforeClass() throws SocketException {
+        sentry = new SentryAppenderTest.SentryMock();
+    }
+
+    @AfterClass
+    public static void afterClass() throws SocketException {
+        System.setProperty(Utils.SENTRY_DSN, "");
+        sentry.stop();
+    }
+
+    @Test
+    public void debugLevel() throws IOException, ParseException {
+        final String loggerName = "omg.logger";
+        final long logLevel = (long) Level.DEBUG_INT / 1000;
+        final String projectId = "1";
+        final String message = "hi there!";
+
+        // Log
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
+        Logger.getLogger(loggerName).debug(message);
+
+        // Verify log message
+        verifyMessage(loggerName, logLevel, projectId, message);
+    }
+
+    @Test
+    public void infoLevel() throws IOException, ParseException {
+        final String loggerName = "dude.wheres.my.ride";
+        final long logLevel = (long) Level.INFO_INT / 1000;
+        final String projectId = "2";
+        final String message = "This message will self-destruct in 5...4...3...";
+
+        // Log
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
+        Logger.getLogger(loggerName).info(message);
+
+        // And verify
+        verifyMessage(loggerName, logLevel, projectId, message);
+    }
+
+    @Test
+    public void warnLevel() throws IOException, ParseException {
+        final String loggerName = "org.apache.commons.httpclient.andStuff";
+        final long logLevel = (long) Level.WARN_INT / 1000;
+        final String projectId = "20";
+        final String message = "Warning! Warning! WARNING! Oh, come on!";
+
+        // Log
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
+        Logger.getLogger(loggerName).warn(message);
+
+        // And verify
+        verifyMessage(loggerName, logLevel, projectId, message);
+    }
+
+    @Test
+    public void errorLevel() throws IOException, ParseException {
+        final String loggerName = "org.apache.commons.httpclient.andStuff";
+        final long logLevel = (long) Level.ERROR_INT / 1000;
+        final String projectId = "5";
+        final String message = "D'oh!";
+
+        // Log
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
+        Logger.getLogger(loggerName).error(message);
+
+        // Verify
+        verifyMessage(loggerName, logLevel, projectId, message);
+    }
+
+    @Test
+    public void errorLevel_withException() throws IOException, ParseException {
+        final String loggerName = "org.apache.commons.httpclient.andStuff";
+        // When an exception is logged, the culprit should be the class+method where the exception occurred
+        final String culprit = getClass().getName() + ".errorLevel_withException";
+        final long logLevel = (long) Level.ERROR_INT / 1000;
+        final String projectId = "5";
+        final String message = "D'oh!";
+
+        // Log
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        configureLog4J();
+        NullPointerException npe = new NullPointerException("Damn you!");
+        Logger.getLogger(loggerName).error(message, npe);
+
+        // Verify
+        JSONObject json = verifyMessage(culprit, logLevel, projectId, message);
+        JSONObject stacktrace = (JSONObject) json.get("sentry.interfaces.Stacktrace");
+        assertNotNull(stacktrace);
+        assertNotNull(stacktrace.get("frames"));
+        JSONArray frames = (JSONArray) stacktrace.get("frames");
+        assertTrue(frames.size() > 0);
+        JSONObject exception = (JSONObject) json.get("sentry.interfaces.Exception");
+        assertNotNull(exception);
+        assertEquals(NullPointerException.class.getSimpleName(), exception.get("type"));
+        assertEquals(npe.getMessage(), exception.get("value"));
+        assertEquals(NullPointerException.class.getPackage().getName(), exception.get("module"));
+    }
+
+    protected void configureLog4J() {
+        PropertyConfigurator.configure(getClass().getResource("/asyncsentryappender.log4j.properties"));
+    }
+
+
+    protected JSONObject verifyMessage(String loggerName, long logLevel, String projectId, String message) throws IOException, ParseException {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return SentryAppenderTest.verifyMessage(sentry, loggerName, logLevel, projectId, message);
+    }
+
 }
