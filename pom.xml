@@ -14,7 +14,6 @@
     <modules>
         <module>raven</module>
         <module>raven-log4j</module>
-        <module>raven-integration-tests</module>
     </modules>
 
     <build>
