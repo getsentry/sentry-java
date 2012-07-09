@@ -16,9 +16,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Integration tests for {@link net.kencochrane.raven.log4j.SentryAppender}.
+ * Integration tests for {@link net.kencochrane.raven.log4j.AsyncSentryAppender}.
  */
-public class SentryAppenderTest {
+public class AsyncSentryAppenderTest {
 
     private SentryApi api;
 
@@ -126,7 +126,7 @@ public class SentryAppenderTest {
         api = IntegrationContext.api;
         api.clear(IntegrationContext.httpDsn.projectId);
         System.setProperty(Utils.SENTRY_DSN, IntegrationContext.httpDsn.toString());
-        PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
+        PropertyConfigurator.configure(getClass().getResource("/asyncsentryappender.log4j.properties"));
     }
 
     @After
@@ -135,6 +135,11 @@ public class SentryAppenderTest {
     }
 
     private void verify(String loggerName, String message, String levelName, String title) throws IOException {
+        try {
+            Thread.sleep(600);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
         List<SentryApi.Event> events = api.getEvents(IntegrationContext.projectSlug);
         assertEquals(1, events.size());
         SentryApi.Event event = events.get(0);

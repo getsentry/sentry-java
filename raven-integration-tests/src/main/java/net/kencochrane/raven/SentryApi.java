@@ -96,38 +96,48 @@ public class SentryApi {
                 continue;
             }
             int count = Integer.parseInt(item.attr("data-count"));
-            int level = extractLevel(item.classNames());
+            String levelName = extractLevel(item.classNames());
+            int level = -1;
+            if (levelName != null) {
+                try {
+                    level = Integer.parseInt(levelName);
+                } catch (NumberFormatException e) {
+                    // Ignore
+                }
+            }
             Element anchor = item.select("h3 a").get(0);
             String link = anchor.attr("href");
             String title = StringUtils.trim(anchor.text());
             Element messageElement = item.select("p.message").get(0);
             String message = StringUtils.trim(messageElement.attr("title"));
             String logger = StringUtils.trim(messageElement.select("span.tag-logger").text());
-            events.add(new Event(count, level, link, title, message, logger));
+            events.add(new Event(count, level, levelName, link, title, message, logger));
         }
         return events;
     }
 
-    protected static int extractLevel(Collection<String> classNames) {
+    protected static String extractLevel(Collection<String> classNames) {
         for (String name : classNames) {
             if (name.startsWith("level-")) {
-                return Integer.parseInt(name.replace("level-", ""));
+                return name.replace("level-", "");
             }
         }
-        return 0;
+        return null;
     }
 
     public static class Event {
         public final int count;
         public final int level;
+        public final String levelName;
         public final String url;
         public final String title;
         public final String message;
         public final String logger;
 
-        public Event(int count, int level, String url, String title, String message, String logger) {
+        public Event(int count, int level, String levelName, String url, String title, String message, String logger) {
             this.count = count;
             this.level = level;
+            this.levelName = levelName;
             this.url = url;
             this.title = title;
             this.message = message;
