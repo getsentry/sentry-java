@@ -97,7 +97,7 @@ public class Client {
      * @param autoStart whether to start the underlying transport automatically or not
      */
     public Client(boolean autoStart) {
-        this(SentryDsn.build(), autoStart);
+        this(fetchOptionalDsn(), autoStart);
     }
 
     /**
@@ -193,6 +193,9 @@ public class Client {
     }
 
     public void start() {
+        if (isDisabled()) {
+            return;
+        }
         if (transport == null) {
             transport = newTransport(dsn);
         }
@@ -211,8 +214,15 @@ public class Client {
         transport = null;
     }
 
+    public boolean isDisabled() {
+        return dsn == null;
+    }
+
     @SuppressWarnings("unchecked")
     protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
+        if (isDisabled()) {
+            return Message.NONE;
+        }
         String eventId = generateEventId();
         JSONObject obj = new JSONObject();
         if (exception == null) {
@@ -242,6 +252,9 @@ public class Client {
     }
 
     protected void send(Message message, long timestamp) {
+        if (isDisabled()) {
+            return;
+        }
         try {
             transport.send(message.encoded(), timestamp);
         } catch (ConnectException e) {
@@ -404,6 +417,21 @@ public class Client {
         return String.valueOf(checksum.getValue());
     }
 
+    /**
+     * Wrapper for {@link net.kencochrane.raven.SentryDsn#build()} that turns an {@link SentryDsn.InvalidDsnException}
+     * into a <code>null</code> DSN, effectively disabling the client.
+     *
+     * @return the Sentry DSN as determined from the environment or <code>null</code> when no DSN was found
+     */
+    protected static SentryDsn fetchOptionalDsn() {
+        try {
+            return SentryDsn.build();
+        } catch (SentryDsn.InvalidDsnException e) {
+            LOG.log(Level.WARNING, "Could not automatically determine a valid DSN; client will be disabled", e);
+            return null;
+        }
+    }
+
     public static class InvalidConfig extends RuntimeException {
 
         public InvalidConfig(String msg) {
@@ -417,6 +445,8 @@ public class Client {
     }
 
     public static class Message {
+
+        public static final Message NONE = new Message(null, "-1");
 
         public final JSONObject json;
         public final String eventId;

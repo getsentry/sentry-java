@@ -59,6 +59,15 @@ public class ClientTest {
     }
 
     @Test
+    public void constructor_noDsn() {
+        Client client = new Client();
+        assertTrue(client.isDisabled());
+        client.start();
+        assertFalse(client.isStarted());
+        assertEquals("-1", client.captureMessage("Hi"));
+    }
+
+    @Test
     public void newTransport() {
         // HTTP
         String dsn = "http://public:private@localhost/1";
@@ -159,6 +168,7 @@ public class ClientTest {
 
     protected void verifyClient(Client client, Class<? extends Transport> transportClass, boolean async, boolean autostart) {
         assertTrue(!autostart || client.isStarted());
+        assertFalse(client.isDisabled());
         if (async) {
             assertTrue(client.transport instanceof AsyncTransport);
             assertTrue(((AsyncTransport) client.transport).transport.getClass().isAssignableFrom(transportClass));
