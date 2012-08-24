@@ -6,6 +6,12 @@ It is officially recognized as production-ready by Sentry: http://sentry.readthe
 
 The log4j appender is asyncronous by design so there is no need to put it in a AsyncAppender.
 
+Current Status
+--------------
+.. image:: https://secure.travis-ci.org/kencochrane/raven-java.png
+   :target: http://travis-ci.org/kencochrane/raven-java
+
+
 Installation
 ------------
 
