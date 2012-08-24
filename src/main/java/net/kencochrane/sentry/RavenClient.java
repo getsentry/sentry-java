@@ -92,15 +92,16 @@ public class RavenClient {
      * @param loggerClass The class associated with the log message
      * @param logLevel    int value for Log level for message (DEBUG, ERROR, INFO, etc.)
      * @param culprit     Who we think caused the problem.
-     * @return JSON String of message body
+     * @return JSON message body
      */
-    private String buildJSON(String message, String timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
+    protected JSONObject buildJSON(String message, String timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         JSONObject obj = new JSONObject();
         String lastID = RavenUtils.getRandomUUID();
         obj.put("event_id", lastID); //Hexadecimal string representing a uuid4 value.
         obj.put("checksum", RavenUtils.calculateChecksum(message));
         if (exception == null) {
             obj.put("culprit", culprit);
+            obj.put("sentry.interfaces.Message", buildSentryInterfacesMessage(message));
         } else {
             obj.put("culprit", determineCulprit(exception));
             obj.put("sentry.interfaces.Exception", buildException(exception));
@@ -113,7 +114,7 @@ public class RavenClient {
         obj.put("logger", loggerClass);
         obj.put("server_name", RavenUtils.getHostname());
         setLastID(lastID);
-        return obj.toJSONString();
+        return obj;
     }
 
     /**
@@ -134,6 +135,20 @@ public class RavenClient {
             cause = cause.getCause();
         }
         return culprit;
+    }
+
+    /**
+     * Build a message object that conforms to sentry.interfaces.Message. This
+     * allows logs with no exceptions to show up in the Messages view.
+     *
+     * @param message rendered message text
+     * @return message object built
+     */
+    private JSONObject buildSentryInterfacesMessage(String message) {
+        JSONObject messageObject = new JSONObject();
+        messageObject.put("message", message);
+        messageObject.put("params", new JSONArray());
+        return messageObject;
     }
 
     private JSONObject buildException(Throwable exception) {
@@ -204,7 +219,7 @@ public class RavenClient {
      */
     private String buildMessage(String message, String timestamp, String loggerClass, int logLevel, String culprit, Throwable exception) {
         // get the json version of the body
-        String jsonMessage = buildJSON(message, timestamp, loggerClass, logLevel, culprit, exception);
+        String jsonMessage = buildJSON(message, timestamp, loggerClass, logLevel, culprit, exception).toJSONString();
 
         // compress and encode the json message.
         return buildMessageBody(jsonMessage);
