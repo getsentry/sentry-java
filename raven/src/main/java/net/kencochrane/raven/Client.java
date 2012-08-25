@@ -227,6 +227,8 @@ public class Client {
         JSONObject obj = new JSONObject();
         if (exception == null) {
             obj.put("culprit", culprit);
+            JSONObject messageJson = Events.message(message);
+            obj.putAll(messageJson);
         } else {
             JSONObject exceptionJson = Events.exception(exception);
             obj.putAll(exceptionJson);

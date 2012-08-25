@@ -2,16 +2,15 @@ package net.kencochrane.raven.integration;
 
 import net.kencochrane.raven.Client;
 import net.kencochrane.raven.SentryApi;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Integration tests for {@link net.kencochrane.raven.Client}.
@@ -34,6 +33,7 @@ public class ClientTest {
         Map<String, Object> tags = new HashMap<String, Object>();
         tags.put("release", "1.2.0");
         tags.put("uptime", 60000L);
+        tags.put("client", "Raven-Java");
         captureMessage(client, message, false, tags);
     }
 
@@ -114,7 +114,21 @@ public class ClientTest {
         assertEquals(message, event.title);
         assertEquals(Client.Default.LOGGER, event.logger);
 
-        // TODO Verify tags when it's a bit more stable on the Sentry side
+        JSONArray jsonArray = api.getRawJson(IntegrationContext.projectSlug, newEvent.group);
+        assertNotNull(jsonArray);
+        assertTrue(jsonArray.size() > 0);
+        JSONObject json = (JSONObject) jsonArray.get(0);
+        JSONObject messageJson = (JSONObject) json.get("sentry.interfaces.Message");
+        assertNotNull(messageJson);
+        assertEquals(message, messageJson.get("message"));
+        assertTrue(messageJson.get("params") instanceof JSONArray);
+
+        if (tags != null && !tags.isEmpty()) {
+            List<String> tagNames = api.getAvailableTags(IntegrationContext.projectSlug);
+            Set<String> nonMatches = new HashSet<String>(tags.keySet());
+            nonMatches.removeAll(tagNames);
+            assertTrue(nonMatches.isEmpty());
+        }
     }
 
     @Before

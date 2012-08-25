@@ -12,9 +12,8 @@ Make sure you have Sentry installed. Follow the instructions in
 services of Sentry in the same terminal.
 
 ## 3. Run `src/main/resources/run_sentry.sh` before running the tests
-This script will remove any existing `sentry.db` at the *same* location so we can start fresh and then perform a Sentry
-upgrade using `default_config.py` as the Sentry configuration. During this process, you will be asked to create a
-superuser. Use username and password `test`.
+This script will remove any existing `sentry.db` at the *same* location so we can start fresh, replace it with `boot_sentry.db` and then perform a Sentry
+upgrade using `default_config.py` as the Sentry configuration. The database is set up with a user with username and password `test`.
 
 Once the Sentry installation is finished, the `Procfile` at the same location will be used to kickstart Sentry HTTP and
 UDP services at ports 9500 and 9501 respectively.

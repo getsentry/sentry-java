@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 /**
  * Test cases for {@link Client}.
  */
-public class ClientTest {
+public class ClientSetupTest {
 
     @Test
     public void defaultConstructor() {

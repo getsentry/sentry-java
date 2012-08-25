@@ -136,7 +136,7 @@ public class AsyncSentryAppenderTest {
 
     private void verify(String loggerName, String message, String levelName, String title) throws IOException {
         try {
-            Thread.sleep(600);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             // Ignore
         }

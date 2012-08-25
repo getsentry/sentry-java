@@ -2,7 +2,6 @@ package net.kencochrane.raven;
 
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 

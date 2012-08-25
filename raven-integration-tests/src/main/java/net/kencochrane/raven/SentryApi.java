@@ -7,11 +7,16 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.ClientPNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Sentry tools.
@@ -40,6 +47,8 @@ public class SentryApi {
 
     public SentryApi(String host) {
         this.host = host;
+        // Otherwise HttpClient gets confused when hitting the dashboard without an existing project
+        client.getParams().setParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
     }
 
     public boolean login(String username, String password) throws IOException {
@@ -86,6 +95,19 @@ public class SentryApi {
         return ok;
     }
 
+    public JSONArray getRawJson(String projectSlug, int group) throws IOException {
+        HttpResponse response = client.execute(new HttpGet(host + "/" + projectSlug + "/group/" + group + "/events/json/"));
+        String raw = EntityUtils.toString(response.getEntity());
+        if (StringUtils.isBlank(raw)) {
+            return null;
+        }
+        try {
+            return (JSONArray) new JSONParser().parse(raw);
+        } catch (ParseException e) {
+            throw new IOException(e);
+        }
+    }
+
     public List<Event> getEvents(String projectSlug) throws IOException {
         HttpResponse response = client.execute(new HttpGet(host + "/" + projectSlug));
         Document doc = Jsoup.parse(EntityUtils.toString(response.getEntity()));
@@ -95,6 +117,7 @@ public class SentryApi {
             if (item.hasClass("resolved")) {
                 continue;
             }
+            int group = Integer.parseInt(item.attr("data-group"));
             int count = Integer.parseInt(item.attr("data-count"));
             String levelName = extractLevel(item.classNames());
             int level = -1;
@@ -111,9 +134,24 @@ public class SentryApi {
             Element messageElement = item.select("p.message").get(0);
             String message = StringUtils.trim(messageElement.attr("title"));
             String logger = StringUtils.trim(messageElement.select("span.tag-logger").text());
-            events.add(new Event(count, level, levelName, link, title, message, logger));
+            events.add(new Event(group, count, level, levelName, link, title, message, logger));
         }
         return events;
+    }
+
+    public List<String> getAvailableTags(String projectSlug) throws IOException {
+        HttpResponse response = client.execute(new HttpGet(host + "/account/projects/" + projectSlug + "/tags/"));
+        Document doc = Jsoup.parse(EntityUtils.toString(response.getEntity()));
+        Elements items = doc.select("#div_id_filters label.checkbox");
+        Pattern pattern = Pattern.compile(".*\\((\\w+)\\)");
+        List<String> tagNames = new LinkedList<String>();
+        for (Element item : items) {
+            Matcher matcher = pattern.matcher(item.text());
+            if (matcher.matches()) {
+                tagNames.add(matcher.group(1));
+            }
+        }
+        return tagNames;
     }
 
     protected static String extractLevel(Collection<String> classNames) {
@@ -126,6 +164,7 @@ public class SentryApi {
     }
 
     public static class Event {
+        public final int group;
         public final int count;
         public final int level;
         public final String levelName;
@@ -134,7 +173,8 @@ public class SentryApi {
         public final String message;
         public final String logger;
 
-        public Event(int count, int level, String levelName, String url, String title, String message, String logger) {
+        public Event(int group, int count, int level, String levelName, String url, String title, String message, String logger) {
+            this.group = group;
             this.count = count;
             this.level = level;
             this.levelName = levelName;

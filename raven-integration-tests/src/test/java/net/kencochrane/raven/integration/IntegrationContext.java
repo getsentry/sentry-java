@@ -16,7 +16,7 @@ public class IntegrationContext {
     public static SentryApi api;
     public static SentryDsn httpDsn;
     public static SentryDsn udpDsn;
-    public static String projectSlug = "default";
+    public static String projectSlug = "ravenjava";
     protected static boolean initialized = false;
 
     public static void init() throws IOException {
@@ -28,7 +28,6 @@ public class IntegrationContext {
         String dsn = api.getDsn(projectSlug);
         httpDsn = SentryDsn.build(dsn, null, null);
         udpDsn = SentryDsn.build(dsn.replace("http://", "udp://").replace(":" + port, ":" + udpPort), null, null);
-        System.out.println("UDP:" + udpDsn);
         initialized = true;
     }
 

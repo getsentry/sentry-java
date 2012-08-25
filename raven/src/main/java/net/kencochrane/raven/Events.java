@@ -3,6 +3,8 @@ package net.kencochrane.raven;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.Arrays;
+
 /**
  * Collection of builtin Raven/Sentry events.
  */
@@ -24,7 +26,11 @@ public abstract class Events {
         JSONObject json = new JSONObject();
         JSONObject messageJson = new JSONObject();
         messageJson.put("message", message);
-        messageJson.put("params", params);
+        JSONArray paramArray = new JSONArray();
+        if (params != null) {
+            paramArray.addAll(Arrays.asList(params));
+        }
+        messageJson.put("params", paramArray);
         json.put("sentry.interfaces.Message", messageJson);
         return json;
     }
