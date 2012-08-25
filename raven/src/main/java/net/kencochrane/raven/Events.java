@@ -21,9 +21,12 @@ public abstract class Events {
 
     }
 
-    @SuppressWarnings("unchecked")
     public static JSONObject message(String message, Object... params) {
-        JSONObject json = new JSONObject();
+        return message(new JSONObject(), message, params);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static JSONObject message(JSONObject json, String message, Object... params) {
         JSONObject messageJson = new JSONObject();
         messageJson.put("message", message);
         JSONArray paramArray = new JSONArray();
@@ -35,9 +38,12 @@ public abstract class Events {
         return json;
     }
 
-    @SuppressWarnings("unchecked")
     public static JSONObject query(String query, String engine) {
-        JSONObject json = new JSONObject();
+        return query(new JSONObject(), query, engine);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static JSONObject query(JSONObject json, String query, String engine) {
         JSONObject content = new JSONObject();
         content.put("query", query);
         content.put("engine", engine);
@@ -45,9 +51,12 @@ public abstract class Events {
         return json;
     }
 
-    @SuppressWarnings("unchecked")
     public static JSONObject exception(Throwable exception) {
-        JSONObject json = new JSONObject();
+        return exception(new JSONObject(), exception);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static JSONObject exception(JSONObject json, Throwable exception) {
         json.put("level", LogLevel.ERROR.intValue);
         json.put("culprit", determineCulprit(exception));
         json.put("sentry.interfaces.Exception", buildException(exception));
