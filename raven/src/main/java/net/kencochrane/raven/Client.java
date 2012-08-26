@@ -1,5 +1,7 @@
 package net.kencochrane.raven;
 
+import net.kencochrane.raven.spi.RequestProcessor;
+
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.json.simple.JSONObject;
@@ -15,8 +17,13 @@ import java.lang.reflect.Modifier;
 import java.net.ConnectException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,6 +73,8 @@ public class Client {
      */
     private static final Logger LOG = Logger.getLogger("raven.client");
 
+    private static final List<RequestProcessor> PROCESSORS;
+
     /**
      * The dsn used by this client.
      */
@@ -78,6 +87,16 @@ public class Client {
 
     static {
         registerDefaults();
+        PROCESSORS = Collections.unmodifiableList(loadProcessors());
+    }
+
+    private static List<RequestProcessor> loadProcessors() {
+        List<RequestProcessor> processors = new ArrayList<RequestProcessor>();
+        Iterator<RequestProcessor> iterator = ServiceLoader.load(RequestProcessor.class).iterator();
+        while (iterator.hasNext()) {
+            processors.add(iterator.next());
+        }
+        return processors;
     }
 
     /**
@@ -247,6 +266,10 @@ public class Client {
             JSONObject jsonTags = new JSONObject();
             jsonTags.putAll(tags);
             obj.put("tags", jsonTags);
+        }
+
+        for (RequestProcessor processor : PROCESSORS) {
+            processor.process(obj);
         }
         return new Message(obj, eventId);
     }

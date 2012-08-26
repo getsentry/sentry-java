@@ -2,6 +2,8 @@ package net.kencochrane.raven.log4j;
 
 import net.kencochrane.raven.Client;
 import net.kencochrane.raven.SentryDsn;
+import net.kencochrane.raven.spi.RavenMDC;
+
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
@@ -43,6 +45,8 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     protected void append(LoggingEvent event) {
+        ((Log4jMDC)RavenMDC.getInstance()).setThreadLoggingEvent(event);
+
         Client client = fetchClient();
         // get timestamp and timestamp in correct string format.
         long timestamp = event.getTimeStamp();
@@ -62,6 +66,7 @@ public class SentryAppender extends AppenderSkeleton {
         } else {
             client.captureException(message, timestamp, logger, level, culprit, info.getThrowable());
         }
+        ((Log4jMDC)RavenMDC.getInstance()).removeThreadLoggingEvent();
     }
 
     /**
