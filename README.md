@@ -135,6 +135,31 @@ By default the client will **not** block when the queue is full and will use a q
 
     async+http://public:private@host:port/1?raven.waitWhenFull=true&raven.capacity=20
 
+#### Enabling ServletJSONProcessor
+In a servlet environment, Raven can append request information to logs sent to Sentry when logs are created on request threads. Information sent to Sentry include:
+
+*   Request URL
+*   POST parameters
+*   Request headers
+*   Cookies
+*   Environment variables, including:
+    *   Remote address
+    *   Server name
+    *   Server port
+    *   Server protocol
+
+Please be aware that sensitive information, such as user passwords or credit card numbers, may potentially be logged. Common security measures, such as protecting the Sentry installation, should be practiced. To enable this support, add the following line to Log4j configuration:
+
+    log4j.appender.sentry.jsonProcessors=net.kencochrane.raven.ext.ServletJSONProcessor
+
+Then, add the following lines to web.xml:
+
+    <listener>
+        <listener-class>
+            net.kencochrane.raven.ext.RavenServletRequestListener
+        </listener-class>
+    </listener>
+
 * * *
 
 ## Installation
@@ -146,6 +171,7 @@ TODO
 - 1.0
     - Rewrite
     - Support tags
+    - Added support for JSON processors (see bundled `ServletJSONProcessor`)
 - 0.6
     - Added support for sending messages through UDP
 - 0.5
@@ -174,3 +200,4 @@ TODO
 - Kevin Wetzels (@roambe)
 - David Cramer (@zeeg)
 - Mark Philpot (@griphiam)
+- Brad Chen (@vvasabi)
