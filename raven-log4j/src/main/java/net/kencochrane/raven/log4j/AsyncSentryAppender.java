@@ -32,16 +32,8 @@ public class AsyncSentryAppender extends AsyncAppender {
         this.sentryDsn = sentryDsn;
         if (appender != null) {
             removeAppender(appender);
+            appender = null;
         }
-        SentryAppender appender = new SentryAppender();
-        appender.setSentryDsn(sentryDsn);
-        appender.setJsonProcessors(jsonProcessors);
-        appender.setErrorHandler(this.getErrorHandler());
-        appender.setLayout(this.getLayout());
-        appender.setName(this.getName());
-        appender.setThreshold(this.getThreshold());
-        this.appender = appender;
-        addAppender(appender);
     }
 
     /**
@@ -58,10 +50,25 @@ public class AsyncSentryAppender extends AsyncAppender {
     public void append(LoggingEvent event) {
         if (appender == null) {
             synchronized (this) {
-                setSentryDsn(SentryDsn.build().toString());
+                if (sentryDsn == null) {
+                    setSentryDsn(SentryDsn.build().toString());
+                }
+                createAppender();
             }
         }
         super.append(event);
+    }
+
+    private void createAppender() {
+        SentryAppender appender = new SentryAppender();
+        appender.setSentryDsn(sentryDsn);
+        appender.setJsonProcessors(jsonProcessors);
+        appender.setErrorHandler(this.getErrorHandler());
+        appender.setLayout(this.getLayout());
+        appender.setName(this.getName());
+        appender.setThreshold(this.getThreshold());
+        this.appender = appender;
+        addAppender(appender);
     }
 
 }

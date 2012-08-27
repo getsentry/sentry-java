@@ -42,7 +42,7 @@ public class AsyncSentryAppenderTest {
         final String message = "hi there!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).debug(message);
 
@@ -58,7 +58,7 @@ public class AsyncSentryAppenderTest {
         final String message = "This message will self-destruct in 5...4...3...";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).info(message);
 
@@ -74,7 +74,7 @@ public class AsyncSentryAppenderTest {
         final String message = "Warning! Warning! WARNING! Oh, come on!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).warn(message);
 
@@ -90,7 +90,7 @@ public class AsyncSentryAppenderTest {
         final String message = "D'oh!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).error(message);
 
@@ -108,7 +108,7 @@ public class AsyncSentryAppenderTest {
         final String message = "D'oh!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         NullPointerException npe = new NullPointerException("Damn you!");
         Logger.getLogger(loggerName).error(message, npe);
@@ -125,6 +125,19 @@ public class AsyncSentryAppenderTest {
         assertEquals(NullPointerException.class.getSimpleName(), exception.get("type"));
         assertEquals(npe.getMessage(), exception.get("value"));
         assertEquals(NullPointerException.class.getPackage().getName(), exception.get("module"));
+    }
+
+    @Test
+    public void testJSONProcessors() throws IOException, ParseException {
+        setSentryDSN("6");
+        configureLog4J();
+        Logger.getLogger("logger").info("test");
+        JSONObject json = SentryAppenderTest.fetchJSONObject(sentry);
+        assertEquals("Value", json.get("Test"));
+    }
+
+    protected void setSentryDSN(String projectId) {
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
     }
 
     protected void configureLog4J() {
