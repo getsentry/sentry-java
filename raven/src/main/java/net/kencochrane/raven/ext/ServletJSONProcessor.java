@@ -4,6 +4,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
@@ -39,18 +40,19 @@ public class ServletJSONProcessor implements JSONProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private JSONObject buildHttpObject(HttpServletRequest request) {
+    private static JSONObject buildHttpObject(HttpServletRequest request) {
         JSONObject http = new JSONObject();
         http.put("url", getUrl(request));
         http.put("method", request.getMethod());
         http.put("data", getData(request));
         http.put("query_string", request.getQueryString());
+        http.put("cookies", getCookies(request));
         http.put("headers", getHeaders(request));
         http.put("env", getEnvironmentVariables(request));
         return http;
     }
 
-    private String getUrl(HttpServletRequest request) {
+    private static String getUrl(HttpServletRequest request) {
         StringBuffer sb = request.getRequestURL();
         String query = request.getQueryString();
         if (query != null) {
@@ -60,8 +62,8 @@ public class ServletJSONProcessor implements JSONProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private JSONObject getData(HttpServletRequest request) {
-        if ("GET".equals(request.getMethod())) {
+    private static JSONObject getData(HttpServletRequest request) {
+        if (!"POST".equals(request.getMethod())) {
             return null;
         }
 
@@ -74,7 +76,16 @@ public class ServletJSONProcessor implements JSONProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private JSONObject getHeaders(HttpServletRequest request) {
+    private static JSONObject getCookies(HttpServletRequest request) {
+        JSONObject cookiesMap = new JSONObject();
+      for (Cookie cookie : request.getCookies()) {
+          cookiesMap.put(cookie.getName(), cookie.getValue());
+      }
+      return cookiesMap;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static JSONObject getHeaders(HttpServletRequest request) {
         JSONObject headers = new JSONObject();
         Enumeration<String> headersEnum = request.getHeaderNames();
         while (headersEnum.hasMoreElements()) {
@@ -85,7 +96,7 @@ public class ServletJSONProcessor implements JSONProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private JSONObject getEnvironmentVariables(HttpServletRequest request) {
+    private static JSONObject getEnvironmentVariables(HttpServletRequest request) {
         JSONObject env = new JSONObject();
         env.put("REMOTE_ADDR", request.getRemoteAddr());
         env.put("SERVER_NAME", request.getServerName());
