@@ -22,21 +22,28 @@ import net.kencochrane.raven.spi.RavenMDC;
  */
 public class ServletJSONProcessor implements JSONProcessor {
 
-    public static final String MDC_REQUEST
-            = ServletJSONProcessor.class.getName() + ".httpServletRequest";
     private static final String HTTP_INTERFACE = "sentry.interfaces.Http";
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void process(JSONObject json) {
-        RavenMDC mdc = RavenMDC.getInstance();
-        HttpServletRequest request = (HttpServletRequest)mdc.get(MDC_REQUEST);
+    public void prepareDiagnosticContext(Throwable exception) {
+        HttpServletRequest request = RavenServletRequestListener.getRequest();
         if (request == null) {
             // no request available; do nothing
             return;
         }
 
-        json.put(HTTP_INTERFACE, buildHttpObject(request));
+        RavenMDC.getInstance().put(HTTP_INTERFACE, buildHttpObject(request));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void process(JSONObject json) {
+        JSONObject http = (JSONObject)RavenMDC.getInstance().get(HTTP_INTERFACE);
+        if (http == null) {
+            return;
+        }
+
+        json.put(HTTP_INTERFACE, http);
     }
 
     @SuppressWarnings("unchecked")

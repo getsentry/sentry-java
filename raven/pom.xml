@@ -35,7 +35,7 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.0.1</version>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
            <groupId>com.googlecode.jmockit</groupId>

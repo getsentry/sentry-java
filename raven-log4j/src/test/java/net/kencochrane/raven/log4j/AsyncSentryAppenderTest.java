@@ -133,7 +133,7 @@ public class AsyncSentryAppenderTest {
         configureLog4J();
         Logger.getLogger("logger").info("test");
         JSONObject json = SentryAppenderTest.fetchJSONObject(sentry);
-        assertEquals("Value", json.get("Test"));
+        assertEquals(1, ((Long)json.get("Test")).longValue());
     }
 
     protected void setSentryDSN(String projectId) {
