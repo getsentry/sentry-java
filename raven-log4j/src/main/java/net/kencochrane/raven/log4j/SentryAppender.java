@@ -24,7 +24,7 @@ public class SentryAppender extends AppenderSkeleton {
     private String jsonProcessors;
 
     public SentryAppender() {
-        Utils.initMDC();
+        initMDC();
         mdc = (Log4jMDC)RavenMDC.getInstance();
     }
 
@@ -132,6 +132,18 @@ public class SentryAppender extends AppenderSkeleton {
         } catch (IllegalAccessException exception) {
             throw new RuntimeException("Processor could not be instantiated.", exception);
         }
+    }
+
+    public static void initMDC() {
+        if (RavenMDC.getInstance() != null) {
+            if (!(RavenMDC.getInstance() instanceof Log4jMDC)) {
+                throw new IllegalStateException("An incompatible RavenMDC "
+                        + "instance has been set. Please check your Raven "
+                        + "configuration.");
+            }
+            return;
+        }
+        RavenMDC.setInstance(new Log4jMDC());
     }
 
 }

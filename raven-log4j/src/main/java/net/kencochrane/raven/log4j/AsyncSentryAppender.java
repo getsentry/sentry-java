@@ -20,7 +20,7 @@ public class AsyncSentryAppender extends AsyncAppender {
     private SentryAppender appender;
 
     public AsyncSentryAppender() {
-        Utils.initMDC();
+        SentryAppender.initMDC();
     }
 
     public String getSentryDsn() {
