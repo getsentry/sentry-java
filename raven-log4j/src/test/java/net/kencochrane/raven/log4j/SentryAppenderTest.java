@@ -50,7 +50,7 @@ public class SentryAppenderTest {
         final String message = "hi there!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).debug(message);
 
@@ -66,7 +66,7 @@ public class SentryAppenderTest {
         final String message = "This message will self-destruct in 5...4...3...";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).info(message);
 
@@ -82,7 +82,7 @@ public class SentryAppenderTest {
         final String message = "Warning! Warning! WARNING! Oh, come on!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).warn(message);
 
@@ -98,7 +98,7 @@ public class SentryAppenderTest {
         final String message = "D'oh!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         Logger.getLogger(loggerName).error(message);
 
@@ -116,7 +116,7 @@ public class SentryAppenderTest {
         final String message = "D'oh!";
 
         // Log
-        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+        setSentryDSN(projectId);
         configureLog4J();
         NullPointerException npe = new NullPointerException("Damn you!");
         Logger.getLogger(loggerName).error(message, npe);
@@ -135,6 +135,19 @@ public class SentryAppenderTest {
         assertEquals(NullPointerException.class.getPackage().getName(), exception.get("module"));
     }
 
+    @Test
+    public void testJSONProcessors() throws IOException, ParseException {
+        setSentryDSN("6");
+        configureLog4J();
+        Logger.getLogger("logger").info("test");
+        JSONObject json = fetchJSONObject(sentry);
+        assertEquals("Value", json.get("Test"));
+    }
+
+    protected void setSentryDSN(String projectId) {
+        System.setProperty(Utils.SENTRY_DSN, String.format("udp://public:private@%s:%d/%s", sentry.host, sentry.port, projectId));
+    }
+
     protected void configureLog4J() {
         PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
     }
@@ -145,16 +158,20 @@ public class SentryAppenderTest {
     }
 
     protected static JSONObject verifyMessage(SentryMock sentry, String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
-        String payload = Utils.fromUtf8(sentry.fetchMessage());
-        String[] payloadParts = StringUtils.split(payload, "\n\n");
-        assertEquals(2, payloadParts.length);
-        String raw = Utils.fromUtf8(Base64.decodeBase64(payloadParts[1]));
-        JSONObject json = (JSONObject) new JSONParser().parse(raw);
+        JSONObject json = fetchJSONObject(sentry);
         assertEquals(message, json.get("message"));
         assertEquals(culprit, json.get("culprit"));
         assertEquals(projectId, json.get("project"));
         assertEquals(logLevel, json.get("level"));
         return json;
+    }
+
+    protected static JSONObject fetchJSONObject(SentryMock sentry) throws IOException, ParseException {
+        String payload = Utils.fromUtf8(sentry.fetchMessage());
+        String[] payloadParts = StringUtils.split(payload, "\n\n");
+        assertEquals(2, payloadParts.length);
+        String raw = Utils.fromUtf8(Base64.decodeBase64(payloadParts[1]));
+        return (JSONObject) new JSONParser().parse(raw);
     }
 
     public static class SentryMock {

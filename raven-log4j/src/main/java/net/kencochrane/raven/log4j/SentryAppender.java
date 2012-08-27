@@ -1,7 +1,12 @@
 package net.kencochrane.raven.log4j;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import net.kencochrane.raven.Client;
 import net.kencochrane.raven.SentryDsn;
+import net.kencochrane.raven.spi.JSONProcessor;
 import net.kencochrane.raven.spi.RavenMDC;
 
 import org.apache.log4j.AppenderSkeleton;
@@ -13,8 +18,15 @@ import org.apache.log4j.spi.ThrowableInformation;
  */
 public class SentryAppender extends AppenderSkeleton {
 
+    private Log4jMDC mdc;
     protected String sentryDsn;
     protected Client client;
+    private String jsonProcessors;
+
+    public SentryAppender() {
+        Utils.initMDC();
+        mdc = (Log4jMDC)RavenMDC.getInstance();
+    }
 
     public String getSentryDsn() {
         return sentryDsn;
@@ -25,10 +37,20 @@ public class SentryAppender extends AppenderSkeleton {
             this.sentryDsn = sentryDsn;
             if (client != null) {
                 client.stop();
+                client = null;
             }
-            // Create a client that start automatically
-            client = new Client(SentryDsn.build(sentryDsn));
         }
+    }
+
+    /**
+     * Set a comma-separated list of fully qualified class names of
+     * JSONProcessors to be used.
+     *
+     * @param jsonProcessors a comma-separated list of fully qualified class
+     * 		names of JSONProcessors
+     */
+    public void setJsonProcessors(String jsonProcessors) {
+        this.jsonProcessors = jsonProcessors;
     }
 
     @Override
@@ -45,28 +67,30 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     protected void append(LoggingEvent event) {
-        ((Log4jMDC)RavenMDC.getInstance()).setThreadLoggingEvent(event);
+        mdc.setThreadLoggingEvent(event);
+        try {
+            Client client = fetchClient();
+            // get timestamp and timestamp in correct string format.
+            long timestamp = event.getTimeStamp();
 
-        Client client = fetchClient();
-        // get timestamp and timestamp in correct string format.
-        long timestamp = event.getTimeStamp();
+            // get the log and info about the log.
+            String message = event.getRenderedMessage();
+            String logger = event.getLogger().getName();
+            int level = (event.getLevel().toInt() / 1000);  //Need to divide by 1000 to keep consistent with sentry
+            String culprit = event.getLoggerName();
 
-        // get the log and info about the log.
-        String message = event.getRenderedMessage();
-        String logger = event.getLogger().getName();
-        int level = (event.getLevel().toInt() / 1000);  //Need to divide by 1000 to keep consistent with sentry
-        String culprit = event.getLoggerName();
+            // is it an exception?
+            ThrowableInformation info = event.getThrowableInformation();
 
-        // is it an exception?
-        ThrowableInformation info = event.getThrowableInformation();
-
-        // send the message to the sentry server
-        if (info == null) {
-            client.captureMessage(message, timestamp, logger, level, culprit);
-        } else {
-            client.captureException(message, timestamp, logger, level, culprit, info.getThrowable());
+            // send the message to the sentry server
+            if (info == null) {
+                client.captureMessage(message, timestamp, logger, level, culprit);
+            } else {
+                client.captureException(message, timestamp, logger, level, culprit, info.getThrowable());
+            }
+        } finally {
+            mdc.removeThreadLoggingEvent();
         }
-        ((Log4jMDC)RavenMDC.getInstance()).removeThreadLoggingEvent();
     }
 
     /**
@@ -79,9 +103,35 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected synchronized Client fetchClient() {
         if (client == null) {
-            client = new Client();
+            if (sentryDsn == null) {
+                client = new Client();
+            } else {
+                client = new Client(SentryDsn.build(sentryDsn));
+            }
+            client.setJSONProcessors(loadJSONProcessors());
         }
         return client;
+    }
+
+    private List<JSONProcessor> loadJSONProcessors() {
+        if (jsonProcessors == null) {
+            return Collections.emptyList();
+        }
+        try {
+            List<JSONProcessor> processors = new ArrayList<JSONProcessor>();
+            String[] clazzes = jsonProcessors.split(",\\s*");
+            for (String clazz : clazzes) {
+                JSONProcessor processor = (JSONProcessor)Class.forName(clazz).newInstance();
+                processors.add(processor);
+            }
+            return processors;
+        } catch (ClassNotFoundException exception) {
+            throw new RuntimeException("Processor could not be found.", exception);
+        } catch (InstantiationException exception) {
+            throw new RuntimeException("Processor could not be instantiated.", exception);
+        } catch (IllegalAccessException exception) {
+            throw new RuntimeException("Processor could not be instantiated.", exception);
+        }
     }
 
 }

@@ -16,7 +16,12 @@ import org.apache.log4j.spi.LoggingEvent;
 public class AsyncSentryAppender extends AsyncAppender {
 
     private String sentryDsn;
+    private String jsonProcessors;
     private SentryAppender appender;
+
+    public AsyncSentryAppender() {
+        Utils.initMDC();
+    }
 
     public String getSentryDsn() {
         return sentryDsn;
@@ -30,12 +35,23 @@ public class AsyncSentryAppender extends AsyncAppender {
         }
         SentryAppender appender = new SentryAppender();
         appender.setSentryDsn(sentryDsn);
+        appender.setJsonProcessors(jsonProcessors);
         appender.setErrorHandler(this.getErrorHandler());
         appender.setLayout(this.getLayout());
         appender.setName(this.getName());
         appender.setThreshold(this.getThreshold());
         this.appender = appender;
         addAppender(appender);
+    }
+
+    /**
+     * See {@link SentryAppender#setJsonProcessors}.
+     *
+     * @param jsonProcessors a comma-separated list of fully qualified class
+     * 		names of JSONProcessors
+     */
+    public void setJsonProcessors(String jsonProcessors) {
+        this.jsonProcessors = jsonProcessors;
     }
 
     @Override

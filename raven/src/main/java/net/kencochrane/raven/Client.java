@@ -1,6 +1,6 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.raven.spi.RequestProcessor;
+import net.kencochrane.raven.spi.JSONProcessor;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -20,10 +20,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,8 +71,6 @@ public class Client {
      */
     private static final Logger LOG = Logger.getLogger("raven.client");
 
-    private static final List<RequestProcessor> PROCESSORS;
-
     /**
      * The dsn used by this client.
      */
@@ -85,18 +81,13 @@ public class Client {
      */
     protected Transport transport;
 
+    /**
+     * JSONProcessor instances. Initialized with an empty list to prevent NPE.
+     */
+    private List<JSONProcessor> jsonProcessors = Collections.emptyList();
+
     static {
         registerDefaults();
-        PROCESSORS = Collections.unmodifiableList(loadProcessors());
-    }
-
-    private static List<RequestProcessor> loadProcessors() {
-        List<RequestProcessor> processors = new ArrayList<RequestProcessor>();
-        Iterator<RequestProcessor> iterator = ServiceLoader.load(RequestProcessor.class).iterator();
-        while (iterator.hasNext()) {
-            processors.add(iterator.next());
-        }
-        return processors;
     }
 
     /**
@@ -170,6 +161,17 @@ public class Client {
         if (autoStart) {
             start();
         }
+    }
+
+    /**
+     * Set the processors to be used by this client. Instances from the list are
+     * copied over.
+     *
+     * @param processors a list of processors to be used by this client
+     */
+    public synchronized void setJSONProcessors(List<JSONProcessor> processors) {
+        this.jsonProcessors = new ArrayList<JSONProcessor>(processors.size());
+        this.jsonProcessors.addAll(processors);
     }
 
     public String captureMessage(String msg) {
@@ -268,7 +270,7 @@ public class Client {
             obj.put("tags", jsonTags);
         }
 
-        for (RequestProcessor processor : PROCESSORS) {
+        for (JSONProcessor processor : jsonProcessors) {
             processor.process(obj);
         }
         return new Message(obj, eventId);
