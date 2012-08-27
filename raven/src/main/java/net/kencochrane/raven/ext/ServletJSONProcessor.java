@@ -25,10 +25,15 @@ public class ServletJSONProcessor implements JSONProcessor {
     private static final String HTTP_INTERFACE = "sentry.interfaces.Http";
 
     @Override
-    public void prepareDiagnosticContext(Throwable exception) {
+    public void prepareDiagnosticContext() {
         HttpServletRequest request = RavenServletRequestListener.getRequest();
         if (request == null) {
             // no request available; do nothing
+            return;
+        }
+
+        if (RavenMDC.getInstance().get(HTTP_INTERFACE) != null) {
+            // an http object has been built; no need to build again
             return;
         }
 
@@ -37,7 +42,7 @@ public class ServletJSONProcessor implements JSONProcessor {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void process(JSONObject json) {
+    public void process(JSONObject json, Throwable exception) {
         JSONObject http = (JSONObject)RavenMDC.getInstance().get(HTTP_INTERFACE);
         if (http == null) {
             return;

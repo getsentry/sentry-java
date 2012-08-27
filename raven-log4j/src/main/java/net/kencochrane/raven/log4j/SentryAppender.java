@@ -66,13 +66,9 @@ public class SentryAppender extends AppenderSkeleton {
      * Notify processors that a message has been logged. Note that this method
      * is intended to be run on the same thread that creates the message.
      */
-    public void notifyProcessors(LoggingEvent event) {
-        Throwable exception = null;
-        if (event.getThrowableInformation() != null) {
-            exception = event.getThrowableInformation().getThrowable();
-        }
+    public void notifyProcessors() {
         for (JSONProcessor processor : jsonProcessors) {
-            processor.prepareDiagnosticContext(exception);
+            processor.prepareDiagnosticContext();
         }
     }
 
@@ -109,7 +105,7 @@ public class SentryAppender extends AppenderSkeleton {
             // notify processors about the message
             // (in async mode this is done by AsyncSentryAppender)
             if (!async) {
-                notifyProcessors(event);
+                notifyProcessors();
             }
 
             // send the message to the sentry server

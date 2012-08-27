@@ -56,7 +56,7 @@ public class AsyncSentryAppender extends AsyncAppender {
                 createAppender();
             }
         }
-        appender.notifyProcessors(event);
+        appender.notifyProcessors();
         super.append(event);
     }
 

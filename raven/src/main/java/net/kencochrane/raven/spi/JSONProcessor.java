@@ -20,17 +20,16 @@ public interface JSONProcessor {
      * method should copy any data the processor needs into {@link RavenMDC}.
      *
      * For each message logged, this method should be called exactly once.
-     *
-     * @param exception exception attached with the message and may be null
      */
-    void prepareDiagnosticContext(Throwable exception);
+    void prepareDiagnosticContext();
 
     /**
      * Modify the JSON request object specified before it is sent to Sentry.
      * This method may be called concurrently and therefore must be thread-safe.
      *
      * @param json request JSON object to be modified
+     * @param exception exception attached with the message and may be null
      */
-    void process(JSONObject json);
+    void process(JSONObject json, Throwable exception);
 
 }

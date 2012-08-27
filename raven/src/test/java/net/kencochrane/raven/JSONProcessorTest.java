@@ -38,7 +38,7 @@ public class JSONProcessorTest extends Client {
         processors.add(mockProcessor);
         setJSONProcessors(processors);
 
-        mockProcessor.prepareDiagnosticContext(null);
+        mockProcessor.prepareDiagnosticContext();
         Message message = buildMessage("test",
             formatTimestamp(new Date().getTime()), "test",
             LogLevel.ERROR.intValue, "test", null, null);
@@ -50,13 +50,13 @@ public class JSONProcessorTest extends Client {
         private String testValue;
 
         @Override
-        public void prepareDiagnosticContext(Throwable exception) {
+        public void prepareDiagnosticContext() {
             testValue = "Value";
         }
 
         @Override
         @SuppressWarnings("unchecked")
-        public void process(JSONObject json) {
+        public void process(JSONObject json, Throwable exception) {
             json.put("Test", testValue);
         }
 

@@ -208,14 +208,14 @@ public class SentryAppenderTest {
         private Long value = 0L;
 
         @Override
-        public void prepareDiagnosticContext(Throwable exception) {
+        public void prepareDiagnosticContext() {
             // this is done to ensure prepareDiagnosticContext is called exactly once
             value++;
         }
 
         @Override
         @SuppressWarnings("unchecked")
-        public void process(JSONObject json) {
+        public void process(JSONObject json, Throwable exception) {
             json.put("Test", value); // value should be 1
         }
 
