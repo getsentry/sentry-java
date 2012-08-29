@@ -1,11 +1,11 @@
 package net.kencochrane.raven;
 
-import junit.framework.Assert;
-import mockit.*;
+import mockit.Mock;
+import mockit.MockClass;
+import mockit.Mockit;
 import org.junit.After;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertNull;
 import static net.kencochrane.raven.SentryDsn.DefaultLookUps;
 import static net.kencochrane.raven.SentryDsn.LookUp;
 import static org.junit.Assert.*;
