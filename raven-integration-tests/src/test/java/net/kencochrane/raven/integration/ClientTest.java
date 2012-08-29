@@ -125,9 +125,7 @@ public class ClientTest {
 
         if (tags != null && !tags.isEmpty()) {
             List<String> tagNames = api.getAvailableTags(IntegrationContext.projectSlug);
-            Set<String> nonMatches = new HashSet<String>(tags.keySet());
-            nonMatches.removeAll(tagNames);
-            assertTrue(nonMatches.isEmpty());
+            assertTrue(new HashSet<String>(tagNames).containsAll(tags.keySet()));
         }
     }
 
