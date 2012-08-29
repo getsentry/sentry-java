@@ -88,8 +88,8 @@ public class ClientTest {
     protected void captureMessage(Client client, String message, boolean wait, Map<String, ?> tags) throws IOException, InterruptedException {
         client.captureMessage(message, tags);
         if (wait) {
-            // Wait a bit in case of UDP transport
-            Thread.sleep(1000);
+            // Wait a bit in case of UDP transport or tags
+            Thread.sleep(1000 + (tags == null || tags.isEmpty() ? 0 : 3000));
         }
         List<SentryApi.Event> events = api.getEvents(IntegrationContext.projectSlug);
         assertEquals(1, events.size());
@@ -125,6 +125,12 @@ public class ClientTest {
 
         if (tags != null && !tags.isEmpty()) {
             List<String> tagNames = api.getAvailableTags(IntegrationContext.projectSlug);
+            for (String tagName : tagNames) {
+                System.out.println("Found tag " + tagName);
+            }
+            for (String tagName : tags.keySet()) {
+                System.out.println("Expect tag " + tagName);
+            }
             assertTrue(new HashSet<String>(tagNames).containsAll(tags.keySet()));
         }
     }
