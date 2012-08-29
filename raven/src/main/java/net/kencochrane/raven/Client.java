@@ -1,7 +1,6 @@
 package net.kencochrane.raven;
 
 import net.kencochrane.raven.spi.JSONProcessor;
-
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.json.simple.JSONObject;
@@ -17,12 +16,7 @@ import java.lang.reflect.Modifier;
 import java.net.ConnectException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.CRC32;
@@ -94,7 +88,7 @@ public class Client {
      * Default, easy constructor.
      * <p>
      * A client instance instantiated through this constructor will use the Sentry DSN returned by
-     * {@link net.kencochrane.raven.SentryDsn#build()} and perform an automatic start.
+     * {@link SentryDsn#buildOptional()} and perform an automatic start.
      * </p>
      */
     public Client() {

@@ -35,6 +35,18 @@ public class AsyncSentryAppenderTest {
     }
 
     @Test
+    public void noSentryDsn() {
+        PropertyConfigurator.configure(getClass().getResource("/asyncsentryappender-no-dsn.log4j.properties"));
+        Logger.getLogger(this.getClass()).debug("No Sentry DSN, no messages");
+    }
+
+    @Test
+    public void invalidDsn() {
+        configureLog4J();
+        Logger.getLogger(this.getClass()).debug("No Sentry DSN, no messages");
+    }
+
+    @Test
     public void debugLevel() throws IOException, ParseException {
         final String loggerName = "omg.logger";
         final long logLevel = (long) Level.DEBUG_INT / 1000;

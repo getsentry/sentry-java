@@ -29,10 +29,6 @@ public class AsyncSentryAppender extends AsyncAppender {
 
     public void setSentryDsn(String sentryDsn) {
         this.sentryDsn = sentryDsn;
-        if (appender != null) {
-            removeAppender(appender);
-            appender = null;
-        }
     }
 
     /**
@@ -53,9 +49,6 @@ public class AsyncSentryAppender extends AsyncAppender {
 
     @Override
     public void activateOptions() {
-        if (sentryDsn == null) {
-            setSentryDsn(SentryDsn.build().toString());
-        }
         SentryAppender appender = new SentryAppender();
         appender.setAsync(true);
         appender.setSentryDsn(sentryDsn);

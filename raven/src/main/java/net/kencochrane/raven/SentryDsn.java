@@ -82,7 +82,7 @@ public class SentryDsn {
     /**
      * Constructor for your convenience.
      * <p>
-     * It's recommended to use one of the {@link #build()} methods instead.
+     * It's recommended to use one of the {@link #build()} or {@link #buildOptional()} methods instead.
      * </p>
      *
      * @param scheme    scheme

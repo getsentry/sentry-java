@@ -41,13 +41,7 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     public void setSentryDsn(String sentryDsn) {
-        synchronized (this) {
-            this.sentryDsn = sentryDsn;
-            if (client != null) {
-                client.stop();
-                client = null;
-            }
-        }
+        this.sentryDsn = sentryDsn;
     }
 
     /**
