@@ -2,7 +2,6 @@ package net.kencochrane.raven.log4j;
 
 import net.kencochrane.raven.Utils;
 import net.kencochrane.raven.spi.JSONProcessor;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
@@ -22,9 +21,7 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Test cases for {@link SentryAppender}.
@@ -42,6 +39,18 @@ public class SentryAppenderTest {
     public static void afterClass() throws SocketException {
         System.setProperty(Utils.SENTRY_DSN, "");
         sentry.stop();
+    }
+
+    @Test
+    public void noSentryDsn() {
+        PropertyConfigurator.configure(getClass().getResource("/sentryappender-no-dsn.log4j.properties"));
+        Logger.getLogger(this.getClass()).debug("No Sentry DSN, no messages");
+    }
+
+    @Test
+    public void invalidDsn() {
+        configureLog4J();
+        Logger.getLogger(this.getClass()).debug("No Sentry DSN, no messages");
     }
 
     @Test
@@ -143,7 +152,7 @@ public class SentryAppenderTest {
         configureLog4J();
         Logger.getLogger("logger").info("test");
         JSONObject json = fetchJSONObject(sentry);
-        assertEquals(1, ((Long)json.get("Test")).longValue());
+        assertEquals(1, ((Long) json.get("Test")).longValue());
     }
 
     protected void setSentryDSN(String projectId) {
@@ -154,8 +163,7 @@ public class SentryAppenderTest {
         PropertyConfigurator.configure(getClass().getResource("/sentryappender.log4j.properties"));
     }
 
-    protected
-    JSONObject verifyMessage(String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
+    protected JSONObject verifyMessage(String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
         return verifyMessage(sentry, culprit, logLevel, projectId, message);
     }
 

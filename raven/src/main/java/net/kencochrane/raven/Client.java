@@ -107,7 +107,7 @@ public class Client {
      * @param autoStart whether to start the underlying transport automatically or not
      */
     public Client(boolean autoStart) {
-        this(fetchOptionalDsn(), autoStart);
+        this(SentryDsn.buildOptional(), autoStart);
     }
 
     /**
@@ -440,21 +440,6 @@ public class Client {
         Checksum checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
         return String.valueOf(checksum.getValue());
-    }
-
-    /**
-     * Wrapper for {@link net.kencochrane.raven.SentryDsn#build()} that turns an {@link SentryDsn.InvalidDsnException}
-     * into a <code>null</code> DSN, effectively disabling the client.
-     *
-     * @return the Sentry DSN as determined from the environment or <code>null</code> when no DSN was found
-     */
-    protected static SentryDsn fetchOptionalDsn() {
-        try {
-            return SentryDsn.build();
-        } catch (SentryDsn.InvalidDsnException e) {
-            LOG.log(Level.WARNING, "Could not automatically determine a valid DSN; client will be disabled", e);
-            return null;
-        }
     }
 
     public static class InvalidConfig extends RuntimeException {

@@ -1,9 +1,11 @@
 package net.kencochrane.raven;
 
+import junit.framework.Assert;
 import mockit.*;
 import org.junit.After;
 import org.junit.Test;
 
+import static junit.framework.Assert.assertNull;
 import static net.kencochrane.raven.SentryDsn.DefaultLookUps;
 import static net.kencochrane.raven.SentryDsn.LookUp;
 import static org.junit.Assert.*;
@@ -63,9 +65,19 @@ public class SentryDsnTest {
         SentryDsn.build("://public:secret@host/path/1");
     }
 
+    @Test
+    public void emptyScheme_optional() {
+        assertNull(SentryDsn.buildOptional("://public:secret@host/path/1"));
+    }
+
     @Test(expected = SentryDsn.InvalidDsnException.class)
     public void noScheme() {
         SentryDsn.build("public:secret@host/path/1");
+    }
+
+    @Test
+    public void noScheme_optional() {
+        assertNull(SentryDsn.buildOptional("public:secret@host/path/1"));
     }
 
     @Test
@@ -76,7 +88,7 @@ public class SentryDsnTest {
         assertEquals(0, dsn.variants.length);
         assertEquals("udp", dsn.scheme);
         assertEquals("public", dsn.publicKey);
-        assertNull(dsn.secretKey);
+        org.junit.Assert.assertNull(dsn.secretKey);
         assertEquals("host", dsn.host);
         assertEquals("/path/goes/on", dsn.path);
         assertEquals("1", dsn.projectId);
@@ -93,7 +105,7 @@ public class SentryDsnTest {
         assertEquals("1", dsn.projectId);
         assertEquals(2, dsn.options.size());
         assertTrue(dsn.options.containsKey("raven.go"));
-        assertNull(dsn.options.get("raven.go"));
+        org.junit.Assert.assertNull(dsn.options.get("raven.go"));
         assertEquals("true", dsn.options.get("raven.wait"));
     }
 

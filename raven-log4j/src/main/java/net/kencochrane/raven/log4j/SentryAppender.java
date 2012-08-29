@@ -85,7 +85,7 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
-        client = (sentryDsn == null ? new Client() : new Client(SentryDsn.build(sentryDsn)));
+        client = (sentryDsn == null ? new Client() : new Client(SentryDsn.buildOptional(sentryDsn)));
         client.setJSONProcessors(jsonProcessors);
     }
 
@@ -146,7 +146,7 @@ public class SentryAppender extends AppenderSkeleton {
     public static void initMDC() {
         if (RavenMDC.getInstance() != null) {
             if (!(RavenMDC.getInstance() instanceof Log4jMDC)) {
-                throw new IllegalStateException("An incompatible RavenMDC " + "instance has been set. Please check your Raven " + "configuration.");
+                throw new IllegalStateException("An incompatible RavenMDC instance has been set. Please check your Raven configuration.");
             }
             return;
         }

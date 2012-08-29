@@ -5,6 +5,8 @@ import org.apache.commons.lang.StringUtils;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.apache.commons.lang.StringUtils.defaultString;
 
@@ -26,6 +28,11 @@ import static org.apache.commons.lang.StringUtils.defaultString;
  * @see Transport.Http.Option#TIMEOUT
  */
 public class SentryDsn {
+
+    /**
+     * Logger.
+     */
+    private static final Logger LOG = Logger.getLogger("raven.client");
 
     /**
      * The scheme, e.g. http, https or udp.
@@ -214,6 +221,21 @@ public class SentryDsn {
     }
 
     /**
+     * Performs the same logic as {@link #build()} but will catch any {@link InvalidDsnException} thrown and return null
+     * instead.
+     *
+     * @return the Sentry dsn when found and valid or <code>null</code> instead
+     */
+    public static SentryDsn buildOptional() {
+        try {
+            return build();
+        } catch (SentryDsn.InvalidDsnException e) {
+            LOG.log(Level.WARNING, "Could not automatically determine a valid DSN; client will be disabled", e);
+            return null;
+        }
+    }
+
+    /**
      * Builds the Sentry dsn.
      * <p>
      * In case a Sentry dsn is specified in the environment or system properties, that value takes precedence over the
@@ -225,6 +247,22 @@ public class SentryDsn {
      */
     public static SentryDsn build(String fullDsn) {
         return build(fullDsn, DefaultLookUps.values(), null);
+    }
+
+    /**
+     * Performs the same logic as {@link #build(String)} but will catch any {@link InvalidDsnException} thrown and
+     * return null instead.
+     *
+     * @return the dsn found in either the environment, system properties or derived from the parameter
+     *         <code>fullDsn</code>; if no valid dsn is available, this will return <code>null</code>
+     */
+    public static SentryDsn buildOptional(String fullDsn) {
+        try {
+            return build(fullDsn);
+        } catch (SentryDsn.InvalidDsnException e) {
+            LOG.log(Level.WARNING, "Could not automatically determine a valid DSN; client will be disabled", e);
+            return null;
+        }
     }
 
     /**
@@ -276,6 +314,25 @@ public class SentryDsn {
             // This exception should only be thrown when an unhandled scheme slips in which the above code should
             // prevent. Nevertheless: throw something.
             throw new InvalidDsnException("Failed to parse " + dsn, e);
+        }
+    }
+
+    /**
+     * See {@link #build(String, net.kencochrane.raven.SentryDsn.LookUp[], net.kencochrane.raven.SentryDsn.LookUp[])}.
+     * This method will return <code>null</code> when no valid DSN was found instead of throwing a
+     * {@link InvalidDsnException}.
+     *
+     * @param fullDsn   the supplied dsn
+     * @param overrides places to check for a dsn value before using the supplied dsn
+     * @param fallbacks places to check for a dsn value when the supplied dsn is an empty or null string
+     * @return the built Sentry dsn or <code>null</code> when no such value was found
+     */
+    public static SentryDsn buildOptional(final String fullDsn, LookUp[] overrides, LookUp[] fallbacks) {
+        try {
+            return build(fullDsn, overrides, fallbacks);
+        } catch (SentryDsn.InvalidDsnException e) {
+            LOG.log(Level.WARNING, "Could not automatically determine a valid DSN; client will be disabled", e);
+            return null;
         }
     }
 
