@@ -76,6 +76,11 @@ public class Client {
     protected Transport transport;
 
     /**
+     * Whether messages should be compressed or not - defaults to true.
+     */
+    protected boolean messageCompressionEnabled = true;
+
+    /**
      * JSONProcessor instances. Initialized with an empty list to prevent NPE.
      */
     private List<JSONProcessor> jsonProcessors = Collections.emptyList();
@@ -168,6 +173,14 @@ public class Client {
         this.jsonProcessors.addAll(processors);
     }
 
+    public boolean isMessageCompressionEnabled() {
+        return messageCompressionEnabled;
+    }
+
+    public void setMessageCompressionEnabled(boolean messageCompressionEnabled) {
+        this.messageCompressionEnabled = messageCompressionEnabled;
+    }
+
     public String captureMessage(String msg) {
         return captureMessage(msg, null, null, null, null);
     }
@@ -207,7 +220,7 @@ public class Client {
         return message.eventId;
     }
 
-    public void start() {
+    public synchronized void start() {
         if (isDisabled()) {
             return;
         }
@@ -221,7 +234,7 @@ public class Client {
         return transport != null && transport.isStarted();
     }
 
-    public void stop() {
+    public synchronized void stop() {
         if (transport == null) {
             return;
         }
@@ -267,7 +280,7 @@ public class Client {
         for (JSONProcessor processor : jsonProcessors) {
             processor.process(obj, exception);
         }
-        return new Message(obj, eventId);
+        return new Message(obj, eventId, messageCompressionEnabled);
     }
 
     protected void send(Message message, long timestamp) {
@@ -450,18 +463,24 @@ public class Client {
 
     public static class Message {
 
-        public static final Message NONE = new Message(null, "-1");
+        public static final Message NONE = new Message(null, "-1", false);
 
         public final JSONObject json;
         public final String eventId;
+        public final boolean compress;
 
-        public Message(JSONObject json, String eventId) {
+        public Message(JSONObject json, String eventId, boolean compress) {
             this.json = json;
             this.eventId = eventId;
+            this.compress = compress;
         }
 
         public String encoded() {
-            return encodeBase64String(Utils.toUtf8(json.toJSONString()));
+            byte[] raw = Utils.toUtf8(json.toJSONString());
+            if (compress) {
+                raw = Utils.compress(raw);
+            }
+            return encodeBase64String(raw);
         }
 
         @Override

@@ -1,6 +1,5 @@
 package net.kencochrane.raven.log4j;
 
-import net.kencochrane.raven.SentryDsn;
 import org.apache.log4j.AsyncAppender;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -18,6 +17,7 @@ public class AsyncSentryAppender extends AsyncAppender {
     private String sentryDsn;
     private String jsonProcessors;
     private SentryAppender appender;
+    private boolean messageCompressionEnabled = true;
 
     public AsyncSentryAppender() {
         SentryAppender.initMDC();
@@ -29,6 +29,14 @@ public class AsyncSentryAppender extends AsyncAppender {
 
     public void setSentryDsn(String sentryDsn) {
         this.sentryDsn = sentryDsn;
+    }
+
+    public boolean isMessageCompressionEnabled() {
+        return messageCompressionEnabled;
+    }
+
+    public void setMessageCompressionEnabled(boolean messageCompressionEnabled) {
+        this.messageCompressionEnabled = messageCompressionEnabled;
     }
 
     /**
@@ -51,6 +59,7 @@ public class AsyncSentryAppender extends AsyncAppender {
     public void activateOptions() {
         SentryAppender appender = new SentryAppender();
         appender.setAsync(true);
+        appender.setMessageCompressionEnabled(messageCompressionEnabled);
         appender.setSentryDsn(sentryDsn);
         appender.setJsonProcessors(jsonProcessors);
         appender.setErrorHandler(this.getErrorHandler());

@@ -1,10 +1,14 @@
 package net.kencochrane.raven;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterOutputStream;
 
 /**
  * Utilities for the Raven client.
@@ -52,6 +56,32 @@ public abstract class Utils {
         try {
             return new String(b, "UTF-8");
         } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] compress(byte[] input) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        DeflaterOutputStream output = new DeflaterOutputStream(bytes);
+        try {
+            output.write(input);
+            output.close();
+            return bytes.toByteArray();
+        } catch (IOException e) {
+            // Look, if this thing starts throwing IOExceptions, you're on your own. Sorry.
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] decompress(byte[] input) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        InflaterOutputStream output = new InflaterOutputStream(bytes);
+        try {
+            output.write(input);
+            output.close();
+            return bytes.toByteArray();
+        } catch (IOException e) {
+            // ... Let things crash if this happens
             throw new RuntimeException(e);
         }
     }

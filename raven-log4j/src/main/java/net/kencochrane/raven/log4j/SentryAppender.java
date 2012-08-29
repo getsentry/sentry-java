@@ -21,6 +21,7 @@ public class SentryAppender extends AppenderSkeleton {
     private Log4jMDC mdc;
     protected String sentryDsn;
     protected Client client;
+    protected boolean messageCompressionEnabled = true;
     private List<JSONProcessor> jsonProcessors = Collections.emptyList();
 
     public SentryAppender() {
@@ -42,6 +43,14 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setSentryDsn(String sentryDsn) {
         this.sentryDsn = sentryDsn;
+    }
+
+    public boolean isMessageCompressionEnabled() {
+        return messageCompressionEnabled;
+    }
+
+    public void setMessageCompressionEnabled(boolean messageCompressionEnabled) {
+        this.messageCompressionEnabled = messageCompressionEnabled;
     }
 
     /**
@@ -81,6 +90,7 @@ public class SentryAppender extends AppenderSkeleton {
     public void activateOptions() {
         client = (sentryDsn == null ? new Client() : new Client(SentryDsn.buildOptional(sentryDsn)));
         client.setJSONProcessors(jsonProcessors);
+        client.setMessageCompressionEnabled(messageCompressionEnabled);
     }
 
     @Override

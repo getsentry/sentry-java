@@ -89,7 +89,7 @@ public class ClientTest {
         client.captureMessage(message, tags);
         if (wait) {
             // Wait a bit in case of UDP transport or tags
-            Thread.sleep(1000 + (tags == null || tags.isEmpty() ? 0 : 3000));
+            Thread.sleep(1000 + (tags == null || tags.isEmpty() ? 0 : 2000));
         }
         List<SentryApi.Event> events = api.getEvents(IntegrationContext.projectSlug);
         assertEquals(1, events.size());

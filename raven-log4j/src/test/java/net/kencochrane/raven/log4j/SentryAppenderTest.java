@@ -180,7 +180,7 @@ public class SentryAppenderTest {
         String payload = Utils.fromUtf8(sentry.fetchMessage());
         String[] payloadParts = StringUtils.split(payload, "\n\n");
         assertEquals(2, payloadParts.length);
-        String raw = Utils.fromUtf8(Base64.decodeBase64(payloadParts[1]));
+        String raw = Utils.fromUtf8(Utils.decompress(Base64.decodeBase64(payloadParts[1])));
         return (JSONObject) new JSONParser().parse(raw);
     }
 

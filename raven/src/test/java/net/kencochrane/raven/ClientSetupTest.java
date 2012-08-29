@@ -1,8 +1,15 @@
 package net.kencochrane.raven;
 
+import org.apache.commons.codec.binary.Base64;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.junit.After;
 import org.junit.Test;
 
+import java.io.IOException;
+
+import static net.kencochrane.raven.Utils.decompress;
+import static net.kencochrane.raven.Utils.fromUtf8;
 import static org.junit.Assert.*;
 
 /**
@@ -65,6 +72,22 @@ public class ClientSetupTest {
         client.start();
         assertFalse(client.isStarted());
         assertEquals("-1", client.captureMessage("Hi"));
+    }
+
+    @Test
+    public void messageCompression() throws ParseException {
+        Client.register("http", DummyTransport.class);
+        Client client = new Client(SentryDsn.build("http://public:private@localhost:9000/1"));
+        client.captureMessage("hello");
+        byte[] bytes = Base64.decodeBase64(DummyTransport.messageBody.getBytes());
+        // This should not throw an exception
+        new JSONParser().parse(fromUtf8(decompress(bytes)));
+
+        client.setMessageCompressionEnabled(false);
+        client.captureMessage("hello");
+        bytes = Base64.decodeBase64(DummyTransport.messageBody.getBytes());
+        // Neither should this
+        new JSONParser().parse(fromUtf8(bytes));
     }
 
     @Test
@@ -182,10 +205,18 @@ public class ClientSetupTest {
 
     protected static class DummyTransport extends Transport {
 
+        public static String messageBody;
+        public static long timestamp;
+
         public DummyTransport(SentryDsn dsn) {
             super(dsn);
         }
 
+        @Override
+        public void send(String messageBody, long timestamp) throws IOException {
+            DummyTransport.messageBody = messageBody;
+            DummyTransport.timestamp = timestamp;
+        }
     }
 
     protected static class DummyAsyncTransport extends Transport {
