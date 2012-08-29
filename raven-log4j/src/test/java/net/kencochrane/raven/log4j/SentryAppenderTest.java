@@ -1,6 +1,8 @@
 package net.kencochrane.raven.log4j;
 
 import net.kencochrane.raven.Utils;
+import net.kencochrane.raven.spi.JSONProcessor;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
@@ -141,7 +143,7 @@ public class SentryAppenderTest {
         configureLog4J();
         Logger.getLogger("logger").info("test");
         JSONObject json = fetchJSONObject(sentry);
-        assertEquals("Value", json.get("Test"));
+        assertEquals(1, ((Long)json.get("Test")).longValue());
     }
 
     protected void setSentryDSN(String projectId) {
@@ -197,6 +199,24 @@ public class SentryAppenderTest {
             DatagramPacket packet = new DatagramPacket(new byte[10000], 10000);
             serverSocket.receive(packet);
             return packet.getData();
+        }
+
+    }
+
+    public static class MockJSONProcessor implements JSONProcessor {
+
+        private Long value = 0L;
+
+        @Override
+        public void prepareDiagnosticContext() {
+            // this is done to ensure prepareDiagnosticContext is called exactly once
+            value++;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void process(JSONObject json, Throwable exception) {
+            json.put("Test", value); // value should be 1
         }
 
     }

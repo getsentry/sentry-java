@@ -15,11 +15,21 @@ import org.json.simple.JSONObject;
 public interface JSONProcessor {
 
     /**
+     * This is called when a message is logged. Since
+     * {@link #process(JSONObject)} may be executed on a different thread, this
+     * method should copy any data the processor needs into {@link RavenMDC}.
+     *
+     * For each message logged, this method should be called exactly once.
+     */
+    void prepareDiagnosticContext();
+
+    /**
      * Modify the JSON request object specified before it is sent to Sentry.
      * This method may be called concurrently and therefore must be thread-safe.
      *
      * @param json request JSON object to be modified
+     * @param exception exception attached with the message and may be null
      */
-    void process(JSONObject json);
+    void process(JSONObject json, Throwable exception);
 
 }

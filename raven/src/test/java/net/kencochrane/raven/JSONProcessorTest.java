@@ -34,8 +34,11 @@ public class JSONProcessorTest extends Client {
     @Test
     public void testWithProcessor() {
         List<JSONProcessor> processors = new ArrayList<JSONProcessor>();
-        processors.add(new MockJSONProcessor());
+        JSONProcessor mockProcessor = new MockJSONProcessor();
+        processors.add(mockProcessor);
         setJSONProcessors(processors);
+
+        mockProcessor.prepareDiagnosticContext();
         Message message = buildMessage("test",
             formatTimestamp(new Date().getTime()), "test",
             LogLevel.ERROR.intValue, "test", null, null);
@@ -44,10 +47,17 @@ public class JSONProcessorTest extends Client {
 
     private static class MockJSONProcessor implements JSONProcessor {
 
+        private String testValue;
+
+        @Override
+        public void prepareDiagnosticContext() {
+            testValue = "Value";
+        }
+
         @Override
         @SuppressWarnings("unchecked")
-        public void process(JSONObject json) {
-            json.put("Test", "Value");
+        public void process(JSONObject json, Throwable exception) {
+            json.put("Test", testValue);
         }
 
     }

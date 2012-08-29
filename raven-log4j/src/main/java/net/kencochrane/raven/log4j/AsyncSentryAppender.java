@@ -56,11 +56,13 @@ public class AsyncSentryAppender extends AsyncAppender {
                 createAppender();
             }
         }
+        appender.notifyProcessors();
         super.append(event);
     }
 
     private void createAppender() {
         SentryAppender appender = new SentryAppender();
+        appender.setAsync(true);
         appender.setSentryDsn(sentryDsn);
         appender.setJsonProcessors(jsonProcessors);
         appender.setErrorHandler(this.getErrorHandler());

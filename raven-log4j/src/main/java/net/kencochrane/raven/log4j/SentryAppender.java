@@ -18,14 +18,23 @@ import org.apache.log4j.spi.ThrowableInformation;
  */
 public class SentryAppender extends AppenderSkeleton {
 
+    private boolean async;
     private Log4jMDC mdc;
     protected String sentryDsn;
     protected Client client;
-    private String jsonProcessors;
+    private List<JSONProcessor> jsonProcessors = Collections.emptyList();
 
     public SentryAppender() {
         initMDC();
         mdc = (Log4jMDC)RavenMDC.getInstance();
+    }
+
+    public boolean isAsync() {
+        return async;
+    }
+
+    public void setAsync(boolean async) {
+        this.async = async;
     }
 
     public String getSentryDsn() {
@@ -49,8 +58,18 @@ public class SentryAppender extends AppenderSkeleton {
      * @param jsonProcessors a comma-separated list of fully qualified class
      * 		names of JSONProcessors
      */
-    public void setJsonProcessors(String jsonProcessors) {
-        this.jsonProcessors = jsonProcessors;
+    public void setJsonProcessors(String setting) {
+        this.jsonProcessors = loadJSONProcessors(setting);
+    }
+
+    /**
+     * Notify processors that a message has been logged. Note that this method
+     * is intended to be run on the same thread that creates the message.
+     */
+    public void notifyProcessors() {
+        for (JSONProcessor processor : jsonProcessors) {
+            processor.prepareDiagnosticContext();
+        }
     }
 
     @Override
@@ -70,6 +89,7 @@ public class SentryAppender extends AppenderSkeleton {
         mdc.setThreadLoggingEvent(event);
         try {
             Client client = fetchClient();
+
             // get timestamp and timestamp in correct string format.
             long timestamp = event.getTimeStamp();
 
@@ -81,6 +101,12 @@ public class SentryAppender extends AppenderSkeleton {
 
             // is it an exception?
             ThrowableInformation info = event.getThrowableInformation();
+
+            // notify processors about the message
+            // (in async mode this is done by AsyncSentryAppender)
+            if (!async) {
+                notifyProcessors();
+            }
 
             // send the message to the sentry server
             if (info == null) {
@@ -108,18 +134,18 @@ public class SentryAppender extends AppenderSkeleton {
             } else {
                 client = new Client(SentryDsn.build(sentryDsn));
             }
-            client.setJSONProcessors(loadJSONProcessors());
+            client.setJSONProcessors(jsonProcessors);
         }
         return client;
     }
 
-    private List<JSONProcessor> loadJSONProcessors() {
-        if (jsonProcessors == null) {
+    private static List<JSONProcessor> loadJSONProcessors(String setting) {
+        if (setting == null) {
             return Collections.emptyList();
         }
         try {
             List<JSONProcessor> processors = new ArrayList<JSONProcessor>();
-            String[] clazzes = jsonProcessors.split(",\\s*");
+            String[] clazzes = setting.split(",\\s*");
             for (String clazz : clazzes) {
                 JSONProcessor processor = (JSONProcessor)Class.forName(clazz).newInstance();
                 processors.add(processor);

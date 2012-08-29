@@ -271,7 +271,7 @@ public class Client {
         }
 
         for (JSONProcessor processor : jsonProcessors) {
-            processor.process(obj);
+            processor.process(obj, exception);
         }
         return new Message(obj, eventId);
     }
