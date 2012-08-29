@@ -28,7 +28,6 @@ public class AsyncSentryAppender extends AsyncAppender {
     }
 
     public void setSentryDsn(String sentryDsn) {
-        System.out.println("Oh come on!");
         this.sentryDsn = sentryDsn;
         if (appender != null) {
             removeAppender(appender);
@@ -40,7 +39,7 @@ public class AsyncSentryAppender extends AsyncAppender {
      * See {@link SentryAppender#setJsonProcessors}.
      *
      * @param jsonProcessors a comma-separated list of fully qualified class
-     * 		names of JSONProcessors
+     *                       names of JSONProcessors
      */
     public void setJsonProcessors(String jsonProcessors) {
         this.jsonProcessors = jsonProcessors;
@@ -48,19 +47,15 @@ public class AsyncSentryAppender extends AsyncAppender {
 
     @Override
     public void append(LoggingEvent event) {
-        if (appender == null) {
-            synchronized (this) {
-                if (sentryDsn == null) {
-                    setSentryDsn(SentryDsn.build().toString());
-                }
-                createAppender();
-            }
-        }
         appender.notifyProcessors();
         super.append(event);
     }
 
-    private void createAppender() {
+    @Override
+    public void activateOptions() {
+        if (sentryDsn == null) {
+            setSentryDsn(SentryDsn.build().toString());
+        }
         SentryAppender appender = new SentryAppender();
         appender.setAsync(true);
         appender.setSentryDsn(sentryDsn);
@@ -69,8 +64,10 @@ public class AsyncSentryAppender extends AsyncAppender {
         appender.setLayout(this.getLayout());
         appender.setName(this.getName());
         appender.setThreshold(this.getThreshold());
+        appender.activateOptions();
         this.appender = appender;
         addAppender(appender);
+        super.activateOptions();
     }
 
 }

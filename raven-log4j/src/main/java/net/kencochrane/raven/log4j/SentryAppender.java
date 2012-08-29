@@ -1,17 +1,16 @@
 package net.kencochrane.raven.log4j;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import net.kencochrane.raven.Client;
 import net.kencochrane.raven.SentryDsn;
 import net.kencochrane.raven.spi.JSONProcessor;
 import net.kencochrane.raven.spi.RavenMDC;
-
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Log4J appender that will send messages to Sentry.
@@ -26,7 +25,7 @@ public class SentryAppender extends AppenderSkeleton {
 
     public SentryAppender() {
         initMDC();
-        mdc = (Log4jMDC)RavenMDC.getInstance();
+        mdc = (Log4jMDC) RavenMDC.getInstance();
     }
 
     public boolean isAsync() {
@@ -56,7 +55,7 @@ public class SentryAppender extends AppenderSkeleton {
      * JSONProcessors to be used.
      *
      * @param jsonProcessors a comma-separated list of fully qualified class
-     * 		names of JSONProcessors
+     *                       names of JSONProcessors
      */
     public void setJsonProcessors(String setting) {
         this.jsonProcessors = loadJSONProcessors(setting);
@@ -85,11 +84,15 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     @Override
+    public void activateOptions() {
+        client = (sentryDsn == null ? new Client() : new Client(SentryDsn.build(sentryDsn)));
+        client.setJSONProcessors(jsonProcessors);
+    }
+
+    @Override
     protected void append(LoggingEvent event) {
         mdc.setThreadLoggingEvent(event);
         try {
-            Client client = fetchClient();
-
             // get timestamp and timestamp in correct string format.
             long timestamp = event.getTimeStamp();
 
@@ -119,26 +122,6 @@ public class SentryAppender extends AppenderSkeleton {
         }
     }
 
-    /**
-     * Use this to refer to the client instead of using {@link #client} directly.
-     * <p>
-     * This makes sure a client is available.
-     * </p>
-     *
-     * @return the client
-     */
-    protected synchronized Client fetchClient() {
-        if (client == null) {
-            if (sentryDsn == null) {
-                client = new Client();
-            } else {
-                client = new Client(SentryDsn.build(sentryDsn));
-            }
-            client.setJSONProcessors(jsonProcessors);
-        }
-        return client;
-    }
-
     private static List<JSONProcessor> loadJSONProcessors(String setting) {
         if (setting == null) {
             return Collections.emptyList();
@@ -147,7 +130,7 @@ public class SentryAppender extends AppenderSkeleton {
             List<JSONProcessor> processors = new ArrayList<JSONProcessor>();
             String[] clazzes = setting.split(",\\s*");
             for (String clazz : clazzes) {
-                JSONProcessor processor = (JSONProcessor)Class.forName(clazz).newInstance();
+                JSONProcessor processor = (JSONProcessor) Class.forName(clazz).newInstance();
                 processors.add(processor);
             }
             return processors;
@@ -163,9 +146,7 @@ public class SentryAppender extends AppenderSkeleton {
     public static void initMDC() {
         if (RavenMDC.getInstance() != null) {
             if (!(RavenMDC.getInstance() instanceof Log4jMDC)) {
-                throw new IllegalStateException("An incompatible RavenMDC "
-                        + "instance has been set. Please check your Raven "
-                        + "configuration.");
+                throw new IllegalStateException("An incompatible RavenMDC " + "instance has been set. Please check your Raven " + "configuration.");
             }
             return;
         }
