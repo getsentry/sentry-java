@@ -16,7 +16,7 @@ public interface JSONProcessor {
 
     /**
      * This is called when a message is logged. Since
-     * {@link #process(JSONObject)} may be executed on a different thread, this
+     * {@link #process(JSONObject, Throwable)} may be executed on a different thread, this
      * method should copy any data the processor needs into {@link RavenMDC}.
      *
      * For each message logged, this method should be called exactly once.
