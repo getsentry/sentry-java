@@ -32,11 +32,6 @@ public class ServletJSONProcessor implements JSONProcessor {
             return;
         }
 
-        if (RavenMDC.getInstance().get(HTTP_INTERFACE) != null) {
-            // an http object has been built; no need to build again
-            return;
-        }
-
         RavenMDC.getInstance().put(HTTP_INTERFACE, buildHttpObject(request));
     }
 
@@ -49,6 +44,7 @@ public class ServletJSONProcessor implements JSONProcessor {
         }
 
         json.put(HTTP_INTERFACE, http);
+        RavenMDC.getInstance().remove(HTTP_INTERFACE);
     }
 
     @SuppressWarnings("unchecked")

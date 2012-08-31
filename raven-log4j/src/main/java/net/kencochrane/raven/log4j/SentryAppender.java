@@ -57,8 +57,7 @@ public class SentryAppender extends AppenderSkeleton {
      * Set a comma-separated list of fully qualified class names of
      * JSONProcessors to be used.
      *
-     * @param jsonProcessors a comma-separated list of fully qualified class
-     *                       names of JSONProcessors
+     * @param setting a comma-separated list of fully qualified class names of JSONProcessors
      */
     public void setJsonProcessors(String setting) {
         this.jsonProcessors = loadJSONProcessors(setting);
