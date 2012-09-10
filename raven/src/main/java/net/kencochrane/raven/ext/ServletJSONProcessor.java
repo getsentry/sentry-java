@@ -36,6 +36,11 @@ public class ServletJSONProcessor implements JSONProcessor {
     }
 
     @Override
+    public void clearDiagnosticContext() {
+        RavenMDC.getInstance().remove(HTTP_INTERFACE);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public void process(JSONObject json, Throwable exception) {
         JSONObject http = (JSONObject)RavenMDC.getInstance().get(HTTP_INTERFACE);
@@ -44,7 +49,6 @@ public class ServletJSONProcessor implements JSONProcessor {
         }
 
         json.put(HTTP_INTERFACE, http);
-        RavenMDC.getInstance().remove(HTTP_INTERFACE);
     }
 
     @SuppressWarnings("unchecked")

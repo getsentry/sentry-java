@@ -55,6 +55,11 @@ public class JSONProcessorTest extends Client {
         }
 
         @Override
+        public void clearDiagnosticContext() {
+            testValue = null;
+        }
+
+        @Override
         @SuppressWarnings("unchecked")
         public void process(JSONObject json, Throwable exception) {
             json.put("Test", testValue);
