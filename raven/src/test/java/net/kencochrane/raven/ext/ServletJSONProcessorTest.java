@@ -53,9 +53,10 @@ public class ServletJSONProcessorTest extends Client {
         setJSONProcessors(processors);
 
         setHttpServletRequest();
-        new MockRavenMDC();
+       RavenMDC mdc = new MockRavenMDC();
 
         processor.prepareDiagnosticContext();
+        assertNotNull(mdc.get("sentry.interfaces.Http"));
         Message message = buildMessage("test",
                 formatTimestamp(new Date().getTime()), "test",
                 LogLevel.ERROR.intValue, "test", null, null);
@@ -78,6 +79,9 @@ public class ServletJSONProcessorTest extends Client {
         JSONObject cookies = new JSONObject();
         cookies.put("test", "cookie");
         assertEquals(cookies, http.get("cookies"));
+
+        processor.clearDiagnosticContext();
+        assertNull(mdc.get("sentry.interfaces.Http"));
     }
 
     private void setHttpServletRequest() {

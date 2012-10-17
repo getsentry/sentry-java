@@ -1,6 +1,8 @@
 package net.kencochrane.raven.log4j;
 
 import net.kencochrane.raven.Utils;
+import net.kencochrane.raven.spi.RavenMDC;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -146,6 +148,17 @@ public class AsyncSentryAppenderTest {
         Logger.getLogger("logger").info("test");
         JSONObject json = SentryAppenderTest.fetchJSONObject(sentry);
         assertEquals(1, ((Long)json.get("Test")).longValue());
+    }
+
+    @Test
+    public void testClearMDC() throws IOException, ParseException {
+        RavenMDC mdc = RavenMDC.getInstance();
+        mdc.put("test", "test");
+        assertNotNull(mdc.get("test"));
+        setSentryDSN("6");
+        configureLog4J();
+        Logger.getLogger("logger").info("test");
+        assertNull(RavenMDC.getInstance().get("test"));
     }
 
     protected void setSentryDSN(String projectId) {

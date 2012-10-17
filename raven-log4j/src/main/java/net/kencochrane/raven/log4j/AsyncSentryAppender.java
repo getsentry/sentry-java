@@ -51,8 +51,9 @@ public class AsyncSentryAppender extends AsyncAppender {
 
     @Override
     public void append(LoggingEvent event) {
-        appender.notifyProcessors();
+        appender.notifyProcessorsBeforeAppending();
         super.append(event);
+        appender.notifyProcessorsAfterAppending();
     }
 
     @Override
