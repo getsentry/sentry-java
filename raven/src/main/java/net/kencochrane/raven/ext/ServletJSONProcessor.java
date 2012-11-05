@@ -1,17 +1,15 @@
 package net.kencochrane.raven.ext;
 
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
+import net.kencochrane.raven.spi.JSONProcessor;
+import net.kencochrane.raven.spi.RavenMDC;
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
 
-import net.kencochrane.raven.spi.JSONProcessor;
-import net.kencochrane.raven.spi.RavenMDC;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Add HTTP request information to logs when logs are created on HTTP request
@@ -43,7 +41,7 @@ public class ServletJSONProcessor implements JSONProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public void process(JSONObject json, Throwable exception) {
-        JSONObject http = (JSONObject)RavenMDC.getInstance().get(HTTP_INTERFACE);
+        JSONObject http = (JSONObject) RavenMDC.getInstance().get(HTTP_INTERFACE);
         if (http == null) {
             return;
         }
@@ -90,10 +88,13 @@ public class ServletJSONProcessor implements JSONProcessor {
     @SuppressWarnings("unchecked")
     private static JSONObject getCookies(HttpServletRequest request) {
         JSONObject cookiesMap = new JSONObject();
-      for (Cookie cookie : request.getCookies()) {
-          cookiesMap.put(cookie.getName(), cookie.getValue());
-      }
-      return cookiesMap;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : request.getCookies()) {
+                cookiesMap.put(cookie.getName(), cookie.getValue());
+            }
+        }
+        return cookiesMap;
     }
 
     @SuppressWarnings("unchecked")
@@ -127,7 +128,7 @@ public class ServletJSONProcessor implements JSONProcessor {
      */
     private static String capitalize(String headerName) {
         String[] tokens = headerName.split("-");
-        for (int i = 0; i < tokens.length; i ++) {
+        for (int i = 0; i < tokens.length; i++) {
             tokens[i] = StringUtils.capitalize(tokens[i]);
         }
         return StringUtils.join(tokens, "-");
