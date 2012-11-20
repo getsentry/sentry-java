@@ -41,7 +41,7 @@ public class JSONProcessorTest extends Client {
         mockProcessor.prepareDiagnosticContext();
         Message message = buildMessage("test",
             formatTimestamp(new Date().getTime()), "test",
-            LogLevel.ERROR.intValue, "test", null, null);
+            LogLevel.ERROR.intValue, "test", null, null, "test");
         assertEquals("Value", message.json.get("Test"));
     }
 
