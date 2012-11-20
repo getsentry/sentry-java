@@ -182,40 +182,48 @@ public class Client {
     }
 
     public String captureMessage(String msg) {
-        return captureMessage(msg, null, null, null, null);
+        return captureMessage(msg, null, null, null, null, null, msg);
     }
 
     public String captureMessage(String msg, Map<String, ?> tags) {
-        return captureMessage(msg, null, null, null, null, tags);
+        return captureMessage(msg, null, null, null, null, tags, msg);
     }
 
     public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit) {
-        return captureMessage(message, timestamp, loggerClass, logLevel, culprit, null);
+        return captureMessage(message, timestamp, loggerClass, logLevel, culprit, null, message);
     }
 
     public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit, Map<String, ?> tags) {
+        return captureMessage(message, timestamp, loggerClass, logLevel, culprit, null, message);
+    }
+
+    public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit, Map<String, ?> tags, String checksumContent) {
         timestamp = (timestamp == null ? Utils.now() : timestamp);
-        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null, tags);
+        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null, tags, checksumContent);
         send(msg, timestamp);
         return msg.eventId;
     }
 
     public String captureException(Throwable exception) {
         long timestamp = Utils.now();
-        return captureException(exception.getMessage(), timestamp, null, null, null, exception);
+        return captureException(exception.getMessage(), timestamp, null, null, null, exception, null, exception.getMessage());
     }
 
     public String captureException(Throwable exception, Map<String, ?> tags) {
         long timestamp = Utils.now();
-        return captureException(exception.getMessage(), timestamp, null, null, null, exception, tags);
+        return captureException(exception.getMessage(), timestamp, null, null, null, exception, tags, exception.getMessage());
     }
 
     public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception) {
-        return captureException(logMessage, timestamp, loggerName, logLevel, culprit, exception, null);
+        return captureException(logMessage, timestamp, loggerName, logLevel, culprit, exception, null, exception.getMessage());
     }
 
     public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
-        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception, tags);
+        return captureException(logMessage, timestamp, loggerName, logLevel, culprit, exception, tags, exception.getMessage());
+    }
+
+    public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags, String checksumContent) {
+        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception, tags, checksumContent);
         send(message, timestamp);
         return message.eventId;
     }
@@ -247,7 +255,7 @@ public class Client {
     }
 
     @SuppressWarnings("unchecked")
-    protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
+    protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags, String checksumContent) {
         if (isDisabled()) {
             return Message.NONE;
         }
@@ -264,7 +272,7 @@ public class Client {
             message = (message == null ? Default.EMPTY_MESSAGE : message);
         }
         obj.put("event_id", eventId);
-        obj.put("checksum", calculateChecksum(message));
+        obj.put("checksum", calculateChecksum(checksumContent));
         obj.put("timestamp", timestamp);
         obj.put("message", message);
         obj.put("project", dsn.projectId);
