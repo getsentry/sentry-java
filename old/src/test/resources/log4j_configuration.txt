@@ -1,0 +1,28 @@
+log4j.rootLogger=info, stdout, R, sentry
+
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+
+# Pattern to output the caller's file name and line number.
+log4j.appender.stdout.layout.ConversionPattern=%5p [%t] (%F:%L) - %m%n
+
+log4j.appender.R=org.apache.log4j.RollingFileAppender
+log4j.appender.R.File=example.log
+
+log4j.appender.R.MaxFileSize=100KB
+# Keep one backup file
+log4j.appender.R.MaxBackupIndex=1
+
+log4j.appender.R.layout=org.apache.log4j.PatternLayout
+log4j.appender.R.layout.ConversionPattern=%p %t %c - %m%n
+
+# These are for Sentry and Raven-java
+log4j.appender.sentry=net.kencochrane.sentry.SentryAppender
+log4j.appender.sentry.sentry_dsn=http://7e4dff58960645adb2ade337e6d53425:81fe140206d7464e911b89cd93e2a5a4@localhost:9000/2
+
+# If you're using Java 6 or earlier, you might encounter errors when connecting to a Sentry instance using a TLS (https)
+# connection since Server Name Indication support has only been available in Java since Java 7. You can either add
+# the corresponding certificate to your keystore (recommended!) or enable naiveSsl on the Sentry appender. This will
+# make the Raven client use a custom hostname verifier that *will* allow the JVM to connect with the host - in fact it
+# will let the Raven client connect to any host even if the certificate is invalid. Use at your own risk.
+# log4j.appender.sentry.naiveSsl=true

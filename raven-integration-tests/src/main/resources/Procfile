@@ -1,0 +1,2 @@
+web: sentry --config=default_config.py start http
+udp: sentry --config=default_config.py start udp
