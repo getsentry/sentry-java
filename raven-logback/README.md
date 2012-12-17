@@ -36,16 +36,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Example {
-public static Logger logger = LoggerFactory.getLogger(Example.class);
+    public static Logger logger = LoggerFactory.getLogger(Example.class);
 
-public static void main(String[] args) {
-logger.info("Hello World");
-logger.trace("Hello World!");
-logger.debug("How are you today?");
-logger.info("I am fine.");
-logger.warn("I love programming.");
-logger.error("I am programming.");
-}
+    public static void main(String[] args) {
+        logger.info("Hello World");
+        logger.trace("Hello World!");
+        logger.debug("How are you today?");
+        logger.info("I am fine.");
+        logger.warn("I love programming.");
+        logger.error("I am programming.");
+    }
 
 }
 ````
