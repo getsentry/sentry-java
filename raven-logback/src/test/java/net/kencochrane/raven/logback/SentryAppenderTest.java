@@ -157,7 +157,7 @@ public class SentryAppenderTest {
         JoranConfigurator jc = new JoranConfigurator();
         jc.setContext(context);
         context.reset();
-        jc.doConfigure("target/test-classes/sentryappender.logback.xml");
+        jc.doConfigure(this.getClass().getClassLoader().getResource("sentryappender.logback.xml"));
     }
 
     protected JSONObject verifyMessage(String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
@@ -166,7 +166,6 @@ public class SentryAppenderTest {
 
     protected static JSONObject verifyMessage(SentryMock sentry, String culprit, long logLevel, String projectId, String message) throws IOException, ParseException {
         JSONObject json = fetchJSONObject(sentry);
-        System.out.println(json);
         assertEquals(message, json.get("message"));
         assertEquals(culprit, json.get("culprit"));
         assertEquals(projectId, json.get("project"));
@@ -188,7 +187,7 @@ public class SentryAppenderTest {
         public final int port;
 
         public SentryMock() throws SocketException {
-            this("localhost", 9505);
+            this("localhost", 9506);
         }
 
         public SentryMock(String host, int port) throws SocketException {
