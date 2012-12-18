@@ -206,3 +206,7 @@ Contributors
 - Kevin Wetzels (@roambe)
 - David Cramer (@zeeg)
 - Mark Philpot (@griphiam)
+
+License
+-------
+We are using the same license as the Sentry master project which is a BSD license. For more information see the LICENSE file, or follow this link: http://en.wikipedia.org/wiki/BSD_licenses
