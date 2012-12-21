@@ -2,14 +2,58 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
     <groupId>net.kencochrane</groupId>
     <artifactId>raven-java</artifactId>
     <version>0.6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>raven-java</name>
     <description>Java Raven client and log4j appender.</description>
+    <url>http://sentry.readthedocs.org/en/latest/client/index.html</url>
+
+    <licenses>
+        <license>
+            <name>BSD New</name>
+            <url>http://opensource.org/licenses/BSD-3-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>git@github.com:kencochrane/raven-java.git</url>
+        <connection>scm:git:git://github.com/kencochrane/raven-java.git</connection>
+        <developerConnection>scm:git:git@github.com:kencochrane/raven-java.git</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>kencochrane</id>
+            <name>Ken Cochrane</name>
+            <email>contact@email.com</email>
+        </developer>
+        <developer>
+            <id>roambe</id>
+            <name>Kevin Wetzels</name>
+            <email>contact@email.com</email>
+        </developer>
+        <developer>
+            <id>zeeg</id>
+            <name>David Cramer</name>
+            <email>contact@email.com</email>
+        </developer>
+        <developer>
+            <id>griphiam</id>
+            <name>Mark Philpot</name>
+            <email>contact@email.com</email>
+        </developer>
+    </developers>
 
     <dependencies>
         <dependency>
@@ -120,5 +164,4 @@
             </testResource>
         </testResources>
     </build>
-
 </project>
