@@ -20,7 +20,7 @@ public abstract class Utils {
     private static final Map<String, CacheEntry> CACHE = new HashMap<String, CacheEntry>();
 
     public interface Client {
-        String VERSION = "1.0-SNAPSHOT";
+        String VERSION = "2.0";
         String NAME = "Raven-Java " + VERSION;
     }
 

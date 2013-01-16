@@ -135,7 +135,7 @@ public class SentryAppenderTest {
     }
 
     private void verify(String loggerName, String message, String levelName, String title) throws IOException {
-        List<SentryApi.Event> events = api.getEvents(IntegrationContext.projectSlug);
+        List<SentryApi.Event> events = api.getEvents(IntegrationContext.projectId);
         assertEquals(1, events.size());
         SentryApi.Event event = events.get(0);
         assertTrue(event.count > 0);

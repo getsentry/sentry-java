@@ -24,10 +24,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,7 +92,7 @@ public class SentryApi {
         return ok;
     }
 
-    public JSONArray getRawJson(String projectSlug, int group) throws IOException {
+    public JSONArray getRawJson(String projectSlug, String group) throws IOException {
         HttpResponse response = client.execute(new HttpGet(host + "/" + projectSlug + "/group/" + group + "/events/json/"));
         String raw = EntityUtils.toString(response.getEntity());
         if (StringUtils.isBlank(raw)) {
@@ -108,35 +105,36 @@ public class SentryApi {
         }
     }
 
-    public List<Event> getEvents(String projectSlug) throws IOException {
-        HttpResponse response = client.execute(new HttpGet(host + "/" + projectSlug));
-        Document doc = Jsoup.parse(EntityUtils.toString(response.getEntity()));
-        Elements items = doc.select("ul#event_list li.event");
-        List<Event> events = new LinkedList<Event>();
-        for (Element item : items) {
-            if (item.hasClass("resolved")) {
-                continue;
+    public List<Event> getEvents(String projectId) throws IOException {
+        HttpResponse response = client.execute(new HttpGet(host + "/api/" + projectId + "/poll/"));
+        try {
+            Object json = new JSONParser().parse(EntityUtils.toString(response.getEntity()));
+            List<JSONObject> eventJson = null;
+            if (json instanceof JSONObject) {
+                eventJson = Arrays.asList((JSONObject) json);
+            } else {
+                eventJson = (List<JSONObject>) json;
             }
-            int group = Integer.parseInt(item.attr("data-group"));
-            int count = Integer.parseInt(item.attr("data-count"));
-            String levelName = extractLevel(item.classNames());
-            int level = -1;
-            if (levelName != null) {
-                try {
-                    level = Integer.parseInt(levelName);
-                } catch (NumberFormatException e) {
-                    // Ignore
+            List<Event> events = new LinkedList<Event>();
+            for (JSONObject item : eventJson) {
+                Boolean resolved = (Boolean) item.get("isResolved");
+                if (resolved != null && resolved) {
+                    continue;
                 }
+                String group = (String) item.get("id");
+                Integer count = Integer.parseInt((String) item.get("count"));
+                Integer level = ((Long) item.get("level")).intValue();
+                String levelName = (String) item.get("levelName");
+                String link = (String) item.get("permalink");
+                String title = (String) item.get("title");
+                String message = (String) item.get("message");
+                String logger = (String) item.get("logger");
+                events.add(new Event(group, count, level, levelName, link, title, message, logger));
             }
-            Element anchor = item.select("h3 a").get(0);
-            String link = anchor.attr("href");
-            String title = StringUtils.trim(anchor.text());
-            Element messageElement = item.select("p.message").get(0);
-            String message = StringUtils.trim(messageElement.attr("title"));
-            String logger = StringUtils.trim(messageElement.select("span.tag-logger").text());
-            events.add(new Event(group, count, level, levelName, link, title, message, logger));
+            return events;
+        } catch (ParseException e) {
+            throw new IOException(e);
         }
-        return events;
     }
 
     public List<String> getAvailableTags(String projectSlug) throws IOException {
@@ -164,7 +162,7 @@ public class SentryApi {
     }
 
     public static class Event {
-        public final int group;
+        public final String group;
         public final int count;
         public final int level;
         public final String levelName;
@@ -173,7 +171,7 @@ public class SentryApi {
         public final String message;
         public final String logger;
 
-        public Event(int group, int count, int level, String levelName, String url, String title, String message, String logger) {
+        public Event(String group, int count, int level, String levelName, String url, String title, String message, String logger) {
             this.group = group;
             this.count = count;
             this.level = level;

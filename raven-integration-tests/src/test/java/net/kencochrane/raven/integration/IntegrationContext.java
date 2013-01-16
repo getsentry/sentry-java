@@ -17,6 +17,7 @@ public class IntegrationContext {
     public static SentryDsn httpDsn;
     public static SentryDsn udpDsn;
     public static String projectSlug = "ravenjava";
+    public static String projectId = "2";
     protected static boolean initialized = false;
 
     public static void init() throws IOException {
