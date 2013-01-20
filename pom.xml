@@ -10,6 +10,44 @@
     <packaging>pom</packaging>
     <name>raven-all</name>
     <description>Java Raven client and loggers.</description>
+    <url>http://sentry.readthedocs.org/en/latest/client/index.html</url>
+
+    <licenses>
+        <license>
+            <name>BSD New</name>
+            <url>http://opensource.org/licenses/BSD-3-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>git@github.com:kencochrane/raven-java.git</url>
+        <connection>scm:git:git://github.com/kencochrane/raven-java.git</connection>
+        <developerConnection>scm:git:git@github.com:kencochrane/raven-java.git</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>kencochrane</id>
+            <name>Ken Cochrane</name>
+            <email>kencochrane+maven@gmail.com</email>
+        </developer>
+        <developer>
+            <id>roambe</id>
+            <name>Kevin Wetzels</name>
+            <email>kevin@roam.be</email>
+        </developer>
+        <developer>
+            <id>zeeg</id>
+            <name>David Cramer</name>
+            <email>contact@email.com</email>
+        </developer>
+        <developer>
+            <id>griphiam</id>
+            <name>Mark Philpot</name>
+            <email>contact@email.com</email>
+        </developer>
+    </developers>
 
     <modules>
         <module>raven</module>
