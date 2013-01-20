@@ -230,8 +230,8 @@ public abstract class Transport {
     }
 
     /**
-     * A naive HTTPS transport layer, useful in case you set up your own Sentry instance with self-signed
-     * certificates and don't want to add the certificate to your truststore (you really should though).
+     * A naive HTTPS transport layer, useful in case you're using wildcard SSL certificates which
+     * Java doesn't handle that well.
      */
     public static class NaiveHttps extends Http {
 
