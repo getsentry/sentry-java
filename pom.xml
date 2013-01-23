@@ -52,6 +52,7 @@
     <modules>
         <module>raven</module>
         <module>raven-log4j</module>
+        <module>raven-logback</module>
     </modules>
 
     <build>
@@ -112,3 +113,4 @@
     </build>
 
 </project>
+
