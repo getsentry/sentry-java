@@ -1,12 +1,7 @@
-## Logback ##
-"Logback is intended as a successor to the popular log4j project, picking up where log4j leaves off.[...]
-Logback brings a very large number of improvements over log4j, big and small. [...]
-Keep in mind that logback is conceptually very similar to log4j as both projects were founded by the same developer. If you are already familiar with log4j, you will quickly feel at home using logback. If you like log4j, you will probably love logback."
+# Raven-Logback
+A [logback](http://logback.qos.ch/) appender passing messages along to [Sentry](http://www.getsentry.com/).
 
-Logback project: http://logback.qos.ch/
-Reasons to prefer logback over log4j: http://logback.qos.ch/reasonsToSwitch.html
-
-## Maven dependencies ##
+## Maven dependencies
 ````xml
     <dependencies>
         <dependency>
@@ -24,7 +19,7 @@ Reasons to prefer logback over log4j: http://logback.qos.ch/reasonsToSwitch.html
         <dependency>
             <groupId>net.kencochrane</groupId>
             <artifactId>raven-logback</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>2.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 ````
@@ -50,8 +45,8 @@ public class Example {
 }
 ````
 
-## Appender configuration ##
-Example of configuration in src/main/resources/logback.xml
+## Appender configuration
+Example of configuration in src/test/resources/sentryappender.logback.xml
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
