@@ -9,9 +9,6 @@
    
     <appender name="SENTRY" class="net.kencochrane.raven.logback.SentryAppender">
         <sentryDsn>${SENTRY_DSN}</sentryDsn>
-        <encoder>
-            <pattern>No Sentry DSN Test: %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
     </appender>
   	
     <root level="debug">

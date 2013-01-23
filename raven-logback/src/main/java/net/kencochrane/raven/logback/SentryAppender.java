@@ -1,18 +1,17 @@
 package net.kencochrane.raven.logback;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import net.kencochrane.raven.Client;
-import net.kencochrane.raven.SentryDsn;
-import net.kencochrane.raven.spi.JSONProcessor;
-import net.kencochrane.raven.spi.RavenMDC;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
-import ch.qos.logback.core.encoder.Encoder;
+import net.kencochrane.raven.Client;
+import net.kencochrane.raven.SentryDsn;
+import net.kencochrane.raven.spi.JSONProcessor;
+import net.kencochrane.raven.spi.RavenMDC;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Logback appender that will send messages to Sentry.
@@ -25,7 +24,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     protected Client client;
     protected boolean messageCompressionEnabled = true;
     private List<JSONProcessor> jsonProcessors = Collections.emptyList();
-    private Encoder<ILoggingEvent> encoder;
 
     public SentryAppender() {
         initMDC();
@@ -59,10 +57,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     /**
      * Set a comma-separated list of fully qualified class names of
      * JSONProcessors to be used.
-     * 
-     * @param setting
-     *            a comma-separated list of fully qualified class names of
-     *            JSONProcessors
+     *
+     * @param setting a comma-separated list of fully qualified class names of
+     *                JSONProcessors
      */
     public void setJsonProcessors(String setting) {
         this.jsonProcessors = loadJSONProcessors(setting);
@@ -119,9 +116,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             String message = event.getMessage();
             String logger = event.getLoggerName();
             int level = event.getLevel().toInt() / 1000; // Need to divide by
-                                                         // 1000 to keep
-                                                         // consistent with
-                                                         // sentry
+            // 1000 to keep
+            // consistent with
+            // sentry
             String culprit = event.getLoggerName();
 
             IThrowableProxy throwable = event.getThrowableProxy();
@@ -178,11 +175,4 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         RavenMDC.setInstance(new LogbackMDC());
     }
 
-    public Encoder<ILoggingEvent> getEncoder() {
-        return encoder;
-    }
-
-    public void setEncoder(Encoder<ILoggingEvent> encoder) {
-        this.encoder = encoder;
-    }
 }
