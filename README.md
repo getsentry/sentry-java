@@ -1,6 +1,6 @@
 # Raven-Java
 
-Raven-Java is a Java client for [Sentry](https://www.getsentry.com/). Besides a regular client you can use within your application code, Raven-Java also provides the `raven-log4j` package you can use to send logging to Sentry via [log4j](http://logging.apache.org/log4j/).
+Raven-Java is a Java client for [Sentry](https://www.getsentry.com/). Besides a regular client you can use within your application code, Raven-Java also provides the `raven-log4j` package you can use to send logging to Sentry via [log4j](http://logging.apache.org/log4j/) and the `raven-logback` package to do the same through [logback](http://logback.qos.ch/).
 
 Raven-Java supports both HTTP(S) and UDP transport of messages.
 
@@ -72,6 +72,16 @@ Like the client, these appenders will examine the system properties and environm
 If you use log4j's XML configuration, you can use its [AsyncAppender](http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/AsyncAppender.html) to wrap Raven-Java's `SentryAppender`.
 
 But even if you use a properties file to configure log4j, you can log asynchronously by using the `net.kencochrane.raven.log4j.AsyncSentryAppender` instead.
+
+* * *
+
+## Using the logback appender
+Make sure to use the `raven-logback` artifact and add something like the following to your logback configuration:
+
+	<appender name="SENTRY"
+		class="net.kencochrane.raven.logback.SentryAppender">
+		<sentryDsn>http://public:private@host:port/project</sentryDsn>
+    </appender>
 
 * * *
 
@@ -194,12 +204,21 @@ Or if you simply want to log to Sentry from Log4J:
         <version>2.0-SNAPSHOT</version>
     </dependency>
 
+Or Logback:
+
+    <dependency>
+        <groupId>net.kencochrane</groupId>
+        <artifactId>raven-logback</artifactId>
+        <version>2.0-SNAPSHOT</version>
+    </dependency>
+
 * * *
 
 ## History
 
 - 2.0-SNAPSHOT
     - Version increment to reduce confusion about releases
+    - Added Logback appender (thanks to [ccouturi](https://github.com/ccouturi))
 - 1.0
     - Rewrite
     - Support tags
@@ -233,3 +252,4 @@ Or if you simply want to log to Sentry from Log4J:
 - David Cramer (@zeeg)
 - Mark Philpot (@griphiam)
 - Brad Chen (@vvasabi)
+- @ccouturi
