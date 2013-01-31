@@ -185,17 +185,17 @@ public class Client {
         return captureMessage(msg, null, null, null, null);
     }
 
-    public String captureMessage(String msg, Map<String, ?> tags) {
-        return captureMessage(msg, null, null, null, null, tags);
+    public String captureMessage(String msg, Map<String, ?> tags, Map<String, ?> extra) {
+        return captureMessage(msg, null, null, null, null, tags, extra);
     }
 
     public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit) {
-        return captureMessage(message, timestamp, loggerClass, logLevel, culprit, null);
+        return captureMessage(message, timestamp, loggerClass, logLevel, culprit, null, null);
     }
 
-    public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit, Map<String, ?> tags) {
+    public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit, Map<String, ?> tags, Map<String, ?> extra) {
         timestamp = (timestamp == null ? Utils.now() : timestamp);
-        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null, tags);
+        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null, tags, extra);
         send(msg, timestamp);
         return msg.eventId;
     }
@@ -205,17 +205,17 @@ public class Client {
         return captureException(exception.getMessage(), timestamp, null, null, null, exception);
     }
 
-    public String captureException(Throwable exception, Map<String, ?> tags) {
+    public String captureException(Throwable exception, Map<String, ?> tags, Map<String, ?> extra) {
         long timestamp = Utils.now();
-        return captureException(exception.getMessage(), timestamp, null, null, null, exception, tags);
+        return captureException(exception.getMessage(), timestamp, null, null, null, exception, tags, extra);
     }
 
     public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception) {
-        return captureException(logMessage, timestamp, loggerName, logLevel, culprit, exception, null);
+        return captureException(logMessage, timestamp, loggerName, logLevel, culprit, exception, null, null);
     }
 
-    public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
-        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception, tags);
+    public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags, Map<String, ?> extra) {
+        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception, tags, extra);
         send(message, timestamp);
         return message.eventId;
     }
@@ -247,7 +247,7 @@ public class Client {
     }
 
     @SuppressWarnings("unchecked")
-    protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
+    protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags, Map<String, ?> extra) {
         if (isDisabled()) {
             return Message.NONE;
         }
@@ -275,6 +275,11 @@ public class Client {
             JSONObject jsonTags = new JSONObject();
             jsonTags.putAll(tags);
             obj.put("tags", jsonTags);
+        }
+        if (extra != null) {
+        	JSONObject jsonExtra = new JSONObject();
+            jsonExtra.putAll(extra);
+            obj.put("extra", jsonExtra);
         }
 
         for (JSONProcessor processor : jsonProcessors) {
