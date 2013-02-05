@@ -23,7 +23,7 @@ public class Example {
 		// The DSN from Sentry: "http://public:private@host:port/1"
 		String rawDsn = args[0];
 		SentryDsn dsn = SentryDsn.build(rawDsn);
-		Client = new Client(dsn);
+		Client client = new Client(dsn);
 		client.captureMessage("Hello from Raven-Java!");
 	}
 
@@ -48,7 +48,7 @@ public class Example {
 
 	public static void main(String[] args) {
 		// DSN is determined by the client from system properties or env
-		Client = new Client();
+		Client client = new Client();
 		client.captureMessage("Hello from Raven-Java!");
 	}
 
