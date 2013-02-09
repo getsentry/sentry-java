@@ -83,6 +83,14 @@ Make sure to use the `raven-logback` artifact and add something like the followi
 		<sentryDsn>http://public:private@host:port/project</sentryDsn>
     </appender>
 
+And don't forget to use the appender. For example:
+
+    <root level="debug">
+        <appender-ref ref="SENTRY" />
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
+    </root>
+
 * * *
 
 ## Client configuration
