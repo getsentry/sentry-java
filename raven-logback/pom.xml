@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>net.kencochrane</groupId>
+            <groupId>net.kencochrane</groupId>
         <artifactId>raven-all</artifactId>
-        <version>2.0-SNAPSHOT-UNIMARKET</version>
+        <version>2.0-UNIMARKET-SNAPSHOT</version>
     </parent>
     <artifactId>raven-logback</artifactId>
     <packaging>jar</packaging>
