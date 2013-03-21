@@ -59,7 +59,7 @@ public class ServletJSONProcessorTest extends Client {
         assertNotNull(mdc.get("sentry.interfaces.Http"));
         Message message = buildMessage("test",
                 formatTimestamp(new Date().getTime()), "test",
-                LogLevel.ERROR.intValue, "test", null, null);
+                LogLevel.ERROR.intValue, "test", null, null, "test");
         JSONObject http = (JSONObject) message.json.get("sentry.interfaces.Http");
         assertEquals("GET", http.get("method"));
         assertEquals("test=abc", http.get("query_string"));
