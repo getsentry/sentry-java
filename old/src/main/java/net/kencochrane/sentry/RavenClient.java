@@ -9,9 +9,10 @@ import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.String;
 import java.net.*;
 
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 /**
  * User: ken cochrane
@@ -187,7 +188,7 @@ public class RavenClient {
         //return compressAndEncode(jsonMessage);
 
         // in the meantime just base64 encode it.
-        return encodeBase64String(jsonMessage.getBytes());
+        return new String(encodeBase64(jsonMessage.getBytes()));
 
     }
 
