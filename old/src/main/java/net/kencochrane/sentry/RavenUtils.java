@@ -7,6 +7,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.String;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SignatureException;
@@ -16,7 +17,7 @@ import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 import java.util.zip.GZIPOutputStream;
 
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 /**
  * User: ken Cochrane
@@ -226,7 +227,7 @@ public class RavenUtils {
             e.printStackTrace();
             //todo do something here better then this.
         }
-        return encodeBase64String(out.toByteArray());
+        return new String(encodeBase64(out.toByteArray());
     }
 
     public static byte[] toUtf8(String s) {
