@@ -114,6 +114,7 @@ public class SentryAppender extends AppenderSkeleton {
             String logger = event.getLogger().getName();
             int level = (event.getLevel().toInt() / 1000);  //Need to divide by 1000 to keep consistent with sentry
             String culprit = event.getLoggerName();
+            String checksumContent;
 
             // is it an exception?
             ThrowableInformation info = event.getThrowableInformation();
@@ -126,9 +127,15 @@ public class SentryAppender extends AppenderSkeleton {
 
             // send the message to the sentry server
             if (info == null) {
-                client.captureMessage(message, timestamp, logger, level, culprit);
+                checksumContent = event.getLocationInformation().fullInfo;
+                if (checksumContent != null)
+                    client.captureMessage(message, timestamp, logger, level, culprit, null, checksumContent);
+                else
+                    client.captureMessage(message, timestamp, logger, level, culprit);
             } else {
-                client.captureException(message, timestamp, logger, level, culprit, info.getThrowable());
+                Throwable throwable = info.getThrowable();
+                checksumContent = getThrowableChecksum(throwable);
+                client.captureException(message, timestamp, logger, level, culprit, throwable, null, checksumContent);
             }
 
             if (!async) {
@@ -137,6 +144,14 @@ public class SentryAppender extends AppenderSkeleton {
         } finally {
             mdc.removeThreadLoggingEvent();
         }
+    }
+
+    private static String getThrowableChecksum(Throwable throwable) {
+        StringBuffer sb = new StringBuffer();
+        for (StackTraceElement stackTraceElement : throwable.getStackTrace()) {
+            sb.append(stackTraceElement);
+        }
+        return sb.toString();
     }
 
     private static List<JSONProcessor> loadJSONProcessors(String setting) {
