@@ -1,5 +1,8 @@
 package net.kencochrane.raven;
 
+import net.kencochrane.raven.connection.Connection;
+import net.kencochrane.raven.event.EventBuilder;
+import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.spi.JSONProcessor;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -74,6 +77,12 @@ public class Client {
      * The transport layer used by this client.
      */
     protected Transport transport;
+
+    /**
+     * The connection to the Sentry server
+     */
+    //TODO: Set the connection
+    private Connection connection;
 
     /**
      * Whether messages should be compressed or not - defaults to true.
@@ -179,6 +188,19 @@ public class Client {
 
     public void setMessageCompressionEnabled(boolean messageCompressionEnabled) {
         this.messageCompressionEnabled = messageCompressionEnabled;
+    }
+
+    /**
+     * Gets the final information necessary for the event, and submit it to Sentry.
+     *
+     * @param eventBuilder pre-set event builder.
+     * @return the unique identifier of the newly created event.
+     */
+    public UUID processEvent(EventBuilder eventBuilder) {
+        //TODO: grab more information that couldn't be provided by someone else?
+        LoggedEvent event = eventBuilder.build();
+        connection.send(event);
+        return event.getEventId();
     }
 
     public String captureMessage(String msg) {
