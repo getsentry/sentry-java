@@ -87,10 +87,6 @@ public class EventBuilder {
 
         // TODO: As the server can figure that itself, wouldn't it be better to assume that if no checksum is given
         // the server will be in charge of generating it?
-
-        // Ensure that a checksum is present
-        if (event.getChecksum() == null)
-            event.setChecksum(calculateChecksum(event.getMessage()));
     }
 
     private static void makeImmutable(LoggedEvent event) {
@@ -147,8 +143,7 @@ public class EventBuilder {
     /**
      * Manually set the checksum for the current event.
      * <p>
-     * It's recommended to use instead {@link #generateChecksume(String)} which will avoid any problem with
-     * the checksum generation.
+     * It's recommended to rely instead on the checksum system provided by Sentry.
      * </p>
      *
      * @param checksum
