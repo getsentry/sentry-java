@@ -105,6 +105,20 @@ public class EventBuilder {
         event.setSentryInterfaces(Collections.unmodifiableMap(event.getSentryInterfaces()));
     }
 
+    private static String determineCulprit(Throwable throwable) {
+        Throwable currentThrowable = throwable;
+        String culprit = null;
+        while (currentThrowable != null) {
+            StackTraceElement[] elements = currentThrowable.getStackTrace();
+            if (elements.length > 0) {
+                StackTraceElement trace = elements[0];
+                culprit = trace.getClassName() + "." + trace.getMethodName();
+            }
+            currentThrowable = currentThrowable.getCause();
+        }
+        return culprit;
+    }
+
     public EventBuilder addTag(String tagKey, String tagValue) {
         Set<String> tagValues = event.getTags().get(tagKey);
         if (tagValues == null) {
@@ -113,6 +127,15 @@ public class EventBuilder {
         }
         tagValues.add(tagValue);
 
+        return this;
+    }
+
+    public EventBuilder setCulprit(Throwable throwable) {
+        return setCulprit(determineCulprit(throwable));
+    }
+
+    public EventBuilder setCulprit(String culprit) {
+        event.setCulprit(culprit);
         return this;
     }
 
