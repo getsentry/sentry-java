@@ -200,7 +200,7 @@ public class Client {
         //TODO: grab more information that couldn't be provided by someone else?
         LoggedEvent event = eventBuilder.build();
         connection.send(event);
-        return event.getEventId();
+        return event.getId();
     }
 
     public String captureMessage(String msg) {

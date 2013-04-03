@@ -25,7 +25,7 @@ import java.util.*;
  */
 public class LoggedEvent {
     private static final int MAX_MESSAGE_LENGTH = 1000;
-    private final UUID eventId;
+    private final UUID id;
     private String message;
     // TODO: Rely on Joda time instead? (making it completely immutable!) Or wait for Java8 and JSR-310?
     private Date timestamp;
@@ -41,16 +41,16 @@ public class LoggedEvent {
     /**
      * Creates a new LoggedEvent (should be called only through {@link EventBuilder} with the specified identifier.
      *
-     * @param eventId unique identifier of the event.
+     * @param id unique identifier of the event.
      */
-    LoggedEvent(UUID eventId) {
-        if (eventId == null)
-            throw new IllegalArgumentException("The eventId can't be null");
-        this.eventId = eventId;
+    LoggedEvent(UUID id) {
+        if (id == null)
+            throw new IllegalArgumentException("The id can't be null");
+        this.id = id;
     }
 
-    public UUID getEventId() {
-        return eventId;
+    public UUID getId() {
+        return id;
     }
 
     public String getMessage() {
