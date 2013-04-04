@@ -35,7 +35,6 @@ public class LoggedEvent {
     /**
      * Exact time when the logging occurred.
      */
-    // TODO: Rely on Joda time instead? (making it completely immutable!) Or wait for Java8 and JSR-310?
     private Date timestamp;
     /**
      * The record severity.
@@ -94,7 +93,7 @@ public class LoggedEvent {
     }
 
     public Date getTimestamp() {
-        return timestamp;
+        return (Date) timestamp.clone();
     }
 
     void setTimestamp(Date timestamp) {
