@@ -39,8 +39,7 @@ public class HttpConnection extends AbstractConnection {
         }
     }
 
-    @Override
-    protected final OutputStream getOutputStream() throws IOException {
+    private OutputStream getOutputStream() throws IOException {
         HttpURLConnection connection = (HttpURLConnection) getSentryUrl().openConnection();
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
@@ -56,7 +55,7 @@ public class HttpConnection extends AbstractConnection {
     public void send(LoggedEvent event) {
         OutputStream out = null;
         try {
-            out = getOutput();
+            out = getOutputStream();
             simpleJsonEncoder.encodeEvent(event, out);
         } catch (IOException e) {
             logger.log(Level.SEVERE,
