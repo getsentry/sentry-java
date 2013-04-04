@@ -42,6 +42,7 @@ public abstract class AbstractConnection implements Connection {
      * @return an authentication header as a String.
      */
     protected String getAuthHeader() {
+        //TODO: Consider adding back signature? Not a priority, probably not worth it.
         //TODO : Consider caching everything but the timestamp
         StringBuilder header = new StringBuilder();
         header.append("Sentry sentry_version=").append(SENTRY_PROTOCOL_VERSION);
