@@ -153,25 +153,57 @@ public class EventBuilder {
     }
 
     /**
-     * Adds a tag to an event.
-     * <p>
-     * Multiple calls to {@code addTag} allow to have more that one value for a single tag.<br />
-     * This allows to set a tag value in different contexts.
-     * </p>
+     * Sets the message in the event.
      *
-     * @param tagKey   name of the tag.
-     * @param tagValue value of the tag.
+     * @param message message of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    //TODO: Check that the tag system works indeed this way.
-    public EventBuilder addTag(String tagKey, String tagValue) {
-        Set<String> tagValues = event.getTags().get(tagKey);
-        if (tagValues == null) {
-            tagValues = new HashSet<String>();
-            event.getTags().put(tagKey, tagValues);
-        }
-        tagValues.add(tagValue);
+    public EventBuilder setMessage(String message) {
+        event.setMessage(message);
+        return this;
+    }
 
+    /**
+     * Sets the timestamp in the event.
+     *
+     * @param timestamp timestamp of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder setTimestamp(Date timestamp) {
+        event.setTimestamp(timestamp);
+        return this;
+    }
+
+    /**
+     * Sets the log level in the event.
+     *
+     * @param level log level of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder setLevel(LoggedEvent.Level level) {
+        event.setLevel(level);
+        return this;
+    }
+
+    /**
+     * Sets the logger in the event.
+     *
+     * @param logger logger of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder setLogger(String logger) {
+        event.setLogger(logger);
+        return this;
+    }
+
+    /**
+     * Sets the platform in the event.
+     *
+     * @param platform platform of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder setPlatform(String platform) {
+        event.setPlatform(platform);
         return this;
     }
 
@@ -197,18 +229,47 @@ public class EventBuilder {
     }
 
     /**
-     * Adds a {@link SentryInterface} to the event.
+     * Adds a tag to an event.
      * <p>
-     * If a {@code SentryInterface} with the same interface name has already been added, the new one will replace
-     * the old one.
+     * Multiple calls to {@code addTag} allow to have more that one value for a single tag.<br />
+     * This allows to set a tag value in different contexts.
      * </p>
      *
-     * @param sentryInterface sentry interface to add to the event.
+     * @param tagKey   name of the tag.
+     * @param tagValue value of the tag.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder addSentryInterface(SentryInterface sentryInterface) {
-        event.getSentryInterfaces().put(sentryInterface.getInterfaceName(), sentryInterface);
+    //TODO: Check that the tag system works indeed this way.
+    public EventBuilder addTag(String tagKey, String tagValue) {
+        Set<String> tagValues = event.getTags().get(tagKey);
+        if (tagValues == null) {
+            tagValues = new HashSet<String>();
+            event.getTags().put(tagKey, tagValues);
+        }
+        tagValues.add(tagValue);
+
         return this;
+    }
+
+    /**
+     * Sets the serverName in the event.
+     *
+     * @param serverName name of the server responsible for the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder setServerName(String serverName) {
+        event.setServerName(serverName);
+        return this;
+    }
+
+    /**
+     * Generates a checksum from a given content and set it to the current event.
+     *
+     * @param contentToChecksum content to checksum.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder generateChecksum(String contentToChecksum) {
+        return setChecksum(calculateChecksum(contentToChecksum));
     }
 
     /**
@@ -226,13 +287,18 @@ public class EventBuilder {
     }
 
     /**
-     * Generates a checksum from a given content and set it to the current event.
+     * Adds a {@link SentryInterface} to the event.
+     * <p>
+     * If a {@code SentryInterface} with the same interface name has already been added, the new one will replace
+     * the old one.
+     * </p>
      *
-     * @param contentToChecksum content to checksum.
+     * @param sentryInterface sentry interface to add to the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder generateChecksum(String contentToChecksum) {
-        return setChecksum(calculateChecksum(contentToChecksum));
+    public EventBuilder addSentryInterface(SentryInterface sentryInterface) {
+        event.getSentryInterfaces().put(sentryInterface.getInterfaceName(), sentryInterface);
+        return this;
     }
 
     /**
