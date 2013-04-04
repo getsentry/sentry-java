@@ -24,17 +24,50 @@ import java.util.*;
  * </p>
  */
 public class LoggedEvent {
+    /**
+     * Unique identifier of the event.
+     */
     private final UUID id;
+    /**
+     * User-readable representation of this event.
+     */
     private String message;
+    /**
+     * Exact time when the logging occurred.
+     */
     // TODO: Rely on Joda time instead? (making it completely immutable!) Or wait for Java8 and JSR-310?
     private Date timestamp;
+    /**
+     * The record severity.
+     */
     private Level level;
+    /**
+     * The name of the logger which created the record.
+     */
     private String logger;
+    /**
+     * A string representing the currently used platform (java/python).
+     */
     private String platform;
+    /**
+     * Function call which was the primary perpetrator of this event.
+     */
     private String culprit;
+    /**
+     * A map or list of tags for this event.
+     */
     private Map<String, Set<String>> tags = new HashMap<String, Set<String>>();
+    /**
+     * Identifies the host client from which the event was recorded.
+     */
     private String serverName;
+    /**
+     * Checksum for the event, allowing to group events with a similar checksum.
+     */
     private String checksum;
+    /**
+     * Additional interfaces for other information and metadata.
+     */
     private Map<String, SentryInterface> sentryInterfaces = new HashMap<String, SentryInterface>();
 
     /**
@@ -68,14 +101,6 @@ public class LoggedEvent {
         this.timestamp = timestamp;
     }
 
-    public String getLogger() {
-        return logger;
-    }
-
-    void setLogger(String logger) {
-        this.logger = logger;
-    }
-
     public Level getLevel() {
         return level;
     }
@@ -84,28 +109,12 @@ public class LoggedEvent {
         this.level = level;
     }
 
-    public String getCulprit() {
-        return culprit;
+    public String getLogger() {
+        return logger;
     }
 
-    void setCulprit(String culprit) {
-        this.culprit = culprit;
-    }
-
-    public String getChecksum() {
-        return checksum;
-    }
-
-    void setChecksum(String checksum) {
-        this.checksum = checksum;
-    }
-
-    public Map<String, Set<String>> getTags() {
-        return tags;
-    }
-
-    void setTags(Map<String, Set<String>> tags) {
-        this.tags = tags;
+    void setLogger(String logger) {
+        this.logger = logger;
     }
 
     public String getPlatform() {
@@ -116,12 +125,36 @@ public class LoggedEvent {
         this.platform = platform;
     }
 
+    public String getCulprit() {
+        return culprit;
+    }
+
+    void setCulprit(String culprit) {
+        this.culprit = culprit;
+    }
+
+    public Map<String, Set<String>> getTags() {
+        return tags;
+    }
+
+    void setTags(Map<String, Set<String>> tags) {
+        this.tags = tags;
+    }
+
     public String getServerName() {
         return serverName;
     }
 
     void setServerName(String serverName) {
         this.serverName = serverName;
+    }
+
+    public String getChecksum() {
+        return checksum;
+    }
+
+    void setChecksum(String checksum) {
+        this.checksum = checksum;
     }
 
     public Map<String, SentryInterface> getSentryInterfaces() {
