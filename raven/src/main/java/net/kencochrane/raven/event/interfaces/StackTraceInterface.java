@@ -3,7 +3,7 @@ package net.kencochrane.raven.event.interfaces;
 import java.util.*;
 
 public class StackTraceInterface implements SentryInterface {
-    private static final String STACKTRACE_INTERFACE = "sentry.interface.Stacktrace";
+    private static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
     private static final String FRAMES_PARAMETER = "frames";
     private static final String FILENAME_PARAMETER = "filename";
     private static final String FUNCTION_PARAMETER = "function";

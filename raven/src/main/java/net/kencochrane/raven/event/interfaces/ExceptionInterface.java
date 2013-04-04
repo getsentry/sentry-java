@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ExceptionInterface implements SentryInterface {
-    private static final String EXCEPTION_INTERFACE = "sentry.interface.Exception";
+    private static final String EXCEPTION_INTERFACE = "sentry.interfaces.Exception";
     private static final String TYPE_PARAMETER = "type";
     private static final String VALUE_PARAMETER = "value";
     private static final String MODULE_PARAMETER = "module";
