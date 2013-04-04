@@ -24,7 +24,6 @@ import java.util.*;
  * </p>
  */
 public class LoggedEvent {
-    private static final int MAX_MESSAGE_LENGTH = 1000;
     private final UUID id;
     private String message;
     // TODO: Rely on Joda time instead? (making it completely immutable!) Or wait for Java8 and JSR-310?
@@ -58,9 +57,6 @@ public class LoggedEvent {
     }
 
     void setMessage(String message) {
-        // TODO: Keep the message whatever the size is, and let the marshaller take care of cutting long messages?
-        if (message != null && message.length() > MAX_MESSAGE_LENGTH)
-            throw new IllegalArgumentException("A message can't be larger than " + MAX_MESSAGE_LENGTH + " characters");
         this.message = message;
     }
 
