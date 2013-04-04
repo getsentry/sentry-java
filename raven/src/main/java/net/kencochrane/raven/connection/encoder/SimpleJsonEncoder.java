@@ -2,12 +2,13 @@ package net.kencochrane.raven.connection.encoder;
 
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -68,6 +69,10 @@ public class SimpleJsonEncoder {
      * Maximum length for a message.
      */
     public static final int MAX_MESSAGE_LENGTH = 1000;
+    /**
+     * Date format for ISO 8601
+     */
+    private static final DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
 
     /**
      * Encodes an event as a JSON string and sends it through an {@code OutputStream}.
@@ -152,7 +157,6 @@ public class SimpleJsonEncoder {
      * @return timestamp as a formatted String.
      */
     private String formatTimestamp(Date timestamp) {
-        return DateFormatUtils.formatUTC(timestamp,
-                DateFormatUtils.ISO_DATETIME_FORMAT.getPattern());
+        return isoFormat.format(timestamp);
     }
 }
