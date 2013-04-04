@@ -2,6 +2,8 @@ package net.kencochrane.raven.event.interfaces;
 
 import java.util.Map;
 
+//TODO: Change interfaces so they do not behave like pre-made JSON objects
+//Instead the encoder should take care of interpreting each interface in a specific way (more code, but more sensible).
 public interface SentryInterface {
     /**
      * Gets the unique name of the interface.
