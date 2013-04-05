@@ -100,6 +100,7 @@ public class SimpleJsonMarshaller implements Marshaller {
 
         JSONObject jsonObject = encodeToJSONObject(event);
         jsonObject.writeJSONString(new OutputStreamWriter(outputStream, charset));
+        outputStream.flush();
     }
 
     @SuppressWarnings("unchecked")
