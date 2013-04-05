@@ -2,6 +2,7 @@ package net.kencochrane.raven.connection.marshaller;
 
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
+import org.apache.commons.codec.binary.Base64OutputStream;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
@@ -15,7 +16,7 @@ import java.util.UUID;
 import java.util.zip.DeflaterOutputStream;
 
 /**
- * Marshaller allowing to transform a simple {@link LoggedEvent} into a JSON String send over a stream.
+ * Marshaller allowing to transform a simple {@link LoggedEvent} into a compressed JSON String send over a stream.
  */
 public class SimpleJsonMarshaller implements Marshaller {
     /**
@@ -74,11 +75,22 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Date format for ISO 8601
      */
     private static final DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+    /**
+     * Enables disables the compression of JSON.
+     */
+    private boolean compression = true;
 
     @Override
     public void marshall(LoggedEvent event, OutputStream destination) throws IOException {
+        OutputStream outputStream = destination;
+
+        if (compression)
+            outputStream = new DeflaterOutputStream(outputStream);
+
+        outputStream = new Base64OutputStream(outputStream);
+
         JSONObject jsonObject = encodeToJSONObject(event);
-        jsonObject.writeJSONString(new OutputStreamWriter(destination));
+        jsonObject.writeJSONString(new OutputStreamWriter(outputStream));
     }
 
     @SuppressWarnings("unchecked")
@@ -153,5 +165,9 @@ public class SimpleJsonMarshaller implements Marshaller {
      */
     private String formatTimestamp(Date timestamp) {
         return isoFormat.format(timestamp);
+    }
+
+    public void setCompression(boolean compression) {
+        this.compression = compression;
     }
 }
