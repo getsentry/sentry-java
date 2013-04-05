@@ -11,7 +11,7 @@ public class ExceptionInterface implements SentryInterface {
     private final Throwable throwable;
 
     public ExceptionInterface(Throwable throwable) {
-        this.throwable = throwable;
+        this.throwable = new ImmutableThrowable(throwable);
     }
 
     @Override

@@ -18,7 +18,7 @@ public class StackTraceInterface implements SentryInterface {
     private final Throwable throwable;
 
     public StackTraceInterface(Throwable throwable) {
-        this.throwable = throwable;
+        this.throwable = new ImmutableThrowable(throwable);
     }
 
     /**
