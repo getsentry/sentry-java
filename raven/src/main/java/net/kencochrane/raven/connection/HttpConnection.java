@@ -77,4 +77,8 @@ public class HttpConnection extends AbstractConnection {
     public void setTimeout(int timeout) {
         this.timeout = timeout;
     }
+
+    public void setMarshaller(Marshaller marshaller) {
+        this.marshaller = marshaller;
+    }
 }
