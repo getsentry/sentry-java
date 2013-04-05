@@ -1,6 +1,7 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.connection.encoder.SimpleJsonEncoder;
+import net.kencochrane.raven.connection.marshaller.Marshaller;
+import net.kencochrane.raven.connection.marshaller.SimpleJsonMarshaller;
 import net.kencochrane.raven.event.LoggedEvent;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class HttpConnection extends AbstractConnection {
     private static final Logger logger = Logger.getLogger(HttpConnection.class.getCanonicalName());
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
     private static final int DEFAULT_TIMEOUT = 10000;
-    private SimpleJsonEncoder simpleJsonEncoder = new SimpleJsonEncoder();
+    private Marshaller marshaller = new SimpleJsonMarshaller();
     private int timeout = DEFAULT_TIMEOUT;
 
     public HttpConnection(Dsn dsn) {
@@ -56,7 +57,7 @@ public class HttpConnection extends AbstractConnection {
         OutputStream out = null;
         try {
             out = getOutputStream();
-            simpleJsonEncoder.encodeEvent(event, out);
+            marshaller.marshall(event, out);
         } catch (IOException e) {
             logger.log(Level.SEVERE,
                     "An exception occurred while trying to establish a connection to the sentry server", e);

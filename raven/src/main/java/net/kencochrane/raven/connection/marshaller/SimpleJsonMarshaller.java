@@ -1,4 +1,4 @@
-package net.kencochrane.raven.connection.encoder;
+package net.kencochrane.raven.connection.marshaller;
 
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
@@ -12,11 +12,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.DeflaterOutputStream;
 
 /**
- * Encoder allowing to transform a simple {@link LoggedEvent} into a JSON String sent over a stream.
+ * Marshaller allowing to transform a simple {@link LoggedEvent} into a JSON String send over a stream.
  */
-public class SimpleJsonEncoder {
+public class SimpleJsonMarshaller implements Marshaller {
     /**
      * Hexadecimal string representing a uuid4 value.
      */
@@ -74,14 +75,8 @@ public class SimpleJsonEncoder {
      */
     private static final DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
 
-    /**
-     * Encodes an event as a JSON string and sends it through an {@code OutputStream}.
-     *
-     * @param event       event to encode as a JSON string.
-     * @param destination destination stream.
-     * @throws IOException occurs when the serialisation to JSON failed.
-     */
-    public void encodeEvent(LoggedEvent event, OutputStream destination) throws IOException {
+    @Override
+    public void marshall(LoggedEvent event, OutputStream destination) throws IOException {
         JSONObject jsonObject = encodeToJSONObject(event);
         jsonObject.writeJSONString(new OutputStreamWriter(destination));
     }
