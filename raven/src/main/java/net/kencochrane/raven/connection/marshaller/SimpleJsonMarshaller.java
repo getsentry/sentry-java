@@ -76,7 +76,7 @@ public class SimpleJsonMarshaller implements Marshaller {
      */
     public static final int MAX_MESSAGE_LENGTH = 1000;
     /**
-     * Date format for ISO 8601
+     * Date format for ISO 8601.
      */
     private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
     /**
@@ -192,6 +192,11 @@ public class SimpleJsonMarshaller implements Marshaller {
         return ISO_FORMAT.format(timestamp);
     }
 
+    /**
+     * Enables the JSON compression with GZip.
+     *
+     * @param compression state of the compression.
+     */
     public void setCompression(boolean compression) {
         this.compression = compression;
     }
