@@ -1,7 +1,10 @@
 package net.kencochrane.raven.connection.marshaller;
 
 import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.json.simple.JSONObject;
 
@@ -108,8 +111,24 @@ public class SimpleJsonMarshaller implements Marshaller {
         jsonObject.put(CHECKSUM, event.getChecksum());
 
         for (Map.Entry<String, SentryInterface> sentryInterfaceEntry : event.getSentryInterfaces().entrySet()) {
-            //TODO: Usually we would look for marshallers for each interface type.
-            jsonObject.put(sentryInterfaceEntry.getKey(), sentryInterfaceEntry.getValue());
+            jsonObject.put(sentryInterfaceEntry.getKey(), formatInterface(sentryInterfaceEntry.getValue()));
+        }
+
+        return jsonObject;
+    }
+
+    private JSONObject formatInterface(SentryInterface sentryInterface) {
+        JSONObject jsonObject;
+        //TODO: Use an factory here (and do not instanciate a marshaller each time?
+        if (sentryInterface.getInterfaceName().equals(MessageInterface.MESSAGE_INTERFACE)) {
+            jsonObject = new SimpleJsonMessageInterfaceMarshaller().serialiseInterface(sentryInterface);
+        } else if (sentryInterface.getInterfaceName().equals(ExceptionInterface.EXCEPTION_INTERFACE)) {
+            jsonObject = new SimpleJsonExceptionInterfaceMarshaller().serialiseInterface(sentryInterface);
+        } else if (sentryInterface.getInterfaceName().equals(StackTraceInterface.STACKTRACE_INTERFACE)) {
+            jsonObject = new SimpleJsonStackTraceInterfaceMarshaller().serialiseInterface(sentryInterface);
+        } else {
+            //TODO: log something?
+            jsonObject = new JSONObject();
         }
 
         return jsonObject;
