@@ -11,6 +11,7 @@ import org.json.simple.JSONObject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -82,6 +83,11 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Enables disables the compression of JSON.
      */
     private boolean compression = true;
+    /**
+     * Charset used to transmit data.
+     */
+    //TODO: Force or default to UTF-8?
+    private Charset charset = Charset.defaultCharset();
 
     @Override
     public void marshall(LoggedEvent event, OutputStream destination) throws IOException {
@@ -93,7 +99,7 @@ public class SimpleJsonMarshaller implements Marshaller {
         outputStream = new Base64OutputStream(outputStream);
 
         JSONObject jsonObject = encodeToJSONObject(event);
-        jsonObject.writeJSONString(new OutputStreamWriter(outputStream));
+        jsonObject.writeJSONString(new OutputStreamWriter(outputStream, charset));
     }
 
     @SuppressWarnings("unchecked")
@@ -188,5 +194,9 @@ public class SimpleJsonMarshaller implements Marshaller {
 
     public void setCompression(boolean compression) {
         this.compression = compression;
+    }
+
+    public void setCharset(Charset charset) {
+        this.charset = charset;
     }
 }
