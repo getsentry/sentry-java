@@ -74,7 +74,7 @@ public class SimpleJsonMarshaller implements Marshaller {
     /**
      * Date format for ISO 8601
      */
-    private static final DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+    private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
     /**
      * Enables disables the compression of JSON.
      */
@@ -164,7 +164,7 @@ public class SimpleJsonMarshaller implements Marshaller {
      * @return timestamp as a formatted String.
      */
     private String formatTimestamp(Date timestamp) {
-        return isoFormat.format(timestamp);
+        return ISO_FORMAT.format(timestamp);
     }
 
     public void setCompression(boolean compression) {
