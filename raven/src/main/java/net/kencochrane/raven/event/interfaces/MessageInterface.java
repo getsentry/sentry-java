@@ -2,10 +2,11 @@ package net.kencochrane.raven.event.interfaces;
 
 import java.util.*;
 
+/**
+ * The Message interface for Sentry allows to add a message that will be formatted by sentry.
+ */
 public class MessageInterface implements SentryInterface {
-    private static final String MESSAGE_INTERFACE = "sentry.interfaces.Message";
-    private static final String MESSAGE_PARAMETER = "message";
-    private static final String PARAMS_PARAMETER = "params";
+    public static final String MESSAGE_INTERFACE = "sentry.interfaces.Message";
     private final String message;
     private final List<String> params;
 
@@ -23,13 +24,11 @@ public class MessageInterface implements SentryInterface {
         return MESSAGE_INTERFACE;
     }
 
-    @Override
-    public Map<String, Object> getInterfaceContent() {
-        Map<String, Object> content = new HashMap<String, Object>();
-        content.put(MESSAGE_PARAMETER, message);
-        if (!params.isEmpty())
-            content.put(PARAMS_PARAMETER, params);
+    public String getMessage() {
+        return message;
+    }
 
-        return content;
+    public List<String> getParams() {
+        return params;
     }
 }
