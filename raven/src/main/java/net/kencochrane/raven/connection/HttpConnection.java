@@ -1,5 +1,6 @@
 package net.kencochrane.raven.connection;
 
+import net.kencochrane.raven.Utils;
 import net.kencochrane.raven.connection.marshaller.Marshaller;
 import net.kencochrane.raven.connection.marshaller.SimpleJsonMarshaller;
 import net.kencochrane.raven.event.LoggedEvent;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
  * Basic connection to a Sentry server, using HTTP.
  */
 public class HttpConnection extends AbstractConnection {
+    public static final String USER_AGENT = "User-Agent";
     private static final Logger logger = Logger.getLogger(HttpConnection.class.getCanonicalName());
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
     private static final int DEFAULT_TIMEOUT = 10000;
@@ -46,6 +48,7 @@ public class HttpConnection extends AbstractConnection {
         connection.setDoOutput(true);
         connection.setDoInput(false);
         connection.setConnectTimeout(timeout);
+        connection.setRequestProperty(USER_AGENT, Utils.Client.NAME);
         connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
         connection.connect();
 
