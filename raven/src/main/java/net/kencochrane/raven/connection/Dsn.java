@@ -69,7 +69,10 @@ public class Dsn {
     }
 
     private void extractOptions(URI uri) {
-        String[] optionPairs = uri.getQuery().split("&");
+        String query = uri.getQuery();
+        if (query == null)
+            return;
+        String[] optionPairs = query.split("&");
         for (String optionPair : optionPairs) {
             String[] pairDetails = optionPair.split("=");
             options.put(pairDetails[0], (pairDetails.length > 1) ? pairDetails[1] : "");
