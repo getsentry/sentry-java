@@ -9,9 +9,9 @@ import java.util.*;
  */
 public class Dsn {
     /**
-     * Option specific to raven-java, allowing to enable/disable the compression of the requests to the Sentry Server.
+     * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
      */
-    public static final String COMPRESSION_OPTION = "raven.compression";
+    public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
     /**
      * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
      */
