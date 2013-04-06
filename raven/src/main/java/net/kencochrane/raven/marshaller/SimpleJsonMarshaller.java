@@ -1,4 +1,4 @@
-package net.kencochrane.raven.connection.marshaller;
+package net.kencochrane.raven.marshaller;
 
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;

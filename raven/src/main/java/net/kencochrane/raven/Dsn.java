@@ -1,4 +1,4 @@
-package net.kencochrane.raven.connection;
+package net.kencochrane.raven;
 
 import java.net.URI;
 import java.net.URISyntaxException;

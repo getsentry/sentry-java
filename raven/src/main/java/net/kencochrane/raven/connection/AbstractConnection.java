@@ -1,6 +1,6 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.Utils;
+import net.kencochrane.raven.Dsn;
 
 /**
  * Abstract connection to a Sentry server.
