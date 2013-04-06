@@ -1,5 +1,7 @@
 package net.kencochrane.raven;
 
+import net.kencochrane.raven.exception.InvalidDsnException;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -57,10 +59,12 @@ public class Dsn {
 
         makeOptionsImmutable();
 
+        validate();
+
         try {
             uri = new URI(protocol, null, host, port, path, null, null);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Impossible to determine Sentry's URI from the DSN '"+dsn+"'");
+            throw new InvalidDsnException("Impossible to determine Sentry's URI from the DSN '" + dsn + "'", e);
         }
     }
 
@@ -103,6 +107,21 @@ public class Dsn {
         // Make the options immutable
         options = Collections.unmodifiableMap(options);
         protocolSettings = Collections.unmodifiableSet(protocolSettings);
+    }
+
+    private void validate() {
+        List<String> missingElements = new LinkedList<String>();
+        if (host == null)
+            missingElements.add("host");
+        if (publicKey == null)
+            missingElements.add("public key");
+        if (secretKey == null)
+            missingElements.add("secret key");
+        if (projectId == null || projectId.isEmpty())
+            missingElements.add("project ID");
+
+        if (!missingElements.isEmpty())
+            throw new InvalidDsnException("Invalid DSN, the following properties aren't set '" + missingElements + "'");
     }
 
     public String getSecretKey() {
