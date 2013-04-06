@@ -5,8 +5,10 @@ import net.kencochrane.raven.connection.marshaller.Marshaller;
 import net.kencochrane.raven.connection.marshaller.SimpleJsonMarshaller;
 import net.kencochrane.raven.event.LoggedEvent;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.logging.Level;
@@ -42,38 +44,52 @@ public class HttpConnection extends AbstractConnection {
         }
     }
 
-    private OutputStream getOutputStream() throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) getSentryUrl().openConnection();
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setConnectTimeout(timeout);
-        connection.setRequestProperty(USER_AGENT, Utils.Client.NAME);
-        connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
-        connection.connect();
-
-        return connection.getOutputStream();
+    private HttpURLConnection getConnection() {
+        try {
+            HttpURLConnection connection = (HttpURLConnection) getSentryUrl().openConnection();
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(timeout);
+            connection.setRequestProperty(USER_AGENT, Utils.Client.NAME);
+            connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
+            return connection;
+        } catch (IOException e) {
+            throw new IllegalStateException("Couldn't set up a connection to the sentry server.", e);
+        }
     }
 
     @Override
     public void send(LoggedEvent event) {
-        OutputStream out = null;
+        HttpURLConnection connection = getConnection();
         try {
-            out = getOutputStream();
-            marshaller.marshall(event, out);
+            connection.connect();
+            marshaller.marshall(event, connection.getOutputStream());
+            connection.getOutputStream().close();
+            connection.getInputStream().close();
         } catch (IOException e) {
-            logger.log(Level.SEVERE,
-                    "An exception occurred while trying to establish a connection to the sentry server", e);
-        } finally {
-            try {
-                if (out != null) {
-                    out.flush();
-                    out.close();
-                }
-            } catch (IOException e) {
+            if (connection.getErrorStream() != null) {
+                logger.log(Level.SEVERE, getErrorMessageFromStream(connection.getErrorStream()), e);
+            } else {
                 logger.log(Level.SEVERE,
-                        "An exception occurred while closing the connection to the sentry server", e);
+                        "An exception occurred while submitting the event to the sentry server.", e);
             }
+        } finally {
+            connection.disconnect();
         }
+    }
+
+    private String getErrorMessageFromStream(InputStream errorStream) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+        StringBuilder sb = new StringBuilder();
+        try {
+            String line;
+            while ((line = reader.readLine()) != null)
+                sb.append(line);
+
+        } catch (Exception e2) {
+            logger.log(Level.SEVERE, "Exception while reading the error message from the connection.", e2);
+        }
+        return sb.toString();
     }
 
     public void setTimeout(int timeout) {
