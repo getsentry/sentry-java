@@ -171,4 +171,27 @@ public class LoggedEvent {
         INFO,
         DEBUG
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        return id.equals(((LoggedEvent) o).id);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "LoggedEvent{" +
+                "level=" + level +
+                ", message='" + message + '\'' +
+                ", logger='" + logger + '\'' +
+                '}';
+    }
 }
