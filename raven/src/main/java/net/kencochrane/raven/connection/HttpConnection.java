@@ -1,6 +1,7 @@
 package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.SimpleJsonMarshaller;
 import net.kencochrane.raven.event.LoggedEvent;
@@ -69,7 +70,7 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setConnectTimeout(timeout);
-            connection.setRequestProperty(USER_AGENT, Utils.Client.NAME);
+            connection.setRequestProperty(USER_AGENT, Raven.NAME);
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {
