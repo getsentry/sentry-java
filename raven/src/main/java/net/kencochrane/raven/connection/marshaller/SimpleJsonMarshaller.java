@@ -11,6 +11,7 @@ import org.json.simple.JSONObject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -91,16 +92,21 @@ public class SimpleJsonMarshaller implements Marshaller {
 
     @Override
     public void marshall(LoggedEvent event, OutputStream destination) throws IOException {
-        OutputStream outputStream = destination;
+        OutputStream outputStream = new Base64OutputStream(destination);
+        DeflaterOutputStream compressionStream = null;
 
         if (compression)
-            outputStream = new DeflaterOutputStream(outputStream);
+            outputStream = compressionStream = new DeflaterOutputStream(outputStream);
 
-        outputStream = new Base64OutputStream(outputStream);
-
+        Writer writer = new OutputStreamWriter(outputStream, charset);
         JSONObject jsonObject = encodeToJSONObject(event);
-        jsonObject.writeJSONString(new OutputStreamWriter(outputStream, charset));
-        outputStream.flush();
+        jsonObject.writeJSONString(writer);
+
+        writer.flush();
+
+        if (compressionStream != null) {
+            compressionStream.finish();
+        }
     }
 
     @SuppressWarnings("unchecked")
