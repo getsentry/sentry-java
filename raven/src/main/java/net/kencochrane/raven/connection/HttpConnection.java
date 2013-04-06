@@ -46,7 +46,6 @@ public class HttpConnection extends AbstractConnection {
         HttpURLConnection connection = (HttpURLConnection) getSentryUrl().openConnection();
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
-        connection.setDoInput(false);
         connection.setConnectTimeout(timeout);
         connection.setRequestProperty(USER_AGENT, Utils.Client.NAME);
         connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
