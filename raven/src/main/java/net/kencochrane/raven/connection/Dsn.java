@@ -130,6 +130,6 @@ public class Dsn {
     //TODO: Return as a String instead?
     //TODO: Exception, really?
     public URI getUri() throws Exception {
-        return new URI(protocol, "", host, port, path, "", "");
+        return new URI(protocol, null, host, port, path, null, null);
     }
 }
