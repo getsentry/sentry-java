@@ -6,6 +6,7 @@ import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.exception.InvalidDsnException;
 import net.kencochrane.raven.marshaller.SimpleJsonMarshaller;
 
 import java.nio.charset.Charset;
@@ -35,7 +36,12 @@ public class Raven {
     }
 
     private static String dsnLookup() {
-        throw new IllegalStateException("Couldn't find a Sentry DSN in either the Java or System environment.");
+        if (System.getenv(Dsn.DSN_VARIABLE) != null)
+            return System.getenv(Dsn.DSN_VARIABLE);
+        else if (System.getProperty(Dsn.DSN_VARIABLE) != null)
+            return System.getProperty(Dsn.DSN_VARIABLE);
+        else
+            throw new InvalidDsnException("Couldn't find a Sentry DSN in either the Java or System environment.");
     }
 
     private static Charset determineCharset(Dsn dsn) {

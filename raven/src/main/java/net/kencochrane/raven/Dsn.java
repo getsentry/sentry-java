@@ -11,6 +11,10 @@ import java.util.*;
  */
 public class Dsn {
     /**
+     * Name of the environment or system variable containing the DSN.
+     */
+    public static final String DSN_VARIABLE = "SENTRY_DSN";
+    /**
      * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
      */
     public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
