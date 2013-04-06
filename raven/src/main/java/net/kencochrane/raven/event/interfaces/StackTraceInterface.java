@@ -4,7 +4,7 @@ import java.util.*;
 
 public class StackTraceInterface implements SentryInterface {
     public static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
-    private final Throwable throwable;
+    private final ImmutableThrowable throwable;
 
     public StackTraceInterface(Throwable throwable) {
         this.throwable = new ImmutableThrowable(throwable);
@@ -15,7 +15,7 @@ public class StackTraceInterface implements SentryInterface {
         return STACKTRACE_INTERFACE;
     }
 
-    public Throwable getThrowable() {
+    public ImmutableThrowable getThrowable() {
         return throwable;
     }
 }

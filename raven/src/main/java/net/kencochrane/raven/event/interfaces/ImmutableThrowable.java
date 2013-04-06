@@ -19,6 +19,10 @@ public class ImmutableThrowable extends Throwable {
         this.actualThrowable = actualThrowable;
     }
 
+    public Class<? extends Throwable> getActualClass(){
+        return actualThrowable.getClass();
+    }
+
     @Override
     public String getMessage() {
         return actualThrowable.getMessage();
@@ -30,8 +34,8 @@ public class ImmutableThrowable extends Throwable {
     }
 
     @Override
-    public Throwable getCause() {
-        return actualThrowable.getCause();
+    public ImmutableThrowable getCause() {
+        return new ImmutableThrowable(actualThrowable.getCause());
     }
 
     @Override

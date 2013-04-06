@@ -1,5 +1,6 @@
 package net.kencochrane.raven.connection.marshaller;
 
+import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.json.simple.JSONArray;
@@ -30,9 +31,9 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
      * @param throwable Exception for which a fake frame should be created
      * @return a fake frame allowing to chain exceptions smoothly in Sentry.
      */
-    private JSONObject createFakeFrame(Throwable throwable) {
+    private JSONObject createFakeFrame(ImmutableThrowable throwable) {
         JSONObject fakeFrame = new JSONObject();
-        String message = "Caused by: " + throwable.getClass().getName();
+        String message = "Caused by: " + throwable.getActualClass().getName();
         if (throwable.getMessage() != null)
             message += " (\"" + throwable.getMessage() + "\")";
         fakeFrame.put(FILENAME_PARAMETER, message);
@@ -77,7 +78,7 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
         StackTraceInterface stackTraceInterface = (StackTraceInterface) sentryInterface;
         JSONObject jsonObject = new JSONObject();
         JSONArray frames = new JSONArray();
-        Throwable currentThrowable = stackTraceInterface.getThrowable();
+        ImmutableThrowable currentThrowable = stackTraceInterface.getThrowable();
         boolean firstFrame = true;
         while (currentThrowable != null) {
             if (firstFrame) {

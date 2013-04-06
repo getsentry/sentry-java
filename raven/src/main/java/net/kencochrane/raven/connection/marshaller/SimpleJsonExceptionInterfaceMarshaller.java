@@ -1,6 +1,7 @@
 package net.kencochrane.raven.connection.marshaller;
 
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.json.simple.JSONObject;
 
@@ -18,10 +19,10 @@ public class SimpleJsonExceptionInterfaceMarshaller implements SimpleJsonInterfa
 
         ExceptionInterface messageInterface = (ExceptionInterface) sentryInterface;
         JSONObject jsonObject = new JSONObject();
-        Throwable throwable = messageInterface.getThrowable();
-        jsonObject.put(TYPE_PARAMETER, throwable.getClass().getSimpleName());
+        ImmutableThrowable throwable = messageInterface.getThrowable();
+        jsonObject.put(TYPE_PARAMETER, throwable.getActualClass().getSimpleName());
         jsonObject.put(VALUE_PARAMETER, throwable.getMessage());
-        jsonObject.put(MODULE_PARAMETER, throwable.getClass().getPackage().getName());
+        jsonObject.put(MODULE_PARAMETER, throwable.getActualClass().getPackage().getName());
         return jsonObject;
     }
 }

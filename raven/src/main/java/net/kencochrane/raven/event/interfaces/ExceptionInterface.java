@@ -2,7 +2,7 @@ package net.kencochrane.raven.event.interfaces;
 
 public class ExceptionInterface implements SentryInterface {
     public static final String EXCEPTION_INTERFACE = "sentry.interfaces.Exception";
-    private final Throwable throwable;
+    private final ImmutableThrowable throwable;
 
     public ExceptionInterface(Throwable throwable) {
         this.throwable = new ImmutableThrowable(throwable);
@@ -13,7 +13,7 @@ public class ExceptionInterface implements SentryInterface {
         return EXCEPTION_INTERFACE;
     }
 
-    public Throwable getThrowable() {
+    public ImmutableThrowable getThrowable() {
         return throwable;
     }
 }
