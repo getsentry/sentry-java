@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,12 +32,15 @@ public class HttpConnection extends AbstractConnection {
             return true;
         }
     };
+    private final URL sentryUrl;
     private Marshaller marshaller = new SimpleJsonMarshaller();
     private int timeout = DEFAULT_TIMEOUT;
     private boolean bypassSecurity;
 
     public HttpConnection(Dsn dsn) {
         super(dsn);
+
+        sentryUrl = getSentryUrl();
 
         // Check if a timeout is set
         if (dsn.getOptions().containsKey(Dsn.TIMEOUT_OPTION))
@@ -50,17 +54,15 @@ public class HttpConnection extends AbstractConnection {
     private URL getSentryUrl() {
         try {
             String url = getDsn().getUri().toString() + "api/" + getDsn().getProjectId() + "/store/";
-            //TODO: Cache the URL?
             return new URL(url);
-        } catch (Exception e) {
-            // TODO: Runtime exception... Really???
-            throw new RuntimeException("Couldn't get a valid URL from the DSN", e);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Couldn't get a valid URL from the DSN.", e);
         }
     }
 
     private HttpURLConnection getConnection() {
         try {
-            HttpURLConnection connection = (HttpURLConnection) getSentryUrl().openConnection();
+            HttpURLConnection connection = (HttpURLConnection) sentryUrl.openConnection();
             if (bypassSecurity && connection instanceof HttpsURLConnection) {
                 ((HttpsURLConnection) connection).setHostnameVerifier(NAIVE_VERIFIER);
             }
