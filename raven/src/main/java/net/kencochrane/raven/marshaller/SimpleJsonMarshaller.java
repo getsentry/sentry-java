@@ -124,6 +124,7 @@ public class SimpleJsonMarshaller implements Marshaller {
         jsonObject.put(CULPRIT, event.getCulprit());
         jsonObject.put(TAGS, event.getTags());
         jsonObject.put(SERVER_NAME, event.getServerName());
+        jsonObject.put(EXTRA, event.getExtra());
         jsonObject.put(CHECKSUM, event.getChecksum());
 
         for (Map.Entry<String, SentryInterface> sentryInterfaceEntry : event.getSentryInterfaces().entrySet()) {

@@ -127,6 +127,9 @@ public class EventBuilder {
         }
         event.setTags(Collections.unmodifiableMap(unmodifiablesTags));
 
+        // Make the extra properties unmodifiable (everything in it is still mutable though)
+        event.setExtra(Collections.unmodifiableMap(event.getExtra()));
+
         // Make the SentryInterfaces unmodifiable
         event.setSentryInterfaces(Collections.unmodifiableMap(event.getSentryInterfaces()));
     }
@@ -259,6 +262,19 @@ public class EventBuilder {
      */
     public EventBuilder setServerName(String serverName) {
         event.setServerName(serverName);
+        return this;
+    }
+
+
+    /**
+     * Adds an extra property to the event.
+     *
+     * @param extraName name of the extra property.
+     * @param extraValue value of the extra property.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder addExtra(String extraName, Object extraValue) {
+        event.getExtra().put(extraName, extraValue);
         return this;
     }
 

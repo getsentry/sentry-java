@@ -17,8 +17,9 @@ import java.util.*;
  * In order to ensure that a LoggedEvent can't be modified externally, the setters should have a package visibility.
  * </li>
  * <li>
- * A proper immutable Object should only contain immutable Objects and primitives, this must be ensured before making
- * publishing the LoggedEvent.
+ * A proper immutable Object should only contain immutable Objects and primitives, this must be ensured before
+ * publishing the LoggedEvent.<br />
+ * There is one exception, the {@link #extra} section can't be transformed to be completely immutable.
  * </li>
  * </ul>
  * </p>
@@ -60,6 +61,10 @@ public class LoggedEvent {
      * Identifies the host client from which the event was recorded.
      */
     private String serverName;
+    /**
+     * A map or list of additional properties for this event.
+     */
+    private Map<String, Object> extra = new HashMap<String, Object>();
     /**
      * Checksum for the event, allowing to group events with a similar checksum.
      */
@@ -146,6 +151,14 @@ public class LoggedEvent {
 
     void setServerName(String serverName) {
         this.serverName = serverName;
+    }
+
+    public Map<String, Object> getExtra() {
+        return extra;
+    }
+
+    void setExtra(Map<String, Object> extra) {
+        this.extra = extra;
     }
 
     public String getChecksum() {
