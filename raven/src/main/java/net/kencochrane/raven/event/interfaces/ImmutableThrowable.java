@@ -35,7 +35,8 @@ public class ImmutableThrowable extends Throwable {
 
     @Override
     public ImmutableThrowable getCause() {
-        return new ImmutableThrowable(actualThrowable.getCause());
+        Throwable cause = actualThrowable.getCause();
+        return (cause != null) ? new ImmutableThrowable(cause) : null;
     }
 
     @Override
