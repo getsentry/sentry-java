@@ -36,6 +36,7 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
         if (throwable.getMessage() != null)
             message += " (\"" + throwable.getMessage() + "\")";
         fakeFrame.put(FILENAME_PARAMETER, message);
+        fakeFrame.put(IN_APP_PARAMETER, true);
         return fakeFrame;
     }
 
