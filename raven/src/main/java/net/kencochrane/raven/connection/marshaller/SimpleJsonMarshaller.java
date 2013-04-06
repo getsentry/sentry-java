@@ -87,7 +87,6 @@ public class SimpleJsonMarshaller implements Marshaller {
     /**
      * Charset used to transmit data.
      */
-    //TODO: Force or default to UTF-8?
     private Charset charset = Charset.defaultCharset();
 
     @Override

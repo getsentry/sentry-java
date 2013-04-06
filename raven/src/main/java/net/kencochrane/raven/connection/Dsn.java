@@ -15,6 +15,10 @@ public class Dsn {
      * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
+    /**
+     * Option to set the charset for strings sent to sentry.
+     */
+    public static final String CHARSET_OPTION = "raven.charset";
     private String secretKey;
     private String publicKey;
     private String projectId;

@@ -57,4 +57,8 @@ public class UdpConnection extends AbstractConnection {
                     "to sentry", e);
         }
     }
+
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
 }
