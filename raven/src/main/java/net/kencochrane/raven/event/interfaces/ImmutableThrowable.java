@@ -19,7 +19,7 @@ public class ImmutableThrowable extends Throwable {
         this.actualThrowable = actualThrowable;
     }
 
-    public Class<? extends Throwable> getActualClass(){
+    public Class<? extends Throwable> getActualClass() {
         return actualThrowable.getClass();
     }
 
