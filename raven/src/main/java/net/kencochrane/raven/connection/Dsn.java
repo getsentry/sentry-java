@@ -1,6 +1,7 @@
 package net.kencochrane.raven.connection;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -28,6 +29,7 @@ public class Dsn {
     private String path;
     private Set<String> protocolSettings;
     private Map<String, String> options;
+    private URI uri;
 
     /**
      * Creates a DS based on a String.
@@ -38,14 +40,20 @@ public class Dsn {
         options = new HashMap<String, String>();
         protocolSettings = new HashSet<String>();
 
-        URI uri = URI.create(dsn);
-        extractProtocolInfo(uri);
-        extractUserKeys(uri);
-        extractHostInfo(uri);
-        extractPathInfo(uri);
-        extractOptions(uri);
+        URI dsnUri = URI.create(dsn);
+        extractProtocolInfo(dsnUri);
+        extractUserKeys(dsnUri);
+        extractHostInfo(dsnUri);
+        extractPathInfo(dsnUri);
+        extractOptions(dsnUri);
 
         makeOptionsImmutable();
+
+        try {
+            uri = new URI(protocol, null, host, port, path, null, null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Impossible to determine Sentry's URI from the DSN '"+dsn+"'");
+        }
     }
 
     private void extractPathInfo(URI uri) {
@@ -129,11 +137,8 @@ public class Dsn {
      * Creates the URI of the sentry server.
      *
      * @return the URI of the sentry server.
-     * @throws Exception if an URI couldn't be created.
      */
-    //TODO: Return as a String instead?
-    //TODO: Exception, really?
-    public URI getUri() throws Exception {
-        return new URI(protocol, null, host, port, path, null, null);
+    public URI getUri() {
+        return uri;
     }
 }
