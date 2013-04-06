@@ -70,6 +70,8 @@ public class Dsn {
 
     private void extractPathInfo(URI uri) {
         String uriPath = uri.getPath();
+        if (uriPath == null)
+            return;
         int projectIdStart = uriPath.lastIndexOf("/") + 1;
         path = uriPath.substring(0, projectIdStart);
         projectId = uriPath.substring(projectIdStart);
@@ -81,15 +83,22 @@ public class Dsn {
     }
 
     private void extractProtocolInfo(URI uri) {
-        String[] schemeDetails = uri.getScheme().split("\\+");
+        String scheme = uri.getScheme();
+        if (scheme == null)
+            return;
+        String[] schemeDetails = scheme.split("\\+");
         protocolSettings.addAll(Arrays.asList(schemeDetails).subList(0, schemeDetails.length - 1));
         protocol = schemeDetails[schemeDetails.length - 1];
     }
 
     private void extractUserKeys(URI uri) {
-        String[] userDetails = uri.getUserInfo().split(":");
+        String userInfo = uri.getUserInfo();
+        if (userInfo == null)
+            return;
+        String[] userDetails = userInfo.split(":");
         publicKey = userDetails[0];
-        secretKey = userDetails[1];
+        if (userDetails.length > 1)
+            secretKey = userDetails[1];
     }
 
     private void extractOptions(URI uri) {
