@@ -78,8 +78,13 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
         JSONObject jsonObject = new JSONObject();
         JSONArray frames = new JSONArray();
         Throwable currentThrowable = stackTraceInterface.getThrowable();
+        boolean firstFrame = true;
         while (currentThrowable != null) {
-            frames.add(createFakeFrame(currentThrowable));
+            if (firstFrame) {
+                firstFrame = false;
+            } else {
+                frames.add(createFakeFrame(currentThrowable));
+            }
             for (StackTraceElement stackTraceElement : currentThrowable.getStackTrace()) {
                 frames.add(createFrame(stackTraceElement));
             }
