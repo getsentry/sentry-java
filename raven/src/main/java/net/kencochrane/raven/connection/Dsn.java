@@ -17,6 +17,10 @@ public class Dsn {
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
     /**
+     * Option to send events asynchronously.
+     */
+    public static final String ASYNC_OPTION = "raven.async";
+    /**
      * Option to set the charset for strings sent to sentry.
      */
     public static final String CHARSET_OPTION = "raven.charset";
