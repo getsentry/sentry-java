@@ -1,6 +1,8 @@
 package net.kencochrane.raven.event.interfaces;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The Message interface for Sentry allows to add a message that will be formatted by sentry.
