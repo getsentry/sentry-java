@@ -65,7 +65,7 @@ public class ImmutableThrowable extends Throwable {
 
     @Override
     public Throwable fillInStackTrace() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
