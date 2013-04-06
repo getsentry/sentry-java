@@ -25,6 +25,17 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
     //TODO: add a way to add content here.
     private Set<String> notInAppFrames = new HashSet<String>();
 
+    //TODO: Remove this attempt to set a sensible default setting.
+    {
+        notInAppFrames.add("com.sun.");
+        notInAppFrames.add("java.");
+        notInAppFrames.add("javax.");
+        notInAppFrames.add("org.omg.");
+        notInAppFrames.add("sun.");
+        notInAppFrames.add("junit.");
+        notInAppFrames.add("com.intellij.rt.");
+    }
+
     /**
      * Create a fake frame to allow chained exceptions.
      *
