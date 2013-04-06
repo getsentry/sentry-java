@@ -33,7 +33,7 @@ public class HttpConnection extends AbstractConnection {
 
     private URL getSentryUrl() {
         try {
-            String url = getDsn().getUri().toString() + "/api/" + getDsn().getProjectId() + "/store/";
+            String url = getDsn().getUri().toString() + "api/" + getDsn().getProjectId() + "/store/";
             //TODO: Cache the URL?
             return new URL(url);
         } catch (Exception e) {
