@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * Basic connection to a Sentry server, using HTTP and HTTPS.
  */
 public class HttpConnection extends AbstractConnection {
-    public static final String USER_AGENT = "User-Agent";
+    private static final String USER_AGENT = "User-Agent";
     private static final Logger logger = Logger.getLogger(HttpConnection.class.getCanonicalName());
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
     private static final int DEFAULT_TIMEOUT = 10000;
