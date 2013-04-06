@@ -93,7 +93,7 @@ public class LoggedEvent {
     }
 
     public Date getTimestamp() {
-        return (Date) timestamp.clone();
+        return (timestamp != null) ? (Date) timestamp.clone() : null;
     }
 
     void setTimestamp(Date timestamp) {
