@@ -20,7 +20,6 @@ public class SimpleJsonExceptionInterfaceMarshaller implements SimpleJsonInterfa
         JSONObject jsonObject = new JSONObject();
         Throwable throwable = messageInterface.getThrowable();
         jsonObject.put(TYPE_PARAMETER, throwable.getClass().getSimpleName());
-        // TODO: The message can be empty here, should something be done?
         jsonObject.put(VALUE_PARAMETER, throwable.getMessage());
         jsonObject.put(MODULE_PARAMETER, throwable.getClass().getPackage().getName());
         return jsonObject;
