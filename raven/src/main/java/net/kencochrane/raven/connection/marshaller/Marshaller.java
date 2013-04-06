@@ -2,7 +2,6 @@ package net.kencochrane.raven.connection.marshaller;
 
 import net.kencochrane.raven.event.LoggedEvent;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -11,10 +10,13 @@ import java.io.OutputStream;
 public interface Marshaller {
     /**
      * Serialise an event and sends it through an {@code OutputStream}.
+     * <p>
+     * The marshaller will close the given stream once it's done sending content.
+     * If it should stay open, use a wrapper that will intercept the call to {@code OutputStream#close()}.
+     * </p>
      *
      * @param event       event to serialise.
      * @param destination destination stream.
-     * @throws IOException occurs when the serialisation failed.
      */
-    void marshall(LoggedEvent event, OutputStream destination) throws IOException;
+    void marshall(LoggedEvent event, OutputStream destination);
 }

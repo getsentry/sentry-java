@@ -18,6 +18,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.DeflaterOutputStream;
 
 /**
@@ -88,23 +90,25 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Charset used to transmit data.
      */
     private Charset charset = Charset.defaultCharset();
+    private static final Logger logger = Logger.getLogger(SimpleJsonMarshaller.class.getCanonicalName());
 
     @Override
-    public void marshall(LoggedEvent event, OutputStream destination) throws IOException {
+    public void marshall(LoggedEvent event, OutputStream destination) {
         OutputStream outputStream = new Base64OutputStream(destination);
-        DeflaterOutputStream compressionStream = null;
-
         if (compression)
-            outputStream = compressionStream = new DeflaterOutputStream(outputStream);
+            outputStream = new DeflaterOutputStream(outputStream);
 
         Writer writer = new OutputStreamWriter(outputStream, charset);
         JSONObject jsonObject = encodeToJSONObject(event);
-        jsonObject.writeJSONString(writer);
-
-        writer.flush();
-
-        if (compressionStream != null) {
-            compressionStream.finish();
+        try {
+            jsonObject.writeJSONString(writer);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An exception occurred serialising the event.", e);
+        } finally {
+            try {
+                writer.close();
+            } catch (IOException e) {
+            }
         }
     }
 
