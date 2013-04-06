@@ -48,7 +48,8 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
      */
     private JSONObject createFrame(StackTraceElement stackTraceElement) {
         JSONObject currentFrame = new JSONObject();
-        currentFrame.put(FILENAME_PARAMETER, stackTraceElement.getFileName());
+        // Do not display the file name (irrelevant) as it replaces the module in the sentry interface.
+        //currentFrame.put(FILENAME_PARAMETER, stackTraceElement.getFileName());
         currentFrame.put(MODULE_PARAMETER, stackTraceElement.getClassName());
         currentFrame.put(IN_APP_PARAMETER, isFrameInApp(stackTraceElement));
         currentFrame.put(FUNCTION_PARAMETER, stackTraceElement.getMethodName());
