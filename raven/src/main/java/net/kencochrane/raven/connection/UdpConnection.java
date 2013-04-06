@@ -1,5 +1,7 @@
 package net.kencochrane.raven.connection;
 
+import net.kencochrane.raven.connection.marshaller.Marshaller;
+import net.kencochrane.raven.connection.marshaller.SimpleJsonMarshaller;
 import net.kencochrane.raven.event.LoggedEvent;
 
 import java.io.ByteArrayOutputStream;
@@ -20,6 +22,7 @@ public class UdpConnection extends AbstractConnection {
     private static final Logger logger = Logger.getLogger(UdpConnection.class.getCanonicalName());
     private DatagramSocket socket;
     private Charset charset = Charset.defaultCharset();
+    private Marshaller marshaller = new SimpleJsonMarshaller();
 
     public UdpConnection(Dsn dsn) {
         super(dsn);
@@ -31,8 +34,7 @@ public class UdpConnection extends AbstractConnection {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             writeHeader(baos);
-            baos.flush();
-            baos.close();
+            marshaller.marshall(event, baos);
 
             byte[] message = baos.toByteArray();
             DatagramPacket packet = new DatagramPacket(message, message.length);
@@ -56,6 +58,10 @@ public class UdpConnection extends AbstractConnection {
             throw new IllegalStateException("The UDP connection couldn't be used, impossible to send anything " +
                     "to sentry", e);
         }
+    }
+
+    public void setMarshaller(Marshaller marshaller) {
+        this.marshaller = marshaller;
     }
 
     public void setCharset(Charset charset) {
