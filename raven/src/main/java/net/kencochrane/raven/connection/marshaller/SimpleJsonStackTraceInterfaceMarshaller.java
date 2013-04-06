@@ -5,6 +5,7 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -82,6 +83,7 @@ public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterf
             }
             currentThrowable = currentThrowable.getCause();
         }
+        Collections.reverse(frames);
         jsonObject.put(FRAMES_PARAMETER, frames);
 
         return jsonObject;
