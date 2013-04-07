@@ -181,4 +181,39 @@ public class Dsn {
     public URI getUri() {
         return uri;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Dsn dsn = (Dsn) o;
+
+        if (port != dsn.port) return false;
+        if (!host.equals(dsn.host)) return false;
+        if (!options.equals(dsn.options)) return false;
+        if (!path.equals(dsn.path)) return false;
+        if (!projectId.equals(dsn.projectId)) return false;
+        if (protocol != null ? !protocol.equals(dsn.protocol) : dsn.protocol != null) return false;
+        if (!protocolSettings.equals(dsn.protocolSettings)) return false;
+        if (!publicKey.equals(dsn.publicKey)) return false;
+        if (!secretKey.equals(dsn.secretKey)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = publicKey.hashCode();
+        result = 31 * result + projectId.hashCode();
+        result = 31 * result + host.hashCode();
+        result = 31 * result + port;
+        result = 31 * result + path.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return getUri().toString();
+    }
 }
