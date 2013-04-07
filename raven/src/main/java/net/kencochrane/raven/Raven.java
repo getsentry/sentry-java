@@ -9,6 +9,10 @@ import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.exception.InvalidDsnException;
 import net.kencochrane.raven.marshaller.SimpleJsonMarshaller;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,12 +40,33 @@ public class Raven {
     }
 
     private static String dsnLookup() {
-        if (System.getenv(Dsn.DSN_VARIABLE) != null)
-            return System.getenv(Dsn.DSN_VARIABLE);
-        else if (System.getProperty(Dsn.DSN_VARIABLE) != null)
-            return System.getProperty(Dsn.DSN_VARIABLE);
-        else
+        String dsn = null;
+
+        // Try to obtain the DSN from JNDI
+        try {
+            Context c = new InitialContext();
+            dsn = (String) c.lookup("java:comp/env/sentry/dsn");
+        } catch (NoInitialContextException e) {
+            logger.log(Level.INFO, "JNDI not configured for sentry (NoInitialContextEx)");
+        } catch (NamingException e) {
+            logger.log(Level.INFO, "No /sentry/dsn in JNDI");
+        } catch (RuntimeException ex) {
+            logger.log(Level.INFO, "Odd RuntimeException while testing for JNDI: " + ex.getMessage());
+        }
+
+        // Try to obtain the DSN from a System Environment Variable
+        if (dsn == null)
+            dsn = System.getenv(Dsn.DSN_VARIABLE);
+
+        // Try to obtain the DSN from a Java System Property
+        if (dsn == null)
+            dsn = System.getProperty(Dsn.DSN_VARIABLE);
+
+        if (dsn != null) {
+            return dsn;
+        } else {
             throw new InvalidDsnException("Couldn't find a Sentry DSN in either the Java or System environment.");
+        }
     }
 
     private static Charset determineCharset(Dsn dsn) {
