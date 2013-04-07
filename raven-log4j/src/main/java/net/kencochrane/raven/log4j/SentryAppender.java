@@ -10,6 +10,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 
 public class SentryAppender extends AppenderSkeleton {
     private final Raven raven;
@@ -50,6 +52,12 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
                     .addSentryInterface(new StackTraceInterface(throwable));
         }
+
+        if (loggingEvent.getNDC() != null)
+            eventBuilder.addExtra("Log4J-NDC", loggingEvent.getNDC());
+
+        for (Map.Entry mdcEntry : (Set<Map.Entry>) loggingEvent.getProperties().entrySet())
+            eventBuilder.addExtra(mdcEntry.getKey().toString(), mdcEntry.getValue());
 
         raven.sendEvent(eventBuilder);
     }

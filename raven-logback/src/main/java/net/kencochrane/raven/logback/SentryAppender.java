@@ -14,6 +14,7 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private final Raven raven;
@@ -63,6 +64,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
                     formatArguments(iLoggingEvent.getArgumentArray())));
         }
+
+        for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
+            eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+        }
+
         raven.sendEvent(eventBuilder);
     }
 }
