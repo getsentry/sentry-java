@@ -22,8 +22,8 @@ public class AsyncConnection implements Connection {
      * Connection used to actually send the events.
      */
     private final Connection actualConnection;
-    // TODO: Allow the user to change to a custom executor?
-    private final ExecutorService executorService = Executors.newCachedThreadPool(new DaemonThreadFactory());
+    private final ExecutorService executorService =
+            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
 
     /**
      * Create a connection which will rely on an executor to send events.
