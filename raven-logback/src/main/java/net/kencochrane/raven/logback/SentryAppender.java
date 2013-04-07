@@ -63,6 +63,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } else if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
                     formatArguments(iLoggingEvent.getArgumentArray())));
+            if (iLoggingEvent.getCallerData().length > 0)
+                eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
         }
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
@@ -70,5 +72,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         raven.sendEvent(eventBuilder);
+    }
+
+    private String getEventPosition(ILoggingEvent iLoggingEvent) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement stackTraceElement : iLoggingEvent.getCallerData()) {
+            sb.append(stackTraceElement.getClassName())
+                    .append(stackTraceElement.getMethodName())
+                    .append(stackTraceElement.getLineNumber());
+        }
+        return sb.toString();
     }
 }
