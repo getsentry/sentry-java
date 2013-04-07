@@ -14,6 +14,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
 import java.nio.charset.Charset;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,8 +108,10 @@ public class Raven {
         return connection;
     }
 
-    public void sendEvent(EventBuilder eventBuilder) {
-        sendEvent(eventBuilder.build());
+    public UUID sendEvent(EventBuilder eventBuilder) {
+        LoggedEvent event = eventBuilder.build();
+        sendEvent(event);
+        return event.getId();
     }
 
     public void sendEvent(LoggedEvent event) {
