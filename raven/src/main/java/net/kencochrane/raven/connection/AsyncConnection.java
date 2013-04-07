@@ -2,9 +2,11 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.event.LoggedEvent;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +34,27 @@ public class AsyncConnection implements Connection {
      */
     public AsyncConnection(Connection actualConnection) {
         this.actualConnection = actualConnection;
+        addShutdownHook();
+    }
+
+    private void addShutdownHook() {
+        //TODO: JUL loggers are shutdown by an other shutdown hook, it's possible that nothing will get actually logged.
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                logger.log(Level.INFO, "Gracefully shutdown sentry threads.");
+                executorService.shutdown();
+                try {
+                    if (!executorService.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                        logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
+                        List<Runnable> tasks = executorService.shutdownNow();
+                        logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
+                    }
+                    logger.log(Level.SEVERE, "Shutdown interrupted.");
+                } catch (InterruptedException e) {
+                    logger.log(Level.SEVERE, "Shutdown interrupted.");
+                }
+            }
+        });
     }
 
     @Override
