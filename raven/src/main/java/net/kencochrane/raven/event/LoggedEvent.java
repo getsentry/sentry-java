@@ -177,14 +177,6 @@ public class LoggedEvent {
         this.sentryInterfaces = sentryInterfaces;
     }
 
-    public static enum Level {
-        FATAL,
-        ERROR,
-        WARNING,
-        INFO,
-        DEBUG
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -206,5 +198,13 @@ public class LoggedEvent {
                 ", message='" + message + '\'' +
                 ", logger='" + logger + '\'' +
                 '}';
+    }
+
+    public static enum Level {
+        FATAL,
+        ERROR,
+        WARNING,
+        INFO,
+        DEBUG
     }
 }
