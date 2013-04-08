@@ -22,11 +22,10 @@ class StackTraceMarshaller implements InterfaceMarshaller {
     private static final String POST_CONTEXT_PARAMETER = "post_context";
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
-    //TODO: add a way to add content here.
-    private Set<String> notInAppFrames = new HashSet<String>();
+    private final Set<String> notInAppFrames;
 
-    //TODO: Remove this attempt to set a sensible default setting.
-    {
+    public StackTraceMarshaller() {
+        notInAppFrames = new HashSet<String>();
         notInAppFrames.add("com.sun.");
         notInAppFrames.add("java.");
         notInAppFrames.add("javax.");
@@ -34,6 +33,11 @@ class StackTraceMarshaller implements InterfaceMarshaller {
         notInAppFrames.add("sun.");
         notInAppFrames.add("junit.");
         notInAppFrames.add("com.intellij.rt.");
+    }
+
+    public StackTraceMarshaller(Set<String> notInAppFrames) {
+        // Makes a copy to avoid an external modification.
+        this.notInAppFrames = new HashSet<String>(notInAppFrames);
     }
 
     /**

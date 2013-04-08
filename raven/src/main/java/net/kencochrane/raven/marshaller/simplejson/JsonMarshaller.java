@@ -93,7 +93,7 @@ public class JsonMarshaller implements Marshaller {
      */
     private Charset charset = Charset.defaultCharset();
 
-    {
+    public JsonMarshaller() {
         interfaceMarshallers.put(ExceptionInterface.class, new ExceptionMarshaller());
         interfaceMarshallers.put(HttpInterface.class, new HttpMarshaller());
         interfaceMarshallers.put(MessageInterface.class, new MessageMarshaller());
