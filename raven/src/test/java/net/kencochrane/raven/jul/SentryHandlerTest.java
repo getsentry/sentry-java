@@ -35,6 +35,7 @@ public class SentryHandlerTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         logger = Logger.getAnonymousLogger();
+        logger.setUseParentHandlers(false);
         logger.setLevel(Level.ALL);
         logger.addHandler(new SentryHandler(mockRaven));
     }
