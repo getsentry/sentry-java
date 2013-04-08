@@ -1,4 +1,4 @@
-package net.kencochrane.raven.marshaller;
+package net.kencochrane.raven.marshaller.simplejson;
 
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.SentryInterface;

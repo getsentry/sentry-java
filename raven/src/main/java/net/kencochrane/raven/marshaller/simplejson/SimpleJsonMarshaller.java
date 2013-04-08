@@ -1,10 +1,11 @@
-package net.kencochrane.raven.marshaller;
+package net.kencochrane.raven.marshaller.simplejson;
 
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import net.kencochrane.raven.marshaller.Marshaller;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.json.simple.JSONObject;
 
@@ -16,6 +17,7 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -83,6 +85,8 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Date format for ISO 8601.
      */
     private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+    private final Map<Class<? extends SentryInterface>, SimpleJsonInterfaceMarshaller> interfaceMarshallers =
+            new HashMap<Class<? extends SentryInterface>, SimpleJsonInterfaceMarshaller>();
     /**
      * Enables disables the compression of JSON.
      */
@@ -91,6 +95,12 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Charset used to transmit data.
      */
     private Charset charset = Charset.defaultCharset();
+
+    {
+        interfaceMarshallers.put(ExceptionInterface.class, new SimpleJsonExceptionInterfaceMarshaller());
+        interfaceMarshallers.put(MessageInterface.class, new SimpleJsonMessageInterfaceMarshaller());
+        interfaceMarshallers.put(StackTraceInterface.class, new SimpleJsonStackTraceInterfaceMarshaller());
+    }
 
     @Override
     public void marshall(LoggedEvent event, OutputStream destination) {
@@ -135,20 +145,12 @@ public class SimpleJsonMarshaller implements Marshaller {
     }
 
     private JSONObject formatInterface(SentryInterface sentryInterface) {
-        JSONObject jsonObject;
-        //TODO: Use an factory here (and do not instanciate a marshaller each time?
-        if (sentryInterface.getInterfaceName().equals(MessageInterface.MESSAGE_INTERFACE)) {
-            jsonObject = new SimpleJsonMessageInterfaceMarshaller().serialiseInterface(sentryInterface);
-        } else if (sentryInterface.getInterfaceName().equals(ExceptionInterface.EXCEPTION_INTERFACE)) {
-            jsonObject = new SimpleJsonExceptionInterfaceMarshaller().serialiseInterface(sentryInterface);
-        } else if (sentryInterface.getInterfaceName().equals(StackTraceInterface.STACKTRACE_INTERFACE)) {
-            jsonObject = new SimpleJsonStackTraceInterfaceMarshaller().serialiseInterface(sentryInterface);
+        SimpleJsonInterfaceMarshaller interfaceMarshaller = interfaceMarshallers.get(sentryInterface.getClass());
+        if (interfaceMarshaller != null) {
+            return interfaceMarshaller.serialiseInterface(sentryInterface);
         } else {
-            //TODO: log something?
-            jsonObject = new JSONObject();
+            return new JSONObject();
         }
-
-        return jsonObject;
     }
 
     /**

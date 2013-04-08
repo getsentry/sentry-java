@@ -7,7 +7,7 @@ import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.exception.InvalidDsnException;
-import net.kencochrane.raven.marshaller.SimpleJsonMarshaller;
+import net.kencochrane.raven.marshaller.simplejson.SimpleJsonMarshaller;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
