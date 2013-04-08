@@ -12,6 +12,17 @@ public class MessageInterface implements SentryInterface {
     private final String message;
     private final List<String> params;
 
+    /**
+     * Creates a non parametrised message.
+     * <p>
+     * While it's technically possible to create a non parametrised message with {@code MessageInterface}, it's
+     * recommended to use {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} instead.
+     * </p>
+     *
+     * @param message message to add to the event.
+     * @deprecated Use {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} instead.
+     */
+    @Deprecated
     public MessageInterface(String message) {
         this(message, Collections.<String>emptyList());
     }
