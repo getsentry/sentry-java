@@ -79,4 +79,14 @@ public class ImmutableThrowable extends Throwable {
     public void setStackTrace(StackTraceElement[] stackTrace) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int hashCode() {
+        return actualThrowable.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return actualThrowable.equals(obj);
+    }
 }
