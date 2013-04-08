@@ -13,14 +13,6 @@ import java.util.zip.Checksum;
  */
 public class EventBuilder {
     /**
-     * Default log level if it isn't set manually.
-     */
-    public static final LoggedEvent.Level DEFAULT_LEVEL = LoggedEvent.Level.ERROR;
-    /**
-     * Default logger if it isn't set manually.
-     */
-    public static final String DEFAULT_LOGGER = "root";
-    /**
      * Default platform if it isn't set manually.
      */
     public static final String DEFAULT_PLATFORM = "java";
@@ -28,10 +20,6 @@ public class EventBuilder {
      * Default hostname if it isn't set manually (or can't be determined).
      */
     public static final String DEFAULT_HOSTNAME = "unavailable";
-    /**
-     * Default log level if it isn't provided (either directly or through an exception).
-     */
-    public static final String DEFAULT_MESSAGE = "(empty)";
     private final LoggedEvent event;
     private boolean alreadyBuilt = false;
 
@@ -87,23 +75,10 @@ public class EventBuilder {
      *
      * @param event currently handled event.
      */
-    //TODO: Shouldn't this be removed to rely on sentry default settings?
     private static void autoSetMissingValues(LoggedEvent event) {
-        // Ensure that an actual message is set
-        if (event.getMessage() == null)
-            event.setMessage(DEFAULT_MESSAGE);
-
         // Ensure that a timestamp is set (to now at least!)
         if (event.getTimestamp() == null)
             event.setTimestamp(new Date());
-
-        // Ensure that a log level is set
-        if (event.getLevel() == null)
-            event.setLevel(DEFAULT_LEVEL);
-
-        // Ensure that a logger is set
-        if (event.getLogger() == null)
-            event.setLogger(DEFAULT_LOGGER);
 
         // Ensure that a platform is set
         if (event.getPlatform() == null)

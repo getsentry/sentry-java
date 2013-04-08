@@ -158,7 +158,11 @@ public class SimpleJsonMarshaller implements Marshaller {
      * @return formatted message (shortened if necessary).
      */
     private String formatMessage(String message) {
-        return (message.length() > MAX_MESSAGE_LENGTH) ? message.substring(0, MAX_MESSAGE_LENGTH) : message;
+        if (message == null)
+            return null;
+        else if (message.length() > MAX_MESSAGE_LENGTH)
+            return message.substring(0, MAX_MESSAGE_LENGTH);
+        else return message;
     }
 
     /**
@@ -178,6 +182,9 @@ public class SimpleJsonMarshaller implements Marshaller {
      * @return log level as a String.
      */
     private String formatLevel(LoggedEvent.Level level) {
+        if (level == null)
+            return null;
+
         switch (level) {
             case DEBUG:
                 return "debug";
@@ -188,8 +195,9 @@ public class SimpleJsonMarshaller implements Marshaller {
             case INFO:
                 return "info";
             case ERROR:
-            default:
                 return "error";
+            default:
+                return null;
         }
     }
 
