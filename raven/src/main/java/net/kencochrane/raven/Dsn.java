@@ -61,6 +61,7 @@ public class Dsn {
      * Creates a DS based on a String.
      *
      * @param dsn dsn in a string form.
+     * @throws InvalidDsnException the given DSN isn't usable.
      */
     public Dsn(String dsn) {
         if (dsn == null)
@@ -87,6 +88,11 @@ public class Dsn {
         }
     }
 
+    /**
+     * Looks for a DSN configuration within JNDI, the System environment or Java properties.
+     *
+     * @return a DSN configuration or null if nothing could be found.
+     */
     public static String dsnLookup() {
         String dsn = null;
 
@@ -113,6 +119,11 @@ public class Dsn {
         return dsn;
     }
 
+    /**
+     * Extracts the path and the project ID from the DSN provided as an {@code URI}.
+     *
+     * @param dsnUri DSN as an URI.
+     */
     private void extractPathInfo(URI dsnUri) {
         String uriPath = dsnUri.getPath();
         if (uriPath == null)
@@ -122,11 +133,21 @@ public class Dsn {
         projectId = uriPath.substring(projectIdStart);
     }
 
+    /**
+     * Extracts the hostname and port of the Sentry server from the DSN provided as an {@code URI}.
+     *
+     * @param dsnUri DSN as an URI.
+     */
     private void extractHostInfo(URI dsnUri) {
         host = dsnUri.getHost();
         port = dsnUri.getPort();
     }
 
+    /**
+     * Extracts the scheme and additional protocol options from the DSN provided as an {@code URI}.
+     *
+     * @param dsnUri DSN as an URI.
+     */
     private void extractProtocolInfo(URI dsnUri) {
         String scheme = dsnUri.getScheme();
         if (scheme == null)
@@ -136,6 +157,11 @@ public class Dsn {
         protocol = schemeDetails[schemeDetails.length - 1];
     }
 
+    /**
+     * Extracts the public and secret keys from the DSN provided as an {@code URI}.
+     *
+     * @param dsnUri DSN as an URI.
+     */
     private void extractUserKeys(URI dsnUri) {
         String userInfo = dsnUri.getUserInfo();
         if (userInfo == null)
@@ -146,6 +172,11 @@ public class Dsn {
             secretKey = userDetails[1];
     }
 
+    /**
+     * Extracts the DSN options from the DSN provided as an {@code URI}.
+     *
+     * @param dsnUri DSN as an URI.
+     */
     private void extractOptions(URI dsnUrgi) {
         String query = dsnUri.getQuery();
         if (query == null)
@@ -157,12 +188,21 @@ public class Dsn {
         }
     }
 
+    /**
+     * Makes protocol and dsn options immutable to allow an external usage.
+     */
     private void makeOptionsImmutable() {
         // Make the options immutable
         options = Collections.unmodifiableMap(options);
         protocolSettings = Collections.unmodifiableSet(protocolSettings);
     }
 
+    /**
+     * Validates internally the DSN, and check for mandatory elements.
+     * <p>
+     * Mandatory elements are the {@link #host}, {@link #publicKey}, {@link #secretKey} and {@link #projectId}.
+     * </p>
+     */
     private void validate() {
         List<String> missingElements = new LinkedList<String>();
         if (host == null)
