@@ -32,6 +32,7 @@
         <log4j.version>1.2.17</log4j.version>
         <commons-codec.version>1.6</commons-codec.version>
         <json-simple.version>1.1.1</json-simple.version>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
     </properties>
 
     <licenses>
@@ -94,6 +95,11 @@
                 <groupId>com.googlecode.json-simple</groupId>
                 <artifactId>json-simple</artifactId>
                 <version>${json-simple.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax.servlet-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>
