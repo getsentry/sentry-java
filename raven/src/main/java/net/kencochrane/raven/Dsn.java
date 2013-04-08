@@ -113,8 +113,8 @@ public class Dsn {
         return dsn;
     }
 
-    private void extractPathInfo(URI uri) {
-        String uriPath = uri.getPath();
+    private void extractPathInfo(URI dsnUri) {
+        String uriPath = dsnUri.getPath();
         if (uriPath == null)
             return;
         int projectIdStart = uriPath.lastIndexOf("/") + 1;
@@ -122,13 +122,13 @@ public class Dsn {
         projectId = uriPath.substring(projectIdStart);
     }
 
-    private void extractHostInfo(URI uri) {
-        host = uri.getHost();
-        port = uri.getPort();
+    private void extractHostInfo(URI dsnUri) {
+        host = dsnUri.getHost();
+        port = dsnUri.getPort();
     }
 
-    private void extractProtocolInfo(URI uri) {
-        String scheme = uri.getScheme();
+    private void extractProtocolInfo(URI dsnUri) {
+        String scheme = dsnUri.getScheme();
         if (scheme == null)
             return;
         String[] schemeDetails = scheme.split("\\+");
@@ -136,8 +136,8 @@ public class Dsn {
         protocol = schemeDetails[schemeDetails.length - 1];
     }
 
-    private void extractUserKeys(URI uri) {
-        String userInfo = uri.getUserInfo();
+    private void extractUserKeys(URI dsnUri) {
+        String userInfo = dsnUri.getUserInfo();
         if (userInfo == null)
             return;
         String[] userDetails = userInfo.split(":");
@@ -146,8 +146,8 @@ public class Dsn {
             secretKey = userDetails[1];
     }
 
-    private void extractOptions(URI uri) {
-        String query = uri.getQuery();
+    private void extractOptions(URI dsnUrgi) {
+        String query = dsnUri.getQuery();
         if (query == null)
             return;
         String[] optionPairs = query.split("&");
