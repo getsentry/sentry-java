@@ -6,13 +6,8 @@ import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.LoggedEvent;
-import net.kencochrane.raven.exception.InvalidDsnException;
 import net.kencochrane.raven.marshaller.simplejson.JsonMarshaller;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.naming.NoInitialContextException;
 import java.nio.charset.Charset;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -25,7 +20,7 @@ public class Raven {
     private Connection connection;
 
     public Raven() {
-        this(dsnLookup());
+        this(new Dsn());
     }
 
     public Raven(String dsn) {
@@ -38,36 +33,6 @@ public class Raven {
 
     public Raven(Connection connection) {
         this.connection = connection;
-    }
-
-    private static String dsnLookup() {
-        String dsn = null;
-
-        // Try to obtain the DSN from JNDI
-        try {
-            Context c = new InitialContext();
-            dsn = (String) c.lookup("java:comp/env/sentry/dsn");
-        } catch (NoInitialContextException e) {
-            logger.log(Level.INFO, "JNDI not configured for sentry (NoInitialContextEx)");
-        } catch (NamingException e) {
-            logger.log(Level.INFO, "No /sentry/dsn in JNDI");
-        } catch (RuntimeException ex) {
-            logger.log(Level.INFO, "Odd RuntimeException while testing for JNDI: " + ex.getMessage());
-        }
-
-        // Try to obtain the DSN from a System Environment Variable
-        if (dsn == null)
-            dsn = System.getenv(Dsn.DSN_VARIABLE);
-
-        // Try to obtain the DSN from a Java System Property
-        if (dsn == null)
-            dsn = System.getProperty(Dsn.DSN_VARIABLE);
-
-        if (dsn != null) {
-            return dsn;
-        } else {
-            throw new InvalidDsnException("Couldn't find a Sentry DSN in either the Java or System environment.");
-        }
     }
 
     private static Charset determineCharset(Dsn dsn) {

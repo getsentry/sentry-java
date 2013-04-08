@@ -2,9 +2,15 @@ package net.kencochrane.raven;
 
 import net.kencochrane.raven.exception.InvalidDsnException;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Data Source name allowing a direct connection to a Sentry server.
@@ -34,6 +40,7 @@ public class Dsn {
      * Protocol setting to disable security checks over an SSL connection.
      */
     public static final String NAIVE_PROTOCOL = "naive";
+    private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private String secretKey;
     private String publicKey;
     private String projectId;
@@ -44,6 +51,11 @@ public class Dsn {
     private Set<String> protocolSettings;
     private Map<String, String> options;
     private URI uri;
+
+
+    public Dsn() {
+        this(dsnLookup());
+    }
 
     /**
      * Creates a DS based on a String.
@@ -69,6 +81,36 @@ public class Dsn {
             uri = new URI(protocol, null, host, port, path, null, null);
         } catch (URISyntaxException e) {
             throw new InvalidDsnException("Impossible to determine Sentry's URI from the DSN '" + dsn + "'", e);
+        }
+    }
+
+    public static String dsnLookup() {
+        String dsn = null;
+
+        // Try to obtain the DSN from JNDI
+        try {
+            Context c = new InitialContext();
+            dsn = (String) c.lookup("java:comp/env/sentry/dsn");
+        } catch (NoInitialContextException e) {
+            logger.log(Level.INFO, "JNDI not configured for sentry (NoInitialContextEx)");
+        } catch (NamingException e) {
+            logger.log(Level.INFO, "No /sentry/dsn in JNDI");
+        } catch (RuntimeException ex) {
+            logger.log(Level.INFO, "Odd RuntimeException while testing for JNDI: " + ex.getMessage());
+        }
+
+        // Try to obtain the DSN from a System Environment Variable
+        if (dsn == null)
+            dsn = System.getenv(Dsn.DSN_VARIABLE);
+
+        // Try to obtain the DSN from a Java System Property
+        if (dsn == null)
+            dsn = System.getProperty(Dsn.DSN_VARIABLE);
+
+        if (dsn != null) {
+            return dsn;
+        } else {
+            throw new InvalidDsnException("Couldn't find a Sentry DSN in either the Java or System environment.");
         }
     }
 
