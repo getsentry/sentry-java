@@ -4,7 +4,7 @@ import net.kencochrane.raven.event.interfaces.HttpInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.json.simple.JSONObject;
 
-public class SimpleJsonHttpInterfaceMarshaller implements SimpleJsonInterfaceMarshaller {
+class HttpMarshaller implements InterfaceMarshaller {
     @Override
     public JSONObject serialiseInterface(SentryInterface sentryInterface) {
         if (!(sentryInterface instanceof HttpInterface)) {

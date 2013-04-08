@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SimpleJsonStackTraceInterfaceMarshaller implements SimpleJsonInterfaceMarshaller {
+class StackTraceMarshaller implements InterfaceMarshaller {
     private static final String FRAMES_PARAMETER = "frames";
     private static final String FILENAME_PARAMETER = "filename";
     private static final String FUNCTION_PARAMETER = "function";

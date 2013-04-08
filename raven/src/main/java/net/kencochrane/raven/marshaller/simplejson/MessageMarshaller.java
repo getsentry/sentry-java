@@ -4,7 +4,7 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.json.simple.JSONObject;
 
-public class SimpleJsonMessageInterfaceMarshaller implements SimpleJsonInterfaceMarshaller {
+class MessageMarshaller implements InterfaceMarshaller {
     private static final String MESSAGE_PARAMETER = "message";
     private static final String PARAMS_PARAMETER = "params";
 

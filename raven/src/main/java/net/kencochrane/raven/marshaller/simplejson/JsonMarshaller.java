@@ -24,7 +24,7 @@ import java.util.zip.DeflaterOutputStream;
 /**
  * Marshaller allowing to transform a simple {@link LoggedEvent} into a compressed JSON String send over a stream.
  */
-public class SimpleJsonMarshaller implements Marshaller {
+public class JsonMarshaller implements Marshaller {
     /**
      * Hexadecimal string representing a uuid4 value.
      */
@@ -77,13 +77,13 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Maximum length for a message.
      */
     public static final int MAX_MESSAGE_LENGTH = 1000;
-    private static final Logger logger = Logger.getLogger(SimpleJsonMarshaller.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(JsonMarshaller.class.getCanonicalName());
     /**
      * Date format for ISO 8601.
      */
     private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
-    private final Map<Class<? extends SentryInterface>, SimpleJsonInterfaceMarshaller> interfaceMarshallers =
-            new HashMap<Class<? extends SentryInterface>, SimpleJsonInterfaceMarshaller>();
+    private final Map<Class<? extends SentryInterface>, InterfaceMarshaller> interfaceMarshallers =
+            new HashMap<Class<? extends SentryInterface>, InterfaceMarshaller>();
     /**
      * Enables disables the compression of JSON.
      */
@@ -94,10 +94,10 @@ public class SimpleJsonMarshaller implements Marshaller {
     private Charset charset = Charset.defaultCharset();
 
     {
-        interfaceMarshallers.put(ExceptionInterface.class, new SimpleJsonExceptionInterfaceMarshaller());
-        interfaceMarshallers.put(HttpInterface.class, new SimpleJsonHttpInterfaceMarshaller());
-        interfaceMarshallers.put(MessageInterface.class, new SimpleJsonMessageInterfaceMarshaller());
-        interfaceMarshallers.put(StackTraceInterface.class, new SimpleJsonStackTraceInterfaceMarshaller());
+        interfaceMarshallers.put(ExceptionInterface.class, new ExceptionMarshaller());
+        interfaceMarshallers.put(HttpInterface.class, new HttpMarshaller());
+        interfaceMarshallers.put(MessageInterface.class, new MessageMarshaller());
+        interfaceMarshallers.put(StackTraceInterface.class, new StackTraceMarshaller());
     }
 
     @Override
@@ -143,7 +143,7 @@ public class SimpleJsonMarshaller implements Marshaller {
     }
 
     private JSONObject formatInterface(SentryInterface sentryInterface) {
-        SimpleJsonInterfaceMarshaller interfaceMarshaller = interfaceMarshallers.get(sentryInterface.getClass());
+        InterfaceMarshaller interfaceMarshaller = interfaceMarshallers.get(sentryInterface.getClass());
         if (interfaceMarshaller != null) {
             return interfaceMarshaller.serialiseInterface(sentryInterface);
         } else {

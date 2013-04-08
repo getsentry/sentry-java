@@ -5,7 +5,7 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.json.simple.JSONObject;
 
-public class SimpleJsonExceptionInterfaceMarshaller implements SimpleJsonInterfaceMarshaller {
+class ExceptionMarshaller implements InterfaceMarshaller {
     private static final String TYPE_PARAMETER = "type";
     private static final String VALUE_PARAMETER = "value";
     private static final String MODULE_PARAMETER = "module";

@@ -3,7 +3,7 @@ package net.kencochrane.raven.connection;
 import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.marshaller.Marshaller;
-import net.kencochrane.raven.marshaller.simplejson.SimpleJsonMarshaller;
+import net.kencochrane.raven.marshaller.simplejson.JsonMarshaller;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class UdpConnection extends AbstractConnection {
     private static final Logger logger = Logger.getLogger(UdpConnection.class.getCanonicalName());
     private DatagramSocket socket;
     private Charset charset = Charset.defaultCharset();
-    private Marshaller marshaller = new SimpleJsonMarshaller();
+    private Marshaller marshaller = new JsonMarshaller();
 
     public UdpConnection(Dsn dsn) {
         super(dsn);

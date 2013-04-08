@@ -7,7 +7,7 @@ import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.exception.InvalidDsnException;
-import net.kencochrane.raven.marshaller.simplejson.SimpleJsonMarshaller;
+import net.kencochrane.raven.marshaller.simplejson.JsonMarshaller;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -84,7 +84,7 @@ public class Raven {
         String protocol = dsn.getProtocol();
         Connection connection = null;
         Charset charset = determineCharset(dsn);
-        SimpleJsonMarshaller marshaller = new SimpleJsonMarshaller();
+        JsonMarshaller marshaller = new JsonMarshaller();
         marshaller.setCompression(!dsn.getOptions().containsKey(Dsn.NOCOMPRESSION_OPTION));
         marshaller.setCharset(charset);
 
