@@ -63,6 +63,9 @@ public class Dsn {
      * @param dsn dsn in a string form.
      */
     public Dsn(String dsn) {
+        if (dsn == null)
+            throw new InvalidDsnException("The sentry DSN must be provided and not be null");
+
         options = new HashMap<String, String>();
         protocolSettings = new HashSet<String>();
 
@@ -107,11 +110,7 @@ public class Dsn {
         if (dsn == null)
             dsn = System.getProperty(Dsn.DSN_VARIABLE);
 
-        if (dsn != null) {
-            return dsn;
-        } else {
-            throw new InvalidDsnException("Couldn't find a Sentry DSN in either the Java or System environment.");
-        }
+        return dsn;
     }
 
     private void extractPathInfo(URI uri) {
