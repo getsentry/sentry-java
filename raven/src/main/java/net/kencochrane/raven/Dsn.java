@@ -177,7 +177,7 @@ public class Dsn {
      *
      * @param dsnUri DSN as an URI.
      */
-    private void extractOptions(URI dsnUrgi) {
+    private void extractOptions(URI dsnUri) {
         String query = dsnUri.getQuery();
         if (query == null)
             return;
