@@ -1,6 +1,6 @@
 package net.kencochrane.raven.exception;
 
-public class InvalidDsnException extends RuntimeException{
+public class InvalidDsnException extends RuntimeException {
     public InvalidDsnException() {
     }
 

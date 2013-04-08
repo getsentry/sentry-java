@@ -244,7 +244,7 @@ public class EventBuilder {
     /**
      * Adds an extra property to the event.
      *
-     * @param extraName name of the extra property.
+     * @param extraName  name of the extra property.
      * @param extraValue value of the extra property.
      * @return the current {@code EventBuilder} for chained calls.
      */

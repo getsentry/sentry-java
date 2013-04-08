@@ -1,9 +1,9 @@
 package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.SimpleJsonMarshaller;
-import net.kencochrane.raven.event.LoggedEvent;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

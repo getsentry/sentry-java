@@ -78,6 +78,7 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Maximum length for a message.
      */
     public static final int MAX_MESSAGE_LENGTH = 1000;
+    private static final Logger logger = Logger.getLogger(SimpleJsonMarshaller.class.getCanonicalName());
     /**
      * Date format for ISO 8601.
      */
@@ -90,7 +91,6 @@ public class SimpleJsonMarshaller implements Marshaller {
      * Charset used to transmit data.
      */
     private Charset charset = Charset.defaultCharset();
-    private static final Logger logger = Logger.getLogger(SimpleJsonMarshaller.class.getCanonicalName());
 
     @Override
     public void marshall(LoggedEvent event, OutputStream destination) {
