@@ -1,10 +1,7 @@
 package net.kencochrane.raven.marshaller.simplejson;
 
 import net.kencochrane.raven.event.LoggedEvent;
-import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.MessageInterface;
-import net.kencochrane.raven.event.interfaces.SentryInterface;
-import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import net.kencochrane.raven.event.interfaces.*;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.json.simple.JSONObject;
@@ -98,6 +95,7 @@ public class SimpleJsonMarshaller implements Marshaller {
 
     {
         interfaceMarshallers.put(ExceptionInterface.class, new SimpleJsonExceptionInterfaceMarshaller());
+        interfaceMarshallers.put(HttpInterface.class, new SimpleJsonHttpInterfaceMarshaller());
         interfaceMarshallers.put(MessageInterface.class, new SimpleJsonMessageInterfaceMarshaller());
         interfaceMarshallers.put(StackTraceInterface.class, new SimpleJsonStackTraceInterfaceMarshaller());
     }
