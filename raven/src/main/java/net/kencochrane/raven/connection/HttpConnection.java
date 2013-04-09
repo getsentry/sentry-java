@@ -4,7 +4,7 @@ import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.marshaller.Marshaller;
-import net.kencochrane.raven.marshaller.simplejson.JsonMarshaller;
+import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;

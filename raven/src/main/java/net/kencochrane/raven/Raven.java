@@ -6,7 +6,7 @@ import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.LoggedEvent;
-import net.kencochrane.raven.marshaller.simplejson.JsonMarshaller;
+import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.nio.charset.Charset;
 import java.util.UUID;
