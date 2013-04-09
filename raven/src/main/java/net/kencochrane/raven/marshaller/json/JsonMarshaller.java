@@ -99,7 +99,7 @@ public class JsonMarshaller implements Marshaller {
     public void marshall(LoggedEvent event, OutputStream destination) {
 
         if (compression)
-            destination = new Base64OutputStream(new DeflaterOutputStream(destination));
+            destination = new DeflaterOutputStream(new Base64OutputStream(destination));
 
         JsonGenerator generator = null;
         try {
