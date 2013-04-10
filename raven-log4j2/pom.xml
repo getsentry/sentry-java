@@ -9,7 +9,7 @@
         <artifactId>raven-all</artifactId>
         <version>3.0-SNAPSHOT</version>
     </parent>
-    <artifactId>raven-log4j</artifactId>
+    <artifactId>raven-log4j2</artifactId>
     <packaging>jar</packaging>
     <name>raven-log4j</name>
     <description>Log4J appender for Raven/Sentry.</description>
