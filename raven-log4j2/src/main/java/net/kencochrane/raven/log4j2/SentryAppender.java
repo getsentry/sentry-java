@@ -6,15 +6,22 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttr;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
 
-public class SentryAppender extends AbstractAppender<Serializable> {
+@Plugin(name = "Sentry", type = "Sentry", elementType = "appender")
+public class SentryAppender extends AbstractAppender {
     public static final String APPENDER_NAME = "raven";
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final Raven raven;
@@ -30,9 +37,46 @@ public class SentryAppender extends AbstractAppender<Serializable> {
     }
 
     public SentryAppender(Raven raven, boolean propagateClose) {
-        super(APPENDER_NAME, null, null);
+        this(APPENDER_NAME, raven, PatternLayout.createLayout(null, null, null, null), null, true, propagateClose);
+    }
+
+    private SentryAppender(String name, Raven raven, Layout layout, Filter filter,
+                           boolean handleExceptions, boolean propagateClose) {
+        super(name, filter, layout, handleExceptions);
         this.raven = raven;
         this.propagateClose = propagateClose;
+    }
+
+    /**
+     * Create a Sentry Appender.
+     *
+     * @param name     The name of the Appender.
+     * @param dsn      Data Source Name to access the Sentry server.
+     * @param suppress "true" if exceptions should be hidden from the application, "false" otherwise.
+     *                 The default is "true".
+     * @param layout   The layout to use to format the event. If no layout is provided the default PatternLayout
+     *                 will be used.
+     * @param filter   The filter, if any, to use.
+     * @return The SentryAppender.
+     */
+    @PluginFactory
+    public static SentryAppender createAppender(@PluginAttr("name") final String name,
+                                                @PluginAttr("dsn") final String dsn,
+                                                @PluginAttr("suppressExceptions") final String suppress,
+                                                @PluginElement("layout") Layout layout,
+                                                @PluginElement("filters") final Filter filter) {
+
+        final boolean handleExceptions = suppress == null ? true : Boolean.valueOf(suppress);
+
+        if (name == null) {
+            LOGGER.error("No name provided for FileAppender");
+            return null;
+        }
+
+        if (layout == null) {
+            layout = PatternLayout.createLayout(null, null, null, null);
+        }
+        return new SentryAppender(name, new Raven(dsn), layout, filter, handleExceptions, true);
     }
 
     private static Event.Level formatLevel(Level level) {
