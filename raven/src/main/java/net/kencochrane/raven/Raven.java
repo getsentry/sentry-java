@@ -6,10 +6,13 @@ import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.nio.charset.Charset;
 import java.util.UUID;
+import java.util.Collections;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,6 +21,7 @@ public class Raven {
     public static final String NAME = "Raven-Java/3.0";
     private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private Connection connection;
+    private Set<EventBuilderHelper> builderHelpers;
 
     public Raven() {
         this(new Dsn());
@@ -79,6 +83,12 @@ public class Raven {
         return event.getId();
     }
 
+    public void runBuilderHelpers(EventBuilder eventBuilder) {
+        for (EventBuilderHelper builderHelper : builderHelpers) {
+            builderHelper.helpBuildingEvent(eventBuilder);
+        }
+    }
+
     public void sendEvent(LoggedEvent event) {
         try {
             connection.send(event);
@@ -89,5 +99,17 @@ public class Raven {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public Set<EventBuilderHelper> getBuilderHelpers() {
+        return Collections.unmodifiableSet(builderHelpers);
+    }
+
+    public void removeBuilderHelper(EventBuilderHelper builderHelper) {
+        builderHelpers.remove(builderHelper);
+    }
+
+    public void addBuilderHelper(EventBuilderHelper builderHelper) {
+        builderHelpers.add(builderHelper);
     }
 }
