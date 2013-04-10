@@ -68,6 +68,8 @@ public class SentryAppender extends AbstractAppender {
 
         final boolean handleExceptions = suppress == null ? true : Boolean.valueOf(suppress);
 
+        final Raven raven = dsn == null ? new Raven() : new Raven(dsn);
+
         if (name == null) {
             LOGGER.error("No name provided for FileAppender");
             return null;
@@ -76,7 +78,7 @@ public class SentryAppender extends AbstractAppender {
         if (layout == null) {
             layout = PatternLayout.createLayout(null, null, null, null);
         }
-        return new SentryAppender(name, new Raven(dsn), layout, filter, handleExceptions, true);
+        return new SentryAppender(name, raven, layout, filter, handleExceptions, true);
     }
 
     private static Event.Level formatLevel(Level level) {
