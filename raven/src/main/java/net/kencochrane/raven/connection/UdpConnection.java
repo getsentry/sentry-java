@@ -21,13 +21,23 @@ import java.util.logging.Logger;
  */
 public class UdpConnection extends AbstractConnection {
     private static final Logger logger = Logger.getLogger(UdpConnection.class.getCanonicalName());
+    private static final int DEFAULT_UDP_PORT = 9001;
     private DatagramSocket socket;
     private Charset charset = Charset.defaultCharset();
     private Marshaller marshaller = new JsonMarshaller();
 
     public UdpConnection(Dsn dsn) {
         super(dsn);
-        openSocket();
+        openSocket(dsn.getHost(), dsn.getPort());
+    }
+
+    public UdpConnection(String hostname, String publicKey, String secretKey) {
+        this(hostname, DEFAULT_UDP_PORT, publicKey, secretKey);
+    }
+
+    public UdpConnection(String hostname, int port, String publicKey, String secretKey) {
+        super(publicKey, secretKey);
+        openSocket(hostname, port);
     }
 
     @Override
@@ -51,13 +61,13 @@ public class UdpConnection extends AbstractConnection {
         os.write("\n\n".getBytes(charset));
     }
 
-    private void openSocket() {
+    private void openSocket(String hostname, int port) {
         try {
             socket = new DatagramSocket();
-            socket.connect(new InetSocketAddress(getDsn().getHost(), getDsn().getPort()));
+            socket.connect(new InetSocketAddress(hostname, port));
         } catch (SocketException e) {
-            throw new IllegalStateException("The UDP connection couldn't be used, impossible to send anything " +
-                    "to sentry", e);
+            throw new IllegalStateException("The UDP connection couldn't be used, impossible to send anything "
+                    + "to sentry", e);
         }
     }
 

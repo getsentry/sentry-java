@@ -41,7 +41,7 @@ public class HttpConnection extends AbstractConnection {
     public HttpConnection(Dsn dsn) {
         super(dsn);
 
-        sentryUrl = getSentryUrl();
+        this.sentryUrl = getSentryUrl(dsn);
 
         // Check if a timeout is set
         if (dsn.getOptions().containsKey(Dsn.TIMEOUT_OPTION))
@@ -52,9 +52,14 @@ public class HttpConnection extends AbstractConnection {
             setBypassSecurity(true);
     }
 
-    private URL getSentryUrl() {
+    public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
+        super(publicKey, secretKey);
+        this.sentryUrl = sentryUrl;
+    }
+
+    private URL getSentryUrl(Dsn dsn) {
         try {
-            String url = getDsn().getUri().toString() + "api/" + getDsn().getProjectId() + "/store/";
+            String url = dsn.getUri().toString() + "api/" + dsn.getProjectId() + "/store/";
             return new URL(url);
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Couldn't get a valid URL from the DSN.", e);
