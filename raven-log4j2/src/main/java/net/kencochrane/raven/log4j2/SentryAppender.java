@@ -53,6 +53,11 @@ public class SentryAppender extends AbstractAppender<Serializable> {
         }
     }
 
+    private static String formatCulprit(StackTraceElement stackTraceElement) {
+        return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
+                + " at line " + stackTraceElement.getLineNumber();
+    }
+
     @Override
     public void append(LogEvent event) {
         EventBuilder eventBuilder = new EventBuilder()
@@ -86,11 +91,6 @@ public class SentryAppender extends AbstractAppender<Serializable> {
         raven.runBuilderHelpers(eventBuilder);
 
         raven.sendEvent(eventBuilder.build());
-    }
-
-    private String formatCulprit(StackTraceElement stackTraceElement) {
-        return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
-                + " at line " + stackTraceElement.getLineNumber();
     }
 
     @Override
