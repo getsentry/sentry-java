@@ -128,4 +128,8 @@ public class HttpConnection extends AbstractConnection {
     public void setBypassSecurity(boolean bypassSecurity) {
         this.bypassSecurity = bypassSecurity;
     }
+
+    @Override
+    public void close() throws IOException {
+    }
 }

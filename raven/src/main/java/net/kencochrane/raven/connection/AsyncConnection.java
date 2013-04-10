@@ -2,6 +2,7 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.event.Event;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +28,7 @@ public class AsyncConnection implements Connection {
     private final Connection actualConnection;
     private final ExecutorService executorService =
             Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
+    private final boolean propagateClose;
 
     /**
      * Create a connection which will rely on an executor to send events.
@@ -34,7 +36,17 @@ public class AsyncConnection implements Connection {
      * @param actualConnection connection used to send the events.
      */
     public AsyncConnection(Connection actualConnection) {
+        this(actualConnection, true);
+    }
+
+    /**
+     * Create a connection which will rely on an executor to send events.
+     *
+     * @param actualConnection connection used to send the events.
+     */
+    public AsyncConnection(Connection actualConnection, boolean propagateClose) {
         this.actualConnection = actualConnection;
+        this.propagateClose = propagateClose;
         addShutdownHook();
     }
 
@@ -42,17 +54,10 @@ public class AsyncConnection implements Connection {
         //TODO: JUL loggers are shutdown by an other shutdown hook, it's possible that nothing will get actually logged.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                logger.log(Level.INFO, "Gracefully shutdown sentry threads.");
-                executorService.shutdown();
                 try {
-                    if (!executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
-                        logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
-                        List<Runnable> tasks = executorService.shutdownNow();
-                        logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
-                    }
-                    logger.log(Level.SEVERE, "Shutdown interrupted.");
-                } catch (InterruptedException e) {
-                    logger.log(Level.SEVERE, "Shutdown interrupted.");
+                    close();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "An exception occurred while closing the connection.", e);
                 }
             }
         });
@@ -105,6 +110,25 @@ public class AsyncConnection implements Connection {
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "An exception occurred while sending the event to Sentry.", e);
             }
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        logger.log(Level.INFO, "Gracefully shutdown sentry threads.");
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
+                List<Runnable> tasks = executorService.shutdownNow();
+                logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
+            }
+            logger.log(Level.SEVERE, "Shutdown interrupted.");
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "Shutdown interrupted.");
+        } finally {
+            if(propagateClose)
+                actualConnection.close();
         }
     }
 }

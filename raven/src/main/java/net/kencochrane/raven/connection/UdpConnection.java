@@ -78,4 +78,9 @@ public class UdpConnection extends AbstractConnection {
     public void setCharset(Charset charset) {
         this.charset = charset;
     }
+
+    @Override
+    public void close() throws IOException {
+        socket.close();
+    }
 }
