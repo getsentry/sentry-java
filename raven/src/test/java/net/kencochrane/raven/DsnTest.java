@@ -26,6 +26,11 @@ public class DsnTest {
         assertThat(dsn.getProjectId(), is("9"));
     }
 
+    @Test
+    public void testDsnLookupWithNothingSet() {
+        assertThat(Dsn.dsnLookup(), is(nullValue()));
+    }
+
     @Test(expected = InvalidDsnException.class)
     public void testMissingSecretKeyInvalid() {
         new Dsn("http://publicKey:@host/9");
