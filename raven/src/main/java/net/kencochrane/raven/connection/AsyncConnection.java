@@ -64,7 +64,7 @@ public class AsyncConnection implements Connection {
     }
 
     private static final class DaemonThreadFactory implements ThreadFactory {
-        private static final AtomicInteger poolNumber = new AtomicInteger(1);
+        private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);
         private final String namePrefix;
@@ -72,7 +72,7 @@ public class AsyncConnection implements Connection {
         private DaemonThreadFactory() {
             SecurityManager s = System.getSecurityManager();
             group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-            namePrefix = "pool-" + poolNumber.getAndIncrement() + "-thread-";
+            namePrefix = "pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
         }
 
         public Thread newThread(Runnable r) {
