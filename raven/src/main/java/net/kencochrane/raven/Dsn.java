@@ -52,13 +52,15 @@ public class Dsn {
     private Map<String, String> options;
     private URI uri;
 
-
+    /**
+     * Creates a DSN based on the {@link #dsnLookup()} result.
+     */
     public Dsn() {
         this(dsnLookup());
     }
 
     /**
-     * Creates a DS based on a String.
+     * Creates a DSN based on a String.
      *
      * @param dsn dsn in a string form.
      * @throws InvalidDsnException the given DSN isn't usable.
