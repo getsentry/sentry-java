@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  */
 public class AsyncConnection implements Connection {
     private static final Logger logger = Logger.getLogger(AsyncConnection.class.getCanonicalName());
+    private static final int TIMEOUT = 1000;
     /**
      * Connection used to actually send the events.
      */
@@ -44,7 +45,7 @@ public class AsyncConnection implements Connection {
                 logger.log(Level.INFO, "Gracefully shutdown sentry threads.");
                 executorService.shutdown();
                 try {
-                    if (!executorService.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                    if (!executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
                         logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
                         List<Runnable> tasks = executorService.shutdownNow();
                         logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
