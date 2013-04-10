@@ -25,16 +25,16 @@ public class SentryAppender extends AppenderSkeleton {
         this.raven = raven;
     }
 
-    private static Event.Level formatLevel(LoggingEvent loggingEvent) {
-        if (loggingEvent.getLevel().isGreaterOrEqual(Level.FATAL)) {
+    private static Event.Level formatLevel(Level level) {
+        if (level.isGreaterOrEqual(Level.FATAL)) {
             return Event.Level.FATAL;
-        } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
+        } else if (level.isGreaterOrEqual(Level.ERROR)) {
             return Event.Level.ERROR;
-        } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.WARN)) {
+        } else if (level.isGreaterOrEqual(Level.WARN)) {
             return Event.Level.WARNING;
-        } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.INFO)) {
+        } else if (level.isGreaterOrEqual(Level.INFO)) {
             return Event.Level.INFO;
-        } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.ALL)) {
+        } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
         } else return null;
     }
@@ -45,7 +45,7 @@ public class SentryAppender extends AppenderSkeleton {
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
                 .setLogger(loggingEvent.getLoggerName())
-                .setLevel(formatLevel(loggingEvent))
+                .setLevel(formatLevel(loggingEvent.getLevel()))
                 .setCulprit(loggingEvent.getFQNOfLoggerClass());
 
         if (loggingEvent.getThrowableInformation() != null) {
