@@ -41,7 +41,7 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
         generator.writeEndObject();
     }
 
-    private void writeEnvironment(JsonGenerator generator, HttpServletRequest request) throws IOException{
+    private void writeEnvironment(JsonGenerator generator, HttpServletRequest request) throws IOException {
         generator.writeStartObject();
         generator.writeStringField(REMOTE_ADDR, request.getRemoteAddr());
         generator.writeStringField(SERVER_NAME, request.getServerName());

@@ -4,8 +4,8 @@ import net.kencochrane.raven.connection.AsyncConnection;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
-import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 

@@ -5,7 +5,10 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
     private static final String FRAMES_PARAMETER = "frames";

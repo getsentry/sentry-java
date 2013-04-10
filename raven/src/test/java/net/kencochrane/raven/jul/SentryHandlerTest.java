@@ -1,7 +1,6 @@
 package net.kencochrane.raven.jul;
 
 import net.kencochrane.raven.Raven;
-import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
@@ -20,9 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
@@ -66,7 +63,7 @@ public class SentryHandlerTest {
         assertLevelConverted(Event.Level.ERROR, Level.SEVERE);
     }
 
-    private void assertLevelConverted(Event.Level expectedLevel, Level level){
+    private void assertLevelConverted(Event.Level expectedLevel, Level level) {
         reset(mockRaven);
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 

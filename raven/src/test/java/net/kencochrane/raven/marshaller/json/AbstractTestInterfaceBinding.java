@@ -15,7 +15,7 @@ public abstract class AbstractTestInterfaceBinding {
     private ByteArrayOutputStream jsonContentStream;
 
     @Before
-    protected void setUp() throws Exception{
+    protected void setUp() throws Exception {
         jsonFactory = new JsonFactory();
         mapper = new ObjectMapper();
     }

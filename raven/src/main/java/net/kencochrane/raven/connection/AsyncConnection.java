@@ -76,6 +76,7 @@ public class AsyncConnection implements Connection {
             namePrefix = "pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
         }
 
+        @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
             if (!t.isDaemon())
