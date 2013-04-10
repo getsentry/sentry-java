@@ -10,7 +10,6 @@ import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.nio.charset.Charset;
-import java.util.UUID;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
@@ -75,12 +74,6 @@ public class Raven {
             connection = new AsyncConnection(connection);
 
         return connection;
-    }
-
-    public UUID sendEvent(EventBuilder eventBuilder) {
-        LoggedEvent event = eventBuilder.build();
-        sendEvent(event);
-        return event.getId();
     }
 
     public void runBuilderHelpers(EventBuilder eventBuilder) {

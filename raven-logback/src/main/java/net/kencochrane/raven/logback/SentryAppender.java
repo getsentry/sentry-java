@@ -74,7 +74,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
         }
 
-        raven.sendEvent(eventBuilder);
+        raven.sendEvent(eventBuilder.build());
     }
 
     private String getEventPosition(ILoggingEvent iLoggingEvent) {

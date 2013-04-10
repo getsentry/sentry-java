@@ -32,18 +32,4 @@ public class RavenTest {
 
         verify(mockConnection).send(loggedEvent);
     }
-
-    @Test
-    public void testSendEventBuilder() {
-        EventBuilder eventBuilder = mock(EventBuilder.class);
-        LoggedEvent loggedEvent = mock(LoggedEvent.class);
-        UUID mockUuid = UUID.randomUUID();
-        when(eventBuilder.build()).thenReturn(loggedEvent);
-        when(loggedEvent.getId()).thenReturn(mockUuid);
-        UUID uuid = raven.sendEvent(eventBuilder);
-
-        verify(eventBuilder).build();
-        verify(mockConnection).send(any(LoggedEvent.class));
-        assertEquals(mockUuid, uuid);
-    }
 }

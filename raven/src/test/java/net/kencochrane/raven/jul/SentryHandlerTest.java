@@ -42,14 +42,14 @@ public class SentryHandlerTest {
 
     @Test
     public void testSimpleMessageLogging() {
-        ArgumentCaptor<EventBuilder> eventBuilderCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
         LoggedEvent event;
 
         String message = UUID.randomUUID().toString();
         logger.log(Level.INFO, message);
 
-        verify(mockRaven).sendEvent(eventBuilderCaptor.capture());
-        event = eventBuilderCaptor.getValue().build();
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        event = eventCaptor.getValue();
 
         assertEquals(logger.getName(), event.getLogger());
         assertEquals(message, event.getMessage());
@@ -68,23 +68,23 @@ public class SentryHandlerTest {
 
     private void assertLevelConverted(LoggedEvent.Level expectedLevel, Level level){
         reset(mockRaven);
-        ArgumentCaptor<EventBuilder> eventBuilderCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
 
         logger.log(level, null);
-        verify(mockRaven).sendEvent(eventBuilderCaptor.capture());
-        assertEquals(expectedLevel, eventBuilderCaptor.getValue().build().getLevel());
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertEquals(expectedLevel, eventCaptor.getValue().getLevel());
     }
 
     @Test
     public void testLogException() {
-        ArgumentCaptor<EventBuilder> eventBuilderCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
         Exception exception = new Exception();
         LoggedEvent event;
 
         logger.log(Level.SEVERE, "message", exception);
 
-        verify(mockRaven).sendEvent(eventBuilderCaptor.capture());
-        event = eventBuilderCaptor.getValue().build();
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        event = eventCaptor.getValue();
         SentryInterface exceptionInterface = event.getSentryInterfaces().get(ExceptionInterface.EXCEPTION_INTERFACE);
         assertThat(exceptionInterface, instanceOf(ExceptionInterface.class));
 
@@ -103,15 +103,15 @@ public class SentryHandlerTest {
 
     @Test
     public void testLogParametrisedMessage() {
-        ArgumentCaptor<EventBuilder> eventBuilderCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
         String message = UUID.randomUUID().toString();
         List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
         LoggedEvent event;
 
         logger.log(Level.INFO, message, parameters.toArray());
 
-        verify(mockRaven).sendEvent(eventBuilderCaptor.capture());
-        event = eventBuilderCaptor.getValue().build();
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        event = eventCaptor.getValue();
         SentryInterface exceptionInterface = event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE);
         assertThat(exceptionInterface, instanceOf(MessageInterface.class));
 

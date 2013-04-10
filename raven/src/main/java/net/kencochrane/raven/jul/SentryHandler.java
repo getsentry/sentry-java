@@ -65,7 +65,7 @@ public class SentryHandler extends Handler {
         else
             eventBuilder.setMessage(record.getMessage());
 
-        raven.sendEvent(eventBuilder);
+        raven.sendEvent(eventBuilder.build());
     }
 
     @Override
