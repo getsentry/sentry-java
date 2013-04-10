@@ -9,7 +9,7 @@ import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
 /**
- * Builder to assist the creation of {@link LoggedEvent}s.
+ * Builder to assist the creation of {@link Event}s.
  */
 public class EventBuilder {
     /**
@@ -20,11 +20,11 @@ public class EventBuilder {
      * Default hostname if it isn't set manually (or can't be determined).
      */
     public static final String DEFAULT_HOSTNAME = "unavailable";
-    private final LoggedEvent event;
+    private final Event event;
     private boolean alreadyBuilt = false;
 
     /**
-     * Creates a new EventBuilder to prepare a new {@link LoggedEvent}.
+     * Creates a new EventBuilder to prepare a new {@link Event}.
      * <p>
      * Automatically generates the id of the new event.
      * </p>
@@ -34,12 +34,12 @@ public class EventBuilder {
     }
 
     /**
-     * Creates a new EventBuilder to prepare a new {@link LoggedEvent}.
+     * Creates a new EventBuilder to prepare a new {@link Event}.
      *
      * @param eventId unique identifier for the new event.
      */
     public EventBuilder(UUID eventId) {
-        this.event = new LoggedEvent(eventId);
+        this.event = new Event(eventId);
     }
 
     /**
@@ -75,7 +75,7 @@ public class EventBuilder {
      *
      * @param event currently handled event.
      */
-    private static void autoSetMissingValues(LoggedEvent event) {
+    private static void autoSetMissingValues(Event event) {
         // Ensure that a timestamp is set (to now at least!)
         if (event.getTimestamp() == null)
             event.setTimestamp(new Date());
@@ -90,11 +90,11 @@ public class EventBuilder {
     }
 
     /**
-     * Ensures that every field in the {@code LoggedEvent} are immutable to avoid confusion later.
+     * Ensures that every field in the {@code Event} are immutable to avoid confusion later.
      *
      * @param event event to make immutable.
      */
-    private static void makeImmutable(LoggedEvent event) {
+    private static void makeImmutable(Event event) {
         // Make the tags unmodifiable
         Map<String, Set<String>> unmodifiablesTags = new HashMap<String, Set<String>>(event.getTags().size());
         for (Map.Entry<String, Set<String>> tag : event.getTags().entrySet()) {
@@ -158,7 +158,7 @@ public class EventBuilder {
      * @param level log level of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setLevel(LoggedEvent.Level level) {
+    public EventBuilder setLevel(Event.Level level) {
         event.setLevel(level);
         return this;
     }
@@ -293,14 +293,14 @@ public class EventBuilder {
     }
 
     /**
-     * Finalises the {@link LoggedEvent} and returns it.
+     * Finalises the {@link Event} and returns it.
      * <p>
      * This operations will automatically set the missing values and make the mutable values immutable.
      * </p>
      *
      * @return an immutable event.
      */
-    public LoggedEvent build() {
+    public Event build() {
         if (alreadyBuilt)
             throw new IllegalStateException("A message can't be built twice");
 

@@ -14,17 +14,17 @@ import java.util.*;
  * Notes to developers:
  * <ul>
  * <li>
- * In order to ensure that a LoggedEvent can't be modified externally, the setters should have a package visibility.
+ * In order to ensure that a Event can't be modified externally, the setters should have a package visibility.
  * </li>
  * <li>
  * A proper immutable Object should only contain immutable Objects and primitives, this must be ensured before
- * publishing the LoggedEvent.<br />
+ * publishing the Event.<br />
  * There is one exception, the {@link #extra} section can't be transformed to be completely immutable.
  * </li>
  * </ul>
  * </p>
  */
-public class LoggedEvent {
+public class Event {
     /**
      * Unique identifier of the event.
      */
@@ -75,11 +75,11 @@ public class LoggedEvent {
     private Map<String, SentryInterface> sentryInterfaces = new HashMap<String, SentryInterface>();
 
     /**
-     * Creates a new LoggedEvent (should be called only through {@link EventBuilder} with the specified identifier.
+     * Creates a new Event (should be called only through {@link EventBuilder} with the specified identifier.
      *
      * @param id unique identifier of the event.
      */
-    LoggedEvent(UUID id) {
+    Event(UUID id) {
         if (id == null)
             throw new IllegalArgumentException("The id can't be null");
         this.id = id;
@@ -182,7 +182,7 @@ public class LoggedEvent {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        return id.equals(((LoggedEvent) o).id);
+        return id.equals(((Event) o).id);
 
     }
 
@@ -193,7 +193,7 @@ public class LoggedEvent {
 
     @Override
     public String toString() {
-        return "LoggedEvent{" +
+        return "Event{" +
                 "level=" + level +
                 ", message='" + message + '\'' +
                 ", logger='" + logger + '\'' +

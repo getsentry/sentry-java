@@ -5,8 +5,8 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
-import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
@@ -35,15 +35,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return arguments;
     }
 
-    private static LoggedEvent.Level formatLevel(ILoggingEvent iLoggingEvent) {
+    private static Event.Level formatLevel(ILoggingEvent iLoggingEvent) {
         if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
-            return LoggedEvent.Level.ERROR;
+            return Event.Level.ERROR;
         } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.WARN)) {
-            return LoggedEvent.Level.WARNING;
+            return Event.Level.WARNING;
         } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.INFO)) {
-            return LoggedEvent.Level.INFO;
+            return Event.Level.INFO;
         } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ALL)) {
-            return LoggedEvent.Level.DEBUG;
+            return Event.Level.DEBUG;
         } else return null;
     }
 

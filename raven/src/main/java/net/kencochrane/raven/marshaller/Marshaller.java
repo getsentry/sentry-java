@@ -1,11 +1,11 @@
 package net.kencochrane.raven.marshaller;
 
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 
 import java.io.OutputStream;
 
 /**
- * Marshaller allows to serialise a {@link LoggedEvent} and sends over a stream.
+ * Marshaller allows to serialise a {@link Event} and sends over a stream.
  */
 public interface Marshaller {
     /**
@@ -18,5 +18,5 @@ public interface Marshaller {
      * @param event       event to serialise.
      * @param destination destination stream.
      */
-    void marshall(LoggedEvent event, OutputStream destination);
+    void marshall(Event event, OutputStream destination);
 }

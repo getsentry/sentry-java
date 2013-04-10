@@ -2,7 +2,7 @@ package net.kencochrane.raven.jul;
 
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.EventBuilder;
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
@@ -42,8 +42,8 @@ public class SentryHandlerTest {
 
     @Test
     public void testSimpleMessageLogging() {
-        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
-        LoggedEvent event;
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        Event event;
 
         String message = UUID.randomUUID().toString();
         logger.log(Level.INFO, message);
@@ -57,18 +57,18 @@ public class SentryHandlerTest {
 
     @Test
     public void testLogLevelConversions() {
-        assertLevelConverted(LoggedEvent.Level.DEBUG, Level.FINEST);
-        assertLevelConverted(LoggedEvent.Level.DEBUG, Level.FINER);
-        assertLevelConverted(LoggedEvent.Level.DEBUG, Level.FINE);
-        assertLevelConverted(LoggedEvent.Level.DEBUG, Level.CONFIG);
-        assertLevelConverted(LoggedEvent.Level.INFO, Level.INFO);
-        assertLevelConverted(LoggedEvent.Level.WARNING, Level.WARNING);
-        assertLevelConverted(LoggedEvent.Level.ERROR, Level.SEVERE);
+        assertLevelConverted(Event.Level.DEBUG, Level.FINEST);
+        assertLevelConverted(Event.Level.DEBUG, Level.FINER);
+        assertLevelConverted(Event.Level.DEBUG, Level.FINE);
+        assertLevelConverted(Event.Level.DEBUG, Level.CONFIG);
+        assertLevelConverted(Event.Level.INFO, Level.INFO);
+        assertLevelConverted(Event.Level.WARNING, Level.WARNING);
+        assertLevelConverted(Event.Level.ERROR, Level.SEVERE);
     }
 
-    private void assertLevelConverted(LoggedEvent.Level expectedLevel, Level level){
+    private void assertLevelConverted(Event.Level expectedLevel, Level level){
         reset(mockRaven);
-        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
         logger.log(level, null);
         verify(mockRaven).sendEvent(eventCaptor.capture());
@@ -77,9 +77,9 @@ public class SentryHandlerTest {
 
     @Test
     public void testLogException() {
-        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         Exception exception = new Exception();
-        LoggedEvent event;
+        Event event;
 
         logger.log(Level.SEVERE, "message", exception);
 
@@ -103,10 +103,10 @@ public class SentryHandlerTest {
 
     @Test
     public void testLogParametrisedMessage() {
-        ArgumentCaptor<LoggedEvent> eventCaptor = ArgumentCaptor.forClass(LoggedEvent.class);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         String message = UUID.randomUUID().toString();
         List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-        LoggedEvent event;
+        Event event;
 
         logger.log(Level.INFO, message, parameters.toArray());
 

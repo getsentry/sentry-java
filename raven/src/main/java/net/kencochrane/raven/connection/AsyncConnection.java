@@ -1,6 +1,6 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -58,9 +58,9 @@ public class AsyncConnection implements Connection {
     }
 
     @Override
-    public void send(LoggedEvent event) {
+    public void send(Event event) {
         // TODO: Consider adding an option to wait when it's full?
-        executorService.execute(new LoggedEventSubmitter(event));
+        executorService.execute(new EventSubmitter(event));
     }
 
     private static final class DaemonThreadFactory implements ThreadFactory {
@@ -86,13 +86,13 @@ public class AsyncConnection implements Connection {
     }
 
     /**
-     * Simple runnable using the {@link #send(net.kencochrane.raven.event.LoggedEvent)} method of the
+     * Simple runnable using the {@link #send(net.kencochrane.raven.event.Event)} method of the
      * {@link #actualConnection}.
      */
-    private final class LoggedEventSubmitter implements Runnable {
-        private final LoggedEvent event;
+    private final class EventSubmitter implements Runnable {
+        private final Event event;
 
-        private LoggedEventSubmitter(LoggedEvent event) {
+        private EventSubmitter(Event event) {
             this.event = event;
         }
 

@@ -3,7 +3,7 @@ package net.kencochrane.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.*;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.apache.commons.codec.binary.Base64OutputStream;
@@ -96,7 +96,7 @@ public class JsonMarshaller implements Marshaller {
     }
 
     @Override
-    public void marshall(LoggedEvent event, OutputStream destination) {
+    public void marshall(Event event, OutputStream destination) {
 
         if (compression)
             destination = new DeflaterOutputStream(new Base64OutputStream(destination));
@@ -117,7 +117,7 @@ public class JsonMarshaller implements Marshaller {
         }
     }
 
-    private void writeContent(JsonGenerator generator, LoggedEvent event) throws IOException {
+    private void writeContent(JsonGenerator generator, Event event) throws IOException {
         generator.writeStartObject();
 
         generator.writeStringField(EVENT_ID, formatId(event.getId()));
@@ -197,7 +197,7 @@ public class JsonMarshaller implements Marshaller {
      * @param level log level to format.
      * @return log level as a String.
      */
-    private String formatLevel(LoggedEvent.Level level) {
+    private String formatLevel(Event.Level level) {
         if (level == null)
             return null;
 

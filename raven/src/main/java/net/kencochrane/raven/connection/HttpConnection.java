@@ -2,7 +2,7 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
@@ -79,7 +79,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     @Override
-    public void send(LoggedEvent event) {
+    public void send(Event event) {
         HttpURLConnection connection = getConnection();
         try {
             connection.connect();

@@ -2,7 +2,7 @@ package net.kencochrane.raven;
 
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.EventBuilder;
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -27,9 +27,9 @@ public class RavenTest {
 
     @Test
     public void testSendEvent() {
-        LoggedEvent loggedEvent = mock(LoggedEvent.class);
-        raven.sendEvent(loggedEvent);
+        Event event = mock(Event.class);
+        raven.sendEvent(event);
 
-        verify(mockConnection).send(loggedEvent);
+        verify(mockConnection).send(event);
     }
 }

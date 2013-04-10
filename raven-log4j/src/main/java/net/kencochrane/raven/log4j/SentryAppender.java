@@ -1,8 +1,8 @@
 package net.kencochrane.raven.log4j;
 
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
-import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.AppenderSkeleton;
@@ -25,17 +25,17 @@ public class SentryAppender extends AppenderSkeleton {
         this.raven = raven;
     }
 
-    private static LoggedEvent.Level formatLevel(LoggingEvent loggingEvent) {
+    private static Event.Level formatLevel(LoggingEvent loggingEvent) {
         if (loggingEvent.getLevel().isGreaterOrEqual(Level.FATAL)) {
-            return LoggedEvent.Level.FATAL;
+            return Event.Level.FATAL;
         } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
-            return LoggedEvent.Level.ERROR;
+            return Event.Level.ERROR;
         } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.WARN)) {
-            return LoggedEvent.Level.WARNING;
+            return Event.Level.WARNING;
         } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.INFO)) {
-            return LoggedEvent.Level.INFO;
+            return Event.Level.INFO;
         } else if (loggingEvent.getLevel().isGreaterOrEqual(Level.ALL)) {
-            return LoggedEvent.Level.DEBUG;
+            return Event.Level.DEBUG;
         } else return null;
     }
 

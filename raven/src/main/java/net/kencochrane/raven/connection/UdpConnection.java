@@ -1,7 +1,7 @@
 package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
-import net.kencochrane.raven.event.LoggedEvent;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
@@ -31,7 +31,7 @@ public class UdpConnection extends AbstractConnection {
     }
 
     @Override
-    public void send(LoggedEvent event) {
+    public void send(Event event) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             writeHeader(baos);

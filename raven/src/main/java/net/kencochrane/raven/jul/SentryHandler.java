@@ -1,8 +1,8 @@
 package net.kencochrane.raven.jul;
 
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
-import net.kencochrane.raven.event.LoggedEvent;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
@@ -25,15 +25,15 @@ public class SentryHandler extends Handler {
         this.raven = raven;
     }
 
-    private static LoggedEvent.Level getLevel(Level level) {
+    private static Event.Level getLevel(Level level) {
         if (level.intValue() >= Level.SEVERE.intValue())
-            return LoggedEvent.Level.ERROR;
+            return Event.Level.ERROR;
         else if (level.intValue() >= Level.WARNING.intValue())
-            return LoggedEvent.Level.WARNING;
+            return Event.Level.WARNING;
         else if (level.intValue() >= Level.INFO.intValue())
-            return LoggedEvent.Level.INFO;
+            return Event.Level.INFO;
         else if (level.intValue() >= Level.ALL.intValue())
-            return LoggedEvent.Level.DEBUG;
+            return Event.Level.DEBUG;
         else return null;
     }
 
