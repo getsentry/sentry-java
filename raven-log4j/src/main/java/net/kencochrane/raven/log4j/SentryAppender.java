@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class SentryAppender extends AppenderSkeleton {
+    private static final String LOG4J_NDC = "Log4J-NDC";
     private final Raven raven;
 
     public SentryAppender() {
@@ -59,7 +60,7 @@ public class SentryAppender extends AppenderSkeleton {
         }
 
         if (loggingEvent.getNDC() != null)
-            eventBuilder.addExtra("Log4J-NDC", loggingEvent.getNDC());
+            eventBuilder.addExtra(LOG4J_NDC, loggingEvent.getNDC());
 
         for (Map.Entry mdcEntry : (Set<Map.Entry>) loggingEvent.getProperties().entrySet())
             eventBuilder.addExtra(mdcEntry.getKey().toString(), mdcEntry.getValue());
