@@ -57,6 +57,16 @@ public class DsnTest {
         assertThat(Dsn.dsnLookup(), is(dsn));
     }
 
+    @Test
+    public void testDsnLookupWithSystemProperty() {
+        String dsn = UUID.randomUUID().toString();
+        System.setProperty("SENTRY_DSN", dsn);
+
+        assertThat(Dsn.dsnLookup(), is(dsn));
+
+        System.clearProperty("SENTRY_DSN");
+    }
+
     @Test(expected = InvalidDsnException.class)
     public void testMissingSecretKeyInvalid() {
         new Dsn("http://publicKey:@host/9");
