@@ -66,6 +66,8 @@ public class SentryAppender extends AppenderSkeleton {
         for (Map.Entry mdcEntry : (Set<Map.Entry>) loggingEvent.getProperties().entrySet())
             eventBuilder.addExtra(mdcEntry.getKey().toString(), mdcEntry.getValue());
 
+        raven.runBuilderHelpers(eventBuilder);
+
         raven.sendEvent(eventBuilder.build());
     }
 
