@@ -3,8 +3,10 @@ package net.kencochrane.raven;
 import net.kencochrane.raven.exception.InvalidDsnException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 
 public class DsnTest {
     @Test(expected = InvalidDsnException.class)
@@ -16,12 +18,12 @@ public class DsnTest {
     public void testSimpleDsnValid() {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
 
-        assertEquals("http", dsn.getProtocol());
-        assertEquals("publicKey", dsn.getPublicKey());
-        assertEquals("secretKey", dsn.getSecretKey());
-        assertEquals("host", dsn.getHost());
-        assertEquals("/", dsn.getPath());
-        assertEquals("9", dsn.getProjectId());
+        assertThat(dsn.getProtocol(), is("http"));
+        assertThat(dsn.getPublicKey(), is("publicKey"));
+        assertThat(dsn.getSecretKey(), is("secretKey"));
+        assertThat(dsn.getHost(), is("host"));
+        assertThat(dsn.getPath(), is("/"));
+        assertThat(dsn.getProjectId(), is("9"));
     }
 
     @Test(expected = InvalidDsnException.class)
@@ -49,16 +51,17 @@ public class DsnTest {
         Dsn dsn = new Dsn("naive+udp://1234567890:0987654321@complete.host.name:1234" +
                 "/composed/path/1029384756?option1&option2=valueOption2");
 
-        assertEquals("udp", dsn.getProtocol());
-        assertTrue(dsn.getProtocolSettings().contains("naive"));
-        assertEquals("1234567890", dsn.getPublicKey());
-        assertEquals("0987654321", dsn.getSecretKey());
-        assertEquals("complete.host.name", dsn.getHost());
-        assertEquals(1234, dsn.getPort());
-        assertEquals("/composed/path/", dsn.getPath());
-        assertEquals("1029384756", dsn.getProjectId());
-        assertTrue(dsn.getOptions().containsKey("option1"));
-        assertEquals("valueOption2", dsn.getOptions().get("option2"));
+        assertThat(dsn.getProtocol(), is("udp"));
+        assertThat(dsn.getProtocolSettings(), contains("naive"));
+        assertThat(dsn.getPublicKey(), is("1234567890"));
+        assertThat(dsn.getSecretKey(), is("0987654321"));
+        assertThat(dsn.getHost(), is("complete.host.name"));
+        assertThat(dsn.getPort(), is(1234));
+        assertThat(dsn.getPath(), is("/composed/path/"));
+        assertThat(dsn.getProjectId(), is("1029384756"));
+        assertThat(dsn.getOptions(), hasKey("option1"));
+        assertThat(dsn.getOptions(), hasKey("option2"));
+        assertThat(dsn.getOptions().get("option2"), is("valueOption2"));
     }
 
     @Test(expected = UnsupportedOperationException.class)

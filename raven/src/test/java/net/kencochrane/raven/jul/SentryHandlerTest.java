@@ -6,6 +6,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -18,8 +19,9 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
@@ -48,8 +50,8 @@ public class SentryHandlerTest {
         verify(mockRaven).sendEvent(eventCaptor.capture());
         event = eventCaptor.getValue();
 
-        assertEquals(logger.getName(), event.getLogger());
-        assertEquals(message, event.getMessage());
+        assertThat(event.getLogger(), is(logger.getName()));
+        assertThat(event.getMessage(), is(message));
     }
 
     @Test
@@ -69,7 +71,7 @@ public class SentryHandlerTest {
 
         logger.log(level, null);
         verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertEquals(expectedLevel, eventCaptor.getValue().getLevel());
+        assertThat(eventCaptor.getValue().getLevel(), is(expectedLevel));
     }
 
     @Test
@@ -87,7 +89,7 @@ public class SentryHandlerTest {
 
         // The object isn't exactly the same, but equals delegates to the actual exception in ImmutableThrowable.
         // This is _BAD_ and shouldn't be done, but it's the best way to do it in this particular case.
-        assertTrue(((ExceptionInterface) exceptionInterface).getThrowable().equals(exception));
+        assertThat(((ExceptionInterface) exceptionInterface).getThrowable(), Matchers.<Object>equalTo(exception));
 
 
         SentryInterface stackTraceInterface = event.getSentryInterfaces().get(StackTraceInterface.STACKTRACE_INTERFACE);
@@ -95,7 +97,7 @@ public class SentryHandlerTest {
 
         // The object isn't exactly the same, but equals delegates to the actual exception in ImmutableThrowable.
         // This is _BAD_ and shouldn't be done, but it's the best way to do it in this particular case.
-        assertTrue(((StackTraceInterface) stackTraceInterface).getThrowable().equals(exception));
+        assertThat(((StackTraceInterface) stackTraceInterface).getThrowable(), Matchers.<Object>equalTo(exception));
     }
 
     @Test
@@ -109,10 +111,11 @@ public class SentryHandlerTest {
 
         verify(mockRaven).sendEvent(eventCaptor.capture());
         event = eventCaptor.getValue();
-        SentryInterface exceptionInterface = event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE);
-        assertThat(exceptionInterface, instanceOf(MessageInterface.class));
+        assertThat(event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE), instanceOf(MessageInterface.class));
+        MessageInterface messageInterface =
+                (MessageInterface) event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE);
 
-        assertEquals(message, ((MessageInterface) exceptionInterface).getMessage());
-        assertEquals(parameters, ((MessageInterface) exceptionInterface).getParams());
+        assertThat(messageInterface.getMessage(), is(message));
+        assertThat(messageInterface.getParams(), is(parameters));
     }
 }

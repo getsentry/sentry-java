@@ -10,7 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +37,7 @@ public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
         jSonGenerator.close();
 
         JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
-        assertEquals(message, rootNode.get("message").asText());
-        assertEquals(parameters, getMapper().convertValue(rootNode.get("params"), List.class));
+        assertThat(rootNode.get("message").asText(), is(message));
+        assertThat(getMapper().convertValue(rootNode.get("params"), List.class), is(parameters));
     }
 }

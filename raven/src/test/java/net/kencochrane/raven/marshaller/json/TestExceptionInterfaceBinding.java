@@ -9,7 +9,8 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,8 +35,8 @@ public class TestExceptionInterfaceBinding extends AbstractTestInterfaceBinding 
         jsonGenerator.close();
 
         JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
-        assertEquals(throwable.getClass().getPackage().getName(), rootNode.get("module").asText());
-        assertEquals(throwable.getClass().getSimpleName(), rootNode.get("type").asText());
-        assertEquals(message, rootNode.get("value").asText());
+        assertThat(rootNode.get("module").asText(), is(throwable.getClass().getPackage().getName()));
+        assertThat(rootNode.get("type").asText(), is(throwable.getClass().getSimpleName()));
+        assertThat(rootNode.get("value").asText(), is(message));
     }
 }

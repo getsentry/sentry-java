@@ -9,7 +9,8 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 
 public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding {
@@ -37,9 +38,9 @@ public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding
         jSonGenerator.close();
 
         JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");
-        assertEquals(1, frames.size());
-        assertEquals(className, frames.get(0).get("module").asText());
-        assertEquals(methodName, frames.get(0).get("function").asText());
-        assertEquals(lineNumber, frames.get(0).get("lineno").asInt());
+        assertThat(frames.size(), is(1));
+        assertThat(frames.get(0).get("module").asText(), is(className));
+        assertThat(frames.get(0).get("function").asText(), is(methodName));
+        assertThat(frames.get(0).get("lineno").asInt(), is(lineNumber));
     }
 }
