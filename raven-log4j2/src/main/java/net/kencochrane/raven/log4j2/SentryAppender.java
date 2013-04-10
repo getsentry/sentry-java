@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
@@ -17,14 +18,21 @@ public class SentryAppender extends AbstractAppender<Serializable> {
     public static final String APPENDER_NAME = "raven";
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final Raven raven;
+    private final boolean propagateClose;
 
     public SentryAppender() {
-        this(new Raven());
+        this(new Raven(), true);
     }
 
+
     public SentryAppender(Raven raven) {
+        this(raven, false);
+    }
+
+    public SentryAppender(Raven raven, boolean propagateClose) {
         super(APPENDER_NAME, null, null);
         this.raven = raven;
+        this.propagateClose = propagateClose;
     }
 
     private static Event.Level formatLevel(Level level) {
@@ -83,5 +91,18 @@ public class SentryAppender extends AbstractAppender<Serializable> {
     private String formatCulprit(StackTraceElement stackTraceElement) {
         return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
                 + " at line " + stackTraceElement.getLineNumber();
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+
+        try {
+            if (propagateClose)
+                raven.getConnection().close();
+        } catch (IOException e) {
+            //TODO: What to do with that exception?
+            e.printStackTrace();
+        }
     }
 }

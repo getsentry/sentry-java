@@ -9,6 +9,7 @@ import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.spi.LoggingEvent;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
@@ -16,13 +17,19 @@ import java.util.Set;
 public class SentryAppender extends AppenderSkeleton {
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final Raven raven;
+    private final boolean propagateClose;
 
     public SentryAppender() {
-        this(new Raven());
+        this(new Raven(), true);
     }
 
     public SentryAppender(Raven raven) {
+        this(raven, false);
+    }
+
+    public SentryAppender(Raven raven, boolean propagateClose) {
         this.raven = raven;
+        this.propagateClose = propagateClose;
     }
 
     private static Event.Level formatLevel(Level level) {
@@ -73,6 +80,13 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void close() {
+        try {
+            if (propagateClose)
+                raven.getConnection().close();
+        } catch (IOException e) {
+            //TODO: What to do with that exception?
+            e.printStackTrace();
+        }
     }
 
     @Override

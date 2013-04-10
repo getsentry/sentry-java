@@ -7,6 +7,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -16,13 +17,19 @@ import java.util.logging.LogRecord;
 
 public class SentryHandler extends Handler {
     private final Raven raven;
+    private final boolean propagateClose;
 
     public SentryHandler() {
-        this(new Raven());
+        this(new Raven(), true);
     }
 
     public SentryHandler(Raven raven) {
+        this(raven, false);
+    }
+
+    public SentryHandler(Raven raven, boolean propagateClose) {
         this.raven = raven;
+        this.propagateClose = propagateClose;
     }
 
     private static Event.Level getLevel(Level level) {
@@ -76,5 +83,12 @@ public class SentryHandler extends Handler {
 
     @Override
     public void close() throws SecurityException {
+        try {
+            if (propagateClose)
+                raven.getConnection().close();
+        } catch (IOException e) {
+            //TODO: What to do with that exception?
+            e.printStackTrace();
+        }
     }
 }

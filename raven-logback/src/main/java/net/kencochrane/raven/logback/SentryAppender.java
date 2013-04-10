@@ -11,6 +11,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -18,13 +19,19 @@ import java.util.Map;
 
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private final Raven raven;
+    private final boolean propagateClose;
 
     public SentryAppender() {
-        this(new Raven());
+        this(new Raven(), true);
     }
 
     public SentryAppender(Raven raven) {
+        this(raven, false);
+    }
+
+    public SentryAppender(Raven raven, boolean propagateClose) {
         this.raven = raven;
+        this.propagateClose = propagateClose;
     }
 
     private static List<String> formatArguments(Object[] argumentArray) {
@@ -87,5 +94,18 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                     .append(stackTraceElement.getLineNumber());
         }
         return sb.toString();
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+
+        try {
+            if (propagateClose)
+                raven.getConnection().close();
+        } catch (IOException e) {
+            //TODO: What to do with that exception?
+            e.printStackTrace();
+        }
     }
 }
