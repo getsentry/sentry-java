@@ -8,12 +8,13 @@ import org.mockito.MockitoAnnotations;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
 
 public class DsnTest {
@@ -65,6 +66,65 @@ public class DsnTest {
         assertThat(Dsn.dsnLookup(), is(dsn));
 
         System.clearProperty("SENTRY_DSN");
+    }
+
+    @Test
+    public void testDsnLookupWithEnvironmentVariable() throws Exception {
+        String dsn = UUID.randomUUID().toString();
+        setEnv("SENTRY_DSN", dsn);
+
+        assertThat(Dsn.dsnLookup(), is(dsn));
+
+        removeEnv("SENTRY_DSN");
+    }
+
+    /**
+     * Sets an environment variable during Unit-Test.
+     * <p>
+     * DO NOT USE THIS METHOD OUTSIDE OF THE UNIT TESTS!
+     * </p>
+     *
+     * @param key   name of the environment variable.
+     * @param value value for the variable.
+     * @throws Exception if anything goes wrong.
+     */
+    @SuppressWarnings("unchecked")
+    private void setEnv(String key, String value) throws Exception {
+        Class[] classes = Collections.class.getDeclaredClasses();
+        Map<String, String> env = System.getenv();
+        for (Class cl : classes) {
+            if (env.getClass().equals(cl)) {
+                Field field = cl.getDeclaredField("m");
+                field.setAccessible(true);
+                Map<String, String> map = (Map<String, String>) field.get(env);
+                map.put(key, value);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Removes an environment variable during Unit-Test.
+     * <p>
+     * DO NOT USE THIS METHOD OUTSIDE OF THE UNIT TESTS!
+     * </p>
+     *
+     * @param key name of the environment variable.
+     * @throws Exception if anything goes wrong.
+     */
+    @SuppressWarnings("unchecked")
+    private void removeEnv(String key) throws Exception {
+        Class[] classes = Collections.class.getDeclaredClasses();
+        Map<String, String> env = System.getenv();
+        for (Class cl : classes) {
+            if (env.getClass().equals(cl)) {
+                Field field = cl.getDeclaredField("m");
+                field.setAccessible(true);
+                Map<String, String> map = (Map<String, String>) field.get(env);
+                map.remove(key);
+                break;
+            }
+        }
     }
 
     @Test(expected = InvalidDsnException.class)
