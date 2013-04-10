@@ -11,6 +11,7 @@ import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,8 +20,8 @@ public class Raven {
     public static final String DEFAULT_CHARSET = "UTF-8";
     public static final String NAME = "Raven-Java/3.0";
     private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
+    private final Set<EventBuilderHelper> builderHelpers = new HashSet<EventBuilderHelper>();
     private Connection connection;
-    private Set<EventBuilderHelper> builderHelpers;
 
     public Raven() {
         this(new Dsn());
