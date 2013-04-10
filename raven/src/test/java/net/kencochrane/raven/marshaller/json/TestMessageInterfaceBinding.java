@@ -3,6 +3,7 @@ package net.kencochrane.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,6 +39,6 @@ public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
 
         JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
         assertThat(rootNode.get("message").asText(), is(message));
-        assertThat(getMapper().convertValue(rootNode.get("params"), List.class), is(parameters));
+        assertThat(getMapper().convertValue(rootNode.get("params"), List.class), Matchers.<List>is(parameters));
     }
 }
