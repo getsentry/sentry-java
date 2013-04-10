@@ -60,9 +60,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
                     .addSentryInterface(new StackTraceInterface(throwable));
-        } else if (iLoggingEvent.getArgumentArray() != null) {
-            eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
-                    formatArguments(iLoggingEvent.getArgumentArray())));
+        } else {
+            if (iLoggingEvent.getArgumentArray() != null)
+                eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
+                        formatArguments(iLoggingEvent.getArgumentArray())));
+            // When it's a message try to rely on the position of the log (the same message can be logged from
+            // different places, or a same place can log a message in different ways.
             if (iLoggingEvent.getCallerData().length > 0)
                 eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
         }
