@@ -114,10 +114,12 @@ public class Raven {
         marshaller.setCharset(charset);
 
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
+            logger.log(Level.INFO, "Using an HTTP connection to Sentry.");
             HttpConnection httpConnection = new HttpConnection(dsn);
             httpConnection.setMarshaller(marshaller);
             connection = httpConnection;
         } else if (protocol.equalsIgnoreCase("udp")) {
+            logger.log(Level.INFO, "Using an UDP connection to Sentry.");
             UdpConnection udpConnection = new UdpConnection(dsn);
             udpConnection.setCharset(charset);
             udpConnection.setMarshaller(marshaller);
@@ -164,6 +166,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
+        logger.log(Level.INFO, "Removes '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.remove(builderHelper);
     }
 
@@ -173,6 +176,7 @@ public class Raven {
      * @param builderHelper builder helper to add.
      */
     public void addBuilderHelper(EventBuilderHelper builderHelper) {
+        logger.log(Level.INFO, "Adding '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.add(builderHelper);
     }
 
