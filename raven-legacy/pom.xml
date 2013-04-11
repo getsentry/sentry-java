@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <json-simple.version>1.1.1</json-simple.version>
+        <commons-lang.version>2.5</commons-lang.version>
+    </properties>
+
+    <parent>
+        <groupId>net.kencochrane</groupId>
+        <artifactId>raven-all</artifactId>
+        <version>3.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>raven-legacy</artifactId>
+    <packaging>jar</packaging>
+    <name>Raven legacy</name>
+    <description>The legacy client of Raven Java</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>raven</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>${json-simple.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>${commons-lang.version}</version>
+        </dependency>
+    </dependencies>
+</project>
