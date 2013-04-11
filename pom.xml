@@ -194,7 +194,7 @@
                 <configuration>
                     <message>Creating site for ${project.name} ${project.version}</message>
                     <merge>true</merge>
-                    <outputDirectory>${stagingDirectory}</outputDirectory>
+                    <outputDirectory>${project.build.directory}/staging</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
