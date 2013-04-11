@@ -193,11 +193,11 @@ public class Event {
 
     @Override
     public String toString() {
-        return "Event{" +
-                "level=" + level +
-                ", message='" + message + '\'' +
-                ", logger='" + logger + '\'' +
-                '}';
+        return "Event{"
+                + "level=" + level
+                + ", message='" + message + '\''
+                + ", logger='" + logger + '\''
+                + '}';
     }
 
     public static enum Level {

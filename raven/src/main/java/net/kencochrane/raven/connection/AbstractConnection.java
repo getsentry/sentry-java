@@ -25,6 +25,7 @@ public abstract class AbstractConnection implements Connection {
     protected AbstractConnection(Dsn dsn) {
         this(dsn.getPublicKey(), dsn.getSecretKey());
     }
+
     protected AbstractConnection(String publicKey, String secretKey) {
         this.publicKey = publicKey;
         this.secretKey = secretKey;
