@@ -26,8 +26,7 @@ import static org.apache.commons.lang.StringUtils.defaultString;
  * The options that are taken into account depend on the selected transport layer.
  * </p>
  *
- * @see Transport.Option#INCLUDE_SIGNATURE
- * @see Transport.Http.Option#TIMEOUT
+ * @deprecated Use {@link Dsn} instead.
  */
 @Deprecated
 public class SentryDsn {

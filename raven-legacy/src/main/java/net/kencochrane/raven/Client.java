@@ -36,6 +36,8 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
  * </ul>
  * <p>
  * </p>
+ *
+ * @deprecated Use {@link Raven} instead.
  */
 @Deprecated
 public class Client {
