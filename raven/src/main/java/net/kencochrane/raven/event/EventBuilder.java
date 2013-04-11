@@ -49,7 +49,6 @@ public class EventBuilder {
      * @return a checksum allowing two events with the same properties to be grouped later.
      */
     private static String calculateChecksum(String string) {
-        // TODO: Large strings will be poorly handled
         byte[] bytes = string.getBytes();
         Checksum checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
