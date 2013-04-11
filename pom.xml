@@ -17,7 +17,6 @@
     <description>Java Raven client and loggers</description>
     <url>https://github.com/kencochrane/raven-java</url>
 
-
     <licenses>
         <license>
             <name>BSD New</name>
@@ -27,7 +26,7 @@
     </licenses>
 
     <scm>
-        <url>https://github.com:kencochrane/raven-java</url>
+        <url>https://github.com/kencochrane/raven-java</url>
         <connection>scm:git:git://github.com/kencochrane/raven-java.git</connection>
         <developerConnection>scm:git:git@github.com:kencochrane/raven-java.git</developerConnection>
     </scm>
@@ -43,7 +42,7 @@
     </distributionManagement>
     <ciManagement>
         <system>Travis-CI</system>
-        <url>http://travis-ci.org/kencochrane/raven-java</url>
+        <url>https://travis-ci.org/kencochrane/raven-java</url>
     </ciManagement>
 
     <developers>
