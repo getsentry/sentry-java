@@ -95,11 +95,11 @@ public class EventBuilder {
      */
     private static void makeImmutable(Event event) {
         // Make the tags unmodifiable
-        Map<String, Set<String>> unmodifiablesTags = new HashMap<String, Set<String>>(event.getTags().size());
+        Map<String, Set<String>> unmodifiableTags = new HashMap<String, Set<String>>(event.getTags().size());
         for (Map.Entry<String, Set<String>> tag : event.getTags().entrySet()) {
-            unmodifiablesTags.put(tag.getKey(), Collections.unmodifiableSet(tag.getValue()));
+            unmodifiableTags.put(tag.getKey(), Collections.unmodifiableSet(tag.getValue()));
         }
-        event.setTags(Collections.unmodifiableMap(unmodifiablesTags));
+        event.setTags(Collections.unmodifiableMap(unmodifiableTags));
 
         // Make the extra properties unmodifiable (everything in it is still mutable though)
         event.setExtra(Collections.unmodifiableMap(event.getExtra()));
