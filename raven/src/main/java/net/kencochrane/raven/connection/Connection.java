@@ -7,7 +7,6 @@ import java.io.Closeable;
 /**
  * Connection to a Sentry server, allowing to send captured events.
  */
-//TODO: Move to an AutoCloseable?
 public interface Connection extends Closeable {
     /**
      * Sends an event to the sentry server.
