@@ -58,16 +58,21 @@
             <email>kevin@roam.be</email>
         </developer>
         <developer>
-            <id>zeeg</id>
-            <name>David Cramer</name>
-            <email>contact@email.com</email>
-        </developer>
-        <developer>
-            <id>griphiam</id>
-            <name>Mark Philpot</name>
-            <email>contact@email.com</email>
+            <id>ColinHebert</id>
+            <name>Colin Hebert</name>
+            <email>hebert.colin@gmail.com</email>
         </developer>
     </developers>
+    <contributors>
+        <contributor>
+            <name>David Cramer</name>
+            <email>contact@email.com</email>
+        </contributor>
+        <contributor>
+            <name>Mark Philpot</name>
+            <email>contact@email.com</email>
+        </contributor>
+    </contributors>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
