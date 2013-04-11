@@ -60,16 +60,21 @@
             <id>ColinHebert</id>
             <name>Colin Hebert</name>
             <email>hebert.colin@gmail.com</email>
+            <url>https://github.com/ColinHebert</url>
         </developer>
     </developers>
     <contributors>
         <contributor>
             <name>David Cramer</name>
-            <email>contact@email.com</email>
         </contributor>
         <contributor>
             <name>Mark Philpot</name>
-            <email>contact@email.com</email>
+        </contributor>
+        <contributor>
+            <name>Brad Chen</name>
+        </contributor>
+        <contributor>
+            <name>ccouturi</name>
         </contributor>
     </contributors>
 
