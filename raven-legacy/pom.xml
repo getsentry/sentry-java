@@ -3,10 +3,6 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <properties>
-        <json-simple.version>1.1.1</json-simple.version>
-        <commons-lang.version>2.5</commons-lang.version>
-    </properties>
 
     <parent>
         <groupId>net.kencochrane</groupId>
@@ -17,6 +13,11 @@
     <packaging>jar</packaging>
     <name>Raven legacy</name>
     <description>The legacy client of Raven Java</description>
+
+    <properties>
+        <json-simple.version>1.1.1</json-simple.version>
+        <commons-lang.version>2.5</commons-lang.version>
+    </properties>
 
     <dependencies>
         <dependency>
