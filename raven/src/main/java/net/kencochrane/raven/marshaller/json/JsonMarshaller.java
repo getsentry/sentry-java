@@ -249,6 +249,6 @@ public class JsonMarshaller implements Marshaller {
             }
         }
         throw new IllegalArgumentException("Couldn't set the charset to " + charset + ". " +
-                "The supported charsets are '" + JsonEncoding.values() + "'");
+                "The supported charsets are '" + Arrays.toString(JsonEncoding.values()) + "'");
     }
 }
