@@ -131,8 +131,14 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(SERVER_NAME, event.getServerName());
         writeExtras(generator, event.getExtra());
         generator.writeStringField(CHECKSUM, event.getChecksum());
+        writeInterfaces(generator, event.getSentryInterfaces());
 
-        for (Map.Entry<String, SentryInterface> interfaceEntry : event.getSentryInterfaces().entrySet()) {
+        generator.writeEndObject();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void writeInterfaces(JsonGenerator generator, Map<String, SentryInterface> sentryInterfaces) throws IOException {
+        for (Map.Entry<String, SentryInterface> interfaceEntry : sentryInterfaces.entrySet()) {
             SentryInterface sentryInterface = interfaceEntry.getValue();
 
             if (interfaceBindings.containsKey(sentryInterface.getClass())) {
@@ -143,8 +149,6 @@ public class JsonMarshaller implements Marshaller {
                         + "provided in " + sentryInterface + ".");
             }
         }
-
-        generator.writeEndObject();
     }
 
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
