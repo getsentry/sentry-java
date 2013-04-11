@@ -17,25 +17,6 @@
     <description>Java Raven client and loggers</description>
     <url>https://github.com/kencochrane/raven-java</url>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <!-- maven-compiler-plugin config -->
-        <maven.compiler.source>6</maven.compiler.source>
-        <maven.compiler.target>6</maven.compiler.target>
-
-        <!-- dependencies versions -->
-        <commons-codec.version>1.6</commons-codec.version>
-        <jackson.version>2.1.4</jackson.version>
-        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
-        <logback.version>1.0.11</logback.version>
-        <log4j.version>1.2.17</log4j.version>
-        <log4j2.version>2.0-beta4</log4j2.version>
-        <junit.version>4.11</junit.version>
-        <mockito.version>1.9.5</mockito.version>
-        <hamcrest.version>1.3</hamcrest.version>
-    </properties>
 
     <licenses>
         <license>
@@ -73,6 +54,26 @@
             <email>contact@email.com</email>
         </developer>
     </developers>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- maven-compiler-plugin config -->
+        <maven.compiler.source>6</maven.compiler.source>
+        <maven.compiler.target>6</maven.compiler.target>
+
+        <!-- dependencies versions -->
+        <commons-codec.version>1.6</commons-codec.version>
+        <jackson.version>2.1.4</jackson.version>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
+        <logback.version>1.0.11</logback.version>
+        <log4j.version>1.2.17</log4j.version>
+        <log4j2.version>2.0-beta4</log4j2.version>
+        <junit.version>4.11</junit.version>
+        <mockito.version>1.9.5</mockito.version>
+        <hamcrest.version>1.3</hamcrest.version>
+    </properties>
 
     <modules>
         <module>raven</module>
