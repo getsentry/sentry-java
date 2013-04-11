@@ -27,10 +27,24 @@
     </licenses>
 
     <scm>
-        <url>git@github.com:kencochrane/raven-java.git</url>
+        <url>https://github.com:kencochrane/raven-java</url>
         <connection>scm:git:git://github.com/kencochrane/raven-java.git</connection>
         <developerConnection>scm:git:git@github.com:kencochrane/raven-java.git</developerConnection>
     </scm>
+    <issueManagement>
+        <url>https://github.com/kencochrane/raven-java/issues</url>
+        <system>GitHub Issues</system>
+    </issueManagement>
+    <distributionManagement>
+        <site>
+            <id>raven.java.server</id>
+            <url>scm:git:git@github.com:kencochrane/raven-java.git</url>
+        </site>
+    </distributionManagement>
+    <ciManagement>
+        <system>Travis-CI</system>
+        <url>http://travis-ci.org/kencochrane/raven-java</url>
+    </ciManagement>
 
     <developers>
         <developer>
