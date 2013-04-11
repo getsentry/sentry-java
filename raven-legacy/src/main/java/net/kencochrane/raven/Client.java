@@ -151,8 +151,8 @@ public class Client {
         //NOOP
     }
 
-    private String buildAndSendEvent(EventBuilder eventBuilder){
-        for (EventBuilderHelper builderHelper: raven.getBuilderHelpers()){
+    private String buildAndSendEvent(EventBuilder eventBuilder) {
+        for (EventBuilderHelper builderHelper : raven.getBuilderHelpers()) {
             builderHelper.helpBuildingEvent(eventBuilder);
         }
         Event event = eventBuilder.build();
@@ -161,11 +161,11 @@ public class Client {
 
     }
 
-    private static Event.Level convertLevel(Integer logLevel){
-        if(logLevel == null)
+    private static Event.Level convertLevel(Integer logLevel) {
+        if (logLevel == null)
             return null;
 
-        switch (logLevel){
+        switch (logLevel) {
             case 1:
                 return Event.Level.DEBUG;
             case 2:
@@ -191,7 +191,7 @@ public class Client {
     @Deprecated
     public String captureMessage(String msg, Map<String, ?> tags) {
         EventBuilder eventBuilder = new EventBuilder().setMessage(msg);
-        for(Map.Entry<String, ?> tag: tags.entrySet()){
+        for (Map.Entry<String, ?> tag : tags.entrySet()) {
             eventBuilder.addTag(tag.getKey(), tag.getValue().toString());
         }
         return buildAndSendEvent(eventBuilder);
@@ -217,7 +217,7 @@ public class Client {
                 .setLogger(loggerClass)
                 .setLevel(convertLevel(logLevel))
                 .setCulprit(culprit);
-        for(Map.Entry<String, ?> tag: tags.entrySet()){
+        for (Map.Entry<String, ?> tag : tags.entrySet()) {
             eventBuilder.addTag(tag.getKey(), tag.getValue().toString());
         }
 
@@ -239,7 +239,7 @@ public class Client {
                 .setMessage(exception.getMessage())
                 .addSentryInterface(new StackTraceInterface(exception))
                 .addSentryInterface(new ExceptionInterface(exception));
-        for(Map.Entry<String, ?> tag: tags.entrySet()){
+        for (Map.Entry<String, ?> tag : tags.entrySet()) {
             eventBuilder.addTag(tag.getKey(), tag.getValue().toString());
         }
         return buildAndSendEvent(eventBuilder);
@@ -268,7 +268,7 @@ public class Client {
                 .setCulprit(culprit)
                 .addSentryInterface(new StackTraceInterface(exception))
                 .addSentryInterface(new ExceptionInterface(exception));
-        for(Map.Entry<String, ?> tag: tags.entrySet()){
+        for (Map.Entry<String, ?> tag : tags.entrySet()) {
             eventBuilder.addTag(tag.getKey(), tag.getValue().toString());
         }
         return buildAndSendEvent(eventBuilder);

@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.verify;
-
 public class SentryHandlerTest extends AbstractLoggerTest {
     private Logger logger;
 

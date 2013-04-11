@@ -86,7 +86,7 @@
             <property name="scope" value="package"/>
         </module>
         <module name="JavadocVariable">
-            <property name="scope" value="package" />
+            <property name="scope" value="package"/>
         </module>
         <module name="JavadocStyle">
             <property name="checkEmptyJavadoc" value="true"/>
@@ -108,7 +108,8 @@
 
         <!-- Checks for imports                              -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
-        <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
+        <!-- defaults to sun.* packages -->
+        <module name="IllegalImport"/>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
 
@@ -116,7 +117,7 @@
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
         <module name="LineLength">
-            <property name="max" value="120" />
+            <property name="max" value="120"/>
         </module>
         <module name="MethodLength">
             <property name="severity" value="warning"/>
@@ -219,18 +220,18 @@
         <module name="UpperEll"/>
 
         <module name="RegexpSinglelineJava">
-            <property name="format" value="\.printStackTrace\(\)" />
-            <property name="message" value="Log the exception instead of using exception.printStackTrace()" />
+            <property name="format" value="\.printStackTrace\(\)"/>
+            <property name="message" value="Log the exception instead of using exception.printStackTrace()"/>
             <property name="ignoreComments" value="true"/>
         </module>
         <module name="RegexpSinglelineJava">
             <property name="format" value="System\.out"/>
-            <property name="message" value="Log the message instead of using System.out" />
+            <property name="message" value="Log the message instead of using System.out"/>
             <property name="ignoreComments" value="true"/>
         </module>
         <module name="RegexpSinglelineJava">
             <property name="format" value="System\.err"/>
-            <property name="message" value="Log the message instead of using System.err" />
+            <property name="message" value="Log the message instead of using System.err"/>
             <property name="ignoreComments" value="true"/>
         </module>
     </module>
