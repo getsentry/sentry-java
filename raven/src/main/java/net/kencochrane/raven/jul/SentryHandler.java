@@ -68,7 +68,8 @@ public class SentryHandler extends Handler {
         }
 
         if (record.getParameters() != null)
-            eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(), formatParameters(record.getParameters())));
+            eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(),
+                    formatParameters(record.getParameters())));
         else
             eventBuilder.setMessage(record.getMessage());
 
