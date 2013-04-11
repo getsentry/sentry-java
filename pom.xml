@@ -15,7 +15,7 @@
     <packaging>pom</packaging>
     <name>Java-Raven</name>
     <description>Java Raven client and loggers</description>
-    <url>https://github.com/kencochrane/raven-java</url>
+    <url>https://github.com/${github.repo}</url>
 
     <licenses>
         <license>
@@ -26,23 +26,23 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/kencochrane/raven-java</url>
-        <connection>scm:git:git://github.com/kencochrane/raven-java.git</connection>
-        <developerConnection>scm:git:git@github.com:kencochrane/raven-java.git</developerConnection>
+        <url>https://github.com/${github.repo}</url>
+        <connection>scm:git:git://github.com/${github.repo}.git</connection>
+        <developerConnection>scm:git:git@github.com:${github.repo}.git</developerConnection>
     </scm>
     <issueManagement>
-        <url>https://github.com/kencochrane/raven-java/issues</url>
+        <url>https://github.com/${github.repo}/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
     <distributionManagement>
         <site>
             <id>raven.java.server</id>
-            <url>scm:git:git@github.com:kencochrane/raven-java.git</url>
+            <url>scm:git:git@github.com:${github.repo}.git</url>
         </site>
     </distributionManagement>
     <ciManagement>
         <system>Travis-CI</system>
-        <url>https://travis-ci.org/kencochrane/raven-java</url>
+        <url>https://travis-ci.org/${github.repo}</url>
     </ciManagement>
 
     <developers>
@@ -76,6 +76,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <github.repo>kencochrane/raven-java</github.repo>
 
         <!-- maven-compiler-plugin config -->
         <maven.compiler.source>6</maven.compiler.source>

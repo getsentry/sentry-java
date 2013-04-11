@@ -10,7 +10,7 @@
             <profile>pre-release</profile>
             <sourceLineNumbersEnabled>true</sourceLineNumbersEnabled>
             <gitHub>
-                <projectId>kencochrane/raven-java</projectId>
+                <projectId>${github.repo}</projectId>
                 <ribbonOrientation>right</ribbonOrientation>
                 <ribbonColor>red</ribbonColor>
             </gitHub>
