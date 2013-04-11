@@ -5,60 +5,49 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
-import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.AbstractLoggerTest;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.MessageInterface;
-import net.kencochrane.raven.event.interfaces.SentryInterface;
-import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-
-public class SentryAppenderTest {
-    @Mock
-    private Raven mockRaven;
+public class SentryAppenderTest extends AbstractLoggerTest {
     private Logger logger;
 
     @Before
+    @Override
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        super.setUp();
         logger = new LoggerContext().getLogger(SentryAppenderTest.class);
         logger.setLevel(Level.ALL);
-        Appender<ILoggingEvent> appender = new SentryAppender(mockRaven);
+        Appender<ILoggingEvent> appender = new SentryAppender(getMockRaven());
         appender.start();
         logger.addAppender(appender);
     }
 
-    @Test
-    public void testSimpleMessageLogging() {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        Event event;
-
-        String message = UUID.randomUUID().toString();
+    @Override
+    public void logAnyLevel(String message) {
         logger.info(message);
+    }
 
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        event = eventCaptor.getValue();
+    @Override
+    public void logAnyLevel(String message, Throwable exception) {
+        logger.error(message, exception);
+    }
 
-        assertThat(event.getLogger(), is(logger.getName()));
-        assertThat(event.getMessage(), is(message));
+    @Override
+    public void logAnyLevel(String message, List<String> parameters) {
+        logger.info(message, parameters.toArray());
+    }
+
+    @Override
+    public String getCurrentLoggerName() {
+        return logger.getName();
     }
 
     @Test
+    @Override
     public void testLogLevelConversions() {
         assertLevelConverted(Event.Level.DEBUG, Level.TRACE);
         assertLevelConverted(Event.Level.DEBUG, Level.DEBUG);
@@ -68,10 +57,6 @@ public class SentryAppenderTest {
     }
 
     private void assertLevelConverted(Event.Level expectedLevel, Level level) {
-        reset(mockRaven);
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-
         if (level.isGreaterOrEqual(Level.ERROR)) {
             logger.error("message");
         } else if (level.isGreaterOrEqual(Level.WARN)) {
@@ -84,52 +69,6 @@ public class SentryAppenderTest {
             logger.trace("message");
         }
 
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getLevel(), is(expectedLevel));
-    }
-
-    @Test
-    public void testLogException() {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        Exception exception = new Exception();
-        Event event;
-
-        logger.error("message", exception);
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        event = eventCaptor.getValue();
-        SentryInterface exceptionInterface = event.getSentryInterfaces().get(ExceptionInterface.EXCEPTION_INTERFACE);
-        assertThat(exceptionInterface, instanceOf(ExceptionInterface.class));
-
-        // The object isn't exactly the same, but equals delegates to the actual exception in ImmutableThrowable.
-        // This is _BAD_ and shouldn't be done, but it's the best way to do it in this particular case.
-        assertThat(((ExceptionInterface) exceptionInterface).getThrowable(), Matchers.<Object>equalTo(exception));
-
-
-        SentryInterface stackTraceInterface = event.getSentryInterfaces().get(StackTraceInterface.STACKTRACE_INTERFACE);
-        assertThat(stackTraceInterface, instanceOf(StackTraceInterface.class));
-
-        // The object isn't exactly the same, but equals delegates to the actual exception in ImmutableThrowable.
-        // This is _BAD_ and shouldn't be done, but it's the best way to do it in this particular case.
-        assertThat(((StackTraceInterface) stackTraceInterface).getThrowable(), Matchers.<Object>equalTo(exception));
-    }
-
-    @Test
-    public void testLogParametrisedMessage() {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        String message = UUID.randomUUID().toString();
-        List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-        Event event;
-
-        logger.info(message, parameters.toArray());
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        event = eventCaptor.getValue();
-        assertThat(event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE), instanceOf(MessageInterface.class));
-        MessageInterface messageInterface =
-                (MessageInterface) event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE);
-
-        assertThat(messageInterface.getMessage(), is(message));
-        assertThat(messageInterface.getParams(), is(parameters));
+        assertLogLevel(expectedLevel);
     }
 }
