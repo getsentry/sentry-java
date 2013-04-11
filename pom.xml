@@ -83,6 +83,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <github.repo>kencochrane/raven-java</github.repo>
+        <github.global.server>github</github.global.server>
 
         <!-- maven-compiler-plugin config -->
         <maven.compiler.source>6</maven.compiler.source>
@@ -188,6 +189,30 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.7</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <message>Creating site for ${project.name} ${project.version}</message>
+                    <merge>true</merge>
+                    <outputDirectory>${stagingDirectory}</outputDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>site-deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <reporting>
         <plugins>
