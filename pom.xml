@@ -13,9 +13,9 @@
     <artifactId>raven-all</artifactId>
     <version>3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>raven-all</name>
-    <description>Java Raven client and loggers.</description>
-    <url>http://sentry.readthedocs.org/en/latest/client/index.html</url>
+    <name>Java-Raven</name>
+    <description>Java Raven client and loggers</description>
+    <url>https://github.com/kencochrane/raven-java</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
