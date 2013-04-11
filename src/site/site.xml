@@ -5,13 +5,25 @@
         <version>1.3.0</version>
     </skin>
     <publishDate position="left"/>
+    <custom>
+        <fluidoSkin>
+            <profile>pre-release</profile>
+            <sourceLineNumbersEnabled>true</sourceLineNumbersEnabled>
+            <gitHub>
+                <projectId>kencochrane/raven-java</projectId>
+                <ribbonOrientation>right</ribbonOrientation>
+                <ribbonColor>red</ribbonColor>
+            </gitHub>
+        </fluidoSkin>
+    </custom>
 
     <body>
         <links>
             <item name="Sentry" href="https://www.getsentry.com/"/>
             <item name="Sentry on GitHub" href="https://www.github.com/getsentry/sentry/"/>
         </links>
-        <menu ref="modules" inherit="top" />
-        <menu ref="reports" inherit="top" />
+        <menu ref="parent" inherit="top"/>
+        <menu ref="modules" inherit="top"/>
+        <menu ref="reports" inherit="top"/>
     </body>
 </project>
