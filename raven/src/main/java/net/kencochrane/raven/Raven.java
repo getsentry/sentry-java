@@ -130,7 +130,7 @@ public class Raven {
         }
 
         if (dsn.getOptions().containsKey(Dsn.ASYNC_OPTION))
-            connection = new AsyncConnection(connection);
+            connection = new AsyncConnection(connection, dsn);
 
         return connection;
     }
