@@ -26,6 +26,12 @@ public abstract class AbstractConnection implements Connection {
         this(dsn.getPublicKey(), dsn.getSecretKey());
     }
 
+    /**
+     * Creates a connection based on the public and secret keys.
+     *
+     * @param publicKey public key (identifier) to the Sentry server.
+     * @param secretKey secret key (password) to the Sentry server.
+     */
     protected AbstractConnection(String publicKey, String secretKey) {
         this.publicKey = publicKey;
         this.secretKey = secretKey;
