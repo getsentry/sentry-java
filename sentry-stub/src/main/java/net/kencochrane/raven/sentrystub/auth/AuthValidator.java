@@ -39,7 +39,7 @@ public class AuthValidator {
     private void validateVersion(String authSentryVersion, InvalidAuthException invalidAuthException) {
         if (authSentryVersion == null || !SENTRY_PROTOCOL_VERSIONS.contains(authSentryVersion))
             invalidAuthException.addDetailedMessage("The version '" + authSentryVersion + "' isn't valid, " +
-                    "only '" + SENTRY_PROTOCOL_VERSIONS + "' are accepted.");
+                    "only those " + SENTRY_PROTOCOL_VERSIONS + " are supported.");
     }
 
     private void validateKeys(String publicKey, String secretKey,
@@ -53,7 +53,7 @@ public class AuthValidator {
         if (secretKey == null)
             invalidAuthException.addDetailedMessage("No secret key provided");
 
-        if (secretKey != null && publicKey != null && !publicKeySecretKey.get(publicKey).equals(secretKey))
+        if (secretKey != null && publicKey != null && !secretKey.equals(publicKeySecretKey.get(publicKey)))
             invalidAuthException.addDetailedMessage("The secret key '" + secretKey + "' " +
                     "isn't valid for '" + publicKey + "'");
     }
@@ -62,7 +62,7 @@ public class AuthValidator {
         if (projectId == null)
             invalidAuthException.addDetailedMessage("No project ID provided");
 
-        if (publicKey != null && !publicKeyProjectId.get(publicKey).equals(projectId))
+        if (projectId != null && publicKey != null && !projectId.equals(publicKeyProjectId.get(publicKey)))
             invalidAuthException.addDetailedMessage("The project '" + projectId + "' " +
                     "can't be accessed by ' " + publicKey + " '");
     }
