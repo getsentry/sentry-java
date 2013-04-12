@@ -70,16 +70,26 @@ public class AsyncConnection implements Connection {
     /**
      * Creates a connection which will rely on an executor to send events.
      * <p>
-     * Will propagate the {@link #close()} operation and
+     * Will propagate the {@link #close()} operation and attempt to get the number of Threads and their priority from
+     * the DSN configuration.
      * </p>
      *
-     * @param actualConnection
-     * @param dsn
+     * @param actualConnection connection used to send the events.
+     * @param dsn              Data Source Name containing the additional settings for the async connection.
      */
     public AsyncConnection(Connection actualConnection, Dsn dsn) {
         this(actualConnection, true, getMaxThreads(dsn), getPriority(dsn));
     }
 
+    /**
+     * Creates a connection which will rely on an executor to send events.
+     *
+     * @param actualConnection connection used to send the events.
+     * @param propagateClose   whether or not the {@link #actualConnection} should be closed
+     *                         when this connection closes.
+     * @param maxThreads       number of {@code Thread}s available in the thread pool.
+     * @param priority         priority of the {@code Thread}s.
+     */
     public AsyncConnection(Connection actualConnection, boolean propagateClose, int maxThreads, int priority) {
         this.actualConnection = actualConnection;
         this.propagateClose = propagateClose;
@@ -87,6 +97,16 @@ public class AsyncConnection implements Connection {
         addShutdownHook();
     }
 
+    /**
+     * Gets the number of {@code Thread}s that should be available in the pool.
+     * <p>
+     * Attempts to get the {@link #MAX_THREADS_OPTION} option from the {@code Dsn},
+     * defaults to {@link #DEFAULT_MAX_THREADS} if not available.
+     * </p>
+     *
+     * @param dsn Data Source Name potentially containing settings for the {@link AsyncConnection}.
+     * @return the number of threads that should be available in the pool.
+     */
     private static int getMaxThreads(Dsn dsn) {
         if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
             return Integer.parseInt(dsn.getOptions().get(MAX_THREADS_OPTION));
@@ -95,6 +115,16 @@ public class AsyncConnection implements Connection {
         }
     }
 
+    /**
+     * Gets the priority of {@code Thread}s in the pool.
+     * <p>
+     * Attempts to get the {@link #PRIORITY_OPTION} option from the {@code Dsn},
+     * defaults to {@link #DEFAULT_PRIORITY} if not available.
+     * </p>
+     *
+     * @param dsn Data Source Name potentially containing settings for the {@link AsyncConnection}.
+     * @return the priority of threads available in the pool.
+     */
     private static int getPriority(Dsn dsn) {
         if (dsn.getOptions().containsKey(PRIORITY_OPTION)) {
             return Integer.parseInt(dsn.getOptions().get(PRIORITY_OPTION));
@@ -103,6 +133,9 @@ public class AsyncConnection implements Connection {
         }
     }
 
+    /**
+     * Adds a hook to shutdown the {@link #executorService} gracefully when the JVM shuts down.
+     */
     private void addShutdownHook() {
         // JUL loggers are shutdown by an other shutdown hook, it's possible that nothing will get actually logged.
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -116,6 +149,12 @@ public class AsyncConnection implements Connection {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The event will be added to a queue and will be handled by a separate {@code Thread} later on.
+     * </p>
+     */
     @Override
     public void send(Event event) {
         executorService.execute(new EventSubmitter(event));
