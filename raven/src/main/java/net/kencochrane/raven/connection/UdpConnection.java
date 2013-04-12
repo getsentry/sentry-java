@@ -28,7 +28,7 @@ public class UdpConnection extends AbstractConnection {
 
     public UdpConnection(Dsn dsn) {
         super(dsn);
-        openSocket(dsn.getHost(), dsn.getPort());
+        openSocket(dsn.getHost(), dsn.getPort() != -1 ? dsn.getPort() : DEFAULT_UDP_PORT);
     }
 
     public UdpConnection(String hostname, String publicKey, String secretKey) {
