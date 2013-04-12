@@ -74,7 +74,7 @@ public class JsonMarshaller implements Marshaller {
     /**
      * Date format for ISO 8601.
      */
-    private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+    private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     private static final Logger logger = Logger.getLogger(JsonMarshaller.class.getCanonicalName());
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings =
