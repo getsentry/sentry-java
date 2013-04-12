@@ -144,7 +144,7 @@ public class HttpConnection extends AbstractConnection {
         try {
             String line;
             while ((line = reader.readLine()) != null)
-                sb.append(line);
+                sb.append(line).append("\n");
 
         } catch (Exception e2) {
             logger.log(Level.SEVERE, "Exception while reading the error message from the connection.", e2);
