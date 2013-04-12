@@ -88,6 +88,10 @@ public class JsonMarshaller implements Marshaller {
      */
     private JsonEncoding charset = JsonEncoding.UTF8;
 
+    static {
+        ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
     public JsonMarshaller() {
         addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding());
         addInterfaceBinding(StackTraceInterface.class, new StackTraceInterfaceBinding());
