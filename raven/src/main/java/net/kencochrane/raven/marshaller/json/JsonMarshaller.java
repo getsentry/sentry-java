@@ -137,7 +137,8 @@ public class JsonMarshaller implements Marshaller {
     }
 
     @SuppressWarnings("unchecked")
-    private void writeInterfaces(JsonGenerator generator, Map<String, SentryInterface> sentryInterfaces) throws IOException {
+    private void writeInterfaces(JsonGenerator generator, Map<String, SentryInterface> sentryInterfaces)
+            throws IOException {
         for (Map.Entry<String, SentryInterface> interfaceEntry : sentryInterfaces.entrySet()) {
             SentryInterface sentryInterface = interfaceEntry.getValue();
 
@@ -252,7 +253,7 @@ public class JsonMarshaller implements Marshaller {
                 return;
             }
         }
-        throw new IllegalArgumentException("Couldn't set the charset to " + charset + ". " +
-                "The supported charsets are '" + Arrays.toString(JsonEncoding.values()) + "'");
+        throw new IllegalArgumentException("Couldn't set the charset to " + charset + ". "
+                + "The supported charsets are '" + Arrays.toString(JsonEncoding.values()) + "'");
     }
 }
