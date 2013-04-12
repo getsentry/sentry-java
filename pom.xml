@@ -107,6 +107,7 @@
         <module>raven-log4j</module>
         <module>raven-logback</module>
         <module>raven-log4j2</module>
+        <module>sentry-stub</module>
     </modules>
 
     <dependencyManagement>
