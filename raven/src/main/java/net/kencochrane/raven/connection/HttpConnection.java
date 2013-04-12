@@ -21,23 +21,58 @@ import java.util.logging.Logger;
 
 /**
  * Basic connection to a Sentry server, using HTTP and HTTPS.
+ * <p>
+ * It is possible to enable the "naive mode" through the DSN with {@link Dsn#NAIVE_PROTOCOL} to allow a connection over
+ * SSL using a certificate with a wildcard.<br />
+ *
+ * </p>
  */
 public class HttpConnection extends AbstractConnection {
     private static final Logger logger = Logger.getLogger(HttpConnection.class.getCanonicalName());
+    /**
+     * HTTP Header for the user agent.
+     */
     private static final String USER_AGENT = "User-Agent";
+    /**
+     * HTTP Header for the authentication to Sentry.
+     */
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
+    /**
+     * Default timeout of an HTTP connection to Sentry.
+     */
     private static final int DEFAULT_TIMEOUT = 10000;
+    /**
+     * HostnameVerifier allowing wildcard certificates to work without adding them to the truststore.
+     */
     private static final HostnameVerifier NAIVE_VERIFIER = new HostnameVerifier() {
         @Override
         public boolean verify(String hostname, SSLSession sslSession) {
             return true;
         }
     };
+    /**
+     * URL of the Sentry endpoint.
+     */
     private final URL sentryUrl;
+    /**
+     * Marshaller used to transform and send the {@link Event} over a stream.
+     */
     private Marshaller marshaller = new JsonMarshaller();
+    /**
+     * Timeout of an HTTP connection to Sentry.
+     */
     private int timeout = DEFAULT_TIMEOUT;
+    /**
+     * Setting allowing to bypass the security system which requires wildcard certificates
+     * to be added to the truststore.
+     */
     private boolean bypassSecurity;
 
+    /**
+     * Creates a connection through HTTP(s) based on the settings in the {@code dsn}.
+     *
+     * @param dsn Data Source Name containing details and options for the connection to Sentry.
+     */
     public HttpConnection(Dsn dsn) {
         super(dsn);
 
