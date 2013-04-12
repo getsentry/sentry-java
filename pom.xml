@@ -34,6 +34,12 @@
         <url>https://github.com/${github.repo}/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
+    <distributionManagement>
+        <site>
+            <id>raven.java.server</id>
+            <url>scm:git:git@github.com:${github.repo}.git</url>
+        </site>
+    </distributionManagement>
     <ciManagement>
         <system>Travis-CI</system>
         <url>https://travis-ci.org/${github.repo}</url>
@@ -212,10 +218,20 @@
                 <version>3.2</version>
                 <executions>
                     <execution>
+                        <id>stage</id>
                         <goals>
                             <goal>stage</goal>
                         </goals>
                         <phase>post-site</phase>
+                    </execution>
+                    <execution>
+                        <id>default-deploy</id>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                        <configuration>
+                            <skipDeploy>true</skipDeploy>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
