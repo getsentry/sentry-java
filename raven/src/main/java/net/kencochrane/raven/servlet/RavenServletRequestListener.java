@@ -6,6 +6,7 @@ import javax.servlet.ServletRequestListener;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpServletRequest;
 
+//TODO: Consider Servlet < 3?
 @WebListener
 public class RavenServletRequestListener implements ServletRequestListener {
     private static final ThreadLocal<HttpServletRequest> THREAD_REQUEST = new ThreadLocal<HttpServletRequest>();
