@@ -72,7 +72,7 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
         for (Cookie cookie : cookies) {
             generator.writeStringField(cookie.getName(), cookie.getValue());
         }
-        generator.writeStartObject();
+        generator.writeEndObject();
     }
 
     private void writeData(JsonGenerator generator, Map<String, String[]> parameterMap) throws IOException {
