@@ -54,7 +54,7 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
         generator.writeStartObject();
         for (String header : Collections.list(request.getHeaderNames())) {
             generator.writeArrayFieldStart(header);
-            for (String headerValue : request.getParameterValues(header)) {
+            for (String headerValue : Collections.list(request.getHeaders(header))) {
                 generator.writeString(headerValue);
             }
             generator.writeEndArray();
