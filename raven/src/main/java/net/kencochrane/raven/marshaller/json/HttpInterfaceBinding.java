@@ -17,10 +17,17 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
     private static final String COOKIES = "cookies";
     private static final String HEADERS = "headers";
     private static final String ENVIRONMENT = "env";
-    private static final String REMOTE_ADDR = "REMOTE_ADDR";
-    private static final String SERVER_NAME = "SERVER_NAME";
-    private static final String SERVER_PORT = "SERVER_PORT";
-    private static final String SERVER_PROTOCOL = "SERVER_PROTOCOL";
+    private static final String ENV_REMOTE_ADDR = "REMOTE_ADDR";
+    private static final String ENV_SERVER_NAME = "SERVER_NAME";
+    private static final String ENV_SERVER_PORT = "SERVER_PORT";
+    private static final String ENV_LOCAL_ADDR = "LOCAL_ADDR";
+    private static final String ENV_LOCAL_NAME = "LOCAL_NAME";
+    private static final String ENV_LOCAL_PORT = "LOCAL_PORT";
+    private static final String ENV_SERVER_PROTOCOL = "SERVER_PROTOCOL";
+    private static final String ENV_REQUEST_SECURE = "REQUEST_SECURE";
+    private static final String ENV_REQUEST_ASYNC = "REQUEST_ASYNC";
+    private static final String ENV_AUTH_TYPE = "AUTH_TYPE";
+    private static final String ENV_REMOTE_USER = "REMOTE_USER";
 
     @Override
     public void writeInterface(JsonGenerator generator, HttpInterface httpInterface) throws IOException {
@@ -43,10 +50,18 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
 
     private void writeEnvironment(JsonGenerator generator, HttpServletRequest request) throws IOException {
         generator.writeStartObject();
-        generator.writeStringField(REMOTE_ADDR, request.getRemoteAddr());
-        generator.writeStringField(SERVER_NAME, request.getServerName());
-        generator.writeNumberField(SERVER_PORT, request.getServerPort());
-        generator.writeStringField(SERVER_PROTOCOL, request.getProtocol());
+        generator.writeStringField(ENV_REMOTE_ADDR, request.getRemoteAddr());
+        generator.writeStringField(ENV_SERVER_NAME, request.getServerName());
+        generator.writeNumberField(ENV_SERVER_PORT, request.getServerPort());
+        generator.writeStringField(ENV_LOCAL_ADDR, request.getLocalAddr());
+        generator.writeStringField(ENV_LOCAL_NAME, request.getLocalName());
+        generator.writeNumberField(ENV_LOCAL_PORT, request.getLocalPort());
+        generator.writeStringField(ENV_SERVER_PROTOCOL, request.getProtocol());
+        generator.writeBooleanField(ENV_REQUEST_SECURE, request.isSecure());
+        generator.writeBooleanField(ENV_REQUEST_ASYNC, request.isAsyncStarted());
+        generator.writeStringField(ENV_AUTH_TYPE, request.getAuthType());
+        //TODO: Should that be really displayed here ? Consider the user interface?
+        generator.writeStringField(ENV_REMOTE_USER, request.getRemoteUser());
         generator.writeEndObject();
     }
 
