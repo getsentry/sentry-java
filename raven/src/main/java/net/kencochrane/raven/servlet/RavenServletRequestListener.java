@@ -1,5 +1,6 @@
 package net.kencochrane.raven.servlet;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.annotation.WebListener;
@@ -20,7 +21,8 @@ public class RavenServletRequestListener implements ServletRequestListener {
 
     @Override
     public void requestInitialized(ServletRequestEvent servletRequestEvent) {
-        if (servletRequestEvent instanceof HttpServletRequest)
-            THREAD_REQUEST.set((HttpServletRequest) servletRequestEvent.getServletRequest());
+        ServletRequest servletRequest = servletRequestEvent.getServletRequest();
+        if (servletRequest instanceof HttpServletRequest)
+            THREAD_REQUEST.set((HttpServletRequest) servletRequest);
     }
 }
