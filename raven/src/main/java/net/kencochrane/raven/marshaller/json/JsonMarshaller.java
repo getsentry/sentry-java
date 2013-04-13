@@ -222,6 +222,8 @@ public class JsonMarshaller implements Marshaller {
             case ERROR:
                 return "error";
             default:
+                logger.warning("The level '" + level.name() + "' isn't supported, this should NEVER happen, contact "
+                        + "the developers of Raven-Java");
                 return null;
         }
     }
