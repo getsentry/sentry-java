@@ -20,13 +20,13 @@ public class RavenTest {
     private Raven raven;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         raven = new Raven(mockConnection);
     }
 
     @Test
-    public void testSendEvent() {
+    public void testSendEvent() throws Exception {
         Event event = mock(Event.class);
         raven.sendEvent(event);
 
@@ -34,7 +34,7 @@ public class RavenTest {
     }
 
     @Test
-    public void testChangeConnection() {
+    public void testChangeConnection() throws Exception {
         Event event = mock(Event.class);
         Connection mockNewConnection = mock(Connection.class);
 
@@ -46,7 +46,7 @@ public class RavenTest {
     }
 
     @Test
-    public void testAddRemoveBuilderHelpers() {
+    public void testAddRemoveBuilderHelpers() throws Exception {
         EventBuilderHelper builderHelper = mock(EventBuilderHelper.class);
         assertThat(raven.getBuilderHelpers(), not(contains(builderHelper)));
 
@@ -57,13 +57,13 @@ public class RavenTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testCantModifyBuilderHelpersDirectly() {
+    public void testCantModifyBuilderHelpersDirectly() throws Exception {
         EventBuilderHelper builderHelper = mock(EventBuilderHelper.class);
         raven.getBuilderHelpers().add(builderHelper);
     }
 
     @Test
-    public void testRunBuilderHelpers() {
+    public void testRunBuilderHelpers() throws Exception {
         EventBuilder eventBuilder = mock(EventBuilder.class);
         EventBuilderHelper builderHelper = mock(EventBuilderHelper.class);
         raven.addBuilderHelper(builderHelper);

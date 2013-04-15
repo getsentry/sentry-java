@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.naming.Context;
-import javax.naming.NamingException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
@@ -22,19 +21,19 @@ public class DsnTest {
     private Context context;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         System.setProperty("java.naming.factory.initial", InitialContextMockFactory.class.getCanonicalName());
         InitialContextMockFactory.context = context;
     }
 
     @Test(expected = InvalidDsnException.class)
-    public void testEmptyDsnInvalid() {
+    public void testEmptyDsnInvalid() throws Exception {
         new Dsn("");
     }
 
     @Test
-    public void testSimpleDsnValid() {
+    public void testSimpleDsnValid() throws Exception {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
 
         assertThat(dsn.getProtocol(), is("http"));
@@ -46,12 +45,12 @@ public class DsnTest {
     }
 
     @Test
-    public void testDsnLookupWithNothingSet() {
+    public void testDsnLookupWithNothingSet() throws Exception {
         assertThat(Dsn.dsnLookup(), is(nullValue()));
     }
 
     @Test
-    public void testDsnLookupWithJndi() throws NamingException {
+    public void testDsnLookupWithJndi() throws Exception {
         String dsn = UUID.randomUUID().toString();
         when(context.lookup("java:comp/env/sentry/dsn")).thenReturn(dsn);
 
@@ -59,7 +58,7 @@ public class DsnTest {
     }
 
     @Test
-    public void testDsnLookupWithSystemProperty() {
+    public void testDsnLookupWithSystemProperty() throws Exception {
         String dsn = UUID.randomUUID().toString();
         System.setProperty("SENTRY_DSN", dsn);
 
@@ -128,27 +127,27 @@ public class DsnTest {
     }
 
     @Test(expected = InvalidDsnException.class)
-    public void testMissingSecretKeyInvalid() {
+    public void testMissingSecretKeyInvalid() throws Exception {
         new Dsn("http://publicKey:@host/9");
     }
 
     @Test(expected = InvalidDsnException.class)
-    public void testMissingHostInvalid() {
+    public void testMissingHostInvalid() throws Exception {
         new Dsn("http://publicKey:secretKey@/9");
     }
 
     @Test(expected = InvalidDsnException.class)
-    public void testMissingPathInvalid() {
+    public void testMissingPathInvalid() throws Exception {
         new Dsn("http://publicKey:secretKey@host");
     }
 
     @Test(expected = InvalidDsnException.class)
-    public void testMissingProjectIdInvalid() {
+    public void testMissingProjectIdInvalid() throws Exception {
         new Dsn("http://publicKey:secretKey@host/");
     }
 
     @Test
-    public void testAdvancedDsnValid() {
+    public void testAdvancedDsnValid() throws Exception {
         Dsn dsn = new Dsn("naive+udp://1234567890:0987654321@complete.host.name:1234" +
                 "/composed/path/1029384756?option1&option2=valueOption2");
 
@@ -166,14 +165,14 @@ public class DsnTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testOptionsImmutable() {
+    public void testOptionsImmutable() throws Exception {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
 
         dsn.getOptions().put("test", "test");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testProtocolSettingsImmutable() {
+    public void testProtocolSettingsImmutable() throws Exception {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
 
         dsn.getProtocolSettings().add("test");

@@ -14,7 +14,7 @@ public class SentryHandlerTest extends AbstractLoggerTest {
 
     @Override
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         super.setUp();
         logger = Logger.getAnonymousLogger();
         logger.setUseParentHandlers(false);
@@ -44,7 +44,7 @@ public class SentryHandlerTest extends AbstractLoggerTest {
 
     @Override
     @Test
-    public void testLogLevelConversions() {
+    public void testLogLevelConversions() throws Exception {
         assertLevelConverted(Event.Level.DEBUG, Level.FINEST);
         assertLevelConverted(Event.Level.DEBUG, Level.FINER);
         assertLevelConverted(Event.Level.DEBUG, Level.FINE);

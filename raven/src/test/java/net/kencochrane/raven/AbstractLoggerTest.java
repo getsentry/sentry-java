@@ -27,12 +27,12 @@ public abstract class AbstractLoggerTest {
     private Raven mockRaven;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    public void testSimpleMessageLogging() {
+    public void testSimpleMessageLogging() throws Exception {
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         Event event;
 
@@ -59,7 +59,7 @@ public abstract class AbstractLoggerTest {
     public abstract String getCurrentLoggerName();
 
     @Test
-    public abstract void testLogLevelConversions();
+    public abstract void testLogLevelConversions() throws Exception;
 
     protected void assertLogLevel(Event.Level expectedLevel) {
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
@@ -70,7 +70,7 @@ public abstract class AbstractLoggerTest {
     }
 
     @Test
-    public void testLogException() {
+    public void testLogException() throws Exception {
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         Exception exception = new Exception();
         Event event;
@@ -96,7 +96,7 @@ public abstract class AbstractLoggerTest {
     }
 
     @Test
-    public void testLogParametrisedMessage() {
+    public void testLogParametrisedMessage() throws Exception {
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         String message = UUID.randomUUID().toString();
         List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());

@@ -17,7 +17,7 @@ public class SentryAppenderTest extends AbstractLoggerTest {
 
     @Before
     @Override
-    public void setUp() {
+    public void setUp() throws Exception {
         super.setUp();
         logger = new LoggerContext().getLogger(SentryAppenderTest.class);
         logger.setLevel(Level.ALL);
@@ -48,7 +48,7 @@ public class SentryAppenderTest extends AbstractLoggerTest {
 
     @Test
     @Override
-    public void testLogLevelConversions() {
+    public void testLogLevelConversions() throws Exception {
         assertLevelConverted(Event.Level.DEBUG, Level.TRACE);
         assertLevelConverted(Event.Level.DEBUG, Level.DEBUG);
         assertLevelConverted(Event.Level.INFO, Level.INFO);
