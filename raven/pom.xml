@@ -11,8 +11,8 @@
     </parent>
     <artifactId>raven</artifactId>
     <packaging>jar</packaging>
-    <name>The Java Raven client</name>
-    <description>Java Raven client</description>
+    <name>Raven-Java client</name>
+    <description>Sentry client written in Java.</description>
 
     <dependencies>
         <dependency>

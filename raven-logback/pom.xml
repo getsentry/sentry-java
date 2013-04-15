@@ -11,8 +11,8 @@
     </parent>
     <artifactId>raven-logback</artifactId>
     <packaging>jar</packaging>
-    <name>raven-logback</name>
-    <description>Logback appender for Raven/Sentry.</description>
+    <name>Raven-Java for Logback</name>
+    <description>Logback appender allowing to send logs to the Raven-Java client.</description>
 
     <dependencies>
         <dependency>

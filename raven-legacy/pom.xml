@@ -11,8 +11,8 @@
     </parent>
     <artifactId>raven-legacy</artifactId>
     <packaging>jar</packaging>
-    <name>Raven legacy</name>
-    <description>The legacy client of Raven Java</description>
+    <name>Raven-Java legacy client</name>
+    <description>Legacy interface for the new version of Raven-Java.</description>
 
     <properties>
         <json-simple.version>1.1.1</json-simple.version>

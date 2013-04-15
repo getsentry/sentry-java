@@ -11,8 +11,8 @@
     </parent>
     <artifactId>raven-log4j</artifactId>
     <packaging>jar</packaging>
-    <name>raven-log4j</name>
-    <description>Log4J appender for Raven/Sentry.</description>
+    <name>Raven-Java for log4j</name>
+    <description>log4j appender allowing to send logs to the Raven-Java client.</description>
 
     <dependencies>
         <dependency>
