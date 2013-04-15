@@ -58,7 +58,8 @@ public class JsonDecoder {
         boolean valid = false;
         try {
             final JsonParser parser = new JsonFactory().createJsonParser(inputStream);
-            while (parser.nextToken() != null) {
+            while (parser.hasCurrentToken()) {
+                parser.nextToken();
             }
             valid = true;
         } catch (Exception e) {
