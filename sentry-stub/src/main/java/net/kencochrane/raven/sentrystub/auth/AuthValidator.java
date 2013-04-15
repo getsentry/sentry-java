@@ -86,8 +86,8 @@ public class AuthValidator {
      */
     private void validateVersion(String authSentryVersion, InvalidAuthException invalidAuthException) {
         if (authSentryVersion == null || !SENTRY_PROTOCOL_VERSIONS.contains(authSentryVersion))
-            invalidAuthException.addDetailedMessage("The version '" + authSentryVersion + "' isn't valid, " +
-                    "only those " + SENTRY_PROTOCOL_VERSIONS + " are supported.");
+            invalidAuthException.addDetailedMessage("The version '" + authSentryVersion + "' isn't valid, "
+                    + "only those " + SENTRY_PROTOCOL_VERSIONS + " are supported.");
     }
 
     /**
@@ -106,15 +106,15 @@ public class AuthValidator {
         if (publicKey == null)
             invalidAuthException.addDetailedMessage("No public key provided");
         else if (!publicKeySecretKey.containsKey(publicKey))
-            invalidAuthException.addDetailedMessage("The public key '" + publicKey + "' isn't associated " +
-                    "with a secret key.");
+            invalidAuthException.addDetailedMessage("The public key '" + publicKey + "' isn't associated "
+                    + "with a secret key.");
 
         if (secretKey == null)
             invalidAuthException.addDetailedMessage("No secret key provided");
 
         if (secretKey != null && publicKey != null && !secretKey.equals(publicKeySecretKey.get(publicKey)))
-            invalidAuthException.addDetailedMessage("The secret key '" + secretKey + "' " +
-                    "isn't valid for '" + publicKey + "'");
+            invalidAuthException.addDetailedMessage("The secret key '" + secretKey + "' "
+                    + "isn't valid for '" + publicKey + "'");
     }
 
     /**
@@ -130,8 +130,8 @@ public class AuthValidator {
             invalidAuthException.addDetailedMessage("No project ID provided");
 
         if (projectId != null && publicKey != null && !projectId.equals(publicKeyProjectId.get(publicKey)))
-            invalidAuthException.addDetailedMessage("The project '" + projectId + "' " +
-                    "can't be accessed by ' " + publicKey + " '");
+            invalidAuthException.addDetailedMessage("The project '" + projectId + "' "
+                    + "can't be accessed by ' " + publicKey + " '");
     }
 
     /**
