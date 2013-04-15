@@ -9,9 +9,12 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebListener
 public class SentryUdpContextListener implements ServletContextListener {
+    private static final Logger logger = Logger.getLogger(SentryUdpContextListener.class.getCanonicalName());
     private static final int DEFAULT_SENTRY_UDP_PORT = 9001;
     private static final String SENTRY_UDP_PORT_PARAMETER = "sentryUdpPort";
     private ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -69,7 +72,7 @@ public class SentryUdpContextListener implements ServletContextListener {
                     udpSocket.receive(datagramPacket);
                     executorService.execute(new UdpRequestHandler(datagramPacket));
                 } catch (Exception e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    logger.log(Level.WARNING, "An exception occurred during the reception of a UDP packet.", e);
                 }
             }
         }
