@@ -1,13 +1,18 @@
 package net.kencochrane.raven.sentrystub;
 
 import net.kencochrane.raven.sentrystub.auth.AuthValidator;
+import net.kencochrane.raven.sentrystub.auth.InvalidAuthException;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -57,14 +62,50 @@ public class SentryUdpContextListener implements ServletContextListener {
 
         @Override
         public void run() {
+            InputStream bais = new ByteArrayInputStream(datagramPacket.getData(),
+                    datagramPacket.getOffset(),
+                    datagramPacket.getLength());
+            validateAuthHeader(bais);
+        }
+
+        /**
+         * Extracts the Auth Header from a binary stream and leave the stream as is once the header is parsed.
+         *
+         * @param inputStream
+         */
+        private void validateAuthHeader(InputStream inputStream) {
             try {
-                ByteArrayInputStream bais = new ByteArrayInputStream(datagramPacket.getData(),
-                        datagramPacket.getOffset(),
-                        datagramPacket.getLength());
-                //TODO extract the AUTH header validate it, send the rest to the JSon validator
-            } catch (Exception e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                Map<String, String> authHeader = parseAuthHeader(inputStream);
+                authValidator.validateSentryAuth(authHeader);
+            } catch (IOException e) {
+                throw new InvalidAuthException("Impossible to extract the auth header from an UDP packet", e);
             }
+        }
+
+        private Map<String, String> parseAuthHeader(InputStream inputStream) throws IOException {
+            Map<String, String> authHeader = new HashMap<String, String>();
+
+            int i;
+            StringBuilder sb = new StringBuilder();
+            String key = null;
+            while ((i = inputStream.read()) >= 0) {
+                if (i == '\n') {
+                    authHeader.put(key, sb.toString().trim());
+                    //Assume it's the double \n, parse the next once
+                    inputStream.read();
+                    break;
+                } else if (i == '=' && key == null) {
+                    key = sb.toString().trim();
+                    sb = new StringBuilder();
+                } else if (i == ',' && key != null) {
+                    authHeader.put(key, sb.toString().trim());
+                    sb = new StringBuilder();
+                    key = null;
+                } else {
+                    sb.append((char) i);
+                }
+            }
+            return authHeader;
         }
     }
 
