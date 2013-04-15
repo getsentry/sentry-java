@@ -30,7 +30,7 @@ public class InvalidAuthException extends RuntimeException {
         detailedMessages.add(message);
     }
 
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return detailedMessages.isEmpty();
     }
 }

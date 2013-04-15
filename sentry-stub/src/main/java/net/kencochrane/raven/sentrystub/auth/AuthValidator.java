@@ -141,7 +141,7 @@ public class AuthValidator {
      * The client should always be provided.
      * </p>
      *
-     * @param client string identifying a client type (such as Java/3.0)
+     * @param client               string identifying a client type (such as Java/3.0)
      * @param invalidAuthException exception thrown if the auth header is invalid.
      */
     private void validateClient(String client, InvalidAuthException invalidAuthException) {
