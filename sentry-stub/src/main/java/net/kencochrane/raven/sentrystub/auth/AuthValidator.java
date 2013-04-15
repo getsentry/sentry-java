@@ -23,14 +23,27 @@ public class AuthValidator {
         publicKeyProjectId.put(publicKey, projectId);
     }
 
-    public void validateSentryAuth(Map<String, String> authParameters, String projectId) {
+    public void validateSentryAuth(Map<String, String> authParameters) {
         InvalidAuthException invalidAuthException = new InvalidAuthException("The auth parameters weren't valid");
 
         validateVersion(authParameters.get(SENTRY_VERSION_PARAMETER), invalidAuthException);
         validateKeys(authParameters.get(PUBLIC_KEY_PARAMETER), authParameters.get(SECRET_KEY_PARAMETER),
                 invalidAuthException);
-        validateProject(authParameters.get(PUBLIC_KEY_PARAMETER), projectId, invalidAuthException);
         validateClient(authParameters.get(SENTRY_CLIENT_PARAMETER), invalidAuthException);
+
+        if (!invalidAuthException.isEmpty())
+            throw invalidAuthException;
+    }
+
+    public void validateSentryAuth(Map<String, String> authParameters, String projectId) {
+        InvalidAuthException invalidAuthException = new InvalidAuthException("The auth parameters weren't valid");
+        try {
+            validateSentryAuth(authParameters);
+        } catch (InvalidAuthException e) {
+            invalidAuthException = e;
+        }
+
+        validateProject(authParameters.get(PUBLIC_KEY_PARAMETER), projectId, invalidAuthException);
 
         if (!invalidAuthException.isEmpty())
             throw invalidAuthException;
