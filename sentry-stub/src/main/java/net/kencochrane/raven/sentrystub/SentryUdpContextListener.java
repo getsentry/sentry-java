@@ -59,7 +59,7 @@ public class SentryUdpContextListener implements ServletContextListener {
         udpSocket.close();
     }
 
-    private static class UdpRequestHandler implements Runnable {
+    private final class UdpRequestHandler implements Runnable {
         private final DatagramPacket datagramPacket;
 
         private UdpRequestHandler(DatagramPacket datagramPacket) {
