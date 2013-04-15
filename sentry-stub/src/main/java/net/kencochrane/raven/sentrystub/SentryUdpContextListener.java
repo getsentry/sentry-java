@@ -60,10 +60,11 @@ public class SentryUdpContextListener implements ServletContextListener {
     private class UdpListenerThread extends Thread {
         @Override
         public void run() {
+            // We'll assume that no-one sends a > 65KB datagram (max size allowed on IPV4).
+            final int datagramPacketSize = 65536;
             while (!udpSocket.isClosed()) {
                 try {
-                    // We'll assume that no-one sends a > 65KB datagram (max size allowed on IPV4).
-                    byte[] buffer = new byte[1 << 16];
+                    byte[] buffer = new byte[datagramPacketSize];
                     DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
                     udpSocket.receive(datagramPacket);
                     executorService.execute(new UdpRequestHandler(datagramPacket));
