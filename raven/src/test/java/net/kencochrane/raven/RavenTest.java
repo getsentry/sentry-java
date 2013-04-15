@@ -17,13 +17,13 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RavenTest {
+    private Raven raven;
     @Mock
     private Connection mockConnection;
     @Mock
     private EventBuilderHelper mockBuilderHelper;
     @Mock
     private Event mockEvent;
-    private Raven raven;
 
     @Before
     public void setUp() throws Exception {

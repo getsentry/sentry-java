@@ -20,9 +20,9 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HttpEventBuilderHelperTest {
+    private HttpEventBuilderHelper httpEventBuilderHelper;
     @Mock
     private EventBuilder mockEventBuilder;
-    private HttpEventBuilderHelper httpEventBuilderHelper;
 
     private static void simulateRequest() {
         ServletRequestEvent servletRequestEvent = mock(ServletRequestEvent.class);
