@@ -5,6 +5,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Validate a Sentry auth Header (in HTTP {@code X-Sentry-Auth}).
+ * <p>
+ * The validation of a header goes from the validation of the content to the authorisation check for the given public
+ * and secret keys.
+ * </p>
+ */
 public class AuthValidator {
     private static final Collection<String> SENTRY_PROTOCOL_VERSIONS = Arrays.asList("3");
     private static final String SENTRY_VERSION_PARAMETER = "Sentry sentry_version";
@@ -14,6 +21,13 @@ public class AuthValidator {
     private final Map<String, String> publicKeySecretKey = new HashMap<String, String>();
     private final Map<String, String> publicKeyProjectId = new HashMap<String, String>();
 
+    /**
+     * Adds a user to consider as valid of an Auth header.
+     *
+     * @param publicKey public key of the user.
+     * @param secretKey secret key of the user.
+     * @param projectId identifier of the project on which the user is allowed to push events.
+     */
     public void addUser(String publicKey, String secretKey, String projectId) {
         if (publicKeySecretKey.containsKey(publicKey) || publicKeyProjectId.containsKey(publicKey)) {
             throw new IllegalArgumentException("There is already a user " + publicKey);
@@ -23,6 +37,11 @@ public class AuthValidator {
         publicKeyProjectId.put(publicKey, projectId);
     }
 
+    /**
+     * Validates an auth header.
+     *
+     * @param authParameters auth header as a {@code Map}.
+     */
     public void validateSentryAuth(Map<String, String> authParameters) {
         InvalidAuthException invalidAuthException = new InvalidAuthException("The auth parameters weren't valid");
 
@@ -35,6 +54,13 @@ public class AuthValidator {
             throw invalidAuthException;
     }
 
+    /**
+     * Validates an auth header and the access to a project.
+     *
+     * @param authParameters auth header as a {@code Map}.
+     * @param projectId      identifier of the project being accessed (isn't a part
+     * @see #validateSentryAuth(java.util.Map)
+     */
     public void validateSentryAuth(Map<String, String> authParameters, String projectId) {
         InvalidAuthException invalidAuthException = new InvalidAuthException("The auth parameters weren't valid");
         try {
@@ -49,12 +75,32 @@ public class AuthValidator {
             throw invalidAuthException;
     }
 
+    /**
+     * Validates the version of the protocol given in the Auth header.
+     * <p>
+     * The only supported versions are listed in {@link #SENTRY_PROTOCOL_VERSIONS}.
+     * </p>
+     *
+     * @param authSentryVersion    version of the Sentry protocol given in the auth header.
+     * @param invalidAuthException exception thrown if the auth header is invalid.
+     */
     private void validateVersion(String authSentryVersion, InvalidAuthException invalidAuthException) {
         if (authSentryVersion == null || !SENTRY_PROTOCOL_VERSIONS.contains(authSentryVersion))
             invalidAuthException.addDetailedMessage("The version '" + authSentryVersion + "' isn't valid, " +
                     "only those " + SENTRY_PROTOCOL_VERSIONS + " are supported.");
     }
 
+    /**
+     * Validates the public and secret user keys provided in the Auth Header.
+     * <p>
+     * Valid keys are listed in {@link #publicKeySecretKey}.
+     * </p>
+     *
+     * @param publicKey            public key used to identify a user.
+     * @param secretKey            secret key used as a password.
+     * @param invalidAuthException exception thrown if the auth header is invalid.
+     * @see #addUser(String, String, String)
+     */
     private void validateKeys(String publicKey, String secretKey,
                               InvalidAuthException invalidAuthException) {
         if (publicKey == null)
@@ -71,6 +117,14 @@ public class AuthValidator {
                     "isn't valid for '" + publicKey + "'");
     }
 
+    /**
+     * Validates the project and checks if the given user can indeed access the project.
+     *
+     * @param publicKey            public key used to identify a user.
+     * @param projectId            identifier of the project on which the user is allowed to push events.
+     * @param invalidAuthException exception thrown if the auth header is invalid.
+     * @see #addUser(String, String, String)
+     */
     private void validateProject(String publicKey, String projectId, InvalidAuthException invalidAuthException) {
         if (projectId == null)
             invalidAuthException.addDetailedMessage("No project ID provided");
@@ -80,6 +134,15 @@ public class AuthValidator {
                     "can't be accessed by ' " + publicKey + " '");
     }
 
+    /**
+     * Validates the client part of the header.
+     * <p>
+     * The client should always be provided.
+     * </p>
+     *
+     * @param client string identifying a client type (such as Java/3.0)
+     * @param invalidAuthException exception thrown if the auth header is invalid.
+     */
     private void validateClient(String client, InvalidAuthException invalidAuthException) {
         if (client == null)
             invalidAuthException.addDetailedMessage("The client name is mandatory.");
