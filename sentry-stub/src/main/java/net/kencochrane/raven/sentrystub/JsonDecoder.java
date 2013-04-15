@@ -73,7 +73,7 @@ public class JsonDecoder {
     /**
      * InputStream that delegates everything but the {@link #close()} method.
      */
-    private static class Uncloseable extends InputStream {
+    private static final class Uncloseable extends InputStream {
         private final InputStream original;
 
         private Uncloseable(InputStream original) {
