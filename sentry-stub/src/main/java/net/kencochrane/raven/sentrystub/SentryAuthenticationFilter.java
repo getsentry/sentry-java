@@ -21,7 +21,7 @@ public class SentryAuthenticationFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         authValidator = new AuthValidator();
-        authValidator.loadSentryUsers("/sentry.properties");
+        authValidator.loadSentryUsers(filterConfig.getServletContext().getInitParameter("sentry_config"));
     }
 
     @Override
