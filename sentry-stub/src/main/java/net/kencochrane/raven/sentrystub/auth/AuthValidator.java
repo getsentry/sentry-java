@@ -1,6 +1,5 @@
 package net.kencochrane.raven.sentrystub.auth;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -160,7 +159,7 @@ public class AuthValidator {
                 String projectId = sentryProperties.getProperty("sentry.user." + i + ".projectId");
                 addUser(publicKey, secretKey, projectId);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "Couldn't load the sentry.properties file", e);
         }
     }
