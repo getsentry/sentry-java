@@ -2,6 +2,10 @@ package net.kencochrane.raven.sentrystub;
 
 import net.kencochrane.raven.sentrystub.auth.AuthValidator;
 import net.kencochrane.raven.sentrystub.auth.InvalidAuthException;
+import net.kencochrane.raven.sentrystub.event.Event;
+import net.kencochrane.raven.sentrystub.unmarshaller.JsonUnmarshaller;
+import net.kencochrane.raven.sentrystub.unmarshaller.Unmarshaller;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
@@ -26,6 +30,8 @@ public class SentryUdpContextListener implements ServletContextListener {
     private ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private DatagramSocket udpSocket;
     private AuthValidator authValidator;
+    //TODO: Hardcoded now, but later it could be enhanced.
+    private Unmarshaller unmarshaller = new JsonUnmarshaller();
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -66,6 +72,8 @@ public class SentryUdpContextListener implements ServletContextListener {
                     datagramPacket.getOffset(),
                     datagramPacket.getLength());
             validateAuthHeader(bais);
+            Event event = unmarshaller.unmarshall(bais);
+            //TODO: validate event
         }
 
         /**
