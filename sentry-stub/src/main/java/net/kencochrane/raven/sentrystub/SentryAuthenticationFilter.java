@@ -39,6 +39,7 @@ public class SentryAuthenticationFilter implements Filter {
 
     private boolean validateAuth(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Map<String, String> sentryAuthDetails = extractSentryAuthDetails(req);
+        //Can throw an exception, but a request which doesn't provide a project ID should fail anyway
         String projectId = req.getPathInfo().substring(1, req.getPathInfo().indexOf('/', 1));
 
         try {
