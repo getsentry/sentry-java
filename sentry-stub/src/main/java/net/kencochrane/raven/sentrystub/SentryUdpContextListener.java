@@ -1,5 +1,6 @@
 package net.kencochrane.raven.sentrystub;
 
+import net.kencochrane.raven.sentrystub.auth.AuthValidator;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
@@ -19,6 +20,7 @@ public class SentryUdpContextListener implements ServletContextListener {
     private static final String SENTRY_UDP_PORT_PARAMETER = "sentryUdpPort";
     private ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private DatagramSocket udpSocket;
+    private AuthValidator authValidator;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -26,6 +28,8 @@ public class SentryUdpContextListener implements ServletContextListener {
         int port = DEFAULT_SENTRY_UDP_PORT;
         if (sentryUdpPortParameter != null)
             port = Integer.parseInt(sentryUdpPortParameter);
+        authValidator = new AuthValidator();
+        authValidator.loadSentryUsers("/sentry.properties");
         try {
             udpSocket = new DatagramSocket(port);
             new UdpListenerThread().start();
