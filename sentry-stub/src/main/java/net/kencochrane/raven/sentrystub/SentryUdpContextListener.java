@@ -25,11 +25,15 @@ public class SentryUdpContextListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         String sentryUdpPortParameter = sce.getServletContext().getInitParameter(SENTRY_UDP_PORT_PARAMETER);
-        int port = DEFAULT_SENTRY_UDP_PORT;
-        if (sentryUdpPortParameter != null)
-            port = Integer.parseInt(sentryUdpPortParameter);
+        startUdpSocket(sentryUdpPortParameter != null
+                ? Integer.parseInt(sentryUdpPortParameter)
+                : DEFAULT_SENTRY_UDP_PORT);
+
         authValidator = new AuthValidator();
         authValidator.loadSentryUsers("/sentry.properties");
+    }
+
+    private void startUdpSocket(int port) {
         try {
             udpSocket = new DatagramSocket(port);
             new UdpListenerThread().start();
