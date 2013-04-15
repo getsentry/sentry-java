@@ -7,9 +7,13 @@ import org.apache.commons.codec.binary.Base64InputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.InflaterInputStream;
 
 public class JsonDecoder {
+    private static Logger logger = Logger.getLogger(JsonDecoder.class.getCanonicalName());
+
     /**
      * Attempts to read the content of the stream and determinate if it's compressed, encoded or simple JSON.
      * <p>
@@ -57,7 +61,8 @@ public class JsonDecoder {
             while (parser.nextToken() != null) {
             }
             valid = true;
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            logger.log(Level.FINE, "An exception occurred while trying to parse an allegedly JSON document", e);
         }
 
         return valid;
