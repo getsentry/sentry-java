@@ -25,10 +25,11 @@ public class JsonDecoder {
      * @throws IOException if it's impossible to read the content of the Stream.
      */
     public InputStream decapsulateContent(InputStream originalStream) throws IOException {
+        //Hopefully the sent content isn't bigger than 1MB...
+        final int messageSize = 1048576;
         //Make it uncloseable to avoid issues with the InflaterInputStream.
         originalStream = new Uncloseable(new BufferedInputStream(originalStream));
-        //Hopefully the sent content isn't bigger than 1MB...
-        originalStream.mark(1 << 20);
+        originalStream.mark(messageSize);
         InputStream inputStream = originalStream;
 
         if (!isJson(originalStream)) {
