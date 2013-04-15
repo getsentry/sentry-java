@@ -1,9 +1,9 @@
 package net.kencochrane.raven.sentrystub.auth;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Validate a Sentry auth Header (in HTTP {@code X-Sentry-Auth}).
@@ -13,6 +13,7 @@ import java.util.Map;
  * </p>
  */
 public class AuthValidator {
+    private static final Logger logger = Logger.getLogger(AuthValidator.class.getCanonicalName());
     private static final Collection<String> SENTRY_PROTOCOL_VERSIONS = Arrays.asList("3");
     private static final String SENTRY_VERSION_PARAMETER = "Sentry sentry_version";
     private static final String PUBLIC_KEY_PARAMETER = "sentry_key";
@@ -147,4 +148,21 @@ public class AuthValidator {
         if (client == null)
             invalidAuthException.addDetailedMessage("The client name is mandatory.");
     }
+
+    public void loadSentryUsers(String resourceName) {
+        Properties sentryProperties = new Properties();
+        try {
+            sentryProperties.load(AuthValidator.class.getResourceAsStream(resourceName));
+            int userCount = Integer.parseInt(sentryProperties.getProperty("sentry.user.count", "0"));
+            for (int i = 1; i <= userCount; i++) {
+                String publicKey = sentryProperties.getProperty("sentry.user." + i + ".publicKey");
+                String secretKey = sentryProperties.getProperty("sentry.user." + i + ".secretKey");
+                String projectId = sentryProperties.getProperty("sentry.user." + i + ".projectId");
+                addUser(publicKey, secretKey, projectId);
+            }
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Couldn't load the sentry.properties file", e);
+        }
+    }
+
 }
