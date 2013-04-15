@@ -20,12 +20,12 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class DsnTest {
     @Mock
-    private Context context;
+    private Context mockContext;
 
     @Before
     public void setUp() throws Exception {
         System.setProperty("java.naming.factory.initial", InitialContextMockFactory.class.getCanonicalName());
-        InitialContextMockFactory.context = context;
+        InitialContextMockFactory.context = mockContext;
     }
 
     @Test(expected = InvalidDsnException.class)
@@ -53,7 +53,7 @@ public class DsnTest {
     @Test
     public void testDsnLookupWithJndi() throws Exception {
         String dsn = UUID.randomUUID().toString();
-        when(context.lookup("java:comp/env/sentry/dsn")).thenReturn(dsn);
+        when(mockContext.lookup("java:comp/env/sentry/dsn")).thenReturn(dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));
     }

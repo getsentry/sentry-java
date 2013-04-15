@@ -7,17 +7,21 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding {
     private StackTraceInterfaceBinding interfaceBinding;
+    @Mock
+    private StackTraceInterface mockStackTraceInterface;
 
     @Before
     public void setUp() throws Exception {
@@ -32,12 +36,11 @@ public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding
         int lineNumber = 1;
         Throwable exception = mock(Throwable.class);
         StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, lineNumber);
-        StackTraceInterface stackTraceInterface = mock(StackTraceInterface.class, RETURNS_DEEP_STUBS);
-        when(stackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception));
+        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception));
         when(exception.getStackTrace()).thenReturn(new StackTraceElement[]{stackTraceElement});
 
         JsonGenerator jSonGenerator = getJsonGenerator();
-        interfaceBinding.writeInterface(jSonGenerator, stackTraceInterface);
+        interfaceBinding.writeInterface(jSonGenerator, mockStackTraceInterface);
         jSonGenerator.close();
 
         JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");

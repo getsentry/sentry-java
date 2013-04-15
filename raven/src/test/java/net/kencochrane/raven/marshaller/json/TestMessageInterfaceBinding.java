@@ -7,6 +7,7 @@ import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
@@ -15,12 +16,14 @@ import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
     private MessageInterfaceBinding interfaceBinding;
+    @Mock
+    private MessageInterface mockMessageInterface;
+
 
     @Before
     public void setUp() throws Exception {
@@ -32,12 +35,11 @@ public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
     public void testSimpleMessage() throws Exception {
         String message = UUID.randomUUID().toString();
         List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-        MessageInterface messageInterface = mock(MessageInterface.class);
-        when(messageInterface.getMessage()).thenReturn(message);
-        when(messageInterface.getParams()).thenReturn(parameters);
+        when(mockMessageInterface.getMessage()).thenReturn(message);
+        when(mockMessageInterface.getParams()).thenReturn(parameters);
 
         JsonGenerator jSonGenerator = getJsonGenerator();
-        interfaceBinding.writeInterface(jSonGenerator, messageInterface);
+        interfaceBinding.writeInterface(jSonGenerator, mockMessageInterface);
         jSonGenerator.close();
 
         JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);

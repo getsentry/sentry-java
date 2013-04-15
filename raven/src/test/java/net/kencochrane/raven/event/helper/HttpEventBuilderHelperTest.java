@@ -21,14 +21,13 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class HttpEventBuilderHelperTest {
     @Mock
-    private EventBuilder eventBuilder;
+    private EventBuilder mockEventBuilder;
     private HttpEventBuilderHelper httpEventBuilderHelper;
 
-    private static void simulateRequest(HttpServletRequest request) {
-        RavenServletRequestListener ravenServletRequestListener = new RavenServletRequestListener();
+    private static void simulateRequest() {
         ServletRequestEvent servletRequestEvent = mock(ServletRequestEvent.class);
-        when(servletRequestEvent.getServletRequest()).thenReturn(request);
-        ravenServletRequestListener.requestInitialized(servletRequestEvent);
+        when(servletRequestEvent.getServletRequest()).thenReturn(mock(HttpServletRequest.class));
+        new RavenServletRequestListener().requestInitialized(servletRequestEvent);
     }
 
     @Before
@@ -38,19 +37,19 @@ public class HttpEventBuilderHelperTest {
 
     @Test
     public void testNoRequest() throws Exception {
-        httpEventBuilderHelper.helpBuildingEvent(eventBuilder);
+        httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        verify(eventBuilder, never()).addSentryInterface(any(SentryInterface.class));
+        verify(mockEventBuilder, never()).addSentryInterface(any(SentryInterface.class));
     }
 
     @Test
     public void testWithRequest() throws Exception {
-        simulateRequest(mock(HttpServletRequest.class));
+        simulateRequest();
         ArgumentCaptor<SentryInterface> interfaceCaptor = ArgumentCaptor.forClass(SentryInterface.class);
 
-        httpEventBuilderHelper.helpBuildingEvent(eventBuilder);
+        httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        verify(eventBuilder).addSentryInterface(interfaceCaptor.capture());
+        verify(mockEventBuilder).addSentryInterface(interfaceCaptor.capture());
         assertThat(interfaceCaptor.getValue(), is(notNullValue()));
     }
 }

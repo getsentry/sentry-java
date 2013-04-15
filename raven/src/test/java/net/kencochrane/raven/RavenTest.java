@@ -19,6 +19,10 @@ import static org.mockito.Mockito.*;
 public class RavenTest {
     @Mock
     private Connection mockConnection;
+    @Mock
+    private EventBuilderHelper mockBuilderHelper;
+    @Mock
+    private Event mockEvent;
     private Raven raven;
 
     @Before
@@ -28,49 +32,44 @@ public class RavenTest {
 
     @Test
     public void testSendEvent() throws Exception {
-        Event event = mock(Event.class);
-        raven.sendEvent(event);
+        raven.sendEvent(mockEvent);
 
-        verify(mockConnection).send(event);
+        verify(mockConnection).send(mockEvent);
     }
 
     @Test
     public void testChangeConnection() throws Exception {
-        Event event = mock(Event.class);
         Connection mockNewConnection = mock(Connection.class);
 
         raven.setConnection(mockNewConnection);
-        raven.sendEvent(event);
+        raven.sendEvent(mockEvent);
 
-        verify(mockConnection, never()).send(event);
-        verify(mockNewConnection).send(event);
+        verify(mockConnection, never()).send(mockEvent);
+        verify(mockNewConnection).send(mockEvent);
     }
 
     @Test
     public void testAddRemoveBuilderHelpers() throws Exception {
-        EventBuilderHelper builderHelper = mock(EventBuilderHelper.class);
-        assertThat(raven.getBuilderHelpers(), not(contains(builderHelper)));
+        assertThat(raven.getBuilderHelpers(), not(contains(mockBuilderHelper)));
 
-        raven.addBuilderHelper(builderHelper);
-        assertThat(raven.getBuilderHelpers(), contains(builderHelper));
-        raven.removeBuilderHelper(builderHelper);
-        assertThat(raven.getBuilderHelpers(), not(contains(builderHelper)));
+        raven.addBuilderHelper(mockBuilderHelper);
+        assertThat(raven.getBuilderHelpers(), contains(mockBuilderHelper));
+        raven.removeBuilderHelper(mockBuilderHelper);
+        assertThat(raven.getBuilderHelpers(), not(contains(mockBuilderHelper)));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCantModifyBuilderHelpersDirectly() throws Exception {
-        EventBuilderHelper builderHelper = mock(EventBuilderHelper.class);
-        raven.getBuilderHelpers().add(builderHelper);
+        raven.getBuilderHelpers().add(mockBuilderHelper);
     }
 
     @Test
     public void testRunBuilderHelpers() throws Exception {
         EventBuilder eventBuilder = mock(EventBuilder.class);
-        EventBuilderHelper builderHelper = mock(EventBuilderHelper.class);
-        raven.addBuilderHelper(builderHelper);
+        raven.addBuilderHelper(mockBuilderHelper);
 
         raven.runBuilderHelpers(eventBuilder);
 
-        verify(builderHelper).helpBuildingEvent(eventBuilder);
+        verify(mockBuilderHelper).helpBuildingEvent(eventBuilder);
     }
 }

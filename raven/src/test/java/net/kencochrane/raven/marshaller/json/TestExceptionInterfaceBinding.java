@@ -7,18 +7,20 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestExceptionInterfaceBinding extends AbstractTestInterfaceBinding {
     private ExceptionInterfaceBinding interfaceBinding;
+    @Mock
+    private ExceptionInterface mockExceptionInterface;
 
     @Before
     public void setUp() throws Exception {
@@ -28,13 +30,12 @@ public class TestExceptionInterfaceBinding extends AbstractTestInterfaceBinding 
 
     @Test
     public void testSimpleException() throws Exception {
-        ExceptionInterface exceptionInterface = mock(ExceptionInterface.class);
         String message = UUID.randomUUID().toString();
         Throwable throwable = new IllegalStateException(message);
-        when(exceptionInterface.getThrowable()).thenReturn(new ImmutableThrowable(throwable));
+        when(mockExceptionInterface.getThrowable()).thenReturn(new ImmutableThrowable(throwable));
 
         JsonGenerator jsonGenerator = getJsonGenerator();
-        interfaceBinding.writeInterface(jsonGenerator, exceptionInterface);
+        interfaceBinding.writeInterface(jsonGenerator, mockExceptionInterface);
         jsonGenerator.close();
 
         JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
