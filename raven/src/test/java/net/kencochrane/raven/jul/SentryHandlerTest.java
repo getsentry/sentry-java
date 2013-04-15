@@ -12,10 +12,8 @@ import java.util.logging.Logger;
 public class SentryHandlerTest extends AbstractLoggerTest {
     private Logger logger;
 
-    @Override
     @Before
     public void setUp() throws Exception {
-        super.setUp();
         logger = Logger.getAnonymousLogger();
         logger.setUseParentHandlers(false);
         logger.setLevel(Level.ALL);

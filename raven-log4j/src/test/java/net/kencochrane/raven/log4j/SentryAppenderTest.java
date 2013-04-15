@@ -9,14 +9,11 @@ import org.junit.Test;
 
 import java.util.List;
 
-
 public class SentryAppenderTest extends AbstractLoggerTest {
     private Logger logger;
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
         logger = Logger.getLogger(SentryAppenderTest.class);
         logger.setLevel(Level.ALL);
         logger.setAdditivity(false);

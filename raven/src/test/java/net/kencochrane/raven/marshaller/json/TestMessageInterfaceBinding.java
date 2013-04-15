@@ -6,6 +6,8 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +18,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
     private MessageInterfaceBinding interfaceBinding;
 

@@ -16,9 +16,7 @@ public class SentryAppenderTest extends AbstractLoggerTest {
     private Logger logger;
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
         logger = new LoggerContext().getLogger(SentryAppenderTest.class);
         logger.setLevel(Level.ALL);
         Appender<ILoggingEvent> appender = new SentryAppender(getMockRaven());
