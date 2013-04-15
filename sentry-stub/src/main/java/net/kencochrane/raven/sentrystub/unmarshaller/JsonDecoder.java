@@ -70,9 +70,9 @@ public class JsonDecoder {
         boolean valid = false;
         try {
             final JsonParser parser = new JsonFactory().createJsonParser(inputStream);
-            while (parser.hasCurrentToken()) {
+            do {
                 parser.nextToken();
-            }
+            } while (parser.hasCurrentToken());
             valid = true;
         } catch (Exception e) {
             logger.log(Level.FINE, "An exception occurred while trying to parse an allegedly JSON document", e);
