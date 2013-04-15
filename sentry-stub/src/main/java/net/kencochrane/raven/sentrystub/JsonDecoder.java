@@ -11,11 +11,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.InflaterInputStream;
 
+/**
+ * Decodes a Stream as a JSON stream.
+ * <p>
+ * The supported stream formats are:
+ * <ul>
+ * <li>JSON Stream (nothing to do)</li>
+ * <li>Base 64'd JSON streams (base64 decoded)</li>
+ * <li>Base 64'd & deflated JSON streams (base64 decoded and inflated)</li>
+ * </ul>
+ * </p>
+ */
 public class JsonDecoder {
     private static Logger logger = Logger.getLogger(JsonDecoder.class.getCanonicalName());
 
     /**
-     * Attempts to read the content of the stream and determinate if it's compressed, encoded or simple JSON.
+     * Attempts to read the content of the stream and determine if it's compressed, encoded or simple JSON.
      * <p>
      * This method isn't efficient but it isn't really a problem as this part of the project is not about performances.
      * </p>
