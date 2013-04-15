@@ -39,8 +39,8 @@ public class JsonDecoder {
                 inputStream = new InflaterInputStream(inputStream);
                 originalStream.reset();
                 if (!isJson(new InflaterInputStream(new Base64InputStream(originalStream)))) {
-                    throw new IllegalArgumentException("The given Stream is neither JSON, Base64'd JSON " +
-                            "nor Base64'd deflated JSON.");
+                    throw new IllegalArgumentException("The given Stream is neither JSON, Base64'd JSON "
+                            + "nor Base64'd deflated JSON.");
                 }
             }
         }
