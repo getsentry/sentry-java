@@ -1,4 +1,4 @@
-package net.kencochrane.raven.sentrystub;
+package net.kencochrane.raven.sentrystub.unmarshaller;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
