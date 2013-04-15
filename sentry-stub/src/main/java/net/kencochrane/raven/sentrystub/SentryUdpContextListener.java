@@ -128,7 +128,7 @@ public class SentryUdpContextListener implements ServletContextListener {
                     DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
                     udpSocket.receive(datagramPacket);
                     executorService.execute(new UdpRequestHandler(datagramPacket));
-                } catch (Exception e) {
+                } catch (IOException e) {
                     logger.log(Level.WARNING, "An exception occurred during the reception of a UDP packet.", e);
                 }
             }
