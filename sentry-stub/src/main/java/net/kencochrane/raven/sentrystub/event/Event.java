@@ -36,9 +36,7 @@ public class Event {
     private Map<String, Object> extras;
     @JsonProperty(value = "sentry.interfaces.Message")
     private MessageInterface messageInterface;
-    @JsonProperty(value = "sentry.interfaces.Exception")
     private List<ExceptionInterface> exceptionInterfaces;
-    @JsonProperty(value = "sentry.interfaces.StackTrace")
     private StackTraceInterface stackTraceInterface;
 
     @JsonProperty(value = "exception")
@@ -48,6 +46,16 @@ public class Event {
 
     @JsonProperty(value = "stacktrace")
     public void setStackTraceInterface(StackTraceInterface stackTraceInterface) {
+        this.stackTraceInterface = stackTraceInterface;
+    }
+
+    @JsonProperty(value = "sentry.interfaces.Exception")
+    public void setExceptionInterfacesLong(List<ExceptionInterface> exceptionInterfaces) {
+        this.exceptionInterfaces = exceptionInterfaces;
+    }
+
+    @JsonProperty(value = "sentry.interfaces.StackTrace")
+    public void setStackTraceInterfaceLong(StackTraceInterface stackTraceInterface) {
         this.stackTraceInterface = stackTraceInterface;
     }
 }
