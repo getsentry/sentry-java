@@ -15,11 +15,12 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 public class SentryHandler extends Handler {
-    private final Raven raven;
     private final boolean propagateClose;
+    private Raven raven;
+    private String dsn;
 
     public SentryHandler() {
-        this(new Raven(), true);
+        propagateClose = true;
     }
 
     public SentryHandler(Raven raven) {
@@ -71,9 +72,19 @@ public class SentryHandler extends Handler {
         else
             eventBuilder.setMessage(record.getMessage());
 
-        raven.runBuilderHelpers(eventBuilder);
+        getRaven().runBuilderHelpers(eventBuilder);
 
-        raven.sendEvent(eventBuilder.build());
+        getRaven().sendEvent(eventBuilder.build());
+    }
+
+    private Raven getRaven() {
+        if (raven == null)
+            raven = (dsn != null) ? new Raven(dsn) : new Raven();
+        return raven;
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
     }
 
     @Override
