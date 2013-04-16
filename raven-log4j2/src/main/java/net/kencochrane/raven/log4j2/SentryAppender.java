@@ -20,14 +20,15 @@ import java.util.Date;
 import java.util.Map;
 
 @Plugin(name = "Sentry", type = "Sentry", elementType = "appender")
-public class SentryAppender extends AbstractAppender {
+public class SentryAppender extends AbstractAppender<String> {
     public static final String APPENDER_NAME = "raven";
     private static final String LOG4J_NDC = "Log4J-NDC";
-    private final Raven raven;
     private final boolean propagateClose;
+    private Raven raven;
+    private String dsn;
 
     public SentryAppender() {
-        this(new Raven(), true);
+        this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, true);
     }
 
 
@@ -36,38 +37,30 @@ public class SentryAppender extends AbstractAppender {
     }
 
     public SentryAppender(Raven raven, boolean propagateClose) {
-        this(APPENDER_NAME, raven, PatternLayout.createLayout(null, null, null, null), null, true, propagateClose);
+        this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, propagateClose);
+        this.raven = raven;
     }
 
-    private SentryAppender(String name, Raven raven, Layout layout, Filter filter,
-                           boolean handleExceptions, boolean propagateClose) {
-        super(name, filter, layout, handleExceptions);
-        this.raven = raven;
+    private SentryAppender(String name, Layout<String> layout, Filter filter, boolean propagateClose) {
+        super(name, filter, layout, true);
         this.propagateClose = propagateClose;
     }
 
     /**
      * Create a Sentry Appender.
      *
-     * @param name     The name of the Appender.
-     * @param dsn      Data Source Name to access the Sentry server.
-     * @param suppress "true" if exceptions should be hidden from the application, "false" otherwise.
-     *                 The default is "true".
-     * @param layout   The layout to use to format the event. If no layout is provided the default PatternLayout
-     *                 will be used.
-     * @param filter   The filter, if any, to use.
+     * @param name   The name of the Appender.
+     * @param dsn    Data Source Name to access the Sentry server.
+     * @param layout The layout to use to format the event. If no layout is provided the default PatternLayout
+     *               will be used.
+     * @param filter The filter, if any, to use.
      * @return The SentryAppender.
      */
     @PluginFactory
     public static SentryAppender createAppender(@PluginAttr("name") final String name,
                                                 @PluginAttr("dsn") final String dsn,
-                                                @PluginAttr("suppressExceptions") final String suppress,
-                                                @PluginElement("layout") Layout layout,
+                                                @PluginElement("layout") Layout<String> layout,
                                                 @PluginElement("filters") final Filter filter) {
-
-        final boolean handleExceptions = suppress == null ? true : Boolean.valueOf(suppress);
-
-        final Raven raven = dsn == null ? new Raven() : new Raven(dsn);
 
         if (name == null) {
             LOGGER.error("No name provided for FileAppender");
@@ -77,7 +70,9 @@ public class SentryAppender extends AbstractAppender {
         if (layout == null) {
             layout = PatternLayout.createLayout(null, null, null, null);
         }
-        return new SentryAppender(name, raven, layout, filter, handleExceptions, true);
+        SentryAppender sentryAppender = new SentryAppender(name, layout, filter, true);
+        sentryAppender.setDsn(dsn);
+        return sentryAppender;
     }
 
     private static Event.Level formatLevel(Level level) {
@@ -101,6 +96,12 @@ public class SentryAppender extends AbstractAppender {
     private static String formatCulprit(StackTraceElement stackTraceElement) {
         return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
                 + " at line " + stackTraceElement.getLineNumber();
+    }
+
+    @Override
+    public void start() {
+        if (raven == null)
+            raven = (dsn != null) ? new Raven(dsn) : new Raven();
     }
 
     @Override
@@ -135,6 +136,10 @@ public class SentryAppender extends AbstractAppender {
         raven.runBuilderHelpers(eventBuilder);
 
         raven.sendEvent(eventBuilder.build());
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
     }
 
     @Override
