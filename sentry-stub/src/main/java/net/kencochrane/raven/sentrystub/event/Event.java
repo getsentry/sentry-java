@@ -6,6 +6,7 @@ import net.kencochrane.raven.sentrystub.event.interfaces.MessageInterface;
 import net.kencochrane.raven.sentrystub.event.interfaces.StackTraceInterface;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class Event {
@@ -36,13 +37,13 @@ public class Event {
     @JsonProperty(value = "sentry.interfaces.Message")
     private MessageInterface messageInterface;
     @JsonProperty(value = "sentry.interfaces.Exception")
-    private ExceptionInterface exceptionInterface;
+    private List<ExceptionInterface> exceptionInterfaces;
     @JsonProperty(value = "sentry.interfaces.StackTrace")
     private StackTraceInterface stackTraceInterface;
 
     @JsonProperty(value = "exception")
-    public void setExceptionInterface(ExceptionInterface exceptionInterface) {
-        this.exceptionInterface = exceptionInterface;
+    public void setExceptionInterfaces(List<ExceptionInterface> exceptionInterfaces) {
+        this.exceptionInterfaces = exceptionInterfaces;
     }
 
     @JsonProperty(value = "stacktrace")
