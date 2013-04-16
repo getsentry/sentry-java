@@ -7,7 +7,7 @@
     <parent>
         <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0-SNAPSHOT</version>
     </parent>
     <artifactId>raven-logback</artifactId>
     <packaging>jar</packaging>

@@ -11,7 +11,7 @@
     </parent>
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven-all</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Raven-Java</name>
     <description>Sentry client and appenders for diverse logging frameworks.</description>
