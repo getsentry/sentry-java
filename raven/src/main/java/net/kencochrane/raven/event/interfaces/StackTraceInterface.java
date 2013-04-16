@@ -1,14 +1,13 @@
 package net.kencochrane.raven.event.interfaces;
 
+import java.util.Arrays;
+
 public class StackTraceInterface implements SentryInterface {
     public static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
-    private final ImmutableThrowable throwable;
+    private final StackTraceElement[] stackTrace;
 
-    //TODO: Base this interface on a unique stacktrace (rather than an entire exception)
-    //This should be done when the exception system in Sentry will be improved to support chained exception
-    //For now, a fake stacktrace (containing the parent exceptions and their stacktraces) will be used.
-    public StackTraceInterface(Throwable throwable) {
-        this.throwable = new ImmutableThrowable(throwable);
+    public StackTraceInterface(StackTraceElement[] stackTrace) {
+        this.stackTrace = Arrays.copyOf(stackTrace, stackTrace.length);
     }
 
     @Override
@@ -16,7 +15,7 @@ public class StackTraceInterface implements SentryInterface {
         return STACKTRACE_INTERFACE;
     }
 
-    public ImmutableThrowable getThrowable() {
-        return throwable;
+    public StackTraceElement[] getStackTrace() {
+        return Arrays.copyOf(stackTrace, stackTrace.length);
     }
 }
