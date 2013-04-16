@@ -54,7 +54,7 @@ public class Event {
         this.exceptionInterfaces = exceptionInterfaces;
     }
 
-    @JsonProperty(value = "sentry.interfaces.StackTrace")
+    @JsonProperty(value = "sentry.interfaces.Stacktrace")
     public void setStackTraceInterfaceLong(StackTraceInterface stackTraceInterface) {
         this.stackTraceInterface = stackTraceInterface;
     }
