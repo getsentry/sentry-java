@@ -17,11 +17,12 @@ import java.util.List;
 import java.util.Map;
 
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
-    private final Raven raven;
     private final boolean propagateClose;
+    private Raven raven;
+    private String dsn;
 
     public SentryAppender() {
-        this(new Raven(), true);
+        propagateClose = true;
     }
 
     public SentryAppender(Raven raven) {
@@ -51,6 +52,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
         } else return null;
+    }
+
+    @Override
+    public void start() {
+        super.start();
+        if (raven == null)
+            raven = (dsn != null) ? new Raven(dsn) : new Raven();
     }
 
     @Override
@@ -92,6 +100,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                     .append(stackTraceElement.getLineNumber());
         }
         return sb.toString();
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
     }
 
     @Override
