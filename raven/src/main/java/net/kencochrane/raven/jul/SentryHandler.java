@@ -63,8 +63,7 @@ public class SentryHandler extends Handler {
                 .setLogger(record.getLoggerName())
                 .setCulprit(record.getSourceClassName() + "." + record.getSourceMethodName() + "()");
         if (record.getThrown() != null) {
-            eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()))
-                    .addSentryInterface(new StackTraceInterface(record.getThrown()));
+            eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
         }
 
         if (record.getParameters() != null)

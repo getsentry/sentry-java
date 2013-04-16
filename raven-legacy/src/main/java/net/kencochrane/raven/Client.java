@@ -228,7 +228,6 @@ public class Client {
     public String captureException(Throwable exception) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setMessage(exception.getMessage())
-                .addSentryInterface(new StackTraceInterface(exception))
                 .addSentryInterface(new ExceptionInterface(exception));
         return buildAndSendEvent(eventBuilder);
     }
@@ -237,7 +236,6 @@ public class Client {
     public String captureException(Throwable exception, Map<String, ?> tags) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setMessage(exception.getMessage())
-                .addSentryInterface(new StackTraceInterface(exception))
                 .addSentryInterface(new ExceptionInterface(exception));
         for (Map.Entry<String, ?> tag : tags.entrySet()) {
             eventBuilder.addTag(tag.getKey(), tag.getValue().toString());
@@ -253,7 +251,6 @@ public class Client {
                 .setLogger(loggerName)
                 .setLevel(convertLevel(logLevel))
                 .setCulprit(culprit)
-                .addSentryInterface(new StackTraceInterface(exception))
                 .addSentryInterface(new ExceptionInterface(exception));
         return buildAndSendEvent(eventBuilder);
     }
@@ -266,7 +263,6 @@ public class Client {
                 .setLogger(loggerName)
                 .setLevel(convertLevel(logLevel))
                 .setCulprit(culprit)
-                .addSentryInterface(new StackTraceInterface(exception))
                 .addSentryInterface(new ExceptionInterface(exception));
         for (Map.Entry<String, ?> tag : tags.entrySet()) {
             eventBuilder.addTag(tag.getKey(), tag.getValue().toString());

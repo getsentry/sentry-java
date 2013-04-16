@@ -115,8 +115,7 @@ public class SentryAppender extends AbstractAppender {
 
         if (event.getThrown() != null) {
             Throwable throwable = event.getThrown();
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
-                    .addSentryInterface(new StackTraceInterface(throwable));
+            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
             eventBuilder.setCulprit(throwable);
         } else {
             // When it's a message try to rely on the position of the log (the same message can be logged from

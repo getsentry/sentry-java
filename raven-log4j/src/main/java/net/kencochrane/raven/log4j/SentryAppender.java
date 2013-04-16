@@ -57,8 +57,7 @@ public class SentryAppender extends AppenderSkeleton {
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
-                    .addSentryInterface(new StackTraceInterface(throwable));
+            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
             eventBuilder.setCulprit(throwable);
         } else {
             // When it's a message try to rely on the position of the log (the same message can be logged from

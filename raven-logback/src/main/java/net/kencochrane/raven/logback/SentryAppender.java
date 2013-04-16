@@ -65,8 +65,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
-                    .addSentryInterface(new StackTraceInterface(throwable));
+            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
         } else {
             if (iLoggingEvent.getArgumentArray() != null)
                 eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
