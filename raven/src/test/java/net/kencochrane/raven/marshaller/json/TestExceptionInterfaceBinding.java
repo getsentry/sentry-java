@@ -39,8 +39,11 @@ public class TestExceptionInterfaceBinding extends AbstractTestInterfaceBinding 
         jsonGenerator.close();
 
         JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
-        assertThat(rootNode.get("module").asText(), is(throwable.getClass().getPackage().getName()));
-        assertThat(rootNode.get("type").asText(), is(throwable.getClass().getSimpleName()));
-        assertThat(rootNode.get("value").asText(), is(message));
+        assertThat(rootNode.isArray(), is(true));
+        JsonNode exceptionNode = rootNode.get(0);
+        assertThat(exceptionNode.get("module").asText(), is(throwable.getClass().getPackage().getName()));
+        assertThat(exceptionNode.get("type").asText(), is(throwable.getClass().getSimpleName()));
+        assertThat(exceptionNode.get("value").asText(), is(message));
+        assertThat(exceptionNode.get("stacktrace").isObject(), is(true));
     }
 }
