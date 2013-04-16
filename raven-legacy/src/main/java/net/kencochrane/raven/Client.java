@@ -6,7 +6,6 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.json.simple.JSONObject;

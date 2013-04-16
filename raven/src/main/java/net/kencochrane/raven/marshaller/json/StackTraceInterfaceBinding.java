@@ -1,7 +1,6 @@
 package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;

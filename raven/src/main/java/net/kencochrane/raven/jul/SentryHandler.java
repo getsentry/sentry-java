@@ -5,7 +5,6 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
-import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
