@@ -1,6 +1,9 @@
 package net.kencochrane.raven.sentrystub.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.kencochrane.raven.sentrystub.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.sentrystub.event.interfaces.MessageInterface;
+import net.kencochrane.raven.sentrystub.event.interfaces.StackTraceInterface;
 
 import java.util.Date;
 import java.util.Map;
@@ -30,6 +33,10 @@ public class Event {
     private Map<String, String> modules;
     @JsonProperty(value = "extra")
     private Map<String, Object> extras;
-//    @JsonProperty(value = "sentry.interfaces.Message")
-//    private Map<String, ?> messageInterface;
+    @JsonProperty(value = "sentry.interfaces.Message")
+    private MessageInterface messageInterface;
+    @JsonProperty(value = "sentry.interfaces.Exception")
+    private ExceptionInterface exceptionInterface;
+    @JsonProperty(value = "sentry.interfaces.StackTrace")
+    private StackTraceInterface stackTraceInterface;
 }
