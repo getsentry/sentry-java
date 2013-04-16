@@ -5,9 +5,7 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
-import java.util.Deque;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Set;
 
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
@@ -41,22 +39,6 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     /**
-     * Writes a fake frame to allow chained exceptions.
-     *
-     * @param throwable Exception for which a fake frame should be created
-     */
-    private void writeFakeFrame(JsonGenerator generator, ImmutableThrowable throwable) throws IOException {
-        String message = "Caused by: " + throwable.getActualClass().getName();
-        if (throwable.getMessage() != null)
-            message += " (\"" + throwable.getMessage() + "\")";
-
-        generator.writeStartObject();
-        generator.writeStringField(MODULE_PARAMETER, message);
-        generator.writeBooleanField(IN_APP_PARAMETER, true);
-        generator.writeEndObject();
-    }
-
-    /**
      * Writes a single frame based on a {@code StackTraceElement}.
      *
      * @param stackTraceElement current frame in the stackTrace.
@@ -84,29 +66,16 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
     @Override
     public void writeInterface(JsonGenerator generator, StackTraceInterface stackTraceInterface) throws IOException {
-        ImmutableThrowable currentThrowable = stackTraceInterface.getThrowable();
-        Deque<ImmutableThrowable> throwableStack = new LinkedList<ImmutableThrowable>();
-
-        //Inverse the chain of exceptions to get the first exception thrown first.
-        while (currentThrowable != null) {
-            throwableStack.push(currentThrowable);
-            currentThrowable = currentThrowable.getCause();
-        }
+        StackTraceElement[] stackTrace = stackTraceInterface.getStackTrace();
 
         generator.writeStartObject();
         generator.writeArrayFieldStart(FRAMES_PARAMETER);
-        while (!throwableStack.isEmpty()) {
-            currentThrowable = throwableStack.pop();
-            StackTraceElement[] stackFrames = currentThrowable.getStackTrace();
 
-            // Go through the stackTrace frames from the first call to the last
-            for (int i = currentThrowable.getStackTrace().length - 1; i >= 0; i--) {
-                writeFrame(generator, stackFrames[i]);
-            }
-
-            if (!throwableStack.isEmpty())
-                writeFakeFrame(generator, currentThrowable);
+        // Go through the stackTrace frames from the first call to the last
+        for (int i = stackTrace.length - 1; i >= 0; i--) {
+            writeFrame(generator, stackTrace[i]);
         }
+
         generator.writeEndArray();
         generator.writeEndObject();
     }
