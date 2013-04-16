@@ -34,10 +34,8 @@ public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding
         String methodName = UUID.randomUUID().toString();
         String className = UUID.randomUUID().toString();
         int lineNumber = 1;
-        Throwable exception = mock(Throwable.class);
         StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, lineNumber);
-        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception));
-        when(exception.getStackTrace()).thenReturn(new StackTraceElement[]{stackTraceElement});
+        when(mockStackTraceInterface.getStackTrace()).thenReturn(new StackTraceElement[]{stackTraceElement});
 
         JsonGenerator jSonGenerator = getJsonGenerator();
         interfaceBinding.writeInterface(jSonGenerator, mockStackTraceInterface);
