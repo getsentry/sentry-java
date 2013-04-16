@@ -36,7 +36,7 @@ public class Raven {
      * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
      * for each release of this project.
      */
-    public static final String NAME = "Raven-Java/3.0";
+    public static final String NAME = "Raven-Java/4.0";
     private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<EventBuilderHelper>();
     private Connection connection;
