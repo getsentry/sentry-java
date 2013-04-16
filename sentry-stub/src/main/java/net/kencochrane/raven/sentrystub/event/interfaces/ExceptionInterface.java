@@ -9,4 +9,6 @@ public class ExceptionInterface {
     private String value;
     @JsonProperty(value = "module")
     private String module;
+    @JsonProperty(value = "stacktrace")
+    private StackTraceInterface stackTraceInterface;
 }
