@@ -15,11 +15,12 @@ import java.util.Set;
 
 public class SentryAppender extends AppenderSkeleton {
     private static final String LOG4J_NDC = "Log4J-NDC";
-    private final Raven raven;
     private final boolean propagateClose;
+    private Raven raven;
+    private String dsn;
 
     public SentryAppender() {
-        this(new Raven(), true);
+        this.propagateClose = true;
     }
 
     public SentryAppender(Raven raven) {
@@ -43,6 +44,12 @@ public class SentryAppender extends AppenderSkeleton {
         } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
         } else return null;
+    }
+
+    @Override
+    public void activateOptions() {
+        if (raven == null)
+            raven = (dsn != null) ? new Raven(dsn) : new Raven();
     }
 
     @Override
@@ -74,6 +81,10 @@ public class SentryAppender extends AppenderSkeleton {
         raven.runBuilderHelpers(eventBuilder);
 
         raven.sendEvent(eventBuilder.build());
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
     }
 
     @Override
