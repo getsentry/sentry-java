@@ -13,7 +13,7 @@ public abstract class AbstractConnection implements Connection {
     /**
      * Current sentry protocol version.
      */
-    public static final String SENTRY_PROTOCOL_VERSION = "3";
+    public static final String SENTRY_PROTOCOL_VERSION = "4";
     private final String publicKey;
     private final String secretKey;
 
