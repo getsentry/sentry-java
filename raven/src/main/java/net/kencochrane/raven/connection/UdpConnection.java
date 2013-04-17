@@ -12,7 +12,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,7 +22,6 @@ public class UdpConnection extends AbstractConnection {
     private static final Logger logger = Logger.getLogger(UdpConnection.class.getCanonicalName());
     private static final int DEFAULT_UDP_PORT = 9001;
     private DatagramSocket socket;
-    private Charset charset = Charset.defaultCharset();
     private Marshaller marshaller = new JsonMarshaller();
 
     public UdpConnection(Dsn dsn) {
@@ -57,8 +55,8 @@ public class UdpConnection extends AbstractConnection {
     }
 
     private void writeHeader(OutputStream os) throws IOException {
-        os.write(getAuthHeader().getBytes(charset));
-        os.write("\n\n".getBytes(charset));
+        os.write(getAuthHeader().getBytes("UTF-8"));
+        os.write("\n\n".getBytes("UTF-8"));
     }
 
     private void openSocket(String hostname, int port) {
@@ -73,10 +71,6 @@ public class UdpConnection extends AbstractConnection {
 
     public void setMarshaller(Marshaller marshaller) {
         this.marshaller = marshaller;
-    }
-
-    public void setCharset(Charset charset) {
-        this.charset = charset;
     }
 
     @Override

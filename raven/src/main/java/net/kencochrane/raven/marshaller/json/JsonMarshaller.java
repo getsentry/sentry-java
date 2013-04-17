@@ -1,6 +1,5 @@
 package net.kencochrane.raven.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.Event;
@@ -10,7 +9,6 @@ import org.apache.commons.codec.binary.Base64OutputStream;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -83,10 +81,6 @@ public class JsonMarshaller implements Marshaller {
      * Enables disables the compression of JSON.
      */
     private boolean compression = true;
-    /**
-     * Charset used to send Json, by default UTF-8 will be used.
-     */
-    private JsonEncoding charset = JsonEncoding.UTF8;
 
     static {
         ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -107,7 +101,7 @@ public class JsonMarshaller implements Marshaller {
 
         JsonGenerator generator = null;
         try {
-            generator = jsonFactory.createGenerator(destination, charset);
+            generator = jsonFactory.createGenerator(destination);
             writeContent(generator, event);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "An exception occurred while serialising the event.", e);
@@ -250,16 +244,5 @@ public class JsonMarshaller implements Marshaller {
      */
     public void setCompression(boolean compression) {
         this.compression = compression;
-    }
-
-    public void setCharset(Charset charset) {
-        for (JsonEncoding jsonEncoding : JsonEncoding.values()) {
-            if (jsonEncoding.getJavaName().equals(charset.name())) {
-                this.charset = jsonEncoding;
-                return;
-            }
-        }
-        throw new IllegalArgumentException("Couldn't set the charset to " + charset + ". "
-                + "The supported charsets are '" + Arrays.toString(JsonEncoding.values()) + "'");
     }
 }

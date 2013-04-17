@@ -9,7 +9,6 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,14 +23,6 @@ import java.util.logging.Logger;
  * </p>
  */
 public class Raven {
-    /**
-     * Default charset used to send content to Sentry.
-     * <p>
-     * UTF-8 is used as the default since the communication by default is done through JSON
-     * (which uses UTF-8 by default).
-     * </p>
-     */
-    public static final String DEFAULT_CHARSET = "UTF-8";
     /**
      * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
      * for each release of this project.
@@ -78,24 +69,6 @@ public class Raven {
     }
 
     /**
-     * Obtains the charset setting for the given DSN.
-     * <p>
-     * Defaults to {@link #DEFAULT_CHARSET} if the DSN doesn't specify a charset.
-     * </p>
-     *
-     * @param dsn Data Source Name optionally containing a charset option.
-     * @return the charset to use with the given DSN.
-     */
-    private static Charset determineCharset(Dsn dsn) {
-        String charset = DEFAULT_CHARSET;
-
-        if (dsn.getOptions().containsKey(Dsn.CHARSET_OPTION))
-            charset = dsn.getOptions().get(Dsn.CHARSET_OPTION);
-
-        return Charset.forName(charset);
-    }
-
-    /**
      * Builds a {@link Connection} based on a {@link Dsn}.
      * <p>
      * Currently supports the protocols HTTP(s) with {@link HttpConnection} and UPD with {@link UdpConnection}.
@@ -108,10 +81,8 @@ public class Raven {
     private static Connection determineConnection(Dsn dsn) {
         String protocol = dsn.getProtocol();
         Connection connection = null;
-        Charset charset = determineCharset(dsn);
         JsonMarshaller marshaller = new JsonMarshaller();
         marshaller.setCompression(!dsn.getOptions().containsKey(Dsn.NOCOMPRESSION_OPTION));
-        marshaller.setCharset(charset);
 
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
             logger.log(Level.INFO, "Using an HTTP connection to Sentry.");
@@ -121,7 +92,6 @@ public class Raven {
         } else if (protocol.equalsIgnoreCase("udp")) {
             logger.log(Level.INFO, "Using an UDP connection to Sentry.");
             UdpConnection udpConnection = new UdpConnection(dsn);
-            udpConnection.setCharset(charset);
             udpConnection.setMarshaller(marshaller);
             connection = udpConnection;
         } else {

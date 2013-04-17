@@ -33,10 +33,6 @@ public class Dsn {
      */
     public static final String ASYNC_OPTION = "raven.async";
     /**
-     * Option to set the charset for strings sent to sentry.
-     */
-    public static final String CHARSET_OPTION = "raven.charset";
-    /**
      * Protocol setting to disable security checks over an SSL connection.
      */
     public static final String NAIVE_PROTOCOL = "naive";
