@@ -54,14 +54,6 @@
             <artifactId>hamcrest-library</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Ensure that the sentry-stub is available for tests -->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>sentry-stub</artifactId>
-            <scope>test</scope>
-            <type>war</type>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>

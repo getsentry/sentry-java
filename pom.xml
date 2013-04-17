@@ -278,6 +278,14 @@
                             </configuration>
                         </execution>
                     </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>sentry-stub</artifactId>
+                            <version>${project.version}</version>
+                            <type>war</type>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.eclipse.jetty</groupId>
