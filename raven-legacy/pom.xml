@@ -9,8 +9,10 @@
         <artifactId>raven-all</artifactId>
         <version>4.0-SNAPSHOT</version>
     </parent>
+
     <artifactId>raven-legacy</artifactId>
     <packaging>jar</packaging>
+
     <name>Raven-Java legacy client</name>
     <description>Legacy interface for the new version of Raven-Java.</description>
 

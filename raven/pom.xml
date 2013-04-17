@@ -9,8 +9,10 @@
         <artifactId>raven-all</artifactId>
         <version>4.0-SNAPSHOT</version>
     </parent>
+
     <artifactId>raven</artifactId>
     <packaging>jar</packaging>
+
     <name>Raven-Java client</name>
     <description>Sentry client written in Java.</description>
 

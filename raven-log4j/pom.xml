@@ -9,8 +9,10 @@
         <artifactId>raven-all</artifactId>
         <version>4.0-SNAPSHOT</version>
     </parent>
+
     <artifactId>raven-log4j</artifactId>
     <packaging>jar</packaging>
+
     <name>Raven-Java for log4j</name>
     <description>log4j appender allowing to send logs to the Raven-Java client.</description>
 
