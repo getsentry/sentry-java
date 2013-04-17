@@ -65,11 +65,11 @@ public class SentryAppender extends AppenderSkeleton {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
             eventBuilder.setCulprit(throwable);
-        } else {
+        } else if (loggingEvent.getLocationInformation().fullInfo != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways.
-            if (loggingEvent.getLocationInformation().fullInfo != null)
-                eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
+            // different places, or a same place can log a message in different ways).
+            eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
+            eventBuilder.setCulprit(loggingEvent.getLocationInformation().fullInfo);
         }
 
         if (loggingEvent.getNDC() != null)
