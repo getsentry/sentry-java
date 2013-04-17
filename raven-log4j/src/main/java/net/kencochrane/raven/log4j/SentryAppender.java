@@ -59,7 +59,7 @@ public class SentryAppender extends AppenderSkeleton {
                 .setMessage(loggingEvent.getRenderedMessage())
                 .setLogger(loggingEvent.getLoggerName())
                 .setLevel(formatLevel(loggingEvent.getLevel()))
-                .setCulprit(loggingEvent.getFQNOfLoggerClass());
+                .setCulprit(loggingEvent.getLoggerName());
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
