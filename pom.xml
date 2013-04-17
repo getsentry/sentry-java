@@ -299,6 +299,7 @@
                             <configuration>
                                 <scanIntervalSeconds>0</scanIntervalSeconds>
                                 <daemon>true</daemon>
+                                <skip>${skipTests}</skip>
                             </configuration>
                         </execution>
                         <execution>
