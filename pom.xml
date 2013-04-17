@@ -259,7 +259,7 @@
                     <executions>
                         <execution>
                             <id>copy-war-for-integration-tests</id>
-                            <phase>generate-resources</phase>
+                            <phase>package</phase>
                             <goals>
                                 <goal>copy</goal>
                             </goals>
