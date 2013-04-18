@@ -3,6 +3,7 @@ package net.kencochrane.raven.connection;
 import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
@@ -23,8 +24,7 @@ import java.util.logging.Logger;
  * Basic connection to a Sentry server, using HTTP and HTTPS.
  * <p>
  * It is possible to enable the "naive mode" through the DSN with {@link Dsn#NAIVE_PROTOCOL} to allow a connection over
- * SSL using a certificate with a wildcard.<br />
- *
+ * SSL using a certificate with a wildcard.
  * </p>
  */
 public class HttpConnection extends AbstractConnection {
@@ -119,7 +119,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     @Override
-    public void send(Event event) {
+    public void doSend(Event event) {
         HttpURLConnection connection = getConnection();
         try {
             connection.connect();
@@ -130,8 +130,8 @@ public class HttpConnection extends AbstractConnection {
             if (connection.getErrorStream() != null) {
                 logger.log(Level.SEVERE, getErrorMessageFromStream(connection.getErrorStream()), e);
             } else {
-                logger.log(Level.SEVERE,
-                        "An exception occurred while submitting the event to the sentry server.", e);
+                throw new ConnectionException("An exception occurred while submitting the event to the sentry server."
+                        , e);
             }
         } finally {
             connection.disconnect();

@@ -2,6 +2,7 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
@@ -12,14 +13,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Connection to a Sentry server through an UDP connection.
  */
 public class UdpConnection extends AbstractConnection {
-    private static final Logger logger = Logger.getLogger(UdpConnection.class.getCanonicalName());
     private static final int DEFAULT_UDP_PORT = 9001;
     private DatagramSocket socket;
     private Marshaller marshaller = new JsonMarshaller();
@@ -39,7 +37,7 @@ public class UdpConnection extends AbstractConnection {
     }
 
     @Override
-    public void send(Event event) {
+    public void doSend(Event event) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             writeHeader(baos);
@@ -49,8 +47,8 @@ public class UdpConnection extends AbstractConnection {
             DatagramPacket packet = new DatagramPacket(message, message.length);
             socket.send(packet);
         } catch (IOException e) {
-            logger.log(Level.SEVERE,
-                    "An exception occurred while trying to establish a connection to the sentry server");
+            throw new ConnectionException(
+                    "An exception occurred while trying to establish a connection to the sentry server", e);
         }
     }
 
@@ -64,7 +62,7 @@ public class UdpConnection extends AbstractConnection {
             socket = new DatagramSocket();
             socket.connect(new InetSocketAddress(hostname, port));
         } catch (SocketException e) {
-            throw new IllegalStateException("The UDP connection couldn't be used, impossible to send anything "
+            throw new ConnectionException("The UDP connection couldn't be used, impossible to send anything "
                     + "to sentry", e);
         }
     }

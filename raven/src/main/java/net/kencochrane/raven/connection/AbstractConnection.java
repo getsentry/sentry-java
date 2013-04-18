@@ -2,11 +2,19 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.exception.ConnectionException;
+
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstract connection to a Sentry server.
  * <p>
- * Provide the basic tools to submit events to the server (authentication header, dsn).
+ * Provide the basic tools to submit events to the server (authentication header, dsn).<br />
+ * To avoid spamming the network if and when Sentry is down, automatically lock the connection each time a
+ * {@link ConnectionException} is caught.
  * </p>
  */
 public abstract class AbstractConnection implements Connection {
@@ -14,8 +22,19 @@ public abstract class AbstractConnection implements Connection {
      * Current sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "4";
+    /**
+     * At most wait 5 minutes if the connection failed too many times.
+     */
+    private static final long MAX_WAITING_TIME = 300000;
+    /**
+     * When the first exception occurs, wait 10 millis before trying again.
+     */
+    private static final long BASE_WAITING_TIME = 10;
+    private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private final String publicKey;
     private final String secretKey;
+    private final ReentrantLock lock = new ReentrantLock();
+    private long waitingTime = BASE_WAITING_TIME;
 
     /**
      * Creates a connection based on a DSN.
@@ -51,4 +70,49 @@ public abstract class AbstractConnection implements Connection {
         header.append(",sentry_secret=").append(secretKey);
         return header.toString();
     }
+
+    @Override
+    public final void send(Event event) {
+        try {
+            if (!lock.isLocked()) {
+                doSend(event);
+                waitingTime = BASE_WAITING_TIME;
+            } else {
+                logger.info("The event '" + event + "' hasn't been sent to the server due to a lockdown.");
+            }
+        } catch (ConnectionException e) {
+            lock.tryLock();
+            logger.log(Level.WARNING, "An exception due to the connection occurred, a lockdown will be initiated.", e);
+        } finally {
+            if (lock.isHeldByCurrentThread())
+                lockDown();
+        }
+    }
+
+    /**
+     * Initiates a lockdown for {@link #waitingTime}ms and release the lock once the lockdown ends.
+     */
+    private void lockDown() {
+        try {
+            logger.log(Level.WARNING, "Lockdown started for " + waitingTime + "ms.");
+            Thread.sleep(waitingTime);
+
+            // Double the wait until the maximum is reached
+            if (waitingTime > MAX_WAITING_TIME)
+                waitingTime <<= 1;
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An exception occurred during the lockdown.", e);
+        } finally {
+            lock.unlock();
+            logger.log(Level.WARNING, "Lockdown ended.");
+        }
+    }
+
+    /**
+     * Sends an event to the sentry server.
+     *
+     * @param event captured event to add in Sentry.
+     * @throws ConnectionException whenever a temporary exception due to the connection happened.
+     */
+    protected abstract void doSend(Event event) throws ConnectionException;
 }
