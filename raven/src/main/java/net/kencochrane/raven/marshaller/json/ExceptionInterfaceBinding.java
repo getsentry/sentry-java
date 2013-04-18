@@ -12,8 +12,11 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     private static final String VALUE_PARAMETER = "value";
     private static final String MODULE_PARAMETER = "module";
     private static final String STACKTRACE_PARAMETER = "stacktrace";
-    //TODO: assign a proper value here
-    private StackTraceInterfaceBinding stackTraceInterfaceBinding = new StackTraceInterfaceBinding();
+    private final InterfaceBinding<StackTraceInterface> stackTraceInterfaceBinding;
+
+    public ExceptionInterfaceBinding(InterfaceBinding<StackTraceInterface> stackTraceInterfaceBinding) {
+        this.stackTraceInterfaceBinding = stackTraceInterfaceBinding;
+    }
 
     @Override
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {

@@ -87,8 +87,10 @@ public class JsonMarshaller implements Marshaller {
     }
 
     public JsonMarshaller() {
-        addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding());
-        addInterfaceBinding(StackTraceInterface.class, new StackTraceInterfaceBinding());
+        StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
+
+        addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
+        addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
         addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
         addInterfaceBinding(HttpInterface.class, new HttpInterfaceBinding());
     }
