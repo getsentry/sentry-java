@@ -10,7 +10,7 @@ import java.io.OutputStream;
  */
 public interface Marshaller {
     /**
-     * Serialise an event and sends it through an {@code OutputStream}.
+     * Serialises an event and sends it through an {@code OutputStream}.
      * <p>
      * The marshaller should not close the given stream, use {@link UncloseableOutputStream} to prevent automatic calls
      * to {@link OutputStream#close()}.
