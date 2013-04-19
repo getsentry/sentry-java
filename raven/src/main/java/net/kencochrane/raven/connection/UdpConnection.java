@@ -42,6 +42,7 @@ public class UdpConnection extends AbstractConnection {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             writeHeader(baos);
             marshaller.marshall(event, baos);
+            baos.close();
 
             byte[] message = baos.toByteArray();
             DatagramPacket packet = new DatagramPacket(message, message.length);

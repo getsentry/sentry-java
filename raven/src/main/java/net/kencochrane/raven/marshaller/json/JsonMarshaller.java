@@ -97,6 +97,8 @@ public class JsonMarshaller implements Marshaller {
 
     @Override
     public void marshall(Event event, OutputStream destination) {
+        // Prevent the stream from being closed automatically
+        destination = new UncloseableOutputStream(destination);
 
         if (compression)
             destination = new DeflaterOutputStream(new Base64OutputStream(destination));

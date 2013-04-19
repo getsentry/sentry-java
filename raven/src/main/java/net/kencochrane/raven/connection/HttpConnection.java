@@ -10,10 +10,7 @@ import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -123,8 +120,9 @@ public class HttpConnection extends AbstractConnection {
         HttpURLConnection connection = getConnection();
         try {
             connection.connect();
-            marshaller.marshall(event, connection.getOutputStream());
-            connection.getOutputStream().close();
+            OutputStream outputStream = connection.getOutputStream();
+            marshaller.marshall(event, outputStream);
+            outputStream.close();
             connection.getInputStream().close();
         } catch (IOException e) {
             if (connection.getErrorStream() != null) {

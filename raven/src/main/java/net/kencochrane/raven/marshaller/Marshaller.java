@@ -2,6 +2,7 @@ package net.kencochrane.raven.marshaller;
 
 import net.kencochrane.raven.event.Event;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -11,12 +12,47 @@ public interface Marshaller {
     /**
      * Serialise an event and sends it through an {@code OutputStream}.
      * <p>
-     * The marshaller will close the given stream once it's done sending content.
-     * If it should stay open, use a wrapper that will intercept the call to {@code OutputStream#close()}.
+     * The marshaller should not close the given stream, use {@link UncloseableOutputStream} to prevent automatic calls
+     * to {@link OutputStream#close()}.
      * </p>
      *
      * @param event       event to serialise.
      * @param destination destination stream.
      */
     void marshall(Event event, OutputStream destination);
+
+    /**
+     * OutputStream delegating every call except for {@link #close()} to an other OutputStream.
+     */
+    final class UncloseableOutputStream extends OutputStream {
+        private final OutputStream originalStream;
+
+        public UncloseableOutputStream(OutputStream originalStream) {
+            this.originalStream = originalStream;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            originalStream.write(b);
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            originalStream.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            originalStream.write(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            originalStream.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+        }
+    }
 }
