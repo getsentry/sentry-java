@@ -141,7 +141,7 @@ public class AsyncConnection implements Connection {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
-                    close();
+                    AsyncConnection.this.close();
                 } catch (IOException e) {
                     logger.log(Level.SEVERE, "An exception occurred while closing the connection.", e);
                 }
