@@ -7,7 +7,7 @@
     <parent>
             <groupId>net.kencochrane</groupId>
         <artifactId>raven-all</artifactId>
-        <version>2.0-UNIMARKET-1</version>
+        <version>2.0-UNIMARKET-2</version>
     </parent>
     <artifactId>raven-logback</artifactId>
     <packaging>jar</packaging>

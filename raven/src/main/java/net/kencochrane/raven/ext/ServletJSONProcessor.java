@@ -45,11 +45,15 @@ public class ServletJSONProcessor implements JSONProcessor {
     public void process(JSONObject json, Throwable exception) {
         String jsonString = (String) RavenMDC.getInstance().get(HTTP_INTERFACE);
         JSONObject http = null;
-        try {
-            http = (JSONObject) new JSONParser().parse(jsonString);
-        } catch (ParseException e) {
-            e.printStackTrace();
+
+        if (StringUtils.isNotBlank(jsonString)) {
+            try {
+                http = (JSONObject) new JSONParser().parse(jsonString);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
         }
+
         if (http == null) {
             return;
         }
