@@ -1,1 +1,2 @@
 language: java
+script: mvn test && for module in $(find . -mindepth 2 -name pom.xml  -exec dirname '{}' ';'); do; cd $module; mvn integration-test; cd ../; done;
