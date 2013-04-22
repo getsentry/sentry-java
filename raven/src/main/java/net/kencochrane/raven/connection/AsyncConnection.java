@@ -24,11 +24,11 @@ public class AsyncConnection implements Connection {
     /**
      * DSN option for the number of threads assigned for the connection.
      */
-    public static final String MAX_THREADS_OPTION = "raven.async.threads";
+    public static final String DSN_MAX_THREADS_OPTION = "raven.async.threads";
     /**
      * DSN option for the priority of threads assigned for the connection.
      */
-    public static final String PRIORITY_OPTION = "raven.async.priority";
+    public static final String DSN_PRIORITY_OPTION = "raven.async.priority";
     private static final Logger logger = Logger.getLogger(AsyncConnection.class.getCanonicalName());
     /**
      * Timeout of the {@link #executorService}.
@@ -100,7 +100,7 @@ public class AsyncConnection implements Connection {
     /**
      * Gets the number of {@code Thread}s that should be available in the pool.
      * <p>
-     * Attempts to get the {@link #MAX_THREADS_OPTION} option from the {@code Dsn},
+     * Attempts to get the {@link #DSN_MAX_THREADS_OPTION} option from the {@code Dsn},
      * defaults to {@link #DEFAULT_MAX_THREADS} if not available.
      * </p>
      *
@@ -108,8 +108,8 @@ public class AsyncConnection implements Connection {
      * @return the number of threads that should be available in the pool.
      */
     private static int getMaxThreads(Dsn dsn) {
-        if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
-            return Integer.parseInt(dsn.getOptions().get(MAX_THREADS_OPTION));
+        if (dsn.getOptions().containsKey(DSN_MAX_THREADS_OPTION)) {
+            return Integer.parseInt(dsn.getOptions().get(DSN_MAX_THREADS_OPTION));
         } else {
             return DEFAULT_MAX_THREADS;
         }
@@ -118,7 +118,7 @@ public class AsyncConnection implements Connection {
     /**
      * Gets the priority of {@code Thread}s in the pool.
      * <p>
-     * Attempts to get the {@link #PRIORITY_OPTION} option from the {@code Dsn},
+     * Attempts to get the {@link #DSN_PRIORITY_OPTION} option from the {@code Dsn},
      * defaults to {@link #DEFAULT_PRIORITY} if not available.
      * </p>
      *
@@ -126,8 +126,8 @@ public class AsyncConnection implements Connection {
      * @return the priority of threads available in the pool.
      */
     private static int getPriority(Dsn dsn) {
-        if (dsn.getOptions().containsKey(PRIORITY_OPTION)) {
-            return Integer.parseInt(dsn.getOptions().get(PRIORITY_OPTION));
+        if (dsn.getOptions().containsKey(DSN_PRIORITY_OPTION)) {
+            return Integer.parseInt(dsn.getOptions().get(DSN_PRIORITY_OPTION));
         } else {
             return DEFAULT_PRIORITY;
         }
