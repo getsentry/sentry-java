@@ -13,12 +13,11 @@ import java.io.IOException;
 
 @WebServlet(name = "SentryHttpServlet", displayName = "SentryHttpServlet", urlPatterns = "/api/*")
 public class SentryHttpServlet extends HttpServlet {
-    //TODO: Hardcoded now, but later it could be enhanced.
-    private Unmarshaller unmarshaller = new JsonUnmarshaller();
+    private SentryStub sentryStub = SentryStub.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Event event = unmarshaller.unmarshall(req.getInputStream());
-        //TODO: validate event
+        Event event = sentryStub.parseEvent(req.getInputStream());
+        sentryStub.addEvent(event);
     }
 }

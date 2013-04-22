@@ -1,6 +1,5 @@
 package net.kencochrane.raven.sentrystub;
 
-import net.kencochrane.raven.sentrystub.auth.AuthValidator;
 import net.kencochrane.raven.sentrystub.auth.InvalidAuthException;
 import net.kencochrane.raven.sentrystub.event.Event;
 import net.kencochrane.raven.sentrystub.unmarshaller.JsonUnmarshaller;
@@ -35,20 +34,14 @@ public class SentryUdpContextListener implements ServletContextListener {
     private static final String SENTRY_UDP_PORT_PARAMETER = "sentryUdpPort";
     private ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private DatagramSocket udpSocket;
-    private AuthValidator authValidator;
-    //TODO: Hardcoded now, but later it could be enhanced.
-    private Unmarshaller unmarshaller = new JsonUnmarshaller();
+    private final SentryStub sentryStub = SentryStub.getInstance();
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        String sentyConfiguration = sce.getServletContext().getInitParameter("sentry_config");
         String sentryUdpPortParameter = sce.getServletContext().getInitParameter(SENTRY_UDP_PORT_PARAMETER);
         startUdpSocket(sentryUdpPortParameter != null
                 ? Integer.parseInt(sentryUdpPortParameter)
                 : DEFAULT_SENTRY_UDP_PORT);
-
-        authValidator = new AuthValidator();
-        authValidator.loadSentryUsers(sentyConfiguration);
     }
 
     private void startUdpSocket(int port) {
@@ -79,8 +72,8 @@ public class SentryUdpContextListener implements ServletContextListener {
                     datagramPacket.getOffset(),
                     datagramPacket.getLength());
             validateAuthHeader(bais);
-            Event event = unmarshaller.unmarshall(bais);
-            //TODO: validate event
+            Event event = sentryStub.parseEvent(bais);
+            sentryStub.addEvent(event);
         }
 
         /**
@@ -91,7 +84,7 @@ public class SentryUdpContextListener implements ServletContextListener {
         private void validateAuthHeader(InputStream inputStream) {
             try {
                 Map<String, String> authHeader = parseAuthHeader(inputStream);
-                authValidator.validateSentryAuth(authHeader);
+                sentryStub.validateAuth(authHeader);
             } catch (IOException e) {
                 throw new InvalidAuthException("Impossible to extract the auth header from an UDP packet", e);
             }
