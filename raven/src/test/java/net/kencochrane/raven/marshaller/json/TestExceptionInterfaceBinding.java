@@ -4,16 +4,21 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -21,11 +26,27 @@ public class TestExceptionInterfaceBinding extends AbstractTestInterfaceBinding 
     private ExceptionInterfaceBinding interfaceBinding;
     @Mock
     private ExceptionInterface mockExceptionInterface;
+    @Mock
+    private InterfaceBinding<StackTraceInterface> stackTraceInterfaceBinding;
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        interfaceBinding = new ExceptionInterfaceBinding();
+        interfaceBinding = new ExceptionInterfaceBinding(stackTraceInterfaceBinding);
+
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                JsonGenerator jsonGenerator = (JsonGenerator) invocation.getArguments()[0];
+                if (invocation.getArguments()[1] != null) {
+                    jsonGenerator.writeStartObject();
+                    jsonGenerator.writeEndObject();
+                } else {
+                    jsonGenerator.writeNull();
+                }
+                return null;
+            }
+        }).when(stackTraceInterfaceBinding).writeInterface(any(JsonGenerator.class), any(StackTraceInterface.class));
     }
 
     @Test
