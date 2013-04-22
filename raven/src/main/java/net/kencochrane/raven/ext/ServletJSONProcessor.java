@@ -4,6 +4,8 @@ import net.kencochrane.raven.spi.JSONProcessor;
 import net.kencochrane.raven.spi.RavenMDC;
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +43,17 @@ public class ServletJSONProcessor implements JSONProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public void process(JSONObject json, Throwable exception) {
-        JSONObject http = (JSONObject) RavenMDC.getInstance().get(HTTP_INTERFACE);
+        String jsonString = (String) RavenMDC.getInstance().get(HTTP_INTERFACE);
+        JSONObject http = null;
+
+        if (StringUtils.isNotBlank(jsonString)) {
+            try {
+                http = (JSONObject) new JSONParser().parse(jsonString);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+
         if (http == null) {
             return;
         }

@@ -194,8 +194,12 @@ public class Client {
     }
 
     public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit, Map<String, ?> tags) {
+        return captureMessage(message, timestamp, loggerClass, logLevel, culprit, null, null, null);
+    }
+
+    public String captureMessage(String message, Long timestamp, String loggerClass, Integer logLevel, String culprit, Map<String, ?> tags, String unformattedMessage, List<?> messageParameters) {
         timestamp = (timestamp == null ? Utils.now() : timestamp);
-        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null, tags);
+        Message msg = buildMessage(message, formatTimestamp(timestamp), loggerClass, logLevel, culprit, null, tags, unformattedMessage, messageParameters);
         send(msg, timestamp);
         return msg.eventId;
     }
@@ -215,7 +219,11 @@ public class Client {
     }
 
     public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
-        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception, tags);
+        return captureException(logMessage, timestamp, loggerName, logLevel, culprit, exception, null, null, null);
+    }
+
+    public String captureException(String logMessage, long timestamp, String loggerName, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags, String unformattedMessage, List<?> messageParameters) {
+        Message message = buildMessage(logMessage, formatTimestamp(timestamp), loggerName, logLevel, culprit, exception, tags, unformattedMessage, messageParameters);
         send(message, timestamp);
         return message.eventId;
     }
@@ -247,7 +255,7 @@ public class Client {
     }
 
     @SuppressWarnings("unchecked")
-    protected Message buildMessage(String message, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags) {
+    protected Message buildMessage(String formattedMessage, String timestamp, String loggerClass, Integer logLevel, String culprit, Throwable exception, Map<String, ?> tags, String unformattedMessage, List<?> messageParameters) {
         if (isDisabled()) {
             return Message.NONE;
         }
@@ -255,18 +263,22 @@ public class Client {
         JSONObject obj = new JSONObject();
         if (exception == null) {
             obj.put("culprit", culprit);
-            Events.message(obj, message);
+
+            if (unformattedMessage != null) {
+                Events.message(obj, unformattedMessage, messageParameters != null ? messageParameters.toArray() : null);
+            } else {
+                Events.message(obj, formattedMessage);
+            }
         } else {
             Events.exception(obj, exception);
         }
-        if (message == null) {
-            message = (exception == null ? null : exception.getMessage());
-            message = (message == null ? Default.EMPTY_MESSAGE : message);
+        if (formattedMessage == null) {
+            formattedMessage = (exception == null ? null : exception.getMessage());
+            formattedMessage = (formattedMessage == null ? Default.EMPTY_MESSAGE : formattedMessage);
         }
         obj.put("event_id", eventId);
-        obj.put("checksum", calculateChecksum(message));
         obj.put("timestamp", timestamp);
-        obj.put("message", message);
+        obj.put("message", formattedMessage);
         obj.put("project", dsn.projectId);
         obj.put("level", logLevel == null ? Default.LOG_LEVEL : logLevel);
         obj.put("logger", loggerClass == null ? Default.LOGGER : loggerClass);

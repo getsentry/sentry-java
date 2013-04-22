@@ -10,6 +10,7 @@ import net.kencochrane.raven.spi.JSONProcessor;
 import net.kencochrane.raven.spi.RavenMDC;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -113,12 +114,23 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             long timestamp = event.getTimeStamp();
 
             // get the log and info about the log.
-            String message = event.getMessage();
+            String formattedMessage = event.getFormattedMessage();
+            String unformattedMessage = event.getMessage();
+            List messageParameters = event.getArgumentArray() != null ? Arrays.asList(event.getArgumentArray()) : Collections.emptyList();
+
+            // convert all of them to strings as the json frame work raven uses does not do this properly
+            // (see org.json.simple.toJSONString which does not surround the last returned value on quotes)
+            // http://code.google.com/p/json-simple/issues/detail?id=27
+            // http://code.google.com/p/json-simple/issues/detail?id=33
+            List<String> messageParameterStrings = new ArrayList<String>();
+            for (Object messageParameter : messageParameters) {
+                messageParameterStrings.add(String.valueOf(messageParameter));
+            }
+
+
             String logger = event.getLoggerName();
-            int level = event.getLevel().toInt() / 1000; // Need to divide by
-            // 1000 to keep
-            // consistent with
-            // sentry
+            // Need to divide by 1000 to keep consistent with sentry
+            int level = event.getLevel().toInt() / 1000;
             String culprit = event.getLoggerName();
 
             IThrowableProxy throwable = event.getThrowableProxy();
@@ -131,9 +143,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
             // send the message to the sentry server
             if (event.getThrowableProxy() == null) {
-                client.captureMessage(message, timestamp, logger, level, culprit);
+                client.captureMessage(formattedMessage, timestamp, logger, level, culprit, null, unformattedMessage, messageParameterStrings);
             } else {
-                client.captureException(message, timestamp, logger, level, culprit, ((ThrowableProxy) throwable).getThrowable());
+                client.captureException(formattedMessage, timestamp, logger, level, culprit, ((ThrowableProxy) throwable).getThrowable(), null, unformattedMessage, messageParameterStrings);
             }
 
             if (!async) {

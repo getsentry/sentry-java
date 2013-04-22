@@ -28,12 +28,22 @@ public class LogbackMDC extends RavenMDC {
 
     @Override
     public void put(String key, Object value) {
-        MDC.put(key, value.toString());
+        if (THREAD_LOGGING_EVENT.get() != null) {
+            THREAD_LOGGING_EVENT.get().getMDCPropertyMap().put(key, value.toString());
+        }
+        else {
+            MDC.put(key, value.toString());
+        }
     }
 
     @Override
     public void remove(String key) {
-        MDC.remove(key);
+        if (THREAD_LOGGING_EVENT.get() != null) {
+            THREAD_LOGGING_EVENT.get().getMDCPropertyMap().remove(key);
+        }
+        else {
+            MDC.remove(key);
+        }
     }
 
 }

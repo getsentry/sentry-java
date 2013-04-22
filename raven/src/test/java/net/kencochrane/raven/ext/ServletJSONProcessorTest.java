@@ -59,7 +59,7 @@ public class ServletJSONProcessorTest extends Client {
         assertNotNull(mdc.get("sentry.interfaces.Http"));
         Message message = buildMessage("test",
                 formatTimestamp(new Date().getTime()), "test",
-                LogLevel.ERROR.intValue, "test", null, null);
+                LogLevel.ERROR.intValue, "test", null, null, null, null);
         JSONObject http = (JSONObject) message.json.get("sentry.interfaces.Http");
         assertEquals("GET", http.get("method"));
         assertEquals("test=abc", http.get("query_string"));
@@ -70,7 +70,7 @@ public class ServletJSONProcessorTest extends Client {
         assertEquals(headers, http.get("headers"));
 
         JSONObject env = new JSONObject();
-        env.put("SERVER_PORT", 80);
+        env.put("SERVER_PORT", 80L);
         env.put("REMOTE_ADDR", "127.0.0.1");
         env.put("SERVER_PROTOCOL", "http");
         env.put("SERVER_NAME", "localhost");
@@ -139,7 +139,7 @@ public class ServletJSONProcessorTest extends Client {
 
         @Override
         public void put(String key, Object value) {
-            values.put(key, value);
+            values.put(key, value != null ? value.toString() : null);
         }
 
         @Override
