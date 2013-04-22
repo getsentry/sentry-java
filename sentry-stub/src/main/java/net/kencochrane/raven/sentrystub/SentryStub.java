@@ -48,4 +48,8 @@ public final class SentryStub {
     public void validateAuth(Map<String, String> authHeader) {
         authValidator.validateSentryAuth(authHeader);
     }
+
+    public void removeEvents(){
+        events.clear();
+    }
 }
