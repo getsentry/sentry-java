@@ -26,10 +26,8 @@ public class SentryAuthenticationFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        //TODO: respond to everything that isn't "https://example.com/sentry/api/project-id/store/"
-        String pathInfo = req.getPathInfo();
-
-        if (!validateAuth(req, resp)) return;
+        if (!validateAuth(req, resp))
+            return;
 
         chain.doFilter(request, response);
     }
