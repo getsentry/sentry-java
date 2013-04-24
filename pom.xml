@@ -53,6 +53,12 @@
             <name>Mark Philpot</name>
             <email>contact@email.com</email>
         </developer>
+        <developer>
+            <id>ColinHebert</id>
+            <name>Colin Hebert</name>
+            <email>hebert.colin@gmail.com</email>
+            <url>https://github.com/ColinHebert</url>
+        </developer>
     </developers>
 
     <modules>
