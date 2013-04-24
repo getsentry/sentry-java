@@ -211,7 +211,6 @@
                 <configuration>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <pushChanges>false</pushChanges>
-                    <suppressCommitBeforeTag>true</suppressCommitBeforeTag>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <!-- oss-parent-config -->
                     <mavenExecutorId>forked-path</mavenExecutorId>
