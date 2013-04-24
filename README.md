@@ -14,6 +14,8 @@ to send the logs directly to sentry:
 
 Raven-Java supports both HTTP(S) and UDP transport of events.
 
+[![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](http://travis-ci.org/kencochrane/raven-java)
+
 ## Sentry Protocol and supported versions
 ### Sentry Protocol versions
 Since the version 3.0, Raven-Java the versionning system is based on the
