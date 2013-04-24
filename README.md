@@ -1,6 +1,6 @@
-# Raven-Java
+# Raven
 
-Raven-Java is a Java client for [Sentry](https://www.getsentry.com/).
+Raven is a Java client for [Sentry](https://www.getsentry.com/).
 Besides the regular client you can use within your application code, this
 project also provides tools allowing the most popular logging frameworks
 to send the logs directly to sentry:
@@ -12,25 +12,25 @@ to send the logs directly to sentry:
  [log4j2](https://logging.apache.org/log4j/2.x/).
  - `raven-logback` adds the support for [logback](http://logback.qos.ch/).
 
-Raven-Java supports both HTTP(S) and UDP transport of events.
+Raven supports both HTTP(S) and UDP transport of events.
 
 [![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](http://travis-ci.org/kencochrane/raven-java)
 
 ## Sentry Protocol and supported versions
 ### Sentry Protocol versions
-Since the version 3.0, Raven-Java the versionning system is based on the
-protocol version of Sentry. This means that Raven-Java 3.0 only supports
-the version 3 of Sentry's protocol while Raven-Java 4.0 only supports
+Since the version 3.0, Raven the versionning system is based on the
+protocol version of Sentry. This means that Raven-3.x only supports
+the version 3 of Sentry's protocol while Raven-4.x only supports
 the version 4.
 
 Sentry only supports the last two major releases of the protocol, for this
-reason, only the last two major versions of Raven-Java are maintained.
+reason, only the last two major versions of Raven are maintained.
 
 ### Sentry versions
 
- - Sentry protocol v4 is not yet available (use Raven-Java 4.0)
- - Sentry protocol v3 is available since Sentry 5.1 (use Raven-Java 3.0)
- - Sentry protocol v2 is available since Sentry 2.0 (use Raven-Java 2.0)
+ - Sentry protocol v4 is not yet available (use Raven-4.x)
+ - Sentry protocol v3 is available since Sentry 5.1 (use Raven-3.x)
+ - Sentry protocol v2 is available since Sentry 2.0 (use Raven-2.x)
 
 ## Build and Installation
 **See

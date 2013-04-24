@@ -1,18 +1,18 @@
-# Installation and setup of Raven-Java
+# Installation and setup of Raven
 
-## Installing Raven-Java
+## Installing Raven
 Currently there are 6 modules in the project:
 
  - `raven`, the core of the project, providing the client and support for JUL
- - `raven-legacy`, support of the Raven-Java 2.0 API (it's recommended to move
- to the new API as legacy will be removed in the future releases of Raven-Java)
+ - `raven-legacy`, support of the Raven-2.0 API (it's recommended to move
+ to the new API as legacy will be removed in the future releases of Raven)
  - `raven-log4j`, Appender for log4j
  - `raven-log4j2`, Appender for log4j2
  - `raven-logback`, Appander for Logback
  - `sentry-stub`, Sentry server stub, allowing to test the protocol
  
 ### Build
-It's possible to get the latest version of Raven-Java by building it from the
+It's possible to get the latest version of Raven by building it from the
 sources.
 
     $ git clone https://github.com/kencochrane/raven-java.git
@@ -24,7 +24,7 @@ jetty, it is currently not possible to run the integration tests from the main
 project. They have to be run manually on each module independently._
 
 ### Maven dependency
-To add raven-java as a dependency, simply add this to your pom.xml:
+To add raven as a dependency, simply add this to your pom.xml:
 
     <dependency>
       <groupId>net.kencochrane.raven</groupId>
@@ -37,7 +37,7 @@ name of the module.
 
 ### Manual installation
 
-## Using Raven-Java
+## Using Raven
 
 ### Manual usage
 
@@ -50,7 +50,7 @@ name of the module.
             String rawDsn = args[0];
             Raven client = new Raven(rawDsn);
             EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("Hello from Raven-Java!");
+                            .setMessage("Hello from Raven!");
             client.sendEvent(eventBuilder.build());
         }
     }
@@ -72,7 +72,7 @@ The client will lookup for the first DSN configuration provided:
         public static void main(String[] args) {
             Raven client = new Raven();
             EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("Hello from Raven-Java!");
+                            .setMessage("Hello from Raven!");
             client.sendEvent(eventBuilder.build());
         }
     }
@@ -103,7 +103,7 @@ event is sent to Sentry, it is recommended to use instead the option
 It is possible to send events to Sentry over different protocols, depending
 on the security and performance requirements.
 So far Sentry accepts HTTP(S) and UDP which are both fully supported by
-Raven-Java.
+Raven.
 
 ### HTTP
 The most common way to access Sentry is through HTTP, this can be done by
