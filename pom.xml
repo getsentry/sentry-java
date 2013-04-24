@@ -105,6 +105,9 @@
         <maven.compiler.source>6</maven.compiler.source>
         <maven.compiler.target>6</maven.compiler.target>
 
+        <!-- Disable integration tests by default due to https://bugs.eclipse.org/bugs/show_bug.cgi?id=405631 -->
+        <skipITs>true</skipITs>
+
         <!-- dependencies versions -->
         <commons-codec.version>1.6</commons-codec.version>
         <jackson.version>2.1.4</jackson.version>
@@ -310,41 +313,54 @@
                         </dependency>
                     </dependencies>
                 </plugin>
-                <plugin>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-maven-plugin</artifactId>
-                    <version>9.0.1.v20130408</version>
-                    <configuration>
-                        <scanIntervalSeconds>10</scanIntervalSeconds>
-                        <stopKey>foo</stopKey>
-                        <stopPort>9999</stopPort>
-                        <war>${project.build.directory}/webapps/sentry-stub.war</war>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>start-sentry-stub</id>
-                            <phase>pre-integration-test</phase>
-                            <goals>
-                                <goal>deploy-war</goal>
-                            </goals>
-                            <configuration>
-                                <scanIntervalSeconds>0</scanIntervalSeconds>
-                                <daemon>true</daemon>
-                                <skip>${skipTests}</skip>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>stop-sentry-stub</id>
-                            <phase>post-integration-test</phase>
-                            <goals>
-                                <goal>stop</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>jetty</id>
+            <properties>
+                <skipITs>false</skipITs>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-maven-plugin</artifactId>
+                        <version>9.0.1.v20130408</version>
+                        <configuration>
+                            <scanIntervalSeconds>10</scanIntervalSeconds>
+                            <stopKey>foo</stopKey>
+                            <stopPort>9999</stopPort>
+                            <war>${project.build.directory}/webapps/sentry-stub.war</war>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>start-sentry-stub</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>deploy-war</goal>
+                                </goals>
+                                <configuration>
+                                    <scanIntervalSeconds>0</scanIntervalSeconds>
+                                    <daemon>true</daemon>
+                                    <skip>${skipTests}</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-sentry-stub</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <reporting>
         <plugins>
