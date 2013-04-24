@@ -68,7 +68,7 @@
     </modules>
 
     <properties>
-        <tagNameFormat>${project.version}</tagNameFormat>
+        <tagNameFormat>@{project.version}</tagNameFormat>
         <pushChanges>false</pushChanges>
     </properties>
 
