@@ -67,6 +67,11 @@
         <module>raven-logback</module>
     </modules>
 
+    <properties>
+        <tagNameFormat>${project.version}</tagNameFormat>
+        <pushChanges>false</pushChanges>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
