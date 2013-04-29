@@ -34,13 +34,13 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String ASYNC_OPTION = "raven.async";
     /**
-     * DSN option for the number of threads assigned for the connection.
+     * Option for the number of threads assigned for the connection.
      */
-    public static final String DSN_MAX_THREADS_OPTION = "raven.async.threads";
+    public static final String MAX_THREADS_OPTION = "raven.async.threads";
     /**
-     * DSN option for the priority of threads assigned for the connection.
+     * Option for the priority of threads assigned for the connection.
      */
-    public static final String DSN_PRIORITY_OPTION = "raven.async.priority";
+    public static final String PRIORITY_OPTION = "raven.async.priority";
 
     private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
 
@@ -76,15 +76,15 @@ public class DefaultRavenFactory extends RavenFactory {
 
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
         int maxThreads;
-        if (dsn.getOptions().containsKey(DSN_MAX_THREADS_OPTION)) {
-            maxThreads = Integer.parseInt(dsn.getOptions().get(DSN_MAX_THREADS_OPTION));
+        if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
+            maxThreads = Integer.parseInt(dsn.getOptions().get(MAX_THREADS_OPTION));
         } else {
             maxThreads = AsyncConnection.DEFAULT_MAX_THREADS;
         }
 
         int priority;
-        if (dsn.getOptions().containsKey(DSN_PRIORITY_OPTION)) {
-            priority = Integer.parseInt(dsn.getOptions().get(DSN_PRIORITY_OPTION));
+        if (dsn.getOptions().containsKey(PRIORITY_OPTION)) {
+            priority = Integer.parseInt(dsn.getOptions().get(PRIORITY_OPTION));
         } else {
             priority = AsyncConnection.DEFAULT_PRIORITY;
         }
