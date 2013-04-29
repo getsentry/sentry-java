@@ -80,7 +80,7 @@ public abstract class AbstractLoggerTest {
         Throwable capturedException = ((ExceptionInterface) exceptionInterface).getThrowable();
 
         assertThat(capturedException.getMessage(), is(exception.getMessage()));
-        assertThat(capturedException.getStackTrace(), is(capturedException.getStackTrace()));
+        assertThat(capturedException.getStackTrace(), is(exception.getStackTrace()));
     }
 
     @Test
