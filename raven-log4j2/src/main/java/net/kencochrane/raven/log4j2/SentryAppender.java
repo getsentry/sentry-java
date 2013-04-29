@@ -4,6 +4,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
@@ -14,9 +15,12 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttr;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.message.Message;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @Plugin(name = "Sentry", type = "Sentry", elementType = "appender")
@@ -106,9 +110,10 @@ public class SentryAppender extends AbstractAppender<String> {
 
     @Override
     public void append(LogEvent event) {
+        Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(event.getMillis()))
-                .setMessage(event.getMessage().getFormattedMessage())
+                .setMessage(eventMessage.getFormattedMessage())
                 .setLogger(event.getLoggerName())
                 .setLevel(formatLevel(event.getLevel()));
 
@@ -118,10 +123,15 @@ public class SentryAppender extends AbstractAppender<String> {
             eventBuilder.setCulprit(throwable);
         } else if (event.getSource() != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways.
-            eventBuilder.setCulprit(formatCulprit(event.getSource()));
+            // different places, or a same place can log a message in different ways).
+            String source = formatCulprit(event.getSource());
+            eventBuilder.setCulprit(source);
+            eventBuilder.generateChecksum(source);
+        }
 
-            eventBuilder.generateChecksum(formatCulprit(event.getSource()));
+        if (eventMessage.getFormattedMessage() != eventMessage.getFormat()) {
+            eventBuilder.addSentryInterface(new MessageInterface(eventMessage.getFormat(),
+                    formatMessageParameters(eventMessage.getParameters())));
         }
 
         if (event.getContextStack() != null) {
@@ -137,6 +147,13 @@ public class SentryAppender extends AbstractAppender<String> {
         raven.runBuilderHelpers(eventBuilder);
 
         raven.sendEvent(eventBuilder.build());
+    }
+
+    private List<String> formatMessageParameters(Object[] parameters) {
+        List<String> stringParameters = new ArrayList<String>(parameters.length);
+        for (Object parameter : parameters)
+            stringParameters.add(parameter.toString());
+        return stringParameters;
     }
 
     public void setDsn(String dsn) {
