@@ -89,7 +89,7 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     protected Connection createHttpConnection(Dsn dsn) {
-        HttpConnection httpConnection = new HttpConnection(HttpConnection.getSentryUrl(dsn),
+        HttpConnection httpConnection = new HttpConnection(HttpConnection.getSentryApiUrl(dsn),
                 dsn.getPublicKey(), dsn.getSecretKey());
         httpConnection.setMarshaller(createMarshaller(dsn));
 

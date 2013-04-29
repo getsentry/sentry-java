@@ -69,7 +69,7 @@ public class HttpConnection extends AbstractConnection {
         this.sentryUrl = sentryUrl;
     }
 
-    public static URL getSentryUrl(Dsn dsn) {
+    public static URL getSentryApiUrl(Dsn dsn) {
         try {
             String url = dsn.getUri().toString() + "api/" + dsn.getProjectId() + "/store/";
             return new URL(url);
