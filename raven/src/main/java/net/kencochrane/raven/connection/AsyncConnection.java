@@ -37,11 +37,11 @@ public class AsyncConnection implements Connection {
     /**
      * Number of threads dedicated to the connection usage by default (Number of processors available).
      */
-    private static final int DEFAULT_MAX_THREADS = Runtime.getRuntime().availableProcessors();
+    public static final int DEFAULT_MAX_THREADS = Runtime.getRuntime().availableProcessors();
     /**
      * Default threads priority.
      */
-    private static final int DEFAULT_PRIORITY = Thread.MIN_PRIORITY;
+    public static final int DEFAULT_PRIORITY = Thread.MIN_PRIORITY;
     /**
      * Connection used to actually send the events.
      */

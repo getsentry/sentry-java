@@ -18,7 +18,7 @@ import java.net.SocketException;
  * Connection to a Sentry server through an UDP connection.
  */
 public class UdpConnection extends AbstractConnection {
-    private static final int DEFAULT_UDP_PORT = 9001;
+    public static final int DEFAULT_UDP_PORT = 9001;
     private DatagramSocket socket;
     private Marshaller marshaller = new JsonMarshaller();
 
