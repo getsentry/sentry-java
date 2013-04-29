@@ -24,7 +24,7 @@ public class DefaultRavenFactory extends RavenFactory {
         return raven;
     }
 
-    private Connection createConnection(Dsn dsn) {
+    protected Connection createConnection(Dsn dsn) {
         String protocol = dsn.getProtocol();
         Connection connection;
 
@@ -45,7 +45,7 @@ public class DefaultRavenFactory extends RavenFactory {
         return connection;
     }
 
-    private Connection createAsyncConnection(Dsn dsn, Connection connection) {
+    protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
         int maxThreads;
         if (dsn.getOptions().containsKey(AsyncConnection.DSN_MAX_THREADS_OPTION)) {
             maxThreads = Integer.parseInt(dsn.getOptions().get(AsyncConnection.DSN_MAX_THREADS_OPTION));
@@ -63,7 +63,7 @@ public class DefaultRavenFactory extends RavenFactory {
         return new AsyncConnection(connection, true, maxThreads, priority);
     }
 
-    private Connection createHttpConnection(Dsn dsn) {
+    protected Connection createHttpConnection(Dsn dsn) {
         HttpConnection httpConnection = new HttpConnection(HttpConnection.getSentryUrl(dsn),
                 dsn.getPublicKey(), dsn.getSecretKey());
         httpConnection.setMarshaller(createMarshaller(dsn));
@@ -76,7 +76,7 @@ public class DefaultRavenFactory extends RavenFactory {
         return httpConnection;
     }
 
-    private Connection createUdpConnection(Dsn dsn) {
+    protected Connection createUdpConnection(Dsn dsn) {
         //String hostname, int port, String publicKey, String secretKey
         int port = dsn.getPort() != -1 ? dsn.getPort() : UdpConnection.DEFAULT_UDP_PORT;
         UdpConnection udpConnection = new UdpConnection(dsn.getHost(), port, dsn.getPublicKey(), dsn.getSecretKey());
@@ -84,7 +84,7 @@ public class DefaultRavenFactory extends RavenFactory {
         return udpConnection;
     }
 
-    private Marshaller createMarshaller(Dsn dsn) {
+    protected Marshaller createMarshaller(Dsn dsn) {
         JsonMarshaller marshaller = new JsonMarshaller();
 
         // Set JSON marshaller bindings
