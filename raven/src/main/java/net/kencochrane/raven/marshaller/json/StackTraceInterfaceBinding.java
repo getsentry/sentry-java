@@ -20,6 +20,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
     private final Set<String> notInAppFrames;
+    private boolean removeCommonFramesWithEnclosing = true;
 
     public StackTraceInterfaceBinding() {
         notInAppFrames = new HashSet<String>();
@@ -42,12 +43,14 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
      *
      * @param stackTraceElement current frame in the stackTrace.
      */
-    private void writeFrame(JsonGenerator generator, StackTraceElement stackTraceElement) throws IOException {
+    private void writeFrame(JsonGenerator generator, StackTraceElement stackTraceElement, boolean commonWithEnclosing)
+            throws IOException {
         generator.writeStartObject();
         // Do not display the file name (irrelevant) as it replaces the module in the sentry interface.
         //generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
         generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getClassName());
-        generator.writeBooleanField(IN_APP_PARAMETER, isFrameInApp(stackTraceElement));
+        generator.writeBooleanField(IN_APP_PARAMETER, !(removeCommonFramesWithEnclosing && commonWithEnclosing)
+                && isFrameInApp(stackTraceElement));
         generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getMethodName());
         generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineNumber());
         generator.writeEndObject();
@@ -69,13 +72,18 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
         generator.writeStartObject();
         generator.writeArrayFieldStart(FRAMES_PARAMETER);
+        int commonWithEnclosing = stackTraceInterface.getFramesCommonWithEnclosing();
 
         // Go through the stackTrace frames from the first call to the last
         for (int i = stackTrace.length - 1; i >= 0; i--) {
-            writeFrame(generator, stackTrace[i]);
+            writeFrame(generator, stackTrace[i], commonWithEnclosing-- > 0);
         }
 
         generator.writeEndArray();
         generator.writeEndObject();
+    }
+
+    public void setRemoveCommonFramesWithEnclosing(boolean removeCommonFramesWithEnclosing) {
+        this.removeCommonFramesWithEnclosing = removeCommonFramesWithEnclosing;
     }
 }
