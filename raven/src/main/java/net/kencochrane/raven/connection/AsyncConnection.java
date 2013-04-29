@@ -22,19 +22,6 @@ import java.util.logging.Logger;
  */
 public class AsyncConnection implements Connection {
     /**
-     * DSN option for the number of threads assigned for the connection.
-     */
-    public static final String DSN_MAX_THREADS_OPTION = "raven.async.threads";
-    /**
-     * DSN option for the priority of threads assigned for the connection.
-     */
-    public static final String DSN_PRIORITY_OPTION = "raven.async.priority";
-    private static final Logger logger = Logger.getLogger(AsyncConnection.class.getCanonicalName());
-    /**
-     * Timeout of the {@link #executorService}.
-     */
-    private static final int TIMEOUT = 1000;
-    /**
      * Number of threads dedicated to the connection usage by default (Number of processors available).
      */
     public static final int DEFAULT_MAX_THREADS = Runtime.getRuntime().availableProcessors();
@@ -42,6 +29,11 @@ public class AsyncConnection implements Connection {
      * Default threads priority.
      */
     public static final int DEFAULT_PRIORITY = Thread.MIN_PRIORITY;
+    private static final Logger logger = Logger.getLogger(AsyncConnection.class.getCanonicalName());
+    /**
+     * Timeout of the {@link #executorService}.
+     */
+    private static final int TIMEOUT = 1000;
     /**
      * Connection used to actually send the events.
      */

@@ -23,22 +23,6 @@ public class Dsn {
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
     /**
-     * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
-     */
-    public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
-    /**
-     * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
-     */
-    public static final String TIMEOUT_OPTION = "raven.timeout";
-    /**
-     * Option to send events asynchronously.
-     */
-    public static final String ASYNC_OPTION = "raven.async";
-    /**
-     * Protocol setting to disable security checks over an SSL connection.
-     */
-    public static final String NAIVE_PROTOCOL = "naive";
-    /**
      * Lookup name for the DSN in JNDI.
      */
     private static final String JNDI_DSN_NAME = "java:comp/env/sentry/dsn";

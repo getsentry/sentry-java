@@ -15,6 +15,31 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DefaultRavenFactory extends RavenFactory {
+    /**
+     * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
+     */
+    public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
+    /**
+     * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
+     */
+    public static final String TIMEOUT_OPTION = "raven.timeout";
+    /**
+     * Option to send events asynchronously.
+     */
+    public static final String ASYNC_OPTION = "raven.async";
+    /**
+     * Protocol setting to disable security checks over an SSL connection.
+     */
+    public static final String NAIVE_PROTOCOL = "naive";
+    /**
+     * DSN option for the number of threads assigned for the connection.
+     */
+    public static final String DSN_MAX_THREADS_OPTION = "raven.async.threads";
+    /**
+     * DSN option for the priority of threads assigned for the connection.
+     */
+    public static final String DSN_PRIORITY_OPTION = "raven.async.priority";
+
     private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
 
     @Override
@@ -38,7 +63,7 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
-        if (dsn.getOptions().containsKey(Dsn.ASYNC_OPTION)) {
+        if (dsn.getOptions().containsKey(ASYNC_OPTION)) {
             connection = createAsyncConnection(dsn, connection);
         }
 
@@ -47,15 +72,15 @@ public class DefaultRavenFactory extends RavenFactory {
 
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
         int maxThreads;
-        if (dsn.getOptions().containsKey(AsyncConnection.DSN_MAX_THREADS_OPTION)) {
-            maxThreads = Integer.parseInt(dsn.getOptions().get(AsyncConnection.DSN_MAX_THREADS_OPTION));
+        if (dsn.getOptions().containsKey(DSN_MAX_THREADS_OPTION)) {
+            maxThreads = Integer.parseInt(dsn.getOptions().get(DSN_MAX_THREADS_OPTION));
         } else {
             maxThreads = AsyncConnection.DEFAULT_MAX_THREADS;
         }
 
         int priority;
-        if (dsn.getOptions().containsKey(AsyncConnection.DSN_PRIORITY_OPTION)) {
-            priority = Integer.parseInt(dsn.getOptions().get(AsyncConnection.DSN_PRIORITY_OPTION));
+        if (dsn.getOptions().containsKey(DSN_PRIORITY_OPTION)) {
+            priority = Integer.parseInt(dsn.getOptions().get(DSN_PRIORITY_OPTION));
         } else {
             priority = AsyncConnection.DEFAULT_PRIORITY;
         }
@@ -69,10 +94,10 @@ public class DefaultRavenFactory extends RavenFactory {
         httpConnection.setMarshaller(createMarshaller(dsn));
 
         // Set the naive mode
-        httpConnection.setBypassSecurity(dsn.getProtocolSettings().contains(Dsn.NAIVE_PROTOCOL));
+        httpConnection.setBypassSecurity(dsn.getProtocolSettings().contains(NAIVE_PROTOCOL));
         // Set the HTTP timeout
-        if (dsn.getOptions().containsKey(Dsn.TIMEOUT_OPTION))
-            httpConnection.setTimeout(Integer.parseInt(dsn.getOptions().get(Dsn.TIMEOUT_OPTION)));
+        if (dsn.getOptions().containsKey(TIMEOUT_OPTION))
+            httpConnection.setTimeout(Integer.parseInt(dsn.getOptions().get(TIMEOUT_OPTION)));
         return httpConnection;
     }
 
@@ -102,7 +127,7 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.addInterfaceBinding(HttpInterface.class, httpBinding);
 
         // Set compression
-        marshaller.setCompression(!dsn.getOptions().containsKey(Dsn.NOCOMPRESSION_OPTION));
+        marshaller.setCompression(!dsn.getOptions().containsKey(NOCOMPRESSION_OPTION));
 
         return marshaller;
     }
