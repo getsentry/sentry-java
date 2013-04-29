@@ -6,8 +6,12 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Logger;
 
 public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInterface> {
+    private static final Logger logger = Logger.getLogger(ExceptionInterfaceBinding.class.getCanonicalName());
     private static final String TYPE_PARAMETER = "type";
     private static final String VALUE_PARAMETER = "value";
     private static final String MODULE_PARAMETER = "module";
@@ -20,10 +24,13 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
 
     @Override
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {
+        Set<ImmutableThrowable> dejaVu = new HashSet<ImmutableThrowable>();
         ImmutableThrowable throwable = exceptionInterface.getThrowable();
 
         generator.writeStartArray();
         while (throwable != null) {
+            dejaVu.add(throwable);
+
             generator.writeStartObject();
             generator.writeStringField(TYPE_PARAMETER, throwable.getActualClass().getSimpleName());
             generator.writeStringField(VALUE_PARAMETER, throwable.getMessage());
@@ -32,6 +39,11 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
             stackTraceInterfaceBinding.writeInterface(generator, new StackTraceInterface(throwable.getStackTrace()));
             generator.writeEndObject();
             throwable = throwable.getCause();
+
+            if (dejaVu.contains(throwable)) {
+                logger.warning("Exiting a circular referencing exception!");
+                break;
+            }
         }
         generator.writeEndArray();
     }
