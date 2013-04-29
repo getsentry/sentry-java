@@ -239,7 +239,6 @@ public class EventBuilder {
         return this;
     }
 
-
     /**
      * Adds an extra property to the event.
      *

@@ -1,8 +1,6 @@
 package net.kencochrane.raven.sentrystub;
 
 import net.kencochrane.raven.sentrystub.event.Event;
-import net.kencochrane.raven.sentrystub.unmarshaller.JsonUnmarshaller;
-import net.kencochrane.raven.sentrystub.unmarshaller.Unmarshaller;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;

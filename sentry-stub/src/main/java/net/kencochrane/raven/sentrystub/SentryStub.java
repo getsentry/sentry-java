@@ -30,7 +30,7 @@ public final class SentryStub {
         events.add(event);
     }
 
-    public void validateEvent(Event event){
+    public void validateEvent(Event event) {
     }
 
     public Event parseEvent(InputStream source) {
@@ -49,7 +49,7 @@ public final class SentryStub {
         authValidator.validateSentryAuth(authHeader);
     }
 
-    public void removeEvents(){
+    public void removeEvents() {
         events.clear();
     }
 }

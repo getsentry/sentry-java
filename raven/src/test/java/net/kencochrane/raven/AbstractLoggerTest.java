@@ -4,7 +4,6 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;

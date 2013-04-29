@@ -14,17 +14,17 @@ public class SentryAppenderIT {
     private SentryStub sentryStub;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         sentryStub = new SentryStub();
     }
 
     @After
-    public void tearDown(){
+    public void tearDown() {
         sentryStub.removeEvents();
     }
 
     @Test
-    public void testInfoLog(){
+    public void testInfoLog() {
         assertThat(sentryStub.getEventCount(), is(0));
         logger.info("This is a test");
         assertThat(sentryStub.getEventCount(), is(1));

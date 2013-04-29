@@ -2,8 +2,6 @@ package net.kencochrane.raven.sentrystub;
 
 import net.kencochrane.raven.sentrystub.auth.InvalidAuthException;
 import net.kencochrane.raven.sentrystub.event.Event;
-import net.kencochrane.raven.sentrystub.unmarshaller.JsonUnmarshaller;
-import net.kencochrane.raven.sentrystub.unmarshaller.Unmarshaller;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -32,9 +30,9 @@ public class SentryUdpContextListener implements ServletContextListener {
     private static final Logger logger = Logger.getLogger(SentryUdpContextListener.class.getCanonicalName());
     private static final int DEFAULT_SENTRY_UDP_PORT = 9001;
     private static final String SENTRY_UDP_PORT_PARAMETER = "sentryUdpPort";
+    private final SentryStub sentryStub = SentryStub.getInstance();
     private ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private DatagramSocket udpSocket;
-    private final SentryStub sentryStub = SentryStub.getInstance();
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {

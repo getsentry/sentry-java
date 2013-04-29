@@ -24,7 +24,6 @@ public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
     @Mock
     private MessageInterface mockMessageInterface;
 
-
     @Before
     public void setUp() throws Exception {
         super.setUp();
