@@ -4,6 +4,7 @@ import net.kencochrane.raven.connection.AsyncConnection;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
+import net.kencochrane.raven.event.helper.HttpEventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
@@ -47,6 +48,8 @@ public class DefaultRavenFactory extends RavenFactory {
     public Raven createRavenInstance(Dsn dsn) {
         Raven raven = new Raven();
         raven.setConnection(createConnection(dsn));
+        //TODO: do not add that all the time. Check if HttpServlet is accessible??
+        raven.addBuilderHelper(new HttpEventBuilderHelper());
         return raven;
     }
 
