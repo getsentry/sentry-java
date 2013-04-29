@@ -59,8 +59,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     public void start() {
         super.start();
-        if (raven == null){
-            //TODO: Handle null dsn, Add a way to select the factory
+
+        if (dsn == null)
+            dsn = Dsn.dsnLookup();
+
+        if (raven == null) {
+            //TODO: Add a way to select the factory
             raven = RavenFactory.ravenInstance(new Dsn(dsn));
         }
     }
