@@ -110,16 +110,17 @@ public class SentryAppender extends AbstractAppender<String> {
                 .setTimestamp(new Date(event.getMillis()))
                 .setMessage(event.getMessage().getFormattedMessage())
                 .setLogger(event.getLoggerName())
-                .setLevel(formatLevel(event.getLevel()))
-                .setCulprit(formatCulprit(event.getSource()));
+                .setLevel(formatLevel(event.getLevel()));
 
         if (event.getThrown() != null) {
             Throwable throwable = event.getThrown();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
             eventBuilder.setCulprit(throwable);
-        } else {
+        } else if (event.getSource() != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways.
+            eventBuilder.setCulprit(formatCulprit(event.getSource()));
+
             eventBuilder.generateChecksum(formatCulprit(event.getSource()));
         }
 
