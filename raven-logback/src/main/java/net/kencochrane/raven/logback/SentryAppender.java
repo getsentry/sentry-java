@@ -4,7 +4,9 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
+import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -57,8 +59,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     public void start() {
         super.start();
-        if (raven == null)
-            raven = (dsn != null) ? new Raven(dsn) : new Raven();
+        if (raven == null){
+            //TODO: Handle null dsn, Add a way to select the factory
+            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+        }
     }
 
     @Override

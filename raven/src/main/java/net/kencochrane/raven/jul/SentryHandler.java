@@ -1,6 +1,8 @@
 package net.kencochrane.raven.jul;
 
+import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -78,8 +80,10 @@ public class SentryHandler extends Handler {
     }
 
     private Raven getRaven() {
-        if (raven == null)
-            raven = (dsn != null) ? new Raven(dsn) : new Raven();
+        if (raven == null){
+            //TODO: Handle null dsn, Add a way to select the factory
+            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+        }
         return raven;
     }
 
