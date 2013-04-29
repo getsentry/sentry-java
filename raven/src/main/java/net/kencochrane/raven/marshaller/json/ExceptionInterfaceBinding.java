@@ -26,6 +26,7 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {
         Set<ImmutableThrowable> dejaVu = new HashSet<ImmutableThrowable>();
         ImmutableThrowable throwable = exceptionInterface.getThrowable();
+        StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
 
         generator.writeStartArray();
         while (throwable != null) {
@@ -36,8 +37,9 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
             generator.writeStringField(VALUE_PARAMETER, throwable.getMessage());
             generator.writeStringField(MODULE_PARAMETER, throwable.getActualClass().getPackage().getName());
             generator.writeFieldName(STACKTRACE_PARAMETER);
-            stackTraceInterfaceBinding.writeInterface(generator, new StackTraceInterface(throwable.getStackTrace()));
+            stackTraceInterfaceBinding.writeInterface(generator, new StackTraceInterface(throwable.getStackTrace(), enclosingStackTrace));
             generator.writeEndObject();
+            enclosingStackTrace = throwable.getStackTrace();
             throwable = throwable.getCause();
 
             if (dejaVu.contains(throwable)) {
