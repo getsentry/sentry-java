@@ -41,6 +41,10 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option for the priority of threads assigned for the connection.
      */
     public static final String PRIORITY_OPTION = "raven.async.priority";
+    /**
+     * Option to hide common stackframes with enclosing exceptions.
+     */
+    public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
 
     private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
 
@@ -118,8 +122,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
-        //TODO: Set that properly
-        stackTraceBinding.setRemoveCommonFramesWithEnclosing(true);
+        stackTraceBinding.setRemoveCommonFramesWithEnclosing(dsn.getOptions().containsKey(HIDE_COMMON_FRAMES_OPTION));
         //TODO: Add a way to remove in_app frames
         stackTraceBinding.setNotInAppFrames(Collections.<String>emptySet());
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
