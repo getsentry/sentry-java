@@ -11,6 +11,7 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.*;
 
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -117,7 +118,7 @@ public class DefaultRavenFactory extends RavenFactory {
         //TODO: Set that properly
         stackTraceBinding.setRemoveCommonFramesWithEnclosing(true);
         //TODO: Add a way to remove in_app frames
-        //stackTraceBinding.
+        stackTraceBinding.setNotInAppFrames(Collections.<String>emptySet());
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
         marshaller.addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
         marshaller.addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
