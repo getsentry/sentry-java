@@ -1,6 +1,5 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.event.Event;
 
 import java.io.IOException;
@@ -61,20 +60,6 @@ public class AsyncConnection implements Connection {
 
     /**
      * Creates a connection which will rely on an executor to send events.
-     * <p>
-     * Will propagate the {@link #close()} operation and attempt to get the number of Threads and their priority from
-     * the DSN configuration.
-     * </p>
-     *
-     * @param actualConnection connection used to send the events.
-     * @param dsn              Data Source Name containing the additional settings for the async connection.
-     */
-    public AsyncConnection(Connection actualConnection, Dsn dsn) {
-        this(actualConnection, true, getMaxThreads(dsn), getPriority(dsn));
-    }
-
-    /**
-     * Creates a connection which will rely on an executor to send events.
      *
      * @param actualConnection connection used to send the events.
      * @param propagateClose   whether or not the {@link #actualConnection} should be closed
@@ -87,42 +72,6 @@ public class AsyncConnection implements Connection {
         this.propagateClose = propagateClose;
         executorService = Executors.newFixedThreadPool(maxThreads, new DaemonThreadFactory(priority));
         addShutdownHook();
-    }
-
-    /**
-     * Gets the number of {@code Thread}s that should be available in the pool.
-     * <p>
-     * Attempts to get the {@link #DSN_MAX_THREADS_OPTION} option from the {@code Dsn},
-     * defaults to {@link #DEFAULT_MAX_THREADS} if not available.
-     * </p>
-     *
-     * @param dsn Data Source Name potentially containing settings for the {@link AsyncConnection}.
-     * @return the number of threads that should be available in the pool.
-     */
-    private static int getMaxThreads(Dsn dsn) {
-        if (dsn.getOptions().containsKey(DSN_MAX_THREADS_OPTION)) {
-            return Integer.parseInt(dsn.getOptions().get(DSN_MAX_THREADS_OPTION));
-        } else {
-            return DEFAULT_MAX_THREADS;
-        }
-    }
-
-    /**
-     * Gets the priority of {@code Thread}s in the pool.
-     * <p>
-     * Attempts to get the {@link #DSN_PRIORITY_OPTION} option from the {@code Dsn},
-     * defaults to {@link #DEFAULT_PRIORITY} if not available.
-     * </p>
-     *
-     * @param dsn Data Source Name potentially containing settings for the {@link AsyncConnection}.
-     * @return the priority of threads available in the pool.
-     */
-    private static int getPriority(Dsn dsn) {
-        if (dsn.getOptions().containsKey(DSN_PRIORITY_OPTION)) {
-            return Integer.parseInt(dsn.getOptions().get(DSN_PRIORITY_OPTION));
-        } else {
-            return DEFAULT_PRIORITY;
-        }
     }
 
     /**

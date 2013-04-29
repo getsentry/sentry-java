@@ -34,29 +34,8 @@ public class Raven {
 
     /**
      * Builds a default Raven client, trying to figure out which {@link Dsn} can be used.
-     *
-     * @see net.kencochrane.raven.Dsn#dsnLookup()
      */
     public Raven() {
-        this(new Dsn());
-    }
-
-    /**
-     * Builds a default Raven client using the given DSN.
-     *
-     * @param dsn Data Source Name as a String to use to connect to sentry.
-     */
-    public Raven(String dsn) {
-        this(new Dsn(dsn));
-    }
-
-    /**
-     * Builds a default Raven client using the given DSN.
-     *
-     * @param dsn Data Source Name as a String to use to connect to sentry.
-     */
-    public Raven(Dsn dsn) {
-        this(determineConnection(dsn));
     }
 
     /**
@@ -66,43 +45,6 @@ public class Raven {
      */
     public Raven(Connection connection) {
         this.connection = connection;
-    }
-
-    /**
-     * Builds a {@link Connection} based on a {@link Dsn}.
-     * <p>
-     * Currently supports the protocols HTTP(s) with {@link HttpConnection} and UPD with {@link UdpConnection}.
-     * </p>
-     *
-     * @param dsn Data Source Name from which the connection will be generated.
-     * @return a {@link Connection} allowing to send events to a Sentry server or {@code null} if nothing was found.
-     */
-    //TODO: Replace with a factory?
-    private static Connection determineConnection(Dsn dsn) {
-        String protocol = dsn.getProtocol();
-        Connection connection = null;
-        JsonMarshaller marshaller = new JsonMarshaller();
-        marshaller.setCompression(!dsn.getOptions().containsKey(Dsn.NOCOMPRESSION_OPTION));
-
-        if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
-            logger.log(Level.INFO, "Using an HTTP connection to Sentry.");
-            HttpConnection httpConnection = new HttpConnection(dsn);
-            httpConnection.setMarshaller(marshaller);
-            connection = httpConnection;
-        } else if (protocol.equalsIgnoreCase("udp")) {
-            logger.log(Level.INFO, "Using an UDP connection to Sentry.");
-            UdpConnection udpConnection = new UdpConnection(dsn);
-            udpConnection.setMarshaller(marshaller);
-            connection = udpConnection;
-        } else {
-            logger.log(Level.WARNING,
-                    "Couldn't figure out automatically a connection to Sentry, one should be set manually");
-        }
-
-        if (dsn.getOptions().containsKey(Dsn.ASYNC_OPTION))
-            connection = new AsyncConnection(connection, dsn);
-
-        return connection;
     }
 
     /**

@@ -20,8 +20,7 @@ import java.util.logging.Logger;
 /**
  * Basic connection to a Sentry server, using HTTP and HTTPS.
  * <p>
- * It is possible to enable the "naive mode" through the DSN with {@link Dsn#NAIVE_PROTOCOL} to allow a connection over
- * SSL using a certificate with a wildcard.
+ * It is possible to enable the "naive mode" to allow a connection over SSL using a certificate with a wildcard.
  * </p>
  */
 public class HttpConnection extends AbstractConnection {
@@ -64,25 +63,6 @@ public class HttpConnection extends AbstractConnection {
      * to be added to the truststore.
      */
     private boolean bypassSecurity;
-
-    /**
-     * Creates a connection through HTTP(s) based on the settings in the {@code dsn}.
-     *
-     * @param dsn Data Source Name containing details and options for the connection to Sentry.
-     */
-    public HttpConnection(Dsn dsn) {
-        super(dsn);
-
-        this.sentryUrl = getSentryUrl(dsn);
-
-        // Check if a timeout is set
-        if (dsn.getOptions().containsKey(Dsn.TIMEOUT_OPTION))
-            setTimeout(Integer.parseInt(dsn.getOptions().get(Dsn.TIMEOUT_OPTION)));
-
-        // Check if the naive mode is on
-        if (dsn.getProtocolSettings().contains(Dsn.NAIVE_PROTOCOL))
-            setBypassSecurity(true);
-    }
 
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
         super(publicKey, secretKey);

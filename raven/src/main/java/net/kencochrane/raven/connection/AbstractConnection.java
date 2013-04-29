@@ -1,6 +1,5 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
@@ -35,15 +34,6 @@ public abstract class AbstractConnection implements Connection {
     private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
     private long waitingTime = BASE_WAITING_TIME;
-
-    /**
-     * Creates a connection based on a DSN.
-     *
-     * @param dsn Data Source Name of the sentry server.
-     */
-    protected AbstractConnection(Dsn dsn) {
-        this(dsn.getPublicKey(), dsn.getSecretKey());
-    }
 
     /**
      * Creates a connection based on the public and secret keys.
