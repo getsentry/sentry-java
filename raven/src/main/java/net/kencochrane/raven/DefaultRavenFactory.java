@@ -114,7 +114,6 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     protected Connection createUdpConnection(Dsn dsn) {
-        //String hostname, int port, String publicKey, String secretKey
         int port = dsn.getPort() != -1 ? dsn.getPort() : UdpConnection.DEFAULT_UDP_PORT;
         UdpConnection udpConnection = new UdpConnection(dsn.getHost(), port, dsn.getPublicKey(), dsn.getSecretKey());
         udpConnection.setMarshaller(createMarshaller(dsn));
