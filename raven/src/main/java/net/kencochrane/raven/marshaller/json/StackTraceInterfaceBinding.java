@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,7 +21,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String POST_CONTEXT_PARAMETER = "post_context";
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
-    private Set<String> notInAppFrames = Collections.emptySet();
+    private Collection<String> notInAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
 
     /**
@@ -72,7 +73,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         this.removeCommonFramesWithEnclosing = removeCommonFramesWithEnclosing;
     }
 
-    public void setNotInAppFrames(Set<String> notInAppFrames) {
+    public void setNotInAppFrames(Collection<String> notInAppFrames) {
         this.notInAppFrames = notInAppFrames;
     }
 }

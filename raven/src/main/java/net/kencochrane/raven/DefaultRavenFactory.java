@@ -12,6 +12,8 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.*;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -126,8 +128,8 @@ public class DefaultRavenFactory extends RavenFactory {
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
         stackTraceBinding.setRemoveCommonFramesWithEnclosing(dsn.getOptions().containsKey(HIDE_COMMON_FRAMES_OPTION));
-        //TODO: Add a way to remove in_app frames
-        stackTraceBinding.setNotInAppFrames(Collections.<String>emptySet());
+        stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
+
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
         marshaller.addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
         marshaller.addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
@@ -140,5 +142,15 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.setCompression(!dsn.getOptions().containsKey(NOCOMPRESSION_OPTION));
 
         return marshaller;
+    }
+
+    protected Collection<String> getNotInAppFrames(){
+        return Arrays.asList("com.sun.",
+                "java.",
+                "javax.",
+                "org.omg.",
+                "sun.",
+                "junit.",
+                "com.intellij.rt.");
     }
 }
