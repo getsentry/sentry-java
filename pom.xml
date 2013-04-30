@@ -104,9 +104,6 @@
         <maven.compiler.source>6</maven.compiler.source>
         <maven.compiler.target>6</maven.compiler.target>
 
-        <!-- Disable integration tests by default due to https://bugs.eclipse.org/bugs/show_bug.cgi?id=405631 -->
-        <skipITs>true</skipITs>
-
         <!-- dependencies versions -->
         <commons-codec.version>1.6</commons-codec.version>
         <jackson.version>2.2.0</jackson.version>
@@ -237,17 +234,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.0.1.v20130408</version>
-                <configuration>
-                    <scanIntervalSeconds>10</scanIntervalSeconds>
-                    <stopKey>foo</stopKey>
-                    <stopPort>9999</stopPort>
-                    <war>${project.build.directory}/webapps/sentry-stub.war</war>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.2</version>
@@ -279,6 +265,39 @@
         </plugins>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-maven-plugin</artifactId>
+                    <!-- TODO: Update to a stable version ASAP -->
+                    <version>9.0.3-SNAPSHOT</version>
+                    <configuration>
+                        <scanIntervalSeconds>10</scanIntervalSeconds>
+                        <stopKey>foo</stopKey>
+                        <stopPort>9999</stopPort>
+                        <war>${project.build.directory}/webapps/sentry-stub.war</war>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>start-sentry-stub</id>
+                            <phase>pre-integration-test</phase>
+                            <goals>
+                                <goal>deploy-war</goal>
+                            </goals>
+                            <configuration>
+                                <scanIntervalSeconds>0</scanIntervalSeconds>
+                                <daemon>true</daemon>
+                                <skip>${skipTests}</skip>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>stop-sentry-stub</id>
+                            <phase>post-integration-test</phase>
+                            <goals>
+                                <goal>stop</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
@@ -331,44 +350,6 @@
         </pluginManagement>
     </build>
 
-    <profiles>
-        <profile>
-            <id>jetty</id>
-            <properties>
-                <skipITs>false</skipITs>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>start-sentry-stub</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>deploy-war</goal>
-                                </goals>
-                                <configuration>
-                                    <scanIntervalSeconds>0</scanIntervalSeconds>
-                                    <daemon>true</daemon>
-                                    <skip>${skipTests}</skip>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>stop-sentry-stub</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>stop</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <reporting>
         <plugins>
             <plugin>
@@ -401,4 +382,19 @@
             </plugin>
         </plugins>
     </reporting>
+
+    <!-- This is bad and _TEMPORARY_ until the new version of Jetty is out -->
+    <pluginRepositories>
+        <pluginRepository>
+            <id>sonatype-jetty-snapshots</id>
+            <name>Sonatype Jetty Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/jetty-snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 </project>
