@@ -22,7 +22,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestExceptionInterfaceBinding extends AbstractTestInterfaceBinding {
+public class ExceptionInterfaceBindingTest extends AbstractInterfaceBindingTest {
     private ExceptionInterfaceBinding interfaceBinding;
     @Mock
     private ExceptionInterface mockExceptionInterface;

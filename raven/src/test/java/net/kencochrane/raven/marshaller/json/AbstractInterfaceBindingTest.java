@@ -9,7 +9,7 @@ import org.junit.Before;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public abstract class AbstractTestInterfaceBinding {
+public abstract class AbstractInterfaceBindingTest {
     private JsonFactory jsonFactory;
     private ObjectMapper mapper;
     private ByteArrayOutputStream jsonContentStream;

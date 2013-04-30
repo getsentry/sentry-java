@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestMessageInterfaceBinding extends AbstractTestInterfaceBinding {
+public class MessageInterfaceBindingTest extends AbstractInterfaceBindingTest {
     private MessageInterfaceBinding interfaceBinding;
     @Mock
     private MessageInterface mockMessageInterface;
