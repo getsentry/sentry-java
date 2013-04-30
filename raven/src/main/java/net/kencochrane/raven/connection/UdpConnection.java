@@ -3,7 +3,6 @@ package net.kencochrane.raven.connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
-import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,7 +18,7 @@ import java.net.SocketException;
 public class UdpConnection extends AbstractConnection {
     public static final int DEFAULT_UDP_PORT = 9001;
     private DatagramSocket socket;
-    private Marshaller marshaller = new JsonMarshaller();
+    private Marshaller marshaller;
 
     public UdpConnection(String hostname, String publicKey, String secretKey) {
         this(hostname, DEFAULT_UDP_PORT, publicKey, secretKey);
