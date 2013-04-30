@@ -1,13 +1,9 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.raven.connection.AsyncConnection;
 import net.kencochrane.raven.connection.Connection;
-import net.kencochrane.raven.connection.HttpConnection;
-import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
-import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -92,15 +88,15 @@ public class Raven {
         builderHelpers.add(builderHelper);
     }
 
+    public Set<EventBuilderHelper> getBuilderHelpers() {
+        return Collections.unmodifiableSet(builderHelpers);
+    }
+
     public Connection getConnection() {
         return connection;
     }
 
     public void setConnection(Connection connection) {
         this.connection = connection;
-    }
-
-    public Set<EventBuilderHelper> getBuilderHelpers() {
-        return Collections.unmodifiableSet(builderHelpers);
     }
 }
