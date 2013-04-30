@@ -32,7 +32,7 @@ public class AsyncConnection implements Connection {
     /**
      * Timeout of the {@link #executorService}.
      */
-    private static final int TIMEOUT = 1000;
+    private static final int SHUTDOWN_TIMEOUT = 1000;
     /**
      * Connection used to actually send the events.
      */
@@ -105,7 +105,8 @@ public class AsyncConnection implements Connection {
      * {@inheritDoc}.
      * <p>
      * Closing the {@link AsyncConnection} will attempt a graceful shutdown of the {@link #executorService} with a
-     * timeout of {@link #TIMEOUT}, allowing the current events to be submitted while new events will be rejected.<br />
+     * timeout of {@link #SHUTDOWN_TIMEOUT}, allowing the current events to be submitted while new events will
+     * be rejected.<br />
      * If the shutdown times out, the {@code executorService} will be forced to shutdown.
      * </p>
      */
@@ -114,7 +115,7 @@ public class AsyncConnection implements Connection {
         logger.log(Level.INFO, "Gracefully shutdown sentry threads.");
         executorService.shutdown();
         try {
-            if (!executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
+            if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS)) {
                 logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
                 logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
