@@ -119,9 +119,11 @@ public class AsyncConnection implements Connection {
                 List<Runnable> tasks = executorService.shutdownNow();
                 logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
             }
-            logger.log(Level.SEVERE, "Shutdown interrupted.");
+            logger.log(Level.SEVERE, "Shutdown finished.");
         } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "Shutdown interrupted.");
+            logger.log(Level.SEVERE, "Graceful shutdown interrupted, forcing the shutdown.");
+            List<Runnable> tasks = executorService.shutdownNow();
+            logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
         } finally {
             if (propagateClose)
                 actualConnection.close();
