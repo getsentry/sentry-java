@@ -21,19 +21,19 @@ public abstract class AbstractConnection implements Connection {
      * Current sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "4";
-    /**
-     * At most wait 5 minutes if the connection failed too many times.
-     */
-    private static final long MAX_WAITING_TIME = 300000;
-    /**
-     * When the first exception occurs, wait 10 millis before trying again.
-     */
-    private static final long BASE_WAITING_TIME = 10;
     private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private final String publicKey;
     private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
-    private long waitingTime = BASE_WAITING_TIME;
+    /**
+     * At most wait 5 minutes if the connection failed too many times.
+     */
+    private long maxWaitingTime = 300000;
+    /**
+     * When the first exception occurs, wait 10 millis before trying again.
+     */
+    private long baseWaitingTime = 10;
+    private long waitingTime = baseWaitingTime;
 
     /**
      * Creates a connection based on the public and secret keys.
@@ -65,7 +65,7 @@ public abstract class AbstractConnection implements Connection {
         try {
             if (!lock.isLocked()) {
                 doSend(event);
-                waitingTime = BASE_WAITING_TIME;
+                waitingTime = baseWaitingTime;
             } else {
                 logger.info("The event '" + event + "' hasn't been sent to the server due to a lockdown.");
             }
@@ -87,7 +87,7 @@ public abstract class AbstractConnection implements Connection {
             Thread.sleep(waitingTime);
 
             // Double the wait until the maximum is reached
-            if (waitingTime > MAX_WAITING_TIME)
+            if (waitingTime > maxWaitingTime)
                 waitingTime <<= 1;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "An exception occurred during the lockdown.", e);
@@ -104,4 +104,12 @@ public abstract class AbstractConnection implements Connection {
      * @throws ConnectionException whenever a temporary exception due to the connection happened.
      */
     protected abstract void doSend(Event event) throws ConnectionException;
+
+    public void setMaxWaitingTime(long maxWaitingTime) {
+        this.maxWaitingTime = maxWaitingTime;
+    }
+
+    public void setBaseWaitingTime(long baseWaitingTime) {
+        this.baseWaitingTime = baseWaitingTime;
+    }
 }
