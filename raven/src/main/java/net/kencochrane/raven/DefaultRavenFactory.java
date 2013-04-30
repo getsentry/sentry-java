@@ -45,7 +45,6 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
-
     private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
 
     @Override
