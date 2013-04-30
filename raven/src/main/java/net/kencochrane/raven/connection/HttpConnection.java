@@ -5,7 +5,6 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
-import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -53,7 +52,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Marshaller used to transform and send the {@link Event} over a stream.
      */
-    private Marshaller marshaller = new JsonMarshaller();
+    private Marshaller marshaller;
     /**
      * Timeout of an HTTP connection to Sentry.
      */
