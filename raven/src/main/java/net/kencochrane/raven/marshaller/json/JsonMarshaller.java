@@ -86,15 +86,6 @@ public class JsonMarshaller implements Marshaller {
         ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public JsonMarshaller() {
-        StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
-
-        addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
-        addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
-        addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
-        addInterfaceBinding(HttpInterface.class, new HttpInterfaceBinding());
-    }
-
     @Override
     public void marshall(Event event, OutputStream destination) {
         // Prevent the stream from being closed automatically
