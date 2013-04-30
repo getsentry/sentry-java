@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
  * <p>
- * A default client will use the protocol defined in the DSN and will send the content in the JSON format
- * (optionally compressed and encoded in base64).
+ * It is recommended to create an instance of Raven through {@link RavenFactory#createRavenInstance(Dsn)}, this
+ * will use the best factory available to create a sensible instance of Raven.
  * </p>
  */
 public class Raven {
