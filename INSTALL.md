@@ -10,7 +10,7 @@ Currently there are 6 modules in the project:
  - `raven-log4j2`, Appender for log4j2
  - `raven-logback`, Appander for Logback
  - `sentry-stub`, Sentry server stub, allowing to test the protocol
- 
+
 ### Build
 It's possible to get the latest version of Raven by building it from the
 sources.
@@ -43,7 +43,7 @@ name of the module.
 
     import net.kencochrane.raven.Raven;
     import net.kencochrane.raven.event.EventBuilder;
-    
+
     public class Example {
         public static void main(String[] args) {
             // The DSN from Sentry: "http://public:private@host:port/1"
@@ -67,7 +67,7 @@ The client will lookup for the first DSN configuration provided:
 
     import net.kencochrane.raven.Raven;
     import net.kencochrane.raven.event.EventBuilder;
-    
+
     public class Example {
         public static void main(String[] args) {
             Raven client = new Raven();
@@ -83,7 +83,7 @@ TODO
 ### Using log4j
 TODO
 
-#### Asynchronous logging with AsyncAppander
+#### Asynchronous logging with AsyncAppender
 log4j supports asynchronous logging with
 [AsyncAppender](http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/AsyncAppender.html).
 While this is a common solution to avoid blocking the current thread until the
@@ -98,41 +98,3 @@ event is sent to Sentry, it is recommended to use instead the option
 
 ### Capturing the HTTP environment
 **TODO**
-
-## Connection and protocol
-It is possible to send events to Sentry over different protocols, depending
-on the security and performance requirements.
-So far Sentry accepts HTTP(S) and UDP which are both fully supported by
-Raven.
-
-### HTTP
-The most common way to access Sentry is through HTTP, this can be done by
-using a DSN using this form:
-
-    http://public:private@host:port/1
-    
-If not provided, the port will default to `80`.
-
-### HTTPS
-It is possible to use an encrypted connection to Sentry using HTTPS:
-
-    https://public:private@host:port/1
-    
-If not provided, the port will default to `443`.
-### HTTPS (naive)
-If the certificate used over HTTPS is a wildcard certificate (which is not
-handled by every version of Java), and the certificate isn't added to the 
-truststore, it is possible to add a protocol setting to tell the client to be
-naive and ignore the hostname verification:
-
-    naive+https://public:private@host:port/1
-
-### UDP
-It is possible to use a DSN with the UDP protocol:
-
-    udp://public:private@host:port/1
-
-If not provided the port will default to `9001`.
-
-While being faster because there is no TCP and HTTP overhead, UDP doesn't wait
-for a reply, and if a connection problem occurs, there will be no notification.

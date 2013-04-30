@@ -36,6 +36,44 @@ reason, only the last two major versions of Raven are maintained.
 **See
 [INSTALL.md](https://github.com/kencochrane/raven-java/blob/master/INSTALL.md)**
 
+## Connection and protocol
+It is possible to send events to Sentry over different protocols, depending
+on the security and performance requirements.
+So far Sentry accepts HTTP(S) and UDP which are both fully supported by
+Raven.
+
+### HTTP
+The most common way to access Sentry is through HTTP, this can be done by
+using a DSN using this form:
+
+    http://public:private@host:port/1
+
+If not provided, the port will default to `80`.
+
+### HTTPS
+It is possible to use an encrypted connection to Sentry using HTTPS:
+
+    https://public:private@host:port/1
+
+If not provided, the port will default to `443`.
+### HTTPS (naive)
+If the certificate used over HTTPS is a wildcard certificate (which is not
+handled by every version of Java), and the certificate isn't added to the
+truststore, it is possible to add a protocol setting to tell the client to be
+naive and ignore the hostname verification:
+
+    naive+https://public:private@host:port/1
+
+### UDP
+It is possible to use a DSN with the UDP protocol:
+
+    udp://public:private@host:port/1
+
+If not provided the port will default to `9001`.
+
+While being faster because there is no TCP and HTTP overhead, UDP doesn't wait
+for a reply, and if a connection problem occurs, there will be no notification.
+
 ## Options
 It is possible to enable some options by adding data to the query string of the
 DSN:
