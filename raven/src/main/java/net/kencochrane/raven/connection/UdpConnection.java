@@ -31,7 +31,7 @@ public class UdpConnection extends AbstractConnection {
     }
 
     @Override
-    public void doSend(Event event) {
+    protected void doSend(Event event) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             writeHeader(baos);
