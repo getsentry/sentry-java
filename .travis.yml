@@ -1,9 +1,2 @@
 language: java
-script:
-    - mvn test
-    - cd raven; mvn integration-test -Pjetty; cd ../
-    - cd raven-legacy; mvn integration-test -Pjetty; cd ../
-    - cd raven-log4j; mvn integration-test -Pjetty; cd ../
-    - cd raven-log4j2; mvn integration-test -Pjetty; cd ../
-    - cd raven-logback; mvn integration-test -Pjetty; cd ../
-    - cd sentry-stub; mvn integration-test -Pjetty; cd ../
+script: mvn verify
