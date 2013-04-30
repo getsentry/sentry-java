@@ -52,8 +52,13 @@ public class DefaultRavenFactory extends RavenFactory {
     public Raven createRavenInstance(Dsn dsn) {
         Raven raven = new Raven();
         raven.setConnection(createConnection(dsn));
-        //TODO: do not add that all the time. Check if HttpServlet is accessible??
-        raven.addBuilderHelper(new HttpEventBuilderHelper());
+        try {
+            Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
+            //TODO: Is it enough? Shouldn't it look for Servlet >= 3.0 ?
+            raven.addBuilderHelper(new HttpEventBuilderHelper());
+        } catch (Exception e) {
+            logger.fine("It seems that the current environment doesn't provide access to servlets.");
+        }
         return raven;
     }
 
