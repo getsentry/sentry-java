@@ -27,7 +27,8 @@ public class RavenTest {
 
     @Before
     public void setUp() throws Exception {
-        raven = new Raven(mockConnection);
+        raven = new Raven();
+        raven.setConnection(mockConnection);
     }
 
     @Test

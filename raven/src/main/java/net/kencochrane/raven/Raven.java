@@ -29,21 +29,6 @@ public class Raven {
     private Connection connection;
 
     /**
-     * Builds a default Raven client, trying to figure out which {@link Dsn} can be used.
-     */
-    public Raven() {
-    }
-
-    /**
-     * Builds a Raven client using the given connection.
-     *
-     * @param connection connection to sentry.
-     */
-    public Raven(Connection connection) {
-        this.connection = connection;
-    }
-
-    /**
      * Runs the {@link EventBuilderHelper} against the {@link EventBuilder} to obtain additional information with a
      * MDC-like system.
      *
