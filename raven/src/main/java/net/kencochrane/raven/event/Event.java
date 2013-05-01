@@ -55,6 +55,9 @@ public class Event {
     private String culprit;
     /**
      * A map or list of tags for this event.
+     * <p>
+     * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
+     * </p>
      */
     private Map<String, Set<String>> tags = new HashMap<String, Set<String>>();
     /**
@@ -63,6 +66,9 @@ public class Event {
     private String serverName;
     /**
      * A map or list of additional properties for this event.
+     * <p>
+     * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
+     * </p>
      */
     private Map<String, Object> extra = new HashMap<String, Object>();
     /**
@@ -71,6 +77,9 @@ public class Event {
     private String checksum;
     /**
      * Additional interfaces for other information and metadata.
+     * <p>
+     * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
+     * </p>
      */
     private Map<String, SentryInterface> sentryInterfaces = new HashMap<String, SentryInterface>();
 
