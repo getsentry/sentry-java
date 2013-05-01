@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -61,13 +62,15 @@ public class HttpConnectionTest {
 
     @Test
     public void testByPassSecurity() throws Exception {
+        ArgumentCaptor<HostnameVerifier> hostnameVerifierCaptor = ArgumentCaptor.forClass(HostnameVerifier.class);
         httpConnection.send(new EventBuilder().build());
         verify(mockUrlConnection, never()).setHostnameVerifier(any(HostnameVerifier.class));
 
         reset(mockUrlConnection);
         httpConnection.setBypassSecurity(true);
         httpConnection.send(new EventBuilder().build());
-        verify(mockUrlConnection).setHostnameVerifier(any(HostnameVerifier.class));
+        verify(mockUrlConnection).setHostnameVerifier(hostnameVerifierCaptor.capture());
+        assertThat(hostnameVerifierCaptor.getValue().verify(null, null), is(true));
 
         reset(mockUrlConnection);
         httpConnection.setBypassSecurity(false);
