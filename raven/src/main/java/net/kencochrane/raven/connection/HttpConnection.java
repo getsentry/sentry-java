@@ -61,7 +61,7 @@ public class HttpConnection extends AbstractConnection {
      * Setting allowing to bypass the security system which requires wildcard certificates
      * to be added to the truststore.
      */
-    private boolean bypassSecurity;
+    private boolean bypassSecurity = false;
 
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
         super(publicKey, secretKey);
