@@ -15,6 +15,9 @@ import net.kencochrane.raven.marshaller.json.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,21 +88,25 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
+        AsyncConnection asyncConnection = new AsyncConnection(connection, true);
+
         int maxThreads;
         if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
             maxThreads = Integer.parseInt(dsn.getOptions().get(MAX_THREADS_OPTION));
         } else {
-            maxThreads = AsyncConnection.DEFAULT_MAX_THREADS;
+            maxThreads = Runtime.getRuntime().availableProcessors();
         }
 
         int priority;
         if (dsn.getOptions().containsKey(PRIORITY_OPTION)) {
             priority = Integer.parseInt(dsn.getOptions().get(PRIORITY_OPTION));
         } else {
-            priority = AsyncConnection.DEFAULT_PRIORITY;
+            priority = Thread.MIN_PRIORITY;
         }
 
-        return new AsyncConnection(connection, true, maxThreads, priority);
+        asyncConnection.setExecutorService(Executors.newFixedThreadPool(maxThreads, new DaemonThreadFactory(priority)));
+
+        return asyncConnection;
     }
 
     protected Connection createHttpConnection(Dsn dsn) {
@@ -152,5 +159,37 @@ public class DefaultRavenFactory extends RavenFactory {
                 "sun.",
                 "junit.",
                 "com.intellij.rt.");
+    }
+
+    /**
+     * Thread factory generating daemon threads with a custom priority.
+     * <p>
+     * Those (usually) low priority threads will allow to send event details to sentry concurrently without slowing
+     * down the main application.
+     * </p>
+     */
+    private static final class DaemonThreadFactory implements ThreadFactory {
+        private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
+        private final ThreadGroup group;
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+        private final String namePrefix;
+        private final int priority;
+
+        private DaemonThreadFactory(int priority) {
+            SecurityManager s = System.getSecurityManager();
+            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+            namePrefix = "pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
+            this.priority = priority;
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+            if (!t.isDaemon())
+                t.setDaemon(true);
+            if (t.getPriority() != priority)
+                t.setPriority(priority);
+            return t;
+        }
     }
 }
