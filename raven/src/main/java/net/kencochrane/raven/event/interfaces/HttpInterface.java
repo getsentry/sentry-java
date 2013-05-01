@@ -1,10 +1,6 @@
 package net.kencochrane.raven.event.interfaces;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * The HTTP interface for Sentry allows to add an HTTP request to an event.

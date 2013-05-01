@@ -6,8 +6,6 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
     private static final String FRAMES_PARAMETER = "frames";

@@ -83,7 +83,7 @@ public class SentryHandler extends Handler {
         if (dsn == null)
             dsn = Dsn.dsnLookup();
 
-        if (raven == null){
+        if (raven == null) {
             //TODO: Add a way to select the factory
             raven = RavenFactory.ravenInstance(new Dsn(dsn));
         }

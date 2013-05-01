@@ -3,7 +3,7 @@ package net.kencochrane.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.event.interfaces.*;
+import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.apache.commons.codec.binary.Base64OutputStream;
 

@@ -123,7 +123,7 @@ public class HttpConnection extends AbstractConnection {
             while ((line = reader.readLine()) != null)
                 sb.append(line).append("\n");
             //Remove last \n
-            sb.deleteCharAt(sb.length()-1);
+            sb.deleteCharAt(sb.length() - 1);
 
         } catch (Exception e2) {
             logger.log(Level.SEVERE, "Exception while reading the error message from the connection.", e2);

@@ -16,8 +16,9 @@ public class StackTraceInterface implements SentryInterface {
 
         int m = stackTrace.length - 1;
         int n = enclosingStackTrace.length - 1;
-        while (m >= 0 && n >=0 && stackTrace[m].equals(enclosingStackTrace[n])) {
-            m--; n--;
+        while (m >= 0 && n >= 0 && stackTrace[m].equals(enclosingStackTrace[n])) {
+            m--;
+            n--;
         }
         framesCommonWithEnclosing = stackTrace.length - 1 - m;
     }
