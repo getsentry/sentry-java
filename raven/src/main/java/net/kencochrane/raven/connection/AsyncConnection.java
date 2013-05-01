@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,14 +18,6 @@ import java.util.logging.Logger;
  * </p>
  */
 public class AsyncConnection implements Connection {
-    /**
-     * Number of threads dedicated to the connection usage by default (Number of processors available).
-     */
-    public static final int DEFAULT_MAX_THREADS = Runtime.getRuntime().availableProcessors();
-    /**
-     * Default threads priority.
-     */
-    public static final int DEFAULT_PRIORITY = Thread.MIN_PRIORITY;
     private static final Logger logger = Logger.getLogger(AsyncConnection.class.getCanonicalName());
     /**
      * Timeout of the {@link #executorService}.
@@ -38,24 +28,24 @@ public class AsyncConnection implements Connection {
      */
     private final Connection actualConnection;
     /**
-     * Executor service in charge of running the connection in separate threads.
-     */
-    private final ExecutorService executorService;
-    /**
      * Option to disable the propagation of the {@link #close()} operation to the actual connection.
      */
     private final boolean propagateClose;
+    /**
+     * Executor service in charge of running the connection in separate threads.
+     */
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     /**
      * Creates a connection which will rely on an executor to send events.
      * <p>
-     * Will propagate the {@link #close()} operation and use {@link #DEFAULT_MAX_THREADS} and {@link #DEFAULT_PRIORITY}.
+     * Will propagate the {@link #close()} operation.
      * </p>
      *
      * @param actualConnection connection used to send the events.
      */
     public AsyncConnection(Connection actualConnection) {
-        this(actualConnection, true, DEFAULT_MAX_THREADS, DEFAULT_PRIORITY);
+        this(actualConnection, true);
     }
 
     /**
@@ -64,13 +54,10 @@ public class AsyncConnection implements Connection {
      * @param actualConnection connection used to send the events.
      * @param propagateClose   whether or not the {@link #actualConnection} should be closed
      *                         when this connection closes.
-     * @param maxThreads       number of {@code Thread}s available in the thread pool.
-     * @param priority         priority of the {@code Thread}s.
      */
-    public AsyncConnection(Connection actualConnection, boolean propagateClose, int maxThreads, int priority) {
+    public AsyncConnection(Connection actualConnection, boolean propagateClose) {
         this.actualConnection = actualConnection;
         this.propagateClose = propagateClose;
-        executorService = Executors.newFixedThreadPool(maxThreads, new DaemonThreadFactory(priority));
         addShutdownHook();
     }
 
@@ -131,36 +118,8 @@ public class AsyncConnection implements Connection {
         }
     }
 
-    /**
-     * Thread factory generating daemon threads with a custom priority.
-     * <p>
-     * Those (usually) low priority threads will allow to send event details to sentry concurrently without slowing
-     * down the main application.
-     * </p>
-     */
-    private static final class DaemonThreadFactory implements ThreadFactory {
-        private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
-        private final ThreadGroup group;
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
-        private final String namePrefix;
-        private final int priority;
-
-        private DaemonThreadFactory(int priority) {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-            namePrefix = "pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
-            this.priority = priority;
-        }
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
-            if (!t.isDaemon())
-                t.setDaemon(true);
-            if (t.getPriority() != priority)
-                t.setPriority(priority);
-            return t;
-        }
+    public void setExecutorService(ExecutorService executorService) {
+        this.executorService = executorService;
     }
 
     /**
