@@ -21,7 +21,7 @@ public abstract class AbstractConnection implements Connection {
      * Current sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "4";
-    private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(AbstractConnection.class.getCanonicalName());
     private final String publicKey;
     private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
