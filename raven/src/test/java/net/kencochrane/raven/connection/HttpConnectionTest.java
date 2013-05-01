@@ -1,6 +1,7 @@
 package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -91,6 +92,18 @@ public class HttpConnectionTest {
         httpConnection.send(event);
 
         verify(mockMarshaller).marshall(eq(event), any(OutputStream.class));
+    }
+
+    @Test
+    public void testAuthHeaderSent() throws Exception {
+        httpConnection.send(new EventBuilder().build());
+
+        verify(mockUrlConnection).setRequestProperty("User-Agent", Raven.NAME);
+        String expectedAuthRequest = "Sentry sentry_version=4,"
+                + "sentry_client=" + Raven.NAME + ","
+                + "sentry_key=" + publicKey + ","
+                + "sentry_secret=" + secretKey;
+        verify(mockUrlConnection).setRequestProperty("X-Sentry-Auth", expectedAuthRequest);
     }
 
     @Test
