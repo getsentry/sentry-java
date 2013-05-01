@@ -4,6 +4,7 @@ import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.marshaller.Marshaller;
+import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,6 +15,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -21,8 +23,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.UUID;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -85,6 +91,29 @@ public class HttpConnectionTest {
         httpConnection.send(event);
 
         verify(mockMarshaller).marshall(eq(event), any(OutputStream.class));
+    }
+
+    @Test
+    public void testHttpErrorLogged() throws Exception {
+        final String httpErrorMessage = UUID.randomUUID().toString();
+        ArgumentCaptor<LogRecord> logRecordCaptor = ArgumentCaptor.forClass(LogRecord.class);
+        Handler handler = mock(Handler.class);
+        Logger.getLogger(HttpConnection.class.getCanonicalName()).addHandler(handler);
+        when(mockUrlConnection.getOutputStream()).thenThrow(new IOException());
+        when(mockUrlConnection.getErrorStream()).thenReturn(new ByteArrayInputStream(httpErrorMessage.getBytes()));
+
+        httpConnection.send(new EventBuilder().build());
+
+        verify(handler).publish(logRecordCaptor.capture());
+        assertThat(logRecordCaptor.getAllValues(),
+                hasItem(new CustomTypeSafeMatcher<LogRecord>("Looks for message '" + httpErrorMessage + "'") {
+                    @Override
+                    protected boolean matchesSafely(LogRecord logRecord) {
+                        return httpErrorMessage.equals(logRecord.getMessage());
+                    }
+                }));
+
+        Logger.getLogger(HttpConnection.class.getCanonicalName()).removeHandler(handler);
     }
 
     @Test
