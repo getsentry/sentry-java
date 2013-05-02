@@ -128,8 +128,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            addError("An exception occurred while closing the raven connection", e);
         }
     }
 }

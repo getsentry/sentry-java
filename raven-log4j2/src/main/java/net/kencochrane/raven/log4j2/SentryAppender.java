@@ -179,8 +179,7 @@ public class SentryAppender extends AbstractAppender<String> {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            error("An exception occurred while closing the raven connection", e);
         }
     }
 }

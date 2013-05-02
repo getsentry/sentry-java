@@ -8,6 +8,7 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
+import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -111,8 +112,8 @@ public class SentryAppender extends AppenderSkeleton {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            getErrorHandler().error("An exception occurred while closing the raven connection", e,
+                    ErrorCode.CLOSE_FAILURE);
         }
     }
 

@@ -114,7 +114,7 @@ public class SentryHandler extends Handler {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            reportError("Am exception occurred while closing the connection", e, ErrorManager.CLOSE_FAILURE);
+            reportError("An exception occurred while closing the raven connection", e, ErrorManager.CLOSE_FAILURE);
         }
     }
 }
