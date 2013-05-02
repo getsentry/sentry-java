@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -113,8 +114,7 @@ public class SentryHandler extends Handler {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            reportError("Am exception occurred while closing the connection", e, ErrorManager.CLOSE_FAILURE);
         }
     }
 }
