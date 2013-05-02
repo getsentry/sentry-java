@@ -1,13 +1,17 @@
 package net.kencochrane.raven.jul;
 
 import net.kencochrane.raven.AbstractLoggerTest;
+import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.mockito.Mockito.*;
 
 public class SentryHandlerTest extends AbstractLoggerTest {
     private Logger logger;
@@ -50,6 +54,26 @@ public class SentryHandlerTest extends AbstractLoggerTest {
         assertLevelConverted(Event.Level.INFO, Level.INFO);
         assertLevelConverted(Event.Level.WARNING, Level.WARNING);
         assertLevelConverted(Event.Level.ERROR, Level.SEVERE);
+    }
+
+    @Test
+    public void testClosePropagates() throws Exception {
+        when(getMockRaven().getConnection()).thenReturn(mock(Connection.class));
+        Handler handler = new SentryHandler(getMockRaven(), true);
+
+        handler.close();
+
+        verify(getMockRaven().getConnection()).close();
+    }
+
+    @Test
+    public void testCloseDoesntPropagate() throws Exception {
+        when(getMockRaven().getConnection()).thenReturn(mock(Connection.class));
+        Handler handler = new SentryHandler(getMockRaven(), false);
+
+        handler.close();
+
+        verify(getMockRaven().getConnection(), never()).close();
     }
 
     private void assertLevelConverted(Event.Level expectedLevel, Level level) {
