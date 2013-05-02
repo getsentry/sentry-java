@@ -62,8 +62,12 @@ public class SentryHandler extends Handler {
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))
                 .setTimestamp(new Date(record.getMillis()))
-                .setLogger(record.getLoggerName())
-                .setCulprit(record.getSourceClassName() + "." + record.getSourceMethodName() + "()");
+                .setLogger(record.getLoggerName());
+
+        StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),record.getSourceMethodName(),
+                null, -1);
+        eventBuilder.setCulprit(fakeFrame);
+
         if (record.getThrown() != null) {
             eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
         }
