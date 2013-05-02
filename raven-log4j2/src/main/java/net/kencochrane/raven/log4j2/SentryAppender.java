@@ -106,10 +106,10 @@ public class SentryAppender extends AbstractAppender<String> {
 
     @Override
     public void start() {
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
         if (raven == null) {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
             //TODO: Add a way to select the factory
             raven = RavenFactory.ravenInstance(new Dsn(dsn));
         }

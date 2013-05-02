@@ -57,10 +57,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
         if (raven == null) {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
             //TODO: Add a way to select the factory
             raven = RavenFactory.ravenInstance(new Dsn(dsn));
         }
