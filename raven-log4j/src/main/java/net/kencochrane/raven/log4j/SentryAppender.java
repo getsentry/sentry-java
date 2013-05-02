@@ -50,11 +50,9 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     private static StackTraceElement asStackTraceElement(LocationInfo location) {
-        String className = (LocationInfo.NA.equals(location.getClassName())) ? null : location.getClassName();
-        String methodName = (LocationInfo.NA.equals(location.getMethodName())) ? null : location.getMethodName();
         String fileName = (LocationInfo.NA.equals(location.getFileName())) ? null : location.getFileName();
         int line = (LocationInfo.NA.equals(location.getLineNumber())) ? -1 : Integer.parseInt(location.getLineNumber());
-        return new StackTraceElement(className, methodName, fileName, line);
+        return new StackTraceElement(location.getClassName(), location.getMethodName(), fileName, line);
     }
 
     @Override
