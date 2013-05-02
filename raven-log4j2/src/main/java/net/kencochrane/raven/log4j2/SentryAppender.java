@@ -136,7 +136,7 @@ public class SentryAppender extends AbstractAppender<String> {
             eventBuilder.generateChecksum(source);
         }
 
-        if (eventMessage.getFormattedMessage() != eventMessage.getFormat()) {
+        if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
             eventBuilder.addSentryInterface(new MessageInterface(eventMessage.getFormat(),
                     formatMessageParameters(eventMessage.getParameters())));
         }
