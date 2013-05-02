@@ -172,19 +172,13 @@ public class EventBuilder {
     public EventBuilder setCulprit(StackTraceElement frame) {
         StringBuilder sb = new StringBuilder();
 
-        if (frame.getClassName() != null) {
-            sb.append(frame.getClassName());
-            if (frame.getMethodName() != null)
-                sb.append(".");
-        }
+        sb.append(frame.getClassName())
+                .append(".")
+                .append(frame.getMethodName());
 
-        if (frame.getMethodName() != null) {
-            sb.append(frame.getMethodName());
-        }
-
-        if(frame.getFileName() != null){
+        if (frame.getFileName() != null && !frame.getFileName().isEmpty()) {
             sb.append("(").append(frame.getFileName());
-            if(frame.getLineNumber() >= 0){
+            if (frame.getLineNumber() >= 0) {
                 sb.append(":").append(frame.getLineNumber());
             }
             sb.append(")");
