@@ -109,27 +109,6 @@ public class EventBuilder {
     }
 
     /**
-     * Determines the culprit value for an event based on a {@code Throwable}.
-     *
-     * @param throwable throwable caught, responsible of the event.
-     * @return the name of the method/class responsible for the event, based on the {@code Throwable}.
-     */
-    private static String determineCulprit(Throwable throwable) {
-        Throwable currentThrowable = throwable;
-        String culprit = null;
-        // Attempts to go through each cause, in case the last ones do not provide a stacktrace.
-        while (currentThrowable != null) {
-            StackTraceElement[] elements = currentThrowable.getStackTrace();
-            if (elements.length > 0) {
-                StackTraceElement trace = elements[0];
-                culprit = trace.getClassName() + "." + trace.getMethodName();
-            }
-            currentThrowable = currentThrowable.getCause();
-        }
-        return culprit;
-    }
-
-    /**
      * Sets the message in the event.
      *
      * @param message message of the event.
@@ -185,13 +164,33 @@ public class EventBuilder {
     }
 
     /**
-     * Sets the culprit in the event based on a {@code Throwable}.
+     * Sets the culprit in the event based on a {@link StackTraceElement}.
      *
-     * @param throwable throwable responsible of the event.
+     * @param frame stack frame during which the event was captured.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setCulprit(Throwable throwable) {
-        return setCulprit(determineCulprit(throwable));
+    public EventBuilder setCulprit(StackTraceElement frame) {
+        StringBuilder sb = new StringBuilder();
+
+        if (frame.getClassName() != null) {
+            sb.append(frame.getClassName());
+            if (frame.getMethodName() != null)
+                sb.append(".");
+        }
+
+        if (frame.getMethodName() != null) {
+            sb.append(frame.getMethodName());
+        }
+
+        if(frame.getFileName() != null){
+            sb.append("(").append(frame.getFileName());
+            if(frame.getLineNumber() >= 0){
+                sb.append(":").append(frame.getLineNumber());
+            }
+            sb.append(")");
+        }
+
+        return setCulprit(sb.toString());
     }
 
     /**
