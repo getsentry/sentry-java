@@ -75,8 +75,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
                 .setLogger(iLoggingEvent.getLoggerName())
-                .setLevel(formatLevel(iLoggingEvent))
-                .setCulprit(iLoggingEvent.getLoggerName());
+                .setLevel(formatLevel(iLoggingEvent));
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
@@ -87,8 +86,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                         formatArguments(iLoggingEvent.getArgumentArray())));
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways.
-            if (iLoggingEvent.getCallerData().length > 0)
+            if (iLoggingEvent.getCallerData().length > 0) {
                 eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
+            }
+        }
+
+        if (iLoggingEvent.getCallerData().length > 0) {
+            eventBuilder.setCulprit(iLoggingEvent.getCallerData()[0]);
+        } else {
+            eventBuilder.setCulprit(iLoggingEvent.getLoggerName());
         }
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
