@@ -8,6 +8,7 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
+import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.io.IOException;
@@ -48,6 +49,14 @@ public class SentryAppender extends AppenderSkeleton {
         } else return null;
     }
 
+    private static StackTraceElement asStackTraceElement(LocationInfo location) {
+        String className = (LocationInfo.NA.equals(location.getClassName())) ? null : location.getClassName();
+        String methodName = (LocationInfo.NA.equals(location.getMethodName())) ? null : location.getMethodName();
+        String fileName = (LocationInfo.NA.equals(location.getFileName())) ? null : location.getFileName();
+        int line = (LocationInfo.NA.equals(location.getLineNumber())) ? -1 : Integer.parseInt(location.getLineNumber());
+        return new StackTraceElement(className, methodName, fileName, line);
+    }
+
     @Override
     public void activateOptions() {
         if (dsn == null)
@@ -65,18 +74,22 @@ public class SentryAppender extends AppenderSkeleton {
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
                 .setLogger(loggingEvent.getLoggerName())
-                .setLevel(formatLevel(loggingEvent.getLevel()))
-                .setCulprit(loggingEvent.getLoggerName());
+                .setLevel(formatLevel(loggingEvent.getLevel()));
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
-            eventBuilder.setCulprit(throwable);
         } else if (loggingEvent.getLocationInformation().fullInfo != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways).
             eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
-            eventBuilder.setCulprit(loggingEvent.getLocationInformation().fullInfo);
+        }
+
+        // Set culprit
+        if (loggingEvent.getLocationInformation().fullInfo != null) {
+            eventBuilder.setCulprit(asStackTraceElement(loggingEvent.getLocationInformation()));
+        } else {
+            eventBuilder.setCulprit(loggingEvent.getLoggerName());
         }
 
         if (loggingEvent.getNDC() != null)
