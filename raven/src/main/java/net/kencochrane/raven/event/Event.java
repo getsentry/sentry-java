@@ -193,7 +193,6 @@ public class Event implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
 
         return id.equals(((Event) o).id);
-
     }
 
     @Override
