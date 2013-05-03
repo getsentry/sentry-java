@@ -54,15 +54,6 @@ public class EventBuilder {
     }
 
     /**
-     * Obtains the current hostname.
-     *
-     * @return the current hostname.
-     */
-    private static String getHostname() {
-        return hostnameCache.getHostname();
-    }
-
-    /**
      * Sets default values for each field that hasn't been provided manually.
      *
      * @param event currently handled event.
@@ -78,7 +69,7 @@ public class EventBuilder {
 
         // Ensure that a hostname is set
         if (event.getServerName() == null)
-            event.setServerName(getHostname());
+            event.setServerName(hostnameCache.getHostname());
     }
 
     /**
