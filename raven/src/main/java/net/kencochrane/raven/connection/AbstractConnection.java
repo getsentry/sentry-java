@@ -21,6 +21,8 @@ public abstract class AbstractConnection implements Connection {
      * Current sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "4";
+    public static final int DEFAULT_MAX_WAITING_TIME = 300000;
+    public static final int DEFAULT_BASE_WAITING_TIME = 10;
     private static final Logger logger = Logger.getLogger(AbstractConnection.class.getCanonicalName());
     private final String publicKey;
     private final String secretKey;
@@ -28,11 +30,11 @@ public abstract class AbstractConnection implements Connection {
     /**
      * At most wait 5 minutes if the connection failed too many times.
      */
-    private long maxWaitingTime = 300000;
+    private long maxWaitingTime = DEFAULT_MAX_WAITING_TIME;
     /**
      * When the first exception occurs, wait 10 millis before trying again.
      */
-    private long baseWaitingTime = 10;
+    private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
     private long waitingTime = baseWaitingTime;
 
     /**

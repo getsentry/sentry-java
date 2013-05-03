@@ -41,8 +41,8 @@ public abstract class RavenFactory {
         try {
             raven = ravenFactory.createRavenInstance(dsn);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "An exception occurred during the creation of a Raven instance with " +
-                    "'" + ravenFactory + "' using the DSN '" + dsn + "'", e);
+            logger.log(Level.WARNING, "An exception occurred during the creation of a Raven instance with "
+                    + "'" + ravenFactory + "' using the DSN '" + dsn + "'", e);
         }
         return raven;
     }

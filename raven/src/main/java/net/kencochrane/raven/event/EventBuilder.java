@@ -295,7 +295,7 @@ public class EventBuilder {
      * hostname for a period defined during the construction.
      * </p>
      */
-    private static class HostnameCache {
+    private static final class HostnameCache {
         /**
          * Default hostname if it isn't set manually (or can't be determined).
          */
@@ -305,7 +305,7 @@ public class EventBuilder {
          */
         private final long cacheDuration;
         /**
-         * Current value for hostname (might change over time)
+         * Current value for hostname (might change over time).
          */
         private String hostname = DEFAULT_HOSTNAME;
         /**
