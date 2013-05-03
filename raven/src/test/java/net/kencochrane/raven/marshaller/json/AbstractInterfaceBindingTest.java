@@ -22,11 +22,11 @@ public abstract class AbstractInterfaceBindingTest {
 
     protected JsonGenerator getJsonGenerator() throws IOException {
         jsonContentStream = new ByteArrayOutputStream();
-        return jsonFactory.createJsonGenerator(jsonContentStream);
+        return jsonFactory.createGenerator(jsonContentStream);
     }
 
     protected JsonParser getJsonParser() throws IOException {
-        return jsonFactory.createJsonParser(jsonContentStream.toByteArray());
+        return jsonFactory.createParser(jsonContentStream.toByteArray());
     }
 
     protected ObjectMapper getMapper() {
