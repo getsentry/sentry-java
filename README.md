@@ -83,7 +83,7 @@ DSN:
 Not every option requires a value.
 
 ### Async connection
-In order to avoid performance issues due to a large amout of logs being
+In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, it is recommended to use
 the asynchronous connection which will use a low priority thread pool to submit
 events to Sentry.
