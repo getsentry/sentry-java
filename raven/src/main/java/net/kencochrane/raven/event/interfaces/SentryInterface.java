@@ -1,9 +1,11 @@
 package net.kencochrane.raven.event.interfaces;
 
+import java.io.Serializable;
+
 /**
  * A SentryInterface is an additional structured data that can be provided with a message.
  */
-public interface SentryInterface {
+public interface SentryInterface extends Serializable {
     /**
      * Gets the unique name of the interface.
      *
