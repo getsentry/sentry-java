@@ -25,8 +25,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Appender for log4j2 in charge of sending the logged events to a Sentry server.
+ */
 @Plugin(name = "Sentry", type = "Sentry", elementType = "appender")
 public class SentryAppender extends AbstractAppender<String> {
+    /**
+     * Default name for the appender.
+     */
     public static final String APPENDER_NAME = "raven";
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final boolean propagateClose;
@@ -56,11 +62,12 @@ public class SentryAppender extends AbstractAppender<String> {
     /**
      * Create a Sentry Appender.
      *
-     * @param name   The name of the Appender.
-     * @param dsn    Data Source Name to access the Sentry server.
-     * @param layout The layout to use to format the event. If no layout is provided the default PatternLayout
-     *               will be used.
-     * @param filter The filter, if any, to use.
+     * @param name         The name of the Appender.
+     * @param dsn          Data Source Name to access the Sentry server.
+     * @param ravenFactory name of the factory to use to build the {@link Raven} instance.
+     * @param layout       The layout to use to format the event. If no layout is provided the default PatternLayout
+     *                     will be used.
+     * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
     @PluginFactory

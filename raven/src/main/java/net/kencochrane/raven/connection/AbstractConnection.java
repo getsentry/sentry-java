@@ -21,18 +21,27 @@ public abstract class AbstractConnection implements Connection {
      * Current sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "4";
+    /**
+     * Default maximum duration for a lockdown (5 minutes).
+     */
     public static final int DEFAULT_MAX_WAITING_TIME = 300000;
+    /**
+     * Default base duration for a lockdown (10 milliseconds).
+     */
     public static final int DEFAULT_BASE_WAITING_TIME = 10;
     private static final Logger logger = Logger.getLogger(AbstractConnection.class.getCanonicalName());
     private final String publicKey;
     private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
     /**
-     * At most wait 5 minutes if the connection failed too many times.
+     * Maximum duration for a lockdown.
      */
     private long maxWaitingTime = DEFAULT_MAX_WAITING_TIME;
     /**
-     * When the first exception occurs, wait 10 millis before trying again.
+     * Base duration for a lockdown.
+     * <p>
+     * On each attempt the time is doubled until it reaches {@link #maxWaitingTime}.
+     * </p>
      */
     private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
     private long waitingTime = baseWaitingTime;

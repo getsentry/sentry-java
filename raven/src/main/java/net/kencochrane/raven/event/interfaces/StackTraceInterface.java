@@ -2,7 +2,13 @@ package net.kencochrane.raven.event.interfaces;
 
 import java.util.Arrays;
 
+/**
+ * The StackTrace interface for Sentry, allowing to add a stackTrace to an event.
+ */
 public class StackTraceInterface implements SentryInterface {
+    /**
+     * Name of the Sentry interface allowing to send a StackTrace.
+     */
     public static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
     private final StackTraceElement[] stackTrace;
     private final int framesCommonWithEnclosing;

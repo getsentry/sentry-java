@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
+/**
+ * Binding allowing to convert a {@link StackTraceInterface} into a JSON stream.
+ */
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
     private static final String FRAMES_PARAMETER = "frames";
     private static final String FILENAME_PARAMETER = "filename";

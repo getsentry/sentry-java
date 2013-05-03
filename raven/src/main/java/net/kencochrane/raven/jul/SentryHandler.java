@@ -17,6 +17,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+/**
+ * Logging handler in charge of sending the java.util.logging records to a Sentry server.
+ */
 public class SentryHandler extends Handler {
     private final boolean propagateClose;
     private Raven raven;

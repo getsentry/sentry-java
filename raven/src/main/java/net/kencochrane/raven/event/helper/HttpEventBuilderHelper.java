@@ -6,6 +6,9 @@ import net.kencochrane.raven.servlet.RavenServletRequestListener;
 
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * EventBuilderHelper allowing to retrieve the current {@link HttpServletRequest}.
+ */
 public class HttpEventBuilderHelper implements EventBuilderHelper {
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {

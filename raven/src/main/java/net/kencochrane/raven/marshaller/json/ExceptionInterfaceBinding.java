@@ -10,6 +10,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * Binding system allowing to convert an {@link ExceptionInterface} to a JSON stream.
+ */
 public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInterface> {
     private static final Logger logger = Logger.getLogger(ExceptionInterfaceBinding.class.getCanonicalName());
     private static final String TYPE_PARAMETER = "type";

@@ -19,6 +19,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Default implementation of {@link RavenFactory}.
+ * <p>
+ * In most cases this is the implementation to use or extend for additional features.
+ * </p>
+ */
 public class DefaultRavenFactory extends RavenFactory {
     /**
      * Protocol setting to disable security checks over an SSL connection.

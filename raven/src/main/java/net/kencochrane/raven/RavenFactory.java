@@ -4,6 +4,12 @@ import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Factory in charge of creating {@link Raven} instances.
+ * <p>
+ * The factories register themselves through the {@link ServiceLoader} system.
+ * </p>
+ */
 public abstract class RavenFactory {
     private static final Logger logger = Logger.getLogger(RavenFactory.class.getCanonicalName());
     private static final ServiceLoader<RavenFactory> RAVEN_FACTORIES = ServiceLoader.load(RavenFactory.class);

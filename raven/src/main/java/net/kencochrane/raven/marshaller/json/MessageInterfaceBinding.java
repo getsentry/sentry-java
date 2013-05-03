@@ -5,6 +5,9 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 
 import java.io.IOException;
 
+/**
+ * Binding allowing to transform a {@link MessageInterface} into a JSON stream.
+ */
 public class MessageInterfaceBinding implements InterfaceBinding<MessageInterface> {
     /**
      * Maximum length for a message.

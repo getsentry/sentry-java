@@ -1,5 +1,11 @@
 package net.kencochrane.raven.exception;
 
+/**
+ * Exception thrown by a {@link net.kencochrane.raven.connection.Connection} if something went wrong temporarily.
+ * <p>
+ * This allows connections to know when to back off for a while.
+ * </p>
+ */
 public class ConnectionException extends RuntimeException {
 
     public ConnectionException() {

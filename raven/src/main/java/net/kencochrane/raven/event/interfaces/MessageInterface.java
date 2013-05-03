@@ -8,6 +8,9 @@ import java.util.List;
  * The Message interface for Sentry allows to add a message that will be formatted by sentry.
  */
 public class MessageInterface implements SentryInterface {
+    /**
+     * Name of the message interface in Sentry.
+     */
     public static final String MESSAGE_INTERFACE = "sentry.interfaces.Message";
     private final String message;
     private final List<String> params;

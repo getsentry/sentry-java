@@ -1,6 +1,12 @@
 package net.kencochrane.raven.event.interfaces;
 
+/**
+ * The Exception interface for Sentry allowing to add an Exception details to an event.
+ */
 public class ExceptionInterface implements SentryInterface {
+    /**
+     * Name of the exception interface in Sentry.
+     */
     public static final String EXCEPTION_INTERFACE = "sentry.interfaces.Exception";
     private final ImmutableThrowable throwable;
 

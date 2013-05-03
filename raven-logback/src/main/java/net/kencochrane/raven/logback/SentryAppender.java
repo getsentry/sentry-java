@@ -18,6 +18,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Appender for logback in charge of sending the logged events to a Sentry server.
+ */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private final boolean propagateClose;
     private Raven raven;

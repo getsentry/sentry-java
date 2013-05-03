@@ -17,6 +17,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Appender for log4j in charge of sending the logged events to a Sentry server.
+ */
 public class SentryAppender extends AppenderSkeleton {
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final boolean propagateClose;

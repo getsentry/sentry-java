@@ -16,6 +16,11 @@ public class EventBuilder {
      * Default platform if it isn't set manually.
      */
     public static final String DEFAULT_PLATFORM = "java";
+    /**
+     * Duration of the hostname caching.
+     *
+     * @see HostnameCache
+     */
     public static final int HOSTNAME_CACHE_DURATION = 18000000;
     private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
