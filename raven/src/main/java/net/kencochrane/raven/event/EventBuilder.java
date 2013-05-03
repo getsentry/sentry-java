@@ -16,10 +16,8 @@ public class EventBuilder {
      * Default platform if it isn't set manually.
      */
     public static final String DEFAULT_PLATFORM = "java";
-    /**
-     * Default hostname if it isn't set manually (or can't be determined).
-     */
-    public static final String DEFAULT_HOSTNAME = "unavailable";
+    public static final int HOSTNAME_CACHE_DURATION = 18000000;
+    private static final HostnameCache hostnameCache = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
 
@@ -58,15 +56,10 @@ public class EventBuilder {
     /**
      * Obtains the current hostname.
      *
-     * @return the current hostname, or {@link #DEFAULT_HOSTNAME} if it couldn't be determined.
+     * @return the current hostname.
      */
     private static String getHostname() {
-        try {
-            // TODO: Cache this info
-            return InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            return DEFAULT_HOSTNAME;
-        }
+        return hostnameCache.getHostname();
     }
 
     /**
@@ -301,5 +294,70 @@ public class EventBuilder {
         // Lock it only when everything has been set, in case of exception it should be possible to try to build again.
         alreadyBuilt = true;
         return event;
+    }
+
+    /**
+     * Time sensitive cache in charge of keeping track of the hostname.
+     * <p>
+     * The {@code InetAddress.getLocalHost().getCanonicalHostName()} call can be quite expensive and could be called
+     * for the creation of each {@link Event}. This system will prevent unnecessary costs by keeping track of the
+     * hostname for a period defined during the construction.
+     * </p>
+     */
+    private static class HostnameCache {
+        /**
+         * Default hostname if it isn't set manually (or can't be determined).
+         */
+        public static final String DEFAULT_HOSTNAME = "unavailable";
+        /**
+         * Time for which the cache is kept.
+         */
+        private final long cacheDuration;
+        /**
+         * Current value for hostname (might change over time)
+         */
+        private String hostname = DEFAULT_HOSTNAME;
+        /**
+         * Time at which the cache should expire.
+         */
+        private long expirationTimestamp;
+
+        /**
+         * Sets up a cache for the hostname.
+         *
+         * @param cacheDuration cache duration in milliseconds.
+         */
+        private HostnameCache(long cacheDuration) {
+            this.cacheDuration = cacheDuration;
+        }
+
+        /**
+         * Gets the hostname of the current machine.
+         * <p>
+         * Gets the value from the cache if possible otherwise calls {@link #updateCache()}.
+         * </p>
+         *
+         * @return the hostname of the current machine.
+         */
+        public String getHostname() {
+            if (expirationTimestamp < System.currentTimeMillis()) {
+                updateCache();
+            }
+
+            return hostname;
+        }
+
+        /**
+         * Force an update of the cache to get the current value of the hostname.
+         */
+        public void updateCache() {
+            expirationTimestamp = System.currentTimeMillis() + cacheDuration;
+
+            try {
+                hostname = InetAddress.getLocalHost().getCanonicalHostName();
+            } catch (UnknownHostException e) {
+                hostname = DEFAULT_HOSTNAME;
+            }
+        }
     }
 }
