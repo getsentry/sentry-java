@@ -20,6 +20,9 @@ public abstract class RavenFactory {
     }
 
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
+        if (ravenFactoryName == null)
+            return ravenInstance(dsn);
+
         for (RavenFactory ravenFactory : RAVEN_FACTORIES) {
             if (!ravenFactoryName.equals(ravenFactory.getClass().getCanonicalName()))
                 continue;
