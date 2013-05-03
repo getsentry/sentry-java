@@ -22,6 +22,7 @@ public class SentryAppender extends AppenderSkeleton {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryAppender() {
         this.propagateClose = true;
@@ -62,8 +63,7 @@ public class SentryAppender extends AppenderSkeleton {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
 
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
     }
 
@@ -104,6 +104,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
     }
 
     @Override

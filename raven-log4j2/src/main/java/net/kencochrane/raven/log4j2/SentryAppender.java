@@ -32,6 +32,7 @@ public class SentryAppender extends AbstractAppender<String> {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryAppender() {
         this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, true);
@@ -65,6 +66,7 @@ public class SentryAppender extends AbstractAppender<String> {
     @PluginFactory
     public static SentryAppender createAppender(@PluginAttr("name") final String name,
                                                 @PluginAttr("dsn") final String dsn,
+                                                @PluginAttr("ravenFactory") final String ravenFactory,
                                                 @PluginElement("layout") Layout<String> layout,
                                                 @PluginElement("filters") final Filter filter) {
 
@@ -78,6 +80,7 @@ public class SentryAppender extends AbstractAppender<String> {
         }
         SentryAppender sentryAppender = new SentryAppender(name, layout, filter, true);
         sentryAppender.setDsn(dsn);
+        sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
     }
 
@@ -110,8 +113,7 @@ public class SentryAppender extends AbstractAppender<String> {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
 
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
     }
 
@@ -169,6 +171,10 @@ public class SentryAppender extends AbstractAppender<String> {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
     }
 
     @Override

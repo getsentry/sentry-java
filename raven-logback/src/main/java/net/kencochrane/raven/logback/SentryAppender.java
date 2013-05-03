@@ -22,6 +22,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryAppender() {
         propagateClose = true;
@@ -64,8 +65,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
 
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
     }
 
@@ -118,6 +118,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
     }
 
     @Override
