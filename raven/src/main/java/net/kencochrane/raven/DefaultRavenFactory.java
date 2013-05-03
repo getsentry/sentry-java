@@ -14,8 +14,7 @@ import net.kencochrane.raven.marshaller.json.*;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +44,10 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option for the priority of threads assigned for the connection.
      */
     public static final String PRIORITY_OPTION = "raven.async.priority";
+    /**
+     * Option for the maximum size of the queue.
+     */
+    public static final String QUEUE_SIZE_OPTION = "raven.async.queuesize";
     /**
      * Option to hide common stackframes with enclosing exceptions.
      */
@@ -103,7 +106,18 @@ public class DefaultRavenFactory extends RavenFactory {
             priority = Thread.MIN_PRIORITY;
         }
 
-        asyncConnection.setExecutorService(Executors.newFixedThreadPool(maxThreads, new DaemonThreadFactory(priority)));
+        BlockingDeque<Runnable> queue;
+        if (dsn.getOptions().containsKey(QUEUE_SIZE_OPTION)) {
+            queue = new LinkedBlockingDeque<Runnable>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
+        } else {
+            queue = new LinkedBlockingDeque<Runnable>();
+        }
+
+        asyncConnection.setExecutorService(new ThreadPoolExecutor(
+                maxThreads, maxThreads,
+                0L, TimeUnit.MILLISECONDS,
+                queue,
+                new DaemonThreadFactory(priority)));
 
         return asyncConnection;
     }
