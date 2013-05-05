@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -25,6 +26,7 @@ public class SentryHandler extends Handler {
     private Raven raven;
     private String dsn;
     private String ravenFactory;
+    private ReentrantLock startLock = new ReentrantLock();
 
     public SentryHandler() {
         propagateClose = true;
@@ -64,6 +66,20 @@ public class SentryHandler extends Handler {
             return;
         }
 
+        if (raven == null) {
+            // Prevent recursive start
+            if (startLock.isHeldByCurrentThread()) {
+                return;
+            }
+
+            try {
+                start();
+            } catch (Exception e) {
+                reportError("An exception occurred while creating an instance of raven", e, ErrorManager.OPEN_FAILURE);
+                return;
+            }
+        }
+
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))
                 .setTimestamp(new Date(record.getMillis()))
@@ -88,19 +104,25 @@ public class SentryHandler extends Handler {
         else
             eventBuilder.setMessage(record.getMessage());
 
-        getRaven().runBuilderHelpers(eventBuilder);
+        raven.runBuilderHelpers(eventBuilder);
 
-        getRaven().sendEvent(eventBuilder.build());
+        raven.sendEvent(eventBuilder.build());
     }
 
-    private Raven getRaven() {
-        if (raven == null) {
+    private void start() {
+        // Attempt to start raven
+        startLock.lock();
+        try {
+            if (raven != null)
+                return;
+
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } finally {
+            startLock.unlock();
         }
-        return raven;
     }
 
     public void setDsn(String dsn) {
