@@ -78,6 +78,11 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     protected void append(LoggingEvent loggingEvent) {
+        Event event = buildEvent(loggingEvent);
+        raven.sendEvent(event);
+    }
+
+    private Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
@@ -107,8 +112,7 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.addExtra(mdcEntry.getKey().toString(), mdcEntry.getValue());
 
         raven.runBuilderHelpers(eventBuilder);
-
-        raven.sendEvent(eventBuilder.build());
+        return eventBuilder.build();
     }
 
     public void setDsn(String dsn) {
