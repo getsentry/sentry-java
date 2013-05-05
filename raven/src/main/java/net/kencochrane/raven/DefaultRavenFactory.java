@@ -187,7 +187,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * down the main application.
      * </p>
      */
-    private static final class DaemonThreadFactory implements ThreadFactory {
+    protected static final class DaemonThreadFactory implements ThreadFactory {
         private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);
