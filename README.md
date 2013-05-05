@@ -190,9 +190,10 @@ Depending on the limitations of the project (ie: a mobile application with a
 limited connection, Sentry hosted on an external network), it can be interesting
 to compress the data beforehand or not.
 
-It's possible to disable the compression with the option `raven.nocompression`
+It's possible to manually enable/disable the compression with the option
+`raven.compression`
 
-    http://public:private@host:port/1?raven.nocompression
+    http://public:private@host:port/1?raven.compression=false
 
 ### Timeout (advanced)
 To avoid blocking the thread because of a connection taking too much time, a

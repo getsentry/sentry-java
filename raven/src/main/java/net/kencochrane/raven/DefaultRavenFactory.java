@@ -31,9 +31,9 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String NAIVE_PROTOCOL = "naive";
     /**
-     * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
+     * Option specific to raven-java, allowing to enable/disable the compression of requests to the Sentry Server.
      */
-    public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
+    public static final String COMPRESSION_OPTION = "raven.compression";
     /**
      * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
      */
@@ -165,7 +165,7 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.addInterfaceBinding(HttpInterface.class, httpBinding);
 
         // Set compression
-        marshaller.setCompression(!dsn.getOptions().containsKey(NOCOMPRESSION_OPTION));
+        marshaller.setCompression(!dsn.getOptions().containsKey(COMPRESSION_OPTION));
 
         return marshaller;
     }
