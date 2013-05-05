@@ -106,11 +106,12 @@ To use the `SentryAppender` with log4j2 use this configuration:
     <configuration status="warn" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
         <appenders>
             <Raven name="Sentry">
-                <Dsn>
+                <dsn>
                     http://publicKey:secretKey@host:port/1?options
-                </Dsn>
+                </dsn>
             </Raven>
         </appenders>
+
         <loggers>
             <root level="all">
                 <appender-ref ref="Sentry"/>
@@ -126,11 +127,11 @@ To use the `SentryAppender` with logback use this configuration:
         <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
             <dsn>
                 http://publicKey:secretKey@host:port/1?options
-                </dsn>
+            </dsn>
         </appender>
 
         <root level="debug">
-            <appender-ref ref="Sentry" />
+            <appender-ref ref="Sentry"/>
         </root>
     </configuration>
 
