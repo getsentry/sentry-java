@@ -89,11 +89,11 @@ public class Dsn {
             Context c = new InitialContext();
             dsn = (String) c.lookup(JNDI_DSN_NAME);
         } catch (NoInitialContextException e) {
-            logger.log(Level.INFO, "JNDI not configured for sentry (NoInitialContextEx)");
+            logger.log(Level.FINE, "JNDI not configured for sentry (NoInitialContextEx)");
         } catch (NamingException e) {
-            logger.log(Level.INFO, "No /sentry/dsn in JNDI");
+            logger.log(Level.FINE, "No /sentry/dsn in JNDI");
         } catch (RuntimeException ex) {
-            logger.log(Level.INFO, "Odd RuntimeException while testing for JNDI: " + ex.getMessage());
+            logger.log(Level.WARNING, "Odd RuntimeException while testing for JNDI", ex);
         }
 
         // Try to obtain the DSN from a System Environment Variable
