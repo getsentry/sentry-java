@@ -73,7 +73,7 @@ public class SentryAppender extends AbstractAppender<String> {
                                                 @PluginElement("filters") final Filter filter) {
 
         if (name == null) {
-            LOGGER.error("No name provided for FileAppender");
+            LOGGER.error("No name provided for SentryAppender");
             return null;
         }
 
