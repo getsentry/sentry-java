@@ -9,14 +9,12 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;
-import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttr;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.message.Message;
 
 import java.io.IOException;
@@ -41,7 +39,7 @@ public class SentryAppender extends AbstractAppender<String> {
     private String ravenFactory;
 
     public SentryAppender() {
-        this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, true);
+        this(APPENDER_NAME, null, true);
     }
 
 
@@ -50,12 +48,12 @@ public class SentryAppender extends AbstractAppender<String> {
     }
 
     public SentryAppender(Raven raven, boolean propagateClose) {
-        this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, propagateClose);
+        this(APPENDER_NAME, null, propagateClose);
         this.raven = raven;
     }
 
-    private SentryAppender(String name, Layout<String> layout, Filter filter, boolean propagateClose) {
-        super(name, filter, layout, true);
+    private SentryAppender(String name, Filter filter, boolean propagateClose) {
+        super(name, filter, null, true);
         this.propagateClose = propagateClose;
     }
 
@@ -65,8 +63,6 @@ public class SentryAppender extends AbstractAppender<String> {
      * @param name         The name of the Appender.
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory name of the factory to use to build the {@link Raven} instance.
-     * @param layout       The layout to use to format the event. If no layout is provided the default PatternLayout
-     *                     will be used.
      * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
@@ -74,7 +70,6 @@ public class SentryAppender extends AbstractAppender<String> {
     public static SentryAppender createAppender(@PluginAttr("name") final String name,
                                                 @PluginAttr("dsn") final String dsn,
                                                 @PluginAttr("ravenFactory") final String ravenFactory,
-                                                @PluginElement("layout") Layout<String> layout,
                                                 @PluginElement("filters") final Filter filter) {
 
         if (name == null) {
@@ -82,10 +77,7 @@ public class SentryAppender extends AbstractAppender<String> {
             return null;
         }
 
-        if (layout == null) {
-            layout = PatternLayout.createLayout(null, null, null, null);
-        }
-        SentryAppender sentryAppender = new SentryAppender(name, layout, filter, true);
+        SentryAppender sentryAppender = new SentryAppender(name, filter, true);
         sentryAppender.setDsn(dsn);
         sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
