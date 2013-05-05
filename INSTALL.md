@@ -78,27 +78,61 @@ The client will lookup for the first DSN configuration provided:
     }
 
 ### Using `java.util.logging`
-TODO
+To use the `SentryHandler` with `java.util.loggin` use this `logging.properties`
+
+    level=INFO
+    handlers=net.kencochrane.raven.jul.SentryHandler
+    net.kencochrane.raven.jul.SentryHandler.dsn=http://publicKey:secretKey@host:port/1?options
+
 
 ### Using log4j
 To use the `SentryAppender` with log4j use this configuration:
 
     log4j.rootLogger=DEBUG, SentryAppender
     log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
-    log4j.appender.SentryAppender.dsn=http://publicKey:secretKey@host:port/projectId?options
+    log4j.appender.SentryAppender.dsn=http://publicKey:secretKey@host:port/1?options
 
 #### Asynchronous logging with AsyncAppender
 It is not recommended to attempt to set up a `SentryAppender` with an
 [AsyncAppender](http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/AsyncAppender.html).
 While this is a common solution to avoid blocking the current thread until the
-event is sent to Sentry, it is recommended to use instead the option
-`raven.async` to enable asynchronous logging for raven.
+event is sent to Sentry, it is recommended to rely instead on the asynchronous
+connection within Raven.
 
 ### Using log4j2
-**TODO**
+To use the `SentryAppender` with log4j2 use this configuration:
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration status="warn" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
+        <appenders>
+            <Raven name="Sentry">
+                <Dsn>
+                    http://publicKey:secretKey@host:port/1?options
+                </Dsn>
+            </Raven>
+        </appenders>
+        <loggers>
+            <root level="all">
+                <appender-ref ref="Sentry"/>
+            </root>
+        </loggers>
+    </configuration>
+
 
 ### Using logback
-**TODO**
+To use the `SentryAppender` with logback use this configuration:
+
+    <configuration>
+        <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
+            <dsn>
+                http://publicKey:secretKey@host:port/1?options
+                </dsn>
+        </appender>
+
+        <root level="debug">
+            <appender-ref ref="Sentry" />
+        </root>
+    </configuration>
 
 ### Capturing the HTTP environment
 **TODO**
