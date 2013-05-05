@@ -59,6 +59,7 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
     private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
+    private static final String FALSE = Boolean.FALSE.toString();
 
     @Override
     public Raven createRavenInstance(Dsn dsn) {
@@ -88,7 +89,8 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
-        if (dsn.getOptions().containsKey(ASYNC_OPTION)) {
+        // Enable async unless its value is 'false'.
+        if (!FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION))) {
             connection = createAsyncConnection(dsn, connection);
         }
 
@@ -153,7 +155,9 @@ public class DefaultRavenFactory extends RavenFactory {
 
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
-        stackTraceBinding.setRemoveCommonFramesWithEnclosing(dsn.getOptions().containsKey(HIDE_COMMON_FRAMES_OPTION));
+        // Enable common frames hiding unless its value is 'false'.
+        stackTraceBinding.setRemoveCommonFramesWithEnclosing(
+                !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION)));
         stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
@@ -164,8 +168,8 @@ public class DefaultRavenFactory extends RavenFactory {
         //httpBinding.
         marshaller.addInterfaceBinding(HttpInterface.class, httpBinding);
 
-        // Set compression
-        marshaller.setCompression(!dsn.getOptions().containsKey(COMPRESSION_OPTION));
+        // Enable compression unless the option is set to false
+        marshaller.setCompression(!FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION)));
 
         return marshaller;
     }
