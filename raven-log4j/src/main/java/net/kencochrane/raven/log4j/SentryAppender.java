@@ -62,6 +62,8 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
+        super.activateOptions();
+
         if (raven == null) {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();

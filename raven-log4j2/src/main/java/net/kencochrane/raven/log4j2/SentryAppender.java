@@ -116,6 +116,8 @@ public class SentryAppender extends AbstractAppender<String> {
 
     @Override
     public void start() {
+        super.start();
+
         if (raven == null) {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
