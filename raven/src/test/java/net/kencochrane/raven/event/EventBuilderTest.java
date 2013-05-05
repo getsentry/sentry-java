@@ -72,7 +72,7 @@ public class EventBuilderTest {
     }
 
     @Test
-    public void testUseStackFrameAsCulprit(){
+    public void testUseStackFrameAsCulprit() {
         StackTraceElement frame1 = new StackTraceElement("class", "method", "file", 1);
         StackTraceElement frame2 = new StackTraceElement("class", "method", "file", -1);
         StackTraceElement frame3 = new StackTraceElement("class", "method", null, 1);

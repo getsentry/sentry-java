@@ -1,8 +1,6 @@
 package net.kencochrane.raven;
 
 import java.util.ServiceLoader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Factory in charge of creating {@link Raven} instances.
