@@ -33,9 +33,11 @@ reason, only the last two major versions of Raven are maintained.
  - Sentry protocol v3 is available since Sentry 5.1 (use Raven-3.x)
  - Sentry protocol v2 is available since Sentry 2.0 (use Raven-2.x)
 
+
 ## Build and Installation
 **See
 [INSTALL.md](https://github.com/kencochrane/raven-java/blob/master/INSTALL.md)**
+
 
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
@@ -44,8 +46,8 @@ So far Sentry accepts HTTP(S) and UDP which are both fully supported by
 Raven.
 
 ### HTTP
-The most common way to access Sentry is through HTTP, this can be done by
-using a DSN using this form:
+The most common way send events to Sentry is through HTTP, this can be done by
+using a DSN of this form:
 
     http://public:private@host:port/1
 
@@ -57,6 +59,7 @@ It is possible to use an encrypted connection to Sentry using HTTPS:
     https://public:private@host:port/1
 
 If not provided, the port will default to `443`.
+
 ### HTTPS (naive)
 If the certificate used over HTTPS is a wildcard certificate (which is not
 handled by every version of Java), and the certificate isn't added to the
@@ -75,13 +78,15 @@ If not provided the port will default to `9001`.
 While being faster because there is no TCP and HTTP overhead, UDP doesn't wait
 for a reply, and if a connection problem occurs, there will be no notification.
 
+
 ## Options
 It is possible to enable some options by adding data to the query string of the
 DSN:
 
     http://public:private@host:port/1?option1=value1&option2&option3=value3
 
-Not every option requires a value.
+Some options do not require a value, just being declared signifies that the
+option is enabled.
 
 ### Async connection
 In order to avoid performance issues due to a large amount of logs being
@@ -96,22 +101,22 @@ To enable the async mode, add the `raven.async` option to your DSN:
 #### Queue size (advanced)
 The default queue used to store the not yet processed events doesn't have a
 limit.
-Depending on the environment (where memory is sparse) it is important to be
+Depending on the environment (if the memory is sparse) it is important to be
 able to control the size of that queue to avoid memory issues.
 
 It is possible to set a maximum with the option `raven.async.queuesize`:
 
     http://public:private@host:port/1?raven.async&raven.async.queuesize=100
 
-This means that if the connection to the Sentry server, only the first 100
-events will be stored and be processed as soon as the server is back up.
+This means that if the connection to the Sentry server is down, only the first
+100 events will be stored and be processed as soon as the server is back up.
 
 #### Threads count (advanced)
 By default the thread pool used by the async connection contains one thread per
 processor available to the JVM (more threads wouldn't be useful).
 
 It's possible to manually set the number of threads (for example if you want
-only one Thread) with the option `raven.async.threads`:
+only one thread) with the option `raven.async.threads`:
 
     http://public:private@host:port/1?raven.async&raven.async.threads=1
 
@@ -126,7 +131,53 @@ with the option `raven.async.priority`:
     http://public:private@host:port/1?raven.async.priority=10&raven.async
 
 ### Inapp classes
-**TODO**
+Sentry differentiate `in_app` stack frames (which are directly related to your application)
+and the "not `in_app`" ones.
+This difference is visible in the Sentry web interface where only the `in_app`
+frames are displayed by default.
+
+#### Same frame as enclosing exception
+Raven can use the `in_app` system to hide frames in the context of chained exceptions.
+
+Usually when a StackTrace is printed, the result looks like this:
+
+    HighLevelException: MidLevelException: LowLevelException
+            at Main.a(Main.java:13)
+            at Junk.main(Main.java:4)
+    Caused by: MidLevelException: LowLevelException
+            at Main.c(Main.java:23)
+            at Main.b(Main.java:17)
+            at Main.a(Main.java:11)
+            ... 1 more
+    Caused by: LowLevelException
+            at Main.e(Main.java:30)
+            at Main.d(Main.java:27)
+            at Main.c(Main.java:21)
+            ... 3 more
+
+Some frames are replaced by the `... N more` line as they are the same frames
+as in the enclosing exception.
+
+To enable a similar behaviour from raven use the `raven.stacktrace.hidecommon` option.
+
+    http://public:private@host:port/1?raven.stacktrace.hidecommon
+
+#### Hide frames based on the class name
+Raven can also mark some frames as `in_app` based on the name of the class.
+
+This can be used to hide parts of the stacktrace that are irrelevant to the problem
+for example the stack frames in the `java.util` package will not help determining
+what the problem was and will just create a longer stacktrace.
+
+Currently this is not configurable (see #49) and some packages are ignored by default:
+
+- com.sun.*
+- java.*
+- javax.*
+- org.omg.*
+- sun.*
+- junit.*
+- com.intellij.rt.*
 
 ### Compression
 By default the content sent to Sentry is compressed and encoded in base64 before
@@ -151,6 +202,7 @@ By default the connection will set up its own timeout, but it's possible to
 manually set one with `raven.timeout` (in milliseconds):
 
     http://public:private@host:port/1?raven.timeout=10000
+
 
 ## History
 
