@@ -62,7 +62,7 @@ public class SentryAppender extends AbstractAppender<String> {
      *
      * @param name         The name of the Appender.
      * @param dsn          Data Source Name to access the Sentry server.
-     * @param ravenFactory name of the factory to use to build the {@link Raven} instance.
+     * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
      * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
