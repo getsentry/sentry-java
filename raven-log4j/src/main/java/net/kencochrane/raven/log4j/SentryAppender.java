@@ -62,13 +62,17 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
-        super.activateOptions();
+        try {
+            if (raven == null) {
+                if (dsn == null)
+                    dsn = Dsn.dsnLookup();
 
-        if (raven == null) {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
-
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+            }
+            super.activateOptions();
+        } catch (Exception e) {
+            getErrorHandler().error("An exception occurred during the creation of a raven instance", e,
+                    ErrorCode.FILE_OPEN_FAILURE);
         }
     }
 

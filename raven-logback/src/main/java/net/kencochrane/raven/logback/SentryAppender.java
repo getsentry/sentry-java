@@ -62,13 +62,16 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void start() {
-        super.start();
+        try {
+            if (raven == null) {
+                if (dsn == null)
+                    dsn = Dsn.dsnLookup();
 
-        if (raven == null) {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
-
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+            }
+            super.start();
+        } catch (Exception e) {
+            addError("An exception occurred during the creation of a raven instance", e);
         }
     }
 
