@@ -148,7 +148,19 @@ public class JsonMarshaller implements Marshaller {
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
-            generator.writeObjectField(extra.getKey(), extra.getValue());
+            Object value = extra.getValue();
+            if (value.getClass().isArray()) {
+                value = Arrays.asList((Object[]) value);
+            }
+            if (value instanceof Iterable) {
+                generator.writeArrayFieldStart(extra.getKey());
+                for (Object subValue : (Iterable) value) {
+                    generator.writeObject(subValue);
+                }
+                generator.writeEndArray();
+            } else {
+                generator.writeObjectField(extra.getKey(), extra.getValue());
+            }
         }
         generator.writeEndObject();
     }
