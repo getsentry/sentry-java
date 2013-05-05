@@ -122,7 +122,12 @@ public class SentryAppender extends AbstractAppender<String> {
     }
 
     @Override
-    public void append(LogEvent event) {
+    public void append(LogEvent logEvent) {
+        Event event = buildEvent(logEvent);
+        raven.sendEvent(event);
+    }
+
+    private Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(event.getMillis()))
@@ -163,7 +168,7 @@ public class SentryAppender extends AbstractAppender<String> {
 
         raven.runBuilderHelpers(eventBuilder);
 
-        raven.sendEvent(eventBuilder.build());
+        return eventBuilder.build();
     }
 
     private List<String> formatMessageParameters(Object[] parameters) {
