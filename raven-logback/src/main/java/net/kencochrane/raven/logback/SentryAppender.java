@@ -77,6 +77,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
+        Event event = buildEvent(iLoggingEvent);
+        raven.sendEvent(event);
+    }
+
+    private Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
@@ -109,7 +114,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         raven.runBuilderHelpers(eventBuilder);
 
-        raven.sendEvent(eventBuilder.build());
+        return eventBuilder.build();
     }
 
     private String getEventPosition(ILoggingEvent iLoggingEvent) {
