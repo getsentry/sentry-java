@@ -1,5 +1,7 @@
 # Raven
 
+[![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](http://travis-ci.org/kencochrane/raven-java)
+
 Raven is a Java client for [Sentry](https://www.getsentry.com/).
 Besides the regular client you can use within your application code, this
 project also provides tools allowing the most popular logging frameworks
@@ -14,7 +16,6 @@ to send the logs directly to sentry:
 
 Raven supports both HTTP(S) and UDP transport of events.
 
-[![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](http://travis-ci.org/kencochrane/raven-java)
 
 ## Sentry Protocol and supported versions
 ### Sentry Protocol versions
