@@ -8,7 +8,7 @@ Currently there are 6 modules in the project:
  to the new API as legacy will be removed in the future releases of Raven)
  - `raven-log4j`, Appender for log4j
  - `raven-log4j2`, Appender for log4j2
- - `raven-logback`, Appander for Logback
+ - `raven-logback`, Appender for Logback
  - `sentry-stub`, Sentry server stub, allowing to test the protocol
 
 ### Build
