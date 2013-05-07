@@ -17,10 +17,6 @@ sources.
     $ cd raven-java
     $ mvn clean install -DskipTests=true
 
-_Due to a [known issue](https://bugs.eclipse.org/bugs/show_bug.cgi?id=405631) in
-jetty, it is currently not possible to run the integration tests from the main
-project. They have to be run manually on each module independently._
-
 ### Maven dependency
 To add raven as a dependency, simply add this to the pom.xml file:
 
