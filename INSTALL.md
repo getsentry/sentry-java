@@ -36,6 +36,7 @@ You can add the other modules the same way (replacing the `artifactId`) with the
 name of the module.
 
 ### Manual installation
+TODO
 
 ## Using Raven
 
