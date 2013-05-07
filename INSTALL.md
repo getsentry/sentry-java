@@ -24,7 +24,7 @@ jetty, it is currently not possible to run the integration tests from the main
 project. They have to be run manually on each module independently._
 
 ### Maven dependency
-To add raven as a dependency, simply add this to your pom.xml:
+To add raven as a dependency, simply add this to the pom.xml file:
 
     <dependency>
       <groupId>net.kencochrane.raven</groupId>
@@ -32,8 +32,23 @@ To add raven as a dependency, simply add this to your pom.xml:
       <version>4.0-SNAPSHOT</version>
     </dependency>
 
-You can add the other modules the same way (replacing the `artifactId`) with the
+Other modules can be added the same way (replacing the `artifactId`) with the
 name of the module.
+
+If the version is a snapshot it will be necessary to specify the
+Sonatype Nexus snapshot repository:
+
+    <repository>
+        <id>sonatype-nexus-snapshots</id>
+        <name>Sonatype Nexus Snapshots</name>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
 
 ### Manual installation
 TODO
