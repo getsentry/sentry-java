@@ -90,13 +90,12 @@ option is enabled.
 
 ### Async connection
 In order to avoid performance issues due to a large amount of logs being
-generated or a slow connection to the Sentry server, it is recommended to use
-the asynchronous connection which will use a low priority thread pool to submit
-events to Sentry.
+generated or a slow connection to the Sentry server, an asynchronous connection
+is set up, using  a low priority thread pool to submit events to Sentry.
 
-To enable the async mode, add the `raven.async` option to your DSN:
+To disable the async mode, add `raven.async=false` to your DSN:
 
-    http://public:private@host:port/1?raven.async
+    http://public:private@host:port/1?raven.async=false
 
 #### Queue size (advanced)
 The default queue used to store the not yet processed events doesn't have a
@@ -106,7 +105,7 @@ able to control the size of that queue to avoid memory issues.
 
 It is possible to set a maximum with the option `raven.async.queuesize`:
 
-    http://public:private@host:port/1?raven.async&raven.async.queuesize=100
+    http://public:private@host:port/1?raven.async.queuesize=100
 
 This means that if the connection to the Sentry server is down, only the first
 100 events will be stored and be processed as soon as the server is back up.
@@ -118,7 +117,7 @@ processor available to the JVM (more threads wouldn't be useful).
 It's possible to manually set the number of threads (for example if you want
 only one thread) with the option `raven.async.threads`:
 
-    http://public:private@host:port/1?raven.async&raven.async.threads=1
+    http://public:private@host:port/1?raven.async.threads=1
 
 #### Threads priority (advanced)
 As in most cases sending logs to Sentry isn't as important as an application
@@ -128,7 +127,7 @@ running smoothly, the threads have a
 It is possible to customise this value to increase the priority of those threads
 with the option `raven.async.priority`:
 
-    http://public:private@host:port/1?raven.async.priority=10&raven.async
+    http://public:private@host:port/1?raven.async.priority=10
 
 ### Inapp classes
 Sentry differentiate `in_app` stack frames (which are directly related to your application)
