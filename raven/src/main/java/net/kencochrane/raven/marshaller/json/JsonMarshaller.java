@@ -168,11 +168,15 @@ public class JsonMarshaller implements Marshaller {
     private void writeTags(JsonGenerator generator, Map<String, Set<String>> tags) throws IOException {
         generator.writeObjectFieldStart(TAGS);
         for (Map.Entry<String, Set<String>> tag : tags.entrySet()) {
-            generator.writeArrayFieldStart(tag.getKey());
-            for (String tagValue : tag.getValue()) {
-                generator.writeString(tagValue);
+            if (tag.getValue().size() == 1) {
+                generator.writeStringField(tag.getKey(), tag.getValue().iterator().next());
+            } else {
+                generator.writeArrayFieldStart(tag.getKey());
+                for (String tagValue : tag.getValue()) {
+                    generator.writeString(tagValue);
+                }
+                generator.writeEndArray();
             }
-            generator.writeEndArray();
         }
         generator.writeEndObject();
     }
