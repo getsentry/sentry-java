@@ -3,7 +3,10 @@ package net.kencochrane.raven.event;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Plain Old Java Object describing an event that will be sent to a Sentry instance.
@@ -60,7 +63,7 @@ public class Event implements Serializable {
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
      * </p>
      */
-    private Map<String, Set<String>> tags = new HashMap<String, Set<String>>();
+    private Map<String, String> tags = new HashMap<String, String>();
     /**
      * Identifies the host client from which the event was recorded.
      */
@@ -147,11 +150,11 @@ public class Event implements Serializable {
         this.culprit = culprit;
     }
 
-    public Map<String, Set<String>> getTags() {
+    public Map<String, String> getTags() {
         return tags;
     }
 
-    void setTags(Map<String, Set<String>> tags) {
+    void setTags(Map<String, String> tags) {
         this.tags = tags;
     }
 

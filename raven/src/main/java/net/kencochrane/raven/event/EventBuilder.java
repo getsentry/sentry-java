@@ -4,7 +4,9 @@ import net.kencochrane.raven.event.interfaces.SentryInterface;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -84,11 +86,7 @@ public class EventBuilder {
      */
     private static void makeImmutable(Event event) {
         // Make the tags unmodifiable
-        Map<String, Set<String>> unmodifiableTags = new HashMap<String, Set<String>>(event.getTags().size());
-        for (Map.Entry<String, Set<String>> tag : event.getTags().entrySet()) {
-            unmodifiableTags.put(tag.getKey(), Collections.unmodifiableSet(tag.getValue()));
-        }
-        event.setTags(Collections.unmodifiableMap(unmodifiableTags));
+        event.setTags(Collections.unmodifiableMap(event.getTags()));
 
         // Make the extra properties unmodifiable (everything in it is still mutable though)
         event.setExtra(Collections.unmodifiableMap(event.getExtra()));
@@ -190,7 +188,6 @@ public class EventBuilder {
     /**
      * Adds a tag to an event.
      * <p>
-     * Multiple calls to {@code addTag} allow to have more that one value for a single tag.<br />
      * This allows to set a tag value in different contexts.
      * </p>
      *
@@ -198,15 +195,8 @@ public class EventBuilder {
      * @param tagValue value of the tag.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    //TODO: Check that the tag system works indeed this way.
     public EventBuilder addTag(String tagKey, String tagValue) {
-        Set<String> tagValues = event.getTags().get(tagKey);
-        if (tagValues == null) {
-            tagValues = new HashSet<String>();
-            event.getTags().put(tagKey, tagValues);
-        }
-        tagValues.add(tagValue);
-
+        event.getTags().put(tagKey, tagValue);
         return this;
     }
 

@@ -5,7 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.InetAddress;
-import java.util.*;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -106,13 +108,12 @@ public class EventBuilderTest {
         String tagKey = UUID.randomUUID().toString();
         String tagValue = UUID.randomUUID().toString();
 
-        Map<String, Set<String>> tags = eventBuilder.addTag(tagKey, tagValue).build().getTags();
+        Map<String, String> tags = eventBuilder.addTag(tagKey, tagValue).build().getTags();
 
         assertThat(tags.size(), is(1));
-        assertThat(tags.get(tagKey).size(), is(1));
-        assertThat(tags.get(tagKey), contains(tagValue));
+        assertThat(tags.get(tagKey), is(tagValue));
 
-        tags.put(UUID.randomUUID().toString(), Collections.<String>emptySet());
+        tags.put(UUID.randomUUID().toString(), UUID.randomUUID().toString());
     }
 
     @Test(expected = UnsupportedOperationException.class)
