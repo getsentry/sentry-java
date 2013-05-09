@@ -14,6 +14,7 @@ import net.kencochrane.raven.marshaller.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.*;
@@ -131,8 +132,8 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     protected Connection createHttpConnection(Dsn dsn) {
-        HttpConnection httpConnection = new HttpConnection(HttpConnection.getSentryApiUrl(dsn),
-                dsn.getPublicKey(), dsn.getSecretKey());
+        URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
+        HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(), dsn.getSecretKey());
         httpConnection.setMarshaller(createMarshaller(dsn));
 
         // Set the naive mode

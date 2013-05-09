@@ -140,7 +140,7 @@ public class HttpConnectionTest {
         when(dsn.getUri()).thenReturn(new URI(uri));
         when(dsn.getProjectId()).thenReturn(projectId);
 
-        URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn);
+        URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
 
         assertThat(sentryApiUrl.toString(), is(uri + "api/" + projectId + "/store/"));
     }

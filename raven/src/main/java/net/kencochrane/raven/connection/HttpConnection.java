@@ -14,6 +14,7 @@ import javax.net.ssl.SSLSession;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -68,9 +69,9 @@ public class HttpConnection extends AbstractConnection {
         this.sentryUrl = sentryUrl;
     }
 
-    public static URL getSentryApiUrl(Dsn dsn) {
+    public static URL getSentryApiUrl(URI sentryUri, String projectId) {
         try {
-            String url = dsn.getUri().toString() + "api/" + dsn.getProjectId() + "/store/";
+            String url = sentryUri.toString() + "api/" + projectId + "/store/";
             return new URL(url);
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Couldn't get a valid URL from the DSN.", e);
