@@ -98,7 +98,7 @@ public abstract class AbstractConnection implements Connection {
             Thread.sleep(waitingTime);
 
             // Double the wait until the maximum is reached
-            if (waitingTime > maxWaitingTime)
+            if (waitingTime < maxWaitingTime)
                 waitingTime <<= 1;
         } catch (Exception e) {
             logger.warn("An exception occurred during the lockdown.", e);
