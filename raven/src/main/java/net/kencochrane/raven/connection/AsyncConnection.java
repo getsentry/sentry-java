@@ -1,14 +1,14 @@
 package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.event.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Asynchronous usage of a connection.
@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * </p>
  */
 public class AsyncConnection implements Connection {
-    private static final Logger logger = Logger.getLogger(AsyncConnection.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
     /**
      * Timeout of the {@link #executorService}.
      */
@@ -71,7 +71,7 @@ public class AsyncConnection implements Connection {
                 try {
                     AsyncConnection.this.close();
                 } catch (IOException e) {
-                    logger.log(Level.SEVERE, "An exception occurred while closing the connection.", e);
+                    logger.error("An exception occurred while closing the connection.", e);
                 }
             }
         });
@@ -99,19 +99,19 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void close() throws IOException {
-        logger.log(Level.INFO, "Gracefully shutdown sentry threads.");
+        logger.info("Gracefully shutdown sentry threads.");
         executorService.shutdown();
         try {
             if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS)) {
-                logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
+                logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
-                logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
+                logger.info(tasks.size() + " tasks failed to execute before the shutdown.");
             }
-            logger.log(Level.SEVERE, "Shutdown finished.");
+            logger.info("Shutdown finished.");
         } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "Graceful shutdown interrupted, forcing the shutdown.");
+            logger.error("Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
-            logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
+            logger.info(tasks.size() + " tasks failed to execute before the shutdown.");
         } finally {
             if (propagateClose)
                 actualConnection.close();
@@ -138,7 +138,7 @@ public class AsyncConnection implements Connection {
             try {
                 actualConnection.send(event);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "An exception occurred while sending the event to Sentry.", e);
+                logger.error("An exception occurred while sending the event to Sentry.", e);
             }
         }
     }

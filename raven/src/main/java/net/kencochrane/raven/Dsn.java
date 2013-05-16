@@ -1,6 +1,8 @@
 package net.kencochrane.raven;
 
 import net.kencochrane.raven.exception.InvalidDsnException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -11,8 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Data Source name allowing a direct connection to a Sentry server.
@@ -26,7 +26,7 @@ public class Dsn {
      * Lookup name for the DSN in JNDI.
      */
     private static final String JNDI_DSN_NAME = "java:comp/env/sentry/dsn";
-    private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private String secretKey;
     private String publicKey;
     private String projectId;
@@ -89,11 +89,11 @@ public class Dsn {
             Context c = new InitialContext();
             dsn = (String) c.lookup(JNDI_DSN_NAME);
         } catch (NoInitialContextException e) {
-            logger.log(Level.FINE, "JNDI not configured for sentry (NoInitialContextEx)");
+            logger.trace("JNDI not configured for sentry (NoInitialContextEx)");
         } catch (NamingException e) {
-            logger.log(Level.FINE, "No /sentry/dsn in JNDI");
+            logger.trace("No /sentry/dsn in JNDI");
         } catch (RuntimeException ex) {
-            logger.log(Level.WARNING, "Odd RuntimeException while testing for JNDI", ex);
+            logger.warn("Odd RuntimeException while testing for JNDI", ex);
         }
 
         // Try to obtain the DSN from a System Environment Variable

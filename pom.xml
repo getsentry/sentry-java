@@ -105,6 +105,7 @@
         <maven.compiler.target>6</maven.compiler.target>
 
         <!-- dependencies versions -->
+        <slf4j.version>1.7.5</slf4j.version>
         <commons-codec.version>1.8</commons-codec.version>
         <jackson.version>2.2.0</jackson.version>
         <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
@@ -130,6 +131,11 @@
                 <type>test-jar</type>
             </dependency>
 
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>

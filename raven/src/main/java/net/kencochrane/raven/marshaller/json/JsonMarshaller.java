@@ -6,14 +6,14 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.apache.commons.codec.binary.Base64OutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.DeflaterOutputStream;
 
 public class JsonMarshaller implements Marshaller {
@@ -73,7 +73,7 @@ public class JsonMarshaller implements Marshaller {
      * Date format for ISO 8601.
      */
     private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    private static final Logger logger = Logger.getLogger(JsonMarshaller.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings =
             new HashMap<Class<? extends SentryInterface>, InterfaceBinding>();
@@ -99,13 +99,13 @@ public class JsonMarshaller implements Marshaller {
             generator = jsonFactory.createGenerator(destination);
             writeContent(generator, event);
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "An exception occurred while serialising the event.", e);
+            logger.error("An exception occurred while serialising the event.", e);
         } finally {
             try {
                 if (generator != null)
                     generator.close();
             } catch (IOException e) {
-                logger.log(Level.SEVERE, "An exception occurred while closing the json stream.", e);
+                logger.error("An exception occurred while closing the json stream.", e);
             }
         }
     }
@@ -139,7 +139,7 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeFieldName(interfaceEntry.getKey());
                 interfaceBindings.get(sentryInterface.getClass()).writeInterface(generator, sentryInterface);
             } else {
-                logger.log(Level.SEVERE, "Couldn't parse the content of '" + interfaceEntry.getKey() + "' "
+                logger.error("Couldn't parse the content of '" + interfaceEntry.getKey() + "' "
                         + "provided in " + sentryInterface + ".");
             }
         }
@@ -219,7 +219,7 @@ public class JsonMarshaller implements Marshaller {
             case ERROR:
                 return "error";
             default:
-                logger.warning("The level '" + level.name() + "' isn't supported, this should NEVER happen, contact "
+                logger.warn("The level '" + level.name() + "' isn't supported, this should NEVER happen, contact "
                         + "the developers of Raven-Java");
                 return null;
         }

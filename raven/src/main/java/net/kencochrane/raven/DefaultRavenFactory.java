@@ -11,13 +11,13 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Default implementation of {@link RavenFactory}.
@@ -58,7 +58,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
-    private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
 
     @Override
@@ -70,7 +70,7 @@ public class DefaultRavenFactory extends RavenFactory {
             //TODO: Is it enough? Shouldn't it look for Servlet >= 3.0 ?
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (Exception e) {
-            logger.fine("It seems that the current environment doesn't provide access to servlets.");
+            logger.trace("It seems that the current environment doesn't provide access to servlets.");
         }
         return raven;
     }
@@ -80,10 +80,10 @@ public class DefaultRavenFactory extends RavenFactory {
         Connection connection;
 
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
-            logger.log(Level.INFO, "Using an HTTP connection to Sentry.");
+            logger.info("Using an HTTP connection to Sentry.");
             connection = createHttpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("udp")) {
-            logger.log(Level.INFO, "Using an UDP connection to Sentry.");
+            logger.info("Using an UDP connection to Sentry.");
             connection = createUdpConnection(dsn);
         } else {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");

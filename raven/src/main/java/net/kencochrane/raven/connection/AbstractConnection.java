@@ -3,10 +3,10 @@ package net.kencochrane.raven.connection;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Abstract connection to a Sentry server.
@@ -29,7 +29,7 @@ public abstract class AbstractConnection implements Connection {
      * Default base duration for a lockdown (10 milliseconds).
      */
     public static final int DEFAULT_BASE_WAITING_TIME = 10;
-    private static final Logger logger = Logger.getLogger(AbstractConnection.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
     private final String publicKey;
     private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
@@ -82,7 +82,7 @@ public abstract class AbstractConnection implements Connection {
             }
         } catch (ConnectionException e) {
             lock.tryLock();
-            logger.log(Level.WARNING, "An exception due to the connection occurred, a lockdown will be initiated.", e);
+            logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
         } finally {
             if (lock.isHeldByCurrentThread())
                 lockDown();
@@ -94,17 +94,17 @@ public abstract class AbstractConnection implements Connection {
      */
     private void lockDown() {
         try {
-            logger.log(Level.WARNING, "Lockdown started for " + waitingTime + "ms.");
+            logger.warn("Lockdown started for " + waitingTime + "ms.");
             Thread.sleep(waitingTime);
 
             // Double the wait until the maximum is reached
             if (waitingTime > maxWaitingTime)
                 waitingTime <<= 1;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "An exception occurred during the lockdown.", e);
+            logger.warn("An exception occurred during the lockdown.", e);
         } finally {
             lock.unlock();
-            logger.log(Level.WARNING, "Lockdown ended.");
+            logger.warn("Lockdown ended.");
         }
     }
 

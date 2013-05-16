@@ -4,12 +4,12 @@ import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
@@ -24,7 +24,7 @@ public class Raven {
      * for each release of this project.
      */
     public static final String NAME = "Raven-Java/4.0";
-    private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<EventBuilderHelper>();
     private Connection connection;
 
@@ -49,7 +49,7 @@ public class Raven {
         try {
             connection.send(event);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "An exception occurred while sending the event to Sentry.", e);
+            logger.error("An exception occurred while sending the event to Sentry.", e);
         }
     }
 
@@ -59,7 +59,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.log(Level.INFO, "Removes '" + builderHelper + "' to the list of builder helpers.");
+        logger.error("Removes '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.remove(builderHelper);
     }
 
@@ -69,7 +69,7 @@ public class Raven {
      * @param builderHelper builder helper to add.
      */
     public void addBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.log(Level.INFO, "Adding '" + builderHelper + "' to the list of builder helpers.");
+        logger.error("Adding '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.add(builderHelper);
     }
 

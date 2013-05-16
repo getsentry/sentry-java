@@ -5,6 +5,8 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -13,8 +15,6 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Basic connection to a Sentry server, using HTTP and HTTPS.
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * </p>
  */
 public class HttpConnection extends AbstractConnection {
-    private static final Logger logger = Logger.getLogger(HttpConnection.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
     /**
      * HTTP Header for the user agent.
      */
@@ -105,7 +105,7 @@ public class HttpConnection extends AbstractConnection {
             connection.getInputStream().close();
         } catch (IOException e) {
             if (connection.getErrorStream() != null) {
-                logger.log(Level.SEVERE, getErrorMessageFromStream(connection.getErrorStream()), e);
+                logger.error(getErrorMessageFromStream(connection.getErrorStream()), e);
             } else {
                 throw new ConnectionException("An exception occurred while submitting the event to the sentry server."
                         , e);
@@ -126,7 +126,7 @@ public class HttpConnection extends AbstractConnection {
             sb.deleteCharAt(sb.length() - 1);
 
         } catch (Exception e2) {
-            logger.log(Level.SEVERE, "Exception while reading the error message from the connection.", e2);
+            logger.error("Exception while reading the error message from the connection.", e2);
         }
         return sb.toString();
     }

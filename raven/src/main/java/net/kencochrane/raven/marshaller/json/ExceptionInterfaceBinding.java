@@ -4,17 +4,18 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Binding system allowing to convert an {@link ExceptionInterface} to a JSON stream.
  */
 public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInterface> {
-    private static final Logger logger = Logger.getLogger(ExceptionInterfaceBinding.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(ExceptionInterfaceBinding.class);
     private static final String TYPE_PARAMETER = "type";
     private static final String VALUE_PARAMETER = "value";
     private static final String MODULE_PARAMETER = "module";
@@ -47,7 +48,7 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
             throwable = throwable.getCause();
 
             if (dejaVu.contains(throwable)) {
-                logger.warning("Exiting a circular referencing exception!");
+                logger.warn("Exiting a circular referencing exception!");
                 break;
             }
         }
