@@ -7,6 +7,7 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
@@ -106,6 +107,8 @@ public class HttpConnectionTest {
         verify(mockUrlConnection).setRequestProperty("X-Sentry-Auth", expectedAuthRequest);
     }
 
+    //TODO: This test is ignored since the logs are sent through SLF4J rather than JUL.
+    @Ignore
     @Test
     public void testHttpErrorLogged() throws Exception {
         final String httpErrorMessage = UUID.randomUUID().toString();
