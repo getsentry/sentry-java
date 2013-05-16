@@ -269,6 +269,20 @@
                 </executions>
             </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-maven-plugin</artifactId>
+                    <version>9.0.3.v20130506</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.14.1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
     <reporting>
@@ -316,7 +330,6 @@
                         <plugin>
                             <groupId>org.eclipse.jetty</groupId>
                             <artifactId>jetty-maven-plugin</artifactId>
-                            <version>9.0.3.v20130506</version>
                             <configuration>
                                 <scanIntervalSeconds>10</scanIntervalSeconds>
                                 <stopKey>foo</stopKey>
@@ -348,7 +361,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-failsafe-plugin</artifactId>
-                            <version>2.14.1</version>
                             <executions>
                                 <execution>
                                     <goals>
