@@ -35,6 +35,10 @@ public class AsyncConnection implements Connection {
      * Executor service in charge of running the connection in separate threads.
      */
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    /**
+     * Boolean used to check whether the connection is still open or not.
+     */
+    private boolean closed;
 
     /**
      * Creates a connection which will rely on an executor to send events.
@@ -85,7 +89,8 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void send(Event event) {
-        executorService.execute(new EventSubmitter(event));
+        if (!closed)
+            executorService.execute(new EventSubmitter(event));
     }
 
     /**
@@ -100,6 +105,7 @@ public class AsyncConnection implements Connection {
     @Override
     public void close() throws IOException {
         logger.info("Gracefully shutdown sentry threads.");
+        closed = true;
         executorService.shutdown();
         try {
             if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS)) {
