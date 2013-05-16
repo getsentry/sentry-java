@@ -77,8 +77,6 @@ public abstract class AbstractConnection implements Connection {
             if (!lock.isLocked()) {
                 doSend(event);
                 waitingTime = baseWaitingTime;
-            } else {
-                logger.info("The event '" + event + "' hasn't been sent to the server due to a lockdown.");
             }
         } catch (ConnectionException e) {
             lock.tryLock();
