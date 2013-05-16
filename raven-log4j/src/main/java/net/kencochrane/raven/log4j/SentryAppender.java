@@ -26,6 +26,7 @@ public class SentryAppender extends AppenderSkeleton {
     private Raven raven;
     private String dsn;
     private String ravenFactory;
+    private boolean guard;
 
     public SentryAppender() {
         this.propagateClose = true;
@@ -77,9 +78,17 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     @Override
-    protected void append(LoggingEvent loggingEvent) {
-        Event event = buildEvent(loggingEvent);
-        raven.sendEvent(event);
+    protected synchronized void append(LoggingEvent loggingEvent) {
+        if (guard)
+            return;
+
+        guard = true;
+        try {
+            Event event = buildEvent(loggingEvent);
+            raven.sendEvent(event);
+        } finally {
+            guard = false;
+        }
     }
 
     private Event buildEvent(LoggingEvent loggingEvent) {
