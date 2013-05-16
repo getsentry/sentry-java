@@ -274,8 +274,7 @@
                 <plugin>
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-maven-plugin</artifactId>
-                    <!-- TODO: Update to a stable version ASAP -->
-                    <version>9.0.3-SNAPSHOT</version>
+                    <version>9.0.3.v20130506</version>
                     <configuration>
                         <scanIntervalSeconds>10</scanIntervalSeconds>
                         <stopKey>foo</stopKey>
@@ -388,19 +387,4 @@
             </plugin>
         </plugins>
     </reporting>
-
-    <!-- This is bad and _TEMPORARY_ until the new version of Jetty is out -->
-    <pluginRepositories>
-        <pluginRepository>
-            <id>sonatype-jetty-snapshots</id>
-            <name>Sonatype Jetty Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/jetty-snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
