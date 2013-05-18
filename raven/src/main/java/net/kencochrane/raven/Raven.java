@@ -59,7 +59,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.error("Removes '" + builderHelper + "' to the list of builder helpers.");
+        logger.info("Removes '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.remove(builderHelper);
     }
 
@@ -69,7 +69,7 @@ public class Raven {
      * @param builderHelper builder helper to add.
      */
     public void addBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.error("Adding '" + builderHelper + "' to the list of builder helpers.");
+        logger.info("Adding '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.add(builderHelper);
     }
 
