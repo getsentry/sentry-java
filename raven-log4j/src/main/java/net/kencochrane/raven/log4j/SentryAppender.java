@@ -79,11 +79,13 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     protected synchronized void append(LoggingEvent loggingEvent) {
-        if (guard)
+        // Do not log the event if the current thread has been spawned by raven or if the event has been created during
+        // the logging of an other event.
+        if (Raven.RAVEN_THREAD.get() || guard)
             return;
 
-        guard = true;
         try {
+            guard = true;
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } finally {

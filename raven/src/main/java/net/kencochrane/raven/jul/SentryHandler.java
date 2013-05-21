@@ -56,12 +56,13 @@ public class SentryHandler extends Handler {
 
     @Override
     public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record) || guard) {
+        // Do not log the event if the current thread has been spawned by raven or if the event has been created during
+        // the logging of an other event.
+        if (!isLoggable(record) || Raven.RAVEN_THREAD.get() || guard)
             return;
-        }
 
-        guard = true;
         try {
+            guard = true;
             if (raven == null) {
                 try {
                     start();

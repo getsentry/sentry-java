@@ -123,6 +123,10 @@ public class SentryAppender extends AbstractAppender<String> {
 
     @Override
     public void append(LogEvent logEvent) {
+        // Do not log the event if the current thread has been spawned by raven
+        if (Raven.RAVEN_THREAD.get())
+            return;
+
         Event event = buildEvent(logEvent);
         raven.sendEvent(event);
     }

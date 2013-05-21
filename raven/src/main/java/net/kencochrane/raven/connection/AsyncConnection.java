@@ -1,5 +1,6 @@
 package net.kencochrane.raven.connection;
 
+import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,9 +143,13 @@ public class AsyncConnection implements Connection {
         @Override
         public void run() {
             try {
+                // The current thread is spawned by raven
+                Raven.RAVEN_THREAD.set(true);
                 actualConnection.send(event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
+            } finally {
+                Raven.RAVEN_THREAD.remove();
             }
         }
     }

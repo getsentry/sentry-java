@@ -20,6 +20,15 @@ import java.util.Set;
  */
 public class Raven {
     /**
+     * Indicates whether the current thread has been spawned within raven or not.
+     */
+    public static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>(){
+        @Override
+        protected Boolean initialValue() {
+            return false;
+        }
+    };
+    /**
      * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
      * for each release of this project.
      */
