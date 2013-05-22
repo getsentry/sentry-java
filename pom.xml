@@ -214,6 +214,8 @@
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <pushChanges>false</pushChanges>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <!-- Force to do a deploy rather than a site deploy which conflicts with the github plugin -->
+                    <goals>deploy</goals>
                     <!-- oss-parent-config -->
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <useReleaseProfile>false</useReleaseProfile>
