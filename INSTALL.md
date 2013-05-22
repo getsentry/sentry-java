@@ -23,7 +23,7 @@ To add raven as a dependency, simply add this to the pom.xml file:
     <dependency>
       <groupId>net.kencochrane.raven</groupId>
       <artifactId>raven</artifactId>
-      <version>4.0-SNAPSHOT</version>
+      <version>4.0</version>
     </dependency>
 
 Other modules can be added the same way (replacing the `artifactId`) with the
