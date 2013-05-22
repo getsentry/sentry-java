@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * Appender for log4j2 in charge of sending the logged events to a Sentry server.
  */
-@Plugin(name = "Raven", type = "Core", elementType = "appender")
+@Plugin(name = "Raven", category = "Core", elementType = "appender")
 public class SentryAppender extends AbstractAppender<String> {
     /**
      * Default name for the appender.
