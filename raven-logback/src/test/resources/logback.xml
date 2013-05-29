@@ -6,7 +6,7 @@
         </dsn>
     </appender>
 
-    <root level="debug">
+    <root level="all">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="Sentry"/>
     </root>
