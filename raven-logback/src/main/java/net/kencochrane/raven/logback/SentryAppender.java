@@ -11,6 +11,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import org.slf4j.Marker;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -114,6 +115,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+        }
+
+        if (iLoggingEvent.getMarker() != null) {
+            eventBuilder.addExtra(Marker.class.getName(), iLoggingEvent.getMarker());
         }
 
         raven.runBuilderHelpers(eventBuilder);
