@@ -1,17 +1,17 @@
 package net.kencochrane.raven;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SentryStub {
-    private static final Logger logger = Logger.getLogger(SentryStub.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(SentryStub.class);
     private static final URL DEFAULT_URL;
     private final URL url;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -21,7 +21,7 @@ public class SentryStub {
         try {
             url = new URL("http://localhost:8080/stub/");
         } catch (MalformedURLException e) {
-            logger.log(Level.FINE, "Couldn't create the URL http://localhost:8080/stub", e);
+            logger.debug("Couldn't create the URL http://localhost:8080/stub", e);
         }
 
         DEFAULT_URL = url;
@@ -41,7 +41,7 @@ public class SentryStub {
             connection.setRequestMethod("GET");
             return (Integer) getContent(connection).get("count");
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Couldn't get the number of events created.", e);
+            logger.error("Couldn't get the number of events created.", e);
             return -1;
         }
     }
@@ -54,7 +54,7 @@ public class SentryStub {
             connection.connect();
             connection.getInputStream().close();
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Couldn't remove stub events.", e);
+            logger.error("Couldn't remove stub events.", e);
         }
     }
 
@@ -65,7 +65,7 @@ public class SentryStub {
             try {
                 connection.getOutputStream().close();
             } catch (IOException e) {
-                logger.log(Level.FINE, "Couldn't open and close the outputstream", e);
+                logger.error("Couldn't open and close the outputstream", e);
             }
             return (Map<String, Object>) mapper.readValue(connection.getInputStream(), Map.class);
         } catch (Exception e) {
