@@ -14,7 +14,7 @@ import org.junit.Test;
 import java.util.List;
 
 public class SentryAppenderTest extends AbstractLoggerTest {
-    private static final String LOGGER_NAME = SentryAppenderTest.class.getCanonicalName();
+    private static final String LOGGER_NAME = SentryAppenderTest.class.getName();
     private SentryAppender sentryAppender;
 
     @Before

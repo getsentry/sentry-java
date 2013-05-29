@@ -24,7 +24,7 @@ public class DsnTest {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty("java.naming.factory.initial", InitialContextMockFactory.class.getCanonicalName());
+        System.setProperty("java.naming.factory.initial", InitialContextMockFactory.class.getName());
         InitialContextMockFactory.context = mockContext;
     }
 

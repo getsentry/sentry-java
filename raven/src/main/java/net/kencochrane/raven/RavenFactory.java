@@ -27,7 +27,7 @@ public abstract class RavenFactory {
             return ravenInstance(dsn);
 
         for (RavenFactory ravenFactory : RAVEN_FACTORIES) {
-            if (!ravenFactoryName.equals(ravenFactory.getClass().getCanonicalName()))
+            if (!ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
 
             Raven raven = ravenFactory.createRavenInstance(dsn);
