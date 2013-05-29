@@ -17,6 +17,7 @@ public class SentryHandlerIT {
     @Before
     public void setUp() {
         sentryStub = new SentryStub();
+        sentryStub.removeEvents();
     }
 
     @After
