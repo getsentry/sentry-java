@@ -92,7 +92,7 @@ public abstract class AbstractConnection implements Connection {
      */
     private void lockDown() {
         try {
-            logger.warn("Lockdown started for " + waitingTime + "ms.");
+            logger.warn("Lockdown started for {}ms.", waitingTime);
             Thread.sleep(waitingTime);
 
             // Double the wait until the maximum is reached

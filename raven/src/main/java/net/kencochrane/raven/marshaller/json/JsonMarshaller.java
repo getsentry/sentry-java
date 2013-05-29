@@ -139,8 +139,8 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeFieldName(interfaceEntry.getKey());
                 interfaceBindings.get(sentryInterface.getClass()).writeInterface(generator, sentryInterface);
             } else {
-                logger.error("Couldn't parse the content of '" + interfaceEntry.getKey() + "' "
-                        + "provided in " + sentryInterface + ".");
+                logger.error("Couldn't parse the content of '{}' provided in {}.",
+                        interfaceEntry.getKey(), sentryInterface);
             }
         }
     }
@@ -219,8 +219,8 @@ public class JsonMarshaller implements Marshaller {
             case ERROR:
                 return "error";
             default:
-                logger.warn("The level '" + level.name() + "' isn't supported, this should NEVER happen, contact "
-                        + "the developers of Raven-Java");
+                logger.warn("The level '{}' isn't supported, this should NEVER happen, contact Raven developers",
+                        level.name());
                 return null;
         }
     }

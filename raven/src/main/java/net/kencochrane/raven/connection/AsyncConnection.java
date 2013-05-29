@@ -112,13 +112,13 @@ public class AsyncConnection implements Connection {
             if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS)) {
                 logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
-                logger.info(tasks.size() + " tasks failed to execute before the shutdown.");
+                logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
             }
             logger.info("Shutdown finished.");
         } catch (InterruptedException e) {
             logger.error("Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
-            logger.info(tasks.size() + " tasks failed to execute before the shutdown.");
+            logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
         } finally {
             if (propagateClose)
                 actualConnection.close();
