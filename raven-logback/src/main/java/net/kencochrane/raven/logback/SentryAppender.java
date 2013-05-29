@@ -49,14 +49,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return arguments;
     }
 
-    private static Event.Level formatLevel(ILoggingEvent iLoggingEvent) {
-        if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
+    private static Event.Level formatLevel(Level level) {
+        if (level.isGreaterOrEqual(Level.ERROR)) {
             return Event.Level.ERROR;
-        } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.WARN)) {
+        } else if (level.isGreaterOrEqual(Level.WARN)) {
             return Event.Level.WARNING;
-        } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.INFO)) {
+        } else if (level.isGreaterOrEqual(Level.INFO)) {
             return Event.Level.INFO;
-        } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ALL)) {
+        } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
         } else return null;
     }
@@ -91,7 +91,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
                 .setLogger(iLoggingEvent.getLoggerName())
-                .setLevel(formatLevel(iLoggingEvent));
+                .setLevel(formatLevel(iLoggingEvent.getLevel()));
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
