@@ -22,7 +22,7 @@ public class Raven {
     /**
      * Indicates whether the current thread has been spawned within raven or not.
      */
-    public static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>(){
+    public static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>() {
         @Override
         protected Boolean initialValue() {
             return false;
