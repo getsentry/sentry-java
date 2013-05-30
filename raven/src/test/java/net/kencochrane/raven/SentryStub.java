@@ -62,15 +62,12 @@ public class SentryStub {
         try {
             connection.setDoInput(true);
             connection.connect();
-            try {
-                connection.getOutputStream().close();
-            } catch (IOException e) {
-                logger.error("Couldn't open and close the outputstream", e);
-            }
             return (Map<String, Object>) mapper.readValue(connection.getInputStream(), Map.class);
         } catch (Exception e) {
             throw new IllegalStateException(
                     "Couldn't get the JSON content for the connection '" + connection + "'", e);
+        } finally {
+            connection.disconnect();
         }
     }
 
