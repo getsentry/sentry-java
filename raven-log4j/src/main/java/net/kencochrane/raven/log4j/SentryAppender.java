@@ -15,7 +15,6 @@ import org.apache.log4j.spi.LoggingEvent;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Appender for log4j in charge of sending the logged events to a Sentry server.
@@ -119,8 +118,10 @@ public class SentryAppender extends AppenderSkeleton {
         if (loggingEvent.getNDC() != null)
             eventBuilder.addExtra(LOG4J_NDC, loggingEvent.getNDC());
 
-        for (Map.Entry mdcEntry : (Set<Map.Entry>) loggingEvent.getProperties().entrySet())
-            eventBuilder.addExtra(mdcEntry.getKey().toString(), mdcEntry.getValue());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
+        for (Map.Entry<String, Object> mdcEntry : properties.entrySet())
+            eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
