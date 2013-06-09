@@ -2,20 +2,22 @@
 
 [![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](http://travis-ci.org/kencochrane/raven-java)
 
-Raven is a Java client for [Sentry](https://www.getsentry.com/).
-Besides the regular client you can use within your application code, this
-project also provides tools allowing the most popular logging frameworks
-to send the logs directly to sentry:
+Raven is the Java client for [Sentry](https://www.getsentry.com/).
+Raven relies on the most popular logging libraries to capture and convert logs
+before sending details to a Sentry instance.
 
- - `java.util.logging` is supported out of the box.
- - `raven-log4j` adds the support for
- [log4j](https://logging.apache.org/log4j/1.2/).
- - `raven-log4j2` adds the support for
- [log4j2](https://logging.apache.org/log4j/2.x/).
- - `raven-logback` adds the support for [logback](http://logback.qos.ch/).
+ - [`java.util.logging`](http://docs.oracle.com/javase/7/docs/technotes/guides/logging/index.html)
+ support is provided by the main project [`raven`](raven/README.md)
+ - [log4j](https://logging.apache.org/log4j/1.2/) support is provided in [`raven-log4j`](raven-log4j/README.md)
+ - [log4j2](https://logging.apache.org/log4j/2.x/) can be used with [`raven-log4j2`](raven-log4j2/README.md)
+ - [logback](http://logback.qos.ch/) support is provided in [`raven-logback`](raven-logback/README.md)
 
-Raven supports both HTTP(S) and UDP transport of events.
+While it's **strongly recommended to use one of the supported logging
+frameworks** to capture and send messages to Sentry, a it is possible to do so
+manually with the main project [`raven`](raven/README.md).
 
+Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
+instance.
 
 ## Sentry Protocol and supported versions
 ### Sentry Protocol versions
