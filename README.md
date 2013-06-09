@@ -14,7 +14,7 @@ before sending details to a Sentry instance.
 
 While it's **strongly recommended to use one of the supported logging
 frameworks** to capture and send messages to Sentry, a it is possible to do so
-manually with the main project [`raven`](raven/README.md).
+manually with the main project [raven](raven).
 
 Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
 instance.
