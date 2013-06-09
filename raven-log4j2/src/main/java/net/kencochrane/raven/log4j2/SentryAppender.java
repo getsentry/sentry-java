@@ -8,6 +8,7 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -33,6 +34,7 @@ public class SentryAppender extends AbstractAppender<String> {
      */
     public static final String APPENDER_NAME = "raven";
     private static final String LOG4J_NDC = "Log4J-NDC";
+    private static final String LOG4J_MARKER = "log4j2-Marker";
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
@@ -168,6 +170,9 @@ public class SentryAppender extends AbstractAppender<String> {
             for (Map.Entry<String, String> mdcEntry : event.getContextMap().entrySet()) {
                 eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
+        }
+        if (event.getMarker() != null) {
+            eventBuilder.addExtra(LOG4J_MARKER, event.getMarker());
         }
 
         raven.runBuilderHelpers(eventBuilder);
