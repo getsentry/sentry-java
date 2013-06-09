@@ -1,6 +1,6 @@
 # Raven
 
-[![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](http://travis-ci.org/kencochrane/raven-java)
+[![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](https://travis-ci.org/kencochrane/raven-java)
 
 Raven is the Java client for [Sentry](https://www.getsentry.com/).
 Raven relies on the most popular logging libraries to capture and convert logs
