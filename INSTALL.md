@@ -61,14 +61,6 @@ The client will lookup for the first DSN configuration provided:
  (`export SENTRY_DSN=yoursentrydsn` or `setenv SENTRYDSN yoursentrydsn`)
  - The system property `SENTRY_DSN` (`-DSENTRY_DSN=yoursentrydsn`)
 
-### Using `java.util.logging`
-To use the `SentryHandler` with `java.util.loggin` use this `logging.properties`
-
-    level=INFO
-    handlers=net.kencochrane.raven.jul.SentryHandler
-    net.kencochrane.raven.jul.SentryHandler.dsn=http://publicKey:secretKey@host:port/1?options
-
-
 ### Using log4j
 To use the `SentryAppender` with log4j use this configuration:
 
