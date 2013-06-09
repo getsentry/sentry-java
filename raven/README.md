@@ -15,20 +15,20 @@ for `java.util.logging`.
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](http://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
 
- - [raven-4.0.jar](http://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.0%7Cjar)
- - [slf4j-api-1.7.5.jar](http://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.5%7Cjar)
+ - [raven-4.0.jar](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.0%7Cjar)
+ - [slf4j-api-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.5%7Cjar)
  it is also recommended to have an implementation of the slf4j-api in order to
  get the potential logs from Raven. For example if the connection isn't working
  or if a problem occured during the creation of the log.
- [slf4j-jdk14-1.7.5.jar](http://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-jdk14%7C1.7.5%7Cjar)
+ [slf4j-jdk14-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-jdk14%7C1.7.5%7Cjar)
  is recommended if `java.util.logging` is used.
- - [commons-codec-1.8.jar](http://search.maven.org/#artifactdetails%7Ccommons-codec%7Ccommons-codec%7C1.8%7Cjar)
- - [jackson-core-2.2.2.jar](http://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.2.2%7Cjar)
+ - [commons-codec-1.8.jar](https://search.maven.org/#artifactdetails%7Ccommons-codec%7Ccommons-codec%7C1.8%7Cjar)
+ - [jackson-core-2.2.2.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.2.2%7Cjar)
 
 
 ## Usage (`java.util.logging`)
@@ -38,7 +38,7 @@ In the `logging.properties` file set:
 ```properties
 level=INFO
 handlers=net.kencochrane.raven.jul.SentryHandler
-net.kencochrane.raven.jul.SentryHandler.dsn=http://publicKey:secretKey@host:port/1?options
+net.kencochrane.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
 ```
 
 When starting your application, add the `java.util.logging.config.file` to the
