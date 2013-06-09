@@ -44,7 +44,7 @@ net.kencochrane.raven.jul.SentryHandler.dsn=http://publicKey:secretKey@host:port
 When starting your application, add the `java.util.logging.config.file` to the
 system properties, with the full path to the `logging.properties` as its value.
 
-    $ java -Djava.util.logging.config.file=/path/to/app.properties MainClass
+    $ java -Djava.util.logging.config.file=/path/to/app.properties MyClass
 
 ### In practice
 ```java
