@@ -45,20 +45,5 @@ The client will lookup for the first DSN configuration provided:
  (`export SENTRY_DSN=yoursentrydsn` or `setenv SENTRYDSN yoursentrydsn`)
  - The system property `SENTRY_DSN` (`-DSENTRY_DSN=yoursentrydsn`)
 
-### Using logback
-To use the `SentryAppender` with logback use this configuration:
-
-    <configuration>
-        <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
-            <dsn>
-                http://publicKey:secretKey@host:port/1?options
-            </dsn>
-        </appender>
-
-        <root level="debug">
-            <appender-ref ref="Sentry"/>
-        </root>
-    </configuration>
-
 ### Capturing the HTTP environment
 **TODO**
