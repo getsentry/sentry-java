@@ -19,22 +19,20 @@ manually with the main project [`raven`](raven/README.md).
 Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
 instance.
 
-## Sentry Protocol and supported versions
-### Sentry Protocol versions
-Since the version 3.0, Raven the versionning system is based on the
-protocol version of Sentry. This means that Raven-3.x only supports
-the version 3 of Sentry's protocol while Raven-4.x only supports
-the version 4.
 
-Sentry only supports the last two major releases of the protocol, for this
-reason, only the last two major versions of Raven are maintained.
+## Sentry Protocol and Raven versions
+Since 2.0, the major version of raven matches the version of the Sentry protocol.
 
-### Sentry versions
+| Raven version | Sentry version | Protocol version |
+| ------------- | -------------- | ---------------- |
+| Raven 2.x     | >= 2.0         | V2               |
+| Raven 3.x     | >= 5.1         | V3               |
+| Raven 4.x(DEV)| >= 5.5(DEV)    | V4               |
 
- - Sentry protocol v4 is not yet available (use Raven-4.x)
- - Sentry protocol v3 is available since Sentry 5.1 (use Raven-3.x)
- - Sentry protocol v2 is available since Sentry 2.0 (use Raven-2.x)
 
+Each release of Sentry supports the last two version of the protocol
+(i.e. Sentry 5.4.5 supports both the protocol V3 and V2), for this reason, only
+the two last stable version of Raven are actively maintained.
 
 ## Build and Installation
 **See
