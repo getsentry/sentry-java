@@ -11,6 +11,14 @@ import java.util.ServiceLoader;
 public abstract class RavenFactory {
     private static final ServiceLoader<RavenFactory> RAVEN_FACTORIES = ServiceLoader.load(RavenFactory.class);
 
+    public static Raven ravenInstance() {
+        return ravenInstance(Dsn.dsnLookup());
+    }
+
+    public static Raven ravenInstance(String dsn) {
+        return ravenInstance(new Dsn(dsn));
+    }
+
     public static Raven ravenInstance(Dsn dsn) {
         for (RavenFactory ravenFactory : RAVEN_FACTORIES) {
             Raven raven = ravenFactory.createRavenInstance(dsn);
