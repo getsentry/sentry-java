@@ -63,7 +63,7 @@ public class DefaultRavenFactory extends RavenFactory {
     private static final String FALSE = Boolean.FALSE.toString();
 
     @Override
-    public Raven createRavenInstance(Dsn dsn) {
+    protected Raven createRavenInstance(Dsn dsn) {
         Raven raven = new Raven();
         raven.setConnection(createConnection(dsn));
         try {

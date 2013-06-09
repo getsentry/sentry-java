@@ -39,5 +39,5 @@ public abstract class RavenFactory {
         throw new IllegalStateException("Couldn't create a raven instance for '" + dsn + "'");
     }
 
-    public abstract Raven createRavenInstance(Dsn dsn);
+    protected abstract Raven createRavenInstance(Dsn dsn);
 }
