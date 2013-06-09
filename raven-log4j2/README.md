@@ -1,7 +1,7 @@
-# Raven-log4j2
-[log4j2](https://logging.apache.org/log4j/2.x/) support for Raven.
+# Raven-Log4j 2
+[Log4j 2](https://logging.apache.org/log4j/2.x/) support for Raven.
 It provides an [`Appender`](https://logging.apache.org/log4j/2.x/log4j-core/apidocs/org/apache/logging/log4j/core/Appender.html)
-for log4j to send the logged events to Sentry.
+for Log4j 2 to send the logged events to Sentry.
 
 ## Installation
 
@@ -78,5 +78,5 @@ public class MyClass {
 
 ### Extras
 **TODO:**
-The log4j2 module for raven takes advantage of the [marker system](https://logging.apache.org/log4j/2.x/manual/markers.html).
-It is also possible use both the [MDC and the NDC systems provided by log4j2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
+The Log4j 2 module for raven takes advantage of the [marker system](https://logging.apache.org/log4j/2.x/manual/markers.html).
+It is also possible use both the [MDC and the NDC systems provided by Log4j 2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
