@@ -6,11 +6,13 @@ for `java.util.logging`.
 ## Installation
 
 ### Maven
-    <dependency>
-      <groupId>net.kencochrane.raven</groupId>
-      <artifactId>raven</artifactId>
-      <version>4.0</version>
-    </dependency>
+```xml
+<dependency>
+    <groupId>net.kencochrane.raven</groupId>
+    <artifactId>raven</artifactId>
+    <version>4.0</version>
+</dependency>
+```
 
 ### Other dependency managers
 Details in the [central Maven repository](http://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.0%7Cjar).
@@ -28,9 +30,11 @@ Relies on:
 ### Configuration
 In the `logging.properties` file set:
 
-    level=INFO
-    handlers=net.kencochrane.raven.jul.SentryHandler
-    net.kencochrane.raven.jul.SentryHandler.dsn=http://publicKey:secretKey@host:port/1?options
+```properties
+level=INFO
+handlers=net.kencochrane.raven.jul.SentryHandler
+net.kencochrane.raven.jul.SentryHandler.dsn=http://publicKey:secretKey@host:port/1?options
+```
 
 When starting your application, add the `java.util.logging.config.file` to the
 system properties, with the full path to the `logging.properties` as its value.
@@ -38,31 +42,32 @@ system properties, with the full path to the `logging.properties` as its value.
     $ java -Djava.util.logging.config.file=/path/to/app.properties MainClass
 
 ### In practice
+```java
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-    import java.util.logging.Level;
-    import java.util.logging.Logger;
+public class MyClass {
+    private static final Logger logger = Logger.getLogger(MyClass.class.getName());
 
-    public class MyClass {
-        private static final Logger logger = Logger.getLogger(MyClass.class.getName());
+    void logSimpleMessage() {
+        // This adds a simple message to the logs
+        logger.log(Level.INFO, "This is a test");
+    }
 
-        void logSimpleMessage() {
-            // This adds a simple message to the logs
-            logger.log(Level.INFO, "This is a test");
-        }
-
-        void logException() {
-            try {
-                unsafeMethod();
-            } catch (Exception e) {
-                // This adds an exception to the logs
-                logger.log(Level.SEVERE, "Exception caught", e);
-            }
-        }
-
-        void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call that");
+    void logException() {
+        try {
+            unsafeMethod();
+        } catch (Exception e) {
+            // This adds an exception to the logs
+            logger.log(Level.SEVERE, "Exception caught", e);
         }
     }
+
+    void unsafeMethod() {
+        throw new UnsupportedOperationException("You shouldn't call that");
+    }
+}
+```
 
 ### Unsupported features
 `java.util.logging` does not support either MDC nor NDC, meaning that it is not
@@ -77,52 +82,53 @@ as the API is more verbose and requires the developer to specify the value of
 each field sent to Sentry.
 
 ### In practice
+```java
+import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.event.EventBuilder;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.MessageInterface;
 
-    import net.kencochrane.raven.Raven;
-    import net.kencochrane.raven.RavenFactory;
-    import net.kencochrane.raven.event.Event;
-    import net.kencochrane.raven.event.EventBuilder;
-    import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-    import net.kencochrane.raven.event.interfaces.MessageInterface;
+public class MyClass {
+    private static Raven raven;
 
-    public class MyClass {
-        private static Raven raven;
+    public static void main(String... args) {
+        // Creation of the client with a specific DSN
+        String dsn = args[0];
+        raven = RavenFactory.ravenInstance(dsn);
 
-        public static void main(String... args) {
-            // Creation of the client with a specific DSN
-            String dsn = args[0];
-            raven = RavenFactory.ravenInstance(dsn);
+        // It is also possible to use the DSN detection system like this
+        raven = RavenFactory.ravenInstance();
+    }
 
-            // It is also possible to use the DSN detection system like this
-            raven = RavenFactory.ravenInstance();
-        }
+    void logSimpleMessage() {
+        // This adds a simple message to the logs
+        EventBuilder eventBuilder = new EventBuilder()
+                        .setMessage("This is a test")
+                        .setLevel(Event.Level.INFO)
+                        .setLogger(MyClass.class.getName());
+        raven.runBuilderHelpers(eventBuilder); // Optional
+        raven.sendEvent(eventBuilder.build());
+    }
 
-        void logSimpleMessage() {
-            // This adds a simple message to the logs
+    void logException() {
+        try {
+            unsafeMethod();
+        } catch (Exception e) {
+            // This adds an exception to the logs
             EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("This is a test")
-                            .setLevel(Event.Level.INFO)
-                            .setLogger(MyClass.class.getName());
+                            .setMessage("Exception caught")
+                            .setLevel(Event.Level.ERROR)
+                            .setLogger(MyClass.class.getName())
+                            .addSentryInterface(new ExceptionInterface(e));
             raven.runBuilderHelpers(eventBuilder); // Optional
             raven.sendEvent(eventBuilder.build());
         }
-
-        void logException() {
-            try {
-                unsafeMethod();
-            } catch (Exception e) {
-                // This adds an exception to the logs
-                EventBuilder eventBuilder = new EventBuilder()
-                                .setMessage("Exception caught")
-                                .setLevel(Event.Level.ERROR)
-                                .setLogger(MyClass.class.getName())
-                                .addSentryInterface(new ExceptionInterface(e));
-                raven.runBuilderHelpers(eventBuilder); // Optional
-                raven.sendEvent(eventBuilder.build());
-            }
-        }
-
-        void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call that");
-        }
     }
+
+    void unsafeMethod() {
+        throw new UnsupportedOperationException("You shouldn't call that");
+    }
+}
+```
