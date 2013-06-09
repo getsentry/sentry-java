@@ -7,10 +7,10 @@ Raven relies on the most popular logging libraries to capture and convert logs
 before sending details to a Sentry instance.
 
  - [`java.util.logging`](http://docs.oracle.com/javase/7/docs/technotes/guides/logging/index.html)
- support is provided by the main project [`raven`](raven/README.md)
- - [log4j](https://logging.apache.org/log4j/1.2/) support is provided in [`raven-log4j`](raven-log4j/README.md)
- - [log4j2](https://logging.apache.org/log4j/2.x/) can be used with [`raven-log4j2`](raven-log4j2/README.md)
- - [logback](http://logback.qos.ch/) support is provided in [`raven-logback`](raven-logback/README.md)
+ support is provided by the main project [raven](raven)
+ - [log4j](https://logging.apache.org/log4j/1.2/) support is provided in [raven-log4j](raven-log4j)
+ - [log4j2](https://logging.apache.org/log4j/2.x/) can be used with [raven-log4j2](raven-log4j2)
+ - [logback](http://logback.qos.ch/) support is provided in [raven-logback](raven-logback)
 
 While it's **strongly recommended to use one of the supported logging
 frameworks** to capture and send messages to Sentry, a it is possible to do so
