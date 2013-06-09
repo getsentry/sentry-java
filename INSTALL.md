@@ -51,22 +51,6 @@ TODO
 
 ## Using Raven
 
-### Manual usage
-
-    import net.kencochrane.raven.Raven;
-    import net.kencochrane.raven.event.EventBuilder;
-
-    public class Example {
-        public static void main(String[] args) {
-            // The DSN from Sentry: "http://public:private@host:port/1"
-            String rawDsn = args[0];
-            Raven client = new Raven(rawDsn);
-            EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("Hello from Raven!");
-            client.sendEvent(eventBuilder.build());
-        }
-    }
-
 It is also possible to create a client without directly providing a DSN,
 the DSN will then be determined at runtime (when the client is created).
 
@@ -76,18 +60,6 @@ The client will lookup for the first DSN configuration provided:
  - The environment variable `SENTRY_DSN`
  (`export SENTRY_DSN=yoursentrydsn` or `setenv SENTRYDSN yoursentrydsn`)
  - The system property `SENTRY_DSN` (`-DSENTRY_DSN=yoursentrydsn`)
-
-    import net.kencochrane.raven.Raven;
-    import net.kencochrane.raven.event.EventBuilder;
-
-    public class Example {
-        public static void main(String[] args) {
-            Raven client = new Raven();
-            EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("Hello from Raven!");
-            client.sendEvent(eventBuilder.build());
-        }
-    }
 
 ### Using `java.util.logging`
 To use the `SentryHandler` with `java.util.loggin` use this `logging.properties`
