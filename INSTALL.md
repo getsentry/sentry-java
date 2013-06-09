@@ -33,9 +33,6 @@ Sonatype Nexus snapshot repository:
         </snapshots>
     </repository>
 
-### Manual installation
-TODO
-
 ## Using Raven
 
 It is also possible to create a client without directly providing a DSN,
