@@ -61,20 +61,6 @@ The client will lookup for the first DSN configuration provided:
  (`export SENTRY_DSN=yoursentrydsn` or `setenv SENTRYDSN yoursentrydsn`)
  - The system property `SENTRY_DSN` (`-DSENTRY_DSN=yoursentrydsn`)
 
-### Using log4j
-To use the `SentryAppender` with log4j use this configuration:
-
-    log4j.rootLogger=DEBUG, SentryAppender
-    log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
-    log4j.appender.SentryAppender.dsn=http://publicKey:secretKey@host:port/1?options
-
-#### Asynchronous logging with AsyncAppender
-It is not recommended to attempt to set up a `SentryAppender` with an
-[AsyncAppender](http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/AsyncAppender.html).
-While this is a common solution to avoid blocking the current thread until the
-event is sent to Sentry, it is recommended to rely instead on the asynchronous
-connection within Raven.
-
 ### Using log4j2
 To use the `SentryAppender` with log4j2 use this configuration:
 
