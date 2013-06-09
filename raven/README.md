@@ -36,7 +36,7 @@ Relies on:
 In the `logging.properties` file set:
 
 ```properties
-level=INFO
+level=ALL
 handlers=net.kencochrane.raven.jul.SentryHandler
 net.kencochrane.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
 ```
