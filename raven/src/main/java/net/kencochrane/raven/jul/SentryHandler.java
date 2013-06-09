@@ -85,7 +85,6 @@ public class SentryHandler extends Handler {
                 .setLogger(record.getLoggerName());
 
         if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
-
             StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
                     record.getSourceMethodName(), null, -1);
             eventBuilder.setCulprit(fakeFrame);
@@ -97,11 +96,12 @@ public class SentryHandler extends Handler {
             eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
         }
 
-        if (record.getParameters() != null)
+        if (record.getParameters() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(),
                     formatParameters(record.getParameters())));
-        else
+        } else {
             eventBuilder.setMessage(record.getMessage());
+        }
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
