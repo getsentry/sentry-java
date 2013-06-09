@@ -33,7 +33,7 @@ public class SentryAppender extends AbstractAppender<String> {
      * Default name for the appender.
      */
     public static final String APPENDER_NAME = "raven";
-    private static final String LOG4J_NDC = "Log4J-NDC";
+    private static final String LOG4J_NDC = "log4j2-NDC";
     private static final String LOG4J_MARKER = "log4j2-Marker";
     private final boolean propagateClose;
     private Raven raven;
