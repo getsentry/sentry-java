@@ -18,19 +18,6 @@ sources.
     $ mvn clean install -DskipTests=true
 
 ### Maven dependency
-To add raven as a dependency, simply add this to the pom.xml file:
-
-    <dependency>
-      <groupId>net.kencochrane.raven</groupId>
-      <artifactId>raven</artifactId>
-      <version>4.0</version>
-    </dependency>
-
-Other modules can be added the same way (replacing the `artifactId`) with the
-name of the module.
-It is preferable to use the scope `runtime` if the API is used through a
-logging system.
-
 If the version is a snapshot it will be necessary to specify the
 Sonatype Nexus snapshot repository:
 
