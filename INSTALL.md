@@ -45,27 +45,6 @@ The client will lookup for the first DSN configuration provided:
  (`export SENTRY_DSN=yoursentrydsn` or `setenv SENTRYDSN yoursentrydsn`)
  - The system property `SENTRY_DSN` (`-DSENTRY_DSN=yoursentrydsn`)
 
-### Using log4j2
-To use the `SentryAppender` with log4j2 use this configuration:
-
-    <?xml version="1.0" encoding="UTF-8"?>
-    <configuration status="warn" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
-        <appenders>
-            <Raven name="Sentry">
-                <dsn>
-                    http://publicKey:secretKey@host:port/1?options
-                </dsn>
-            </Raven>
-        </appenders>
-
-        <loggers>
-            <root level="all">
-                <appender-ref ref="Sentry"/>
-            </root>
-        </loggers>
-    </configuration>
-
-
 ### Using logback
 To use the `SentryAppender` with logback use this configuration:
 
