@@ -2,6 +2,8 @@ package net.kencochrane.raven;
 
 import net.kencochrane.raven.dsn.Dsn;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.ServiceLoader;
 
 /**
@@ -11,7 +13,12 @@ import java.util.ServiceLoader;
  * </p>
  */
 public abstract class RavenFactory {
-    private static final ServiceLoader<RavenFactory> RAVEN_FACTORIES = ServiceLoader.load(RavenFactory.class);
+    private static final ServiceLoader<RavenFactory> AUTO_REGISTERED_FACTORIES = ServiceLoader.load(RavenFactory.class);
+    private static final Collection<RavenFactory> MANUALLY_REGISTERED_FACTORIES = new LinkedList<RavenFactory>();
+
+    public static void registerFactory(RavenFactory ravenFactory) {
+        MANUALLY_REGISTERED_FACTORIES.add(ravenFactory);
+    }
 
     public static Raven ravenInstance() {
         return ravenInstance(Dsn.dsnLookup());
@@ -22,7 +29,14 @@ public abstract class RavenFactory {
     }
 
     public static Raven ravenInstance(Dsn dsn) {
-        for (RavenFactory ravenFactory : RAVEN_FACTORIES) {
+        for (RavenFactory ravenFactory : MANUALLY_REGISTERED_FACTORIES) {
+            Raven raven = ravenFactory.createRavenInstance(dsn);
+            if (raven != null) {
+                return raven;
+            }
+        }
+
+        for (RavenFactory ravenFactory : AUTO_REGISTERED_FACTORIES) {
             Raven raven = ravenFactory.createRavenInstance(dsn);
             if (raven != null) {
                 return raven;
@@ -36,7 +50,17 @@ public abstract class RavenFactory {
         if (ravenFactoryName == null)
             return ravenInstance(dsn);
 
-        for (RavenFactory ravenFactory : RAVEN_FACTORIES) {
+        for (RavenFactory ravenFactory : MANUALLY_REGISTERED_FACTORIES) {
+            if (!ravenFactoryName.equals(ravenFactory.getClass().getName()))
+                continue;
+
+            Raven raven = ravenFactory.createRavenInstance(dsn);
+            if (raven != null) {
+                return raven;
+            }
+        }
+
+        for (RavenFactory ravenFactory : AUTO_REGISTERED_FACTORIES) {
             if (!ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
 
