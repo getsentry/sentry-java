@@ -1,6 +1,7 @@
 package net.kencochrane.raven.event.interfaces;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +29,10 @@ public class MessageInterface implements SentryInterface {
     @Deprecated
     public MessageInterface(String message) {
         this(message, Collections.<String>emptyList());
+    }
+
+    public MessageInterface(String message, String... params) {
+        this(message, Arrays.asList(params));
     }
 
     public MessageInterface(String message, List<String> params) {
