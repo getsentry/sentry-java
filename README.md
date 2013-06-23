@@ -55,6 +55,22 @@ To use it with maven, add the following repository:
 </repository>
 ```
 
+## Android
+
+Raven works on Android, and relies on the [ServiceLoader](https://developer.android.com/reference/java/util/ServiceLoader.html)
+system which uses the content of `META-INF/services`.
+This is used to declare the `RavenFactory` implementations (to allow more control over the automatically generated
+instances of `Raven`) in `META-INF/services/net.kencochrane.raven.RavenFactory`.
+
+Unfortunately, when the APK is build, the content of `META-INF/services` of the dependencies is lost, this prevent Raven
+to work properly. A few solutions exist for that problem.
+
+ - Use [maven-android-plugin](https://code.google.com/p/maven-android-plugin/) which has already solved this
+[problem](https://code.google.com/p/maven-android-plugin/issues/detail?id=97)
+ - Create manually a `META-INF/services/net.kencochrane.raven.RavenFactory` for the project which will contain the
+ canonical name of of implementation of `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
+ - Register manually the `RavenFactory` when the application starts with `RavenFactory.registerFactory(new DefaultRavenFactory())`.
+
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
 on the security and performance requirements.
