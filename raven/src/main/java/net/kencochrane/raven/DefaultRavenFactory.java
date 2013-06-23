@@ -70,7 +70,7 @@ public class DefaultRavenFactory extends RavenFactory {
             Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
             //TODO: Is it enough? Shouldn't it look for Servlet >= 3.0 ?
             raven.addBuilderHelper(new HttpEventBuilderHelper());
-        } catch (Exception e) {
+        } catch (ClassNotFoundException e) {
             logger.trace("It seems that the current environment doesn't provide access to servlets.");
         }
         return raven;
