@@ -34,10 +34,26 @@ Each release of Sentry supports the last two version of the protocol
 (i.e. Sentry 5.4.5 supports both the protocol V3 and V2), for this reason, only
 the two last stable version of Raven are actively maintained.
 
-## Build and Installation
-**See
-[INSTALL.md](https://github.com/kencochrane/raven-java/blob/master/INSTALL.md)**
+### Snapshot versions
+While the stable versions of raven are available on the
+[central Maven Repository](https://search.maven.org), newer (but less stable)
+versions (AKA snapshots) are available in Sonatype's snapshot repository.
 
+To use it with maven, add the following repository:
+
+```xml
+<repository>
+    <id>sonatype-nexus-snapshots</id>
+    <name>Sonatype Nexus Snapshots</name>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <releases>
+        <enabled>false</enabled>
+    </releases>
+    <snapshots>
+        <enabled>true</enabled>
+    </snapshots>
+</repository>
+```
 
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
