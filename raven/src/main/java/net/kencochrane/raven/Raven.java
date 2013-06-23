@@ -14,8 +14,9 @@ import java.util.Set;
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
  * <p>
- * It is recommended to create an instance of Raven through {@link RavenFactory#createRavenInstance(Dsn)}, this
- * will use the best factory available to create a sensible instance of Raven.
+ * It is recommended to create an instance of Raven through
+ * {@link RavenFactory#createRavenInstance(net.kencochrane.raven.dsn.Dsn)}, this will use the best factory available to
+ * create a sensible instance of Raven.
  * </p>
  */
 public class Raven {

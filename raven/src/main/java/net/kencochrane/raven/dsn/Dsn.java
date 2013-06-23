@@ -1,13 +1,9 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.dsn;
 
-import net.kencochrane.raven.exception.InvalidDsnException;
+import net.kencochrane.raven.Raven;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.naming.NoInitialContextException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -47,7 +43,7 @@ public class Dsn {
      * @param dsn dsn in a string form.
      * @throws InvalidDsnException the given DSN isn't usable.
      */
-    public Dsn(String dsn) {
+    public Dsn(String dsn) throws InvalidDsnException {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 

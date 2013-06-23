@@ -4,6 +4,7 @@ import net.kencochrane.raven.connection.AsyncConnection;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.helper.HttpEventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.HttpInterface;

@@ -1,5 +1,7 @@
 package net.kencochrane.raven;
 
+import net.kencochrane.raven.dsn.Dsn;
+
 import java.util.ServiceLoader;
 
 /**

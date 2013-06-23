@@ -1,6 +1,5 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.dsn;
 
-import net.kencochrane.raven.exception.InvalidDsnException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

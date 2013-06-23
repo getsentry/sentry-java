@@ -1,6 +1,6 @@
 package net.kencochrane.raven.log4j2;
 
-import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;

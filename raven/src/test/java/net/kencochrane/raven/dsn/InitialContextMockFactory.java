@@ -1,4 +1,4 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.dsn;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
