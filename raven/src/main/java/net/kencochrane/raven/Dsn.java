@@ -22,10 +22,6 @@ public class Dsn {
      * Name of the environment or system variable containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
-    /**
-     * Lookup name for the DSN in JNDI.
-     */
-    private static final String JNDI_DSN_NAME = "java:comp/env/sentry/dsn";
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private String secretKey;
     private String publicKey;
@@ -86,14 +82,10 @@ public class Dsn {
 
         // Try to obtain the DSN from JNDI
         try {
-            Context c = new InitialContext();
-            dsn = (String) c.lookup(JNDI_DSN_NAME);
-        } catch (NoInitialContextException e) {
-            logger.trace("JNDI not configured for sentry (NoInitialContextEx)");
-        } catch (NamingException e) {
-            logger.trace("No /sentry/dsn in JNDI");
-        } catch (RuntimeException ex) {
-            logger.warn("Odd RuntimeException while testing for JNDI", ex);
+            Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
+            dsn = JndiLookup.jndiLookup();
+        } catch (ClassNotFoundException e) {
+            logger.trace("JNDI not available");
         }
 
         // Try to obtain the DSN from a System Environment Variable
