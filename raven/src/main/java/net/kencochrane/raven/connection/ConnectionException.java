@@ -1,4 +1,4 @@
-package net.kencochrane.raven.exception;
+package net.kencochrane.raven.connection;
 
 /**
  * Exception thrown by a {@link net.kencochrane.raven.connection.Connection} if something went wrong temporarily.

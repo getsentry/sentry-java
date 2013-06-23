@@ -1,7 +1,6 @@
 package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
 
 import java.io.ByteArrayOutputStream;

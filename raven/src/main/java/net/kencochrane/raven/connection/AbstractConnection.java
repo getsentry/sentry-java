@@ -2,7 +2,6 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.exception.ConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
