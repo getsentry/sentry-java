@@ -69,7 +69,11 @@ to work properly. A few solutions exist for that problem.
 [problem](https://code.google.com/p/maven-android-plugin/issues/detail?id=97)
  - Create manually a `META-INF/services/net.kencochrane.raven.RavenFactory` for the project which will contain the
  canonical name of of implementation of `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
- - Register manually the `RavenFactory` when the application starts with `RavenFactory.registerFactory(new DefaultRavenFactory())`.
+ - Register manually the `RavenFactory` when the application starts:
+
+ ```java
+ RavenFactory.registerFactory(new DefaultRavenFactory());
+ ```
 
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
