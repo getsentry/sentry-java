@@ -4,6 +4,7 @@ import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +62,37 @@ public class Raven {
         } catch (Exception e) {
             logger.error("An exception occurred while sending the event to Sentry.", e);
         }
+    }
+
+    /**
+     * Sends a message to the Sentry server.
+     * <p>
+     * The message will be logged at the {@link Event.Level#INFO} level.
+     * </p>
+     *
+     * @param message message to send to Sentry.
+     */
+    public void sendMessage(String message) {
+        EventBuilder eventBuilder = new EventBuilder().setMessage(message)
+                .setLevel(Event.Level.INFO);
+        runBuilderHelpers(eventBuilder);
+        sendEvent(eventBuilder.build());
+    }
+
+    /**
+     * Sends an exception to the Sentry server.
+     * <p>
+     * The Exception will be logged at the {@link Event.Level#ERROR} level.
+     * </p>
+     *
+     * @param exception exception to send to Sentry.
+     */
+    public void sendException(Exception exception) {
+        EventBuilder eventBuilder = new EventBuilder().setMessage(exception.getMessage())
+                .setLevel(Event.Level.ERROR)
+                .addSentryInterface(new ExceptionInterface(exception));
+        runBuilderHelpers(eventBuilder);
+        sendEvent(eventBuilder.build());
     }
 
     /**
