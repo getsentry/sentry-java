@@ -88,6 +88,47 @@ each field sent to Sentry.
 ```java
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+
+
+public class MyClass {
+    private static Raven raven;
+
+    public static void main(String... args) {
+        // Creation of the client with a specific DSN
+        String dsn = args[0];
+        raven = RavenFactory.ravenInstance(dsn);
+
+        // It is also possible to use the DSN detection system like this
+        raven = RavenFactory.ravenInstance();
+    }
+
+    void logSimpleMessage() {
+        // This adds a simple message to the logs
+        raven.sendMessage("This is a test");
+    }
+
+    void logException() {
+        try {
+            unsafeMethod();
+        } catch (Exception e) {
+            // This adds an exception to the logs
+            raven.sendException(e);
+        }
+    }
+
+    void unsafeMethod() {
+        throw new UnsupportedOperationException("You shouldn't call that");
+    }
+}
+```
+
+### In practice (advanced)
+
+For more complex messages, it will be necessary to build an `Event` with the `EventBuilder` class.
+
+```java
+import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -135,3 +176,5 @@ public class MyClass {
     }
 }
 ```
+
+This gives more control over the content of the `Event` and gives access to the complete API supported by Sentry.
