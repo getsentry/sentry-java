@@ -4,15 +4,18 @@ import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.UUID;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -36,6 +39,30 @@ public class RavenTest {
         raven.sendEvent(mockEvent);
 
         verify(mockConnection).send(mockEvent);
+    }
+
+    @Test
+    public void testSendMessage() throws Exception {
+        String message = UUID.randomUUID().toString();
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        raven.sendMessage(message);
+
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        assertThat(eventArgumentCaptor.getValue().getLevel(), equalTo(Event.Level.INFO));
+        assertThat(eventArgumentCaptor.getValue().getMessage(), equalTo(message));
+    }
+
+    @Test
+    public void testSendException() throws Exception {
+        String message = UUID.randomUUID().toString();
+        Exception exception = new Exception(message);
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        raven.sendException(exception);
+
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        assertThat(eventArgumentCaptor.getValue().getLevel(), equalTo(Event.Level.ERROR));
+        assertThat(eventArgumentCaptor.getValue().getMessage(), equalTo(message));
+        assertThat(eventArgumentCaptor.getValue().getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
     }
 
     @Test
