@@ -4,14 +4,13 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
-import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
-import org.slf4j.Marker;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,28 +62,34 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     @Override
-    public void start() {
-        try {
-            if (raven == null) {
-                if (dsn == null)
-                    dsn = Dsn.dsnLookup();
-
-                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
-            }
-            super.start();
-        } catch (Exception e) {
-            addError("An exception occurred during the creation of a raven instance", e);
-        }
-    }
-
-    @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread has been spawned by raven
         if (Raven.RAVEN_THREAD.get())
             return;
 
+        if (raven == null)
+            startRaven();
         Event event = buildEvent(iLoggingEvent);
         raven.sendEvent(event);
+    }
+
+    /**
+     * Initialises the Raven instance.
+     * <p>
+     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
+     * being generated during the instantiation of {@link Raven}.<br />
+     * More on <a href="http://www.slf4j.org/codes.html#substituteLogger">www.slf4j.org/codes.html#substituteLogger</a>
+     * </p>
+     */
+    private void startRaven() {
+        try {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (Exception e) {
+            addError("An exception occurred during the creation of a raven instance", e);
+        }
     }
 
     private Event buildEvent(ILoggingEvent iLoggingEvent) {
@@ -149,7 +154,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         super.stop();
 
         try {
-            if (propagateClose)
+            if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             addError("An exception occurred while closing the raven connection", e);

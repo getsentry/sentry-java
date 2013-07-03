@@ -1,14 +1,13 @@
 package net.kencochrane.raven.log4j2;
 
-import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -109,28 +108,34 @@ public class SentryAppender extends AbstractAppender<String> {
     }
 
     @Override
-    public void start() {
-        try {
-            if (raven == null) {
-                if (dsn == null)
-                    dsn = Dsn.dsnLookup();
-
-                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
-            }
-            super.start();
-        } catch (Exception e) {
-            error("An exception occurred during the creation of a raven instance", e);
-        }
-    }
-
-    @Override
     public void append(LogEvent logEvent) {
+
         // Do not log the event if the current thread has been spawned by raven
         if (Raven.RAVEN_THREAD.get())
             return;
 
+        if (raven == null)
+            startRaven();
         Event event = buildEvent(logEvent);
         raven.sendEvent(event);
+    }
+
+    /**
+     * Initialises the Raven instance.
+     * <p>
+     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
+     * being generated during the instantiation of {@link Raven}.<br />
+     * </p>
+     */
+    private void startRaven() {
+        try {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (Exception e) {
+            error("An exception occurred during the creation of a raven instance", e);
+        }
     }
 
     private Event buildEvent(LogEvent event) {
@@ -200,7 +205,7 @@ public class SentryAppender extends AbstractAppender<String> {
         super.stop();
 
         try {
-            if (propagateClose)
+            if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             error("An exception occurred while closing the raven connection", e);
