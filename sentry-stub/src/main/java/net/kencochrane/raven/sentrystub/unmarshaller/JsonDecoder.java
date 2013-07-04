@@ -2,14 +2,16 @@ package net.kencochrane.raven.sentrystub.unmarshaller;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import org.apache.commons.codec.binary.Base64InputStream;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.InflaterInputStream;
+
+import static com.google.common.io.BaseEncoding.base64;
 
 /**
  * Decodes a Stream as a JSON stream.
@@ -42,14 +44,13 @@ public class JsonDecoder {
         originalStream = new Uncloseable(new BufferedInputStream(originalStream));
         originalStream.mark(messageSize);
         InputStream inputStream = originalStream;
-
         if (!isJson(originalStream)) {
-            inputStream = new Base64InputStream(inputStream);
+            inputStream = base64().decodingStream(new InputStreamReader(inputStream));
             originalStream.reset();
-            if (!isJson(new Base64InputStream(originalStream))) {
+            if (!isJson(base64().decodingStream(new InputStreamReader(originalStream)))) {
                 inputStream = new InflaterInputStream(inputStream);
                 originalStream.reset();
-                if (!isJson(new InflaterInputStream(new Base64InputStream(originalStream)))) {
+                if (!isJson(new InflaterInputStream(base64().decodingStream(new InputStreamReader(originalStream))))) {
                     throw new IllegalArgumentException("The given Stream is neither JSON, Base64'd JSON "
                             + "nor Base64'd deflated JSON.");
                 }

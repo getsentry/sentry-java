@@ -106,7 +106,7 @@
 
         <!-- dependencies versions -->
         <slf4j.version>1.7.5</slf4j.version>
-        <commons-codec.version>1.8</commons-codec.version>
+        <guava.version>14.0.1</guava.version>
         <jackson.version>2.2.2</jackson.version>
         <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
         <logback.version>1.0.13</logback.version>
@@ -147,9 +147,9 @@
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
