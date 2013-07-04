@@ -44,7 +44,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private static List<String> formatArguments(Object[] argumentArray) {
         List<String> arguments = new ArrayList<String>(argumentArray.length);
         for (Object argument : argumentArray) {
-            arguments.add(argument.toString());
+            arguments.add((argument != null) ? argument.toString() : null);
         }
         return arguments;
     }
