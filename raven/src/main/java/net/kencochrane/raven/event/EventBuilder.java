@@ -1,12 +1,14 @@
 package net.kencochrane.raven.event;
 
 import net.kencochrane.raven.event.interfaces.SentryInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.*;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -287,7 +289,9 @@ public class EventBuilder {
      * <p>
      * The {@code InetAddress.getLocalHost().getCanonicalHostName()} call can be quite expensive and could be called
      * for the creation of each {@link Event}. This system will prevent unnecessary costs by keeping track of the
-     * hostname for a period defined during the construction.
+     * hostname for a period defined during the construction.<br />
+     * For performance purposes, the operation of retrieving the hostname will automatically fail after a period of time
+     * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
      * </p>
      */
     private static final class HostnameCache {
@@ -295,6 +299,11 @@ public class EventBuilder {
          * Default hostname if it isn't set manually (or can't be determined).
          */
         public static final String DEFAULT_HOSTNAME = "unavailable";
+        /**
+         * Time before the get hostname operation times out (in ms).
+         */
+        public static final int GET_HOSTNAME_TIMEOUT = 1000;
+        private static final Logger logger = LoggerFactory.getLogger(HostnameCache.class);
         /**
          * Time for which the cache is kept.
          */
@@ -338,11 +347,23 @@ public class EventBuilder {
          */
         public void updateCache() {
             expirationTimestamp = System.currentTimeMillis() + cacheDuration;
+            Future<String> future = Executors.newSingleThreadExecutor().submit(new HostRetriever());
 
             try {
-                hostname = InetAddress.getLocalHost().getCanonicalHostName();
-            } catch (UnknownHostException e) {
+                hostname = future.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                logger.warn("Localhost hostname lookup failed, defaulting back to '{}'", DEFAULT_HOSTNAME, e);
                 hostname = DEFAULT_HOSTNAME;
+            }
+        }
+
+        /**
+         * Task retrieving the current hostname.
+         */
+        private static final class HostRetriever implements Callable<String> {
+            @Override
+            public String call() throws Exception {
+                return InetAddress.getLocalHost().getCanonicalHostName();
             }
         }
     }
