@@ -50,7 +50,7 @@ public class SentryHandler extends Handler {
     private static List<String> formatParameters(Object[] parameters) {
         List<String> formattedParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
-            formattedParameters.add(parameter.toString());
+            formattedParameters.add((parameter != null) ? parameter.toString() : null);
         return formattedParameters;
     }
 

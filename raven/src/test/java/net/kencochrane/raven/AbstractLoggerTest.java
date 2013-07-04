@@ -86,7 +86,7 @@ public abstract class AbstractLoggerTest {
     public void testLogParametrisedMessage() throws Exception {
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         String message = "Some content %s";
-        List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        List<String> parameters = Arrays.asList(null, UUID.randomUUID().toString(), UUID.randomUUID().toString());
         Event event;
 
         logAnyLevel(message, parameters);

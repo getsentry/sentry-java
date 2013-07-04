@@ -188,7 +188,7 @@ public class SentryAppender extends AbstractAppender<String> {
     private List<String> formatMessageParameters(Object[] parameters) {
         List<String> stringParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
-            stringParameters.add(parameter.toString());
+            stringParameters.add((parameter != null) ? parameter.toString() : null);
         return stringParameters;
     }
 
