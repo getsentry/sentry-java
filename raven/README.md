@@ -21,7 +21,7 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 Relies on:
 
  - [raven-4.0.jar](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.0%7Cjar)
- - [commons-codec-1.8.jar](https://search.maven.org/#artifactdetails%7Ccommons-codec%7Ccommons-codec%7C1.8%7Cjar)
+ - [guava-14.0.1.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C14.0.1%7Cjar)
  - [jackson-core-2.2.2.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.2.2%7Cjar)
  - [slf4j-api-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.5%7Cjar)
  - [slf4j-jdk14-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-jdk14%7C1.7.5%7Cjar)
