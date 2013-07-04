@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </p>
  */
 public class DefaultRavenFactory extends RavenFactory {
+    //TODO: Add support for tags set by default
     /**
      * Protocol setting to disable security checks over an SSL connection.
      */

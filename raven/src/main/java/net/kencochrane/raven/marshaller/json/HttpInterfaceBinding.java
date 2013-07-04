@@ -78,6 +78,7 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
     }
 
     private void writeCookies(JsonGenerator generator, Cookie[] cookies) throws IOException {
+        //TODO: Cookies shouldn't be sent by default
         if (cookies == null) {
             generator.writeNull();
             return;
