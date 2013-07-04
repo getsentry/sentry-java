@@ -29,29 +29,12 @@ public abstract class RavenFactory {
     }
 
     public static Raven ravenInstance(Dsn dsn) {
-        for (RavenFactory ravenFactory : MANUALLY_REGISTERED_FACTORIES) {
-            Raven raven = ravenFactory.createRavenInstance(dsn);
-            if (raven != null) {
-                return raven;
-            }
-        }
-
-        for (RavenFactory ravenFactory : AUTO_REGISTERED_FACTORIES) {
-            Raven raven = ravenFactory.createRavenInstance(dsn);
-            if (raven != null) {
-                return raven;
-            }
-        }
-
-        throw new IllegalStateException("Couldn't create a raven instance for '" + dsn + "'");
+        return ravenInstance(dsn, null);
     }
 
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
-        if (ravenFactoryName == null)
-            return ravenInstance(dsn);
-
         for (RavenFactory ravenFactory : MANUALLY_REGISTERED_FACTORIES) {
-            if (!ravenFactoryName.equals(ravenFactory.getClass().getName()))
+            if (ravenFactoryName != null && !ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
 
             Raven raven = ravenFactory.createRavenInstance(dsn);
@@ -61,7 +44,7 @@ public abstract class RavenFactory {
         }
 
         for (RavenFactory ravenFactory : AUTO_REGISTERED_FACTORIES) {
-            if (!ravenFactoryName.equals(ravenFactory.getClass().getName()))
+            if (ravenFactoryName != null && !ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
 
             Raven raven = ravenFactory.createRavenInstance(dsn);
