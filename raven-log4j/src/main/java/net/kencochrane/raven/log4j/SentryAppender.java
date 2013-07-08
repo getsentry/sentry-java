@@ -20,11 +20,11 @@ import java.util.Map;
  * Appender for log4j in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderSkeleton {
-    private static final String LOG4J_NDC = "log4J-NDC";
+    protected static final String LOG4J_NDC = "log4J-NDC";
+    protected Raven raven;
+    protected String dsn;
+    protected String ravenFactory;
     private final boolean propagateClose;
-    private Raven raven;
-    private String dsn;
-    private String ravenFactory;
     private boolean guard;
 
     public SentryAppender() {
@@ -40,7 +40,7 @@ public class SentryAppender extends AppenderSkeleton {
         this.propagateClose = propagateClose;
     }
 
-    private static Event.Level formatLevel(Level level) {
+    protected static Event.Level formatLevel(Level level) {
         if (level.isGreaterOrEqual(Level.FATAL)) {
             return Event.Level.FATAL;
         } else if (level.isGreaterOrEqual(Level.ERROR)) {
@@ -54,7 +54,7 @@ public class SentryAppender extends AppenderSkeleton {
         } else return null;
     }
 
-    private static StackTraceElement asStackTraceElement(LocationInfo location) {
+    protected static StackTraceElement asStackTraceElement(LocationInfo location) {
         String fileName = (LocationInfo.NA.equals(location.getFileName())) ? null : location.getFileName();
         int line = (LocationInfo.NA.equals(location.getLineNumber())) ? -1 : Integer.parseInt(location.getLineNumber());
         return new StackTraceElement(location.getClassName(), location.getMethodName(), fileName, line);
@@ -98,7 +98,7 @@ public class SentryAppender extends AppenderSkeleton {
         }
     }
 
-    private Event buildEvent(LoggingEvent loggingEvent) {
+    protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
