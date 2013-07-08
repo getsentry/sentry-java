@@ -61,6 +61,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } else return null;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The raven instance is started in this method instead of {@link #start()} in order to avoid substitute loggers
+     * being generated during the instantiation of {@link Raven}.<br />
+     * More on <a href="http://www.slf4j.org/codes.html#substituteLogger">www.slf4j.org/codes.html#substituteLogger</a>
+     * </p>
+     */
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread has been spawned by raven
@@ -68,20 +76,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             return;
 
         if (raven == null)
-            startRaven();
+            initRaven();
         Event event = buildEvent(iLoggingEvent);
         raven.sendEvent(event);
     }
 
     /**
      * Initialises the Raven instance.
-     * <p>
-     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Raven}.<br />
-     * More on <a href="http://www.slf4j.org/codes.html#substituteLogger">www.slf4j.org/codes.html#substituteLogger</a>
-     * </p>
      */
-    private void startRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
