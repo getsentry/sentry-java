@@ -63,18 +63,26 @@ public class SentryHandler extends Handler {
 
         try {
             guard = true;
-            if (raven == null) {
-                try {
-                    start();
-                } catch (Exception e) {
-                    reportError("An exception occurred while creating an instance of raven", e, ErrorManager.OPEN_FAILURE);
-                    return;
-                }
-            }
-
-            raven.sendEvent(buildEvent(record));
+            if (raven == null)
+                initRaven();
+            Event event = buildEvent(record);
+            raven.sendEvent(event);
         } finally {
             guard = false;
+        }
+    }
+
+    /**
+     * Initialises the Raven instance.
+     */
+    protected void initRaven() {
+        try {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (Exception e) {
+            reportError("An exception occurred during the creation of a raven instance", e, ErrorManager.OPEN_FAILURE);
         }
     }
 
@@ -105,20 +113,6 @@ public class SentryHandler extends Handler {
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
-    }
-
-    private void start() {
-        if (raven != null)
-            return;
-
-        LogManager manager = LogManager.getLogManager();
-        String dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
-        String ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
-
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
-        raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
     }
 
     @Override
