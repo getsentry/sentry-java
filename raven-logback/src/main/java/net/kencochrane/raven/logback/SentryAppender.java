@@ -22,11 +22,11 @@ import java.util.Map;
  * Appender for logback in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
-    private static final String LOGBACK_MARKER = "logback-Marker";
+    protected static final String LOGBACK_MARKER = "logback-Marker";
+    protected Raven raven;
+    protected String dsn;
+    protected String ravenFactory;
     private final boolean propagateClose;
-    private Raven raven;
-    private String dsn;
-    private String ravenFactory;
 
     public SentryAppender() {
         propagateClose = true;
@@ -49,7 +49,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return arguments;
     }
 
-    private static Event.Level formatLevel(Level level) {
+    protected static Event.Level formatLevel(Level level) {
         if (level.isGreaterOrEqual(Level.ERROR)) {
             return Event.Level.ERROR;
         } else if (level.isGreaterOrEqual(Level.WARN)) {
@@ -95,7 +95,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
-    private Event buildEvent(ILoggingEvent iLoggingEvent) {
+    protected Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
