@@ -107,6 +107,15 @@ public class SentryAppender extends AbstractAppender<String> {
                 + " at line " + stackTraceElement.getLineNumber();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
+     * being generated during the instantiation of {@link Raven}.<br />
+     * </p>
+     *
+     * @param logEvent The LogEvent.
+     */
     @Override
     public void append(LogEvent logEvent) {
 
@@ -115,19 +124,15 @@ public class SentryAppender extends AbstractAppender<String> {
             return;
 
         if (raven == null)
-            startRaven();
+            initRaven();
         Event event = buildEvent(logEvent);
         raven.sendEvent(event);
     }
 
     /**
      * Initialises the Raven instance.
-     * <p>
-     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Raven}.<br />
-     * </p>
      */
-    private void startRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
