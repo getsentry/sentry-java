@@ -18,8 +18,8 @@ import java.util.logging.*;
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
  */
 public class SentryHandler extends Handler {
+    protected Raven raven;
     private final boolean propagateClose;
-    private Raven raven;
     private boolean guard = false;
 
     public SentryHandler() {
@@ -35,7 +35,7 @@ public class SentryHandler extends Handler {
         this.propagateClose = propagateClose;
     }
 
-    private static Event.Level getLevel(Level level) {
+    protected static Event.Level getLevel(Level level) {
         if (level.intValue() >= Level.SEVERE.intValue())
             return Event.Level.ERROR;
         else if (level.intValue() >= Level.WARNING.intValue())
@@ -86,7 +86,7 @@ public class SentryHandler extends Handler {
         }
     }
 
-    private Event buildEvent(LogRecord record) {
+    protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))
                 .setTimestamp(new Date(record.getMillis()))
