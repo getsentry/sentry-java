@@ -41,6 +41,10 @@ public class SentryAppender extends AbstractAppender<String> {
      */
     protected static final String LOG4J_MARKER = "log4j2-Marker";
     /**
+     * Name of the {@link Event#extra} property containing the Thread name.
+     */
+    protected static final String THREAD_NAME = "Raven-Threadname";
+    /**
      * Current instance of {@link Raven}.
      *
      * @see #initRaven()
@@ -209,7 +213,8 @@ public class SentryAppender extends AbstractAppender<String> {
                 .setTimestamp(new Date(event.getMillis()))
                 .setMessage(eventMessage.getFormattedMessage())
                 .setLogger(event.getLoggerName())
-                .setLevel(formatLevel(event.getLevel()));
+                .setLevel(formatLevel(event.getLevel()))
+                .addExtra(THREAD_NAME, event.getThreadName());
 
         if (event.getThrown() != null) {
             Throwable throwable = event.getThrown();

@@ -25,6 +25,10 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected static final String LOG4J_NDC = "log4J-NDC";
     /**
+     * Name of the {@link Event#extra} property containing the Thread name.
+     */
+    protected static final String THREAD_NAME = "Raven-Threadname";
+    /**
      * Current instance of {@link Raven}.
      *
      * @see #initRaven()
@@ -141,7 +145,8 @@ public class SentryAppender extends AppenderSkeleton {
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
                 .setLogger(loggingEvent.getLoggerName())
-                .setLevel(formatLevel(loggingEvent.getLevel()));
+                .setLevel(formatLevel(loggingEvent.getLevel()))
+                .addExtra(THREAD_NAME, loggingEvent.getThreadName());
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();

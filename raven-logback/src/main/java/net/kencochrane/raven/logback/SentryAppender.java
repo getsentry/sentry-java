@@ -27,6 +27,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected static final String LOGBACK_MARKER = "logback-Marker";
     /**
+     * Name of the {@link Event#extra} property containing the Thread name.
+     */
+    protected static final String THREAD_NAME = "Raven-Threadname";
+    /**
      * Current instance of {@link Raven}.
      *
      * @see #initRaven()
@@ -160,7 +164,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
                 .setLogger(iLoggingEvent.getLoggerName())
-                .setLevel(formatLevel(iLoggingEvent.getLevel()));
+                .setLevel(formatLevel(iLoggingEvent.getLevel()))
+                .addExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
         if (iLoggingEvent.getArgumentArray() != null)
             eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
