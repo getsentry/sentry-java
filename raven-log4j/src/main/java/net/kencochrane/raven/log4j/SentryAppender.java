@@ -20,9 +20,29 @@ import java.util.Map;
  * Appender for log4j in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderSkeleton {
+    /**
+     * Name of the {@link Event#extra} property containing NDC details.
+     */
     protected static final String LOG4J_NDC = "log4J-NDC";
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
     protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
     protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
     protected String ravenFactory;
     private final boolean propagateClose;
     private boolean guard;
@@ -40,6 +60,12 @@ public class SentryAppender extends AppenderSkeleton {
         this.propagateClose = propagateClose;
     }
 
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in log4j.
+     * @return log level used within raven.
+     */
     protected static Event.Level formatLevel(Level level) {
         if (level.isGreaterOrEqual(Level.FATAL)) {
             return Event.Level.FATAL;
@@ -54,6 +80,12 @@ public class SentryAppender extends AppenderSkeleton {
         } else return null;
     }
 
+    /**
+     * Transforms the location info of a log into a stacktrace element (stackframe).
+     *
+     * @param location details on the location of the log.
+     * @return a stackframe.
+     */
     protected static StackTraceElement asStackTraceElement(LocationInfo location) {
         String fileName = (LocationInfo.NA.equals(location.getFileName())) ? null : location.getFileName();
         int line = (LocationInfo.NA.equals(location.getLineNumber())) ? -1 : Integer.parseInt(location.getLineNumber());
@@ -98,6 +130,12 @@ public class SentryAppender extends AppenderSkeleton {
         }
     }
 
+    /**
+     * Builds an Event based on the logging event.
+     *
+     * @param loggingEvent Log generated.
+     * @return Event containing details provided by the logging system.
+     */
     protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))

@@ -18,6 +18,11 @@ import java.util.logging.*;
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
  */
 public class SentryHandler extends Handler {
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
     protected Raven raven;
     private final boolean propagateClose;
     private boolean guard = false;
@@ -35,6 +40,12 @@ public class SentryHandler extends Handler {
         this.propagateClose = propagateClose;
     }
 
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in JUL.
+     * @return log level used within raven.
+     */
     protected static Event.Level getLevel(Level level) {
         if (level.intValue() >= Level.SEVERE.intValue())
             return Event.Level.ERROR;
@@ -47,6 +58,15 @@ public class SentryHandler extends Handler {
         else return null;
     }
 
+    /**
+     * Extracts message parameters into a List of Strings.
+     * <p>
+     * null parameters are kept as null.
+     * </p>
+     *
+     * @param parameters parameters provided to the logging system.
+     * @return the parameters formatted as Strings in a List.
+     */
     protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> formattedParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
@@ -86,6 +106,12 @@ public class SentryHandler extends Handler {
         }
     }
 
+    /**
+     * Builds an Event based on the log record.
+     *
+     * @param record Log generated.
+     * @return Event containing details provided by the logging system.
+     */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))

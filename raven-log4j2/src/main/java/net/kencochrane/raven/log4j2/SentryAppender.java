@@ -32,10 +32,33 @@ public class SentryAppender extends AbstractAppender<String> {
      * Default name for the appender.
      */
     public static final String APPENDER_NAME = "raven";
+    /**
+     * Name of the {@link Event#extra} property containing NDC details.
+     */
     protected static final String LOG4J_NDC = "log4j2-NDC";
+    /**
+     * Name of the {@link Event#extra} property containing Marker details.
+     */
     protected static final String LOG4J_MARKER = "log4j2-Marker";
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
     protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
     protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
     protected String ravenFactory;
     private final boolean propagateClose;
 
@@ -84,6 +107,12 @@ public class SentryAppender extends AbstractAppender<String> {
         return sentryAppender;
     }
 
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in log4j2.
+     * @return log level used within raven.
+     */
     protected static Event.Level formatLevel(Level level) {
         switch (level) {
             case FATAL:
@@ -102,11 +131,29 @@ public class SentryAppender extends AbstractAppender<String> {
         }
     }
 
+    /**
+     * Gets the position of the event as a String.
+     * <p>
+     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
+     * </p>
+     *
+     * @param event event without stacktrace but with a position.
+     * @return a string version of the position.
+     */
     protected static String getEventPosition(LogEvent event) {
         StackTraceElement stackTraceElement = event.getSource();
         return stackTraceElement.getClassName() + stackTraceElement.getMethodName() + stackTraceElement.getLineNumber();
     }
 
+    /**
+     * Extracts message parameters into a List of Strings.
+     * <p>
+     * null parameters are kept as null.
+     * </p>
+     *
+     * @param parameters parameters provided to the logging system.
+     * @return the parameters formatted as Strings in a List.
+     */
     protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> stringParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
@@ -150,6 +197,12 @@ public class SentryAppender extends AbstractAppender<String> {
         }
     }
 
+    /**
+     * Builds an Event based on the logging event.
+     *
+     * @param event Log generated.
+     * @return Event containing details provided by the logging system.
+     */
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()

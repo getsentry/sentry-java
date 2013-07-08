@@ -22,9 +22,29 @@ import java.util.Map;
  * Appender for logback in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
+    /**
+     * Name of the {@link Event#extra} property containing Maker details.
+     */
     protected static final String LOGBACK_MARKER = "logback-Marker";
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
     protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
     protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
     protected String ravenFactory;
     private final boolean propagateClose;
 
@@ -41,6 +61,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.propagateClose = propagateClose;
     }
 
+    /**
+     * Extracts message parameters into a List of Strings.
+     * <p>
+     * null parameters are kept as null.
+     * </p>
+     *
+     * @param parameters parameters provided to the logging system.
+     * @return the parameters formatted as Strings in a List.
+     */
     protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> arguments = new ArrayList<String>(parameters.length);
         for (Object argument : parameters) {
@@ -49,6 +78,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return arguments;
     }
 
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in logback.
+     * @return log level used within raven.
+     */
     protected static Event.Level formatLevel(Level level) {
         if (level.isGreaterOrEqual(Level.ERROR)) {
             return Event.Level.ERROR;
@@ -61,6 +96,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } else return null;
     }
 
+    /**
+     * Gets the position of the event as a String.
+     * <p>
+     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
+     * </p>
+     *
+     * @param iLoggingEvent event without stacktrace but with a position.
+     * @return a string version of the position.
+     */
     protected static String getEventPosition(ILoggingEvent iLoggingEvent) {
         StringBuilder sb = new StringBuilder();
         for (StackTraceElement stackTraceElement : iLoggingEvent.getCallerData()) {
@@ -105,6 +149,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
+    /**
+     * Builds an Event based on the logging event.
+     *
+     * @param iLoggingEvent Log generated.
+     * @return Event containing details provided by the logging system.
+     */
     protected Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
