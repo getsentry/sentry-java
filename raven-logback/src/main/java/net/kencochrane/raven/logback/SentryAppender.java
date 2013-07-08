@@ -41,9 +41,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.propagateClose = propagateClose;
     }
 
-    private static List<String> formatArguments(Object[] argumentArray) {
-        List<String> arguments = new ArrayList<String>(argumentArray.length);
-        for (Object argument : argumentArray) {
+    protected static List<String> formatMessageParameters(Object[] parameters) {
+        List<String> arguments = new ArrayList<String>(parameters.length);
+        for (Object argument : parameters) {
             arguments.add((argument != null) ? argument.toString() : null);
         }
         return arguments;
@@ -104,7 +104,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         if (iLoggingEvent.getArgumentArray() != null)
             eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
-                    formatArguments(iLoggingEvent.getArgumentArray())));
+                    formatMessageParameters(iLoggingEvent.getArgumentArray())));
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();

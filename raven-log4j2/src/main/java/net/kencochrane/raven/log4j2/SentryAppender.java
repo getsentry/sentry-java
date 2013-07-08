@@ -106,6 +106,12 @@ public class SentryAppender extends AbstractAppender<String> {
         return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
                 + " at line " + stackTraceElement.getLineNumber();
     }
+    protected static List<String> formatMessageParameters(Object[] parameters) {
+        List<String> stringParameters = new ArrayList<String>(parameters.length);
+        for (Object parameter : parameters)
+            stringParameters.add((parameter != null) ? parameter.toString() : null);
+        return stringParameters;
+    }
 
     /**
      * {@inheritDoc}
@@ -188,13 +194,6 @@ public class SentryAppender extends AbstractAppender<String> {
         raven.runBuilderHelpers(eventBuilder);
 
         return eventBuilder.build();
-    }
-
-    private List<String> formatMessageParameters(Object[] parameters) {
-        List<String> stringParameters = new ArrayList<String>(parameters.length);
-        for (Object parameter : parameters)
-            stringParameters.add((parameter != null) ? parameter.toString() : null);
-        return stringParameters;
     }
 
     public void setDsn(String dsn) {

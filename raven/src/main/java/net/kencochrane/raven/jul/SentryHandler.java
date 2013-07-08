@@ -47,7 +47,7 @@ public class SentryHandler extends Handler {
         else return null;
     }
 
-    private static List<String> formatParameters(Object[] parameters) {
+    protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> formattedParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
             formattedParameters.add((parameter != null) ? parameter.toString() : null);
@@ -106,7 +106,7 @@ public class SentryHandler extends Handler {
 
         if (record.getParameters() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(),
-                    formatParameters(record.getParameters())));
+                    formatMessageParameters(record.getParameters())));
         } else {
             eventBuilder.setMessage(record.getMessage());
         }
