@@ -32,12 +32,12 @@ public class SentryAppender extends AbstractAppender<String> {
      * Default name for the appender.
      */
     public static final String APPENDER_NAME = "raven";
-    private static final String LOG4J_NDC = "log4j2-NDC";
-    private static final String LOG4J_MARKER = "log4j2-Marker";
+    protected static final String LOG4J_NDC = "log4j2-NDC";
+    protected static final String LOG4J_MARKER = "log4j2-Marker";
+    protected Raven raven;
+    protected String dsn;
+    protected String ravenFactory;
     private final boolean propagateClose;
-    private Raven raven;
-    private String dsn;
-    private String ravenFactory;
 
     public SentryAppender() {
         this(APPENDER_NAME, null, true);
@@ -84,7 +84,7 @@ public class SentryAppender extends AbstractAppender<String> {
         return sentryAppender;
     }
 
-    private static Event.Level formatLevel(Level level) {
+    protected static Event.Level formatLevel(Level level) {
         switch (level) {
             case FATAL:
                 return Event.Level.FATAL;
@@ -143,7 +143,7 @@ public class SentryAppender extends AbstractAppender<String> {
         }
     }
 
-    private Event buildEvent(LogEvent event) {
+    protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(event.getMillis()))
