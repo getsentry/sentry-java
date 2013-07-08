@@ -24,11 +24,26 @@ public class SentryHandler extends Handler {
      * @see #initRaven()
      */
     protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
+    protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
+    protected String ravenFactory;
     private final boolean propagateClose;
     private boolean guard = false;
 
     public SentryHandler() {
         propagateClose = true;
+        retrieveProperties();
     }
 
     public SentryHandler(Raven raven) {
@@ -72,6 +87,15 @@ public class SentryHandler extends Handler {
         for (Object parameter : parameters)
             formattedParameters.add((parameter != null) ? parameter.toString() : null);
         return formattedParameters;
+    }
+
+    /**
+     * Retrieves the properties of the logger.
+     */
+    protected void retrieveProperties() {
+        LogManager manager = LogManager.getLogManager();
+        dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
+        ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
     }
 
     @Override
