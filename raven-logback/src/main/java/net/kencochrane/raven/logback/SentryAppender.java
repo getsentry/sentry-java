@@ -61,6 +61,16 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } else return null;
     }
 
+    protected static String getEventPosition(ILoggingEvent iLoggingEvent) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement stackTraceElement : iLoggingEvent.getCallerData()) {
+            sb.append(stackTraceElement.getClassName())
+                    .append(stackTraceElement.getMethodName())
+                    .append(stackTraceElement.getLineNumber());
+        }
+        return sb.toString();
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -132,16 +142,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         raven.runBuilderHelpers(eventBuilder);
 
         return eventBuilder.build();
-    }
-
-    private String getEventPosition(ILoggingEvent iLoggingEvent) {
-        StringBuilder sb = new StringBuilder();
-        for (StackTraceElement stackTraceElement : iLoggingEvent.getCallerData()) {
-            sb.append(stackTraceElement.getClassName())
-                    .append(stackTraceElement.getMethodName())
-                    .append(stackTraceElement.getLineNumber());
-        }
-        return sb.toString();
     }
 
     public void setDsn(String dsn) {

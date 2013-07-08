@@ -102,10 +102,11 @@ public class SentryAppender extends AbstractAppender<String> {
         }
     }
 
-    private static String formatCulprit(StackTraceElement stackTraceElement) {
-        return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
-                + " at line " + stackTraceElement.getLineNumber();
+    protected static String getEventPosition(LogEvent event) {
+        StackTraceElement stackTraceElement = event.getSource();
+        return stackTraceElement.getClassName() + stackTraceElement.getMethodName() + stackTraceElement.getLineNumber();
     }
+
     protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> stringParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
@@ -163,8 +164,7 @@ public class SentryAppender extends AbstractAppender<String> {
         } else if (event.getSource() != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways).
-            String source = formatCulprit(event.getSource());
-            eventBuilder.generateChecksum(source);
+            eventBuilder.generateChecksum(getEventPosition(event));
         }
 
         if (event.getSource() != null) {
