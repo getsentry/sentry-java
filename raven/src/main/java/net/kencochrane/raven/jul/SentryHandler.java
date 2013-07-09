@@ -142,18 +142,6 @@ public class SentryHandler extends Handler {
                 .setTimestamp(new Date(record.getMillis()))
                 .setLogger(record.getLoggerName());
 
-        if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
-            StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
-                    record.getSourceMethodName(), null, -1);
-            eventBuilder.setCulprit(fakeFrame);
-        } else {
-            eventBuilder.setCulprit(record.getLoggerName());
-        }
-
-        if (record.getThrown() != null) {
-            eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
-        }
-
         if (record.getResourceBundle().containsKey(record.getMessage())) {
             String message = record.getResourceBundle().getString(record.getMessage());
             if (record.getParameters() != null) {
@@ -164,6 +152,17 @@ public class SentryHandler extends Handler {
             }
         } else {
             eventBuilder.setMessage(record.getMessage());
+        }
+
+        if (record.getThrown() != null)
+            eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
+
+        if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
+            StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
+                    record.getSourceMethodName(), null, -1);
+            eventBuilder.setCulprit(fakeFrame);
+        } else {
+            eventBuilder.setCulprit(record.getLoggerName());
         }
 
         raven.runBuilderHelpers(eventBuilder);
