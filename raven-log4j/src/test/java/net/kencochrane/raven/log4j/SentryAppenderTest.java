@@ -41,6 +41,11 @@ public class SentryAppenderTest extends AbstractLoggerTest {
     }
 
     @Override
+    public String getUnformattedMessage() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     @Test
     public void testLogLevelConversions() throws Exception {
         assertLevelConverted(Event.Level.DEBUG, Level.TRACE);

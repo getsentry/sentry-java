@@ -45,6 +45,11 @@ public class SentryHandlerTest extends AbstractLoggerTest {
     }
 
     @Override
+    public String getUnformattedMessage() {
+        return "Some content {0} {1} {2}";
+    }
+
+    @Override
     @Test
     public void testLogLevelConversions() throws Exception {
         assertLevelConverted(Event.Level.DEBUG, Level.FINEST);

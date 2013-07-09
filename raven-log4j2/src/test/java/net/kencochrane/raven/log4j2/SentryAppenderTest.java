@@ -42,6 +42,11 @@ public class SentryAppenderTest extends AbstractLoggerTest {
         return LOGGER_NAME;
     }
 
+    @Override
+    public String getUnformattedMessage() {
+        return "Some content {} {} {}";
+    }
+
     @Test
     @Override
     public void testLogLevelConversions() throws Exception {

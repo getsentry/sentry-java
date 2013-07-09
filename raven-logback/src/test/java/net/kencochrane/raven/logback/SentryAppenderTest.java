@@ -40,6 +40,11 @@ public class SentryAppenderTest extends AbstractLoggerTest {
     }
 
     @Override
+    public String getUnformattedMessage() {
+        return "Some content {} {} {}";
+    }
+
+    @Override
     public String getCurrentLoggerName() {
         return logger.getName();
     }
