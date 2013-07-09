@@ -153,8 +153,11 @@ public class SentryAppender extends AppenderSkeleton {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
         } else if (loggingEvent.getLocationInformation().fullInfo != null) {
-            StackTraceElement[] stackTrace = {asStackTraceElement(loggingEvent.getLocationInformation())};
-            eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
+            LocationInfo location = loggingEvent.getLocationInformation();
+            if (!LocationInfo.NA.equals(location.getFileName()) && !LocationInfo.NA.equals(location.getLineNumber())) {
+                StackTraceElement[] stackTrace = {asStackTraceElement(location)};
+                eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
+            }
         }
 
         // Set culprit
