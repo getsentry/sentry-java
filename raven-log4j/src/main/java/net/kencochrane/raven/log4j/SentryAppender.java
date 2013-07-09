@@ -6,6 +6,7 @@ import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.spi.ErrorCode;
@@ -152,9 +153,8 @@ public class SentryAppender extends AppenderSkeleton {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
         } else if (loggingEvent.getLocationInformation().fullInfo != null) {
-            // When it's a message try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways).
-            eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
+            StackTraceElement[] stackTrace = {asStackTraceElement(loggingEvent.getLocationInformation())};
+            eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
         }
 
         // Set culprit

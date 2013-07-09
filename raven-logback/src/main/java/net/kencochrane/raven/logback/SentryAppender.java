@@ -11,6 +11,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -175,9 +176,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
         } else if (iLoggingEvent.getCallerData().length > 0) {
-            // When there is no exceptions try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways).
-            eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
+            eventBuilder.addSentryInterface(new StackTraceInterface(iLoggingEvent.getCallerData()));
         }
 
         if (iLoggingEvent.getCallerData().length > 0) {
