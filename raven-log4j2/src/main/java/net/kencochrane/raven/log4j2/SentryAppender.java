@@ -217,6 +217,11 @@ public class SentryAppender extends AbstractAppender<String> {
                 .setLevel(formatLevel(event.getLevel()))
                 .addExtra(THREAD_NAME, event.getThreadName());
 
+        if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
+            eventBuilder.addSentryInterface(new MessageInterface(eventMessage.getFormat(),
+                    formatMessageParameters(eventMessage.getParameters())));
+        }
+
         if (event.getThrown() != null) {
             Throwable throwable = event.getThrown();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
@@ -231,26 +236,19 @@ public class SentryAppender extends AbstractAppender<String> {
             eventBuilder.setCulprit(event.getLoggerName());
         }
 
-        if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
-            eventBuilder.addSentryInterface(new MessageInterface(eventMessage.getFormat(),
-                    formatMessageParameters(eventMessage.getParameters())));
-        }
-
-        if (event.getContextStack() != null) {
+        if (event.getContextStack() != null)
             eventBuilder.addExtra(LOG4J_NDC, event.getContextStack().asList());
-        }
 
         if (event.getContextMap() != null) {
             for (Map.Entry<String, String> mdcEntry : event.getContextMap().entrySet()) {
                 eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
-        if (event.getMarker() != null) {
+
+        if (event.getMarker() != null)
             eventBuilder.addExtra(LOG4J_MARKER, event.getMarker());
-        }
 
         raven.runBuilderHelpers(eventBuilder);
-
         return eventBuilder.build();
     }
 

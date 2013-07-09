@@ -168,9 +168,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .setLevel(formatLevel(iLoggingEvent.getLevel()))
                 .addExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
-        if (iLoggingEvent.getArgumentArray() != null)
+        if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
                     formatMessageParameters(iLoggingEvent.getArgumentArray())));
+        }
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
@@ -189,12 +190,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
         }
 
-        if (iLoggingEvent.getMarker() != null) {
+        if (iLoggingEvent.getMarker() != null)
             eventBuilder.addExtra(LOGBACK_MARKER, iLoggingEvent.getMarker());
-        }
 
         raven.runBuilderHelpers(eventBuilder);
-
         return eventBuilder.build();
     }
 
