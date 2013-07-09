@@ -9,6 +9,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -144,12 +145,11 @@ public class SentryHandler extends Handler {
 
         if (record.getResourceBundle().containsKey(record.getMessage())) {
             String message = record.getResourceBundle().getString(record.getMessage());
-            if (record.getParameters() != null) {
-                eventBuilder.addSentryInterface(
-                        new MessageInterface(message, formatMessageParameters(record.getParameters())));
-            } else {
-                eventBuilder.setMessage(message);
-            }
+            Object[] parameters = record.getParameters();
+            eventBuilder.setMessage(MessageFormat.format(message, parameters));
+
+            if (parameters != null)
+                eventBuilder.addSentryInterface(new MessageInterface(message, formatMessageParameters(parameters)));
         } else {
             eventBuilder.setMessage(record.getMessage());
         }
