@@ -30,4 +30,12 @@ public class SentryAppenderIT {
         logger.info("This is a test");
         assertThat(sentryStub.getEventCount(), is(1));
     }
+
+    @Test
+    public void testChainedExceptions() {
+        assertThat(sentryStub.getEventCount(), is(0));
+        logger.error("This is an exception",
+                new UnsupportedOperationException("Test", new UnsupportedOperationException()));
+        assertThat(sentryStub.getEventCount(), is(1));
+    }
 }
