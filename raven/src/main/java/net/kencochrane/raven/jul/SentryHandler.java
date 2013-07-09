@@ -143,16 +143,15 @@ public class SentryHandler extends Handler {
                 .setTimestamp(new Date(record.getMillis()))
                 .setLogger(record.getLoggerName());
 
-        if (record.getResourceBundle().containsKey(record.getMessage())) {
-            String message = record.getResourceBundle().getString(record.getMessage());
-            Object[] parameters = record.getParameters();
-            eventBuilder.setMessage(MessageFormat.format(message, parameters));
-
-            if (parameters != null)
-                eventBuilder.addSentryInterface(new MessageInterface(message, formatMessageParameters(parameters)));
-        } else {
-            eventBuilder.setMessage(record.getMessage());
+        String message = record.getMessage();
+        if (record.getResourceBundle() != null && record.getResourceBundle().containsKey(record.getMessage())) {
+            message = record.getResourceBundle().getString(record.getMessage());
         }
+        if (record.getParameters() != null) {
+            eventBuilder.addSentryInterface(new MessageInterface(message, formatMessageParameters(record.getParameters())));
+            message = MessageFormat.format(message, record.getParameters());
+        }
+        eventBuilder.setMessage(message);
 
         if (record.getThrown() != null)
             eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
