@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(MockitoJUnitRunner.class)
 public abstract class AbstractLoggerTest {
     @Mock
-    private Raven mockRaven;
+    protected Raven mockRaven;
 
     @Test
     public void testSimpleMessageLogging() throws Exception {
