@@ -57,18 +57,23 @@ To use it with maven, add the following repository:
 
 ## Android
 
-Raven works on Android, and relies on the [ServiceLoader](https://developer.android.com/reference/java/util/ServiceLoader.html)
+Raven works on Android, and relies on the
+[ServiceLoader](https://developer.android.com/reference/java/util/ServiceLoader.html)
 system which uses the content of `META-INF/services`.
-This is used to declare the `RavenFactory` implementations (to allow more control over the automatically generated
-instances of `Raven`) in `META-INF/services/net.kencochrane.raven.RavenFactory`.
+This is used to declare the `RavenFactory` implementations (to allow more
+control over the automatically generated instances of `Raven`) in
+`META-INF/services/net.kencochrane.raven.RavenFactory`.
 
-Unfortunately, when the APK is build, the content of `META-INF/services` of the dependencies is lost, this prevent Raven
-to work properly. A few solutions exist for that problem.
+Unfortunately, when the APK is build, the content of `META-INF/services` of
+the dependencies is lost, this prevent Raven to work properly.
+Solutions exist for that problem:
 
- - Use [maven-android-plugin](https://code.google.com/p/maven-android-plugin/) which has already solved this
+ - Use [maven-android-plugin](https://code.google.com/p/maven-android-plugin/)
+ which has already solved this
 [problem](https://code.google.com/p/maven-android-plugin/issues/detail?id=97)
- - Create manually a `META-INF/services/net.kencochrane.raven.RavenFactory` for the project which will contain the
- canonical name of of implementation of `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
+ - Create manually a `META-INF/services/net.kencochrane.raven.RavenFactory` for
+ the project which will contain the  canonical name of of implementation of
+ `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
  - Register manually the `RavenFactory` when the application starts:
 
  ```java
@@ -127,9 +132,9 @@ option is enabled.
 ### Async connection
 In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, an asynchronous connection
-is set up, using  a low priority thread pool to submit events to Sentry.
+is set up, using a low priority thread pool to submit events to Sentry.
 
-To disable the async mode, add `raven.async=false` to your DSN:
+To disable the async mode, add `raven.async=false` to the DSN:
 
     http://public:private@host:port/1?raven.async=false
 
@@ -178,7 +183,7 @@ Usually when a StackTrace is printed, the result looks like this:
 
     HighLevelException: MidLevelException: LowLevelException
             at Main.a(Main.java:13)
-            at Junk.main(Main.java:4)
+            at Main.main(Main.java:4)
     Caused by: MidLevelException: LowLevelException
             at Main.c(Main.java:23)
             at Main.b(Main.java:17)
@@ -206,13 +211,13 @@ what the problem was and will just create a longer stacktrace.
 
 Currently this is not configurable (see #49) and some packages are ignored by default:
 
-- com.sun.*
-- java.*
-- javax.*
-- org.omg.*
-- sun.*
-- junit.*
-- com.intellij.rt.*
+- `com.sun.*`
+- `java.*`
+- `javax.*`
+- `org.omg.*`
+- `sun.*`
+- `junit.*`
+- `com.intellij.rt.*`
 
 ### Compression
 By default the content sent to Sentry is compressed and encoded in base64 before
@@ -238,51 +243,3 @@ By default the connection will set up its own timeout, but it's possible to
 manually set one with `raven.timeout` (in milliseconds):
 
     http://public:private@host:port/1?raven.timeout=10000
-
-
-## History
-
-- 4.0
-    - Support of the Sentry protocol V4
-- 3.0
-    - Support of the Sentry protocol V3
-    - Rewritten
-    - Added log4j2 appender
-    - Support of JNDI
-- 2.0
-    - Version increment to reduce confusion about releases
-    - Added Logback appender (thanks to [ccouturi](https://github.com/ccouturi))
-- 1.0
-    - Rewrite
-    - Support tags
-    - Added support for JSON processors (see bundled `ServletJSONProcessor`)
-- 0.6
-    - Added support for sending messages through UDP
-- 0.5
-    - Added async support
-    - Fixed issue with parsing of path and port in DSN
-- 0.4
-    - Added the ability to get the SENTRY_DSN from the ENV
-    - Added RavenClient.captureMessage
-    - Added RavenClient.captureException
-- 0.3
-    - Added Maven support
-    - Merged with log4sentry project by Kevin Wetzels
-    - Added Proxy support
-    - Added full stack trace to logs
-
-- 0.2
-    - code refactor and cleanup
-
-- 0.1
-    - initial version
-
-## Contributors
-
-- [Ken Cochrane](https://github.com/kencochrane)
-- [Kevin Wetzels](https://github.com/roam)
-- [David Cramer](https://github.com/dcramer)
-- [Mark Philpot](https://github.com/griphiam)
-- [Brad Chen](https://github.com/vvasabi)
-- [ccouturi](https://github.com/ccouturi)
-- [Colin Hebert](https://github.com/ColinHebert)
