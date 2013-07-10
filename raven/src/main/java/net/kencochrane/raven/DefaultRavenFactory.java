@@ -204,7 +204,7 @@ public class DefaultRavenFactory extends RavenFactory {
         private DaemonThreadFactory(int priority) {
             SecurityManager s = System.getSecurityManager();
             group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-            namePrefix = "pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
+            namePrefix = "raven-pool-" + POOL_NUMBER.getAndIncrement() + "-thread-";
             this.priority = priority;
         }
 
