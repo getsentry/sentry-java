@@ -31,7 +31,7 @@ Relies on:
 In the `log4j.properties` file set:
 
 ```properties
-log4j.rootLogger=ALL, SentryAppender
+log4j.rootLogger=WARN, SentryAppender
 log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
 log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
 ```
