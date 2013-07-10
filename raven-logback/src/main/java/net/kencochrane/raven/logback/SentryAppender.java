@@ -191,7 +191,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         if (iLoggingEvent.getMarker() != null)
-            eventBuilder.addExtra(LOGBACK_MARKER, iLoggingEvent.getMarker());
+            eventBuilder.addTag(LOGBACK_MARKER, iLoggingEvent.getMarker().getName());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
