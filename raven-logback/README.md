@@ -68,7 +68,9 @@ public class MyClass {
 }
 ```
 
-### Extras
-**TODO:**
-The logback module for raven takes advantage of the [marker system](http://www.slf4j.org/faq.html#fatal).
-It is also possible use the [MDC system provided by logback](http://logback.qos.ch/manual/mdc.html).
+### Additional data and information
+It's possible to add extra details to events captured by the logback module
+thanks to the [marker system](http://www.slf4j.org/faq.html#fatal) which will
+add a tag `logback-Marker`.
+[The MDC system provided by Log4j 2](http://logback.qos.ch/manual/mdc.html)
+allows to add extra information to the event.

@@ -78,7 +78,9 @@ public class MyClass {
 }
 ```
 
-### Extras
-**TODO:**
-The Log4j 2 module for raven takes advantage of the [marker system](https://logging.apache.org/log4j/2.x/manual/markers.html).
-It is also possible use both the [MDC and the NDC systems provided by Log4j 2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
+### Additional data and information
+It's possible to add extra details to events captured by the Log4j 2 module
+thanks to the [marker system](https://logging.apache.org/log4j/2.x/manual/markers.html)
+which will add a tag `log4j2-Marker`.
+Both [the MDC and the NDC systems provided by Log4j 2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
+are usable, allowing to attach extras information to the event.

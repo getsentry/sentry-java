@@ -124,7 +124,8 @@ public class MyClass {
 
 ### In practice (advanced)
 
-For more complex messages, it will be necessary to build an `Event` with the `EventBuilder` class.
+For more complex messages, it will be necessary to build an `Event` with the
+`EventBuilder` class.
 
 ```java
 import net.kencochrane.raven.Raven;
@@ -177,4 +178,5 @@ public class MyClass {
 }
 ```
 
-This gives more control over the content of the `Event` and gives access to the complete API supported by Sentry.
+This gives more control over the content of the `Event` and gives access to the
+complete API supported by Sentry.
