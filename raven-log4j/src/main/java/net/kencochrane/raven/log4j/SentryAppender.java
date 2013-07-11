@@ -25,11 +25,11 @@ public class SentryAppender extends AppenderSkeleton {
     /**
      * Name of the {@link Event#extra} property containing NDC details.
      */
-    protected static final String LOG4J_NDC = "log4J-NDC";
+    public static final String LOG4J_NDC = "log4J-NDC";
     /**
      * Name of the {@link Event#extra} property containing the Thread name.
      */
-    protected static final String THREAD_NAME = "Raven-Threadname";
+    public static final String THREAD_NAME = "Raven-Threadname";
     /**
      * Current instance of {@link Raven}.
      *
