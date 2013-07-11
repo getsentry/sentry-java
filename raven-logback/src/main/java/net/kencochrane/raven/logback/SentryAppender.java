@@ -26,11 +26,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     /**
      * Name of the {@link Event#extra} property containing Maker details.
      */
-    protected static final String LOGBACK_MARKER = "logback-Marker";
+    public static final String LOGBACK_MARKER = "logback-Marker";
     /**
      * Name of the {@link Event#extra} property containing the Thread name.
      */
-    protected static final String THREAD_NAME = "Raven-Threadname";
+    public static final String THREAD_NAME = "Raven-Threadname";
     /**
      * Current instance of {@link Raven}.
      *
