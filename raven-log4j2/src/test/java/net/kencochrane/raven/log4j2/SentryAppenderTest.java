@@ -5,6 +5,7 @@ import net.kencochrane.raven.event.Event;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.FormattedMessage;
@@ -92,6 +93,20 @@ public class SentryAppenderTest extends AbstractLoggerTest {
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getTags(),
                 Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_MARKER, markerName));
+    }
+
+    @Test
+    public void testMdcAddedToExtra() {
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        String extraKey = UUID.randomUUID().toString();
+        String extraValue = UUID.randomUUID().toString();
+
+        ThreadContext.put(extraKey, extraValue);
+
+        logEvent(Level.INFO, null, null, "testMessage", null);
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
     }
 
     private void logEvent(Level level, Marker marker, Throwable exception, String messageString,
