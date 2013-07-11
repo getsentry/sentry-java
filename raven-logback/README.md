@@ -40,16 +40,38 @@ In the `logback.xml` file set:
 </configuration>
 ```
 
+### Additional data and information
+It's possible to add extra details to events captured by the logback module
+thanks to the [marker system](http://www.slf4j.org/faq.html#fatal) which will
+add a tag `logback-Marker`.
+[The MDC system provided by Log4j 2](http://logback.qos.ch/manual/mdc.html)
+allows to add extra information to the event.
+
 ### In practice
 ```java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.MarkerFactory;
 
 public class MyClass {
     private static final Logger logger = LoggerFactory.getLogger(MyClass.class);
+    private static final Marker MARKER = MarkerFactory.getMarker("myMarker");
 
     void logSimpleMessage() {
         // This adds a simple message to the logs
+        logger.info("This is a test");
+    }
+
+    void logWithTag() {
+        // This adds a message with a tag to the logs named 'logback-Marker'
+        logger.info(MARKER, "This is a test");
+    }
+
+    void logWithExtras() {
+        // MDC extras
+        MDC.put("extra_key", "extra_value");
+        // This adds a message with extras to the logs
         logger.info("This is a test");
     }
 
@@ -67,10 +89,3 @@ public class MyClass {
     }
 }
 ```
-
-### Additional data and information
-It's possible to add extra details to events captured by the logback module
-thanks to the [marker system](http://www.slf4j.org/faq.html#fatal) which will
-add a tag `logback-Marker`.
-[The MDC system provided by Log4j 2](http://logback.qos.ch/manual/mdc.html)
-allows to add extra information to the event.
