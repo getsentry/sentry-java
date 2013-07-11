@@ -9,10 +9,14 @@ import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.verify;
 
 public class SentryAppenderTest extends AbstractLoggerTest {
     private static final String LOGGER_NAME = SentryAppenderTest.class.getName();
@@ -62,6 +66,17 @@ public class SentryAppenderTest extends AbstractLoggerTest {
     private void assertLevelConverted(Event.Level expectedLevel, Level level) {
         logEvent(level, null, null, "", null);
         assertLogLevel(expectedLevel);
+    }
+
+    @Test
+    public void testThreadNameAddedToExtra() {
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+        logEvent(Level.INFO, null, null, "testMessage", null);
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getExtra(),
+                Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, Thread.currentThread().getName()));
     }
 
     private void logEvent(Level level, Marker marker, Throwable exception, String messageString,
