@@ -102,25 +102,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Gets the position of the event as a String.
-     * <p>
-     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
-     * </p>
-     *
-     * @param iLoggingEvent event without stacktrace but with a position.
-     * @return a string version of the position.
-     */
-    protected static String getEventPosition(ILoggingEvent iLoggingEvent) {
-        StringBuilder sb = new StringBuilder();
-        for (StackTraceElement stackTraceElement : iLoggingEvent.getCallerData()) {
-            sb.append(stackTraceElement.getClassName())
-                    .append(stackTraceElement.getMethodName())
-                    .append(stackTraceElement.getLineNumber());
-        }
-        return sb.toString();
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * The raven instance is started in this method instead of {@link #start()} in order to avoid substitute loggers
