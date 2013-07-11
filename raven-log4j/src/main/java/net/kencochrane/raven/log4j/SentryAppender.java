@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -113,6 +114,9 @@ public class SentryAppender extends AppenderSkeleton {
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            getErrorHandler().error("An exception occurred during the retrieval of the DSN for Raven", e,
+                    ErrorCode.ADDRESS_PARSE_FAILURE);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred during the creation of a Raven instance", e,
                     ErrorCode.FILE_OPEN_FAILURE);
