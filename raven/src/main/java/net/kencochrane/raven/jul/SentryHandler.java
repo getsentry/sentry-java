@@ -112,6 +112,8 @@ public class SentryHandler extends Handler {
                 initRaven();
             Event event = buildEvent(record);
             raven.sendEvent(event);
+        } catch (Exception e) {
+            reportError("An exception occurred while creating a new event in Raven", e, ErrorManager.WRITE_FAILURE);
         } finally {
             guard = false;
         }

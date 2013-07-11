@@ -130,6 +130,9 @@ public class SentryAppender extends AppenderSkeleton {
             guard = true;
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
+        } catch (Exception e) {
+            getErrorHandler().error("An exception occurred while creating a new event in Raven", e,
+                    ErrorCode.WRITE_FAILURE);
         } finally {
             guard = false;
         }

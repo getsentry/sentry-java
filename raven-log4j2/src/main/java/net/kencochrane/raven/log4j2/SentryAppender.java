@@ -182,10 +182,14 @@ public class SentryAppender extends AbstractAppender<String> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        if (raven == null)
-            initRaven();
-        Event event = buildEvent(logEvent);
-        raven.sendEvent(event);
+        try {
+            if (raven == null)
+                initRaven();
+            Event event = buildEvent(logEvent);
+            raven.sendEvent(event);
+        } catch (Exception e) {
+            error("An exception occurred while creating a new event in Raven", logEvent, e);
+        }
     }
 
     /**

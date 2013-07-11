@@ -115,10 +115,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        if (raven == null)
-            initRaven();
-        Event event = buildEvent(iLoggingEvent);
-        raven.sendEvent(event);
+        try {
+            if (raven == null)
+                initRaven();
+
+            Event event = buildEvent(iLoggingEvent);
+            raven.sendEvent(event);
+        } catch (Exception e) {
+            addError("An exception occurred while creating a new event in Raven", e);
+        }
     }
 
     /**
