@@ -4,6 +4,7 @@ import net.kencochrane.raven.AbstractLoggerTest;
 import net.kencochrane.raven.event.Event;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.FormattedMessage;
@@ -15,6 +16,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.UUID;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.verify;
 
@@ -77,6 +80,18 @@ public class SentryAppenderTest extends AbstractLoggerTest {
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getExtra(),
                 Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, Thread.currentThread().getName()));
+    }
+
+    @Test
+    public void testMarkerAddedToTag() {
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        String markerName = UUID.randomUUID().toString();
+
+        logEvent(Level.INFO, MarkerManager.getMarker(markerName), null, "testMessage", null);
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getTags(),
+                Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_MARKER, markerName));
     }
 
     private void logEvent(Level level, Marker marker, Throwable exception, String messageString,
