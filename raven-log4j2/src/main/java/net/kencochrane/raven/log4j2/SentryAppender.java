@@ -36,15 +36,15 @@ public class SentryAppender extends AbstractAppender<String> {
     /**
      * Name of the {@link Event#extra} property containing NDC details.
      */
-    protected static final String LOG4J_NDC = "log4j2-NDC";
+    public static final String LOG4J_NDC = "log4j2-NDC";
     /**
      * Name of the {@link Event#extra} property containing Marker details.
      */
-    protected static final String LOG4J_MARKER = "log4j2-Marker";
+    public static final String LOG4J_MARKER = "log4j2-Marker";
     /**
      * Name of the {@link Event#extra} property containing the Thread name.
      */
-    protected static final String THREAD_NAME = "Raven-Threadname";
+    public static final String THREAD_NAME = "Raven-Threadname";
     /**
      * Current instance of {@link Raven}.
      *
