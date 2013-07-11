@@ -4,12 +4,14 @@ import net.kencochrane.raven.AbstractLoggerTest;
 import net.kencochrane.raven.event.Event;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -81,5 +83,19 @@ public class SentryAppenderTest extends AbstractLoggerTest {
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getExtra(),
                 Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, Thread.currentThread().getName()));
+    }
+
+    @Test
+    public void testMdcAddedToExtra() {
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        String extraKey = UUID.randomUUID().toString();
+        Object extraValue = mock(Object.class);
+
+        MDC.put(extraKey, extraValue);
+
+        logger.info("testMessage");
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getExtra(), hasEntry(extraKey, extraValue));
     }
 }
