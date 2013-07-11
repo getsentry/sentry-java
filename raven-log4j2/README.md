@@ -50,16 +50,40 @@ In the `log4j2.xml` file set:
 </configuration>
 ```
 
+### Additional data and information
+It's possible to add extra details to events captured by the Log4j 2 module
+thanks to the [marker system](https://logging.apache.org/log4j/2.x/manual/markers.html)
+which will add a tag `log4j2-Marker`.
+Both [the MDC and the NDC systems provided by Log4j 2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
+are usable, allowing to attach extras information to the event.
+
 ### In practice
 ```java
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 public class MyClass {
     private static final Logger logger = LogManager.getLogger(MyClass.class);
+    private static final Marker MARKER = MarkerManager.getMarker("myMarker");
 
     void logSimpleMessage() {
         // This adds a simple message to the logs
+        logger.info("This is a test");
+    }
+
+    void logWithTag() {
+        // This adds a message with a tag to the logs named 'log4j2-Marker'
+        logger.info(MARKER, "This is a test");
+    }
+
+    void logWithExtras() {
+        // MDC extras
+        ThreadContext.put("extra_key", "extra_value");
+        // NDC extras are sent under 'log4j2-NDC'
+        ThreadContext.push("Extra_details");
+        // This adds a message with extras to the logs
         logger.info("This is a test");
     }
 
@@ -77,10 +101,3 @@ public class MyClass {
     }
 }
 ```
-
-### Additional data and information
-It's possible to add extra details to events captured by the Log4j 2 module
-thanks to the [marker system](https://logging.apache.org/log4j/2.x/manual/markers.html)
-which will add a tag `log4j2-Marker`.
-Both [the MDC and the NDC systems provided by Log4j 2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
-are usable, allowing to attach extras information to the event.
