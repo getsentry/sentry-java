@@ -11,9 +11,11 @@ import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.MDC;
 import org.slf4j.MarkerFactory;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.verify;
@@ -102,5 +104,18 @@ public class SentryAppenderTest extends AbstractLoggerTest {
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getTags(),
                 Matchers.<String, Object>hasEntry(SentryAppender.LOGBACK_MARKER, markerName));
+    }
+
+    @Test
+    public void testMdcAddedToExtra() {
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        String extraKey = UUID.randomUUID().toString();
+        String extraValue = UUID.randomUUID().toString();
+
+        MDC.put(extraKey, extraValue);
+        logger.info("testMessage");
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
     }
 }
