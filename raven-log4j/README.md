@@ -56,10 +56,11 @@ public class MyClass {
     }
 
     void logWithExtras() {
-        // This adds a message with extras to the logs
+        // MDC extras
         MDC.put("extra_key", "extra_value");
         // NDC extras are sent under 'log4J-NDC'
         NDC.push("Extra_details");
+        // This adds a message with extras to the logs
         logger.info("This is a test");
     }
 
