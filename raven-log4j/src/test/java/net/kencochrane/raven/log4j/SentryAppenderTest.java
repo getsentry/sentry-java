@@ -5,6 +5,7 @@ import net.kencochrane.raven.event.Event;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
+import org.apache.log4j.NDC;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.mockito.Mockito.*;
 
 public class SentryAppenderTest extends AbstractLoggerTest {
@@ -97,5 +99,29 @@ public class SentryAppenderTest extends AbstractLoggerTest {
 
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getExtra(), hasEntry(extraKey, extraValue));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testNdcAddedToExtra() {
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        String extra = UUID.randomUUID().toString();
+        String extra2 = UUID.randomUUID().toString();
+
+        NDC.push(extra);
+        logger.info("testMessage");
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getExtra(), hasKey(SentryAppender.LOG4J_NDC));
+        assertThat(eventCaptor.getValue().getExtra().get(SentryAppender.LOG4J_NDC), Matchers.<Object>is(extra));
+
+        reset(mockRaven);
+        NDC.push(extra2);
+        logger.info("testMessage");
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getExtra(), hasKey(SentryAppender.LOG4J_NDC));
+        assertThat(eventCaptor.getValue().getExtra().get(SentryAppender.LOG4J_NDC),
+                Matchers.<Object>is(extra + " " + extra2));
     }
 }
