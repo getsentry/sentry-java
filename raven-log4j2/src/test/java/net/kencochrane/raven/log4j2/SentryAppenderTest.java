@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j2;
 import net.kencochrane.raven.AbstractLoggerTest;
 import net.kencochrane.raven.event.Event;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.FormattedMessage;
@@ -24,17 +25,17 @@ public class SentryAppenderTest extends AbstractLoggerTest {
 
     @Override
     public void logAnyLevel(String message) {
-        logEvent(Level.INFO, null, message, null);
+        logEvent(Level.INFO, null, null, message, null);
     }
 
     @Override
     public void logAnyLevel(String message, Throwable exception) {
-        logEvent(Level.INFO, exception, message, null);
+        logEvent(Level.INFO, null, exception, message, null);
     }
 
     @Override
     public void logAnyLevel(String message, List<String> parameters) {
-        logEvent(Level.INFO, null, message, parameters);
+        logEvent(Level.INFO, null, null, message, parameters);
     }
 
     @Override
@@ -59,18 +60,19 @@ public class SentryAppenderTest extends AbstractLoggerTest {
     }
 
     private void assertLevelConverted(Event.Level expectedLevel, Level level) {
-        logEvent(level, null, "", null);
+        logEvent(level, null, null, "", null);
         assertLogLevel(expectedLevel);
     }
 
-    private void logEvent(Level level, Throwable exception, String messageString, List<String> messageParameters) {
+    private void logEvent(Level level, Marker marker, Throwable exception, String messageString,
+                          List<String> messageParameters) {
         Message message;
         if (messageParameters != null)
             message = new FormattedMessage(messageString, messageParameters.toArray());
         else
             message = new SimpleMessage(messageString);
 
-        LogEvent event = new Log4jLogEvent(LOGGER_NAME, null, SentryAppenderTest.class.getName(), level,
+        LogEvent event = new Log4jLogEvent(LOGGER_NAME, marker, SentryAppenderTest.class.getName(), level,
                 message, exception);
         sentryAppender.append(event);
     }
