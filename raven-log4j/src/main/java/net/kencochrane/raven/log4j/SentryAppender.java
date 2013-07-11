@@ -114,7 +114,7 @@ public class SentryAppender extends AppenderSkeleton {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
-            getErrorHandler().error("An exception occurred during the creation of a raven instance", e,
+            getErrorHandler().error("An exception occurred during the creation of a Raven instance", e,
                     ErrorCode.FILE_OPEN_FAILURE);
         }
     }
@@ -196,7 +196,7 @@ public class SentryAppender extends AppenderSkeleton {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            getErrorHandler().error("An exception occurred while closing the raven connection", e,
+            getErrorHandler().error("An exception occurred while closing the Raven connection", e,
                     ErrorCode.CLOSE_FAILURE);
         }
     }

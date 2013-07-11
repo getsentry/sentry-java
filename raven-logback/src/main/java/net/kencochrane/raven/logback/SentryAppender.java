@@ -136,7 +136,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
-            addError("An exception occurred during the creation of a raven instance", e);
+            addError("An exception occurred during the creation of a Raven instance", e);
         }
     }
 
@@ -199,7 +199,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
-            addError("An exception occurred while closing the raven connection", e);
+            addError("An exception occurred while closing the Raven connection", e);
         }
     }
 }

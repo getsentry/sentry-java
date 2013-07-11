@@ -202,7 +202,7 @@ public class SentryAppender extends AbstractAppender<String> {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
-            error("An exception occurred during the creation of a raven instance", e);
+            error("An exception occurred during the creation of a Raven instance", e);
         }
     }
 
@@ -272,7 +272,7 @@ public class SentryAppender extends AbstractAppender<String> {
             if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
-            error("An exception occurred while closing the raven connection", e);
+            error("An exception occurred while closing the Raven connection", e);
         }
     }
 }
