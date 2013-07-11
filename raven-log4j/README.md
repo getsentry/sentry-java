@@ -25,7 +25,6 @@ Relies on:
  - [slf4j-log4j12-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-log4j12%7C1.7.5%7Cjar)
  is recommended as the implementation of slf4j (instead of slf4j-jdk14).
 
-
 ## Usage
 ### Configuration
 In the `log4j.properties` file set:
@@ -36,15 +35,31 @@ log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
 log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
 ```
 
+### Additional data and information
+It's possible to add extra details to events captured by the Log4j module
+thanks to both [the MDC](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/MDC.html)
+and [the NDC](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/NDC.html) systems provided by Log4j are
+usable, allowing to attach extras information to the event.
+
 ### In practice
 ```java
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
+import org.apache.log4j.NDC;
 
 public class MyClass {
     private static final Logger logger = Logger.getLogger(MyClass.class);
 
     void logSimpleMessage() {
         // This adds a simple message to the logs
+        logger.info("This is a test");
+    }
+
+    void logWithExtras() {
+        // This adds a message with extras to the logs
+        MDC.put("extra_key", "extra_value");
+        // NDC extras are sent under 'log4J-NDC'
+        NDC.push("Extra_details");
         logger.info("This is a test");
     }
 
