@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Binding system allowing to convert an {@link HttpInterface} into a JSON stream.
+ */
 public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
     private static final String URL = "url";
     private static final String METHOD = "method";
