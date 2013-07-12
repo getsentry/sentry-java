@@ -150,7 +150,8 @@ public class SentryHandler extends Handler {
             message = record.getResourceBundle().getString(record.getMessage());
         }
         if (record.getParameters() != null) {
-            eventBuilder.addSentryInterface(new MessageInterface(message, formatMessageParameters(record.getParameters())));
+            List<String> parameters = formatMessageParameters(record.getParameters());
+            eventBuilder.addSentryInterface(new MessageInterface(message, parameters));
             message = MessageFormat.format(message, record.getParameters());
         }
         eventBuilder.setMessage(message);
