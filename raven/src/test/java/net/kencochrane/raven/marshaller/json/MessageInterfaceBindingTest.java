@@ -35,7 +35,7 @@ public class MessageInterfaceBindingTest extends AbstractInterfaceBindingTest {
         String message = UUID.randomUUID().toString();
         List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
         when(mockMessageInterface.getMessage()).thenReturn(message);
-        when(mockMessageInterface.getParams()).thenReturn(parameters);
+        when(mockMessageInterface.getParameters()).thenReturn(parameters);
 
         JsonGenerator jSonGenerator = getJsonGenerator();
         interfaceBinding.writeInterface(jSonGenerator, mockMessageInterface);

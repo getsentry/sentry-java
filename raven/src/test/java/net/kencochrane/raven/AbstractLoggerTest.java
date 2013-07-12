@@ -105,7 +105,7 @@ public abstract class AbstractLoggerTest {
                 (MessageInterface) event.getSentryInterfaces().get(MessageInterface.MESSAGE_INTERFACE);
 
         assertThat(messageInterface.getMessage(), is(message));
-        assertThat(messageInterface.getParams(), is(parameters));
+        assertThat(messageInterface.getParameters(), is(parameters));
         assertThat(event.getMessage(), is(
                 "Some content " + parameters.get(0)
                         + " " + parameters.get(1)

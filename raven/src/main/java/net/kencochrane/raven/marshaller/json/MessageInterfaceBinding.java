@@ -35,7 +35,7 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
         generator.writeStartObject();
         generator.writeStringField(MESSAGE_PARAMETER, formatMessage(messageInterface.getMessage()));
         generator.writeArrayFieldStart(PARAMS_PARAMETER);
-        for (String parameter : messageInterface.getParams()) {
+        for (String parameter : messageInterface.getParameters()) {
             generator.writeString(parameter);
         }
         generator.writeEndArray();
