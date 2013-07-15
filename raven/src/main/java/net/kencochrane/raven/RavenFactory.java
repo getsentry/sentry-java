@@ -1,6 +1,8 @@
 package net.kencochrane.raven;
 
 import net.kencochrane.raven.dsn.Dsn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -15,6 +17,7 @@ import java.util.ServiceLoader;
 public abstract class RavenFactory {
     private static final ServiceLoader<RavenFactory> AUTO_REGISTERED_FACTORIES = ServiceLoader.load(RavenFactory.class);
     private static final Collection<RavenFactory> MANUALLY_REGISTERED_FACTORIES = new LinkedList<RavenFactory>();
+    private static final Logger logger = LoggerFactory.getLogger(RavenFactory.class);
 
     public static void registerFactory(RavenFactory ravenFactory) {
         MANUALLY_REGISTERED_FACTORIES.add(ravenFactory);
@@ -37,9 +40,12 @@ public abstract class RavenFactory {
             if (ravenFactoryName != null && !ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
 
+            logger.info("Found an appropriate Raven factory for '{}': '{}'", ravenFactoryName, ravenFactory);
             Raven raven = ravenFactory.createRavenInstance(dsn);
             if (raven != null) {
                 return raven;
+            } else {
+                logger.warn("The raven factory '{}' couldn't create an instance of Raven", ravenFactory);
             }
         }
 
@@ -47,9 +53,12 @@ public abstract class RavenFactory {
             if (ravenFactoryName != null && !ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
 
+            logger.info("Found an appropriate Raven factory for '{}': '{}'", ravenFactoryName, ravenFactory);
             Raven raven = ravenFactory.createRavenInstance(dsn);
             if (raven != null) {
                 return raven;
+            } else {
+                logger.warn("The raven factory '{}' couldn't create an instance of Raven", ravenFactory);
             }
         }
 
