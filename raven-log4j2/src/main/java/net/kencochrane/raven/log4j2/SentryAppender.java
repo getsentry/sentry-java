@@ -137,20 +137,6 @@ public class SentryAppender extends AbstractAppender<String> {
     }
 
     /**
-     * Gets the position of the event as a String.
-     * <p>
-     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
-     * </p>
-     *
-     * @param event event without stacktrace but with a position.
-     * @return a string version of the position.
-     */
-    protected static String getEventPosition(LogEvent event) {
-        StackTraceElement stackTraceElement = event.getSource();
-        return stackTraceElement.getClassName() + stackTraceElement.getMethodName() + stackTraceElement.getLineNumber();
-    }
-
-    /**
      * Extracts message parameters into a List of Strings.
      * <p>
      * null parameters are kept as null.
