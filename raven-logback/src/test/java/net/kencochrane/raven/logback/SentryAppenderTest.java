@@ -279,6 +279,19 @@ public class SentryAppenderTest {
         }
     }
 
+    @Test
+    public void testFailedInitialisation() throws Exception {
+        String dsnUri = "proto://private:public@host/1";
+        sentryAppender = new SentryAppender();
+        setMockContextOnAppender(sentryAppender);
+        sentryAppender.setDsn(dsnUri);
+        sentryAppender.setRavenFactory("invalid factory");
+
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(1));
+    }
+
     private ILoggingEvent newLoggingEvent(String loggerName, Marker marker, Level level, String message,
                                           Object[] argumentArray, Throwable t) {
         return newLoggingEvent(loggerName, marker, level, message, argumentArray, t,
