@@ -40,6 +40,8 @@ public class SentryAppenderTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Raven mockRaven;
     @Mock
+    private RavenFactory mockRavenFactory;
+    @Mock
     private DefaultErrorHandler mockErrorHandler;
     private SentryAppender sentryAppender;
 
@@ -47,6 +49,9 @@ public class SentryAppenderTest {
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         setMockErrorHandlerOnAppender(sentryAppender);
+
+        when(mockRavenFactory.createRavenInstance(any(Dsn.class))).thenReturn(mockRaven);
+        RavenFactory.registerFactory(mockRavenFactory);
     }
 
     private void setMockErrorHandlerOnAppender(final SentryAppender sentryAppender) {
@@ -280,17 +285,13 @@ public class SentryAppenderTest {
         sentryAppender = new SentryAppender();
         setMockErrorHandlerOnAppender(sentryAppender);
         sentryAppender.setDsn(dsnUri);
-
-        RavenFactory ravenFactory = mock(RavenFactory.class);
-        when(ravenFactory.createRavenInstance(any(Dsn.class))).thenReturn(mockRaven);
-        RavenFactory.registerFactory(ravenFactory);
-        sentryAppender.setRavenFactory(ravenFactory.getClass().getName());
+        sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
 
         sentryAppender.start();
-        verify(ravenFactory, never()).createRavenInstance(any(Dsn.class));
+        verify(mockRavenFactory, never()).createRavenInstance(any(Dsn.class));
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-        verify(ravenFactory).createRavenInstance(new Dsn(dsnUri));
+        verify(mockRavenFactory).createRavenInstance(eq(new Dsn(dsnUri)));
         assertNoErrors();
     }
 
