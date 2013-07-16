@@ -22,7 +22,6 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -160,7 +159,6 @@ public class SentryAppenderTest {
         String extraValue = UUID.randomUUID().toString();
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
-        MDC.put(extraKey, extraValue);
         sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null,
                 Collections.singletonMap(extraKey, extraValue), null, null, 0));
 
@@ -176,8 +174,7 @@ public class SentryAppenderTest {
                 UUID.randomUUID().toString(), 42)};
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
-        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null,
-                null, null, location, 0));
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null, null, null, location, 0));
 
         verify(mockRaven).sendEvent(eventCaptor.capture());
         StackTraceInterface stackTraceInterface = (StackTraceInterface) eventCaptor.getValue().getSentryInterfaces()
@@ -192,8 +189,7 @@ public class SentryAppenderTest {
                 new StackTraceElement("d", "e", "f", 69)};
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
-        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null,
-                null, null, location, 0));
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null, null, null, location, 0));
 
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getCulprit(), is("a.b(c:42)"));
