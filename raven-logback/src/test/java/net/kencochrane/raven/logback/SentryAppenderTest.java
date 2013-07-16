@@ -13,7 +13,6 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,11 +42,7 @@ public class SentryAppenderTest {
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         setMockContextOnAppender(sentryAppender);
-    }
 
-    @After
-    public void tearDown() throws Exception {
-        Raven.RAVEN_THREAD.remove();
     }
 
     private void setMockContextOnAppender(SentryAppender sentryAppender) {
@@ -226,12 +221,16 @@ public class SentryAppenderTest {
 
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven(){
-        Raven.RAVEN_THREAD.set(true);
+        try {
+            Raven.RAVEN_THREAD.set(true);
 
-        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+            sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
 
-        verify(mockRaven, never()).sendEvent(any(Event.class));
-        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+            verify(mockRaven, never()).sendEvent(any(Event.class));
+            assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+        } finally {
+            Raven.RAVEN_THREAD.remove();
+        }
     }
 
     @Test
