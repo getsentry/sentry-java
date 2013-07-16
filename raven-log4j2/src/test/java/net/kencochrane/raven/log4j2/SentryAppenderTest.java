@@ -276,9 +276,10 @@ public class SentryAppenderTest {
 
     @Test
     public void testLazyInitialisation() throws Exception {
+        String dsnUri = "proto://private:public@host/1";
         sentryAppender = new SentryAppender();
         setMockErrorHandlerOnAppender(sentryAppender);
-        sentryAppender.setDsn("proto://private:public@host/1");
+        sentryAppender.setDsn(dsnUri);
 
         RavenFactory ravenFactory = mock(RavenFactory.class);
         when(ravenFactory.createRavenInstance(any(Dsn.class))).thenReturn(mockRaven);
@@ -289,7 +290,7 @@ public class SentryAppenderTest {
         verify(ravenFactory, never()).createRavenInstance(any(Dsn.class));
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-        verify(ravenFactory).createRavenInstance(any(Dsn.class));
+        verify(ravenFactory).createRavenInstance(new Dsn(dsnUri));
         assertNoErrors();
     }
 
