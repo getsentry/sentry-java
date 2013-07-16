@@ -295,6 +295,25 @@ public class SentryAppenderTest {
         assertNoErrors();
     }
 
+    @Test
+    public void testDsnAutoDetection() throws Exception {
+        try {
+            String dsnUri = "proto://private:public@host/1";
+            System.setProperty(Dsn.DSN_VARIABLE, dsnUri);
+            sentryAppender = new SentryAppender();
+            setMockErrorHandlerOnAppender(sentryAppender);
+            sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
+
+            sentryAppender.start();
+            sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+            verify(mockRavenFactory).createRavenInstance(eq(new Dsn(dsnUri)));
+            assertNoErrors();
+        } finally {
+            System.clearProperty(Dsn.DSN_VARIABLE);
+        }
+    }
+
     private void assertNoErrors() {
         verify(mockErrorHandler, never()).error(anyString());
         verify(mockErrorHandler, never()).error(anyString(), any(Throwable.class));
