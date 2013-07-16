@@ -13,6 +13,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +43,11 @@ public class SentryAppenderTest {
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         setMockContextOnAppender(sentryAppender);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        Raven.RAVEN_THREAD.remove();
     }
 
     private void setMockContextOnAppender(SentryAppender sentryAppender) {
@@ -216,6 +222,25 @@ public class SentryAppenderTest {
         sentryAppender.stop();
         verify(mockRaven.getConnection()).close();
         assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testAppendFailIfCurrentThreadSpawnedByRaven(){
+        Raven.RAVEN_THREAD.set(true);
+
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+
+        verify(mockRaven, never()).sendEvent(any(Event.class));
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testRavenFailureDoesNotPropagate(){
+        doThrow(new UnsupportedOperationException()).when(mockRaven).sendEvent(any(Event.class));
+
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(1));
     }
 
     private ILoggingEvent newLoggingEvent(String loggerName, Marker marker, Level level, String message,
