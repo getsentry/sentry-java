@@ -130,11 +130,11 @@ public class SentryAppenderTest {
     @Test
     public void testLogParametrisedMessage() throws Exception {
         String messagePattern = "Formatted message {} {} {}";
-        List<Object> parameters = Arrays.<Object>asList("first parameter", new Object[0], null);
+        Object[] parameters = {"first parameter", new Object[0], null};
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO,
-                new FormattedMessage(messagePattern, parameters.toArray()), null));
+                new FormattedMessage(messagePattern, parameters), null));
 
         verify(mockRaven).sendEvent(eventCaptor.capture());
         MessageInterface messageInterface = (MessageInterface) eventCaptor.getValue().getSentryInterfaces()
@@ -142,10 +142,8 @@ public class SentryAppenderTest {
 
         assertThat(eventCaptor.getValue().getMessage(), is("Formatted message first parameter [] null"));
         assertThat(messageInterface.getMessage(), is(messagePattern));
-        assertThat(messageInterface.getParameters(), is(Arrays.asList(
-                parameters.get(0).toString(),
-                parameters.get(1).toString(),
-                null)));
+        assertThat(messageInterface.getParameters(),
+                is(Arrays.asList(parameters[0].toString(), parameters[1].toString(), null)));
         assertNoErrors();
     }
 
