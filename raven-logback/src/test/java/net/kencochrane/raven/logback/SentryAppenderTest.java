@@ -7,6 +7,8 @@ import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -36,6 +38,8 @@ import static org.mockito.Mockito.*;
 public class SentryAppenderTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Raven mockRaven;
+    @Mock
+    private RavenFactory mockRavenFactory;
     private SentryAppender sentryAppender;
 
     @Before
@@ -43,6 +47,8 @@ public class SentryAppenderTest {
         sentryAppender = new SentryAppender(mockRaven);
         setMockContextOnAppender(sentryAppender);
 
+        when(mockRavenFactory.createRavenInstance(any(Dsn.class))).thenReturn(mockRaven);
+        RavenFactory.registerFactory(mockRavenFactory);
     }
 
     private void setMockContextOnAppender(SentryAppender sentryAppender) {
@@ -240,6 +246,41 @@ public class SentryAppenderTest {
         sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
 
         assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(1));
+    }
+
+    @Test
+    public void testLazyInitialisation() throws Exception {
+        String dsnUri = "proto://private:public@host/1";
+        sentryAppender = new SentryAppender();
+        setMockContextOnAppender(sentryAppender);
+        sentryAppender.setDsn(dsnUri);
+        sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
+
+        sentryAppender.start();
+        verify(mockRavenFactory, never()).createRavenInstance(any(Dsn.class));
+
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+        verify(mockRavenFactory).createRavenInstance(eq(new Dsn(dsnUri)));
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testDsnAutoDetection() throws Exception {
+        try {
+            String dsnUri = "proto://private:public@host/1";
+            System.setProperty(Dsn.DSN_VARIABLE, dsnUri);
+            sentryAppender = new SentryAppender();
+            setMockContextOnAppender(sentryAppender);
+            sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
+
+            sentryAppender.start();
+            sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+
+            verify(mockRavenFactory).createRavenInstance(eq(new Dsn(dsnUri)));
+            assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+        } finally {
+            System.clearProperty(Dsn.DSN_VARIABLE);
+        }
     }
 
     private ILoggingEvent newLoggingEvent(String loggerName, Marker marker, Level level, String message,
