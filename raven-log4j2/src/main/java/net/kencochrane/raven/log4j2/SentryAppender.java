@@ -182,14 +182,10 @@ public class SentryAppender extends AbstractAppender<String> {
      * Initialises the Raven instance.
      */
     protected void initRaven() {
-        try {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
+        if (dsn == null)
+            dsn = Dsn.dsnLookup();
 
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
-        } catch (Exception e) {
-            error("An exception occurred during the creation of a Raven instance", e);
-        }
+        raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
     }
 
     /**
