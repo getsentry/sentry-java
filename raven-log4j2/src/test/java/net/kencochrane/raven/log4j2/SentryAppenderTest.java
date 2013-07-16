@@ -49,7 +49,7 @@ public class SentryAppenderTest {
         setMockErrorHandlerOnAppender(sentryAppender);
     }
 
-    private void setMockErrorHandlerOnAppender(final SentryAppender sentryAppender){
+    private void setMockErrorHandlerOnAppender(final SentryAppender sentryAppender) {
         sentryAppender.setHandler(mockErrorHandler);
 
         Answer<Void> answer = new Answer<Void>() {
@@ -167,7 +167,6 @@ public class SentryAppenderTest {
         String extraValue = UUID.randomUUID().toString();
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
-        ThreadContext.put(extraKey, extraValue);
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null,
                 Collections.singletonMap(extraKey, extraValue), null, null, null, 0));
 
