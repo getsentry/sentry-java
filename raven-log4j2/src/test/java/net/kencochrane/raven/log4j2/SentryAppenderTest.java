@@ -250,7 +250,7 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testAppendFailIfCurrentThreadSpawnedByRaven() {
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
             Raven.RAVEN_THREAD.set(true);
 
@@ -264,7 +264,7 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testRavenFailureDoesNotPropagate() {
+    public void testRavenFailureDoesNotPropagate() throws Exception {
         doThrow(new UnsupportedOperationException()).when(mockRaven).sendEvent(any(Event.class));
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
