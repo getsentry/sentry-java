@@ -11,10 +11,12 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -32,13 +34,17 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SentryAppenderTest {
-    @Mock
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Raven mockRaven;
     private SentryAppender sentryAppender;
 
     @Before
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
+        setMockContextOnAppender(sentryAppender);
+    }
+
+    private void setMockContextOnAppender(SentryAppender sentryAppender) {
         Context mockContext = mock(Context.class);
         sentryAppender.setContext(mockContext);
         BasicStatusManager statusManager = new BasicStatusManager();
@@ -153,6 +159,62 @@ public class SentryAppenderTest {
 
         verify(mockRaven).sendEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testSourceUsedAsStacktrace() throws Exception {
+        StackTraceElement[] location = {new StackTraceElement(UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), 42)};
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null,
+                null, null, location, 0));
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        StackTraceInterface stackTraceInterface = (StackTraceInterface) eventCaptor.getValue().getSentryInterfaces()
+                .get(StackTraceInterface.STACKTRACE_INTERFACE);
+        assertThat(stackTraceInterface.getStackTrace(), is(location));
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testCulpritWithSource() throws Exception {
+        StackTraceElement[] location = {new StackTraceElement("a", "b", "c", 42),
+               new StackTraceElement("d", "e", "f", 69)};
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null,
+                null, null, location, 0));
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getCulprit(), is("a.b(c:42)"));
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testCulpritWithoutSource() throws Exception {
+        String loggerName = UUID.randomUUID().toString();
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+        sentryAppender.append(newLoggingEvent(loggerName, null, Level.INFO, null, null, null));
+
+        verify(mockRaven).sendEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getCulprit(), is(loggerName));
+        assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
+    }
+
+    @Test
+    public void testClose() throws Exception {
+        sentryAppender.stop();
+        verify(mockRaven.getConnection(), never()).close();
+
+        sentryAppender = new SentryAppender(mockRaven, true);
+        setMockContextOnAppender(sentryAppender);
+
+        sentryAppender.stop();
+        verify(mockRaven.getConnection()).close();
         assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(0));
     }
 
