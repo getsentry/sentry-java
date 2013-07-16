@@ -183,7 +183,7 @@ public class SentryAppenderTest {
     @Test
     public void testCulpritWithSource() throws Exception {
         StackTraceElement[] location = {new StackTraceElement("a", "b", "c", 42),
-               new StackTraceElement("d", "e", "f", 69)};
+                new StackTraceElement("d", "e", "f", 69)};
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
 
         sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null,
@@ -220,7 +220,7 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testAppendFailIfCurrentThreadSpawnedByRaven(){
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
             Raven.RAVEN_THREAD.set(true);
 
@@ -234,7 +234,7 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testRavenFailureDoesNotPropagate(){
+    public void testRavenFailureDoesNotPropagate() throws Exception {
         doThrow(new UnsupportedOperationException()).when(mockRaven).sendEvent(any(Event.class));
 
         sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
