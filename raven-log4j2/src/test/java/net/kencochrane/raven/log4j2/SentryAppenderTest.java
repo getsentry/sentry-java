@@ -18,6 +18,7 @@ import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.spi.DefaultThreadContextStack;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +48,11 @@ public class SentryAppenderTest {
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         setMockErrorHandlerOnAppender(sentryAppender);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        Raven.RAVEN_THREAD.remove();
     }
 
     private void setMockErrorHandlerOnAppender(final SentryAppender sentryAppender) {
@@ -247,6 +253,27 @@ public class SentryAppenderTest {
         sentryAppender.stop();
         verify(mockRaven.getConnection()).close();
         assertNoErrors();
+    }
+
+    @Test
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() {
+        Raven.RAVEN_THREAD.set(true);
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+        verify(mockRaven, never()).sendEvent(any(Event.class));
+        assertNoErrors();
+    }
+
+    @Test
+    public void testRavenFailureDoesNotPropagate() {
+        doThrow(new UnsupportedOperationException()).when(mockRaven).sendEvent(any(Event.class));
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+        verify(mockErrorHandler, never()).error(anyString());
+        verify(mockErrorHandler, never()).error(anyString(), any(Throwable.class));
+        verify(mockErrorHandler).error(anyString(), any(LogEvent.class), any(Throwable.class));
     }
 
     @Test
