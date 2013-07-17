@@ -85,7 +85,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.basedir}/src/test/resources/logging.properties
+                            ${project.basedir}/src/test/resources/logging-integration.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
