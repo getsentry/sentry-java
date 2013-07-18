@@ -36,7 +36,7 @@ public class SentryAppenderNGTest {
     }
 
     @Test
-    public void testSimpleMesageLogging() throws Exception {
+    public void testSimpleMessageLogging() throws Exception {
         final String loggerName = UUID.randomUUID().toString();
         final String message = UUID.randomUUID().toString();
         final String threadName = UUID.randomUUID().toString();
