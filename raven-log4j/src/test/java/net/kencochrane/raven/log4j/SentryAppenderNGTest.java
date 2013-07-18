@@ -186,4 +186,21 @@ public class SentryAppenderNGTest {
             assertThat(event.getCulprit(), is("a.b(c:42)"));
         }};
     }
+
+    @Test
+    public void testCulpritWithoutSource() throws Exception {
+        final String loggerName = UUID.randomUUID().toString();
+        new Expectations() {{
+            onInstance(mockLogger).getName();
+            result = loggerName;
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getCulprit(), is(loggerName));
+        }};
+    }
 }
