@@ -56,4 +56,24 @@ public class SentryAppenderNGTest {
             assertThat(event.getTimestamp(), is(date));
         }};
     }
+
+    @Test
+    public void testLevelConversion() throws Exception {
+        assertLevelConverted(Event.Level.DEBUG, Level.TRACE);
+        assertLevelConverted(Event.Level.DEBUG, Level.DEBUG);
+        assertLevelConverted(Event.Level.INFO, Level.INFO);
+        assertLevelConverted(Event.Level.WARNING, Level.WARN);
+        assertLevelConverted(Event.Level.ERROR, Level.ERROR);
+        assertLevelConverted(Event.Level.FATAL, Level.FATAL);
+    }
+
+    private void assertLevelConverted(final Event.Level expectedLevel, Level level) throws Exception {
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, level, null, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getLevel(), is(expectedLevel));
+        }};
+    }
 }
