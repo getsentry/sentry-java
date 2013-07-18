@@ -7,6 +7,7 @@ import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
@@ -74,6 +75,24 @@ public class SentryAppenderNGTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
+        }};
+    }
+
+    @Test
+    public void testExceptionLogging() throws Exception {
+        final Exception exception = new Exception(UUID.randomUUID().toString());
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, exception));
+
+        new Verifications() {{
+            Event event;
+            Throwable throwable;
+            mockRaven.sendEvent(event = withCapture());
+            ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
+                    .get(ExceptionInterface.EXCEPTION_INTERFACE);
+            throwable = exceptionInterface.getThrowable();
+            assertThat(throwable.getMessage(), is(exception.getMessage()));
+            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
         }};
     }
 }
