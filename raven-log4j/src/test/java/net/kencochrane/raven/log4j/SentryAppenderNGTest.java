@@ -158,4 +158,32 @@ public class SentryAppenderNGTest {
                     is(new StackTraceElement(className, methodName, fileName, line)));
         }};
     }
+
+    @Test
+    public void testCulpritWithSource(@Injectable @NonStrict final LocationInfo locationInfo) throws Exception {
+        final String className = "a";
+        final String methodName = "b";
+        final String fileName = "c";
+        final int line = 42;
+        new Expectations() {{
+            locationInfo.getClassName();
+            result = className;
+            locationInfo.getMethodName();
+            result = methodName;
+            locationInfo.getFileName();
+            result = fileName;
+            locationInfo.getLineNumber();
+            result = Integer.toString(line);
+            setField(locationInfo, "fullInfo", "");
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, locationInfo, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getCulprit(), is("a.b(c:42)"));
+        }};
+    }
 }
