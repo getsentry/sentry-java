@@ -1,5 +1,6 @@
 package net.kencochrane.raven.log4j;
 
+import com.google.common.base.Joiner;
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
@@ -109,6 +110,20 @@ public class SentryAppenderNGTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+        }};
+    }
+
+    @Test
+    public void testNdcAddedToExtra() throws Exception {
+        final String ndcEntries = Joiner.on(' ').join(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, ndcEntries, null, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
         }};
     }
 }
