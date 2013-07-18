@@ -15,6 +15,7 @@ import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
@@ -93,6 +94,21 @@ public class SentryAppenderNGTest {
             throwable = exceptionInterface.getThrowable();
             assertThat(throwable.getMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+        }};
+    }
+
+    @Test
+    public void testMdcAddedToExtra() throws Exception {
+        final String extraKey = UUID.randomUUID().toString();
+        final String extraValue = UUID.randomUUID().toString();
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, null, Collections.singletonMap(extraKey, extraValue)));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
         }};
     }
 }
