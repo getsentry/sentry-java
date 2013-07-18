@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j;
 import com.google.common.base.Joiner;
 import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -202,5 +203,30 @@ public class SentryAppenderNGTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
         }};
+    }
+
+    @Test
+    public void testConnectionNotClosedIfARavenInstanceIsProvided() throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven);
+        new NonStrictExpectations() {
+            @Mocked
+            private Connection connection;
+
+            {
+                mockRaven.getConnection();
+                result = connection;
+            }
+        };
+
+        sentryAppender.close();
+
+        new Verifications() {
+            private Connection connection;
+
+            {
+                connection.close();
+                times = 0;
+            }
+        };
     }
 }
