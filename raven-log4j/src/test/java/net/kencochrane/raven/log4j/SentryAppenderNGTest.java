@@ -1,16 +1,15 @@
 package net.kencochrane.raven.log4j;
 
 import com.google.common.base.Joiner;
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.Mocked;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
@@ -21,6 +20,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderNGTest {
@@ -124,6 +124,38 @@ public class SentryAppenderNGTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
+        }};
+    }
+
+    @Test
+    public void testSourceUsedAsStacktrace(@Injectable @NonStrict final LocationInfo locationInfo) throws Exception {
+        final String className = UUID.randomUUID().toString();
+        final String methodName = UUID.randomUUID().toString();
+        final String fileName = UUID.randomUUID().toString();
+        final int line = 42;
+        new Expectations() {{
+            locationInfo.getClassName();
+            result = className;
+            locationInfo.getMethodName();
+            result = methodName;
+            locationInfo.getFileName();
+            result = fileName;
+            locationInfo.getLineNumber();
+            result = Integer.toString(line);
+            setField(locationInfo, "fullInfo", "");
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, locationInfo, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
+                    .get(StackTraceInterface.STACKTRACE_INTERFACE);
+            assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
+            assertThat(stackTraceInterface.getStackTrace()[0],
+                    is(new StackTraceElement(className, methodName, fileName, line)));
         }};
     }
 }
