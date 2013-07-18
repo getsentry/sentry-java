@@ -24,6 +24,8 @@ public class SentryAppenderNGTest {
     private SentryAppender sentryAppender;
     @Mocked
     private Raven mockRaven = null;
+    @Injectable
+    private Logger mockLogger = null;
 
     @BeforeMethod
     public void setUp() {
@@ -31,17 +33,17 @@ public class SentryAppenderNGTest {
     }
 
     @Test
-    public void testSimpleMesageLogging(@Injectable final Logger logger) throws Exception {
+    public void testSimpleMesageLogging() throws Exception {
         final String loggerName = UUID.randomUUID().toString();
         final String message = UUID.randomUUID().toString();
         final String threadName = UUID.randomUUID().toString();
         final Date date = new Date(1373883196416L);
         new Expectations() {{
-                logger.getName();
-                result = loggerName;
-            }};
+            onInstance(mockLogger).getName();
+            result = loggerName;
+        }};
 
-        sentryAppender.append(new LoggingEvent(null, logger, date.getTime(), Level.INFO, message, threadName,
+        sentryAppender.append(new LoggingEvent(null, mockLogger, date.getTime(), Level.INFO, message, threadName,
                 null, null, null, null));
 
         new Verifications() {{
