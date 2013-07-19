@@ -5,6 +5,7 @@ import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.connection.Connection;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -255,6 +256,31 @@ public class SentryAppenderNGTest {
         new Verifications() {{
             connection.close();
             times = 0;
+        }};
+    }
+
+    @Test
+    public void testConnectionClosedIfRavenInstanceNotProvided(@Mocked final Connection connection) throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender();
+        new NonStrictExpectations() {
+            @Mocked
+            private final Dsn dsn = null;
+            @Mocked
+            private RavenFactory ravenFactory = null;
+
+            {
+                mockRaven.getConnection();
+                result = connection;
+                RavenFactory.ravenInstance(dsn, anyString);
+                result = mockRaven;
+            }
+        };
+
+        sentryAppender.activateOptions();
+        sentryAppender.close();
+
+        new Verifications() {{
+            connection.close();
         }};
     }
 }
