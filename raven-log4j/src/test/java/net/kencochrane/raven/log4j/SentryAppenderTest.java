@@ -1,125 +1,75 @@
 package net.kencochrane.raven.log4j;
 
-import net.kencochrane.raven.AbstractLoggerTest;
+import com.google.common.base.Joiner;
+import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
-import org.apache.log4j.*;
-import org.apache.log4j.helpers.OnlyOnceErrorHandler;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.log4j.spi.ErrorHandler;
-import org.apache.log4j.spi.LoggerFactory;
+import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Answers;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
+import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
 
-public class SentryAppenderTest extends AbstractLoggerTest {
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private Raven mockRaven;
-    @Mock
-    private RavenFactory mockRavenFactory;
+public class SentryAppenderTest {
     private SentryAppender sentryAppender;
-    private Logger logger;
+    @Mocked
+    private Raven mockRaven = null;
+    @Injectable
+    private Logger mockLogger = null;
+    @Injectable
+    private ErrorHandler mockErrorHandler = null;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeMethod
+    public void setUp() {
         sentryAppender = new SentryAppender(mockRaven);
-        setMockErrorHandlerOnAppender(sentryAppender);
-
-        when(mockRavenFactory.createRavenInstance(any(Dsn.class))).thenReturn(mockRaven);
-        RavenFactory.registerFactory(mockRavenFactory);
-
-        logger = Logger.getLogger(SentryAppenderTest.class);
-        logger.setLevel(Level.ALL);
-        logger.setAdditivity(false);
-        logger.addAppender(new SentryAppender(getMockRaven()));
-    }
-
-    private void setMockErrorHandlerOnAppender(SentryAppender sentryAppender) {
-        ErrorHandler mockErrorHandler = mock(ErrorHandler.class);
         sentryAppender.setErrorHandler(mockErrorHandler);
-        Answer<Void> answer = new Answer<Void>() {
-            private final ErrorHandler actualErrorHandler = new OnlyOnceErrorHandler();
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                invocation.getMethod().invoke(actualErrorHandler, invocation.getArguments());
-                return null;
-            }
-        };
-        doAnswer(answer).when(mockErrorHandler).error(anyString());
-        doAnswer(answer).when(mockErrorHandler).error(anyString(), any(Exception.class), anyInt());
-        doAnswer(answer).when(mockErrorHandler).error(anyString(), any(Exception.class), anyInt(), any(LoggingEvent.class));
     }
 
     @Test
     public void testSimpleMessageLogging() throws Exception {
-        String message = UUID.randomUUID().toString();
-        String loggerName = UUID.randomUUID().toString();
-        String threadName = UUID.randomUUID().toString();
-        Date date = new Date(1373883196416L);
-        Logger logger = Logger.getLogger(loggerName);
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        Event event;
+        final String loggerName = UUID.randomUUID().toString();
+        final String message = UUID.randomUUID().toString();
+        final String threadName = UUID.randomUUID().toString();
+        final Date date = new Date(1373883196416L);
+        new Expectations() {{
+            onInstance(mockLogger).getName();
+            result = loggerName;
+        }};
 
-        sentryAppender.append(new LoggingEvent(null, logger, date.getTime(), Level.INFO, message, threadName,
+        sentryAppender.append(new LoggingEvent(null, mockLogger, date.getTime(), Level.INFO, message, threadName,
                 null, null, null, null));
 
-        verify(mockRaven).runBuilderHelpers(any(EventBuilder.class));
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        event = eventCaptor.getValue();
-        assertThat(event.getMessage(), is(message));
-        assertThat(event.getLogger(), is(loggerName));
-        assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
-        assertThat(event.getTimestamp(), is(date));
-
-        assertNoErrors(sentryAppender);
+        new Verifications() {{
+            Event event;
+            mockRaven.runBuilderHelpers(withAny(new EventBuilder()));
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getMessage(), is(message));
+            assertThat(event.getLogger(), is(loggerName));
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
+            assertThat(event.getTimestamp(), is(date));
+            assertDoNotGenerateErrors();
+        }};
     }
 
-    @Override
-    public void logAnyLevel(String message) {
-        logger.info(message);
-    }
-
-    @Override
-    public void logAnyLevel(String message, Throwable exception) {
-        logger.error(message, exception);
-    }
-
-    @Override
-    public void logAnyLevel(String message, List<String> parameters) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getCurrentLoggerName() {
-        return logger.getName();
-    }
-
-    @Override
-    public String getUnformattedMessage() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     @Test
-    public void testLogLevelConversions() throws Exception {
+    public void testLevelConversion() throws Exception {
         assertLevelConverted(Event.Level.DEBUG, Level.TRACE);
         assertLevelConverted(Event.Level.DEBUG, Level.DEBUG);
         assertLevelConverted(Event.Level.INFO, Level.INFO);
@@ -128,68 +78,261 @@ public class SentryAppenderTest extends AbstractLoggerTest {
         assertLevelConverted(Event.Level.FATAL, Level.FATAL);
     }
 
-    private void assertLevelConverted(Event.Level expectedLevel, Level level) {
-        logger.log(level, null);
-        assertLogLevel(expectedLevel);
-    }
+    private void assertLevelConverted(final Event.Level expectedLevel, Level level) throws Exception {
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, level, null, null));
 
-    @Override
-    public void testLogParametrisedMessage() throws Exception {
-        // Parametrised messages aren't supported
-    }
-
-    @Test
-    public void testThreadNameAddedToExtra() {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        logger.info("testMessage");
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getExtra(),
-                Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, Thread.currentThread().getName()));
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getLevel(), is(expectedLevel));
+            assertDoNotGenerateErrors();
+        }};
     }
 
     @Test
-    public void testMdcAddedToExtra() {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        String extraKey = UUID.randomUUID().toString();
-        Object extraValue = mock(Object.class);
+    public void testExceptionLogging() throws Exception {
+        final Exception exception = new Exception(UUID.randomUUID().toString());
 
-        MDC.put(extraKey, extraValue);
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, exception));
 
-        logger.info("testMessage");
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getExtra(), hasEntry(extraKey, extraValue));
+        new Verifications() {{
+            Event event;
+            Throwable throwable;
+            mockRaven.sendEvent(event = withCapture());
+            ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
+                    .get(ExceptionInterface.EXCEPTION_INTERFACE);
+            throwable = exceptionInterface.getThrowable();
+            assertThat(throwable.getMessage(), is(exception.getMessage()));
+            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            assertDoNotGenerateErrors();
+        }};
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testNdcAddedToExtra() {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        String extra = UUID.randomUUID().toString();
-        String extra2 = UUID.randomUUID().toString();
+    public void testMdcAddedToExtra() throws Exception {
+        final String extraKey = UUID.randomUUID().toString();
+        final String extraValue = UUID.randomUUID().toString();
 
-        NDC.push(extra);
-        logger.info("testMessage");
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, null, Collections.singletonMap(extraKey, extraValue)));
 
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getExtra(), hasKey(SentryAppender.LOG4J_NDC));
-        assertThat(eventCaptor.getValue().getExtra().get(SentryAppender.LOG4J_NDC), Matchers.<Object>is(extra));
-
-        reset(mockRaven);
-        NDC.push(extra2);
-        logger.info("testMessage");
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getExtra(), hasKey(SentryAppender.LOG4J_NDC));
-        assertThat(eventCaptor.getValue().getExtra().get(SentryAppender.LOG4J_NDC),
-                Matchers.<Object>is(extra + " " + extra2));
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+            assertDoNotGenerateErrors();
+        }};
     }
 
-    private void assertNoErrors(SentryAppender sentryAppender) {
-        verify(sentryAppender.getErrorHandler(), never()).error(anyString());
-        verify(sentryAppender.getErrorHandler(), never()).error(anyString(), any(Exception.class), anyInt());
-        verify(sentryAppender.getErrorHandler(), never()).error(anyString(), any(Exception.class), anyInt(), any(LoggingEvent.class));
+    @Test
+    public void testNdcAddedToExtra() throws Exception {
+        final String ndcEntries = Joiner.on(' ').join(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, ndcEntries, null, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testSourceUsedAsStacktrace(@Injectable @NonStrict final LocationInfo locationInfo) throws Exception {
+        final String className = UUID.randomUUID().toString();
+        final String methodName = UUID.randomUUID().toString();
+        final String fileName = UUID.randomUUID().toString();
+        final int line = 42;
+        new Expectations() {{
+            locationInfo.getClassName();
+            result = className;
+            locationInfo.getMethodName();
+            result = methodName;
+            locationInfo.getFileName();
+            result = fileName;
+            locationInfo.getLineNumber();
+            result = Integer.toString(line);
+            setField(locationInfo, "fullInfo", "");
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, locationInfo, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
+                    .get(StackTraceInterface.STACKTRACE_INTERFACE);
+            assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
+            assertThat(stackTraceInterface.getStackTrace()[0],
+                    is(new StackTraceElement(className, methodName, fileName, line)));
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testCulpritWithSource(@Injectable @NonStrict final LocationInfo locationInfo) throws Exception {
+        final String className = "a";
+        final String methodName = "b";
+        final String fileName = "c";
+        final int line = 42;
+        new Expectations() {{
+            locationInfo.getClassName();
+            result = className;
+            locationInfo.getMethodName();
+            result = methodName;
+            locationInfo.getFileName();
+            result = fileName;
+            locationInfo.getLineNumber();
+            result = Integer.toString(line);
+            setField(locationInfo, "fullInfo", "");
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, locationInfo, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getCulprit(), is("a.b(c:42)"));
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testCulpritWithoutSource() throws Exception {
+        final String loggerName = UUID.randomUUID().toString();
+        new Expectations() {{
+            onInstance(mockLogger).getName();
+            result = loggerName;
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getCulprit(), is(loggerName));
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testConnectionNotClosedIfRavenInstanceIsProvided(@Mocked final Connection connection) throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven);
+        new NonStrictExpectations() {{
+            mockRaven.getConnection();
+            result = connection;
+        }};
+
+        sentryAppender.activateOptions();
+        sentryAppender.close();
+
+        new Verifications() {{
+            connection.close();
+            times = 0;
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testConnectionClosedIfRavenInstanceProvidedAndForceClose(@Mocked final Connection connection)
+            throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
+        new NonStrictExpectations() {{
+            mockRaven.getConnection();
+            result = connection;
+        }};
+
+        sentryAppender.activateOptions();
+        sentryAppender.close();
+
+        new Verifications() {{
+            connection.close();
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testConnectionNotClosedIfRavenInstanceProvidedAndNotForceClose(@Mocked final Connection connection)
+            throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
+        new NonStrictExpectations() {{
+            mockRaven.getConnection();
+            result = connection;
+        }};
+
+        sentryAppender.activateOptions();
+        sentryAppender.close();
+
+        new Verifications() {{
+            connection.close();
+            times = 0;
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testConnectionClosedIfRavenInstanceNotProvided(@Mocked final Connection connection) throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender();
+        new NonStrictExpectations() {
+            @Mocked
+            private final Dsn dsn = null;
+            @Mocked
+            private RavenFactory ravenFactory = null;
+
+            {
+                mockRaven.getConnection();
+                result = connection;
+                RavenFactory.ravenInstance(dsn, anyString);
+                result = mockRaven;
+            }
+        };
+
+        sentryAppender.activateOptions();
+        sentryAppender.close();
+
+        new Verifications() {{
+            connection.close();
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    @Test
+    public void testCorrectRavenInstanceUsedIfNotProvided() throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender();
+
+        new NonStrictExpectations() {
+            @Mocked
+            private final Dsn dsn = null;
+            @Mocked
+            private RavenFactory ravenFactory = null;
+
+            {
+                RavenFactory.ravenInstance(dsn, anyString);
+                returns(mockRaven);
+            }
+        };
+
+        sentryAppender.activateOptions();
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
+
+        new Verifications() {{
+            onInstance(mockRaven).sendEvent((Event) any);
+            assertDoNotGenerateErrors();
+        }};
+    }
+
+    private void assertDoNotGenerateErrors() throws Exception{
+        new Verifications() {{
+            mockErrorHandler.error(anyString);
+            times = 0;
+            mockErrorHandler.error(anyString, (Exception) any, anyInt);
+            times = 0;
+            mockErrorHandler.error(anyString, (Exception) any, anyInt, (LoggingEvent) any);
+            times = 0;
+        }};
     }
 }
