@@ -283,4 +283,28 @@ public class SentryAppenderNGTest {
             connection.close();
         }};
     }
+
+    @Test
+    public void testCorrectRavenInstanceUsedIfNotProvided() throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender();
+
+        new NonStrictExpectations() {
+            @Mocked
+            private final Dsn dsn = null;
+            @Mocked
+            private RavenFactory ravenFactory = null;
+
+            {
+                RavenFactory.ravenInstance(dsn, anyString);
+                returns(mockRaven);
+            }
+        };
+
+        sentryAppender.activateOptions();
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
+
+        new Verifications() {{
+            onInstance(mockRaven).sendEvent((Event) any);
+        }};
+    }
 }
