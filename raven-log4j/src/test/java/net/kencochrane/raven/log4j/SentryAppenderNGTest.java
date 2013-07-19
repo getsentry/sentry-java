@@ -222,4 +222,21 @@ public class SentryAppenderNGTest {
             times = 0;
         }};
     }
+
+    @Test
+    public void testConnectionClosedIfRavenInstanceProvidedAndForceClose(@Mocked final Connection connection)
+            throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
+        new NonStrictExpectations() {{
+            mockRaven.getConnection();
+            result = connection;
+        }};
+
+        sentryAppender.activateOptions();
+        sentryAppender.close();
+
+        new Verifications() {{
+            connection.close();
+        }};
+    }
 }
