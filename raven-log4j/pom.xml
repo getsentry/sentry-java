@@ -74,9 +74,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <log4j.configurationFile>
-                            ${project.basedir}/src/test/resources/log4j-integration.xml
-                        </log4j.configurationFile>
+                        <log4j.configuration>log4j-integration.properties</log4j.configuration>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
