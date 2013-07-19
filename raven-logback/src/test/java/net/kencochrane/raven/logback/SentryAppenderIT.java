@@ -1,6 +1,6 @@
 package net.kencochrane.raven.logback;
 
-import net.kencochrane.raven.SentryStub;
+import net.kencochrane.raven.stub.SentryStub;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

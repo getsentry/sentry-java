@@ -1,4 +1,4 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.stub;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

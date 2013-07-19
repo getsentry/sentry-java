@@ -1,6 +1,6 @@
 package net.kencochrane.raven.log4j;
 
-import net.kencochrane.raven.SentryStub;
+import net.kencochrane.raven.stub.SentryStub;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
