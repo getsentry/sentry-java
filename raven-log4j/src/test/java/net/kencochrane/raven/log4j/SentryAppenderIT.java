@@ -2,24 +2,17 @@ package net.kencochrane.raven.log4j;
 
 import net.kencochrane.raven.stub.SentryStub;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderIT {
     private static final Logger logger = Logger.getLogger(SentryAppenderIT.class);
-    private SentryStub sentryStub;
+    private SentryStub sentryStub = new SentryStub();
 
-    @Before
-    public void setUp() {
-        sentryStub = new SentryStub();
-        sentryStub.removeEvents();
-    }
-
-    @After
+    @AfterMethod
     public void tearDown() {
         sentryStub.removeEvents();
     }
