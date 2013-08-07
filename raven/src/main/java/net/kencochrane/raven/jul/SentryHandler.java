@@ -178,7 +178,7 @@ public class SentryHandler extends Handler {
     @Override
     public void close() throws SecurityException {
         try {
-            if (propagateClose)
+            if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);

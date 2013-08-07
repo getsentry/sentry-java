@@ -197,7 +197,7 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public void close() {
         try {
-            if (propagateClose)
+            if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             getErrorHandler().error("An exception occurred while closing the Raven connection", e,
