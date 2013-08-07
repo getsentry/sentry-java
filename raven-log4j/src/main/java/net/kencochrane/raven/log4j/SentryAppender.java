@@ -196,6 +196,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void close() {
+        if (this.closed)
+            return;
+        this.closed = true;
+
         try {
             if (propagateClose && raven != null)
                 raven.getConnection().close();
