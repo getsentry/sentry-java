@@ -6,6 +6,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -119,13 +120,14 @@ public class HttpConnectionTest {
         httpConnection.send(new EventBuilder().build());
 
         verify(handler).publish(logRecordCaptor.capture());
-        assertThat(logRecordCaptor.getAllValues(),
-                hasItem(new CustomTypeSafeMatcher<LogRecord>("Looks for message '" + httpErrorMessage + "'") {
-                    @Override
-                    protected boolean matchesSafely(LogRecord logRecord) {
-                        return httpErrorMessage.equals(logRecord.getMessage());
-                    }
-                }));
+        Matcher<Iterable<? super LogRecord>> matcher = hasItem(
+                new CustomTypeSafeMatcher<LogRecord>("Looks for message '" + httpErrorMessage + "'") {
+            @Override
+            protected boolean matchesSafely(LogRecord logRecord) {
+                return httpErrorMessage.equals(logRecord.getMessage());
+            }
+        });
+        assertThat(logRecordCaptor.getAllValues(), matcher);
 
         Logger.getLogger(HttpConnection.class.getCanonicalName()).removeHandler(handler);
     }
