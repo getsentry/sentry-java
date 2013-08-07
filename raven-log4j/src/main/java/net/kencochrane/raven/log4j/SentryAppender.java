@@ -196,6 +196,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void close() {
+        if (this.closed) {
+            return;
+        }
+        this.closed = true;
         try {
             // If we didn't manage to init correctly then raven won't be defined and log4j should be able to
             // reload it's configuration.
