@@ -197,7 +197,9 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public void close() {
         try {
-            if (propagateClose)
+            // If we didn't manage to init correctly then raven won't be defined and log4j should be able to
+            // reload it's configuration.
+            if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             getErrorHandler().error("An exception occurred while closing the Raven connection", e,
