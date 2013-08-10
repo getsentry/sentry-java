@@ -72,50 +72,6 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testSimpleMessageLogging() throws Exception {
-        String message = UUID.randomUUID().toString();
-        String loggerName = UUID.randomUUID().toString();
-        String threadName = UUID.randomUUID().toString();
-        Date date = new Date(1373883196416L);
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        Event event;
-
-        sentryAppender.append(new Log4jLogEvent(loggerName, null, null, Level.INFO, new SimpleMessage(message),
-                null, null, null, threadName, null, date.getTime()));
-
-        verify(mockRaven).runBuilderHelpers(any(EventBuilder.class));
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        event = eventCaptor.getValue();
-        assertThat(event.getMessage(), is(message));
-        assertThat(event.getLogger(), is(loggerName));
-        assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
-        assertThat(event.getTimestamp(), is(date));
-
-        assertNoErrors();
-    }
-
-    @Test
-    public void testLogLevelConversions() throws Exception {
-        assertLevelConverted(Event.Level.DEBUG, Level.TRACE);
-        assertLevelConverted(Event.Level.DEBUG, Level.DEBUG);
-        assertLevelConverted(Event.Level.INFO, Level.INFO);
-        assertLevelConverted(Event.Level.WARNING, Level.WARN);
-        assertLevelConverted(Event.Level.ERROR, Level.ERROR);
-        assertLevelConverted(Event.Level.FATAL, Level.FATAL);
-    }
-
-    private void assertLevelConverted(Event.Level expectedLevel, Level level) {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, level, new SimpleMessage(""), null));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getLevel(), is(expectedLevel));
-        assertNoErrors();
-        reset(mockRaven);
-    }
-
-    @Test
     public void testExceptionLogging() throws Exception {
         Exception exception = new Exception();
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
