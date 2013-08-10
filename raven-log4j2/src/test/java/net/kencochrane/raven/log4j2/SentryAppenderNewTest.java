@@ -6,13 +6,16 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
+import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 
@@ -90,6 +93,28 @@ public class SentryAppenderNewTest {
             throwable = exceptionInterface.getThrowable();
             assertThat(throwable.getMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        }};
+    }
+
+    @Test
+    public void testLogParametrisedMessage() throws Exception {
+        final String messagePattern = "Formatted message {} {} {}";
+        final Object[] parameters = {"first parameter", new Object[0], null};
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO,
+                new FormattedMessage(messagePattern, parameters), null));
+
+        new Verifications(){{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+
+            MessageInterface messageInterface = (MessageInterface) event.getSentryInterfaces()
+                    .get(MessageInterface.MESSAGE_INTERFACE);
+            assertThat(event.getMessage(), is("Formatted message first parameter [] null"));
+            assertThat(messageInterface.getMessage(), is(messagePattern));
+            assertThat(messageInterface.getParameters(),
+                    is(Arrays.asList(parameters[0].toString(), parameters[1].toString(), null)));
             assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
