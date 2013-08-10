@@ -50,8 +50,8 @@ public class SentryAppenderNewTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -71,8 +71,8 @@ public class SentryAppenderNewTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class SentryAppenderNewTest {
             throwable = exceptionInterface.getThrowable();
             assertThat(throwable.getMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 }
