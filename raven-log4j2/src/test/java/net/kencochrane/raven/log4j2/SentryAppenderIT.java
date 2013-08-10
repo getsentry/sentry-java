@@ -3,9 +3,9 @@ package net.kencochrane.raven.log4j2;
 import net.kencochrane.raven.stub.SentryStub;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -14,13 +14,13 @@ public class SentryAppenderIT {
     private static final Logger logger = LogManager.getLogger(SentryAppenderIT.class);
     private SentryStub sentryStub;
 
-    @Before
+    @BeforeMethod
     public void setUp() {
         sentryStub = new SentryStub();
         sentryStub.removeEvents();
     }
 
-    @After
+    @AfterMethod
     public void tearDown() {
         sentryStub.removeEvents();
     }
