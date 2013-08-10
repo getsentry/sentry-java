@@ -4,7 +4,6 @@ import com.google.common.base.Joiner;
 import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
-import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
@@ -215,87 +214,6 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
-            assertDoNotGenerateErrors();
-        }};
-    }
-
-    @Test
-    public void testConnectionNotClosedIfRavenInstanceIsProvided(@Mocked final Connection connection) throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven);
-        new NonStrictExpectations() {{
-            mockRaven.getConnection();
-            result = connection;
-        }};
-
-        sentryAppender.activateOptions();
-        sentryAppender.close();
-
-        new Verifications() {{
-            connection.close();
-            times = 0;
-            assertDoNotGenerateErrors();
-        }};
-    }
-
-    @Test
-    public void testConnectionClosedIfRavenInstanceProvidedAndForceClose(@Mocked final Connection connection)
-            throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
-        new NonStrictExpectations() {{
-            mockRaven.getConnection();
-            result = connection;
-        }};
-
-        sentryAppender.activateOptions();
-        sentryAppender.close();
-
-        new Verifications() {{
-            connection.close();
-            assertDoNotGenerateErrors();
-        }};
-    }
-
-    @Test
-    public void testConnectionNotClosedIfRavenInstanceProvidedAndNotForceClose(@Mocked final Connection connection)
-            throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
-        new NonStrictExpectations() {{
-            mockRaven.getConnection();
-            result = connection;
-        }};
-
-        sentryAppender.activateOptions();
-        sentryAppender.close();
-
-        new Verifications() {{
-            connection.close();
-            times = 0;
-            assertDoNotGenerateErrors();
-        }};
-    }
-
-    @Test
-    public void testConnectionClosedIfRavenInstanceNotProvided(@Mocked final Connection connection) throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender();
-        new NonStrictExpectations() {
-            @Mocked
-            private final Dsn dsn = null;
-            @Mocked
-            private RavenFactory ravenFactory = null;
-
-            {
-                mockRaven.getConnection();
-                result = connection;
-                RavenFactory.ravenInstance(dsn, anyString);
-                result = mockRaven;
-            }
-        };
-
-        sentryAppender.activateOptions();
-        sentryAppender.close();
-
-        new Verifications() {{
-            connection.close();
             assertDoNotGenerateErrors();
         }};
     }
