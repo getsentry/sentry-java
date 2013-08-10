@@ -222,25 +222,28 @@ public class SentryAppenderTest {
     public void testCorrectRavenInstanceUsedIfNotProvided() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender();
 
-        new NonStrictExpectations() {
-            @Mocked
-            private final Dsn dsn = null;
-            @Mocked
-            private RavenFactory ravenFactory = null;
+        new Expectations() {
+            private final String dsnUri = "protocol://public:private@host/1";
+            @Mocked("dsnLookup")
+            private Dsn dsn;
+            @Mocked("ravenInstance")
+            private RavenFactory ravenFactory;
 
             {
-                RavenFactory.ravenInstance(dsn, anyString);
-                returns(mockRaven);
+                Dsn.dsnLookup();
+                result = dsnUri;
+                RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
+                result = mockRaven;
             }
         };
 
         sentryAppender.activateOptions();
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
 
         new Verifications() {{
             onInstance(mockRaven).sendEvent((Event) any);
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     private void assertDoNotGenerateErrors() throws Exception{
