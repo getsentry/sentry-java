@@ -5,21 +5,22 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.dsn.Dsn;
-import org.apache.log4j.spi.ErrorHandler;
-import org.apache.log4j.spi.LoggingEvent;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 public class SentryAppenderClosingConnectionTest {
+    private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private Raven mockRaven = null;
     @Injectable
     private Connection mockConnection = null;
-    @Injectable
-    private ErrorHandler mockErrorHandler = null;
 
     @BeforeMethod
     public void setUp() {
+        mockUpErrorHandler = new MockUpErrorHandler();
         new NonStrictExpectations() {{
             mockRaven.getConnection();
             result = mockConnection;
@@ -29,7 +30,7 @@ public class SentryAppenderClosingConnectionTest {
     @Test
     public void testNotClosedIfRavenInstanceIsProvided() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.activateOptions();
         sentryAppender.close();
@@ -38,13 +39,13 @@ public class SentryAppenderClosingConnectionTest {
             mockConnection.close();
             times = 0;
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
     public void testClosedIfRavenInstanceProvidedAndForceClose() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.activateOptions();
         sentryAppender.close();
@@ -52,14 +53,14 @@ public class SentryAppenderClosingConnectionTest {
         new Verifications() {{
             mockConnection.close();
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
     public void testNotClosedIfRavenInstanceProvidedAndNotForceClose()
             throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.activateOptions();
         sentryAppender.close();
@@ -68,13 +69,13 @@ public class SentryAppenderClosingConnectionTest {
             mockConnection.close();
             times = 0;
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
     public void testClosedIfRavenInstanceNotProvided() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         new Expectations() {
             private final String dsnUri = "protocol://public:private@host/1";
             @Mocked("dsnLookup")
@@ -96,32 +97,25 @@ public class SentryAppenderClosingConnectionTest {
         new Verifications() {{
             mockConnection.close();
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
     public void testCloseDoNotFailIfInitFailed() throws Exception {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
         SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.activateOptions();
         sentryAppender.close();
 
-        new Verifications() {{
-            mockErrorHandler.error(anyString);
-            times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt);
-            times = 1;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt, (LoggingEvent) any);
-            times = 0;
-        }};
+        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
     }
 
     @Test
     public void testCloseDoNotFailWhenMultipleCalls() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.close();
         sentryAppender.close();
@@ -130,17 +124,6 @@ public class SentryAppenderClosingConnectionTest {
             mockConnection.close();
             times = 0;
         }};
-        assertDoNotGenerateErrors();
-    }
-
-    private void assertDoNotGenerateErrors() throws Exception {
-        new Verifications() {{
-            mockErrorHandler.error(anyString);
-            times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt);
-            times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt, withInstanceOf(LoggingEvent.class));
-            times = 0;
-        }};
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 }

@@ -11,7 +11,6 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.spi.ErrorHandler;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 import org.hamcrest.Matchers;
@@ -28,17 +27,17 @@ import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderTest {
     private SentryAppender sentryAppender;
+    private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private Raven mockRaven = null;
     @Injectable
     private Logger mockLogger = null;
-    @Injectable
-    private ErrorHandler mockErrorHandler = null;
 
     @BeforeMethod
     public void setUp() {
         sentryAppender = new SentryAppender(mockRaven);
-        sentryAppender.setErrorHandler(mockErrorHandler);
+        mockUpErrorHandler = new MockUpErrorHandler();
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
     }
 
     @Test
@@ -64,7 +63,7 @@ public class SentryAppenderTest {
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -85,7 +84,7 @@ public class SentryAppenderTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -104,7 +103,7 @@ public class SentryAppenderTest {
             assertThat(throwable.getMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -120,7 +119,7 @@ public class SentryAppenderTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -135,7 +134,7 @@ public class SentryAppenderTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -168,7 +167,7 @@ public class SentryAppenderTest {
             assertThat(stackTraceInterface.getStackTrace()[0],
                     is(new StackTraceElement(className, methodName, fileName, line)));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -197,7 +196,7 @@ public class SentryAppenderTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is("a.b(c:42)"));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -215,7 +214,7 @@ public class SentryAppenderTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -243,7 +242,7 @@ public class SentryAppenderTest {
         new Verifications() {{
             mockRaven.sendEvent((Event) any);
         }};
-        assertDoNotGenerateErrors();
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -256,20 +255,9 @@ public class SentryAppenderTest {
                 mockRaven.sendEvent((Event) any);
                 times = 0;
             }};
-            assertDoNotGenerateErrors();
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         } finally {
             Raven.RAVEN_THREAD.remove();
         }
-    }
-
-    private void assertDoNotGenerateErrors() throws Exception{
-        new Verifications() {{
-            mockErrorHandler.error(anyString);
-            times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt);
-            times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt, withInstanceOf(LoggingEvent.class));
-            times = 0;
-        }};
     }
 }
