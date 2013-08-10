@@ -275,4 +275,23 @@ public class SentryAppenderTest {
         }};
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));
     }
+
+    @Test
+    public void testRavenFactoryFailureDoesNotPropagate() throws Exception {
+        new Expectations() {
+            @Mocked("ravenInstance")
+            private RavenFactory ravenFactory;
+            {
+                RavenFactory.ravenInstance((Dsn) any, anyString);
+                result = new UnsupportedOperationException();
+            }
+        };
+        SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setDsn("protocol://public:private@host/1");
+
+        sentryAppender.activateOptions();
+
+        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+    }
 }
