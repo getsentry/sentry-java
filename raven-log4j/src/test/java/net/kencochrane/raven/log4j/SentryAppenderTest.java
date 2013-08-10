@@ -63,8 +63,8 @@ public class SentryAppenderTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -84,8 +84,8 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -103,8 +103,8 @@ public class SentryAppenderTest {
             throwable = exceptionInterface.getThrowable();
             assertThat(throwable.getMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -119,8 +119,8 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -134,8 +134,8 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -167,8 +167,8 @@ public class SentryAppenderTest {
             assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
             assertThat(stackTraceInterface.getStackTrace()[0],
                     is(new StackTraceElement(className, methodName, fileName, line)));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -196,8 +196,8 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is("a.b(c:42)"));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
@@ -214,8 +214,8 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
-            assertDoNotGenerateErrors();
         }};
+        assertDoNotGenerateErrors();
     }
 
     @Test
