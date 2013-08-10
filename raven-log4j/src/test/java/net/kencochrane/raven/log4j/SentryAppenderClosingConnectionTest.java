@@ -11,9 +11,9 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class SentryAppenderClosingConnectionTest {
-    @Mocked
+    @Injectable
     private Raven mockRaven = null;
-    @Mocked
+    @Injectable
     private Connection mockConnection = null;
     @Injectable
     private ErrorHandler mockErrorHandler = null;
@@ -127,7 +127,7 @@ public class SentryAppenderClosingConnectionTest {
         sentryAppender.close();
 
         new Verifications() {{
-            onInstance(mockConnection).close();
+            mockConnection.close();
             times = 0;
         }};
         assertDoNotGenerateErrors();

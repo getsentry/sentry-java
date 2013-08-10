@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderTest {
     private SentryAppender sentryAppender;
-    @Mocked
+    @Injectable
     private Raven mockRaven = null;
     @Injectable
     private Logger mockLogger = null;
@@ -48,7 +48,7 @@ public class SentryAppenderTest {
         final String threadName = UUID.randomUUID().toString();
         final Date date = new Date(1373883196416L);
         new Expectations() {{
-            onInstance(mockLogger).getName();
+            mockLogger.getName();
             result = loggerName;
         }};
 
@@ -204,7 +204,7 @@ public class SentryAppenderTest {
     public void testCulpritWithoutSource() throws Exception {
         final String loggerName = UUID.randomUUID().toString();
         new Expectations() {{
-            onInstance(mockLogger).getName();
+            mockLogger.getName();
             result = loggerName;
         }};
 
@@ -241,7 +241,7 @@ public class SentryAppenderTest {
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
 
         new Verifications() {{
-            onInstance(mockRaven).sendEvent((Event) any);
+            mockRaven.sendEvent((Event) any);
         }};
         assertDoNotGenerateErrors();
     }
