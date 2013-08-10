@@ -246,6 +246,22 @@ public class SentryAppenderTest {
         assertDoNotGenerateErrors();
     }
 
+    @Test
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
+        try {
+            Raven.RAVEN_THREAD.set(true);
+            sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
+
+            new Verifications() {{
+                mockRaven.sendEvent((Event) any);
+                times = 0;
+            }};
+            assertDoNotGenerateErrors();
+        } finally {
+            Raven.RAVEN_THREAD.remove();
+        }
+    }
+
     private void assertDoNotGenerateErrors() throws Exception{
         new Verifications() {{
             mockErrorHandler.error(anyString);
