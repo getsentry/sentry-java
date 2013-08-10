@@ -1,11 +1,11 @@
 package net.kencochrane.raven.log4j2;
 
-import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
+import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.SimpleMessage;
@@ -24,7 +24,6 @@ public class SentryAppenderNewTest {
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private Raven mockRaven = null;
-
 
     @BeforeMethod
     public void setUp() {
@@ -72,6 +71,25 @@ public class SentryAppenderNewTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
+        }};
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+    }
+
+    @Test
+    public void testExceptionLogging() throws Exception {
+        final Exception exception = new Exception(UUID.randomUUID().toString());
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), exception));
+
+        new Verifications() {{
+            Event event;
+            Throwable throwable;
+            mockRaven.sendEvent(event = withCapture());
+            ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
+                    .get(ExceptionInterface.EXCEPTION_INTERFACE);
+            throwable = exceptionInterface.getThrowable();
+            assertThat(throwable.getMessage(), is(exception.getMessage()));
+            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
         }};
         assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }

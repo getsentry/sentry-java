@@ -4,8 +4,6 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.event.EventBuilder;
-import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
@@ -28,7 +26,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -69,23 +70,6 @@ public class SentryAppenderTest {
         doAnswer(answer).when(mockErrorHandler).error(anyString());
         doAnswer(answer).when(mockErrorHandler).error(anyString(), any(Throwable.class));
         doAnswer(answer).when(mockErrorHandler).error(anyString(), any(LogEvent.class), any(Throwable.class));
-    }
-
-    @Test
-    public void testExceptionLogging() throws Exception {
-        Exception exception = new Exception();
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), exception));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        ExceptionInterface exceptionInterface = (ExceptionInterface) eventCaptor.getValue().getSentryInterfaces()
-                .get(ExceptionInterface.EXCEPTION_INTERFACE);
-        Throwable capturedException = exceptionInterface.getThrowable();
-
-        assertThat(capturedException.getMessage(), is(exception.getMessage()));
-        assertThat(capturedException.getStackTrace(), is(exception.getStackTrace()));
-        assertNoErrors();
     }
 
     @Test
