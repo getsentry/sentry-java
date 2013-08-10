@@ -76,13 +76,16 @@ public class SentryAppenderClosingConnectionTest {
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockErrorHandler);
         new Expectations() {
-            @Mocked
-            private final Dsn dsn = null;
+            private final String dsnUri = "protocol://public:private@host/1";
+            @Mocked("dsnLookup")
+            private Dsn dsn;
             @Mocked("ravenInstance")
             private RavenFactory ravenFactory;
 
             {
-                RavenFactory.ravenInstance(withAny(dsn), anyString);
+                Dsn.dsnLookup();
+                result = dsnUri;
+                RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
                 result = mockRaven;
             }
         };
