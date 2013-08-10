@@ -57,7 +57,7 @@ public class SentryAppenderTest {
 
         new Verifications() {{
             Event event;
-            mockRaven.runBuilderHelpers(withAny(new EventBuilder()));
+            mockRaven.runBuilderHelpers((EventBuilder) any);
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getMessage(), is(message));
             assertThat(event.getLogger(), is(loggerName));
@@ -268,7 +268,7 @@ public class SentryAppenderTest {
             times = 0;
             mockErrorHandler.error(anyString, (Exception) any, anyInt);
             times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt, (LoggingEvent) any);
+            mockErrorHandler.error(anyString, (Exception) any, anyInt, withInstanceOf(LoggingEvent.class));
             times = 0;
         }};
     }

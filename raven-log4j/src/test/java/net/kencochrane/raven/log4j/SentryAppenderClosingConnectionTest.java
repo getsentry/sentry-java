@@ -139,7 +139,7 @@ public class SentryAppenderClosingConnectionTest {
             times = 0;
             mockErrorHandler.error(anyString, (Exception) any, anyInt);
             times = 0;
-            mockErrorHandler.error(anyString, (Exception) any, anyInt, (LoggingEvent) any);
+            mockErrorHandler.error(anyString, (Exception) any, anyInt, withInstanceOf(LoggingEvent.class));
             times = 0;
         }};
     }
