@@ -7,20 +7,22 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.MarkerManager;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.apache.logging.log4j.spi.DefaultThreadContextStack;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class SentryAppenderNewTest {
     private SentryAppender sentryAppender;
@@ -116,6 +118,107 @@ public class SentryAppenderNewTest {
             assertThat(messageInterface.getParameters(),
                     is(Arrays.asList(parameters[0].toString(), parameters[1].toString(), null)));
             assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        }};
+    }
+
+    @Test
+    public void testMarkerAddedToTag() throws Exception {
+        final String markerName = UUID.randomUUID().toString();
+
+        sentryAppender.append(new Log4jLogEvent(null, MarkerManager.getMarker(markerName), null, Level.INFO,
+                new SimpleMessage(""), null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getTags(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_MARKER, markerName));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        }};
+    }
+
+    @Test
+    public void testMdcAddedToExtra() throws Exception {
+        final String extraKey = UUID.randomUUID().toString();
+        final String extraValue = UUID.randomUUID().toString();
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null,
+                Collections.singletonMap(extraKey, extraValue), null, null, null, 0));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        }};
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testNdcAddedToExtra() throws Exception {
+        final ThreadContext.ContextStack contextStack = new DefaultThreadContextStack(true);
+        contextStack.push(UUID.randomUUID().toString());
+        contextStack.push(UUID.randomUUID().toString());
+        contextStack.push(UUID.randomUUID().toString());
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null,
+                contextStack, null, null, 0));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat((List<String>) event.getExtra().get(SentryAppender.LOG4J_NDC), equalTo(contextStack.asList()));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        }};
+    }
+
+    @Test
+    public void testSourceUsedAsStacktrace() throws Exception {
+        final StackTraceElement location = new StackTraceElement(UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), UUID.randomUUID().toString(), 42);
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null, null,
+                null, location, 0));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
+                    .get(StackTraceInterface.STACKTRACE_INTERFACE);
+            assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
+            assertThat(stackTraceInterface.getStackTrace()[0], is(location));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+
+        }};
+    }
+
+    @Test
+    public void testCulpritWithSource() throws Exception {
+        final StackTraceElement location = new StackTraceElement("a", "b", "c", 42);
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null, null,
+                null, location, 0));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getCulprit(), is("a.b(c:42)"));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+
+        }};
+    }
+
+    @Test
+    public void testCulpritWithoutSource() throws Exception {
+        final String loggerName = UUID.randomUUID().toString();
+
+        sentryAppender.append(new Log4jLogEvent(loggerName, null, null, Level.INFO, new SimpleMessage(""), null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getCulprit(), is(loggerName));
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+
         }};
     }
 }

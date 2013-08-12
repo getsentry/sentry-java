@@ -4,35 +4,20 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.event.interfaces.MessageInterface;
-import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.MarkerManager;
-import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.DefaultErrorHandler;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
-import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.SimpleMessage;
-import org.apache.logging.log4j.spi.DefaultThreadContextStack;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -70,95 +55,6 @@ public class SentryAppenderTest {
         doAnswer(answer).when(mockErrorHandler).error(anyString());
         doAnswer(answer).when(mockErrorHandler).error(anyString(), any(Throwable.class));
         doAnswer(answer).when(mockErrorHandler).error(anyString(), any(LogEvent.class), any(Throwable.class));
-    }
-
-    @Test
-    public void testMarkerAddedToTag() throws Exception {
-        String markerName = UUID.randomUUID().toString();
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(null, MarkerManager.getMarker(markerName), null, Level.INFO,
-                new SimpleMessage(""), null));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getTags(),
-                Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_MARKER, markerName));
-        assertNoErrors();
-    }
-
-    @Test
-    public void testMdcAddedToExtra() throws Exception {
-        String extraKey = UUID.randomUUID().toString();
-        String extraValue = UUID.randomUUID().toString();
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null,
-                Collections.singletonMap(extraKey, extraValue), null, null, null, 0));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
-        assertNoErrors();
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testNdcAddedToExtra() throws Exception {
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        ThreadContext.ContextStack contextStack = new DefaultThreadContextStack(true);
-
-        contextStack.push(UUID.randomUUID().toString());
-        contextStack.push(UUID.randomUUID().toString());
-        contextStack.push(UUID.randomUUID().toString());
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null,
-                contextStack, null, null, 0));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat((List<String>) eventCaptor.getValue().getExtra().get(SentryAppender.LOG4J_NDC),
-                equalTo(contextStack.asList()));
-        assertNoErrors();
-    }
-
-    @Test
-    public void testSourceUsedAsStacktrace() throws Exception {
-        StackTraceElement location = new StackTraceElement(UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(), 42);
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null, null,
-                null, location, 0));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        StackTraceInterface stackTraceInterface = (StackTraceInterface) eventCaptor.getValue().getSentryInterfaces()
-                .get(StackTraceInterface.STACKTRACE_INTERFACE);
-        assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
-        assertThat(stackTraceInterface.getStackTrace()[0], is(location));
-        assertNoErrors();
-    }
-
-    @Test
-    public void testCulpritWithSource() throws Exception {
-        StackTraceElement location = new StackTraceElement("a", "b", "c", 42);
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null, null,
-                null, location, 0));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getCulprit(), is("a.b(c:42)"));
-        assertNoErrors();
-    }
-
-    @Test
-    public void testCulpritWithoutSource() throws Exception {
-        String loggerName = UUID.randomUUID().toString();
-        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-
-        sentryAppender.append(new Log4jLogEvent(loggerName, null, null, Level.INFO, new SimpleMessage(""), null));
-
-        verify(mockRaven).sendEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().getCulprit(), is(loggerName));
-        assertNoErrors();
     }
 
     @Test
