@@ -1,11 +1,10 @@
 package net.kencochrane.raven.log4j2;
 
-import mockit.Injectable;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.connection.Connection;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -304,6 +303,29 @@ public class SentryAppenderNewTest {
 
         new Verifications() {{
             assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+        }};
+    }
+
+    @Test
+    public void testLazyInitialisation(@Injectable final RavenFactory ravenFactory) throws Exception {
+        final String dsnUri = "proto://private:public@host/1";
+        RavenFactory.registerFactory(ravenFactory);
+        sentryAppender = new SentryAppender();
+        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setDsn(dsnUri);
+        sentryAppender.setRavenFactory(ravenFactory.getClass().getName());
+        new Expectations() {
+            {
+                ravenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
+                result = mockRaven;
+            }
+        };
+
+        sentryAppender.start();
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+        new Verifications() {{
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 }

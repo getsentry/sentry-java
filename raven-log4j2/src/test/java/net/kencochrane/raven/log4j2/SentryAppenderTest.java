@@ -57,22 +57,6 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testLazyInitialisation() throws Exception {
-        String dsnUri = "proto://private:public@host/1";
-        sentryAppender = new SentryAppender();
-        setMockErrorHandlerOnAppender(sentryAppender);
-        sentryAppender.setDsn(dsnUri);
-        sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
-
-        sentryAppender.start();
-        verify(mockRavenFactory, never()).createRavenInstance(any(Dsn.class));
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-        verify(mockRavenFactory).createRavenInstance(eq(new Dsn(dsnUri)));
-        assertNoErrors();
-    }
-
-    @Test
     public void testDsnAutoDetection() throws Exception {
         try {
             String dsnUri = "proto://private:public@host/1";
