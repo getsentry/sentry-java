@@ -275,4 +275,21 @@ public class SentryAppenderNewTest {
             }
         };
     }
+
+    @Test
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
+        try {
+            Raven.RAVEN_THREAD.set(true);
+
+            sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+            new Verifications() {{
+                mockRaven.sendEvent((Event) any);
+                times = 0;
+                assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+            }};
+        } finally {
+            Raven.RAVEN_THREAD.remove();
+        }
+    }
 }

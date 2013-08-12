@@ -57,20 +57,6 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
-        try {
-            Raven.RAVEN_THREAD.set(true);
-
-            sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-
-            verify(mockRaven, never()).sendEvent(any(Event.class));
-            assertNoErrors();
-        } finally {
-            Raven.RAVEN_THREAD.remove();
-        }
-    }
-
-    @Test
     public void testRavenFailureDoesNotPropagate() throws Exception {
         doThrow(new UnsupportedOperationException()).when(mockRaven).sendEvent(any(Event.class));
 
