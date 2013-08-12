@@ -292,4 +292,18 @@ public class SentryAppenderNewTest {
             Raven.RAVEN_THREAD.remove();
         }
     }
+
+    @Test
+    public void testRavenFailureDoesNotPropagate() throws Exception {
+        new NonStrictExpectations() {{
+            mockRaven.sendEvent((Event) any);
+            result = new UnsupportedOperationException();
+        }};
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+        new Verifications() {{
+            assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+        }};
+    }
 }

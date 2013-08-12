@@ -57,17 +57,6 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testRavenFailureDoesNotPropagate() throws Exception {
-        doThrow(new UnsupportedOperationException()).when(mockRaven).sendEvent(any(Event.class));
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-
-        verify(mockErrorHandler, never()).error(anyString());
-        verify(mockErrorHandler, never()).error(anyString(), any(Throwable.class));
-        verify(mockErrorHandler).error(anyString(), any(LogEvent.class), any(Throwable.class));
-    }
-
-    @Test
     public void testLazyInitialisation() throws Exception {
         String dsnUri = "proto://private:public@host/1";
         sentryAppender = new SentryAppender();
