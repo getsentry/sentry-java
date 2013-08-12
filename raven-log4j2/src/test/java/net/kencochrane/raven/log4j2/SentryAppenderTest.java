@@ -57,19 +57,6 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testClose() throws Exception {
-        sentryAppender.stop();
-        verify(mockRaven.getConnection(), never()).close();
-
-        sentryAppender = new SentryAppender(mockRaven, true);
-        setMockErrorHandlerOnAppender(sentryAppender);
-
-        sentryAppender.stop();
-        verify(mockRaven.getConnection()).close();
-        assertNoErrors();
-    }
-
-    @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
             Raven.RAVEN_THREAD.set(true);
