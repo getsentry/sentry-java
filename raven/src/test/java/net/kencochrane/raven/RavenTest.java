@@ -5,12 +5,11 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.UUID;
 
@@ -18,7 +17,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class RavenTest {
     private Raven raven;
     @Mock
@@ -28,8 +26,9 @@ public class RavenTest {
     @Mock
     private Event mockEvent;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         raven = new Raven();
         raven.setConnection(mockConnection);
     }
@@ -86,7 +85,7 @@ public class RavenTest {
         assertThat(raven.getBuilderHelpers(), not(contains(mockBuilderHelper)));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testCantModifyBuilderHelpersDirectly() throws Exception {
         raven.getBuilderHelpers().add(mockBuilderHelper);
     }

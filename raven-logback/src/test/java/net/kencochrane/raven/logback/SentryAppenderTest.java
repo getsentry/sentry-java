@@ -15,16 +15,15 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.helpers.MessageFormatter;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.*;
 
@@ -33,7 +32,6 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class SentryAppenderTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Raven mockRaven;
@@ -41,8 +39,9 @@ public class SentryAppenderTest {
     private RavenFactory mockRavenFactory;
     private SentryAppender sentryAppender;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         sentryAppender = new SentryAppender(mockRaven);
         setMockContextOnAppender(sentryAppender);
 

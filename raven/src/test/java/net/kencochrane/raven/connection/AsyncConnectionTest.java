@@ -2,13 +2,12 @@ package net.kencochrane.raven.connection;
 
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +16,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
 public class AsyncConnectionTest {
     private AsyncConnection asyncConnection;
     @Mock
@@ -25,8 +23,9 @@ public class AsyncConnectionTest {
     @Mock
     private ExecutorService mockExecutorService;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         asyncConnection = new AsyncConnection(mockConnection);
         asyncConnection.setExecutorService(mockExecutorService);
     }

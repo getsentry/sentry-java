@@ -3,8 +3,8 @@ package net.kencochrane.raven.jul;
 import net.kencochrane.raven.AbstractLoggerTest;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.logging.Handler;
@@ -16,8 +16,9 @@ import static org.mockito.Mockito.*;
 public class SentryHandlerTest extends AbstractLoggerTest {
     private Logger logger;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        super.setUp();
         logger = Logger.getAnonymousLogger();
         logger.setUseParentHandlers(false);
         logger.setLevel(Level.ALL);

@@ -3,11 +3,10 @@ package net.kencochrane.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.UUID;
 
@@ -15,15 +14,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class StackTraceInterfaceBindingTest extends AbstractInterfaceBindingTest {
     private StackTraceInterfaceBinding interfaceBinding;
     @Mock
     private StackTraceInterface mockStackTraceInterface;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
         super.setUp();
+        MockitoAnnotations.initMocks(this);
         interfaceBinding = new StackTraceInterfaceBinding();
     }
 

@@ -3,12 +3,11 @@ package net.kencochrane.raven.event.helper;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.servlet.RavenServletRequestListener;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.http.HttpServletRequest;
@@ -18,7 +17,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class HttpEventBuilderHelperTest {
     private HttpEventBuilderHelper httpEventBuilderHelper;
     @Mock
@@ -30,8 +28,9 @@ public class HttpEventBuilderHelperTest {
         new RavenServletRequestListener().requestInitialized(servletRequestEvent);
     }
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         httpEventBuilderHelper = new HttpEventBuilderHelper();
     }
 

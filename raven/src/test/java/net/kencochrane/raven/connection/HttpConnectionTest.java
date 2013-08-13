@@ -7,14 +7,12 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -36,7 +34,6 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class HttpConnectionTest {
     private HttpConnection httpConnection;
     private String publicKey = UUID.randomUUID().toString();
@@ -46,8 +43,9 @@ public class HttpConnectionTest {
     @Mock
     private Marshaller mockMarshaller;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         URLStreamHandler stubUrlHandler = new URLStreamHandler() {
             @Override
             protected URLConnection openConnection(URL u) throws IOException {

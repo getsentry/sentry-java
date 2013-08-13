@@ -5,13 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.UUID;
 
@@ -21,7 +20,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class ExceptionInterfaceBindingTest extends AbstractInterfaceBindingTest {
     private ExceptionInterfaceBinding interfaceBinding;
     @Mock
@@ -29,9 +27,10 @@ public class ExceptionInterfaceBindingTest extends AbstractInterfaceBindingTest 
     @Mock
     private InterfaceBinding<StackTraceInterface> stackTraceInterfaceBinding;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
         super.setUp();
+        MockitoAnnotations.initMocks(this);
         interfaceBinding = new ExceptionInterfaceBinding(stackTraceInterfaceBinding);
 
         doAnswer(new Answer<Void>() {

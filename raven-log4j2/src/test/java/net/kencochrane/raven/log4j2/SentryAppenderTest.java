@@ -9,19 +9,17 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.DefaultErrorHandler;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.SimpleMessage;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class SentryAppenderTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Raven mockRaven;
@@ -31,8 +29,9 @@ public class SentryAppenderTest {
     private DefaultErrorHandler mockErrorHandler;
     private SentryAppender sentryAppender;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         sentryAppender = new SentryAppender(mockRaven);
         setMockErrorHandlerOnAppender(sentryAppender);
 

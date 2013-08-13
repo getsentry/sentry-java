@@ -1,11 +1,10 @@
 package net.kencochrane.raven.logback;
 
 import net.kencochrane.raven.stub.SentryStub;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -14,14 +13,9 @@ public class SentryAppenderIT {
     private static final Logger logger = LoggerFactory.getLogger(SentryAppenderIT.class);
     private SentryStub sentryStub;
 
-    @Before
+    @BeforeMethod
     public void setUp() {
         sentryStub = new SentryStub();
-        sentryStub.removeEvents();
-    }
-
-    @After
-    public void tearDown() {
         sentryStub.removeEvents();
     }
 

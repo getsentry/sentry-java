@@ -1,8 +1,8 @@
 package net.kencochrane.raven.event;
 
 import net.kencochrane.raven.event.interfaces.SentryInterface;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.net.InetAddress;
 import java.util.Date;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 public class EventBuilderTest {
     private EventBuilder eventBuilder;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
         eventBuilder = new EventBuilder();
     }
@@ -103,7 +103,7 @@ public class EventBuilderTest {
         assertThat(firstChecksumEvent.getChecksum(), is(secondChecksumEvent.getChecksum()));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testTagsAreImmutable() throws Exception {
         String tagKey = UUID.randomUUID().toString();
         String tagValue = UUID.randomUUID().toString();
@@ -116,7 +116,7 @@ public class EventBuilderTest {
         tags.put(UUID.randomUUID().toString(), UUID.randomUUID().toString());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testExtrasAreImmutable() throws Exception {
         String extraKey = UUID.randomUUID().toString();
         Object extraValue = mock(Object.class);
@@ -129,7 +129,7 @@ public class EventBuilderTest {
         extra.put(UUID.randomUUID().toString(), mock(Object.class));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testSentryInterfacesAreImmutable() throws Exception {
         SentryInterface sentryInterface = mock(SentryInterface.class);
         when(sentryInterface.getInterfaceName()).thenReturn(UUID.randomUUID().toString());
@@ -145,13 +145,13 @@ public class EventBuilderTest {
         sentryInterfaces.put(UUID.randomUUID().toString(), null);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testBuildCanBeCalledOnlyOnce() throws Exception {
         eventBuilder.build();
         eventBuilder.build();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNoUuidFails() throws Exception {
         new EventBuilder(null);
     }

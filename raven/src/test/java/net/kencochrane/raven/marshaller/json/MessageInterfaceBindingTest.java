@@ -4,11 +4,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,15 +17,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class MessageInterfaceBindingTest extends AbstractInterfaceBindingTest {
     private MessageInterfaceBinding interfaceBinding;
     @Mock
     private MessageInterface mockMessageInterface;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
         super.setUp();
+        MockitoAnnotations.initMocks(this);
         interfaceBinding = new MessageInterfaceBinding();
     }
 

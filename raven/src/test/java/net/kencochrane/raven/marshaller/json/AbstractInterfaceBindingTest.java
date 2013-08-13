@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
+import org.testng.annotations.BeforeMethod;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +14,7 @@ public abstract class AbstractInterfaceBindingTest {
     private ObjectMapper mapper;
     private ByteArrayOutputStream jsonContentStream;
 
-    @Before
+    @BeforeMethod
     protected void setUp() throws Exception {
         jsonFactory = new JsonFactory();
         mapper = new ObjectMapper();
