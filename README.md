@@ -23,16 +23,16 @@ instance.
 ## Sentry Protocol and Raven versions
 Since 2.0, the major version of raven matches the version of the Sentry protocol.
 
-| Raven version | Sentry version | Protocol version |
-| ------------- | -------------- | ---------------- |
-| Raven 2.x     | >= 2.0         | V2               |
-| Raven 3.x     | >= 5.1         | V3               |
-| Raven 4.x(DEV)| >= 5.5(DEV)    | V4               |
+| Raven version | Protocol version | Sentry version |
+| ------------- | ---------------- | -------------- |
+| Raven 2.x     | V2               | >= 2.0         |
+| Raven 3.x     | V3               | >= 5.1         |
+| Raven 4.x     | V4               | >= 6.0         |
 
 
 Each release of Sentry supports the last two version of the protocol
-(i.e. Sentry 5.4.5 supports both the protocol V3 and V2), for this reason, only
-the two last stable version of Raven are actively maintained.
+(i.e. Sentry 6.0.4 supports both the protocol V4 and V3), for this reason, only
+the two last stable versions of Raven are actively maintained.
 
 ### Snapshot versions
 While the stable versions of raven are available on the
