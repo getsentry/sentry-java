@@ -120,11 +120,11 @@ public class HttpConnectionTest {
         verify(handler).publish(logRecordCaptor.capture());
         Matcher<Iterable<? super LogRecord>> matcher = hasItem(
                 new CustomTypeSafeMatcher<LogRecord>("Looks for message '" + httpErrorMessage + "'") {
-            @Override
-            protected boolean matchesSafely(LogRecord logRecord) {
-                return httpErrorMessage.equals(logRecord.getMessage());
-            }
-        });
+                    @Override
+                    protected boolean matchesSafely(LogRecord logRecord) {
+                        return httpErrorMessage.equals(logRecord.getMessage());
+                    }
+                });
         assertThat(logRecordCaptor.getAllValues(), matcher);
 
         Logger.getLogger(HttpConnection.class.getCanonicalName()).removeHandler(handler);

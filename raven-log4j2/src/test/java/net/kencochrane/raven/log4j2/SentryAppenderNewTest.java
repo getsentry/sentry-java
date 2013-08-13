@@ -107,7 +107,7 @@ public class SentryAppenderNewTest {
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO,
                 new FormattedMessage(messagePattern, parameters), null));
 
-        new Verifications(){{
+        new Verifications() {{
             Event event;
             mockRaven.sendEvent(event = withCapture());
 
