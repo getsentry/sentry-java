@@ -11,16 +11,22 @@ public class MockUpErrorHandler extends MockUp<ErrorHandler> {
     @Mock
     public void error(String msg) {
         errorCount++;
+        System.err.println(msg);
     }
 
     @Mock
     public void error(String msg, Throwable t) {
         errorCount++;
+        System.err.println(msg);
+        t.printStackTrace(System.err);
     }
 
     @Mock
     public void error(String msg, LogEvent event, Throwable t) {
         errorCount++;
+        System.err.println(msg);
+        t.printStackTrace(System.err);
+
     }
 
     public int getErrorCount() {
