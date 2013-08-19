@@ -270,7 +270,7 @@ public class SentryAppenderTest {
 
             {
                 connection.close();
-                times = 3;
+                times = 1;
                 assertThat(mockUpErrorHandler.getErrorCount(), is(0));
             }
         };
