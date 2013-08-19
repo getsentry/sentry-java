@@ -235,39 +235,4 @@ public class SentryAppenderTest {
             Raven.RAVEN_THREAD.remove();
         }
     }
-
-    @Test
-    public void testRavenFailureDoesNotPropagate() throws Exception {
-        new NonStrictExpectations() {{
-            mockRaven.sendEvent((Event) any);
-            result = new UnsupportedOperationException();
-        }};
-
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
-
-        new Verifications() {{
-            mockRaven.sendEvent((Event) any);
-            assertThat(mockUpErrorHandler.getErrorCount(), is(1));
-        }};
-    }
-
-    @Test
-    public void testRavenFactoryFailureDoesNotPropagate() throws Exception {
-        new Expectations() {
-            @Mocked("ravenInstance")
-            private RavenFactory ravenFactory;
-
-            {
-                RavenFactory.ravenInstance((Dsn) any, anyString);
-                result = new UnsupportedOperationException();
-            }
-        };
-        SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.setDsn("protocol://public:private@host/1");
-
-        sentryAppender.activateOptions();
-
-        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
-    }
 }
