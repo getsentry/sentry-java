@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 import org.hamcrest.Matchers;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -41,6 +42,11 @@ public class SentryAppenderTest {
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
     }
 
+    @AfterMethod
+    public void tearDown() {
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+    }
+
     @Test
     public void testSimpleMessageLogging() throws Exception {
         final String loggerName = UUID.randomUUID().toString();
@@ -63,7 +69,6 @@ public class SentryAppenderTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -86,7 +91,6 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -105,7 +109,6 @@ public class SentryAppenderTest {
             throwable = exceptionInterface.getThrowable();
             assertThat(throwable.getMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -121,7 +124,6 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -136,7 +138,6 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -169,7 +170,6 @@ public class SentryAppenderTest {
             assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
             assertThat(stackTraceInterface.getStackTrace()[0],
                     is(new StackTraceElement(className, methodName, fileName, line)));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -198,7 +198,6 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is("a.b(c:42)"));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -216,7 +215,6 @@ public class SentryAppenderTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
     }
 
@@ -229,7 +227,6 @@ public class SentryAppenderTest {
             new Verifications() {{
                 mockRaven.sendEvent((Event) any);
                 times = 0;
-                assertThat(mockUpErrorHandler.getErrorCount(), is(0));
             }};
         } finally {
             Raven.RAVEN_THREAD.remove();
