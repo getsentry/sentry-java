@@ -38,8 +38,8 @@ public class SentryAppenderClosingConnectionTest {
         new Verifications() {{
             mockConnection.close();
             times = 0;
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -52,8 +52,8 @@ public class SentryAppenderClosingConnectionTest {
 
         new Verifications() {{
             mockConnection.close();
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -68,8 +68,8 @@ public class SentryAppenderClosingConnectionTest {
         new Verifications() {{
             mockConnection.close();
             times = 0;
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -96,8 +96,8 @@ public class SentryAppenderClosingConnectionTest {
 
         new Verifications() {{
             mockConnection.close();
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class SentryAppenderClosingConnectionTest {
         new Verifications() {{
             mockConnection.close();
             times = 0;
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 }
