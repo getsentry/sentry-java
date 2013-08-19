@@ -1,10 +1,11 @@
 package net.kencochrane.raven.log4j;
 
 import com.google.common.base.Joiner;
-import mockit.*;
+import mockit.Expectations;
+import mockit.Injectable;
+import mockit.NonStrictExpectations;
+import mockit.Verifications;
 import net.kencochrane.raven.Raven;
-import net.kencochrane.raven.RavenFactory;
-import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -142,12 +143,12 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testSourceUsedAsStacktrace(@Injectable @NonStrict final LocationInfo locationInfo) throws Exception {
+    public void testSourceUsedAsStacktrace(@Injectable final LocationInfo locationInfo) throws Exception {
         final String className = UUID.randomUUID().toString();
         final String methodName = UUID.randomUUID().toString();
         final String fileName = UUID.randomUUID().toString();
         final int line = 42;
-        new Expectations() {{
+        new NonStrictExpectations() {{
             locationInfo.getClassName();
             result = className;
             locationInfo.getMethodName();
@@ -174,12 +175,12 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testCulpritWithSource(@Injectable @NonStrict final LocationInfo locationInfo) throws Exception {
+    public void testCulpritWithSource(@Injectable final LocationInfo locationInfo) throws Exception {
         final String className = "a";
         final String methodName = "b";
         final String fileName = "c";
         final int line = 42;
-        new Expectations() {{
+        new NonStrictExpectations() {{
             locationInfo.getClassName();
             result = className;
             locationInfo.getMethodName();
