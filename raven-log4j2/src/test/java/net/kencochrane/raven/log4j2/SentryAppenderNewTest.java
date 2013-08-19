@@ -307,16 +307,16 @@ public class SentryAppenderNewTest {
     }
 
     @Test
-    public void testLazyInitialisation(@Injectable final RavenFactory ravenFactory) throws Exception {
+    public void testLazyInitialisation(@Injectable final RavenFactory mockRavenFactory) throws Exception {
         final String dsnUri = "proto://private:public@host/1";
-        RavenFactory.registerFactory(ravenFactory);
+        RavenFactory.registerFactory(mockRavenFactory);
         sentryAppender = new SentryAppender();
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.setDsn(dsnUri);
-        sentryAppender.setRavenFactory(ravenFactory.getClass().getName());
+        sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
         new Expectations() {
             {
-                ravenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
+                mockRavenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
                 result = mockRaven;
             }
         };
