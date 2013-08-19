@@ -218,34 +218,6 @@ public class SentryAppenderTest {
     }
 
     @Test
-    public void testCorrectRavenInstanceUsedIfNotProvided() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender();
-
-        new Expectations() {
-            private final String dsnUri = "protocol://public:private@host/1";
-            @Mocked("dsnLookup")
-            private Dsn dsn;
-            @Mocked("ravenInstance")
-            private RavenFactory ravenFactory;
-
-            {
-                Dsn.dsnLookup();
-                result = dsnUri;
-                RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
-                result = mockRaven;
-            }
-        };
-
-        sentryAppender.activateOptions();
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
-
-        new Verifications() {{
-            mockRaven.sendEvent((Event) any);
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
-        }};
-    }
-
-    @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
             Raven.RAVEN_THREAD.set(true);
