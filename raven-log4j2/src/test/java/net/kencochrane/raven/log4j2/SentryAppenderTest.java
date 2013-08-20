@@ -1,10 +1,11 @@
 package net.kencochrane.raven.log4j2;
 
-import mockit.*;
+import mockit.Injectable;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.Verifications;
 import net.kencochrane.raven.Raven;
-import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.connection.Connection;
-import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -287,50 +288,5 @@ public class SentryAppenderTest {
         } finally {
             Raven.RAVEN_THREAD.remove();
         }
-    }
-
-    @Test
-    public void testLazyInitialisation(@Injectable final RavenFactory mockRavenFactory) throws Exception {
-        final String dsnUri = "proto://private:public@host/1";
-        RavenFactory.registerFactory(mockRavenFactory);
-        sentryAppender = new SentryAppender();
-        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.setDsn(dsnUri);
-        sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
-        new Expectations() {
-            {
-                mockRavenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
-                result = mockRaven;
-            }
-        };
-
-        sentryAppender.start();
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-    }
-
-    @Test
-    public void testDsnAutoDetection(@Injectable final RavenFactory mockRavenFactory) throws Exception {
-        final String dsnUri = "proto://private:public@host/1";
-        RavenFactory.registerFactory(mockRavenFactory);
-        sentryAppender = new SentryAppender();
-        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.setRavenFactory(mockRavenFactory.getClass().getName());
-        new Expectations() {
-            @Mocked("dsnLookup")
-            private Dsn dsn;
-
-            {
-                Dsn.dsnLookup();
-                result = dsnUri;
-                mockRavenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
-                result = mockRaven;
-            }
-        };
-
-        sentryAppender.start();
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
-
-        new Verifications() {{
-        }};
     }
 }
