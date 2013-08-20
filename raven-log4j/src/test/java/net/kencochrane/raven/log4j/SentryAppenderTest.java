@@ -85,7 +85,7 @@ public class SentryAppenderTest {
     }
 
     @Test(dataProvider = "levels")
-    public void assertLevelConverted(final Event.Level expectedLevel, Level level) throws Exception {
+    public void testLevelConversion(final Event.Level expectedLevel, Level level) throws Exception {
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, level, null, null));
 
         new Verifications() {{
