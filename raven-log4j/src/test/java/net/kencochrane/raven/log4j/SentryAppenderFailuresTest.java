@@ -55,7 +55,7 @@ public class SentryAppenderFailuresTest {
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.setDsn("protocol://public:private@host/1");
 
-        sentryAppender.activateOptions();
+        sentryAppender.initRaven();
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));
     }
