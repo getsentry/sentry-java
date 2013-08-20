@@ -119,7 +119,6 @@ public class SentryAppenderCloseTest {
             throws Exception {
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.activateOptions();
 
         sentryAppender.close();
 
