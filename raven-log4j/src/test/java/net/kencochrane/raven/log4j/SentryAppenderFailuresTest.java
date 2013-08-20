@@ -68,6 +68,7 @@ public class SentryAppenderFailuresTest {
             new Verifications() {{
                 mockRaven.sendEvent((Event) any);
                 times = 0;
+                assertThat(mockUpErrorHandler.getErrorCount(), is(0));
             }};
         } finally {
             Raven.RAVEN_THREAD.remove();
