@@ -1,10 +1,9 @@
 package net.kencochrane.raven.log4j2;
 
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.NonStrict;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
@@ -21,6 +20,8 @@ public class SentryAppenderFailuresTest {
     @Injectable
     @NonStrict
     private Raven mockRaven = null;
+    @Mocked("ravenInstance")
+    private RavenFactory mockRavenFactory;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -37,6 +38,21 @@ public class SentryAppenderFailuresTest {
         }};
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+    }
+
+    @Test
+    public void testRavenFactoryFailureDoesNotPropagate() throws Exception {
+        new Expectations() {{
+            RavenFactory.ravenInstance((Dsn) any, anyString);
+            result = new UnsupportedOperationException();
+        }};
+        SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setDsn("protocol://public:private@host/1");
+
+        sentryAppender.initRaven();
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));
     }
