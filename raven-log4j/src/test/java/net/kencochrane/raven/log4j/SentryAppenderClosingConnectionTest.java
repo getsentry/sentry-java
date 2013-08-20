@@ -31,8 +31,8 @@ public class SentryAppenderClosingConnectionTest {
     public void testNotClosedIfRavenInstanceIsProvided() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-
         sentryAppender.activateOptions();
+
         sentryAppender.close();
 
         new Verifications() {{
@@ -46,8 +46,8 @@ public class SentryAppenderClosingConnectionTest {
     public void testClosedIfRavenInstanceProvidedAndForceClose() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-
         sentryAppender.activateOptions();
+
         sentryAppender.close();
 
         new Verifications() {{
@@ -57,12 +57,11 @@ public class SentryAppenderClosingConnectionTest {
     }
 
     @Test
-    public void testNotClosedIfRavenInstanceProvidedAndNotForceClose()
-            throws Exception {
+    public void testNotClosedIfRavenInstanceProvidedAndNotForceClose() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-
         sentryAppender.activateOptions();
+
         sentryAppender.close();
 
         new Verifications() {{
@@ -90,8 +89,8 @@ public class SentryAppenderClosingConnectionTest {
                 result = mockRaven;
             }
         };
-
         sentryAppender.activateOptions();
+
         sentryAppender.close();
 
         new Verifications() {{
@@ -105,8 +104,8 @@ public class SentryAppenderClosingConnectionTest {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
         SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-
         sentryAppender.activateOptions();
+
         sentryAppender.close();
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));

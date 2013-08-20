@@ -23,7 +23,7 @@ public class SentryAppenderFailuresTest {
     private Logger mockLogger = null;
 
     @BeforeMethod
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
