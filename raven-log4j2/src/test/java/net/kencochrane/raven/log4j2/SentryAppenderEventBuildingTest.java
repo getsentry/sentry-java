@@ -33,14 +33,14 @@ public class SentryAppenderEventBuildingTest {
     private Raven mockRaven = null;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
     }
 
     @AfterMethod
-    public void tearDown() {
+    public void tearDown() throws Exception {
         assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 

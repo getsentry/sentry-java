@@ -29,7 +29,7 @@ public class SentryAppenderDsnTest {
     private Dsn mockDsn;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
         sentryAppender = new SentryAppender();
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());

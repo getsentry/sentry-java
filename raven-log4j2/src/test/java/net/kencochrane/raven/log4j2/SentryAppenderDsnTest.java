@@ -25,7 +25,7 @@ public class SentryAppenderDsnTest {
     private Dsn dsn;
 
     @AfterMethod
-    public void tearDown() {
+    public void tearDown() throws Exception {
         assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 

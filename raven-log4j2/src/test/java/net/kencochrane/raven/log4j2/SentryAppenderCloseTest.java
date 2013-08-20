@@ -20,7 +20,7 @@ public class SentryAppenderCloseTest {
     private Raven mockRaven = null;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
         mockUpErrorHandler = new MockUpErrorHandler();
         new NonStrictExpectations() {{
             mockRaven.getConnection();
@@ -29,13 +29,13 @@ public class SentryAppenderCloseTest {
     }
 
     @AfterMethod
-    public void tearDown() {
+    public void tearDown() throws Exception {
         assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
     @Test
     public void testCloseNotCalled() throws Exception {
-        SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.stop();
@@ -48,7 +48,7 @@ public class SentryAppenderCloseTest {
 
     @Test
     public void testClose() throws Exception {
-        SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.stop();

@@ -23,7 +23,7 @@ public class SentryAppenderCloseTest {
     private Dsn mockDsn;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
         mockUpErrorHandler = new MockUpErrorHandler();
         new NonStrictExpectations() {{
             mockRaven.getConnection();
@@ -99,7 +99,7 @@ public class SentryAppenderCloseTest {
     @Test
     public void testCloseDoNotFailIfInitFailed() throws Exception {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
-        SentryAppender sentryAppender = new SentryAppender();
+        final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         new NonStrictExpectations() {{
             RavenFactory.ravenInstance((Dsn) any, anyString);
@@ -117,7 +117,7 @@ public class SentryAppenderCloseTest {
     @Test
     public void testCloseDoNotFailIfNoInit()
             throws Exception {
-        SentryAppender sentryAppender = new SentryAppender();
+        final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
 
         sentryAppender.close();
