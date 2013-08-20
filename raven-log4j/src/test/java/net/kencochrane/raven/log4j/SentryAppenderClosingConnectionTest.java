@@ -115,6 +115,19 @@ public class SentryAppenderClosingConnectionTest {
     }
 
     @Test
+    public void testCloseDoNotFailIfNoInit()
+            throws Exception {
+        SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
+
+        sentryAppender.close();
+
+        new Verifications() {{
+            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        }};
+    }
+
+    @Test
     public void testCloseDoNotFailWhenMultipleCalls() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
