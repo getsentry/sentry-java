@@ -1,11 +1,8 @@
 package net.kencochrane.raven.log4j2;
 
 import mockit.Injectable;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
 import mockit.Verifications;
 import net.kencochrane.raven.Raven;
-import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -222,56 +219,6 @@ public class SentryAppenderTest {
             assertThat(event.getCulprit(), is(loggerName));
 
         }};
-    }
-
-    @Test
-    public void testCloseNotCalled() throws Exception {
-        sentryAppender = new SentryAppender(mockRaven, false);
-        new NonStrictExpectations() {
-            @Mocked
-            private Connection connection;
-
-            {
-                mockRaven.getConnection();
-                result = connection;
-            }
-        };
-
-        sentryAppender.stop();
-
-        new Verifications() {
-            private Connection connection;
-
-            {
-                connection.close();
-                times = 0;
-            }
-        };
-    }
-
-    @Test
-    public void testClose() throws Exception {
-        sentryAppender = new SentryAppender(mockRaven, true);
-        new NonStrictExpectations() {
-            @Mocked
-            private Connection connection;
-
-            {
-                mockRaven.getConnection();
-                result = connection;
-            }
-        };
-
-        sentryAppender.stop();
-
-        new Verifications() {
-            private Connection connection;
-
-            {
-                connection.close();
-                times = 1;
-            }
-        };
     }
 
     @Test
