@@ -12,6 +12,7 @@ public class MockUpErrorHandler extends MockUp<ErrorHandler> {
     public void error(String msg) {
         errorCount++;
         System.err.println(msg);
+        System.err.flush();
     }
 
     @Mock
@@ -19,6 +20,7 @@ public class MockUpErrorHandler extends MockUp<ErrorHandler> {
         errorCount++;
         System.err.println(msg);
         t.printStackTrace(System.err);
+        System.err.flush();
     }
 
     @Mock
@@ -26,7 +28,7 @@ public class MockUpErrorHandler extends MockUp<ErrorHandler> {
         errorCount++;
         System.err.println(msg);
         t.printStackTrace(System.err);
-
+        System.err.flush();
     }
 
     public int getErrorCount() {
