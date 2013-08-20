@@ -3,13 +3,13 @@ package net.kencochrane.raven.log4j;
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
-import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -35,6 +35,11 @@ public class SentryAppenderDsnTest {
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
     }
 
+    @AfterMethod
+    public void tearDown() throws Exception {
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+    }
+
     @Test
     public void testDsnDetected() throws Exception {
         final String dsnUri = "protocol://public:private@host/1";
@@ -47,10 +52,6 @@ public class SentryAppenderDsnTest {
 
         sentryAppender.activateOptions();
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
-
-        new Verifications() {{
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
-        }};
     }
 
     @Test
@@ -64,9 +65,5 @@ public class SentryAppenderDsnTest {
 
         sentryAppender.activateOptions();
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
-
-        new Verifications() {{
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
-        }};
     }
 }
