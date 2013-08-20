@@ -3,6 +3,7 @@ package net.kencochrane.raven.jul;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -128,6 +129,8 @@ public class SentryHandler extends Handler {
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            reportError("An exception occurred during the retrieval of the DSN for Raven", e, ErrorManager.OPEN_FAILURE);
         } catch (Exception e) {
             reportError("An exception occurred during the creation of a Raven instance", e, ErrorManager.OPEN_FAILURE);
         }

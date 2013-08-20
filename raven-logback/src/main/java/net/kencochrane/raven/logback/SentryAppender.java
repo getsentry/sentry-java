@@ -7,6 +7,7 @@ import ch.qos.logback.core.AppenderBase;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -115,10 +116,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        try {
-            if (raven == null)
-                initRaven();
+        if (raven == null)
+            initRaven();
 
+        try {
             Event event = buildEvent(iLoggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -130,10 +131,16 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Initialises the Raven instance.
      */
     protected void initRaven() {
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
+        try {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
 
-        raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            addError("An exception occurred during the retrieval of the DSN for Raven", e);
+        } catch (Exception e) {
+            addError("An exception occurred during the creation of a Raven instance", e);
+        }
     }
 
     /**
