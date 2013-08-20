@@ -6,9 +6,6 @@ import mockit.Mocked;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.impl.Log4jLogEvent;
-import org.apache.logging.log4j.message.SimpleMessage;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
@@ -40,8 +37,7 @@ public class SentryAppenderDsnTest {
             result = mockRaven;
         }};
 
-        sentryAppender.start();
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+        sentryAppender.initRaven();
     }
 
     @Test
@@ -56,7 +52,6 @@ public class SentryAppenderDsnTest {
             result = mockRaven;
         }};
 
-        sentryAppender.start();
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+        sentryAppender.initRaven();
     }
 }

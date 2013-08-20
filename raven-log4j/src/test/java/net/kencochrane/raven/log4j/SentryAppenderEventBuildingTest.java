@@ -41,6 +41,7 @@ public class SentryAppenderEventBuildingTest {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.activateOptions();
     }
 
     @AfterMethod

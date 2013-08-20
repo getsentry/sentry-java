@@ -30,6 +30,7 @@ public class SentryAppenderFailuresTest {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.activateOptions();
     }
 
     @Test

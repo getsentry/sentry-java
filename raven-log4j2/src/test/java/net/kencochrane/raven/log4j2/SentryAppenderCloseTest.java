@@ -37,6 +37,7 @@ public class SentryAppenderCloseTest {
     public void testCloseNotCalled() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.start();
 
         sentryAppender.stop();
 
@@ -50,6 +51,7 @@ public class SentryAppenderCloseTest {
     public void testClose() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.start();
 
         sentryAppender.stop();
 
