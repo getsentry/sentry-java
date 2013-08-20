@@ -17,6 +17,10 @@ public class SentryAppenderClosingConnectionTest {
     private Raven mockRaven = null;
     @Injectable
     private Connection mockConnection = null;
+    @Mocked("ravenInstance")
+    private RavenFactory mockRavenFactory;
+    @Mocked("dsnLookup")
+    private Dsn mockDsn;
 
     @BeforeMethod
     public void setUp() {
@@ -73,22 +77,15 @@ public class SentryAppenderClosingConnectionTest {
 
     @Test
     public void testClosedIfRavenInstanceNotProvided() throws Exception {
+        final String dsnUri = "protocol://public:private@host/1";
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        new Expectations() {
-            private final String dsnUri = "protocol://public:private@host/1";
-            @Mocked("dsnLookup")
-            private Dsn dsn;
-            @Mocked("ravenInstance")
-            private RavenFactory ravenFactory;
-
-            {
-                Dsn.dsnLookup();
-                result = dsnUri;
-                RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
-                result = mockRaven;
-            }
-        };
+        new Expectations() {{
+            Dsn.dsnLookup();
+            result = dsnUri;
+            RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
+            result = mockRaven;
+        }};
         sentryAppender.activateOptions();
 
         sentryAppender.close();
@@ -104,11 +101,17 @@ public class SentryAppenderClosingConnectionTest {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
         SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
+        new NonStrictExpectations() {{
+            RavenFactory.ravenInstance((Dsn) any, anyString);
+            result = new UnsupportedOperationException();
+        }};
         sentryAppender.activateOptions();
 
         sentryAppender.close();
 
-        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+        new Verifications() {{
+            assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+        }};
     }
 
     @Test

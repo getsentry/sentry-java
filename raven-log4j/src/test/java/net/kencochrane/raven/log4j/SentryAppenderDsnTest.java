@@ -23,33 +23,27 @@ public class SentryAppenderDsnTest {
     private Raven mockRaven = null;
     @Injectable
     private Logger mockLogger = null;
-    @Injectable
-    private RavenFactory ravenFactory = null;
+    @Mocked("ravenInstance")
+    private RavenFactory mockRavenFactory;
+    @Mocked("dsnLookup")
+    private Dsn mockDsn;
 
     @BeforeMethod
     public void setUp() {
         sentryAppender = new SentryAppender();
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        RavenFactory.registerFactory(ravenFactory);
-        sentryAppender.setRavenFactory(ravenFactory.getClass().getName());
     }
 
     @Test
     public void testDsnDetected() throws Exception {
         final String dsnUri = "protocol://public:private@host/1";
-        sentryAppender.setRavenFactory(ravenFactory.getClass().getName());
-        new Expectations() {
-            @Mocked("dsnLookup")
-            private Dsn dsn;
-
-            {
-                Dsn.dsnLookup();
-                result = dsnUri;
-                ravenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
-                result = mockRaven;
-            }
-        };
+        new Expectations() {{
+            Dsn.dsnLookup();
+            result = dsnUri;
+            RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
+            result = mockRaven;
+        }};
 
         sentryAppender.activateOptions();
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
@@ -64,7 +58,7 @@ public class SentryAppenderDsnTest {
         final String dsnUri = "protocol://public:private@host/2";
         sentryAppender.setDsn(dsnUri);
         new Expectations() {{
-            ravenFactory.createRavenInstance(withEqual(new Dsn(dsnUri)));
+            RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
             result = mockRaven;
         }};
 

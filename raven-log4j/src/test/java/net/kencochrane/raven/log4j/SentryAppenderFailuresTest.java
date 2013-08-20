@@ -21,6 +21,8 @@ public class SentryAppenderFailuresTest {
     private Raven mockRaven = null;
     @Injectable
     private Logger mockLogger = null;
+    @Mocked("ravenInstance")
+    private RavenFactory mockRavenFactory;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -46,15 +48,10 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testRavenFactoryFailureDoesNotPropagate() throws Exception {
-        new Expectations() {
-            @Mocked("ravenInstance")
-            private RavenFactory ravenFactory;
-
-            {
-                RavenFactory.ravenInstance((Dsn) any, anyString);
-                result = new UnsupportedOperationException();
-            }
-        };
+        new Expectations() {{
+            RavenFactory.ravenInstance((Dsn) any, anyString);
+            result = new UnsupportedOperationException();
+        }};
         SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.setDsn("protocol://public:private@host/1");
