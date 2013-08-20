@@ -286,7 +286,7 @@ public class SentryAppenderTest {
         sentryAppender.setDsn(dsnUri);
         sentryAppender.setRavenFactory("invalid factory");
 
-        sentryAppender.append(newLoggingEvent(null, null, Level.INFO, null, null, null));
+        sentryAppender.initRaven();
 
         assertThat(sentryAppender.getContext().getStatusManager().getCount(), is(1));
     }
