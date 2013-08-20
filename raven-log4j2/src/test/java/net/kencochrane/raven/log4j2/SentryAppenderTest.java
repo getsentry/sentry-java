@@ -19,6 +19,7 @@ import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.spi.DefaultThreadContextStack;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.*;
@@ -61,17 +62,19 @@ public class SentryAppenderTest {
         }};
     }
 
-    @Test
-    public void testLevelConversion() throws Exception {
-        assertLevelConverted(Event.Level.DEBUG, Level.TRACE);
-        assertLevelConverted(Event.Level.DEBUG, Level.DEBUG);
-        assertLevelConverted(Event.Level.INFO, Level.INFO);
-        assertLevelConverted(Event.Level.WARNING, Level.WARN);
-        assertLevelConverted(Event.Level.ERROR, Level.ERROR);
-        assertLevelConverted(Event.Level.FATAL, Level.FATAL);
+    @DataProvider(name = "levels")
+    private Object[][] levelConversions() {
+        return new Object[][]{
+                {Event.Level.DEBUG, Level.TRACE},
+                {Event.Level.DEBUG, Level.DEBUG},
+                {Event.Level.INFO, Level.INFO},
+                {Event.Level.WARNING, Level.WARN},
+                {Event.Level.ERROR, Level.ERROR},
+                {Event.Level.FATAL, Level.FATAL}};
     }
 
-    private void assertLevelConverted(final Event.Level expectedLevel, Level level) throws Exception {
+    @Test(dataProvider = "levels")
+    public void testLevelConversion(final Event.Level expectedLevel, Level level) throws Exception {
         sentryAppender.append(new Log4jLogEvent(null, null, null, level, new SimpleMessage(""), null));
 
         new Verifications() {{
