@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.is;
 
-public class SentryAppenderTest {
+public class SentryAppenderEventBuildingTest {
     private SentryAppender sentryAppender;
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
@@ -217,20 +217,5 @@ public class SentryAppenderTest {
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
         }};
-    }
-
-    @Test
-    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
-        try {
-            Raven.RAVEN_THREAD.set(true);
-            sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
-
-            new Verifications() {{
-                mockRaven.sendEvent((Event) any);
-                times = 0;
-            }};
-        } finally {
-            Raven.RAVEN_THREAD.remove();
-        }
     }
 }

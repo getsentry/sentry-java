@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j2;
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.NonStrict;
+import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import org.apache.logging.log4j.Level;
@@ -38,5 +39,21 @@ public class SentryAppenderFailuresTest {
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+    }
+
+    @Test
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
+        try {
+            Raven.RAVEN_THREAD.set(true);
+
+            sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
+
+            new Verifications() {{
+                mockRaven.sendEvent((Event) any);
+                times = 0;
+            }};
+        } finally {
+            Raven.RAVEN_THREAD.remove();
+        }
     }
 }

@@ -1,9 +1,6 @@
 package net.kencochrane.raven.log4j;
 
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.Mocked;
-import mockit.NonStrict;
+import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -60,5 +57,20 @@ public class SentryAppenderFailuresTest {
         sentryAppender.activateOptions();
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));
+    }
+
+    @Test
+    public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
+        try {
+            Raven.RAVEN_THREAD.set(true);
+            sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
+
+            new Verifications() {{
+                mockRaven.sendEvent((Event) any);
+                times = 0;
+            }};
+        } finally {
+            Raven.RAVEN_THREAD.remove();
+        }
     }
 }
