@@ -62,6 +62,8 @@ public class HttpConnection extends AbstractConnection {
      */
     private boolean bypassSecurity = false;
 
+    public static final int HTTP_TOO_MANY_REQUESTS = 429;
+
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
         super(publicKey, secretKey);
         this.sentryUrl = sentryUrl;
@@ -101,7 +103,14 @@ public class HttpConnection extends AbstractConnection {
             OutputStream outputStream = connection.getOutputStream();
             marshaller.marshall(event, outputStream);
             outputStream.close();
-            connection.getInputStream().close();
+
+            // check for throttled state
+            if (connection.getResponseCode() == HTTP_TOO_MANY_REQUESTS) {
+                logger.warn("Too many requests error posting to sentry, you have been throttled.");
+            } else {
+                // consume the response
+                connection.getInputStream().close();
+            }
         } catch (IOException e) {
             if (connection.getErrorStream() != null) {
                 logger.error(getErrorMessageFromStream(connection.getErrorStream()), e);
