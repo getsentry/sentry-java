@@ -1,31 +1,23 @@
 package net.kencochrane.raven.connection;
 
+import mockit.*;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.event.EventBuilder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.verify;
-
 public class AsyncConnectionTest {
+    @Tested
     private AsyncConnection asyncConnection;
-    @Mock
+    @Injectable
     private Connection mockConnection;
-    @Mock
+    @Injectable
     private ExecutorService mockExecutorService;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         asyncConnection = new AsyncConnection(mockConnection);
         asyncConnection.setExecutorService(mockExecutorService);
     }
@@ -34,32 +26,37 @@ public class AsyncConnectionTest {
     public void testCloseOperation() throws Exception {
         asyncConnection.close();
 
-        verify(mockConnection).close();
-        verify(mockExecutorService).awaitTermination(any(Long.class), any(TimeUnit.class));
+        new Verifications() {{
+            mockConnection.close();
+            mockExecutorService.awaitTermination(anyLong, (TimeUnit) any);
+        }};
+    }
+
+
+    @Test
+    public void testSendEventQueued(@Injectable final Event mockEvent) throws Exception {
+        asyncConnection.send(mockEvent);
+
+        new Verifications(){{
+            mockExecutorService.execute((Runnable) any);
+        }};
     }
 
     @Test
-    public void testSendEventQueued() throws Exception {
-        Event event = new EventBuilder().build();
+    public void testQueuedEventExecuted(@Injectable final Event mockEvent) throws Exception {
+        new Expectations(){{
+            mockExecutorService.execute((Runnable) any);
+            result = new Delegate() {
+                public void execute(Runnable runnable){
+                    runnable.run();
+                }
+            };
+        }};
 
-        asyncConnection.send(event);
+        asyncConnection.send(mockEvent);
 
-        verify(mockExecutorService).execute(any(Runnable.class));
-    }
-
-    @Test
-    public void testQueuedEventExecuted() throws Exception {
-        Event event = new EventBuilder().build();
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                ((Runnable) invocation.getArguments()[0]).run();
-                return null;
-            }
-        }).when(mockExecutorService).execute(any(Runnable.class));
-
-        asyncConnection.send(event);
-
-        verify(mockConnection).send(event);
+        new Verifications(){{
+            mockConnection.send(mockEvent);
+        }};
     }
 }
