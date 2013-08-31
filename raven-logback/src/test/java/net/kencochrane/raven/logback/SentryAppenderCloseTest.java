@@ -37,7 +37,7 @@ public class SentryAppenderCloseTest {
         }};
     }
 
-    private void assertNoErrorsInStatusManager() throws Exception{
+    private void assertNoErrorsInStatusManager() throws Exception {
         assertThat(mockContext.getStatusManager().getCount(), is(0));
     }
 
@@ -48,12 +48,13 @@ public class SentryAppenderCloseTest {
 
         sentryAppender.stop();
 
-        new Verifications(){{
+        new Verifications() {{
             mockConnection.close();
             times = 0;
         }};
         assertNoErrorsInStatusManager();
     }
+
     @Test
     public void testClose2() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
@@ -61,7 +62,7 @@ public class SentryAppenderCloseTest {
 
         sentryAppender.stop();
 
-        new Verifications(){{
+        new Verifications() {{
             mockConnection.close();
         }};
         assertNoErrorsInStatusManager();

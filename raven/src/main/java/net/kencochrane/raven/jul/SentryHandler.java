@@ -130,7 +130,8 @@ public class SentryHandler extends Handler {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (InvalidDsnException e) {
-            reportError("An exception occurred during the retrieval of the DSN for Raven", e, ErrorManager.OPEN_FAILURE);
+            reportError("An exception occurred during the retrieval of the DSN for Raven",
+                    e, ErrorManager.OPEN_FAILURE);
         } catch (Exception e) {
             reportError("An exception occurred during the creation of a Raven instance", e, ErrorManager.OPEN_FAILURE);
         }

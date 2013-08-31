@@ -24,7 +24,7 @@ public class SentryAppenderFailuresTest {
     private RavenFactory mockRavenFactory;
 
     @BeforeMethod
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         new NonStrictExpectations() {{
             final BasicStatusManager statusManager = new BasicStatusManager();
             final OnConsoleStatusListener listener = new OnConsoleStatusListener();
