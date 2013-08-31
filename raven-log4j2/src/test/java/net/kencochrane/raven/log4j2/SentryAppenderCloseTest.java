@@ -5,7 +5,6 @@ import mockit.NonStrictExpectations;
 import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.connection.Connection;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -28,8 +27,7 @@ public class SentryAppenderCloseTest {
         }};
     }
 
-    @AfterMethod
-    public void tearDown() throws Exception {
+    private void assertNoErrorsInErrorHandler() throws Exception {
         assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
@@ -45,6 +43,7 @@ public class SentryAppenderCloseTest {
             mockConnection.close();
             times = 0;
         }};
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -58,5 +57,6 @@ public class SentryAppenderCloseTest {
         new Verifications() {{
             mockConnection.close();
         }};
+        assertNoErrorsInErrorHandler();
     }
 }

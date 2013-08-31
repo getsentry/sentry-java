@@ -31,6 +31,10 @@ public class SentryAppenderCloseTest {
         }};
     }
 
+    private void assertNoErrorsInErrorHandler() throws Exception {
+        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+    }
+
     @Test
     public void testNotClosedIfRavenInstanceIsProvided() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
@@ -42,8 +46,8 @@ public class SentryAppenderCloseTest {
         new Verifications() {{
             mockConnection.close();
             times = 0;
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -56,8 +60,8 @@ public class SentryAppenderCloseTest {
 
         new Verifications() {{
             mockConnection.close();
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -71,8 +75,8 @@ public class SentryAppenderCloseTest {
         new Verifications() {{
             mockConnection.close();
             times = 0;
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -92,8 +96,8 @@ public class SentryAppenderCloseTest {
 
         new Verifications() {{
             mockConnection.close();
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -109,9 +113,7 @@ public class SentryAppenderCloseTest {
 
         sentryAppender.close();
 
-        new Verifications() {{
-            assertThat(mockUpErrorHandler.getErrorCount(), is(1));
-        }};
+        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
     }
 
     @Test
@@ -122,9 +124,7 @@ public class SentryAppenderCloseTest {
 
         sentryAppender.close();
 
-        new Verifications() {{
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
-        }};
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -139,7 +139,7 @@ public class SentryAppenderCloseTest {
         new Verifications() {{
             mockConnection.close();
             times = 1;
-            assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         }};
+        assertNoErrorsInErrorHandler();
     }
 }
