@@ -6,7 +6,6 @@ import mockit.Mocked;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,8 +20,7 @@ public class SentryAppenderDsnTest {
     @Mocked("dsnLookup")
     private Dsn dsn;
 
-    @AfterMethod
-    public void tearDown() throws Exception {
+    private void assertNoErrorsInErrorHandler() throws Exception {
         assertThat(mockUpErrorHandler.getErrorCount(), is(0));
     }
 
@@ -38,6 +36,8 @@ public class SentryAppenderDsnTest {
         }};
 
         sentryAppender.initRaven();
+
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
@@ -53,5 +53,7 @@ public class SentryAppenderDsnTest {
         }};
 
         sentryAppender.initRaven();
+
+        assertNoErrorsInErrorHandler();
     }
 }
