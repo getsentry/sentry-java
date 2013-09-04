@@ -29,6 +29,7 @@ public class EventBuilderTest {
         assertThat(event.getId(), is(notNullValue()));
         assertThat(event.getTimestamp(), is(notNullValue()));
         assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM));
+        //TODO: This test can fail if HostnameCache times out (happened once), mock InetAddress.getLocalHost().getCanonicalHostName() for instant reliable results)
         assertThat(event.getServerName(), is(InetAddress.getLocalHost().getCanonicalHostName()));
     }
 
