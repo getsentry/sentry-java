@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AsyncConnectionTest {
-    @Tested
     private AsyncConnection asyncConnection;
     @Injectable
     private Connection mockConnection;
