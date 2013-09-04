@@ -72,7 +72,7 @@ public class HttpConnection extends AbstractConnection {
             String url = sentryUri.toString() + "api/" + projectId + "/store/";
             return new URL(url);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Couldn't get a valid URL from the DSN.", e);
+            throw new IllegalArgumentException("Couldn't build a valid URL from the Sentry API.", e);
         }
     }
 
