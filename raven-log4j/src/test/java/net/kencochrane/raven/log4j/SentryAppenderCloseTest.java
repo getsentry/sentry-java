@@ -8,8 +8,8 @@ import net.kencochrane.raven.dsn.Dsn;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderCloseTest {
     private MockUpErrorHandler mockUpErrorHandler;
