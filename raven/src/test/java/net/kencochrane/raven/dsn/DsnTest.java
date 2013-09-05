@@ -1,7 +1,7 @@
 package net.kencochrane.raven.dsn;
 
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import mockit.Expectations;
+import mockit.Mocked;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -13,17 +13,15 @@ import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.when;
 
 public class DsnTest {
-    @Mock
+    @Mocked
     private Context mockContext;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         System.setProperty("java.naming.factory.initial", InitialContextMockFactory.class.getName());
-        InitialContextMockFactory.context = mockContext;
+        InitialContextFactory.context = mockContext;
     }
 
     @Test(expectedExceptions = InvalidDsnException.class)
@@ -50,8 +48,11 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithJndi() throws Exception {
-        String dsn = UUID.randomUUID().toString();
-        when(mockContext.lookup("java:comp/env/sentry/dsn")).thenReturn(dsn);
+        final String dsn = UUID.randomUUID().toString();
+        new Expectations() {{
+            mockContext.lookup("java:comp/env/sentry/dsn");
+            result = dsn;
+        }};
 
         assertThat(Dsn.dsnLookup(), is(dsn));
     }
