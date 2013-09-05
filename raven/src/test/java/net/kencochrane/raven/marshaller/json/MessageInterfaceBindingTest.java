@@ -1,47 +1,39 @@
 package net.kencochrane.raven.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
+import mockit.Injectable;
+import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
-import org.hamcrest.Matchers;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.when;
-
-public class MessageInterfaceBindingTest extends AbstractInterfaceBindingTest {
+public class MessageInterfaceBindingTest {
     private MessageInterfaceBinding interfaceBinding;
-    @Mock
+    @Injectable
     private MessageInterface mockMessageInterface;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        super.setUp();
-        MockitoAnnotations.initMocks(this);
         interfaceBinding = new MessageInterfaceBinding();
     }
 
     @Test
     public void testSimpleMessage() throws Exception {
-        String message = UUID.randomUUID().toString();
-        List<String> parameters = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-        when(mockMessageInterface.getMessage()).thenReturn(message);
-        when(mockMessageInterface.getParameters()).thenReturn(parameters);
+        final JsonComparator jsonComparator = new JsonComparator();
+        final String message = "550ee459-cbb5-438e-91d2-b0bbdefab670";
+        final List<String> parameters = Arrays.asList("33ed929b-d803-46b6-a57b-9c0feab1f468",
+                "5fc10379-6392-470d-9de5-e4cb805ab78c");
+        new NonStrictExpectations() {{
+            mockMessageInterface.getMessage();
+            result = message;
+            mockMessageInterface.getParameters();
+            result = parameters;
+        }};
 
-        JsonGenerator jSonGenerator = getJsonGenerator();
-        interfaceBinding.writeInterface(jSonGenerator, mockMessageInterface);
-        jSonGenerator.close();
+        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockMessageInterface);
 
-        JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
-        assertThat(rootNode.get("message").asText(), is(message));
-        assertThat(getMapper().convertValue(rootNode.get("params"), List.class), Matchers.<List>is(parameters));
+        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Message1.json");
     }
 }
