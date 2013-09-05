@@ -1,5 +1,7 @@
 package net.kencochrane.raven.event;
 
+import mockit.Expectations;
+import mockit.Injectable;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -11,8 +13,6 @@ import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class EventBuilderTest {
     private EventBuilder eventBuilder;
@@ -119,21 +119,24 @@ public class EventBuilderTest {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testExtrasAreImmutable() throws Exception {
-        String extraKey = UUID.randomUUID().toString();
-        Object extraValue = mock(Object.class);
+        final String extraKey = UUID.randomUUID().toString();
+        final Object extraValue = new Object();
 
         Map<String, Object> extra = eventBuilder.addExtra(extraKey, extraValue).build().getExtra();
 
         assertThat(extra.size(), is(1));
         assertThat(extra.get(extraKey), is(extraValue));
 
-        extra.put(UUID.randomUUID().toString(), mock(Object.class));
+        extra.put(UUID.randomUUID().toString(), new Object());
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testSentryInterfacesAreImmutable() throws Exception {
-        SentryInterface sentryInterface = mock(SentryInterface.class);
-        when(sentryInterface.getInterfaceName()).thenReturn(UUID.randomUUID().toString());
+    public void testSentryInterfacesAreImmutable(@Injectable final SentryInterface sentryInterface) throws Exception {
+        final String interfaceName = UUID.randomUUID().toString();
+        new Expectations(){{
+            sentryInterface.getInterfaceName();
+            result = interfaceName;
+        }};
 
         Map<String, SentryInterface> sentryInterfaces = eventBuilder
                 .addSentryInterface(sentryInterface)

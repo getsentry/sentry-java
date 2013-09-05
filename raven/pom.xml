@@ -45,6 +45,7 @@
             <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Only there to mock classes which aren't handled by jmockit such as ReentrantLock -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
