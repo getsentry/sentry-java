@@ -1,36 +1,27 @@
 package net.kencochrane.raven.event.helper;
 
+import mockit.Expectations;
+import mockit.Injectable;
+import mockit.Mocked;
+import mockit.Verifications;
 import net.kencochrane.raven.event.EventBuilder;
+import net.kencochrane.raven.event.interfaces.HttpInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.servlet.RavenServletRequestListener;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletRequestEvent;
 import javax.servlet.http.HttpServletRequest;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Mockito.*;
 
 public class HttpEventBuilderHelperTest {
     private HttpEventBuilderHelper httpEventBuilderHelper;
-    @Mock
+    @Injectable
     private EventBuilder mockEventBuilder;
-
-    private static void simulateRequest() {
-        ServletRequestEvent servletRequestEvent = mock(ServletRequestEvent.class);
-        when(servletRequestEvent.getServletRequest()).thenReturn(mock(HttpServletRequest.class));
-        new RavenServletRequestListener().requestInitialized(servletRequestEvent);
-    }
+    @Mocked("getServletRequest")
+    private RavenServletRequestListener ravenServletRequestListener;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         httpEventBuilderHelper = new HttpEventBuilderHelper();
     }
 
@@ -38,17 +29,23 @@ public class HttpEventBuilderHelperTest {
     public void testNoRequest() throws Exception {
         httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        verify(mockEventBuilder, never()).addSentryInterface(any(SentryInterface.class));
+        new Verifications() {{
+            mockEventBuilder.addSentryInterface((SentryInterface) any);
+            times = 0;
+        }};
     }
 
     @Test
-    public void testWithRequest() throws Exception {
-        simulateRequest();
-        ArgumentCaptor<SentryInterface> interfaceCaptor = ArgumentCaptor.forClass(SentryInterface.class);
+    public void testWithRequest(@Injectable final HttpServletRequest mockHttpServletRequest) throws Exception {
+        new Expectations() {{
+            RavenServletRequestListener.getServletRequest();
+            result = mockHttpServletRequest;
+        }};
 
         httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        verify(mockEventBuilder).addSentryInterface(interfaceCaptor.capture());
-        assertThat(interfaceCaptor.getValue(), is(notNullValue()));
+        new Verifications() {{
+            mockEventBuilder.addSentryInterface(this.<HttpInterface>withNotNull());
+        }};
     }
 }
