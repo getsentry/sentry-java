@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,30 +30,79 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
 
     @Override
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {
-        Set<ImmutableThrowable> dejaVu = new HashSet<ImmutableThrowable>();
+        Deque<ExceptionWithStackTrace> exceptions = unfoldExceptionInterface(exceptionInterface);
+
+        //Unstack the exceptions
+        generator.writeStartArray();
+        while (!exceptions.isEmpty()) {
+            writeException(generator, exceptions.pop());
+        }
+        generator.writeEndArray();
+    }
+
+    /**
+     * Stack the exception and its causes with their StackTraces to provide them in the order expected by Sentry.
+     * <p>
+     * Sentry expects to get the exception from the first generated (cause) to the last generated. To provide the
+     * exceptions in this order, those are stacked then later the stack is emptied.
+     * </p>
+     * <p>
+     * Each exception provides a {@link StackTraceInterface}.
+     * </p>
+     *
+     * @param exceptionInterface Sentry interface containing the captured exception.
+     * @return a Stack of Exceptions with their {@link StackTraceInterface}.
+     */
+    private Deque<ExceptionWithStackTrace> unfoldExceptionInterface(ExceptionInterface exceptionInterface) {
+        Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<ExceptionWithStackTrace>();
+        Set<ImmutableThrowable> circularityDetector = new HashSet<ImmutableThrowable>();
         ImmutableThrowable throwable = exceptionInterface.getThrowable();
         StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
 
-        generator.writeStartArray();
+        //Stack the exceptions to send them in the reverse order
         while (throwable != null) {
-            dejaVu.add(throwable);
-
-            generator.writeStartObject();
-            generator.writeStringField(TYPE_PARAMETER, throwable.getActualClass().getSimpleName());
-            generator.writeStringField(VALUE_PARAMETER, throwable.getMessage());
-            generator.writeStringField(MODULE_PARAMETER, throwable.getActualClass().getPackage().getName());
-            generator.writeFieldName(STACKTRACE_PARAMETER);
-            stackTraceInterfaceBinding.writeInterface(generator,
-                    new StackTraceInterface(throwable.getStackTrace(), enclosingStackTrace));
-            generator.writeEndObject();
-            enclosingStackTrace = throwable.getStackTrace();
-            throwable = throwable.getCause();
-
-            if (dejaVu.contains(throwable)) {
-                logger.warn("Exiting a circular referencing exception!");
+            if (!circularityDetector.add(throwable)) {
+                logger.warn("Exiting a circular exception!");
                 break;
             }
+
+            StackTraceInterface stackTrace = new StackTraceInterface(throwable.getStackTrace(), enclosingStackTrace);
+            exceptions.push(new ExceptionWithStackTrace(throwable, stackTrace));
+            enclosingStackTrace = throwable.getStackTrace();
+            throwable = throwable.getCause();
         }
-        generator.writeEndArray();
+
+        return exceptions;
+    }
+
+    /**
+     * Outputs an exception with its StackTrace on a JSon stream.
+     *
+     * @param generator JSonGenerator.
+     * @param ewst      Exception with its associated {@link StackTraceInterface}.
+     * @throws IOException
+     */
+    private void writeException(JsonGenerator generator, ExceptionWithStackTrace ewst) throws IOException {
+        generator.writeStartObject();
+        generator.writeStringField(TYPE_PARAMETER, ewst.exception.getActualClass().getSimpleName());
+        generator.writeStringField(VALUE_PARAMETER, ewst.exception.getMessage());
+        generator.writeStringField(MODULE_PARAMETER, ewst.exception.getActualClass().getPackage().getName());
+
+        generator.writeFieldName(STACKTRACE_PARAMETER);
+        stackTraceInterfaceBinding.writeInterface(generator, ewst.stackTrace);
+        generator.writeEndObject();
+    }
+
+    /**
+     * Class associating an exception to its {@link StackTraceInterface}.
+     */
+    private final class ExceptionWithStackTrace {
+        private ImmutableThrowable exception;
+        private StackTraceInterface stackTrace;
+
+        private ExceptionWithStackTrace(ImmutableThrowable exception, StackTraceInterface stackTrace) {
+            this.exception = exception;
+            this.stackTrace = stackTrace;
+        }
     }
 }
