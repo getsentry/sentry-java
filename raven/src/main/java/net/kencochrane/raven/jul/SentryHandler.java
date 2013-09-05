@@ -21,6 +21,10 @@ import java.util.logging.*;
  */
 public class SentryHandler extends Handler {
     /**
+     * Name of the {@link Event#extra} property containing the Thread id.
+     */
+    public static final String THREAD_ID = "Raven-Threadid";
+    /**
      * Current instance of {@link Raven}.
      *
      * @see #initRaven()
@@ -170,6 +174,8 @@ public class SentryHandler extends Handler {
         } else {
             eventBuilder.setCulprit(record.getLoggerName());
         }
+
+        eventBuilder.addExtra(THREAD_ID, record.getThreadID());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
