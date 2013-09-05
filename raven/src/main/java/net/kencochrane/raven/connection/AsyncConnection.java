@@ -74,9 +74,12 @@ public class AsyncConnection implements Connection {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
+                    Raven.RAVEN_THREAD.set(true);
                     AsyncConnection.this.close();
                 } catch (IOException e) {
                     logger.error("An exception occurred while closing the connection.", e);
+                } finally {
+                    Raven.RAVEN_THREAD.remove();
                 }
             }
         });
