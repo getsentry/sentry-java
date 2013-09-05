@@ -2,7 +2,6 @@ package net.kencochrane.raven.dsn;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.spi.InitialContextFactory;
 import java.util.Hashtable;
 
 /**
@@ -10,7 +9,7 @@ import java.util.Hashtable;
  *
  * @see DsnTest#setUp()
  */
-public class InitialContextMockFactory implements InitialContextFactory {
+public class InitialContextFactory implements javax.naming.spi.InitialContextFactory {
     public static Context context;
 
     @Override
