@@ -76,14 +76,7 @@
         <module name="JavadocMethod">
             <property name="allowMissingPropertyJavadoc" value="true"/>
             <property name="allowUndeclaredRTE" value="true"/>
-            <property name="allowMissingJavadoc" value="true"/>
             <property name="scope" value="package"/>
-        </module>
-        <module name="JavadocMethod">
-            <property name="allowMissingPropertyJavadoc" value="true"/>
-            <property name="allowUndeclaredRTE" value="true"/>
-            <property name="scope" value="package"/>
-            <property name="severity" value="info"/>
         </module>
         <module name="JavadocType">
             <property name="scope" value="package"/>
