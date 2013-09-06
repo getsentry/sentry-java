@@ -5,7 +5,11 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 
 /**
- * Wrapper for {@code Throwable} to make it immutable.
+ * Wrapper for {@link Throwable} to make it immutable.
+ * <p>
+ * This throwable is made for the sole purpose of making actual {@link Throwable} instance immutable.<br />
+ * Under no circumstances an instance of ImmutableThrowable should be used for flow interruption.
+ * </p>
  */
 public class ImmutableThrowable extends Throwable {
     private final Throwable actualThrowable;
@@ -19,6 +23,15 @@ public class ImmutableThrowable extends Throwable {
         this.actualThrowable = actualThrowable;
     }
 
+    /**
+     * Returns the class of the original Throwable.
+     * <p>
+     * As ImmutableThrowable is encapsulating a Throwable, it's important to be able to retrieve the type of the
+     * original exception.
+     * </p>
+     *
+     * @return the class of the original Throwable
+     */
     public Class<? extends Throwable> getActualClass() {
         return actualThrowable.getClass();
     }

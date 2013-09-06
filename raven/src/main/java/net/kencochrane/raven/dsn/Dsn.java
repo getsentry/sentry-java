@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class Dsn {
     /**
-     * Name of the environment or system variable containing the DSN.
+     * Name of the environment and system variables containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
@@ -78,6 +78,7 @@ public class Dsn {
 
         // Try to obtain the DSN from JNDI
         try {
+            // Check that JNDI is available (not available on Android) by loading InitialContext
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             dsn = JndiLookup.jndiLookup();
         } catch (ClassNotFoundException e) {

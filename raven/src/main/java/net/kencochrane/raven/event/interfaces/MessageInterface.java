@@ -6,7 +6,24 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The Message interface for Sentry allows to add a message that will be formatted by sentry.
+ * The Message interface for Sentry allows to send the original pattern to Sentry, allowing the events to be grouped
+ * by original message (rather than the formatted version).
+ * <p>
+ * Sentry's ability to regroup event with the same messages is based on the content of the message, meaning that an
+ * {@link net.kencochrane.raven.event.Event} with the message "<cite>User1 failed to provide an email address</cite>"
+ * won't be grouped with an Event with the message "<cite>User2 failed to provide an email address</cite>".
+ * </p>
+ * <p>
+ * To allow this kind of grouping, sentry supports the message interface which will provide both the pattern of the
+ * message and the parameters. In this example the pattern could be:<br />
+ * <cite>{} failed to provide an email address</cite><br />
+ * And the parameters would be <cite>User1</cite> in the first Event and <cite>User2</cite> in the second Event.<br />
+ * This way, Sentry will be able to put the two events in the same category.
+ * </p>
+ * <p>
+ * Note: Sentry won't attempt to format the message, this is why the formatted message should be set through
+ * {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} in any case.
+ * </p>
  */
 public class MessageInterface implements SentryInterface {
     /**
@@ -31,10 +48,22 @@ public class MessageInterface implements SentryInterface {
         this(message, Collections.<String>emptyList());
     }
 
+    /**
+     * Creates a parametrised message.
+     *
+     * @param message original message.
+     * @param params  parameters of the message.
+     */
     public MessageInterface(String message, String... params) {
         this(message, Arrays.asList(params));
     }
 
+    /**
+     * Creates a parametrised message.
+     *
+     * @param message original message.
+     * @param parameters  parameters of the message.
+     */
     public MessageInterface(String message, List<String> parameters) {
         this.message = message;
         this.parameters = Collections.unmodifiableList(new ArrayList<String>(parameters));
