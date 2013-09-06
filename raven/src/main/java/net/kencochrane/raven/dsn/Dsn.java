@@ -86,11 +86,11 @@ public class Dsn {
 
         // Try to obtain the DSN from a System Environment Variable
         if (dsn == null)
-            dsn = System.getenv(Dsn.DSN_VARIABLE);
+            dsn = System.getenv(DSN_VARIABLE);
 
         // Try to obtain the DSN from a Java System Property
         if (dsn == null)
-            dsn = System.getProperty(Dsn.DSN_VARIABLE);
+            dsn = System.getProperty(DSN_VARIABLE);
 
         return dsn;
     }
