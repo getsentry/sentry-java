@@ -12,6 +12,11 @@ public class HttpInterface implements SentryInterface {
     public static final String HTTP_INTERFACE = "sentry.interfaces.Http";
     private final HttpServletRequest request;
 
+    /**
+     * Creates a an HTTP element for an {@link net.kencochrane.raven.event.Event}.
+     *
+     * @param request Catpured HTTP request to send to Sentry.
+     */
     public HttpInterface(HttpServletRequest request) {
         this.request = request;
     }

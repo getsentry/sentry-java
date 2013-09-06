@@ -22,10 +22,25 @@ public class UdpConnection extends AbstractConnection {
     private DatagramSocket socket;
     private Marshaller marshaller;
 
+    /**
+     * Creates an UDP connection to a Sentry server.
+     *
+     * @param hostname  hostname of the Sentry server.
+     * @param publicKey public key of the current project.
+     * @param secretKey private key of the current project.
+     */
     public UdpConnection(String hostname, String publicKey, String secretKey) {
         this(hostname, DEFAULT_UDP_PORT, publicKey, secretKey);
     }
 
+    /**
+     * Creates an UDP connection to a Sentry server.
+     *
+     * @param hostname  hostname of the Sentry server.
+     * @param port      Port on which the Sentry server listens.
+     * @param publicKey public key of the current project.
+     * @param secretKey private key of the current project.
+     */
     public UdpConnection(String hostname, int port, String publicKey, String secretKey) {
         super(publicKey, secretKey);
         openSocket(hostname, port);

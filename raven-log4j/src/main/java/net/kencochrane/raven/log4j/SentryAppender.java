@@ -53,14 +53,29 @@ public class SentryAppender extends AppenderSkeleton {
     private final boolean propagateClose;
     private boolean guard;
 
+    /**
+     * Creates an instance of SentryAppender.
+     */
     public SentryAppender() {
         this.propagateClose = true;
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven instance of Raven to use with this appender.
+     */
     public SentryAppender(Raven raven) {
         this(raven, false);
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven          instance of Raven to use with this appender.
+     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
+     *                       when the appender is closed.
+     */
     public SentryAppender(Raven raven, boolean propagateClose) {
         this.raven = raven;
         this.propagateClose = propagateClose;

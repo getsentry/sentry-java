@@ -14,7 +14,7 @@ public class StackTraceInterface implements SentryInterface {
     private final int framesCommonWithEnclosing;
 
     /**
-     * Creates a StackTrace.
+     * Creates a StackTrace for an {@link net.kencochrane.raven.event.Event}.
      *
      * @param stackTrace StackTrace to provide to Sentry.
      */
@@ -23,7 +23,7 @@ public class StackTraceInterface implements SentryInterface {
     }
 
     /**
-     * Creates a StackTrace.
+     * Creates a StackTrace for an {@link net.kencochrane.raven.event.Event}.
      * <p>
      * With the help of the enclosing StackTrace, figure out which frames are in common with the parent exception
      * to potentially hide them later in Sentry.

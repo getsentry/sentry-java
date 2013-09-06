@@ -10,6 +10,11 @@ public class ExceptionInterface implements SentryInterface {
     public static final String EXCEPTION_INTERFACE = "sentry.interfaces.Exception";
     private final ImmutableThrowable throwable;
 
+    /**
+     * Creates a an Exception element for an {@link net.kencochrane.raven.event.Event}.
+     *
+     * @param throwable Exception from the JVM to send to Sentry.
+     */
     public ExceptionInterface(Throwable throwable) {
         this.throwable = new ImmutableThrowable(throwable);
     }

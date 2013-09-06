@@ -8,6 +8,7 @@ package net.kencochrane.raven.dsn;
  * </p>
  */
 public class InvalidDsnException extends RuntimeException {
+    //CHECKSTYLE.OFF: JavadocMethod
     public InvalidDsnException() {
     }
 
@@ -22,4 +23,5 @@ public class InvalidDsnException extends RuntimeException {
     public InvalidDsnException(Throwable cause) {
         super(cause);
     }
+    //CHECKSTYLE.ON: JavadocMethod
 }

@@ -24,6 +24,16 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     private static final String STACKTRACE_PARAMETER = "stacktrace";
     private final InterfaceBinding<StackTraceInterface> stackTraceInterfaceBinding;
 
+    /**
+     * Creates a Binding system to send a {@link ExceptionInterface} on JSON stream.
+     * <p>
+     * Exceptions may contain StackTraces, this means that the system should also be able to send a
+     * {@link StackTraceInterface} on the JSON stream.
+     * </p>
+     *
+     * @param stackTraceInterfaceBinding InterfaceBinding allowing to send a {@link StackTraceInterface} on the JSON
+     *                                   stream.
+     */
     public ExceptionInterfaceBinding(InterfaceBinding<StackTraceInterface> stackTraceInterfaceBinding) {
         this.stackTraceInterfaceBinding = stackTraceInterfaceBinding;
     }

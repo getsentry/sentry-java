@@ -47,15 +47,30 @@ public class SentryHandler extends Handler {
     private final boolean propagateClose;
     private boolean guard = false;
 
+    /**
+     * Creates an instance of SentryHandler.
+     */
     public SentryHandler() {
         propagateClose = true;
         retrieveProperties();
     }
 
+    /**
+     * Creates an instance of SentryHandler.
+     *
+     * @param raven instance of Raven to use with this appender.
+     */
     public SentryHandler(Raven raven) {
         this(raven, false);
     }
 
+    /**
+     * Creates an instance of SentryHandler.
+     *
+     * @param raven          instance of Raven to use with this appender.
+     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
+     *                       when the appender is closed.
+     */
     public SentryHandler(Raven raven, boolean propagateClose) {
         this.raven = raven;
         this.propagateClose = propagateClose;

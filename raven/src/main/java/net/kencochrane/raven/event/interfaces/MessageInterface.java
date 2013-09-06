@@ -49,7 +49,7 @@ public class MessageInterface implements SentryInterface {
     }
 
     /**
-     * Creates a parametrised message.
+     * Creates a parametrised message for an {@link net.kencochrane.raven.event.Event}.
      *
      * @param message original message.
      * @param params  parameters of the message.
@@ -59,7 +59,7 @@ public class MessageInterface implements SentryInterface {
     }
 
     /**
-     * Creates a parametrised message.
+     * Creates a parametrised message for an {@link net.kencochrane.raven.event.Event}.
      *
      * @param message original message.
      * @param parameters  parameters of the message.

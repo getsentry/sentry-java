@@ -62,11 +62,25 @@ public class HttpConnection extends AbstractConnection {
      */
     private boolean bypassSecurity = false;
 
+    /**
+     * Creates an HTTP connection to a Sentry server.
+     *
+     * @param sentryUrl URL to the Sentry API.
+     * @param publicKey public key of the current project.
+     * @param secretKey private key of the current project.
+     */
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
         super(publicKey, secretKey);
         this.sentryUrl = sentryUrl;
     }
 
+    /**
+     * Automatically determines the URL to the HTTP API of Sentry.
+     *
+     * @param sentryUri URI of the Sentry instance.
+     * @param projectId unique identifier of the current project.
+     * @return an URL to the HTTP API of Sentry.
+     */
     public static URL getSentryApiUrl(URI sentryUri, String projectId) {
         try {
             String url = sentryUri.toString() + "api/" + projectId + "/store/";

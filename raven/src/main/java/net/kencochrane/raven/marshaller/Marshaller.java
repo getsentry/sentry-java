@@ -27,6 +27,11 @@ public interface Marshaller {
     final class UncloseableOutputStream extends OutputStream {
         private final OutputStream originalStream;
 
+        /**
+         * Creates an OutputStream which will not delegate the {@link #close()} operation.
+         *
+         * @param originalStream original stream to encapsulate.
+         */
         public UncloseableOutputStream(OutputStream originalStream) {
             this.originalStream = originalStream;
         }

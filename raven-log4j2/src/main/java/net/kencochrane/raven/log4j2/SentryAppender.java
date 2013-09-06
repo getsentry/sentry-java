@@ -68,15 +68,29 @@ public class SentryAppender extends AbstractAppender<String> {
     protected String ravenFactory;
     private final boolean propagateClose;
 
+    /**
+     * Creates an instance of SentryAppender.
+     */
     public SentryAppender() {
         this(APPENDER_NAME, null, true);
     }
 
-
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven instance of Raven to use with this appender.
+     */
     public SentryAppender(Raven raven) {
         this(raven, false);
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven          instance of Raven to use with this appender.
+     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
+     *                       when the appender is closed.
+     */
     public SentryAppender(Raven raven, boolean propagateClose) {
         this(APPENDER_NAME, null, propagateClose);
         this.raven = raven;

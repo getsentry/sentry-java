@@ -7,7 +7,7 @@ package net.kencochrane.raven.connection;
  * </p>
  */
 public class ConnectionException extends RuntimeException {
-
+    //CHECKSTYLE.OFF: JavadocMethod
     public ConnectionException() {
     }
 
@@ -22,4 +22,5 @@ public class ConnectionException extends RuntimeException {
     public ConnectionException(Throwable cause) {
         super(cause);
     }
+    //CHECKSTYLE.ON: JavadocMethod
 }

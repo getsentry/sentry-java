@@ -19,22 +19,56 @@ public abstract class RavenFactory {
     private static final Map<String, RavenFactory> MANUALLY_REGISTERED_FACTORIES = new HashMap<String, RavenFactory>();
     private static final Logger logger = LoggerFactory.getLogger(RavenFactory.class);
 
+    /**
+     * Manually adds a RavenFactory to the system.
+     * <p>
+     * Usually RavenFactories are automatically detected with the {@link ServiceLoader} system, but some systems
+     * such as Android do not provide a fully working ServiceLoader.<br />
+     * If the factory isn't detected automatically, it's possible to add it through this method.
+     * </p>
+     *
+     * @param ravenFactory ravenFactory to support.
+     */
     public static void registerFactory(RavenFactory ravenFactory) {
         MANUALLY_REGISTERED_FACTORIES.put(ravenFactory.getClass().getName(), ravenFactory);
     }
 
+    /**
+     * Creates an instance of Raven using the DSN obtain through {@link net.kencochrane.raven.dsn.Dsn#dsnLookup()}.
+     *
+     * @return an instance of Raven.
+     */
     public static Raven ravenInstance() {
         return ravenInstance(Dsn.dsnLookup());
     }
 
+    /**
+     * Creates an instance of Raven using the provided DSN.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an instance of Raven.
+     */
     public static Raven ravenInstance(String dsn) {
         return ravenInstance(new Dsn(dsn));
     }
 
+    /**
+     * Creates an instance of Raven using the provided DSN.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an instance of Raven.
+     */
     public static Raven ravenInstance(Dsn dsn) {
         return ravenInstance(dsn, null);
     }
 
+    /**
+     * Creates an instance of Raven using the provided DSN and the specified factory.
+     *
+     * @param dsn              Data Source Name of the Sentry server.
+     * @param ravenFactoryName name of the raven factory to use to generate an instance of Raven.
+     * @return an instance of Raven.
+     */
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
         Raven raven = ravenInstanceFromManualFactories(dsn, ravenFactoryName);
 
@@ -87,5 +121,11 @@ public abstract class RavenFactory {
         return raven;
     }
 
+    /**
+     * Creates an instance of Raven given a DSN.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an instance of Raven or {@code null} if it isn't possible to create one.
+     */
     public abstract Raven createRavenInstance(Dsn dsn);
 }

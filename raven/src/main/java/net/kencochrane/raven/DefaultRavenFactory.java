@@ -70,7 +70,6 @@ public class DefaultRavenFactory extends RavenFactory {
         raven.setConnection(createConnection(dsn));
         try {
             Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
-            //TODO: Is it enough? Shouldn't it look for Servlet >= 3.0 ?
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
             logger.trace("It seems that the current environment doesn't provide access to servlets.");
@@ -78,6 +77,12 @@ public class DefaultRavenFactory extends RavenFactory {
         return raven;
     }
 
+    /**
+     * Creates a connection to the given DSN by determining the protocol.
+     *
+     * @param dsn Data Source Name of the Sentry server to use.
+     * @return a connection to the server.
+     */
     protected Connection createConnection(Dsn dsn) {
         String protocol = dsn.getProtocol();
         Connection connection;
@@ -100,6 +105,14 @@ public class DefaultRavenFactory extends RavenFactory {
         return connection;
     }
 
+    /**
+     * Encapsulates an already existing connection in an {@link AsyncConnection} and get the async options from the
+     * Sentry DSN.
+     *
+     * @param dsn        Data Source Name of the Sentry server.
+     * @param connection Connection to encapsulate in an {@link AsyncConnection}.
+     * @return the asynchronous connection.
+     */
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
         AsyncConnection asyncConnection = new AsyncConnection(connection, true);
 
@@ -133,6 +146,12 @@ public class DefaultRavenFactory extends RavenFactory {
         return asyncConnection;
     }
 
+    /**
+     * Creates an HTTP connection to the Sentry server.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an {@link HttpConnection} to the server.
+     */
     protected Connection createHttpConnection(Dsn dsn) {
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
         HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(), dsn.getSecretKey());
@@ -146,6 +165,12 @@ public class DefaultRavenFactory extends RavenFactory {
         return httpConnection;
     }
 
+    /**
+     * Creates an UDP connection to the Sentry server.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an {@link UdpConnection} to the server.
+     */
     protected Connection createUdpConnection(Dsn dsn) {
         int port = dsn.getPort() != -1 ? dsn.getPort() : UdpConnection.DEFAULT_UDP_PORT;
         UdpConnection udpConnection = new UdpConnection(dsn.getHost(), port, dsn.getPublicKey(), dsn.getSecretKey());
@@ -153,6 +178,13 @@ public class DefaultRavenFactory extends RavenFactory {
         return udpConnection;
     }
 
+    /**
+     * Creates a JSON marshaller that will convert every {@link net.kencochrane.raven.event.Event} in a format
+     * handled by the Sentry server.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return a {@link JsonMarshaller} to process the events.
+     */
     protected Marshaller createMarshaller(Dsn dsn) {
         JsonMarshaller marshaller = new JsonMarshaller();
 
@@ -177,6 +209,15 @@ public class DefaultRavenFactory extends RavenFactory {
         return marshaller;
     }
 
+    /**
+     * Provides a list of package names to consider as "not in-app".
+     * <p>
+     * Those packages will be used with the {@inheritDoc StackTraceInterface} to hide frames that aren't a part of
+     * the main application.
+     * </p>
+     *
+     * @return the list of "not in-app" packages.
+     */
     protected Collection<String> getNotInAppFrames() {
         return Arrays.asList("com.sun.",
                 "java.",

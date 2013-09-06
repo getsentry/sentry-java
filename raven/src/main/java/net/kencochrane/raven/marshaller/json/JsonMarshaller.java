@@ -244,6 +244,13 @@ public class JsonMarshaller implements Marshaller {
         return ISO_FORMAT.format(timestamp);
     }
 
+    /**
+     * Add an interface binding to send a type of {@link SentryInterface} through a JSON stream.
+     *
+     * @param sentryInterfaceClass Actual type of SentryInterface supported by the {@link InterfaceBinding}
+     * @param binding              InterfaceBinding converting SentryInterfaces of type {@code sentryInterfaceClass}.
+     * @param <T>                  Type of SentryInterface.
+     */
     public <T extends SentryInterface> void addInterfaceBinding(Class<T> sentryInterfaceClass,
                                                                 InterfaceBinding<T> binding) {
         this.interfaceBindings.put(sentryInterfaceClass, binding);
