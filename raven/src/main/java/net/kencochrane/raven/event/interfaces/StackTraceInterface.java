@@ -13,10 +13,26 @@ public class StackTraceInterface implements SentryInterface {
     private final StackTraceElement[] stackTrace;
     private final int framesCommonWithEnclosing;
 
+    /**
+     * Creates a StackTrace.
+     *
+     * @param stackTrace StackTrace to provide to Sentry.
+     */
     public StackTraceInterface(StackTraceElement[] stackTrace) {
         this(stackTrace, new StackTraceElement[0]);
     }
 
+    /**
+     * Creates a StackTrace.
+     * <p>
+     * With the help of the enclosing StackTrace, figure out which frames are in common with the parent exception
+     * to potentially hide them later in Sentry.
+     * </p>
+     *
+     * @param stackTrace          StackTrace to provide to Sentry.
+     * @param enclosingStackTrace StackTrace of the enclosing exception, to determine how many Stack frames
+     *                            are in common.
+     */
     public StackTraceInterface(StackTraceElement[] stackTrace, StackTraceElement[] enclosingStackTrace) {
         this.stackTrace = Arrays.copyOf(stackTrace, stackTrace.length);
 
