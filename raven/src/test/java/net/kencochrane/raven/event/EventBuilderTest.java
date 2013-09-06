@@ -1,7 +1,7 @@
 package net.kencochrane.raven.event;
 
-import mockit.Expectations;
 import mockit.Injectable;
+import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -133,7 +133,7 @@ public class EventBuilderTest {
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testSentryInterfacesAreImmutable(@Injectable final SentryInterface sentryInterface) throws Exception {
         final String interfaceName = UUID.randomUUID().toString();
-        new Expectations(){{
+        new NonStrictExpectations() {{
             sentryInterface.getInterfaceName();
             result = interfaceName;
         }};
