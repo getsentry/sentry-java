@@ -1,6 +1,7 @@
 package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import mockit.Deencapsulation;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
@@ -53,4 +54,35 @@ public class ExceptionInterfaceBindingTest {
 
         jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Exception1.json");
     }
+
+    @Test
+    public void testClassInDefaultPackage() throws Exception {
+        Deencapsulation.setField((Object) DefaultPackageException.class, "name",
+                DefaultPackageException.class.getSimpleName());
+        final JsonComparator jsonComparator = new JsonComparator();
+        final Throwable throwable = new DefaultPackageException();
+        new NonStrictExpectations() {{
+            mockExceptionInterface.getThrowable();
+            result = new Delegate<Void>() {
+                public ImmutableThrowable getThrowable() {
+                    return new ImmutableThrowable(throwable);
+                }
+            };
+        }};
+
+        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockExceptionInterface);
+
+        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Exception2.json");
+    }
+}
+
+/**
+ * Exception used to test exceptions defined in the default package.
+ * <p>
+ * Obviously we can't use an Exception which is really defined in the default package within those tests
+ * (can't import it), so instead set the name of the class to remove the package name.<br />
+ * {@code Deencapsulation.setField((Object) DefaultPackageException.class, "name", "DefaultPackageClass")}
+ * </p>
+ */
+class DefaultPackageException extends Exception {
 }
