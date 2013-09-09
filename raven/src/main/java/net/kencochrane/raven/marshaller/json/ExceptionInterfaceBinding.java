@@ -96,7 +96,10 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
         generator.writeStartObject();
         generator.writeStringField(TYPE_PARAMETER, ewst.exception.getActualClass().getSimpleName());
         generator.writeStringField(VALUE_PARAMETER, ewst.exception.getMessage());
-        generator.writeStringField(MODULE_PARAMETER, ewst.exception.getActualClass().getPackage().getName());
+        // getPackage() can return null e.g. if the exception is in the default package
+        if (ewst.exception.getActualClass().getPackage() != null) {
+            generator.writeStringField(MODULE_PARAMETER, ewst.exception.getActualClass().getPackage().getName());
+        }
 
         generator.writeFieldName(STACKTRACE_PARAMETER);
         stackTraceInterfaceBinding.writeInterface(generator, ewst.stackTrace);
