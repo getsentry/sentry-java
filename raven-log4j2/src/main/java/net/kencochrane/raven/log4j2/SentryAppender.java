@@ -14,7 +14,7 @@ import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
-import org.apache.logging.log4j.core.config.plugins.PluginAttr;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.message.Message;
@@ -28,8 +28,8 @@ import java.util.Map;
 /**
  * Appender for log4j2 in charge of sending the logged events to a Sentry server.
  */
-@Plugin(name = "Raven", category = "Core", elementType = "appender")
-public class SentryAppender extends AbstractAppender<String> {
+@Plugin(name = "Raven", category = "Core", elementType = "appender", printObject = true)
+public class SentryAppender extends AbstractAppender {
     /**
      * Default name for the appender.
      */
@@ -111,9 +111,9 @@ public class SentryAppender extends AbstractAppender<String> {
      * @return The SentryAppender.
      */
     @PluginFactory
-    public static SentryAppender createAppender(@PluginAttr("name") final String name,
-                                                @PluginAttr("dsn") final String dsn,
-                                                @PluginAttr("ravenFactory") final String ravenFactory,
+    public static SentryAppender createAppender(@PluginAttribute("name") final String name,
+                                                @PluginAttribute("dsn") final String dsn,
+                                                @PluginAttribute("ravenFactory") final String ravenFactory,
                                                 @PluginElement("filters") final Filter filter) {
 
         if (name == null) {
