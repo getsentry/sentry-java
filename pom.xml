@@ -297,26 +297,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
-                <executions>
-                    <execution>
-                        <id>analyze</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>analyze-only</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipTests}</skip>
-                            <failOnWarning>true</failOnWarning>
-                            <ignoreNonCompile>true</ignoreNonCompile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
         <pluginManagement>
             <plugins>
@@ -347,6 +327,25 @@
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>2.8</version>
+                    <executions>
+                        <execution>
+                            <id>analyze</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${skipTests}</skip>
+                                <ignoreNonCompile>true</ignoreNonCompile>
+                                <failOnWarning>true</failOnWarning>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
