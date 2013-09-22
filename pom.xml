@@ -388,7 +388,7 @@
 
     <profiles>
         <profile>
-            <id>jetty</id>
+            <id>run-jetty-integration-tests</id>
             <activation>
                 <jdk>1.7</jdk>
             </activation>
