@@ -431,6 +431,7 @@
                             <artifactId>maven-failsafe-plugin</artifactId>
                             <executions>
                                 <execution>
+                                    <id>integration-tests</id>
                                     <goals>
                                         <goal>integration-test</goal>
                                         <goal>verify</goal>
