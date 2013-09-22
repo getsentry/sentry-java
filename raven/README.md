@@ -21,8 +21,8 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 Relies on:
 
  - [raven-4.1.jar](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.1%7Cjar)
- - [guava-14.0.1.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C14.0.1%7Cjar)
- - [jackson-core-2.2.2.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.2.2%7Cjar)
+ - [guava-15.0.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C15.0%7Cjar)
+ - [jackson-core-2.2.3.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.2.3%7Cjar)
  - [slf4j-api-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.5%7Cjar)
  - [slf4j-jdk14-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-jdk14%7C1.7.5%7Cjar)
  is recommended as the implementation of slf4j to capture the log events
