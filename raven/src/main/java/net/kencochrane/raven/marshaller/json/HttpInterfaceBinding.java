@@ -3,11 +3,8 @@ package net.kencochrane.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -36,47 +33,45 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
 
     @Override
     public void writeInterface(JsonGenerator generator, HttpInterface httpInterface) throws IOException {
-        HttpServletRequest request = httpInterface.getRequest();
-
         generator.writeStartObject();
-        generator.writeStringField(URL, request.getRequestURL().toString());
-        generator.writeStringField(METHOD, request.getMethod());
+        generator.writeStringField(URL, httpInterface.getRequestUrl());
+        generator.writeStringField(METHOD, httpInterface.getMethod());
         generator.writeFieldName(DATA);
-        writeData(generator, request.getParameterMap());
-        generator.writeStringField(QUERY_STRING, request.getQueryString());
+        writeData(generator, httpInterface.getParameters());
+        generator.writeStringField(QUERY_STRING, httpInterface.getQueryString());
         generator.writeFieldName(COOKIES);
-        writeCookies(generator, request.getCookies());
+        writeCookies(generator, httpInterface.getCookies());
         generator.writeFieldName(HEADERS);
-        writeHeaders(generator, request);
+        writeHeaders(generator, httpInterface.getHeaders());
         generator.writeFieldName(ENVIRONMENT);
-        writeEnvironment(generator, request);
+        writeEnvironment(generator, httpInterface);
         generator.writeEndObject();
     }
 
-    private void writeEnvironment(JsonGenerator generator, HttpServletRequest request) throws IOException {
+    private void writeEnvironment(JsonGenerator generator, HttpInterface httpInterface) throws IOException {
         generator.writeStartObject();
-        generator.writeStringField(ENV_REMOTE_ADDR, request.getRemoteAddr());
-        generator.writeStringField(ENV_SERVER_NAME, request.getServerName());
-        generator.writeNumberField(ENV_SERVER_PORT, request.getServerPort());
-        generator.writeStringField(ENV_LOCAL_ADDR, request.getLocalAddr());
-        generator.writeStringField(ENV_LOCAL_NAME, request.getLocalName());
-        generator.writeNumberField(ENV_LOCAL_PORT, request.getLocalPort());
-        generator.writeStringField(ENV_SERVER_PROTOCOL, request.getProtocol());
-        generator.writeBooleanField(ENV_REQUEST_SECURE, request.isSecure());
-        generator.writeBooleanField(ENV_REQUEST_ASYNC, request.isAsyncStarted());
-        generator.writeStringField(ENV_AUTH_TYPE, request.getAuthType());
+        generator.writeStringField(ENV_REMOTE_ADDR, httpInterface.getRemoteAddr());
+        generator.writeStringField(ENV_SERVER_NAME, httpInterface.getServerName());
+        generator.writeNumberField(ENV_SERVER_PORT, httpInterface.getServerPort());
+        generator.writeStringField(ENV_LOCAL_ADDR, httpInterface.getLocalAddr());
+        generator.writeStringField(ENV_LOCAL_NAME, httpInterface.getLocalName());
+        generator.writeNumberField(ENV_LOCAL_PORT, httpInterface.getLocalPort());
+        generator.writeStringField(ENV_SERVER_PROTOCOL, httpInterface.getProtocol());
+        generator.writeBooleanField(ENV_REQUEST_SECURE, httpInterface.isSecure());
+        generator.writeBooleanField(ENV_REQUEST_ASYNC, httpInterface.isAsyncStarted());
+        generator.writeStringField(ENV_AUTH_TYPE, httpInterface.getAuthType());
         //TODO: Should that be really displayed here ? Consider the user interface?
-        generator.writeStringField(ENV_REMOTE_USER, request.getRemoteUser());
+        generator.writeStringField(ENV_REMOTE_USER, httpInterface.getRemoteUser());
         generator.writeEndObject();
     }
 
-    private void writeHeaders(JsonGenerator generator, HttpServletRequest request) throws IOException {
+    private void writeHeaders(JsonGenerator generator, Map<String, Collection<String>> headers) throws IOException {
         generator.writeStartObject();
-        for (String header : Collections.list(request.getHeaderNames())) {
-            generator.writeFieldName(header);
+        for (Map.Entry<String, Collection<String>> headerEntry : headers.entrySet()) {
+            generator.writeFieldName(headerEntry.getKey());
+
             StringBuilder sb = new StringBuilder();
-            Collection<String> headerValues = Collections.list(request.getHeaders(header));
-            for (Iterator<String> it = headerValues.iterator(); it.hasNext(); ) {
+            for (Iterator<String> it = headerEntry.getValue().iterator(); it.hasNext(); ) {
                 sb.append("' ").append(it.next()).append(" '");
                 if (it.hasNext()) {
                     sb.append(",");
@@ -87,28 +82,28 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
         generator.writeEndObject();
     }
 
-    private void writeCookies(JsonGenerator generator, Cookie[] cookies) throws IOException {
+    private void writeCookies(JsonGenerator generator, Map<String, String> cookies) throws IOException {
         //TODO: Cookies shouldn't be sent by default
-        if (cookies == null) {
+        if (cookies.isEmpty()) {
             generator.writeNull();
             return;
         }
 
         generator.writeStartObject();
-        for (Cookie cookie : cookies) {
-            generator.writeStringField(cookie.getName(), cookie.getValue());
+        for (Map.Entry<String, String> cookie : cookies.entrySet()) {
+            generator.writeStringField(cookie.getKey(), cookie.getValue());
         }
         generator.writeEndObject();
     }
 
-    private void writeData(JsonGenerator generator, Map<String, String[]> parameterMap) throws IOException {
+    private void writeData(JsonGenerator generator, Map<String, Collection<String>> parameterMap) throws IOException {
         if (parameterMap == null) {
             generator.writeNull();
             return;
         }
 
         generator.writeStartObject();
-        for (Map.Entry<String, String[]> parameter : parameterMap.entrySet()) {
+        for (Map.Entry<String, Collection<String>> parameter : parameterMap.entrySet()) {
             generator.writeArrayFieldStart(parameter.getKey());
             for (String parameterValue : parameter.getValue()) {
                 generator.writeString(parameterValue);
