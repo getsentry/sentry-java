@@ -7,9 +7,7 @@ import org.testng.annotations.Test;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -54,9 +52,9 @@ public class HttpInterfaceTest {
             mockHttpServletRequest.getRemoteUser();
             result = "remoteUser";
             mockHttpServletRequest.getHeaderNames();
-            result = Collections.emptyEnumeration();
+            result = new EmptyEnumeration<String>();
             mockHttpServletRequest.getHeaders(anyString);
-            result = Collections.emptyEnumeration();
+            result = new EmptyEnumeration<String>();
         }};
     }
 
@@ -161,5 +159,10 @@ public class HttpInterfaceTest {
         HttpInterface httpInterface = new HttpInterface(mockHttpServletRequest);
 
         assertThat(httpInterface.getCookies().size(), is(0));
+    }
+
+    private static class EmptyEnumeration<E> implements Enumeration<E> {
+        public boolean hasMoreElements() { return false; }
+        public E nextElement() { throw new NoSuchElementException(); }
     }
 }
