@@ -19,6 +19,10 @@ public class HttpEventBuilderHelperTest {
     private EventBuilder mockEventBuilder;
     @Mocked("getServletRequest")
     private RavenServletRequestListener ravenServletRequestListener;
+    @Injectable
+    private HttpServletRequest mockHttpServletRequest;
+    @Mocked
+    private HttpInterface mockHttpInterface;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -27,6 +31,10 @@ public class HttpEventBuilderHelperTest {
 
     @Test
     public void testNoRequest() throws Exception {
+        new Expectations() {{
+            RavenServletRequestListener.getServletRequest();
+            result = null;
+        }};
         httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
         new Verifications() {{
@@ -36,7 +44,7 @@ public class HttpEventBuilderHelperTest {
     }
 
     @Test
-    public void testWithRequest(@Injectable final HttpServletRequest mockHttpServletRequest) throws Exception {
+    public void testWithRequest() throws Exception {
         new Expectations() {{
             RavenServletRequestListener.getServletRequest();
             result = mockHttpServletRequest;
