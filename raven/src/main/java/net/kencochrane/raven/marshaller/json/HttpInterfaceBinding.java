@@ -6,7 +6,9 @@ import net.kencochrane.raven.event.interfaces.HttpInterface;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -71,11 +73,16 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
     private void writeHeaders(JsonGenerator generator, HttpServletRequest request) throws IOException {
         generator.writeStartObject();
         for (String header : Collections.list(request.getHeaderNames())) {
-            generator.writeArrayFieldStart(header);
-            for (String headerValue : Collections.list(request.getHeaders(header))) {
-                generator.writeString(headerValue);
+            generator.writeFieldName(header);
+            StringBuilder sb = new StringBuilder();
+            Collection<String> headerValues = Collections.list(request.getHeaders(header));
+            for (Iterator<String> it = headerValues.iterator(); it.hasNext(); ) {
+                sb.append("' ").append(it.next()).append(" '");
+                if (it.hasNext()) {
+                    sb.append(",");
+                }
             }
-            generator.writeEndArray();
+            generator.writeString(sb.toString());
         }
         generator.writeEndObject();
     }
