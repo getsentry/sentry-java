@@ -24,6 +24,10 @@ public class EventBuilder {
      */
     public static final String DEFAULT_PLATFORM = "java";
     /**
+     * Default hostname if it isn't set manually (or can't be determined).
+     */
+    public static final String DEFAULT_HOSTNAME = "unavailable";
+    /**
      * Duration of the hostname caching.
      *
      * @see HostnameCache
@@ -298,10 +302,6 @@ public class EventBuilder {
      * </p>
      */
     private static final class HostnameCache {
-        /**
-         * Default hostname if it isn't set manually (or can't be determined).
-         */
-        public static final String DEFAULT_HOSTNAME = "unavailable";
         /**
          * Time before the get hostname operation times out (in ms).
          */
