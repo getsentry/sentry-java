@@ -51,6 +51,29 @@ public class EventBuilderTest {
     }
 
     @Test
+    public void slowCallToGetCanonicalHostNameIsCaught() throws Exception {
+        new NonStrictExpectations() {{
+            inetAddress.getCanonicalHostName();
+            result = new Delegate() {
+                public String getCanonicalHostName() throws Exception {
+                    synchronized (EventBuilderTest.this) {
+                        EventBuilderTest.this.wait();
+                    }
+                    return "";
+                }
+            };
+        }};
+
+        Event event = eventBuilder.build();
+        synchronized (EventBuilderTest.this) {
+            EventBuilderTest.this.notify();
+        }
+
+        assertThat(event.getServerName(), is(EventBuilder.DEFAULT_HOSTNAME));
+
+    }
+
+    @Test
     public void testMandatoryValuesNotOverwritten() throws Exception {
         UUID uuid = UUID.randomUUID();
         Date timestamp = new Date();
