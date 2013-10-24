@@ -1,6 +1,8 @@
 package net.kencochrane.raven.event;
 
+import mockit.Delegate;
 import mockit.Injectable;
+import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.testng.annotations.BeforeMethod;
@@ -11,26 +13,41 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
+import static mockit.Deencapsulation.newInstance;
+import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class EventBuilderTest {
     private EventBuilder eventBuilder;
+    @Mocked
+    private InetAddress inetAddress;
 
     @BeforeMethod
     public void setUp() throws Exception {
         eventBuilder = new EventBuilder();
+        new NonStrictExpectations() {{
+            InetAddress.getLocalHost();
+            result = inetAddress;
+        }};
+        //Create a temporary cache with a timeout of 0
+        setField(EventBuilder.class, "HOSTNAME_CACHE",
+                newInstance(EventBuilder.class.getName() + "$HostnameCache", 0l));
     }
 
     @Test
     public void testMandatoryValuesAutomaticallySet() throws Exception {
+        final String expectedWorkingHostname = UUID.randomUUID().toString();
+        new NonStrictExpectations() {{
+            inetAddress.getCanonicalHostName();
+            result = expectedWorkingHostname;
+        }};
         Event event = eventBuilder.build();
 
         assertThat(event.getId(), is(notNullValue()));
         assertThat(event.getTimestamp(), is(notNullValue()));
         assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM));
-        //TODO: This test can fail if HostnameCache times out (happened once), mock InetAddress.getLocalHost().getCanonicalHostName() for instant reliable results)
-        assertThat(event.getServerName(), is(InetAddress.getLocalHost().getCanonicalHostName()));
+        assertThat(event.getServerName(), is(expectedWorkingHostname));
     }
 
     @Test
