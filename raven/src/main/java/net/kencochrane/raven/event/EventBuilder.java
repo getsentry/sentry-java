@@ -349,14 +349,14 @@ public class EventBuilder {
          * Force an update of the cache to get the current value of the hostname.
          */
         public void updateCache() {
-            expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             Future<String> future = Executors.newSingleThreadExecutor().submit(new HostRetriever());
 
             try {
                 hostname = future.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
+                expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             } catch (Exception e) {
-                logger.warn("Localhost hostname lookup failed, defaulting back to '{}'", DEFAULT_HOSTNAME, e);
-                hostname = DEFAULT_HOSTNAME;
+                expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
+                logger.warn("Localhost hostname lookup failed, keeping the value '{}'", hostname, e);
             }
         }
 
