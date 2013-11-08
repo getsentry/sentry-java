@@ -5,6 +5,7 @@ import net.kencochrane.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -21,13 +22,13 @@ public abstract class AbstractConnection implements Connection {
      */
     public static final String SENTRY_PROTOCOL_VERSION = "4";
     /**
-     * Default maximum duration for a lockdown (5 minutes).
+     * Default maximum duration for a lockdown.
      */
-    public static final int DEFAULT_MAX_WAITING_TIME = 300000;
+    public static final long DEFAULT_MAX_WAITING_TIME = TimeUnit.MINUTES.toMillis(5);
     /**
-     * Default base duration for a lockdown (10 milliseconds).
+     * Default base duration for a lockdown.
      */
-    public static final int DEFAULT_BASE_WAITING_TIME = 10;
+    public static final long DEFAULT_BASE_WAITING_TIME = TimeUnit.MILLISECONDS.toMillis(10);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
     private final String publicKey;
     private final String secretKey;

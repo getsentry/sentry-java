@@ -23,7 +23,7 @@ public class AsyncConnection implements Connection {
     /**
      * Timeout of the {@link #executorService}.
      */
-    private static final int SHUTDOWN_TIMEOUT = 1000;
+    private static final long SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
     /**
      * Connection used to actually send the events.
      */
