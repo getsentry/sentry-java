@@ -33,6 +33,7 @@ public abstract class AbstractConnection implements Connection {
     private final String publicKey;
     private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
+    private final String authHeader;
     /**
      * Maximum duration for a lockdown.
      */
@@ -55,6 +56,10 @@ public abstract class AbstractConnection implements Connection {
     protected AbstractConnection(String publicKey, String secretKey) {
         this.publicKey = publicKey;
         this.secretKey = secretKey;
+        authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
+                + "sentry_client=" + Raven.NAME + ","
+                + "sentry_key=" + publicKey + ","
+                + "sentry_secret=" + secretKey;
     }
 
     /**
@@ -63,12 +68,7 @@ public abstract class AbstractConnection implements Connection {
      * @return an authentication header as a String.
      */
     protected String getAuthHeader() {
-        StringBuilder header = new StringBuilder();
-        header.append("Sentry sentry_version=").append(SENTRY_PROTOCOL_VERSION);
-        header.append(",sentry_client=").append(Raven.NAME);
-        header.append(",sentry_key=").append(publicKey);
-        header.append(",sentry_secret=").append(secretKey);
-        return header.toString();
+        return authHeader;
     }
 
     @Override
