@@ -92,7 +92,7 @@ public abstract class RavenFactory {
                 logger.warn("The raven factory '{}' couldn't create an instance of Raven", ravenFactory);
         } else if (ravenFactoryName == null) {
             for (RavenFactory ravenFactory : MANUALLY_REGISTERED_FACTORIES.values()) {
-                logger.info("Found an appropriate Raven factory for '{}': '{}'", ravenFactoryName, ravenFactory);
+                logger.info("Found an available Raven factory: '{}'", ravenFactory);
                 raven = ravenFactory.createRavenInstance(dsn);
                 if (raven != null) {
                     break;
