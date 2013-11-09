@@ -1,6 +1,9 @@
 package net.kencochrane.raven.log4j2;
 
-import mockit.*;
+import mockit.Injectable;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -18,7 +21,6 @@ public class SentryAppenderFailuresTest {
     private SentryAppender sentryAppender;
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
-    @NonStrict
     private Raven mockRaven = null;
     @Mocked("ravenInstance")
     private RavenFactory mockRavenFactory;
@@ -32,7 +34,7 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testRavenFailureDoesNotPropagate() throws Exception {
-        new Expectations() {{
+        new NonStrictExpectations() {{
             mockRaven.sendEvent((Event) any);
             result = new UnsupportedOperationException();
         }};
@@ -44,7 +46,7 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testRavenFactoryFailureDoesNotPropagate() throws Exception {
-        new Expectations() {{
+        new NonStrictExpectations() {{
             RavenFactory.ravenInstance((Dsn) any, anyString);
             result = new UnsupportedOperationException();
         }};
