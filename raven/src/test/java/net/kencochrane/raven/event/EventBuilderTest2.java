@@ -2,6 +2,7 @@ package net.kencochrane.raven.event;
 
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
@@ -172,6 +173,28 @@ public class EventBuilderTest2 {
         final Event event = eventBuilder.build();
 
         assertThat(event.getCulprit(), is(sameInstance(mockCulprit)));
+    }
+
+    @DataProvider
+    public Object[][] stackFrameProvider() {
+        return new Object[][]{
+                {new StackTraceElement("class", "method", "file", 12), "class.method(file:12)"},
+                {new StackTraceElement("class", "method", "file", -1), "class.method(file)"},
+                {new StackTraceElement("class", "method", null, 12), "class.method"},
+                {new StackTraceElement("class", "method", null, -1), "class.method"}
+        };
+    }
+
+    @Test(dataProvider = "stackFrameProvider")
+    public void builtEventWithStackFrameAsCulpritHasProperCulprit(StackTraceElement mockStackFrame,
+                                                                  String expectedCulprit)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setCulprit(mockStackFrame);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getCulprit(), is(expectedCulprit));
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
