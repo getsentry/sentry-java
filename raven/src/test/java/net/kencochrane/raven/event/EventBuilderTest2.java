@@ -3,6 +3,7 @@ package net.kencochrane.raven.event;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
+import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -369,5 +370,41 @@ public class EventBuilderTest2 {
         final Event event = eventBuilder.build();
 
         assertThat(event.getChecksum(), is(expectedChecksum));
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void builtEventHasImmutableSentryInterfaces(@Injectable final SentryInterface mockSentryInterface)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        final Event event = eventBuilder.build();
+
+        event.getSentryInterfaces().put("interfaceName", mockSentryInterface);
+    }
+
+    @Test
+    public void builtEventWithoutSentryInterfacesHasEmptySentryInterfaces() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces().entrySet(), is(empty()));
+    }
+
+    @Test
+    public void builtEventWithSentryInterfacesHasProperSentryInterfaces(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface)
+            throws Exception {
+        new NonStrictExpectations(){{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addSentryInterface(mockSentryInterface);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
 }
