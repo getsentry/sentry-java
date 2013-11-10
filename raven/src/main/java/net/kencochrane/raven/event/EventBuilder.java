@@ -67,7 +67,7 @@ public class EventBuilder {
         byte[] bytes = string.getBytes(Charsets.UTF_8);
         Checksum checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
-        return String.valueOf(checksum.getValue());
+        return Long.toHexString(checksum.getValue()).toUpperCase();
     }
 
     /**
