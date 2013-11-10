@@ -30,8 +30,6 @@ public abstract class AbstractConnection implements Connection {
      */
     public static final long DEFAULT_BASE_WAITING_TIME = TimeUnit.MILLISECONDS.toMillis(10);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
-    private final String publicKey;
-    private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
     private final String authHeader;
     /**
@@ -54,8 +52,6 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
-        this.publicKey = publicKey;
-        this.secretKey = secretKey;
         authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
                 + "sentry_client=" + Raven.NAME + ","
                 + "sentry_key=" + publicKey + ","
