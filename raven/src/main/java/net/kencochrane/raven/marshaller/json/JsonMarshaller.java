@@ -82,7 +82,7 @@ public class JsonMarshaller implements Marshaller {
     /**
      * Date format for ISO 8601.
      */
-    private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings =
@@ -91,10 +91,6 @@ public class JsonMarshaller implements Marshaller {
      * Enables disables the compression of JSON.
      */
     private boolean compression = true;
-
-    static {
-        ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
 
     @Override
     public void marshall(Event event, OutputStream destination) {
@@ -243,7 +239,9 @@ public class JsonMarshaller implements Marshaller {
      * @return timestamp as a formatted String.
      */
     private String formatTimestamp(Date timestamp) {
-        return ISO_FORMAT.format(timestamp);
+        DateFormat isoFormat = new SimpleDateFormat(ISO_8601_FORMAT);
+        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return isoFormat.format(timestamp);
     }
 
     /**
