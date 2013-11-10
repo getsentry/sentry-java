@@ -12,7 +12,8 @@ import static org.hamcrest.Matchers.sameInstance;
 
 public class EventBuilderTest2 {
     @Test
-    public void buildedEventHasRandomlyGeneratedUuid(@Injectable final UUID mockUuid) throws Exception {
+    public void builtEventHasRandomlyGeneratedUuid(@Injectable final UUID mockUuid)
+            throws Exception {
         new NonStrictExpectations(UUID.class) {{
             UUID.randomUUID();
             result = mockUuid;
@@ -25,7 +26,8 @@ public class EventBuilderTest2 {
     }
 
     @Test
-    public void buildedEventWithCustomUuidHasProperUuid(@Injectable UUID mockUuid) throws Exception {
+    public void builtEventWithCustomUuidHasProperUuid(@Injectable final UUID mockUuid)
+            throws Exception {
         final EventBuilder eventBuilder = new EventBuilder(mockUuid);
 
         final Event event = eventBuilder.build();
@@ -34,7 +36,9 @@ public class EventBuilderTest2 {
     }
 
     @Test
-    public void buildedEventWithMessageHasProperMessage(@Injectable("message") String mockMessage) throws Exception {
+    public void builtEventWithMessageHasProperMessage(
+            @Injectable("message") final String mockMessage)
+            throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setMessage(mockMessage);
 
