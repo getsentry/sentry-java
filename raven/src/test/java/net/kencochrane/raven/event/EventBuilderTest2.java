@@ -4,6 +4,7 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
@@ -171,5 +172,35 @@ public class EventBuilderTest2 {
         final Event event = eventBuilder.build();
 
         assertThat(event.getCulprit(), is(sameInstance(mockCulprit)));
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void builtEventHasImmutableTags() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        final Event event = eventBuilder.build();
+
+        event.getTags().put("tagKey", "tagValue");
+    }
+
+    @Test
+    public void builtEventWithoutTagsHasEmptyTags() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTags().entrySet(), is(empty()));
+    }
+
+    @Test
+    public void builtEventWithTagsHasProperTags(@Injectable("tagKey") final String mockTagKey,
+                                                @Injectable("tagValue") final String mockTagValue)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addTag(mockTagKey, mockTagValue);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTags(), hasEntry(mockTagKey, mockTagValue));
+        assertThat(event.getTags().entrySet(), hasSize(1));
     }
 }
