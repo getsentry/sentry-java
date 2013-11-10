@@ -35,6 +35,11 @@ public class EventBuilderTest2 {
         assertThat(event.getId(), is(sameInstance(mockUuid)));
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void builtEventWithCustomNullUuidFails() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder(null);
+    }
+
     @Test
     public void builtEventWithoutMessageHasNullMessage() throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
