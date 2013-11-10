@@ -235,6 +235,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * down the main application.
      * </p>
      */
+    @SuppressWarnings("PMD.AvoidThreadGroup")
     protected static final class DaemonThreadFactory implements ThreadFactory {
         private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
         private final ThreadGroup group;
