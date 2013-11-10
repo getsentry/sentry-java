@@ -58,7 +58,7 @@ public class EventBuilderHostnameCacheTest {
         }};
 
         new EventBuilder().build();
-        final long expirationTime = getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
+        final long expirationTime = Deencapsulation.<Long>getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
 
         assertThat(expirationTime, is(TimeUnit.HOURS.toMillis(5) + System.currentTimeMillis()));
     }
@@ -75,7 +75,7 @@ public class EventBuilderHostnameCacheTest {
 
         new EventBuilder().build();
         unlockTimingOutLocalHost();
-        final long expirationTime = getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
+        final long expirationTime = Deencapsulation.<Long>getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
 
         assertThat(expirationTime, is(TimeUnit.SECONDS.toMillis(1) + System.currentTimeMillis()));
     }
