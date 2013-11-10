@@ -1,8 +1,8 @@
 package net.kencochrane.raven.event.helper;
 
-import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
+import mockit.NonStrictExpectations;
 import mockit.Verifications;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
@@ -17,10 +17,6 @@ public class HttpEventBuilderHelperTest {
     private HttpEventBuilderHelper httpEventBuilderHelper;
     @Injectable
     private EventBuilder mockEventBuilder;
-    @Mocked("getServletRequest")
-    private RavenServletRequestListener ravenServletRequestListener;
-    @Injectable
-    private HttpServletRequest mockHttpServletRequest;
     @Mocked
     private HttpInterface mockHttpInterface;
 
@@ -31,21 +27,23 @@ public class HttpEventBuilderHelperTest {
 
     @Test
     public void testNoRequest() throws Exception {
-        new Expectations() {{
+        new NonStrictExpectations(RavenServletRequestListener.class) {{
             RavenServletRequestListener.getServletRequest();
             result = null;
         }};
         httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
         new Verifications() {{
-            mockEventBuilder.addSentryInterface((SentryInterface) any);
+            new HttpInterface(withInstanceOf(HttpServletRequest.class));
+            times = 0;
+            mockEventBuilder.addSentryInterface(withInstanceOf(SentryInterface.class));
             times = 0;
         }};
     }
 
     @Test
-    public void testWithRequest() throws Exception {
-        new Expectations() {{
+    public void testWithRequest(@Injectable final HttpServletRequest mockHttpServletRequest) throws Exception {
+        new NonStrictExpectations(RavenServletRequestListener.class) {{
             RavenServletRequestListener.getServletRequest();
             result = mockHttpServletRequest;
         }};
@@ -53,6 +51,7 @@ public class HttpEventBuilderHelperTest {
         httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
         new Verifications() {{
+            new HttpInterface(mockHttpServletRequest);
             mockEventBuilder.addSentryInterface(this.<HttpInterface>withNotNull());
         }};
     }
