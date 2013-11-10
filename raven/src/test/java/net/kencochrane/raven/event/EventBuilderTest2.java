@@ -127,4 +127,24 @@ public class EventBuilderTest2 {
 
         assertThat(event.getLogger(), is(sameInstance(mockLogger)));
     }
+
+    @Test
+    public void builtEventWithoutPlatformHasDefaultPlatform() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM));
+    }
+
+    @Test
+    public void builtEventWithPlatformHasProperPlatform(@Injectable("platform") final String mockPlatform)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setPlatform(mockPlatform);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getPlatform(), is(sameInstance(mockPlatform)));
+    }
 }
