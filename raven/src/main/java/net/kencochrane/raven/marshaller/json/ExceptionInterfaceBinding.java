@@ -108,7 +108,7 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     /**
      * Class associating an exception to its {@link StackTraceInterface}.
      */
-    private final class ExceptionWithStackTrace {
+    private static final class ExceptionWithStackTrace {
         private ImmutableThrowable exception;
         private StackTraceInterface stackTrace;
 
