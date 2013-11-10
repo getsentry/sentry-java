@@ -4,6 +4,7 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import org.testng.annotations.Test;
 
+import java.util.Date;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,5 +46,20 @@ public class EventBuilderTest2 {
         final Event event = eventBuilder.build();
 
         assertThat(event.getMessage(), is(sameInstance(mockMessage)));
+    }
+
+    @Test
+    public void builtEventWithTimestampHasProperTimestamp(@Injectable final Date mockTimestamp)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockTimestamp.clone();
+            result = mockTimestamp;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setTimestamp(mockTimestamp);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
     }
 }
