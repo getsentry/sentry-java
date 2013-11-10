@@ -2,201 +2,416 @@ package net.kencochrane.raven.event;
 
 import mockit.Delegate;
 import mockit.Injectable;
-import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.net.InetAddress;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
-import static mockit.Deencapsulation.newInstance;
+import static mockit.Deencapsulation.getField;
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class EventBuilderTest {
-    private EventBuilder eventBuilder;
-    @Mocked
-    private InetAddress inetAddress;
+    private static void resetHostnameCache() {
+        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+    }
 
-    @BeforeMethod
-    public void setUp() throws Exception {
-        eventBuilder = new EventBuilder();
-        new NonStrictExpectations() {{
-            InetAddress.getLocalHost();
-            result = inetAddress;
+    @Test
+    public void builtEventHasRandomlyGeneratedUuid(@Injectable final UUID mockUuid)
+            throws Exception {
+        new NonStrictExpectations(UUID.class) {{
+            UUID.randomUUID();
+            result = mockUuid;
         }};
-        //Create a temporary cache with a timeout of 0
-        setField(EventBuilder.class, "HOSTNAME_CACHE",
-                newInstance(EventBuilder.class.getName() + "$HostnameCache", 0l));
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getId(), is(sameInstance(mockUuid)));
     }
 
     @Test
-    public void testMandatoryValuesAutomaticallySet() throws Exception {
-        final String expectedWorkingHostname = UUID.randomUUID().toString();
-        new NonStrictExpectations() {{
-            inetAddress.getCanonicalHostName();
-            result = expectedWorkingHostname;
-        }};
-        Event event = eventBuilder.build();
+    public void builtEventWithCustomUuidHasProperUuid(@Injectable final UUID mockUuid)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder(mockUuid);
 
-        assertThat(event.getId(), is(notNullValue()));
-        assertThat(event.getTimestamp(), is(notNullValue()));
-        assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM));
-        assertThat(event.getServerName(), is(expectedWorkingHostname));
-    }
+        final Event event = eventBuilder.build();
 
-    @Test
-    public void slowCallToGetCanonicalHostNameIsCaught() throws Exception {
-        new NonStrictExpectations() {{
-            inetAddress.getCanonicalHostName();
-            result = new Delegate() {
-                public String getCanonicalHostName() throws Exception {
-                    synchronized (EventBuilderTest.this) {
-                        EventBuilderTest.this.wait();
-                    }
-                    return "";
-                }
-            };
-        }};
-
-        Event event = eventBuilder.build();
-        synchronized (EventBuilderTest.this) {
-            EventBuilderTest.this.notify();
-        }
-
-        assertThat(event.getServerName(), is(EventBuilder.DEFAULT_HOSTNAME));
-
-    }
-
-    @Test
-    public void testMandatoryValuesNotOverwritten() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        Date timestamp = new Date();
-        String platform = UUID.randomUUID().toString();
-        String serverName = UUID.randomUUID().toString();
-
-        Event event = new EventBuilder(uuid)
-                .setTimestamp(timestamp)
-                .setPlatform(platform)
-                .setServerName(serverName)
-                .build();
-
-        assertThat(event.getId(), is(uuid));
-        assertThat(event.getTimestamp(), is(timestamp));
-        assertThat(event.getPlatform(), is(platform));
-        assertThat(event.getServerName(), is(serverName));
-    }
-
-    @Test
-    public void testEventParameters() throws Exception {
-        String culprit = UUID.randomUUID().toString();
-        String checksum = UUID.randomUUID().toString();
-        Event.Level level = Event.Level.INFO;
-        String logger = UUID.randomUUID().toString();
-        String message = UUID.randomUUID().toString();
-
-        Event event = eventBuilder.setCulprit(culprit)
-                .setChecksum(checksum)
-                .setLevel(level)
-                .setLogger(logger)
-                .setMessage(message)
-                .build();
-
-        assertThat(event.getCulprit(), is(culprit));
-        assertThat(event.getChecksum(), is(checksum));
-        assertThat(event.getLevel(), is(level));
-        assertThat(event.getLogger(), is(logger));
-        assertThat(event.getMessage(), is(message));
-    }
-
-    @Test
-    public void testUseStackFrameAsCulprit() {
-        StackTraceElement frame1 = new StackTraceElement("class", "method", "file", 1);
-        StackTraceElement frame2 = new StackTraceElement("class", "method", "file", -1);
-        StackTraceElement frame3 = new StackTraceElement("class", "method", null, 1);
-
-        String culprit1 = new EventBuilder().setCulprit(frame1).build().getCulprit();
-        String culprit2 = new EventBuilder().setCulprit(frame2).build().getCulprit();
-        String culprit3 = new EventBuilder().setCulprit(frame3).build().getCulprit();
-
-        assertThat(culprit1, is("class.method(file:1)"));
-        assertThat(culprit2, is("class.method(file)"));
-        assertThat(culprit3, is("class.method"));
-    }
-
-    @Test
-    public void testChecksumGeneration() throws Exception {
-        String cont = UUID.randomUUID().toString();
-        Event noChecksumEvent = new EventBuilder().build();
-        Event firstChecksumEvent = new EventBuilder().generateChecksum(cont).build();
-        Event secondChecksumEvent = new EventBuilder().generateChecksum(cont).build();
-        Event differentChecksumEvent = new EventBuilder().generateChecksum(UUID.randomUUID().toString()).build();
-
-        assertThat(noChecksumEvent.getChecksum(), is(nullValue()));
-        assertThat(firstChecksumEvent.getChecksum(), is(notNullValue()));
-        assertThat(differentChecksumEvent.getChecksum(), is(notNullValue()));
-        assertThat(firstChecksumEvent.getChecksum(), is(not(differentChecksumEvent.getChecksum())));
-        assertThat(firstChecksumEvent.getChecksum(), is(secondChecksumEvent.getChecksum()));
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testTagsAreImmutable() throws Exception {
-        String tagKey = UUID.randomUUID().toString();
-        String tagValue = UUID.randomUUID().toString();
-
-        Map<String, String> tags = eventBuilder.addTag(tagKey, tagValue).build().getTags();
-
-        assertThat(tags.size(), is(1));
-        assertThat(tags.get(tagKey), is(tagValue));
-
-        tags.put(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testExtrasAreImmutable() throws Exception {
-        final String extraKey = UUID.randomUUID().toString();
-        final Object extraValue = new Object();
-
-        Map<String, Object> extra = eventBuilder.addExtra(extraKey, extraValue).build().getExtra();
-
-        assertThat(extra.size(), is(1));
-        assertThat(extra.get(extraKey), is(extraValue));
-
-        extra.put(UUID.randomUUID().toString(), new Object());
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testSentryInterfacesAreImmutable(@Injectable final SentryInterface sentryInterface) throws Exception {
-        final String interfaceName = UUID.randomUUID().toString();
-        new NonStrictExpectations() {{
-            sentryInterface.getInterfaceName();
-            result = interfaceName;
-        }};
-
-        Map<String, SentryInterface> sentryInterfaces = eventBuilder
-                .addSentryInterface(sentryInterface)
-                .build()
-                .getSentryInterfaces();
-
-        assertThat(sentryInterfaces.size(), is(1));
-        assertThat(sentryInterfaces.get(sentryInterface.getInterfaceName()), is(sentryInterface));
-
-        sentryInterfaces.put(UUID.randomUUID().toString(), null);
-    }
-
-    @Test(expectedExceptions = IllegalStateException.class)
-    public void testBuildCanBeCalledOnlyOnce() throws Exception {
-        eventBuilder.build();
-        eventBuilder.build();
+        assertThat(event.getId(), is(sameInstance(mockUuid)));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNoUuidFails() throws Exception {
-        new EventBuilder(null);
+    public void builtEventWithCustomNullUuidFails() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder(null);
+    }
+
+    @Test
+    public void builtEventWithoutMessageHasNullMessage() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getMessage(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithMessageHasProperMessage(
+            @Injectable("message") final String mockMessage)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setMessage(mockMessage);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getMessage(), is(sameInstance(mockMessage)));
+    }
+
+    @Test
+    public void builtEventWithoutTimestampHasDefaultTimestamp(@Injectable final Date mockTimestamp)
+            throws Exception {
+        new NonStrictExpectations(Date.class) {{
+            new Date();
+            result = mockTimestamp;
+            mockTimestamp.clone();
+            result = mockTimestamp;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setTimestamp(mockTimestamp);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
+    }
+
+    @Test
+    public void builtEventWithTimestampHasProperTimestamp(@Injectable final Date mockTimestamp)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockTimestamp.clone();
+            result = mockTimestamp;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setTimestamp(mockTimestamp);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
+    }
+
+    @Test
+    public void builtEventWithoutLevelHasNullLevel() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLevel(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithLevelHasProperLevel(@Injectable final Event.Level mockLevel)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setLevel(mockLevel);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLevel(), is(sameInstance(mockLevel)));
+    }
+
+    @Test
+    public void builtEventWithoutLoggerHasNullLogger() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLogger(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithLoggerHasProperLogger(@Injectable("logger") final String mockLogger)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setLogger(mockLogger);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLogger(), is(sameInstance(mockLogger)));
+    }
+
+    @Test
+    public void builtEventWithoutPlatformHasDefaultPlatform() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM));
+    }
+
+    @Test
+    public void builtEventWithPlatformHasProperPlatform(@Injectable("platform") final String mockPlatform)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setPlatform(mockPlatform);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getPlatform(), is(sameInstance(mockPlatform)));
+    }
+
+    @Test
+    public void builtEventWithoutCulpritHasNullCulprit() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getCulprit(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithCulpritHasProperCulprit(@Injectable("culprit") final String mockCulprit)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setCulprit(mockCulprit);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getCulprit(), is(sameInstance(mockCulprit)));
+    }
+
+    @DataProvider
+    public Object[][] stackFrameProvider() {
+        return new Object[][]{
+                {new StackTraceElement("class", "method", "file", 12), "class.method(file:12)"},
+                {new StackTraceElement("class", "method", "file", -1), "class.method(file)"},
+                {new StackTraceElement("class", "method", null, 12), "class.method"},
+                {new StackTraceElement("class", "method", null, -1), "class.method"}
+        };
+    }
+
+    @Test(dataProvider = "stackFrameProvider")
+    public void builtEventWithStackFrameAsCulpritHasProperCulprit(StackTraceElement mockStackFrame,
+                                                                  String expectedCulprit)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setCulprit(mockStackFrame);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getCulprit(), is(expectedCulprit));
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void builtEventHasImmutableTags() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        final Event event = eventBuilder.build();
+
+        event.getTags().put("tagKey", "tagValue");
+    }
+
+    @Test
+    public void builtEventWithoutTagsHasEmptyTags() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTags().entrySet(), is(empty()));
+    }
+
+    @Test
+    public void builtEventWithTagsHasProperTags(@Injectable("tagKey") final String mockTagKey,
+                                                @Injectable("tagValue") final String mockTagValue)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addTag(mockTagKey, mockTagValue);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTags(), hasEntry(mockTagKey, mockTagValue));
+        assertThat(event.getTags().entrySet(), hasSize(1));
+    }
+
+    @Test
+    public void builtEventWithNoServerNameUsesDefaultIfSearchTimesOut()
+            throws Exception {
+        new NonStrictExpectations(InetAddress.class) {
+            @Injectable
+            private InetAddress mockTimingOutLocalHost;
+
+            {
+                InetAddress.getLocalHost();
+                result = mockTimingOutLocalHost;
+                mockTimingOutLocalHost.getCanonicalHostName();
+                result = new Delegate() {
+                    public String getCanonicalHostName() throws Exception {
+                        synchronized (EventBuilderTest.this) {
+                            EventBuilderTest.this.wait();
+                        }
+                        return "";
+                    }
+                };
+            }
+        };
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        resetHostnameCache();
+        final Event event = eventBuilder.build();
+        synchronized (this) {
+            this.notify();
+        }
+
+        assertThat(event.getServerName(), is(EventBuilder.DEFAULT_HOSTNAME));
+    }
+
+    @Test
+    public void builtEventWithNoServerNameUsesLocalHost(@Injectable("serverName") final String mockServerName)
+            throws Exception {
+        new NonStrictExpectations(InetAddress.class) {
+            @Injectable
+            private InetAddress mockLocalHost;
+
+            {
+                InetAddress.getLocalHost();
+                result = mockLocalHost;
+                mockLocalHost.getCanonicalHostName();
+                result = mockServerName;
+            }
+        };
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        resetHostnameCache();
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getServerName(), is(mockServerName));
+    }
+
+    @Test
+    public void builtEventWithServerNameUsesProvidedServerName(@Injectable("serverName") final String mockServerName)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setServerName(mockServerName);
+
+        resetHostnameCache();
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getServerName(), is(mockServerName));
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void builtEventHasImmutableExtras() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        final Event event = eventBuilder.build();
+
+        event.getExtra().put("extraKey", "extraKey");
+    }
+
+    @Test
+    public void builtEventWithoutExtrasHasEmptyExtras() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getExtra().entrySet(), is(empty()));
+    }
+
+    @Test
+    public void builtEventWithExtrasHasProperExtras(@Injectable("extraKey") final String mockExtraKey,
+                                                    @Injectable("extraValue") final String mockExtraValue)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addExtra(mockExtraKey, mockExtraValue);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getExtra(), hasEntry(mockExtraKey, (Object) mockExtraValue));
+        assertThat(event.getExtra().entrySet(), hasSize(1));
+    }
+
+    @Test
+    public void builtEventWithoutCheckHasNullChecksum() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getChecksum(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithChecksumHasProperChecksum(
+            @Injectable("checksum") final String mockChecksum)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setChecksum(mockChecksum);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getChecksum(), is(sameInstance(mockChecksum)));
+    }
+
+    @DataProvider
+    public Object[][] checksumProvider() {
+        return new Object[][]{
+                {"", "0"},
+                {"test", "D87F7E0C"},
+                {"otherTest", "77B2E45B"}
+        };
+    }
+
+    @Test(dataProvider = "checksumProvider")
+    public void builtEventWithGeneratedChecksumHasCRC32Checksum(String string, String expectedChecksum)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.generateChecksum(string);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getChecksum(), is(expectedChecksum));
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void builtEventHasImmutableSentryInterfaces(@Injectable final SentryInterface mockSentryInterface)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        final Event event = eventBuilder.build();
+
+        event.getSentryInterfaces().put("interfaceName", mockSentryInterface);
+    }
+
+    @Test
+    public void builtEventWithoutSentryInterfacesHasEmptySentryInterfaces() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces().entrySet(), is(empty()));
+    }
+
+    @Test
+    public void builtEventWithSentryInterfacesHasProperSentryInterfaces(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface)
+            throws Exception {
+        new NonStrictExpectations(){{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addSentryInterface(mockSentryInterface);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void buildingTheEventTwiceFails() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.build();
+        eventBuilder.build();
     }
 }
