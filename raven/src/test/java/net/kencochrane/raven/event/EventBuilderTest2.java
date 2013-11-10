@@ -1,13 +1,17 @@
 package net.kencochrane.raven.event;
 
+import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.net.InetAddress;
 import java.util.Date;
 import java.util.UUID;
 
+import static mockit.Deencapsulation.getField;
+import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -224,5 +228,75 @@ public class EventBuilderTest2 {
 
         assertThat(event.getTags(), hasEntry(mockTagKey, mockTagValue));
         assertThat(event.getTags().entrySet(), hasSize(1));
+    }
+
+    @Test
+    public void builtEventWithNoServerNameUsesDefaultIfSearchTimesOut()
+            throws Exception {
+        new NonStrictExpectations(InetAddress.class) {
+            @Injectable
+            private InetAddress mockTimingOutLocalHost;
+
+            {
+                InetAddress.getLocalHost();
+                result = mockTimingOutLocalHost;
+                mockTimingOutLocalHost.getCanonicalHostName();
+                result = new Delegate() {
+                    public String getCanonicalHostName() throws Exception {
+                        synchronized (EventBuilderTest2.this) {
+                            EventBuilderTest2.this.wait();
+                        }
+                        return "";
+                    }
+                };
+            }
+        };
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        resetHostnameCache();
+        final Event event = eventBuilder.build();
+        synchronized (this) {
+            this.notify();
+        }
+
+        assertThat(event.getServerName(), is(EventBuilder.DEFAULT_HOSTNAME));
+    }
+
+    @Test
+    public void builtEventWithNoServerNameUsesLocalHost(@Injectable("serverName") final String mockServerName)
+            throws Exception {
+        new NonStrictExpectations(InetAddress.class) {
+            @Injectable
+            private InetAddress mockLocalHost;
+
+            {
+                InetAddress.getLocalHost();
+                result = mockLocalHost;
+                mockLocalHost.getCanonicalHostName();
+                result = mockServerName;
+            }
+        };
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        resetHostnameCache();
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getServerName(), is(mockServerName));
+    }
+
+    @Test
+    public void builtEventWithServerNameUsesProvidedServerName(@Injectable("serverName") final String mockServerName)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setServerName(mockServerName);
+
+        resetHostnameCache();
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getServerName(), is(mockServerName));
+    }
+
+    private static void resetHostnameCache() {
+        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
     }
 }
