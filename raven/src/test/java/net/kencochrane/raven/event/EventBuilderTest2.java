@@ -107,4 +107,24 @@ public class EventBuilderTest2 {
 
         assertThat(event.getLevel(), is(sameInstance(mockLevel)));
     }
+
+    @Test
+    public void builtEventWithoutLoggerHasNullLogger() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLogger(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithLoggerHasProperLogger(@Injectable("logger") final String mockLogger)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setLogger(mockLogger);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLogger(), is(sameInstance(mockLogger)));
+    }
 }
