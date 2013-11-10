@@ -2,6 +2,7 @@ package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.google.common.base.Charsets;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -101,7 +102,8 @@ public class JsonMarshaller implements Marshaller {
         destination = new UncloseableOutputStream(destination);
 
         if (compression)
-            destination = new DeflaterOutputStream(base64().encodingStream(new OutputStreamWriter(destination)));
+            destination = new DeflaterOutputStream(base64().encodingStream(
+                    new OutputStreamWriter(destination, Charsets.UTF_8)));
 
         JsonGenerator generator = null;
         try {

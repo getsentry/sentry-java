@@ -1,5 +1,6 @@
 package net.kencochrane.raven.event;
 
+import com.google.common.base.Charsets;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +64,7 @@ public class EventBuilder {
      * @return a checksum allowing two events with the same properties to be grouped later.
      */
     private static String calculateChecksum(String string) {
-        byte[] bytes = string.getBytes();
+        byte[] bytes = string.getBytes(Charsets.UTF_8);
         Checksum checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
         return String.valueOf(checksum.getValue());

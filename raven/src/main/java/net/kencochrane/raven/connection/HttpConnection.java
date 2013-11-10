@@ -1,5 +1,6 @@
 package net.kencochrane.raven.connection;
 
+import com.google.common.base.Charsets;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -130,7 +131,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     private String getErrorMessageFromStream(InputStream errorStream) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, Charsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         try {
             String line;
