@@ -5,7 +5,6 @@ import mockit.NonStrictExpectations;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
