@@ -280,7 +280,7 @@ public class EventBuilder {
      *
      * @return an immutable event.
      */
-    public Event build() {
+    public synchronized Event build() {
         if (alreadyBuilt)
             throw new IllegalStateException("A message can't be built twice");
 
