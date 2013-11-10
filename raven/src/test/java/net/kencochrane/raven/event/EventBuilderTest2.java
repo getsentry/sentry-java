@@ -89,6 +89,15 @@ public class EventBuilderTest2 {
     }
 
     @Test
+    public void builtEventWithoutLevelHasNullLevel() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLevel(), is(nullValue()));
+    }
+
+    @Test
     public void builtEventWithLevelHasProperLevel(@Injectable final Event.Level mockLevel)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
