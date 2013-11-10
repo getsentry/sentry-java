@@ -8,8 +8,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.Matchers.*;
 
 public class EventBuilderTest2 {
     @Test
@@ -34,6 +33,15 @@ public class EventBuilderTest2 {
         final Event event = eventBuilder.build();
 
         assertThat(event.getId(), is(sameInstance(mockUuid)));
+    }
+
+    @Test
+    public void builtEventWithoutMessageHasNullMessage() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getMessage(), is(nullValue()));
     }
 
     @Test
