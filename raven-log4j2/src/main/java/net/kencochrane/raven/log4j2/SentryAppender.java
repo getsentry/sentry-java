@@ -178,19 +178,21 @@ public class SentryAppender extends AbstractAppender {
      */
     @Override
     public void append(LogEvent logEvent) {
-
-        // Do not log the event if the current thread has been spawned by raven
+        // Do not log the event if the current thread is managed by raven
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        if (raven == null)
-            initRaven();
-
         try {
+            Raven.RAVEN_THREAD.set(true);
+            if (raven == null)
+                initRaven();
+
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Raven", logEvent, e);
+        } finally {
+            Raven.RAVEN_THREAD.remove();
         }
     }
 

@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public class Raven {
     /**
-     * Indicates whether the current thread has been spawned within raven or not.
+     * Indicates whether the current thread is managed by raven or not.
      */
     public static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>() {
         @Override

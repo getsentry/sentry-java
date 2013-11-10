@@ -45,7 +45,6 @@ public class SentryHandler extends Handler {
      */
     protected String ravenFactory;
     private final boolean propagateClose;
-    private boolean guard = false;
 
     /**
      * Creates an instance of SentryHandler.
@@ -120,14 +119,13 @@ public class SentryHandler extends Handler {
     }
 
     @Override
-    public synchronized void publish(LogRecord record) {
-        // Do not log the event if the current thread has been spawned by raven or if the event has been created during
-        // the logging of an other event.
-        if (!isLoggable(record) || Raven.RAVEN_THREAD.get() || guard)
+    public void publish(LogRecord record) {
+        // Do not log the event if the current thread is managed by raven
+        if (!isLoggable(record) || Raven.RAVEN_THREAD.get())
             return;
 
         try {
-            guard = true;
+            Raven.RAVEN_THREAD.set(true);
             if (raven == null)
                 initRaven();
             Event event = buildEvent(record);
@@ -135,7 +133,7 @@ public class SentryHandler extends Handler {
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Raven", e, ErrorManager.WRITE_FAILURE);
         } finally {
-            guard = false;
+            Raven.RAVEN_THREAD.remove();
         }
     }
 
