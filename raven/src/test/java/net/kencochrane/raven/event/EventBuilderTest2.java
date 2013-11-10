@@ -152,4 +152,24 @@ public class EventBuilderTest2 {
 
         assertThat(event.getPlatform(), is(sameInstance(mockPlatform)));
     }
+
+    @Test
+    public void builtEventWithoutCulpritHasNullCulprit() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getCulprit(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithCulpritHasProperCulprit(@Injectable("culprit") final String mockCulprit)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setCulprit(mockCulprit);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getCulprit(), is(sameInstance(mockCulprit)));
+    }
 }
