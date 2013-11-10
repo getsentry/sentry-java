@@ -299,4 +299,34 @@ public class EventBuilderTest2 {
 
         assertThat(event.getServerName(), is(mockServerName));
     }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void builtEventHasImmutableExtras() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        final Event event = eventBuilder.build();
+
+        event.getExtra().put("extraKey", "extraKey");
+    }
+
+    @Test
+    public void builtEventWithoutExtrasHasEmptyExtras() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getExtra().entrySet(), is(empty()));
+    }
+
+    @Test
+    public void builtEventWithExtrasHasProperExtras(@Injectable("extraKey") final String mockExtraKey,
+                                                    @Injectable("extraValue") final String mockExtraValue)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addExtra(mockExtraKey, mockExtraValue);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getExtra(), hasEntry(mockExtraKey, (Object) mockExtraValue));
+        assertThat(event.getExtra().entrySet(), hasSize(1));
+    }
 }
