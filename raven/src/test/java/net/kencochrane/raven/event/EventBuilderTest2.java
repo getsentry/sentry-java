@@ -49,6 +49,23 @@ public class EventBuilderTest2 {
     }
 
     @Test
+    public void builtEventWithoutTimestampHasDefaultTimestamp(@Injectable final Date mockTimestamp)
+            throws Exception {
+        new NonStrictExpectations(Date.class) {{
+            new Date();
+            result = mockTimestamp;
+            mockTimestamp.clone();
+            result = mockTimestamp;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setTimestamp(mockTimestamp);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
+    }
+
+    @Test
     public void builtEventWithTimestampHasProperTimestamp(@Injectable final Date mockTimestamp)
             throws Exception {
         new NonStrictExpectations() {{
