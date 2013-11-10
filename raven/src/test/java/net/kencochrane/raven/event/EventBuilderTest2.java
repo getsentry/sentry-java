@@ -16,6 +16,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class EventBuilderTest2 {
+    private static void resetHostnameCache() {
+        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+    }
+
     @Test
     public void builtEventHasRandomlyGeneratedUuid(@Injectable final UUID mockUuid)
             throws Exception {
@@ -294,9 +298,5 @@ public class EventBuilderTest2 {
         final Event event = eventBuilder.build();
 
         assertThat(event.getServerName(), is(mockServerName));
-    }
-
-    private static void resetHostnameCache() {
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
     }
 }
