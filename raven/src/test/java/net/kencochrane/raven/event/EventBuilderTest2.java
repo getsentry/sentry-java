@@ -62,4 +62,15 @@ public class EventBuilderTest2 {
 
         assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
     }
+
+    @Test
+    public void builtEventWithLevelHasProperLevel(@Injectable final Event.Level mockLevel)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setLevel(mockLevel);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getLevel(), is(sameInstance(mockLevel)));
+    }
 }
