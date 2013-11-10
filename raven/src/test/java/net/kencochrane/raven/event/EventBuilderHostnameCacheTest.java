@@ -21,6 +21,11 @@ public class EventBuilderHostnameCacheTest {
     @Injectable
     private InetAddress mockTimingOutLocalHost;
 
+    private static void resetHostnameCache() {
+        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+    }
+
     @BeforeMethod
     public void setUp() throws Exception {
         new NonStrictExpectations() {{
@@ -38,7 +43,7 @@ public class EventBuilderHostnameCacheTest {
             };
         }};
         // Clean Hostname Cache
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+        resetHostnameCache();
     }
 
     @Test

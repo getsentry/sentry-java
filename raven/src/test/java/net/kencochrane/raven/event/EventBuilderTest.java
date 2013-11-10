@@ -19,6 +19,7 @@ import static org.hamcrest.Matchers.*;
 public class EventBuilderTest {
     private static void resetHostnameCache() {
         setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
     }
 
     @Test
@@ -238,6 +239,7 @@ public class EventBuilderTest {
     @Test
     public void builtEventWithNoServerNameUsesDefaultIfSearchTimesOut()
             throws Exception {
+        resetHostnameCache();
         new NonStrictExpectations(InetAddress.class) {
             @Injectable
             private InetAddress mockTimingOutLocalHost;
@@ -258,7 +260,6 @@ public class EventBuilderTest {
         };
         final EventBuilder eventBuilder = new EventBuilder();
 
-        resetHostnameCache();
         final Event event = eventBuilder.build();
         synchronized (this) {
             this.notify();
@@ -270,6 +271,7 @@ public class EventBuilderTest {
     @Test
     public void builtEventWithNoServerNameUsesLocalHost(@Injectable("serverName") final String mockServerName)
             throws Exception {
+        resetHostnameCache();
         new NonStrictExpectations(InetAddress.class) {
             @Injectable
             private InetAddress mockLocalHost;
@@ -283,7 +285,6 @@ public class EventBuilderTest {
         };
         final EventBuilder eventBuilder = new EventBuilder();
 
-        resetHostnameCache();
         final Event event = eventBuilder.build();
 
         assertThat(event.getServerName(), is(mockServerName));
@@ -292,10 +293,10 @@ public class EventBuilderTest {
     @Test
     public void builtEventWithServerNameUsesProvidedServerName(@Injectable("serverName") final String mockServerName)
             throws Exception {
+        resetHostnameCache();
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setServerName(mockServerName);
 
-        resetHostnameCache();
         final Event event = eventBuilder.build();
 
         assertThat(event.getServerName(), is(mockServerName));
