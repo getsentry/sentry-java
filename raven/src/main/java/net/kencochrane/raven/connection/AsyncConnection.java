@@ -74,6 +74,7 @@ public class AsyncConnection implements Connection {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
+                    // The current thread is managed by raven
                     Raven.RAVEN_THREAD.set(true);
                     AsyncConnection.this.close();
                 } catch (IOException e) {
@@ -146,7 +147,7 @@ public class AsyncConnection implements Connection {
         @Override
         public void run() {
             try {
-                // The current thread is spawned by raven
+                // The current thread is managed by raven
                 Raven.RAVEN_THREAD.set(true);
                 actualConnection.send(event);
             } catch (Exception e) {
