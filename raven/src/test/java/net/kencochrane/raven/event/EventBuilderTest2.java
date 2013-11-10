@@ -22,4 +22,13 @@ public class EventBuilderTest2 {
 
         assertThat(event.getId(), is(mockUuid));
     }
+
+    @Test
+    public void buildedEventWithCustomUuidHasProperUuid(@Injectable UUID mockUuid) throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder(mockUuid);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getId(), is(mockUuid));
+    }
 }
