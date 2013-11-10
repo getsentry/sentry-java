@@ -329,4 +329,45 @@ public class EventBuilderTest2 {
         assertThat(event.getExtra(), hasEntry(mockExtraKey, (Object) mockExtraValue));
         assertThat(event.getExtra().entrySet(), hasSize(1));
     }
+
+    @Test
+    public void builtEventWithoutCheckHasNullChecksum() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getChecksum(), is(nullValue()));
+    }
+
+    @Test
+    public void builtEventWithChecksumHasProperChecksum(
+            @Injectable("checksum") final String mockChecksum)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setChecksum(mockChecksum);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getChecksum(), is(sameInstance(mockChecksum)));
+    }
+
+    @DataProvider
+    public Object[][] checksumProvider() {
+        return new Object[][]{
+                {"", "0"},
+                {"test", "D87F7E0C"},
+                {"otherTest", "77B2E45B"}
+        };
+    }
+
+    @Test(dataProvider = "checksumProvider")
+    public void builtEventWithGeneratedChecksumHasCRC32Checksum(String string, String expectedChecksum)
+            throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.generateChecksum(string);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getChecksum(), is(expectedChecksum));
+    }
 }
