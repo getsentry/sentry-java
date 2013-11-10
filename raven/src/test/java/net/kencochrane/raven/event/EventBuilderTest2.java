@@ -407,4 +407,11 @@ public class EventBuilderTest2 {
         assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void buildingTheEventTwiceFails() throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.build();
+        eventBuilder.build();
+    }
 }
