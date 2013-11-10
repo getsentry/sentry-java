@@ -32,4 +32,14 @@ public class EventBuilderTest2 {
 
         assertThat(event.getId(), is(sameInstance(mockUuid)));
     }
+
+    @Test
+    public void buildedEventWithMessageHasProperMessage(@Injectable("message") String mockMessage) throws Exception {
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setMessage(mockMessage);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getMessage(), is(sameInstance(mockMessage)));
+    }
 }
