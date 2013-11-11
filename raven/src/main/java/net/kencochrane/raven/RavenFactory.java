@@ -73,6 +73,7 @@ public abstract class RavenFactory {
      * @param dsn              Data Source Name of the Sentry server.
      * @param ravenFactoryName name of the raven factory to use to generate an instance of Raven.
      * @return an instance of Raven.
+     * @throws IllegalStateException when no instance of Raven has been created.
      */
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
         //Loop through registered factories
@@ -82,11 +83,10 @@ public abstract class RavenFactory {
                 continue;
 
             logger.debug("Attempting to use '{}' as a Raven factory.", ravenFactory);
-            Raven raven = ravenFactory.createRavenInstance(dsn);
-            if (raven != null) {
-                return raven;
-            } else {
-                logger.debug("The raven factory '{}' couldn't create an instance of Raven", ravenFactory);
+            try{
+                return ravenFactory.createRavenInstance(dsn);
+            } catch (RuntimeException e){
+                logger.warn("The raven factory '{}' couldn't create an instance of Raven.", ravenFactory, e);
             }
         }
 
@@ -97,7 +97,8 @@ public abstract class RavenFactory {
      * Creates an instance of Raven given a DSN.
      *
      * @param dsn Data Source Name of the Sentry server.
-     * @return an instance of Raven or {@code null} if it isn't possible to create one.
+     * @return an instance of Raven.
+     * @throws RuntimeException when an instance couldn't be created.
      */
     public abstract Raven createRavenInstance(Dsn dsn);
 }
