@@ -15,8 +15,8 @@ import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.Map;
+import java.io.StringReader;
+import java.util.*;
 
 /**
  * Appender for log4j in charge of sending the logged events to a Sentry server.
@@ -50,6 +50,13 @@ public class SentryAppender extends AppenderSkeleton {
      * </p>
      */
     protected String ravenFactory;
+    /**
+     * Additional tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no tags are sent.
+     * </p>
+     */
+    protected Map<String, String> tags = Collections.emptyMap();
     private final boolean propagateClose;
     private boolean guard;
 
@@ -196,6 +203,9 @@ public class SentryAppender extends AppenderSkeleton {
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet())
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
 
+        for (Map.Entry<String, String> tagEntry: tags.entrySet())
+            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
@@ -206,6 +216,23 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setRavenFactory(String ravenFactory) {
         this.ravenFactory = ravenFactory;
+    }
+
+    /**
+     * Set the tags that should be sent along with the events.
+     * @param tags A String that can be parse as Java Properties.
+     */
+    public void setTags(String tags) {
+        Properties props = new Properties();
+        try {
+            props.load(new StringReader(tags));
+            this.tags = new HashMap<String, String>();
+            for (String key : props.stringPropertyNames()) {
+                this.tags.put(key, props.getProperty(key));
+            }
+        } catch (IOException shouldNeverHappen) {
+            throw new RuntimeException(shouldNeverHappen);
+        }
     }
 
     @Override
