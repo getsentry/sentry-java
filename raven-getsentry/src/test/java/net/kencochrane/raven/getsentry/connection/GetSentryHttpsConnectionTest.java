@@ -34,7 +34,11 @@ public class GetSentryHttpsConnectionTest {
         connection.getConnection().connect();
     }
 
-    @Test(expectedExceptions = SSLHandshakeException.class)
+    /*
+     * Test disabled as it will fail when the CA is available in the default KeyStore.
+     * It is useful to be able to run it to ensure that it's indeed necessary to keep the entire module.
+     */
+    @Test(expectedExceptions = SSLHandshakeException.class, enabled = false)
     public void ensureHttpsConnectionToGetSentryRequiresCustomSslFactory() throws Exception {
         final URLConnection httpsConnection = GetSentryHttpsConnection.getSentryUrl(projectId).openConnection();
 
