@@ -2,9 +2,11 @@
 Module enabling the support of the GetSentry.com SSL certificate.
 
 GetSentry.com SSL certificate is provided by StartCom which isn't included in the list of the default CAs in
-Java 6 and 7.
+Oracle JDK 6 and 7.
 
 To work around that, this module embeds the certificate and uses it only for HTTPS connections to GetSentry.com
+
+__This module is not useful with Open JDK.__
 
 ## Installation
 
@@ -23,7 +25,7 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 ### Manual dependency management
 Relies on:
 
- - [raven-4.1.1.jar](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.1.1%7Cjar)
+ - [raven dependencies](../raven)
 
 ## Usage
 
