@@ -92,6 +92,11 @@ public class HttpConnection extends AbstractConnection {
         }
     }
 
+    /**
+     * Opens a connection to the Sentry API allowing to send new events.
+     *
+     * @return an HTTP connection to Sentry.
+     */
     protected HttpURLConnection getConnection() {
         try {
             HttpURLConnection connection = (HttpURLConnection) sentryUrl.openConnection();
