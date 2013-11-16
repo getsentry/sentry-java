@@ -92,7 +92,7 @@ public class HttpConnection extends AbstractConnection {
         }
     }
 
-    private HttpURLConnection getConnection() {
+    protected HttpURLConnection getConnection() {
         try {
             HttpURLConnection connection = (HttpURLConnection) sentryUrl.openConnection();
             if (bypassSecurity && connection instanceof HttpsURLConnection) {
