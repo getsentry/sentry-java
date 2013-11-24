@@ -272,10 +272,11 @@ public class JsonMarshaller implements Marshaller {
      *
      * @param sentryInterfaceClass Actual type of SentryInterface supported by the {@link InterfaceBinding}
      * @param binding              InterfaceBinding converting SentryInterfaces of type {@code sentryInterfaceClass}.
-     * @param <T>                  Type of SentryInterface.
+     * @param <T>                  Type of SentryInterface received by the InterfaceBinding.
+     * @param <F>                  Type of the interface stored in the event to send to the InterfaceBinding.
      */
-    public <T extends SentryInterface> void addInterfaceBinding(Class<T> sentryInterfaceClass,
-                                                                InterfaceBinding<T> binding) {
+    public <T extends SentryInterface, F extends T> void addInterfaceBinding(Class<F> sentryInterfaceClass,
+                                                                             InterfaceBinding<T> binding) {
         this.interfaceBindings.put(sentryInterfaceClass, binding);
     }
 
