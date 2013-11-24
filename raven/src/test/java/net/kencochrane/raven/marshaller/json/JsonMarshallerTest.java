@@ -198,11 +198,11 @@ public class JsonMarshallerTest {
     }
 
     @Test(dataProvider = "extraProvider")
-    public void testEventStringExtraWrittenProperly(final String mockExtraKey, final Object mockExtraValue, String extraFile) throws Exception {
+    public void testEventExtraWrittenProperly(final String extraKey, final Object extraValue, String extraFile) throws Exception {
         final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getExtra();
-            result = Collections.singletonMap(mockExtraKey, mockExtraValue);
+            result = Collections.singletonMap(extraKey, extraValue);
         }};
 
         jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
