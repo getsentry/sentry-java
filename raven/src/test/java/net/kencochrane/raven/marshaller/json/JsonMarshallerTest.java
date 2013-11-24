@@ -191,7 +191,8 @@ public class JsonMarshallerTest {
                 {"key", Arrays.asList(true, null, 1, "string"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraIterable.json"},
                 {"key", Collections.singletonMap("key", "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraMap.json"},
                 {"key", Collections.singletonMap(true, "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraObjectKeyMap.json"},
-                {"key", Collections.singletonMap(null, "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraNullKeyMap.json"}
+                {"key", Collections.singletonMap(null, "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraNullKeyMap.json"},
+                {"key", Collections.singletonMap("key", Arrays.asList("string", 1, true, null)), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraRecursiveMap.json"}
         };
     }
 

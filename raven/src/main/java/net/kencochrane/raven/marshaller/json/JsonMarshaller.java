@@ -179,7 +179,7 @@ public class JsonMarshaller implements Marshaller {
                     generator.writeFieldName("null");
                 else
                     generator.writeFieldName(entry.getKey().toString());
-                generator.writeObject(entry.getValue());
+                safelyWriteObject(generator, entry.getValue());
             }
             generator.writeEndObject();
         } else {
