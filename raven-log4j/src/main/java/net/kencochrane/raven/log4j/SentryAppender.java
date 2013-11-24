@@ -1,5 +1,6 @@
 package net.kencochrane.raven.log4j;
 
+import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -15,8 +16,9 @@ import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * Appender for log4j in charge of sending the logged events to a Sentry server.
@@ -203,8 +205,6 @@ public class SentryAppender extends AppenderSkeleton {
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet())
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
 
-        // Would be nice if the eventbuiller could accept a prebuilt imutable set of tags so we don't have
-        // to build this every time.
         for (Map.Entry<String, String> tagEntry: tags.entrySet())
             eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
 
@@ -222,21 +222,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     /**
      * Set the tags that should be sent along with the events.
-     * @param tags A String that can be parse as Java Properties, but with commas instead of newlines as the entry
-     *             seperator.
+     * @param tags A String of tags. key/values are separated by equals (=) and tags are seperated by commas(,).
      */
     public void setTags(String tags) {
-        Properties props = new Properties();
-        try {
-            // Multiline values in properties files
-            props.load(new StringReader(tags.replace(',', '\n')));
-            this.tags = new HashMap<String, String>();
-            for (String key : props.stringPropertyNames()) {
-                this.tags.put(key, props.getProperty(key));
-            }
-        } catch (IOException shouldNeverHappen) {
-            throw new RuntimeException(shouldNeverHappen);
-        }
+        this.tags = Splitter.on(",").withKeyValueSeparator("=").split(tags);
     }
 
     @Override
