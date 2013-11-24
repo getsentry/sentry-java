@@ -155,25 +155,28 @@ public class JsonMarshaller implements Marshaller {
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
-            Object value = extra.getValue();
-            if (value == null) {
-                generator.writeNullField(extra.getKey());
-            } else {
-                if (value.getClass().isArray()) {
-                    value = Arrays.asList((Object[]) value);
-                }
-                if (value instanceof Iterable) {
-                    generator.writeArrayFieldStart(extra.getKey());
-                    for (Object subValue : (Iterable) value) {
-                        generator.writeObject(subValue);
-                    }
-                    generator.writeEndArray();
-                } else {
-                    generator.writeObjectField(extra.getKey(), extra.getValue());
-                }
-            }
+            generator.writeFieldName(extra.getKey());
+            safelyWriteObject(generator, extra.getValue());
         }
         generator.writeEndObject();
+    }
+
+    private void safelyWriteObject(JsonGenerator generator, Object value) throws IOException {
+        if (value != null && value.getClass().isArray()) {
+            value = Arrays.asList((Object[]) value);
+        }
+
+        if (value instanceof Iterable) {
+            generator.writeStartArray();
+            for (Object subValue : (Iterable<?>) value) {
+                generator.writeObject(subValue);
+            }
+            generator.writeEndArray();
+        } else if (value == null) {
+            generator.writeNull();
+        } else {
+            generator.writeObject(value);
+        }
     }
 
     private void writeTags(JsonGenerator generator, Map<String, String> tags) throws IOException {
