@@ -98,4 +98,17 @@ public class JsonMarshallerTest {
 
         assertThat(outpuStreamTool.value(), is(jsonResource(levelFile)));
     }
+
+    @Test
+    public void testEventLoggerWrittenProperly(@Injectable("logger") final String mockLogger) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getLogger();
+            result = mockLogger;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLogger.json")));
+    }
 }
