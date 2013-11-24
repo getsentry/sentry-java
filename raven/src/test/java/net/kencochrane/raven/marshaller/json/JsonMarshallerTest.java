@@ -1,6 +1,7 @@
 package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.google.common.base.Charsets;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
@@ -11,6 +12,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -254,5 +256,20 @@ public class JsonMarshallerTest {
             mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
         }};
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testInterfaceBinding.json")));
+    }
+
+    @Test
+    public void testCompressedDataIsWorking() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        jsonMarshaller.setCompression(true);
+
+        jsonMarshaller.marshall(mockEvent, outputStream);
+
+        assertThat(new String(outputStream.toByteArray(), Charsets.UTF_8.name()), is(""
+                + "eJyFjcEOAiEMRP+lZ0zYk5Hv8L5psCKxsKSUjclm/"
+                + "12islebucy087oBrZR1jjdwYP8MGEhUKwYClxuzAY"
+                + "09UEylt6fL2Z7s1HW11n3UC9z5PM55CYFkuMKo90X"
+                + "S8L5xkagHG0MFt+0GKslKMmdMx2N6qeB36x/kn7X9"
+                + "MPsbwgxBSQ=="));
     }
 }
