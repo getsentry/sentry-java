@@ -182,8 +182,6 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeObject(entry.getValue());
             }
             generator.writeEndObject();
-        } else if (value == null) {
-            generator.writeNull();
         } else {
             generator.writeObject(value);
         }
