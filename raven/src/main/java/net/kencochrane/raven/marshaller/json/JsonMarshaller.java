@@ -183,7 +183,11 @@ public class JsonMarshaller implements Marshaller {
             }
             generator.writeEndObject();
         } else {
-            generator.writeObject(value);
+            try {
+                generator.writeObject(value);
+            } catch (IllegalStateException e) {
+                generator.writeString(value.toString());
+            }
         }
     }
 

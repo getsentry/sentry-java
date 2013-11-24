@@ -209,4 +209,20 @@ public class JsonMarshallerTest {
 
         assertThat(outpuStreamTool.value(), is(jsonResource(extraFile)));
     }
+
+    @Test
+    public void testEventExtraWrittenProperly(@Injectable("key") final String mockExtraKey,
+                                              @Injectable final Object mockExtraValue) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getExtra();
+            result = Collections.singletonMap(mockExtraKey, mockExtraValue);
+            mockExtraValue.toString();
+            result = "test";
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraCustomValue.json")));
+    }
 }
