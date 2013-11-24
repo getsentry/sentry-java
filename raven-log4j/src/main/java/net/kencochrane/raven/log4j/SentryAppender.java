@@ -222,10 +222,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     /**
      * Set the tags that should be sent along with the events.
-     * @param tags A String of tags. key/values are separated by equals (=) and tags are seperated by commas(,).
+     * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
-        this.tags = Splitter.on(",").withKeyValueSeparator("=").split(tags);
+        this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
     }
 
     @Override
