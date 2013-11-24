@@ -169,7 +169,7 @@ public class JsonMarshaller implements Marshaller {
         if (value instanceof Iterable) {
             generator.writeStartArray();
             for (Object subValue : (Iterable<?>) value) {
-                generator.writeObject(subValue);
+                safelyWriteObject(generator, subValue);
             }
             generator.writeEndArray();
         } else if (value instanceof Map) {
