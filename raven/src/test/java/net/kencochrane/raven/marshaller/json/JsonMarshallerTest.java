@@ -7,6 +7,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
@@ -136,5 +137,19 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testCulprit.json")));
+    }
+
+    @Test
+    public void testEventTagsWrittenProperly(@Injectable("tagName") final String mockTagName,
+                                             @Injectable("tagValue") final String mockTagValue) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getTags();
+            result = Collections.singletonMap(mockTagName, mockTagValue);
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTags.json")));
     }
 }
