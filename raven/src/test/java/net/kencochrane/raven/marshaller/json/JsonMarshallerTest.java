@@ -57,4 +57,20 @@ public class JsonMarshallerTest {
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testMessage.json")));
     }
+
+    @Test
+    public void testEventTimestampWrittenProperly(@Injectable final Date mockTimestamp) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getTimestamp();
+            result = mockTimestamp;
+            mockTimestamp.getTime();
+            // 2013-11-24T04:11:35.338 (UTC)
+            result = 1385266295338L;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTimestamp.json")));
+    }
 }
