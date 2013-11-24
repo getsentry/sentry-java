@@ -1,5 +1,6 @@
 package net.kencochrane.raven.log4j;
 
+import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -15,6 +16,7 @@ import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 
@@ -50,6 +52,13 @@ public class SentryAppender extends AppenderSkeleton {
      * </p>
      */
     protected String ravenFactory;
+    /**
+     * Additional tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no tags are sent.
+     * </p>
+     */
+    protected Map<String, String> tags = Collections.emptyMap();
     private final boolean propagateClose;
     private boolean guard;
 
@@ -196,6 +205,9 @@ public class SentryAppender extends AppenderSkeleton {
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet())
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
 
+        for (Map.Entry<String, String> tagEntry: tags.entrySet())
+            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
@@ -206,6 +218,14 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setRavenFactory(String ravenFactory) {
         this.ravenFactory = ravenFactory;
+    }
+
+    /**
+     * Set the tags that should be sent along with the events.
+     * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
+     */
+    public void setTags(String tags) {
+        this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
     }
 
     @Override

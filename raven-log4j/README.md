@@ -33,6 +33,7 @@ In the `log4j.properties` file set:
 log4j.rootLogger=WARN, SentryAppender
 log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
 log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
+log4j.appender.SentryAppender.tags=deployment:production,version:1.2.7
 ```
 
 ### Additional data and information
