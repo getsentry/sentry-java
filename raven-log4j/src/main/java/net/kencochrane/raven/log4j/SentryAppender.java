@@ -60,7 +60,6 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected Map<String, String> tags = Collections.emptyMap();
     private final boolean propagateClose;
-    private boolean guard;
 
     /**
      * Creates an instance of SentryAppender.
@@ -205,7 +204,7 @@ public class SentryAppender extends AppenderSkeleton {
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet())
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
 
-        for (Map.Entry<String, String> tagEntry: tags.entrySet())
+        for (Map.Entry<String, String> tagEntry : tags.entrySet())
             eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
 
         raven.runBuilderHelpers(eventBuilder);
@@ -222,6 +221,7 @@ public class SentryAppender extends AppenderSkeleton {
 
     /**
      * Set the tags that should be sent along with the events.
+     *
      * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
