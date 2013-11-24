@@ -8,10 +8,17 @@ import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.hamcrest.MatcherAssert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.JsonGeneratorTool;
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.jsonResource;
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.newJsonGenerator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class ExceptionInterfaceBindingTest {
     private ExceptionInterfaceBinding interfaceBinding;
@@ -38,7 +45,7 @@ public class ExceptionInterfaceBindingTest {
 
     @Test
     public void testSimpleException() throws Exception {
-        final JsonComparator jsonComparator = new JsonComparator();
+        final JsonGeneratorTool generatorTool = newJsonGenerator();
         final String message = "6e65f60d-9f22-495a-9556-7a61eeea2a14";
         final Throwable throwable = new IllegalStateException(message);
         new NonStrictExpectations() {{
@@ -50,16 +57,16 @@ public class ExceptionInterfaceBindingTest {
             };
         }};
 
-        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockExceptionInterface);
+        interfaceBinding.writeInterface(generatorTool.generator(), mockExceptionInterface);
 
-        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Exception1.json");
+        assertThat(generatorTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/Exception1.json")));
     }
 
     @Test
     public void testClassInDefaultPackage() throws Exception {
         Deencapsulation.setField((Object) DefaultPackageException.class, "name",
                 DefaultPackageException.class.getSimpleName());
-        final JsonComparator jsonComparator = new JsonComparator();
+        final JsonGeneratorTool generatorTool = newJsonGenerator();
         final Throwable throwable = new DefaultPackageException();
         new NonStrictExpectations() {{
             mockExceptionInterface.getThrowable();
@@ -70,9 +77,9 @@ public class ExceptionInterfaceBindingTest {
             };
         }};
 
-        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockExceptionInterface);
+        interfaceBinding.writeInterface(generatorTool.generator(), mockExceptionInterface);
 
-        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Exception2.json");
+        assertThat(generatorTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/Exception2.json")));
     }
 }
 
