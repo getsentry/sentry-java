@@ -4,6 +4,7 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Date;
@@ -72,5 +73,29 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTimestamp.json")));
+    }
+
+    @DataProvider(name = "levelProvider")
+    public Object[][] levelProvider() {
+        return new Object[][]{
+                {Event.Level.DEBUG, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLevelDebug.json"},
+                {Event.Level.INFO, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLevelInfo.json"},
+                {Event.Level.WARNING, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLevelWarning.json"},
+                {Event.Level.ERROR, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLevelError.json"},
+                {Event.Level.FATAL, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLevelFatal.json"},
+        };
+    }
+
+    @Test(dataProvider = "levelProvider")
+    public void testEventLevelWrittenProperly(final Event.Level eventLevel, String levelFile) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getLevel();
+            result = eventLevel;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource(levelFile)));
     }
 }
