@@ -1,12 +1,17 @@
 package net.kencochrane.raven.marshaller.json;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
+import mockit.Verifications;
 import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -224,5 +229,30 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraCustomValue.json")));
+    }
+
+    @Test
+    public void testInterfaceBindingIsProperlyUsed(
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final InterfaceBinding<SentryInterface> mockInterfaceBinding) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getSentryInterfaces();
+            result = Collections.singletonMap("interfaceKey", mockSentryInterface);
+            mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
+            result = new Delegate<Void>() {
+                public void writeInterface(JsonGenerator generator, SentryInterface sentryInterface) throws IOException {
+                    generator.writeNull();
+                }
+            };
+        }};
+
+        jsonMarshaller.addInterfaceBinding(mockSentryInterface.getClass(), mockInterfaceBinding);
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        new Verifications() {{
+            mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
+        }};
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testInterfaceBinding.json")));
     }
 }
