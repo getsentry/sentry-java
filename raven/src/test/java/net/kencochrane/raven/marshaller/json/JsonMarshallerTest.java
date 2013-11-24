@@ -7,6 +7,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
@@ -177,5 +178,29 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testChecksum.json")));
+    }
+
+    @DataProvider(name = "extraProvider")
+    public Object[][] extraProvider() {
+        return new Object[][]{
+                {"key", "string", "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraString.json"},
+                {"key", 1, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraNumber.json"},
+                {"key", true, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraBoolean.json"},
+                {"key", new Object[]{"string", 1, true}, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraArray.json"},
+                {"key", Arrays.asList(true, 1, "string"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraIterable.json"}
+        };
+    }
+
+    @Test(dataProvider = "extraProvider")
+    public void testEventStringExtraWrittenProperly(final String mockExtraKey, final Object mockExtraValue, String extraFile) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getExtra();
+            result = Collections.singletonMap(mockExtraKey, mockExtraValue);
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource(extraFile)));
     }
 }
