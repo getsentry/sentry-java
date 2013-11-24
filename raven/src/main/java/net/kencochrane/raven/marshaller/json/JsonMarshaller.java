@@ -172,6 +172,11 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeObject(subValue);
             }
             generator.writeEndArray();
+        } else if (value instanceof Map) {
+            generator.writeStartObject();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet())
+                generator.writeObjectField(entry.getKey().toString(), entry.getValue());
+            generator.writeEndObject();
         } else if (value == null) {
             generator.writeNull();
         } else {
