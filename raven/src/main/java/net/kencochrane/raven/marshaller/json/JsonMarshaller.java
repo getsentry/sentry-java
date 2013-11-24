@@ -156,17 +156,21 @@ public class JsonMarshaller implements Marshaller {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
             Object value = extra.getValue();
-            if (value.getClass().isArray()) {
-                value = Arrays.asList((Object[]) value);
-            }
-            if (value instanceof Iterable) {
-                generator.writeArrayFieldStart(extra.getKey());
-                for (Object subValue : (Iterable) value) {
-                    generator.writeObject(subValue);
-                }
-                generator.writeEndArray();
+            if (value == null) {
+                generator.writeNullField(extra.getKey());
             } else {
-                generator.writeObjectField(extra.getKey(), extra.getValue());
+                if (value.getClass().isArray()) {
+                    value = Arrays.asList((Object[]) value);
+                }
+                if (value instanceof Iterable) {
+                    generator.writeArrayFieldStart(extra.getKey());
+                    for (Object subValue : (Iterable) value) {
+                        generator.writeObject(subValue);
+                    }
+                    generator.writeEndArray();
+                } else {
+                    generator.writeObjectField(extra.getKey(), extra.getValue());
+                }
             }
         }
         generator.writeEndObject();

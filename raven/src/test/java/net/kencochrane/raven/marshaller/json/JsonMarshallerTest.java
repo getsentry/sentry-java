@@ -186,6 +186,7 @@ public class JsonMarshallerTest {
                 {"key", "string", "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraString.json"},
                 {"key", 1, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraNumber.json"},
                 {"key", true, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraBoolean.json"},
+                {"key", null, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraNull.json"},
                 {"key", new Object[]{"string", 1, true}, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraArray.json"},
                 {"key", Arrays.asList(true, 1, "string"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraIterable.json"}
         };
