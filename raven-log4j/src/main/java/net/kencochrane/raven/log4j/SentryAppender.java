@@ -220,12 +220,14 @@ public class SentryAppender extends AppenderSkeleton {
 
     /**
      * Set the tags that should be sent along with the events.
-     * @param tags A String that can be parse as Java Properties.
+     * @param tags A String that can be parse as Java Properties, but with commas instead of newlines as the entry
+     *             seperator.
      */
     public void setTags(String tags) {
         Properties props = new Properties();
         try {
-            props.load(new StringReader(tags));
+            // Multiline values in properties files
+            props.load(new StringReader(tags.replace(',', '\n')));
             this.tags = new HashMap<String, String>();
             for (String key : props.stringPropertyNames()) {
                 this.tags.put(key, props.getProperty(key));
