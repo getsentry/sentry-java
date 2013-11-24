@@ -203,6 +203,8 @@ public class SentryAppender extends AppenderSkeleton {
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet())
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
 
+        // Would be nice if the eventbuiller could accept a prebuilt imutable set of tags so we don't have
+        // to build this every time.
         for (Map.Entry<String, String> tagEntry: tags.entrySet())
             eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
 
