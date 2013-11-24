@@ -188,6 +188,7 @@ public class JsonMarshaller implements Marshaller {
             try {
                 generator.writeObject(value);
             } catch (IllegalStateException e) {
+                logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String", value, value.getClass());
                 generator.writeString(value.toString());
             }
         }
