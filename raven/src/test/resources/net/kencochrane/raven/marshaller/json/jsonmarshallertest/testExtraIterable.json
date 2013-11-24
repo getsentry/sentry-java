@@ -11,6 +11,7 @@
   "extra": {
     "key": [
       true,
+      null,
       1,
       "string"
     ]

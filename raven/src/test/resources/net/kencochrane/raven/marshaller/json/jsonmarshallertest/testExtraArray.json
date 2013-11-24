@@ -12,6 +12,7 @@
     "key": [
       "string",
       1,
+      null,
       true
     ]
   },
