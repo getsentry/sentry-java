@@ -190,7 +190,8 @@ public class JsonMarshallerTest {
                 {"key", new Object[]{"string", 1, true}, "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraArray.json"},
                 {"key", Arrays.asList(true, 1, "string"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraIterable.json"},
                 {"key", Collections.singletonMap("key", "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraMap.json"},
-                {"key", Collections.singletonMap(true, "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraObjectKeyMap.json"}
+                {"key", Collections.singletonMap(true, "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraObjectKeyMap.json"},
+                {"key", Collections.singletonMap(null, "value"), "/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraNullKeyMap.json"}
         };
     }
 
