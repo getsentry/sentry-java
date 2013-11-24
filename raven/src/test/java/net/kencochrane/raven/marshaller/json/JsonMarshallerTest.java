@@ -44,4 +44,17 @@ public class JsonMarshallerTest {
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testEventId.json")));
     }
+
+    @Test
+    public void testEventMessageWrittenProperly(@Injectable("message") final String mockMessage) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getMessage();
+            result = mockMessage;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testMessage.json")));
+    }
 }
