@@ -111,4 +111,17 @@ public class JsonMarshallerTest {
 
         assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLogger.json")));
     }
+
+    @Test
+    public void testEventPlaftormWrittenProperly(@Injectable("platform") final String mockPlatform) throws Exception {
+        final JsonOutpuStreamTool outpuStreamTool = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getPlatform();
+            result = mockPlatform;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, outpuStreamTool.outputStream());
+
+        assertThat(outpuStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testPlatform.json")));
+    }
 }
