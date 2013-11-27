@@ -33,6 +33,7 @@ In the `logback.xml` file set:
 <configuration>
     <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
         <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
+        <tags>tag1:value1,tag2:value2</tags>
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>

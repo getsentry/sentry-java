@@ -39,6 +39,9 @@ In the `log4j2.xml` file set:
             <dsn>
                 https://publicKey:secretKey@host:port/1?options
             </dsn>
+            <tags>
+                tag1:value1,tag2:value2
+            </tags>
         </Raven>
     </appenders>
 

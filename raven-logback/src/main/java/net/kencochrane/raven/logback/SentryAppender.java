@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
+import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -15,10 +16,7 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Appender for logback in charge of sending the logged events to a Sentry server.
@@ -52,6 +50,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * </p>
      */
     protected String ravenFactory;
+    /**
+     * Additional tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no tags are sent.
+     * </p>
+     */
+    protected Map<String, String> tags = Collections.emptyMap();
     private final boolean propagateClose;
 
     /**
@@ -211,6 +216,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     public void setRavenFactory(String ravenFactory) {
         this.ravenFactory = ravenFactory;
+    }
+
+    /**
+     * Set the tags that should be sent along with the events.
+     *
+     * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
+     */
+    public void setTags(String tags) {
+        this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
     }
 
     @Override
