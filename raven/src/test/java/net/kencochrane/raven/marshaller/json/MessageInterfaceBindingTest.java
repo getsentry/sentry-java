@@ -9,6 +9,12 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.List;
 
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.JsonGeneratorTool;
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.jsonResource;
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.newJsonGenerator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 public class MessageInterfaceBindingTest {
     private MessageInterfaceBinding interfaceBinding;
     @Injectable
@@ -21,7 +27,7 @@ public class MessageInterfaceBindingTest {
 
     @Test
     public void testSimpleMessage() throws Exception {
-        final JsonComparator jsonComparator = new JsonComparator();
+        final JsonGeneratorTool generatorTool = newJsonGenerator();
         final String message = "550ee459-cbb5-438e-91d2-b0bbdefab670";
         final List<String> parameters = Arrays.asList("33ed929b-d803-46b6-a57b-9c0feab1f468",
                 "5fc10379-6392-470d-9de5-e4cb805ab78c");
@@ -32,8 +38,8 @@ public class MessageInterfaceBindingTest {
             result = parameters;
         }};
 
-        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockMessageInterface);
+        interfaceBinding.writeInterface(generatorTool.generator(), mockMessageInterface);
 
-        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Message1.json");
+        assertThat(generatorTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/Message1.json")));
     }
 }

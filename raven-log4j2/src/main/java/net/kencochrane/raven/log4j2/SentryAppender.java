@@ -1,5 +1,6 @@
 package net.kencochrane.raven.log4j2;
 
+import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -20,10 +21,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.message.Message;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Appender for log4j2 in charge of sending the logged events to a Sentry server.
@@ -66,13 +64,19 @@ public class SentryAppender extends AbstractAppender {
      * </p>
      */
     protected String ravenFactory;
-    private final boolean propagateClose;
+    /**
+     * Additional tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no tags are sent.
+     * </p>
+     */
+    protected Map<String, String> tags = Collections.emptyMap();
 
     /**
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        this(APPENDER_NAME, null, true);
+        this(APPENDER_NAME, null);
     }
 
     /**
@@ -81,24 +85,12 @@ public class SentryAppender extends AbstractAppender {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
-        this(raven, false);
-    }
-
-    /**
-     * Creates an instance of SentryAppender.
-     *
-     * @param raven          instance of Raven to use with this appender.
-     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
-     *                       when the appender is closed.
-     */
-    public SentryAppender(Raven raven, boolean propagateClose) {
-        this(APPENDER_NAME, null, propagateClose);
+        this(APPENDER_NAME, null);
         this.raven = raven;
     }
 
-    private SentryAppender(String name, Filter filter, boolean propagateClose) {
+    private SentryAppender(String name, Filter filter) {
         super(name, filter, null, true);
-        this.propagateClose = propagateClose;
     }
 
     /**
@@ -107,6 +99,7 @@ public class SentryAppender extends AbstractAppender {
      * @param name         The name of the Appender.
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
+     * @param tags         Tags to add to each event.
      * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
@@ -114,6 +107,7 @@ public class SentryAppender extends AbstractAppender {
     public static SentryAppender createAppender(@PluginAttribute("name") final String name,
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,
+                                                @PluginAttribute("tags") final String tags,
                                                 @PluginElement("filters") final Filter filter) {
 
         if (name == null) {
@@ -121,8 +115,10 @@ public class SentryAppender extends AbstractAppender {
             return null;
         }
 
-        SentryAppender sentryAppender = new SentryAppender(name, filter, true);
+        SentryAppender sentryAppender = new SentryAppender(name, filter);
         sentryAppender.setDsn(dsn);
+        if (tags != null)
+            sentryAppender.setTags(tags);
         sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
     }
@@ -270,12 +266,21 @@ public class SentryAppender extends AbstractAppender {
         this.ravenFactory = ravenFactory;
     }
 
+    /**
+     * Set the tags that should be sent along with the events.
+     *
+     * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
+     */
+    public void setTags(String tags) {
+        this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
+    }
+
     @Override
     public void stop() {
         super.stop();
 
         try {
-            if (propagateClose && raven != null)
+            if (raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             error("An exception occurred while closing the Raven connection", e);

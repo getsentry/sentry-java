@@ -155,21 +155,44 @@ public class JsonMarshaller implements Marshaller {
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
-            Object value = extra.getValue();
-            if (value.getClass().isArray()) {
-                value = Arrays.asList((Object[]) value);
-            }
-            if (value instanceof Iterable) {
-                generator.writeArrayFieldStart(extra.getKey());
-                for (Object subValue : (Iterable) value) {
-                    generator.writeObject(subValue);
-                }
-                generator.writeEndArray();
-            } else {
-                generator.writeObjectField(extra.getKey(), extra.getValue());
-            }
+            generator.writeFieldName(extra.getKey());
+            safelyWriteObject(generator, extra.getValue());
         }
         generator.writeEndObject();
+    }
+
+    private void safelyWriteObject(JsonGenerator generator, Object value) throws IOException {
+        if (value != null && value.getClass().isArray()) {
+            value = Arrays.asList((Object[]) value);
+        }
+
+        if (value instanceof Iterable) {
+            generator.writeStartArray();
+            for (Object subValue : (Iterable<?>) value) {
+                safelyWriteObject(generator, subValue);
+            }
+            generator.writeEndArray();
+        } else if (value instanceof Map) {
+            generator.writeStartObject();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+                if (entry.getKey() == null)
+                    generator.writeFieldName("null");
+                else
+                    generator.writeFieldName(entry.getKey().toString());
+                safelyWriteObject(generator, entry.getValue());
+            }
+            generator.writeEndObject();
+        } else if (value == null) {
+            generator.writeNull();
+        } else {
+            try {
+                generator.writeObject(value);
+            } catch (IllegalStateException e) {
+                logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
+                        value, value.getClass());
+                generator.writeString(value.toString());
+            }
+        }
     }
 
     private void writeTags(JsonGenerator generator, Map<String, String> tags) throws IOException {
@@ -249,10 +272,11 @@ public class JsonMarshaller implements Marshaller {
      *
      * @param sentryInterfaceClass Actual type of SentryInterface supported by the {@link InterfaceBinding}
      * @param binding              InterfaceBinding converting SentryInterfaces of type {@code sentryInterfaceClass}.
-     * @param <T>                  Type of SentryInterface.
+     * @param <T>                  Type of SentryInterface received by the InterfaceBinding.
+     * @param <F>                  Type of the interface stored in the event to send to the InterfaceBinding.
      */
-    public <T extends SentryInterface> void addInterfaceBinding(Class<T> sentryInterfaceClass,
-                                                                InterfaceBinding<T> binding) {
+    public <T extends SentryInterface, F extends T> void addInterfaceBinding(Class<F> sentryInterfaceClass,
+                                                                             InterfaceBinding<T> binding) {
         this.interfaceBindings.put(sentryInterfaceClass, binding);
     }
 

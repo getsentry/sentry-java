@@ -1,0 +1,15 @@
+{
+  "event_id": "00000000000000000000000000000000",
+  "message": null,
+  "timestamp": "1970-01-01T00:00:00",
+  "level": null,
+  "logger": null,
+  "platform": null,
+  "culprit": null,
+  "tags": {},
+  "server_name": null,
+  "extra": {
+    "key": 1
+  },
+  "checksum": null
+}

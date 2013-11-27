@@ -114,7 +114,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return the asynchronous connection.
      */
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
-        AsyncConnection asyncConnection = new AsyncConnection(connection, true);
+        AsyncConnection asyncConnection = new AsyncConnection(connection);
 
         int maxThreads;
         if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {

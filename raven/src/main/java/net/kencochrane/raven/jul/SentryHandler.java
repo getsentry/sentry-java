@@ -1,5 +1,6 @@
 package net.kencochrane.raven.jul;
 
+import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -11,9 +12,7 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -44,13 +43,15 @@ public class SentryHandler extends Handler {
      * </p>
      */
     protected String ravenFactory;
-    private final boolean propagateClose;
+    /**
+     * Tags to add to every event.
+     */
+    protected Map<String, String> tags = Collections.emptyMap();
 
     /**
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
-        propagateClose = true;
         retrieveProperties();
     }
 
@@ -60,19 +61,7 @@ public class SentryHandler extends Handler {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryHandler(Raven raven) {
-        this(raven, false);
-    }
-
-    /**
-     * Creates an instance of SentryHandler.
-     *
-     * @param raven          instance of Raven to use with this appender.
-     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
-     *                       when the appender is closed.
-     */
-    public SentryHandler(Raven raven, boolean propagateClose) {
         this.raven = raven;
-        this.propagateClose = propagateClose;
     }
 
     /**
@@ -116,6 +105,9 @@ public class SentryHandler extends Handler {
         LogManager manager = LogManager.getLogManager();
         dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
         ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
+        String tagsProperty = manager.getProperty(SentryHandler.class.getName() + ".tags");
+        if (tagsProperty != null)
+            tags = Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
     }
 
     @Override
@@ -188,6 +180,10 @@ public class SentryHandler extends Handler {
             eventBuilder.setCulprit(record.getLoggerName());
         }
 
+        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
+            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+        }
+
         eventBuilder.addExtra(THREAD_ID, record.getThreadID());
 
         raven.runBuilderHelpers(eventBuilder);
@@ -201,7 +197,7 @@ public class SentryHandler extends Handler {
     @Override
     public void close() throws SecurityException {
         try {
-            if (propagateClose && raven != null)
+            if (raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);
