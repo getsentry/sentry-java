@@ -70,7 +70,7 @@ public class JsonDecoder {
     private boolean isJson(InputStream inputStream) {
         boolean valid = false;
         try {
-            final JsonParser parser = new JsonFactory().createJsonParser(inputStream);
+            final JsonParser parser = new JsonFactory().createParser(inputStream);
             do {
                 parser.nextToken();
             } while (parser.hasCurrentToken());
