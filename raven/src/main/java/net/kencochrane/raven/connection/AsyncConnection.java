@@ -29,10 +29,6 @@ public class AsyncConnection implements Connection {
      */
     private final Connection actualConnection;
     /**
-     * Option to disable the propagation of the {@link #close()} operation to the actual connection.
-     */
-    private final boolean propagateClose;
-    /**
      * Executor service in charge of running the connection in separate threads.
      */
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -50,19 +46,7 @@ public class AsyncConnection implements Connection {
      * @param actualConnection connection used to send the events.
      */
     public AsyncConnection(Connection actualConnection) {
-        this(actualConnection, true);
-    }
-
-    /**
-     * Creates a connection which will rely on an executor to send events.
-     *
-     * @param actualConnection connection used to send the events.
-     * @param propagateClose   whether or not the {@link #actualConnection} should be closed
-     *                         when this connection closes.
-     */
-    public AsyncConnection(Connection actualConnection, boolean propagateClose) {
         this.actualConnection = actualConnection;
-        this.propagateClose = propagateClose;
         addShutdownHook();
     }
 
@@ -124,8 +108,7 @@ public class AsyncConnection implements Connection {
             List<Runnable> tasks = executorService.shutdownNow();
             logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
         } finally {
-            if (propagateClose)
-                actualConnection.close();
+            actualConnection.close();
         }
     }
 

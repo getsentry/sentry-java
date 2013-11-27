@@ -71,13 +71,12 @@ public class SentryAppender extends AbstractAppender {
      * </p>
      */
     protected Map<String, String> tags = Collections.emptyMap();
-    private final boolean propagateClose;
 
     /**
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        this(APPENDER_NAME, null, true);
+        this(APPENDER_NAME, null);
     }
 
     /**
@@ -86,24 +85,12 @@ public class SentryAppender extends AbstractAppender {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
-        this(raven, false);
-    }
-
-    /**
-     * Creates an instance of SentryAppender.
-     *
-     * @param raven          instance of Raven to use with this appender.
-     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
-     *                       when the appender is closed.
-     */
-    public SentryAppender(Raven raven, boolean propagateClose) {
-        this(APPENDER_NAME, null, propagateClose);
+        this(APPENDER_NAME, null);
         this.raven = raven;
     }
 
-    private SentryAppender(String name, Filter filter, boolean propagateClose) {
+    private SentryAppender(String name, Filter filter) {
         super(name, filter, null, true);
-        this.propagateClose = propagateClose;
     }
 
     /**
@@ -128,7 +115,7 @@ public class SentryAppender extends AbstractAppender {
             return null;
         }
 
-        SentryAppender sentryAppender = new SentryAppender(name, filter, true);
+        SentryAppender sentryAppender = new SentryAppender(name, filter);
         sentryAppender.setDsn(dsn);
         sentryAppender.setTags(tags);
         sentryAppender.setRavenFactory(ravenFactory);
@@ -292,7 +279,7 @@ public class SentryAppender extends AbstractAppender {
         super.stop();
 
         try {
-            if (propagateClose && raven != null)
+            if (raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             error("An exception occurred while closing the Raven connection", e);

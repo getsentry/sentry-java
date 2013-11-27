@@ -36,7 +36,7 @@ public class SentryAppenderCloseTest {
     }
 
     @Test
-    public void testNotClosedIfRavenInstanceIsProvided() throws Exception {
+    public void testConnectionClosedWhenAppenderClosed() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.activateOptions();
@@ -45,36 +45,6 @@ public class SentryAppenderCloseTest {
 
         new Verifications() {{
             mockConnection.close();
-            times = 0;
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testClosedIfRavenInstanceProvidedAndForceClose() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
-        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.activateOptions();
-
-        sentryAppender.close();
-
-        new Verifications() {{
-            mockConnection.close();
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testNotClosedIfRavenInstanceProvidedAndNotForceClose() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven, false);
-        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.activateOptions();
-
-        sentryAppender.close();
-
-        new Verifications() {{
-            mockConnection.close();
-            times = 0;
         }};
         assertNoErrorsInErrorHandler();
     }
@@ -129,7 +99,7 @@ public class SentryAppenderCloseTest {
 
     @Test
     public void testCloseDoNotFailWhenMultipleCalls() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.activateOptions();
 

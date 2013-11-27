@@ -42,22 +42,8 @@ public class SentryAppenderCloseTest {
     }
 
     @Test
-    public void testClose() throws Exception {
+    public void testConnectionClosedWhenAppenderStopped() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
-        sentryAppender.setContext(mockContext);
-
-        sentryAppender.stop();
-
-        new Verifications() {{
-            mockConnection.close();
-            times = 0;
-        }};
-        assertNoErrorsInStatusManager();
-    }
-
-    @Test
-    public void testClose2() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockRaven, true);
         sentryAppender.setContext(mockContext);
 
         sentryAppender.stop();

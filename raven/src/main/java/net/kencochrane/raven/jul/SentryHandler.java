@@ -47,13 +47,11 @@ public class SentryHandler extends Handler {
      * Tags to add to every event.
      */
     protected Map<String, String> tags = Collections.emptyMap();
-    private final boolean propagateClose;
 
     /**
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
-        propagateClose = true;
         retrieveProperties();
     }
 
@@ -63,19 +61,7 @@ public class SentryHandler extends Handler {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryHandler(Raven raven) {
-        this(raven, false);
-    }
-
-    /**
-     * Creates an instance of SentryHandler.
-     *
-     * @param raven          instance of Raven to use with this appender.
-     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
-     *                       when the appender is closed.
-     */
-    public SentryHandler(Raven raven, boolean propagateClose) {
         this.raven = raven;
-        this.propagateClose = propagateClose;
     }
 
     /**
@@ -211,7 +197,7 @@ public class SentryHandler extends Handler {
     @Override
     public void close() throws SecurityException {
         try {
-            if (propagateClose && raven != null)
+            if (raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);
