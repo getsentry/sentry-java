@@ -211,12 +211,12 @@ public class SentryAppender extends AppenderSkeleton {
         return eventBuilder.build();
     }
 
-    public void setDsn(String dsn) {
-        this.dsn = dsn;
-    }
-
     public void setRavenFactory(String ravenFactory) {
         this.ravenFactory = ravenFactory;
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
     }
 
     /**
