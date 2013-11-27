@@ -117,7 +117,8 @@ public class SentryAppender extends AbstractAppender {
 
         SentryAppender sentryAppender = new SentryAppender(name, filter);
         sentryAppender.setDsn(dsn);
-        sentryAppender.setTags(tags);
+        if (tags != null)
+            sentryAppender.setTags(tags);
         sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
     }
