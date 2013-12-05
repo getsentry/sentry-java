@@ -351,11 +351,12 @@ public class EventBuilder {
         public void updateCache() {
             FutureTask<String> futureTask = new FutureTask<String>(new HostRetriever());
             try {
-                futureTask.run();
+                new Thread(futureTask).start();
                 logger.debug("Updating the hostname cache");
                 hostname = futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
                 expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             } catch (Exception e) {
+                futureTask.cancel(true);
                 expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
                 logger.warn("Localhost hostname lookup failed, keeping the value '{}'", hostname, e);
             }
