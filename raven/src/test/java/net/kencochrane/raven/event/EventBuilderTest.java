@@ -4,6 +4,7 @@ import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -17,9 +18,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class EventBuilderTest {
+    @Injectable
+    private InetAddress mockLocalHost;
+
     private static void resetHostnameCache() {
         setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
         setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+    }
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        new NonStrictExpectations(InetAddress.class){{
+            InetAddress.getLocalHost();
+            result = mockLocalHost;
+            mockLocalHost.getCanonicalHostName();
+            result = "local";
+        }};
     }
 
     @Test
