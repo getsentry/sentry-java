@@ -63,6 +63,7 @@ public class EventBuilderHostnameCacheTest {
         assertThat(expirationTime, is(TimeUnit.HOURS.toMillis(5) + System.currentTimeMillis()));
     }
 
+    @Test(timeOut = 5000)
     public void unsucessfulHostnameRetrievalIsCachedForOneSecond(
             @Mocked(methods = "currentTimeMillis") final System system)
             throws Exception {
@@ -80,7 +81,7 @@ public class EventBuilderHostnameCacheTest {
         assertThat(expirationTime, is(TimeUnit.SECONDS.toMillis(1) + System.currentTimeMillis()));
     }
 
-    @Test
+    @Test(timeOut = 5000)
     public void unsucessfulHostameRetrievalUsesLastKnownCachedValue() throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             InetAddress.getLocalHost();

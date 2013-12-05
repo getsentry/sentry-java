@@ -236,7 +236,7 @@ public class EventBuilderTest {
         assertThat(event.getTags().entrySet(), hasSize(1));
     }
 
-    @Test
+    @Test(timeOut = 5000)
     public void builtEventWithNoServerNameUsesDefaultIfSearchTimesOut()
             throws Exception {
         resetHostnameCache();
