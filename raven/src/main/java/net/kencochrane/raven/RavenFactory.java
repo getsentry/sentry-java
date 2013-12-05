@@ -77,7 +77,7 @@ public abstract class RavenFactory {
      */
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
         //Loop through registered factories
-        logger.info("Attempting to find a working Raven factory");
+        logger.debug("Attempting to find a working Raven factory");
         for (RavenFactory ravenFactory : getRegisteredFactories()) {
             if (ravenFactoryName != null && !ravenFactoryName.equals(ravenFactory.getClass().getName()))
                 continue;
@@ -85,7 +85,7 @@ public abstract class RavenFactory {
             logger.debug("Attempting to use '{}' as a Raven factory.", ravenFactory);
             try {
                 Raven ravenInstance = ravenFactory.createRavenInstance(dsn);
-                logger.info("The raven factory '{}' created an instance of Raven.", ravenFactory);
+                logger.debug("The raven factory '{}' created an instance of Raven.", ravenFactory);
                 return ravenInstance;
             } catch (RuntimeException e) {
                 logger.debug("The raven factory '{}' couldn't create an instance of Raven.", ravenFactory, e);
