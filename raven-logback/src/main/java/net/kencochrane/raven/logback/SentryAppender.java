@@ -192,6 +192,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         if (iLoggingEvent.getMarker() != null)
             eventBuilder.addTag(LOGBACK_MARKER, iLoggingEvent.getMarker().getName());
 
+        for (Map.Entry<String, String> tagEntry : tags.entrySet())
+            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }

@@ -254,6 +254,9 @@ public class SentryAppender extends AbstractAppender {
         if (event.getMarker() != null)
             eventBuilder.addTag(LOG4J_MARKER, event.getMarker().getName());
 
+        for (Map.Entry<String, String> tagEntry : tags.entrySet())
+            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
