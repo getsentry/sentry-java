@@ -10,8 +10,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
@@ -350,10 +349,11 @@ public class EventBuilder {
          * Force an update of the cache to get the current value of the hostname.
          */
         public void updateCache() {
-            Future<String> future = Executors.newSingleThreadExecutor().submit(new HostRetriever());
-
+            FutureTask<String> futureTask = new FutureTask<String>(new HostRetriever());
             try {
-                hostname = future.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
+                futureTask.run();
+                logger.debug("Updating the hostname cache");
+                hostname = futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
                 expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             } catch (Exception e) {
                 expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
