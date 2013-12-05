@@ -84,9 +84,11 @@ public abstract class RavenFactory {
 
             logger.debug("Attempting to use '{}' as a Raven factory.", ravenFactory);
             try {
-                return ravenFactory.createRavenInstance(dsn);
+                Raven ravenInstance = ravenFactory.createRavenInstance(dsn);
+                logger.info("The raven factory '{}' created an instance of Raven.", ravenFactory);
+                return ravenInstance;
             } catch (RuntimeException e) {
-                logger.warn("The raven factory '{}' couldn't create an instance of Raven.", ravenFactory, e);
+                logger.debug("The raven factory '{}' couldn't create an instance of Raven.", ravenFactory, e);
             }
         }
 
