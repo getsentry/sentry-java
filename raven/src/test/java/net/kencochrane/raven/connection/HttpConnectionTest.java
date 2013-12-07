@@ -128,7 +128,7 @@ public class HttpConnectionTest {
         new Verifications() {{
             mockUrlConnection.setRequestProperty("User-Agent", Raven.NAME);
 
-            String expectedAuthRequest = "Sentry sentry_version=4,"
+            String expectedAuthRequest = "Sentry sentry_version=5,"
                     + "sentry_client=" + Raven.NAME + ","
                     + "sentry_key=" + publicKey + ","
                     + "sentry_secret=" + secretKey;
