@@ -39,10 +39,11 @@ Since 2.0, the major version of raven matches the version of the Sentry protocol
 | Raven 2.x     | V2               | >= 2.0         |
 | Raven 3.x     | V3               | >= 5.1         |
 | Raven 4.x     | V4               | >= 6.0         |
+| Raven 5.x(dev)| V5               | >= 6.4         |
 
 
 Each release of Sentry supports the last two version of the protocol
-(i.e. Sentry 6.0.4 supports both the protocol V4 and V3), for this reason, only
+(i.e. Sentry 6.4.2 supports both the protocol V5 and V4), for this reason, only
 the two last stable versions of Raven are actively maintained.
 
 ### Snapshot versions
