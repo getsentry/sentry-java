@@ -10,12 +10,12 @@ for log4j to send the logged events to Sentry.
 <dependency>
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven-log4j</artifactId>
-    <version>4.1.1</version>
+    <version>4.1.2</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-log4j%7C4.1.1%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-log4j%7C4.1.2%7Cjar).
 
 ### Manual dependency management
 Relies on:
