@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class AuthValidator {
     private static final Logger logger = Logger.getLogger(AuthValidator.class.getCanonicalName());
-    private static final Collection<String> SENTRY_PROTOCOL_VERSIONS = Arrays.asList("4");
+    private static final Collection<String> SENTRY_PROTOCOL_VERSIONS = Arrays.asList("5");
     private static final String SENTRY_VERSION_PARAMETER = "Sentry sentry_version";
     private static final String PUBLIC_KEY_PARAMETER = "sentry_key";
     private static final String SECRET_KEY_PARAMETER = "sentry_secret";
