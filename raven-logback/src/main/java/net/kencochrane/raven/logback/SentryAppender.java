@@ -190,6 +190,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.setCulprit(iLoggingEvent.getLoggerName());
         }
 
+        for (Map.Entry<String, String> contextEntry : iLoggingEvent.getLoggerContextVO().getPropertyMap().entrySet()) {
+            eventBuilder.addExtra(contextEntry.getKey(), contextEntry.getValue());
+        }
+
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
         }

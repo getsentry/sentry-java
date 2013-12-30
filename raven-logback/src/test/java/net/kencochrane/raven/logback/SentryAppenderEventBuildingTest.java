@@ -179,6 +179,43 @@ public class SentryAppenderEventBuildingTest {
     }
 
     @Test
+    public void testContextPropertiesAddedToExtra() throws Exception {
+        final String extraKey = UUID.randomUUID().toString();
+        final String extraValue = UUID.randomUUID().toString();
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null,
+                null, null, null, 0, Collections.singletonMap(extraKey, extraValue)).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.runBuilderHelpers((EventBuilder) any);
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testMdcTakesPrecedenceOverContextProperties() throws Exception {
+        final String mdcKey = UUID.randomUUID().toString();
+        final String mdcValue = UUID.randomUUID().toString();
+        final String contextKey = mdcKey;
+        final String contextValue = UUID.randomUUID().toString();
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null,
+                Collections.singletonMap(mdcKey, mdcValue), null, null, 0,
+                Collections.singletonMap(contextKey, contextValue)).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.runBuilderHelpers((EventBuilder) any);
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(mdcKey, mdcValue));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
     public void testSourceUsedAsStacktrace() throws Exception {
         final StackTraceElement[] location = {new StackTraceElement(UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
