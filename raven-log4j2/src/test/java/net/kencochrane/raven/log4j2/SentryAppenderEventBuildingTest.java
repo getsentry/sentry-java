@@ -6,6 +6,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.ExceptionWithStackTrace;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
@@ -95,12 +96,11 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            Throwable throwable;
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            throwable = exceptionInterface.getThrowable();
-            assertThat(throwable.getMessage(), is(exception.getMessage()));
+            ExceptionWithStackTrace throwable = exceptionInterface.getExceptions().getFirst();
+            assertThat(throwable.getExceptionMessage(), is(exception.getMessage()));
             assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorHandler();

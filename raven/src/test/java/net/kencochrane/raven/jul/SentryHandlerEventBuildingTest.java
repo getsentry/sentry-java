@@ -6,6 +6,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.ExceptionWithStackTrace;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -97,9 +98,9 @@ public class SentryHandlerEventBuildingTest {
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            throwable = exceptionInterface.getThrowable();
-            assertThat(throwable.getMessage(), is(exception.getMessage()));
-            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            final ExceptionWithStackTrace exceptionWithStackTrace = exceptionInterface.getExceptions().getFirst();
+            assertThat(exceptionWithStackTrace.getExceptionMessage(), is(exception.getMessage()));
+            assertThat(exceptionWithStackTrace.getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorManager();
     }
