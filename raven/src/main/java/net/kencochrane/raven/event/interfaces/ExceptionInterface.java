@@ -1,5 +1,7 @@
 package net.kencochrane.raven.event.interfaces;
 
+import java.util.Deque;
+
 /**
  * The Exception interface for Sentry allowing to add an Exception details to an event.
  */
@@ -26,5 +28,9 @@ public class ExceptionInterface implements SentryInterface {
 
     public ImmutableThrowable getThrowable() {
         return throwable;
+    }
+
+    public Deque<ExceptionWithStackTrace> getExceptions()  {
+        return null; // TODO replace this
     }
 }
