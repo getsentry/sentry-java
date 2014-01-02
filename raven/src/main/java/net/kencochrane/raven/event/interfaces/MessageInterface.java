@@ -61,8 +61,8 @@ public class MessageInterface implements SentryInterface {
     /**
      * Creates a parametrised message for an {@link net.kencochrane.raven.event.Event}.
      *
-     * @param message original message.
-     * @param parameters  parameters of the message.
+     * @param message    original message.
+     * @param parameters parameters of the message.
      */
     public MessageInterface(String message, List<String> parameters) {
         this.message = message;

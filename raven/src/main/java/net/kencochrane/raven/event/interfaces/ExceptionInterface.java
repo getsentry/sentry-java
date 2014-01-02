@@ -16,9 +16,7 @@ public class ExceptionInterface implements SentryInterface {
      * Name of the exception interface in Sentry.
      */
     public static final String EXCEPTION_INTERFACE = "sentry.interfaces.Exception";
-
     private static final Logger logger = LoggerFactory.getLogger(ExceptionInterface.class);
-
     private final Deque<ExceptionWithStackTrace> exceptions;
 
     /**
@@ -37,15 +35,6 @@ public class ExceptionInterface implements SentryInterface {
      */
     public ExceptionInterface(final Deque<ExceptionWithStackTrace> exceptions) {
         this.exceptions = exceptions;
-    }
-
-    @Override
-    public String getInterfaceName() {
-        return EXCEPTION_INTERFACE;
-    }
-
-    public Deque<ExceptionWithStackTrace> getExceptions()  {
-        return exceptions;
     }
 
     /**
@@ -76,7 +65,7 @@ public class ExceptionInterface implements SentryInterface {
     }
 
     private static ExceptionWithStackTrace createExceptionWithStackTraceFrom(final Throwable throwable,
-                                                                      final StackTraceInterface stackTrace) {
+                                                                             final StackTraceInterface stackTrace) {
         final String exceptionMessage = throwable.getMessage();
         final String exceptionClassName = throwable.getClass().getSimpleName();
         final String exceptionPackageName = extractPackageName(throwable);
@@ -92,5 +81,14 @@ public class ExceptionInterface implements SentryInterface {
         }
 
         return null;
+    }
+
+    @Override
+    public String getInterfaceName() {
+        return EXCEPTION_INTERFACE;
+    }
+
+    public Deque<ExceptionWithStackTrace> getExceptions() {
+        return exceptions;
     }
 }
