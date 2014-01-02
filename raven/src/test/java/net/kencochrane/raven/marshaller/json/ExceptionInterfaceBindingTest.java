@@ -50,7 +50,7 @@ public class ExceptionInterfaceBindingTest {
             mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
                 public Deque<ExceptionWithStackTrace> getExceptions() {
-                    return ExceptionInterface.extractExceptionQueue(throwable);
+                    return ExceptionWithStackTrace.extractExceptionQueue(throwable);
                 }
             };
         }};
@@ -70,7 +70,7 @@ public class ExceptionInterfaceBindingTest {
             mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
                 public Deque<ExceptionWithStackTrace> getExceptions() {
-                    return ExceptionInterface.extractExceptionQueue(throwable);
+                    return ExceptionWithStackTrace.extractExceptionQueue(throwable);
                 }
             };
         }};
