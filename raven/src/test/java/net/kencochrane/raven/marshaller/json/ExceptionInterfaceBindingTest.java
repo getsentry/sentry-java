@@ -6,12 +6,13 @@ import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
+import net.kencochrane.raven.event.interfaces.ExceptionWithStackTrace;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.Deque;
 
 import static net.kencochrane.raven.marshaller.json.JsonTestTool.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,16 +41,16 @@ public class ExceptionInterfaceBindingTest {
         }};
     }
 
-    @Test(enabled = false)
+    @Test
     public void testSimpleException() throws Exception {
         final JsonGeneratorTool generatorTool = newJsonGenerator();
         final String message = "6e65f60d-9f22-495a-9556-7a61eeea2a14";
         final Throwable throwable = new IllegalStateException(message);
         new NonStrictExpectations() {{
-            //TODO: replace this mock -- mockExceptionInterface.getThrowable();
+            mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
-                public ImmutableThrowable getThrowable() {
-                    return new ImmutableThrowable(throwable);
+                public Deque<ExceptionWithStackTrace> getExceptions() {
+                    return ExceptionInterface.extractExceptionQueue(throwable);
                 }
             };
         }};
@@ -59,17 +60,17 @@ public class ExceptionInterfaceBindingTest {
         assertThat(generatorTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/Exception1.json")));
     }
 
-    @Test(enabled = false)
+    @Test
     public void testClassInDefaultPackage() throws Exception {
         Deencapsulation.setField((Object) DefaultPackageException.class, "name",
                 DefaultPackageException.class.getSimpleName());
         final JsonGeneratorTool generatorTool = newJsonGenerator();
         final Throwable throwable = new DefaultPackageException();
         new NonStrictExpectations() {{
-            //TODO: replace this mock -- mockExceptionInterface.getThrowable();
+            mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
-                public ImmutableThrowable getThrowable() {
-                    return new ImmutableThrowable(throwable);
+                public Deque<ExceptionWithStackTrace> getExceptions() {
+                    return ExceptionInterface.extractExceptionQueue(throwable);
                 }
             };
         }};

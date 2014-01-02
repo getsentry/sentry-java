@@ -48,7 +48,13 @@ public class ExceptionInterface implements SentryInterface {
         return exceptions;
     }
 
-    private static Deque<ExceptionWithStackTrace> extractExceptionQueue(Throwable throwable) {
+    /**
+     * Transforms a {@link Throwable} into a Queue of {@link ExceptionWithStackTrace}.
+     *
+     * @param throwable throwable to transform in a queue of exceptions.
+     * @return a queue of exception with stacktrace
+     */
+    public static Deque<ExceptionWithStackTrace> extractExceptionQueue(Throwable throwable) {
         Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<ExceptionWithStackTrace>();
         Set<Throwable> circularityDetector = new HashSet<Throwable>();
         StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
