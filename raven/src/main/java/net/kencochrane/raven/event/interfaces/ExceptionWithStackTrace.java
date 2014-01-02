@@ -42,6 +42,9 @@ public final class ExceptionWithStackTrace {
 
     /**
      * Transforms a {@link Throwable} into a Queue of {@link ExceptionWithStackTrace}.
+     * <p>
+     * Exceptions are stored in the queue from the most recent one to the oldest one.
+     * </p>
      *
      * @param throwable throwable to transform in a queue of exceptions.
      * @return a queue of exception with StackTrace.
@@ -60,7 +63,7 @@ public final class ExceptionWithStackTrace {
             }
 
             StackTraceInterface stackTrace = new StackTraceInterface(throwable.getStackTrace(), enclosingStackTrace);
-            exceptions.push(createExceptionWithStackTraceFrom(throwable, stackTrace));
+            exceptions.add(createExceptionWithStackTraceFrom(throwable, stackTrace));
             enclosingStackTrace = throwable.getStackTrace();
             throwable = throwable.getCause();
         }

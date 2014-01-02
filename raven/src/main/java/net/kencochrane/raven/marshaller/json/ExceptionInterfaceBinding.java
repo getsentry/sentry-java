@@ -7,6 +7,7 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
 import java.util.Deque;
+import java.util.Iterator;
 
 /**
  * Binding system allowing to convert an {@link ExceptionInterface} to a JSON stream.
@@ -36,10 +37,9 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {
         Deque<ExceptionWithStackTrace> exceptions = exceptionInterface.getExceptions();
 
-        //Unstack the exceptions
         generator.writeStartArray();
-        while (!exceptions.isEmpty()) {
-            writeException(generator, exceptions.pop());
+        for (Iterator<ExceptionWithStackTrace> iterator = exceptions.descendingIterator(); iterator.hasNext(); ) {
+            writeException(generator, iterator.next());
         }
         generator.writeEndArray();
     }
