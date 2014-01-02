@@ -79,6 +79,28 @@ public class ExceptionInterfaceBindingTest {
 
         assertThat(generatorTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/Exception2.json")));
     }
+
+    @Test
+    public void testChainedException() throws Exception {
+        final JsonGeneratorTool generatorTool = newJsonGenerator();
+        final String message1 = "a71e6132-9867-457d-8b04-5021cd7a251f";
+        final Throwable throwable1 = new IllegalStateException(message1);
+        final String message2 = "f1296959-5b86-45f7-853a-cdc25196710b";
+        final Throwable throwable2 = new IllegalStateException(message2, throwable1);
+        new NonStrictExpectations() {{
+            mockExceptionInterface.getExceptions();
+            result = new Delegate<Void>() {
+                public Deque<ExceptionWithStackTrace> getExceptions() {
+                    return ExceptionWithStackTrace.extractExceptionQueue(throwable2);
+                }
+            };
+        }};
+
+        interfaceBinding.writeInterface(generatorTool.generator(), mockExceptionInterface);
+
+        assertThat(generatorTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/Exception3.json")));
+    }
+
 }
 
 /**
