@@ -11,7 +11,7 @@ import java.util.UUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class ExceptionWithStackTraceTest {
+public class SentryExceptionTest {
     @Injectable
     private Throwable mockThrowable;
 
@@ -32,7 +32,7 @@ public class ExceptionWithStackTraceTest {
             result = causeMessage;
         }};
 
-        Deque<ExceptionWithStackTrace> exceptions = ExceptionWithStackTrace.extractExceptionQueue(mockThrowable);
+        Deque<SentryException> exceptions = SentryException.extractExceptionQueue(mockThrowable);
 
         assertThat(exceptions.getFirst().getExceptionMessage(), is(exceptionMessage));
         assertThat(exceptions.getLast().getExceptionMessage(), is(causeMessage));

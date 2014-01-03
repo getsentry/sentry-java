@@ -14,7 +14,7 @@ import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.ExceptionWithStackTrace;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.slf4j.Logger;
@@ -207,9 +207,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return eventBuilder.build();
     }
 
-    private Deque<ExceptionWithStackTrace> extractExceptionQueue(final ILoggingEvent iLoggingEvent) {
+    private Deque<SentryException> extractExceptionQueue(final ILoggingEvent iLoggingEvent) {
         IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
-        Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<ExceptionWithStackTrace>();
+        Deque<SentryException> exceptions = new ArrayDeque<SentryException>();
         Set<IThrowableProxy> circularityDetector = new HashSet<IThrowableProxy>();
         StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
 
@@ -230,12 +230,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return exceptions;
     }
 
-    private ExceptionWithStackTrace createExceptionWithStackTraceFrom(final IThrowableProxy throwableProxy,
+    private SentryException createExceptionWithStackTraceFrom(final IThrowableProxy throwableProxy,
                                                                       final StackTraceInterface stackTrace) {
         final String exceptionMessage = throwableProxy.getMessage();
         final String exceptionClassName = throwableProxy.getClassName();
         final String exceptionPackageName = extractPackageName(throwableProxy);
-        return new ExceptionWithStackTrace(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
+        return new SentryException(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
     }
 
     private String extractPackageName(final IThrowableProxy throwableProxy) {

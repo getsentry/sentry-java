@@ -6,7 +6,7 @@ import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.ExceptionWithStackTrace;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -49,8 +49,8 @@ public class ExceptionInterfaceBindingTest {
         new NonStrictExpectations() {{
             mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
-                public Deque<ExceptionWithStackTrace> getExceptions() {
-                    return ExceptionWithStackTrace.extractExceptionQueue(throwable);
+                public Deque<SentryException> getExceptions() {
+                    return SentryException.extractExceptionQueue(throwable);
                 }
             };
         }};
@@ -69,8 +69,8 @@ public class ExceptionInterfaceBindingTest {
         new NonStrictExpectations() {{
             mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
-                public Deque<ExceptionWithStackTrace> getExceptions() {
-                    return ExceptionWithStackTrace.extractExceptionQueue(throwable);
+                public Deque<SentryException> getExceptions() {
+                    return SentryException.extractExceptionQueue(throwable);
                 }
             };
         }};
@@ -90,8 +90,8 @@ public class ExceptionInterfaceBindingTest {
         new NonStrictExpectations() {{
             mockExceptionInterface.getExceptions();
             result = new Delegate<Void>() {
-                public Deque<ExceptionWithStackTrace> getExceptions() {
-                    return ExceptionWithStackTrace.extractExceptionQueue(throwable2);
+                public Deque<SentryException> getExceptions() {
+                    return SentryException.extractExceptionQueue(throwable2);
                 }
             };
         }};

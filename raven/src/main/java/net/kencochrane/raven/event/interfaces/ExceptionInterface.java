@@ -10,7 +10,7 @@ public class ExceptionInterface implements SentryInterface {
      * Name of the exception interface in Sentry.
      */
     public static final String EXCEPTION_INTERFACE = "sentry.interfaces.Exception";
-    private final Deque<ExceptionWithStackTrace> exceptions;
+    private final Deque<SentryException> exceptions;
 
     /**
      * Creates a new instance from the given {@code throwable}.
@@ -18,15 +18,15 @@ public class ExceptionInterface implements SentryInterface {
      * @param throwable the {@link Throwable} to build this instance from
      */
     public ExceptionInterface(final Throwable throwable) {
-        this(ExceptionWithStackTrace.extractExceptionQueue(throwable));
+        this(SentryException.extractExceptionQueue(throwable));
     }
 
     /**
      * Creates a new instance from the given {@code exceptions}.
      *
-     * @param exceptions a {@link Deque} of {@link ExceptionWithStackTrace} to build this instance from
+     * @param exceptions a {@link Deque} of {@link SentryException} to build this instance from
      */
-    public ExceptionInterface(final Deque<ExceptionWithStackTrace> exceptions) {
+    public ExceptionInterface(final Deque<SentryException> exceptions) {
         this.exceptions = exceptions;
     }
 
@@ -35,7 +35,7 @@ public class ExceptionInterface implements SentryInterface {
         return EXCEPTION_INTERFACE;
     }
 
-    public Deque<ExceptionWithStackTrace> getExceptions() {
+    public Deque<SentryException> getExceptions() {
         return exceptions;
     }
 }

@@ -2,7 +2,7 @@ package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.ExceptionWithStackTrace;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
@@ -35,10 +35,10 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
 
     @Override
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {
-        Deque<ExceptionWithStackTrace> exceptions = exceptionInterface.getExceptions();
+        Deque<SentryException> exceptions = exceptionInterface.getExceptions();
 
         generator.writeStartArray();
-        for (Iterator<ExceptionWithStackTrace> iterator = exceptions.descendingIterator(); iterator.hasNext(); ) {
+        for (Iterator<SentryException> iterator = exceptions.descendingIterator(); iterator.hasNext(); ) {
             writeException(generator, iterator.next());
         }
         generator.writeEndArray();
@@ -47,17 +47,17 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     /**
      * Outputs an exception with its StackTrace on a JSon stream.
      *
-     * @param generator JSonGenerator.
-     * @param ewst      Exception with its associated {@link StackTraceInterface}.
+     * @param generator       JSonGenerator.
+     * @param sentryException Sentry exception with its associated {@link StackTraceInterface}.
      * @throws IOException
      */
-    private void writeException(JsonGenerator generator, ExceptionWithStackTrace ewst) throws IOException {
+    private void writeException(JsonGenerator generator, SentryException sentryException) throws IOException {
         generator.writeStartObject();
-        generator.writeStringField(TYPE_PARAMETER, ewst.getExceptionClassName());
-        generator.writeStringField(VALUE_PARAMETER, ewst.getExceptionMessage());
-        generator.writeStringField(MODULE_PARAMETER, ewst.getExceptionPackageName());
+        generator.writeStringField(TYPE_PARAMETER, sentryException.getExceptionClassName());
+        generator.writeStringField(VALUE_PARAMETER, sentryException.getExceptionMessage());
+        generator.writeStringField(MODULE_PARAMETER, sentryException.getExceptionPackageName());
         generator.writeFieldName(STACKTRACE_PARAMETER);
-        stackTraceInterfaceBinding.writeInterface(generator, ewst.getStackTraceInterface());
+        stackTraceInterfaceBinding.writeInterface(generator, sentryException.getStackTraceInterface());
         generator.writeEndObject();
     }
 

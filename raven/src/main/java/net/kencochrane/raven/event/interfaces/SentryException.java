@@ -11,8 +11,8 @@ import java.util.Set;
 /**
  * Class associating a Sentry exception to its {@link StackTraceInterface}.
  */
-public final class ExceptionWithStackTrace {
-    private static final Logger logger = LoggerFactory.getLogger(ExceptionWithStackTrace.class);
+public final class SentryException {
+    private static final Logger logger = LoggerFactory.getLogger(SentryException.class);
     /**
      * Name used when the class' package is the default one.
      */
@@ -32,7 +32,7 @@ public final class ExceptionWithStackTrace {
      * @param throwable                Java exception to send to Sentry.
      * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
      */
-    public ExceptionWithStackTrace(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
+    public SentryException(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
         this.exceptionMessage = throwable.getMessage();
         this.exceptionClassName = throwable.getClass().getSimpleName();
         Package exceptionPackage = throwable.getClass().getPackage();
@@ -48,10 +48,10 @@ public final class ExceptionWithStackTrace {
      * @param exceptionPackageName the exception's package name
      * @param stackTraceInterface  the stack trace interface holding the stack trace information of the exception
      */
-    public ExceptionWithStackTrace(String exceptionMessage,
-                                   String exceptionClassName,
-                                   String exceptionPackageName,
-                                   StackTraceInterface stackTraceInterface) {
+    public SentryException(String exceptionMessage,
+                           String exceptionClassName,
+                           String exceptionPackageName,
+                           StackTraceInterface stackTraceInterface) {
         this.exceptionMessage = exceptionMessage;
         this.exceptionClassName = exceptionClassName;
         this.exceptionPackageName = exceptionPackageName;
@@ -59,7 +59,7 @@ public final class ExceptionWithStackTrace {
     }
 
     /**
-     * Transforms a {@link Throwable} into a Queue of {@link ExceptionWithStackTrace}.
+     * Transforms a {@link Throwable} into a Queue of {@link SentryException}.
      * <p>
      * Exceptions are stored in the queue from the most recent one to the oldest one.
      * </p>
@@ -67,8 +67,8 @@ public final class ExceptionWithStackTrace {
      * @param throwable throwable to transform in a queue of exceptions.
      * @return a queue of exception with StackTrace.
      */
-    public static Deque<ExceptionWithStackTrace> extractExceptionQueue(Throwable throwable) {
-        Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<ExceptionWithStackTrace>();
+    public static Deque<SentryException> extractExceptionQueue(Throwable throwable) {
+        Deque<SentryException> exceptions = new ArrayDeque<SentryException>();
         Set<Throwable> circularityDetector = new HashSet<Throwable>();
         StackTraceElement[] childExceptionStackTrace = new StackTraceElement[0];
 
@@ -80,7 +80,7 @@ public final class ExceptionWithStackTrace {
                 break;
             }
 
-            exceptions.add(new ExceptionWithStackTrace(throwable, childExceptionStackTrace));
+            exceptions.add(new SentryException(throwable, childExceptionStackTrace));
             childExceptionStackTrace = throwable.getStackTrace();
             throwable = throwable.getCause();
         }
