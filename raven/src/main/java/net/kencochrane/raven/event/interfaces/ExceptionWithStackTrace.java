@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Class associating an exception to its {@link net.kencochrane.raven.event.interfaces.StackTraceInterface}.
+ * Class associating a Sentry exception to its {@link StackTraceInterface}.
  */
 public final class ExceptionWithStackTrace {
     private static final Logger logger = LoggerFactory.getLogger(ExceptionWithStackTrace.class);
@@ -88,28 +88,21 @@ public final class ExceptionWithStackTrace {
         return exceptions;
     }
 
-    /**
-     * Gets the exception message.
-     *
-     * @return the exception message
-     */
     public String getExceptionMessage() {
         return exceptionMessage;
     }
 
-    /**
-     * Gets the exception's class name.
-     *
-     * @return the exception's class name
-     */
     public String getExceptionClassName() {
         return exceptionClassName;
     }
 
     /**
-     * Gets the exception's package name.
+     * Gets the exception package name.
+     * <p>
+     * If there is no package, the value will be {@link #DEFAULT_PACKAGE_NAME}.
+     * </p>
      *
-     * @return the exception's package name
+     * @return the exception package name or {@link #DEFAULT_PACKAGE_NAME} if it isn't defined.
      */
     public String getExceptionPackageName() {
 
@@ -120,11 +113,6 @@ public final class ExceptionWithStackTrace {
         return exceptionPackageName;
     }
 
-    /**
-     * Gets the exceptions stack trace interface.
-     *
-     * @return the exceptions stack trace interface
-     */
     public StackTraceInterface getStackTraceInterface() {
         return stackTraceInterface;
     }
