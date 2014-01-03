@@ -1,8 +1,5 @@
 package net.kencochrane.raven.event.interfaces;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -12,7 +9,6 @@ import java.util.Set;
  * Class associating a Sentry exception to its {@link StackTraceInterface}.
  */
 public final class SentryException {
-    private static final Logger logger = LoggerFactory.getLogger(SentryException.class);
     /**
      * Name used when the class' package is the default one.
      */
@@ -73,13 +69,7 @@ public final class SentryException {
         StackTraceElement[] childExceptionStackTrace = new StackTraceElement[0];
 
         //Stack the exceptions to send them in the reverse order
-        while (throwable != null) {
-            if (!circularityDetector.add(throwable)) {
-                //TODO: Send a more helpful log message here.
-                logger.warn("Exiting a circular exception!");
-                break;
-            }
-
+        while (throwable != null && circularityDetector.add(throwable)) {
             exceptions.add(new SentryException(throwable, childExceptionStackTrace));
             childExceptionStackTrace = throwable.getStackTrace();
             throwable = throwable.getCause();
