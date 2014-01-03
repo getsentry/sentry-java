@@ -23,6 +23,24 @@ public final class ExceptionWithStackTrace {
     private final StackTraceInterface stackTraceInterface;
 
     /**
+     * Creates a Sentry exception based on a Java Throwable.
+     * <p>
+     * The {@code childExceptionStackTrace} parameter is used to define the common frames with the child exception
+     * (Exception caused by {@code throwable}).
+     * </p>
+     *
+     * @param throwable                Java exception to send to Sentry.
+     * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
+     */
+    public ExceptionWithStackTrace(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
+        this.exceptionMessage = throwable.getMessage();
+        this.exceptionClassName = throwable.getClass().getSimpleName();
+        Package exceptionPackage = throwable.getClass().getPackage();
+        this.exceptionPackageName = exceptionPackage != null ? exceptionPackage.getName() : null;
+        this.stackTraceInterface = new StackTraceInterface(throwable.getStackTrace(), childExceptionStackTrace);
+    }
+
+    /**
      * Creates a new instance from the given exceptions data.
      *
      * @param exceptionMessage     the message of the exception
@@ -52,7 +70,7 @@ public final class ExceptionWithStackTrace {
     public static Deque<ExceptionWithStackTrace> extractExceptionQueue(Throwable throwable) {
         Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<ExceptionWithStackTrace>();
         Set<Throwable> circularityDetector = new HashSet<Throwable>();
-        StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
+        StackTraceElement[] childExceptionStackTrace = new StackTraceElement[0];
 
         //Stack the exceptions to send them in the reverse order
         while (throwable != null) {
@@ -62,31 +80,12 @@ public final class ExceptionWithStackTrace {
                 break;
             }
 
-            StackTraceInterface stackTrace = new StackTraceInterface(throwable.getStackTrace(), enclosingStackTrace);
-            exceptions.add(createExceptionWithStackTraceFrom(throwable, stackTrace));
-            enclosingStackTrace = throwable.getStackTrace();
+            exceptions.add(new ExceptionWithStackTrace(throwable, childExceptionStackTrace));
+            childExceptionStackTrace = throwable.getStackTrace();
             throwable = throwable.getCause();
         }
 
         return exceptions;
-    }
-
-    private static ExceptionWithStackTrace createExceptionWithStackTraceFrom(Throwable throwable,
-                                                                             StackTraceInterface stackTrace) {
-        String exceptionMessage = throwable.getMessage();
-        String exceptionClassName = throwable.getClass().getSimpleName();
-        String exceptionPackageName = extractPackageName(throwable);
-        return new ExceptionWithStackTrace(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
-    }
-
-    private static String extractPackageName(Throwable throwable) {
-        Package exceptionPackage = throwable.getClass().getPackage();
-
-        if (exceptionPackage != null) {
-            return exceptionPackage.getName();
-        }
-
-        return null;
     }
 
     /**
