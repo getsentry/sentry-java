@@ -37,12 +37,12 @@ public final class SentryException {
     }
 
     /**
-     * Creates a new instance from the given exceptions data.
+     * Creates a Sentry exception.
      *
-     * @param exceptionMessage     the message of the exception
-     * @param exceptionClassName   the exception's class name
-     * @param exceptionPackageName the exception's package name
-     * @param stackTraceInterface  the stack trace interface holding the stack trace information of the exception
+     * @param exceptionMessage     message of the exception.
+     * @param exceptionClassName   exception's class name (simple name).
+     * @param exceptionPackageName exception's package name.
+     * @param stackTraceInterface  {@code StackTraceInterface} holding the StackTrace information of the exception.
      */
     public SentryException(String exceptionMessage,
                            String exceptionClassName,
