@@ -105,12 +105,7 @@ public final class ExceptionWithStackTrace {
      * @return the exception package name or {@link #DEFAULT_PACKAGE_NAME} if it isn't defined.
      */
     public String getExceptionPackageName() {
-
-        if (exceptionPackageName == null) {
-            return DEFAULT_PACKAGE_NAME;
-        }
-
-        return exceptionPackageName;
+        return exceptionPackageName != null ? exceptionPackageName : DEFAULT_PACKAGE_NAME;
     }
 
     public StackTraceInterface getStackTraceInterface() {
