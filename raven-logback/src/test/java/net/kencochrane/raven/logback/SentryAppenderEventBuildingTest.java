@@ -117,7 +117,7 @@ public class SentryAppenderEventBuildingTest {
             ExceptionWithStackTrace capturedException = exceptionInterface.getExceptions().getFirst();
 
             assertThat(capturedException.getExceptionMessage(), is(exception.getMessage()));
-            assertThat(capturedException.getStackTrace(), is(exception.getStackTrace()));
+            assertThat(capturedException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInStatusManager();
     }

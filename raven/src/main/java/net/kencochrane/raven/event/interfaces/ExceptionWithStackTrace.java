@@ -111,13 +111,4 @@ public final class ExceptionWithStackTrace {
     public StackTraceInterface getStackTraceInterface() {
         return stackTraceInterface;
     }
-
-    /**
-     * Gets the exception's stack trace.
-     *
-     * @return the exception's stack trace
-     */
-    public StackTraceElement[] getStackTrace() {
-        return stackTraceInterface.getStackTrace();
-    }
 }

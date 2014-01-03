@@ -99,7 +99,7 @@ public class SentryHandlerEventBuildingTest {
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             final ExceptionWithStackTrace exceptionWithStackTrace = exceptionInterface.getExceptions().getFirst();
             assertThat(exceptionWithStackTrace.getExceptionMessage(), is(exception.getMessage()));
-            assertThat(exceptionWithStackTrace.getStackTrace(), is(exception.getStackTrace()));
+            assertThat(exceptionWithStackTrace.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorManager();
     }
