@@ -1,7 +1,5 @@
 package net.kencochrane.raven.log4j;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
 import com.google.common.base.Joiner;
 import mockit.Expectations;
 import mockit.Injectable;
@@ -37,7 +35,7 @@ public class SentryAppenderEventBuildingTest {
     @Injectable
     private Logger mockLogger = null;
 
-	@BeforeMethod
+    @BeforeMethod
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
