@@ -197,16 +197,16 @@ public class SentryAppender extends AppenderSkeleton {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
-        for (Map.Entry<String, Object> mdcEntry : properties.entrySet()){
+        for (Map.Entry<String, Object> mdcEntry : properties.entrySet()) {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
             //If MDC key is a mappedTag then add it to the event tag
-            if (this.mappedTags.contains(mdcEntry.getKey())){
+            if (this.mappedTags.contains(mdcEntry.getKey())) {
                 eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue().toString());
             }
         }
-        
-        
-        
+
+
+
         for (Map.Entry<String, String> tagEntry : tags.entrySet())
             eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
 
@@ -230,7 +230,7 @@ public class SentryAppender extends AppenderSkeleton {
     public void setTags(String tags) {
         this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
     }
-    
+
     /**
      * Set the mapped tags that will be used to search MDC and upgrade key pair to a tag sent along with the events.
      *
@@ -239,7 +239,7 @@ public class SentryAppender extends AppenderSkeleton {
     public void setMappedTags(String mappedTags) {
         this.mappedTags = Arrays.asList(mappedTags.split(","));
     }
-    
+
 
     @Override
     public void close() {
