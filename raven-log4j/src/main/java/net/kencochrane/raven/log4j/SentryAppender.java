@@ -237,7 +237,6 @@ public class SentryAppender extends AppenderSkeleton {
      * @param mappedTags A String of mappedTags. mappedTags are separated by commas(,).
      */
     public void setMappedTags(String mappedTags) {
-    	System.out.println("ADDING" + mappedTags);
         this.mappedTags = Arrays.asList(mappedTags.split(","));
     }
     
