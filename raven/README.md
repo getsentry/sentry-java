@@ -38,6 +38,8 @@ level=WARN
 handlers=net.kencochrane.raven.jul.SentryHandler
 net.kencochrane.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
 net.kencochrane.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
+# Optional, allows to select the ravenFactory
+#net.kencochrane.raven.jul.SentryHandler.ravenFactory=net.kencochrane.raven.DefaultRavenFactory
 ```
 
 When starting your application, add the `java.util.logging.config.file` to the
@@ -146,6 +148,9 @@ public class MyClass {
 
         // It is also possible to use the DSN detection system like this
         raven = RavenFactory.ravenInstance();
+
+        // Advanced: To specify the ravenFactory used
+        raven = RavenFactory.ravenInstance(new Dsn(dsn), "net.kencochrane.raven.DefaultRavenFactory");
     }
 
     void logSimpleMessage() {

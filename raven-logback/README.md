@@ -34,6 +34,8 @@ In the `logback.xml` file set:
     <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
         <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
         <tags>tag1:value1,tag2:value2</tags>
+        <!-- Optional, allows to select the ravenFactory -->
+        <!--<ravenFactory>net.kencochrane.raven.DefaultRavenFactory</ravenFactory>-->
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>
