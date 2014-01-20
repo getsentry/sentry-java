@@ -98,8 +98,8 @@
         <github.global.server>github</github.global.server>
 
         <!-- maven-compiler-plugin config -->
-        <maven.compiler.source>6</maven.compiler.source>
-        <maven.compiler.target>6</maven.compiler.target>
+        <maven.compiler.source>7</maven.compiler.source>
+        <maven.compiler.target>7</maven.compiler.target>
 
         <!-- dependencies versions -->
         <slf4j.version>1.7.5</slf4j.version>
