@@ -35,4 +35,6 @@ By default, the default task queue will be used, but it's possible to specify wh
 
     http://public:private@getsentry.com/1?raven.async.gaequeuename=MyQueueName
 
+The queue size and thread options will not be used as they are specific to the default multithreaded system.
+
 It is necessary to force the raven factory name to `net.kencochrane.raven.appengine.AppEngineRavenFactory`.
