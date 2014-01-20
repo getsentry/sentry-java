@@ -15,7 +15,7 @@ __This module is not useful outside of Google App Engine.__
 <dependency>
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven-appengine</artifactId>
-    <version>5.0.1</version>
+    <version>5.0.0</version>
 </dependency>
 ```
 
