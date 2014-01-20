@@ -99,8 +99,8 @@
         <github.global.server>github</github.global.server>
 
         <!-- maven-compiler-plugin config -->
-        <maven.compiler.source>6</maven.compiler.source>
-        <maven.compiler.target>6</maven.compiler.target>
+        <maven.compiler.source>7</maven.compiler.source>
+        <maven.compiler.target>7</maven.compiler.target>
 
         <!-- dependencies versions -->
         <slf4j.version>1.7.5</slf4j.version>
@@ -281,8 +281,8 @@
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
-                        <version>1.1</version>
+                        <artifactId>java17</artifactId>
+                        <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
@@ -302,28 +302,44 @@
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-maven-plugin</artifactId>
                     <version>9.0.6.v20130930</version>
+                    <configuration>
+                        <scanIntervalSeconds>10</scanIntervalSeconds>
+                        <stopKey>foo</stopKey>
+                        <stopPort>9999</stopPort>
+                        <war>${project.build.directory}/webapps/sentry-stub.war</war>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>start-sentry-stub</id>
+                            <phase>pre-integration-test</phase>
+                            <goals>
+                                <goal>deploy-war</goal>
+                            </goals>
+                            <configuration>
+                                <scanIntervalSeconds>0</scanIntervalSeconds>
+                                <daemon>true</daemon>
+                                <skip>${skipTests}</skip>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>stop-sentry-stub</id>
+                            <phase>post-integration-test</phase>
+                            <goals>
+                                <goal>stop</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>2.16</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.10</version>
-                    <configuration>
-                        <configLocation>src/checkstyle/checkstyle.xml</configLocation>
-                        <consoleOutput>true</consoleOutput>
-                    </configuration>
                     <executions>
                         <execution>
-                            <id>checkstyle</id>
-                            <configuration>
-                                <skip>${skipTests}</skip>
-                            </configuration>
+                            <id>integration-tests</id>
                             <goals>
-                                <goal>check</goal>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -344,6 +360,54 @@
                                 <ignoreNonCompile>true</ignoreNonCompile>
                                 <failOnWarning>true</failOnWarning>
                             </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-war-for-integration-tests</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>${project.groupId}</groupId>
+                                        <artifactId>sentry-stub</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                </artifactItems>
+                                <overWriteSnapshots>true</overWriteSnapshots>
+                                <stripVersion>true</stripVersion>
+                                <outputDirectory>${project.build.directory}/webapps</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>sentry-stub</artifactId>
+                            <version>${project.version}</version>
+                            <type>war</type>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.10</version>
+                    <configuration>
+                        <configLocation>src/checkstyle/checkstyle.xml</configLocation>
+                        <consoleOutput>true</consoleOutput>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>checkstyle</id>
+                            <configuration>
+                                <skip>${skipTests}</skip>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -385,97 +449,6 @@
     </reporting>
 
     <profiles>
-        <profile>
-            <id>run-jetty-integration-tests</id>
-            <activation>
-                <jdk>1.7</jdk>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.eclipse.jetty</groupId>
-                            <artifactId>jetty-maven-plugin</artifactId>
-                            <configuration>
-                                <scanIntervalSeconds>10</scanIntervalSeconds>
-                                <stopKey>foo</stopKey>
-                                <stopPort>9999</stopPort>
-                                <war>${project.build.directory}/webapps/sentry-stub.war</war>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                    <id>start-sentry-stub</id>
-                                    <phase>pre-integration-test</phase>
-                                    <goals>
-                                        <goal>deploy-war</goal>
-                                    </goals>
-                                    <configuration>
-                                        <scanIntervalSeconds>0</scanIntervalSeconds>
-                                        <daemon>true</daemon>
-                                        <skip>${skipTests}</skip>
-                                    </configuration>
-                                </execution>
-                                <execution>
-                                    <id>stop-sentry-stub</id>
-                                    <phase>post-integration-test</phase>
-                                    <goals>
-                                        <goal>stop</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-failsafe-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>integration-tests</id>
-                                    <goals>
-                                        <goal>integration-test</goal>
-                                        <goal>verify</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-war-for-integration-tests</id>
-                                    <phase>package</phase>
-                                    <goals>
-                                        <goal>copy</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>${project.groupId}</groupId>
-                                                <artifactId>sentry-stub</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <overWriteSnapshots>true</overWriteSnapshots>
-                                        <stripVersion>true</stripVersion>
-                                        <outputDirectory>${project.build.directory}/webapps</outputDirectory>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>sentry-stub</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>war</type>
-                                </dependency>
-                            </dependencies>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
         <!-- Force new version of plugins for a release -->
         <profile>
             <id>sonatype-oss-release</id>
