@@ -14,8 +14,8 @@ import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +36,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Name of the {@link Event#extra} property containing the Thread name.
      */
     public static final String THREAD_NAME = "Raven-Threadname";
-
     private static final Logger logger = LoggerFactory.getLogger(SentryAppender.class);
-
     /**
      * Current instance of {@link Raven}.
      *
@@ -207,7 +205,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return eventBuilder.build();
     }
 
-    private Deque<SentryException> extractExceptionQueue(final ILoggingEvent iLoggingEvent) {
+    private Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
         IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
         Deque<SentryException> exceptions = new ArrayDeque<>();
         Set<IThrowableProxy> circularityDetector = new HashSet<>();
@@ -220,9 +218,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 break;
             }
 
-            final StackTraceElement[] stackTraceElements = toStackTraceElements(throwableProxy);
+            StackTraceElement[] stackTraceElements = toStackTraceElements(throwableProxy);
             StackTraceInterface stackTrace = new StackTraceInterface(stackTraceElements, enclosingStackTrace);
-            exceptions.push(createExceptionWithStackTraceFrom(throwableProxy, stackTrace));
+            exceptions.push(createSentryExceptionFrom(throwableProxy, stackTrace));
             enclosingStackTrace = stackTraceElements;
             throwableProxy = throwableProxy.getCause();
         }
@@ -230,37 +228,34 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return exceptions;
     }
 
-    private SentryException createExceptionWithStackTraceFrom(final IThrowableProxy throwableProxy,
-                                                                      final StackTraceInterface stackTrace) {
-        final String exceptionMessage = throwableProxy.getMessage();
-        final String exceptionClassName = throwableProxy.getClassName();
-        final String exceptionPackageName = extractPackageName(throwableProxy);
+    private SentryException createSentryExceptionFrom(IThrowableProxy throwableProxy, StackTraceInterface stackTrace) {
+        String exceptionMessage = throwableProxy.getMessage();
+        String exceptionClassName = throwableProxy.getClassName();
+        String exceptionPackageName = extractPackageName(throwableProxy);
         return new SentryException(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
     }
 
-    private String extractPackageName(final IThrowableProxy throwableProxy) {
-
+    private String extractPackageName(IThrowableProxy throwableProxy) {
         // TODO this probably fails with application specific classes which are unknown to the logserver
         try {
-            final Class<?> exceptionClass = Class.forName(throwableProxy.getClassName());
-            final Package exceptionPackage = exceptionClass.getPackage();
+            Class<?> exceptionClass = Class.forName(throwableProxy.getClassName());
+            Package exceptionPackage = exceptionClass.getPackage();
 
             if (exceptionPackage != null) {
                 return exceptionPackage.getName();
             }
-
-        } catch (final ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             logger.error("Could not load exception class", e);
         }
 
         return null;
     }
 
-    private StackTraceElement[] toStackTraceElements(final IThrowableProxy throwableProxy) {
-        final StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
-        final List<StackTraceElement> stackTraceElements = Lists.newArrayList();
+    private StackTraceElement[] toStackTraceElements(IThrowableProxy throwableProxy) {
+       StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
+       List<StackTraceElement> stackTraceElements = Lists.newArrayList();
 
-        for (final StackTraceElementProxy stackTraceElementProxy : stackTraceElementProxies) {
+        for (StackTraceElementProxy stackTraceElementProxy : stackTraceElementProxies) {
             stackTraceElements.add(stackTraceElementProxy.getStackTraceElement());
         }
 
