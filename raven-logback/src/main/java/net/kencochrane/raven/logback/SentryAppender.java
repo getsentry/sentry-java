@@ -252,14 +252,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     private StackTraceElement[] toStackTraceElements(IThrowableProxy throwableProxy) {
-       StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
-       List<StackTraceElement> stackTraceElements = Lists.newArrayList();
+        StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
+        StackTraceElement[] stackTraceElements = new StackTraceElement[stackTraceElementProxies.length];
 
-        for (StackTraceElementProxy stackTraceElementProxy : stackTraceElementProxies) {
-            stackTraceElements.add(stackTraceElementProxy.getStackTraceElement());
+        for (int i = 0, stackTraceElementsLength = stackTraceElementProxies.length; i < stackTraceElementsLength; i++) {
+            stackTraceElements[i] = stackTraceElementProxies[i].getStackTraceElement();
         }
 
-        return stackTraceElements.toArray(new StackTraceElement[stackTraceElements.size()]);
+        return stackTraceElements;
     }
 
     public void setDsn(String dsn) {
