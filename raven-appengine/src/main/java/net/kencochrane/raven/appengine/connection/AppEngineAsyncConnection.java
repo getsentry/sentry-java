@@ -36,8 +36,7 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  */
 public class AppEngineAsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AppEngineAsyncConnection.class);
-    private static final Map<UUID, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS
-            = new HashMap<UUID, AppEngineAsyncConnection>();
+    private static final Map<UUID, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS = new HashMap<>();
     private static final String TASK_TAG = "RavenTask";
     /**
      * Maximum number of tasks that can be leased at once when closing the connection.
