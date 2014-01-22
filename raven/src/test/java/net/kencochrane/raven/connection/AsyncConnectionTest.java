@@ -1,6 +1,9 @@
 package net.kencochrane.raven.connection;
 
-import mockit.*;
+import mockit.Delegate;
+import mockit.Expectations;
+import mockit.Injectable;
+import mockit.Verifications;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -36,17 +39,17 @@ public class AsyncConnectionTest {
     public void testSendEventQueued(@Injectable final Event mockEvent) throws Exception {
         asyncConnection.send(mockEvent);
 
-        new Verifications(){{
+        new Verifications() {{
             mockExecutorService.execute((Runnable) any);
         }};
     }
 
     @Test
     public void testQueuedEventExecuted(@Injectable final Event mockEvent) throws Exception {
-        new Expectations(){{
+        new Expectations() {{
             mockExecutorService.execute((Runnable) any);
             result = new Delegate() {
-                public void execute(Runnable runnable){
+                public void execute(Runnable runnable) {
                     runnable.run();
                 }
             };
@@ -54,7 +57,7 @@ public class AsyncConnectionTest {
 
         asyncConnection.send(mockEvent);
 
-        new Verifications(){{
+        new Verifications() {{
             mockConnection.send(mockEvent);
         }};
     }

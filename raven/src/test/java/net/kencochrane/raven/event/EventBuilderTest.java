@@ -28,7 +28,7 @@ public class EventBuilderTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        new NonStrictExpectations(InetAddress.class){{
+        new NonStrictExpectations(InetAddress.class) {{
             InetAddress.getLocalHost();
             result = mockLocalHost;
             mockLocalHost.getCanonicalHostName();
@@ -410,7 +410,7 @@ public class EventBuilderTest {
             @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
             @Injectable final SentryInterface mockSentryInterface)
             throws Exception {
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             mockSentryInterface.getInterfaceName();
             result = mockSentryInterfaceName;
         }};

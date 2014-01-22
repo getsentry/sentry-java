@@ -162,7 +162,12 @@ public class HttpInterfaceTest {
     }
 
     private static class EmptyEnumeration<E> implements Enumeration<E> {
-        public boolean hasMoreElements() { return false; }
-        public E nextElement() { throw new NoSuchElementException(); }
+        public boolean hasMoreElements() {
+            return false;
+        }
+
+        public E nextElement() {
+            throw new NoSuchElementException();
+        }
     }
 }

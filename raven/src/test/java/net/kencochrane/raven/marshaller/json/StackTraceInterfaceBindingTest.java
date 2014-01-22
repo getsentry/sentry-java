@@ -6,9 +6,7 @@ import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static net.kencochrane.raven.marshaller.json.JsonTestTool.JsonGeneratorTool;
-import static net.kencochrane.raven.marshaller.json.JsonTestTool.jsonResource;
-import static net.kencochrane.raven.marshaller.json.JsonTestTool.newJsonGenerator;
+import static net.kencochrane.raven.marshaller.json.JsonTestTool.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

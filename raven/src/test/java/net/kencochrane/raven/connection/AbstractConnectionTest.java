@@ -1,6 +1,8 @@
 package net.kencochrane.raven.connection;
 
-import mockit.*;
+import mockit.Injectable;
+import mockit.Mock;
+import mockit.MockUp;
 import net.kencochrane.raven.event.Event;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;

@@ -102,7 +102,7 @@ public class RavenTest {
 
         raven.runBuilderHelpers(mockEventBuilder);
 
-        new Verifications(){{
+        new Verifications() {{
             mockBuilderHelper.helpBuildingEvent(mockEventBuilder);
         }};
     }
