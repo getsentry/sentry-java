@@ -12,7 +12,7 @@ public final class SentryException {
     /**
      * Name used when the class' package is the default one.
      */
-    private static final String DEFAULT_PACKAGE_NAME = "(default)";
+    public static final String DEFAULT_PACKAGE_NAME = "(default)";
     private final String exceptionMessage;
     private final String exceptionClassName;
     private final String exceptionPackageName;

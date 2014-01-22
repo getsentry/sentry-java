@@ -6,7 +6,6 @@ import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -230,25 +229,31 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     private SentryException createSentryExceptionFrom(IThrowableProxy throwableProxy, StackTraceInterface stackTrace) {
         String exceptionMessage = throwableProxy.getMessage();
-        String exceptionClassName = throwableProxy.getClassName();
-        String exceptionPackageName = extractPackageName(throwableProxy);
+        String[] packageNameSimpleName = extractPackageSimpleClassName(throwableProxy.getClassName());
+        String exceptionPackageName = packageNameSimpleName[0];
+        String exceptionClassName = packageNameSimpleName[1];
+
         return new SentryException(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
     }
 
-    private String extractPackageName(IThrowableProxy throwableProxy) {
-        // TODO this probably fails with application specific classes which are unknown to the logserver
+    private String[] extractPackageSimpleClassName(String canonicalClassName) {
+        String[] packageNameSimpleName = new String[2];
         try {
-            Class<?> exceptionClass = Class.forName(throwableProxy.getClassName());
+            Class<?> exceptionClass = Class.forName(canonicalClassName);
             Package exceptionPackage = exceptionClass.getPackage();
-
-            if (exceptionPackage != null) {
-                return exceptionPackage.getName();
-            }
+            packageNameSimpleName[0] = exceptionPackage != null ? exceptionPackage.getName() : SentryException.DEFAULT_PACKAGE_NAME;
+            packageNameSimpleName[1] = exceptionClass.getSimpleName();
         } catch (ClassNotFoundException e) {
-            logger.error("Could not load exception class", e);
+            int lastDot = canonicalClassName.lastIndexOf('.');
+            if (lastDot != -1) {
+                packageNameSimpleName[0] = canonicalClassName.substring(0, lastDot);
+                packageNameSimpleName[1] = canonicalClassName.substring(lastDot);
+            } else {
+                packageNameSimpleName[0] = SentryException.DEFAULT_PACKAGE_NAME;
+                packageNameSimpleName[1] = canonicalClassName;
+            }
         }
-
-        return null;
+        return packageNameSimpleName;
     }
 
     private StackTraceElement[] toStackTraceElements(IThrowableProxy throwableProxy) {
