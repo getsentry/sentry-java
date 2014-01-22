@@ -25,6 +25,8 @@ public class AppEngineAsyncConnectionTest {
     private Queue mockQueue;
     @Mocked(methods = "getDefaultQueue")
     private QueueFactory queueFactory;
+    @Injectable("7b55a129-6975-4434-8edc-29ceefd38c95")
+    private String mockConnectionId;
 
     private static DeferredTask extractDeferredTask(TaskOptions taskOptions) throws Exception {
         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(taskOptions.getPayload()));
@@ -43,37 +45,27 @@ public class AppEngineAsyncConnectionTest {
             QueueFactory.getDefaultQueue();
             result = mockQueue;
         }};
-        asyncConnection = new AppEngineAsyncConnection(mockConnection);
+        asyncConnection = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
     }
 
     @Test
-    public void testRegisterNewInstance(@Injectable final UUID mockUuid, @Mocked("randomUUID") UUID uuid)
-            throws Exception {
-        new NonStrictExpectations() {{
-            UUID.randomUUID();
-            result = mockUuid;
-        }};
+    public void testRegisterNewInstance(
+            @Injectable("1bac02f7-c9ed-41b8-9126-e2da257a06ef") final String mockConnectionId) throws Exception {
+        AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
 
-        AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnection);
-
-        Map<UUID, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
+        Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
                 = Deencapsulation.getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
-        assertThat(appEngineAsyncConnectionRegister, hasEntry(mockUuid, asyncConnection2));
+        assertThat(appEngineAsyncConnectionRegister, hasEntry(mockConnectionId, asyncConnection2));
     }
 
     @Test
-    public void testUnregisterInstance(@Injectable final UUID mockUuid, @Mocked("randomUUID") UUID uuid)
-            throws Exception {
-        new NonStrictExpectations() {{
-            UUID.randomUUID();
-            result = mockUuid;
-        }};
+    public void testUnregisterInstance(
+            @Injectable("648f76e2-39ed-40e0-91a2-b1887a03b782") final String mockConnectionId) throws Exception {
+        new AppEngineAsyncConnection(mockConnectionId, mockConnection).close();
 
-        new AppEngineAsyncConnection(mockConnection).close();
-
-        Map<UUID, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
+        Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
                 = Deencapsulation.getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
-        assertThat(appEngineAsyncConnectionRegister, not(hasKey(mockUuid)));
+        assertThat(appEngineAsyncConnectionRegister, not(hasKey(mockConnectionId)));
     }
 
     @Test
@@ -137,8 +129,10 @@ public class AppEngineAsyncConnectionTest {
     }
 
     @Test
-    public void testEventLinkedToCorrectConnection(@Injectable final Event mockEvent) throws Exception {
-        final AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnection);
+    public void testEventLinkedToCorrectConnection(
+            @Injectable("eb37bfe4-7316-47e8-94e4-073aefd0fbf8") final String mockConnectionId,
+            @Injectable final Event mockEvent) throws Exception {
+        final AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
 
         asyncConnection.send(mockEvent);
         asyncConnection2.send(mockEvent);
