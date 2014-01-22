@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
+import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.is;

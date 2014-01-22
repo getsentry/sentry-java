@@ -1,7 +1,6 @@
 package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import mockit.Deencapsulation;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
@@ -14,6 +13,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.util.Deque;
 
+import static mockit.Deencapsulation.setField;
 import static net.kencochrane.raven.marshaller.json.JsonTestTool.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -62,8 +62,7 @@ public class ExceptionInterfaceBindingTest {
 
     @Test
     public void testClassInDefaultPackage() throws Exception {
-        Deencapsulation.setField((Object) DefaultPackageException.class, "name",
-                DefaultPackageException.class.getSimpleName());
+        setField((Object) DefaultPackageException.class, "name", DefaultPackageException.class.getSimpleName());
         final JsonGeneratorTool generatorTool = newJsonGenerator();
         final Throwable throwable = new DefaultPackageException();
         new NonStrictExpectations() {{

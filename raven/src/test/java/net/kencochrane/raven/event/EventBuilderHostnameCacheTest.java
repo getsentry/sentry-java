@@ -22,8 +22,12 @@ public class EventBuilderHostnameCacheTest {
     private InetAddress mockTimingOutLocalHost;
 
     private static void resetHostnameCache() {
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+        setField(getHostnameCache(), "expirationTimestamp", 0l);
+        setField(getHostnameCache(), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+    }
+
+    private static Object getHostnameCache() {
+        return getField(EventBuilder.class, "HOSTNAME_CACHE");
     }
 
     @BeforeMethod
@@ -47,8 +51,7 @@ public class EventBuilderHostnameCacheTest {
     }
 
     @Test
-    public void successfulHostnameRetrievalIsCachedForFiveHours(
-            @Mocked(methods = "currentTimeMillis") final System system)
+    public void successfulHostnameRetrievalIsCachedForFiveHours(@Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();
@@ -58,14 +61,14 @@ public class EventBuilderHostnameCacheTest {
         }};
 
         new EventBuilder().build();
-        final long expirationTime = Deencapsulation.<Long>getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
+        final long expirationTime = Deencapsulation.<Long>getField(getHostnameCache(), "expirationTimestamp");
 
         assertThat(expirationTime, is(TimeUnit.HOURS.toMillis(5) + System.currentTimeMillis()));
     }
 
     @Test(timeOut = 5000)
-    public void unsucessfulHostnameRetrievalIsCachedForOneSecond(
-            @Mocked(methods = "currentTimeMillis") final System system)
+    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(
+            @Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();
@@ -76,13 +79,13 @@ public class EventBuilderHostnameCacheTest {
 
         new EventBuilder().build();
         unlockTimingOutLocalHost();
-        final long expirationTime = Deencapsulation.<Long>getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
+        final long expirationTime = Deencapsulation.<Long>getField(getHostnameCache(), "expirationTimestamp");
 
         assertThat(expirationTime, is(TimeUnit.SECONDS.toMillis(1) + System.currentTimeMillis()));
     }
 
     @Test(timeOut = 5000)
-    public void unsucessfulHostameRetrievalUsesLastKnownCachedValue() throws Exception {
+    public void unsuccessfulHostnameRetrievalUsesLastKnownCachedValue() throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             InetAddress.getLocalHost();
             result = mockLocalHost;
@@ -91,7 +94,7 @@ public class EventBuilderHostnameCacheTest {
 
 
         new EventBuilder().build();
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+        setField(getHostnameCache(), "expirationTimestamp", 0l);
         Event event = new EventBuilder().build();
         unlockTimingOutLocalHost();
 

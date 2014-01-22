@@ -22,8 +22,12 @@ public class EventBuilderTest {
     private InetAddress mockLocalHost;
 
     private static void resetHostnameCache() {
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+        setField(getHostnameCache(), "expirationTimestamp", 0l);
+        setField(getHostnameCache(), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+    }
+
+    private static Object getHostnameCache() {
+        return getField(EventBuilder.class, "HOSTNAME_CACHE");
     }
 
     @BeforeMethod

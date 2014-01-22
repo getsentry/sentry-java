@@ -1,6 +1,5 @@
 package net.kencochrane.raven.getsentry.connection;
 
-import mockit.Deencapsulation;
 import mockit.Injectable;
 import mockit.Tested;
 import org.testng.annotations.Test;
@@ -9,6 +8,7 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.URL;
 import java.net.URLConnection;
 
+import static mockit.Deencapsulation.setField;
 import static org.testng.Assert.fail;
 
 public class GetSentryHttpsConnectionTest {
@@ -29,7 +29,7 @@ public class GetSentryHttpsConnectionTest {
     @Test(expectedExceptions = SSLHandshakeException.class)
     public void ensureHttpsConnectionToGoogleComIsNotSecure() throws Exception {
         final URL url = new URL("https://www.google.com");
-        Deencapsulation.setField(connection, "sentryUrl", url);
+        setField(connection, "sentryUrl", url);
 
         connection.getConnection().connect();
     }
