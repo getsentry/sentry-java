@@ -83,7 +83,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @return the parameters formatted as Strings in a List.
      */
     protected static List<String> formatMessageParameters(Object[] parameters) {
-        List<String> arguments = new ArrayList<String>(parameters.length);
+        List<String> arguments = new ArrayList<>(parameters.length);
         for (Object argument : parameters) {
             arguments.add((argument != null) ? argument.toString() : null);
         }

@@ -37,7 +37,7 @@ public class Raven {
      */
     public static final String NAME = ResourceBundle.getBundle("raven-build").getString("build.name");
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
-    private final Set<EventBuilderHelper> builderHelpers = new HashSet<EventBuilderHelper>();
+    private final Set<EventBuilderHelper> builderHelpers = new HashSet<>();
     private Connection connection;
 
     /**

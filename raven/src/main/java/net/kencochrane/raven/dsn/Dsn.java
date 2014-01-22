@@ -47,8 +47,8 @@ public class Dsn {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 
-        options = new HashMap<String, String>();
-        protocolSettings = new HashSet<String>();
+        options = new HashMap<>();
+        protocolSettings = new HashSet<>();
 
         URI dsnUri = URI.create(dsn);
         extractProtocolInfo(dsnUri);
@@ -186,7 +186,7 @@ public class Dsn {
      * </p>
      */
     private void validate() {
-        List<String> missingElements = new LinkedList<String>();
+        List<String> missingElements = new LinkedList<>();
         if (host == null)
             missingElements.add("host");
         if (publicKey == null)

@@ -65,8 +65,8 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
      * @return a Stack of Exceptions with their {@link StackTraceInterface}.
      */
     private Deque<ExceptionWithStackTrace> unfoldExceptionInterface(ExceptionInterface exceptionInterface) {
-        Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<ExceptionWithStackTrace>();
-        Set<ImmutableThrowable> circularityDetector = new HashSet<ImmutableThrowable>();
+        Deque<ExceptionWithStackTrace> exceptions = new ArrayDeque<>();
+        Set<ImmutableThrowable> circularityDetector = new HashSet<>();
         ImmutableThrowable throwable = exceptionInterface.getThrowable();
         StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
 
