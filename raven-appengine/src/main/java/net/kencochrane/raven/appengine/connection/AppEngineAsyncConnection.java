@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.appengine.api.taskqueue.DeferredTaskContext.setDoNotRetry;
@@ -31,12 +30,14 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * {@link AppEngineAsyncConnection} associated, a register of the instances of {@code AppEngineAsyncConnection} is
  * kept in {@link #APP_ENGINE_ASYNC_CONNECTIONS}.<br />
  * This register is populated when a new instance of {@code AppEngineAsyncConnection} is created and the connection
- * is removed from the register when it has been closed with {@link #close()}.
+ * is removed from the register when it has been closed with {@link #close()}.<br />
+ * The register works based on identifier defined by the user. There is no ID conflict handling, the user is expected
+ * to manage the uniqueness of those ID.
  * </p>
  */
 public class AppEngineAsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AppEngineAsyncConnection.class);
-    private static final Map<UUID, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS = new HashMap<>();
+    private static final Map<String, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS = new HashMap<>();
     private static final String TASK_TAG = "RavenTask";
     /**
      * Maximum number of tasks that can be leased at once when closing the connection.
@@ -49,7 +50,7 @@ public class AppEngineAsyncConnection implements Connection {
     /**
      * Identifier of the async connection.
      */
-    private final UUID id = UUID.randomUUID();
+    private final String id;
     /**
      * Connection used to actually send the events.
      */
@@ -69,10 +70,12 @@ public class AppEngineAsyncConnection implements Connection {
      * Will propagate the {@link #close()} operation.
      * </p>
      *
+     * @param id               Identifier of the connection shared across all the instances of the application.
      * @param actualConnection Connection used to send the events.
      */
-    public AppEngineAsyncConnection(Connection actualConnection) {
+    public AppEngineAsyncConnection(String id, Connection actualConnection) {
         this.actualConnection = actualConnection;
+        this.id = id;
         APP_ENGINE_ASYNC_CONNECTIONS.put(id, this);
     }
 
@@ -124,10 +127,10 @@ public class AppEngineAsyncConnection implements Connection {
      * Simple DeferredTask using the {@link #send(Event)} method of the {@link #actualConnection}.
      */
     private static final class EventSubmitter implements DeferredTask {
-        private final UUID connectionId;
+        private final String connectionId;
         private final Event event;
 
-        private EventSubmitter(UUID connectionId, Event event) {
+        private EventSubmitter(String connectionId, Event event) {
             this.connectionId = connectionId;
             this.event = event;
         }
