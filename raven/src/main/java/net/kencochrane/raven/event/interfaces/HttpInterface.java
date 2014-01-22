@@ -137,4 +137,50 @@ public class HttpInterface implements SentryInterface {
     public Map<String, Collection<String>> getHeaders() {
         return Collections.unmodifiableMap(headers);
     }
+
+    @Override
+    public String toString() {
+        return "HttpInterface{" +
+                "requestUrl='" + requestUrl + '\'' +
+                ", method='" + method + '\'' +
+                ", queryString='" + queryString + '\'' +
+                ", parameters=" + parameters +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HttpInterface that = (HttpInterface) o;
+
+        if (asyncStarted != that.asyncStarted) return false;
+        if (localPort != that.localPort) return false;
+        if (secure != that.secure) return false;
+        if (serverPort != that.serverPort) return false;
+        if (authType != null ? !authType.equals(that.authType) : that.authType != null) return false;
+        if (!cookies.equals(that.cookies)) return false;
+        if (!headers.equals(that.headers)) return false;
+        if (localAddr != null ? !localAddr.equals(that.localAddr) : that.localAddr != null) return false;
+        if (localName != null ? !localName.equals(that.localName) : that.localName != null) return false;
+        if (method != null ? !method.equals(that.method) : that.method != null) return false;
+        if (!parameters.equals(that.parameters)) return false;
+        if (protocol != null ? !protocol.equals(that.protocol) : that.protocol != null) return false;
+        if (queryString != null ? !queryString.equals(that.queryString) : that.queryString != null) return false;
+        if (remoteAddr != null ? !remoteAddr.equals(that.remoteAddr) : that.remoteAddr != null) return false;
+        if (remoteUser != null ? !remoteUser.equals(that.remoteUser) : that.remoteUser != null) return false;
+        if (!requestUrl.equals(that.requestUrl)) return false;
+        if (serverName != null ? !serverName.equals(that.serverName) : that.serverName != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = requestUrl.hashCode();
+        result = 31 * result + (method != null ? method.hashCode() : 0);
+        result = 31 * result + parameters.hashCode();
+        return result;
+    }
 }

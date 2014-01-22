@@ -2,9 +2,11 @@ package net.kencochrane.raven.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.ThrowableProxy;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -12,8 +14,11 @@ import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -22,6 +27,7 @@ import java.util.*;
  * Appender for logback in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
+
     /**
      * Name of the {@link Event#extra} property containing Maker details.
      */
@@ -30,6 +36,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Name of the {@link Event#extra} property containing the Thread name.
      */
     public static final String THREAD_NAME = "Raven-Threadname";
+
+    private static final Logger logger = LoggerFactory.getLogger(SentryAppender.class);
+
     /**
      * Current instance of {@link Raven}.
      *
@@ -173,8 +182,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         if (iLoggingEvent.getThrowableProxy() != null) {
-            Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
+            eventBuilder.addSentryInterface(new ExceptionInterface(extractExceptionQueue(iLoggingEvent)));
         } else if (iLoggingEvent.getCallerData().length > 0) {
             eventBuilder.addSentryInterface(new StackTraceInterface(iLoggingEvent.getCallerData()));
         }
@@ -197,6 +205,66 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
+    }
+
+    private Deque<SentryException> extractExceptionQueue(final ILoggingEvent iLoggingEvent) {
+        IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
+        Deque<SentryException> exceptions = new ArrayDeque<>();
+        Set<IThrowableProxy> circularityDetector = new HashSet<>();
+        StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
+
+        //Stack the exceptions to send them in the reverse order
+        while (throwableProxy != null) {
+            if (!circularityDetector.add(throwableProxy)) {
+                logger.warn("Exiting a circular exception!");
+                break;
+            }
+
+            final StackTraceElement[] stackTraceElements = toStackTraceElements(throwableProxy);
+            StackTraceInterface stackTrace = new StackTraceInterface(stackTraceElements, enclosingStackTrace);
+            exceptions.push(createExceptionWithStackTraceFrom(throwableProxy, stackTrace));
+            enclosingStackTrace = stackTraceElements;
+            throwableProxy = throwableProxy.getCause();
+        }
+
+        return exceptions;
+    }
+
+    private SentryException createExceptionWithStackTraceFrom(final IThrowableProxy throwableProxy,
+                                                                      final StackTraceInterface stackTrace) {
+        final String exceptionMessage = throwableProxy.getMessage();
+        final String exceptionClassName = throwableProxy.getClassName();
+        final String exceptionPackageName = extractPackageName(throwableProxy);
+        return new SentryException(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
+    }
+
+    private String extractPackageName(final IThrowableProxy throwableProxy) {
+
+        // TODO this probably fails with application specific classes which are unknown to the logserver
+        try {
+            final Class<?> exceptionClass = Class.forName(throwableProxy.getClassName());
+            final Package exceptionPackage = exceptionClass.getPackage();
+
+            if (exceptionPackage != null) {
+                return exceptionPackage.getName();
+            }
+
+        } catch (final ClassNotFoundException e) {
+            logger.error("Could not load exception class", e);
+        }
+
+        return null;
+    }
+
+    private StackTraceElement[] toStackTraceElements(final IThrowableProxy throwableProxy) {
+        final StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
+        final List<StackTraceElement> stackTraceElements = Lists.newArrayList();
+
+        for (final StackTraceElementProxy stackTraceElementProxy : stackTraceElementProxies) {
+            stackTraceElements.add(stackTraceElementProxy.getStackTraceElement());
+        }
+
+        return stackTraceElements.toArray(new StackTraceElement[stackTraceElements.size()]);
     }
 
     public void setDsn(String dsn) {

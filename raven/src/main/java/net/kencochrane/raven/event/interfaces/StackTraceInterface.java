@@ -57,4 +57,26 @@ public class StackTraceInterface implements SentryInterface {
     public int getFramesCommonWithEnclosing() {
         return framesCommonWithEnclosing;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StackTraceInterface that = (StackTraceInterface) o;
+
+        return Arrays.equals(stackTrace, that.stackTrace);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(stackTrace);
+    }
+
+    @Override
+    public String toString() {
+        return "StackTraceInterface{" +
+                "stackTrace=" + Arrays.toString(stackTrace) +
+                '}';
+    }
 }
