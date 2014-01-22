@@ -28,7 +28,7 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * </p>
  * <p>
  * Google App Engine serialises the tasks before queuing them, to keep a link between the task and the
- * {@link AppEngineAsyncConnection} that created it, a register of the instances of {@code AppEngineAsyncConnection} is
+ * {@link AppEngineAsyncConnection} associated, a register of the instances of {@code AppEngineAsyncConnection} is
  * kept in {@link #APP_ENGINE_ASYNC_CONNECTIONS}.<br />
  * This register is populated when a new instance of {@code AppEngineAsyncConnection} is created and the connection
  * is removed from the register when it has been closed with {@link #close()}.
@@ -55,7 +55,7 @@ public class AppEngineAsyncConnection implements Connection {
      */
     private final Connection actualConnection;
     /**
-     * Queue used to send deferred tasks
+     * Queue used to send deferred tasks.
      */
     private Queue queue = QueueFactory.getDefaultQueue();
     /**
@@ -69,7 +69,7 @@ public class AppEngineAsyncConnection implements Connection {
      * Will propagate the {@link #close()} operation.
      * </p>
      *
-     * @param actualConnection connection used to send the events.
+     * @param actualConnection Connection used to send the events.
      */
     public AppEngineAsyncConnection(Connection actualConnection) {
         this.actualConnection = actualConnection;
@@ -101,7 +101,8 @@ public class AppEngineAsyncConnection implements Connection {
         try {
             List<TaskHandle> tasks;
             do {
-                tasks = queue.leaseTasksByTag(MAXIMUM_TASK_LEASE_PERIOD_DAYS, TimeUnit.DAYS, MAXIMUM_TASKS_LEASED, TASK_TAG);
+                tasks = queue.leaseTasksByTag(MAXIMUM_TASK_LEASE_PERIOD_DAYS, TimeUnit.DAYS,
+                        MAXIMUM_TASKS_LEASED, TASK_TAG);
                 queue.deleteTask(tasks);
             } while (!tasks.isEmpty());
         } finally {
@@ -120,8 +121,7 @@ public class AppEngineAsyncConnection implements Connection {
     }
 
     /**
-     * Simple DeferredTask using the {@link #send(net.kencochrane.raven.event.Event)} method of the
-     * {@link #actualConnection}.
+     * Simple DeferredTask using the {@link #send(Event)} method of the {@link #actualConnection}.
      */
     private static final class EventSubmitter implements DeferredTask {
         private final UUID connectionId;

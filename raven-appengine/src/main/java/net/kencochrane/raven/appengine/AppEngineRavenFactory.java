@@ -5,6 +5,9 @@ import net.kencochrane.raven.appengine.connection.AppEngineAsyncConnection;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.dsn.Dsn;
 
+/**
+ * RavenFactory dedicated to create async connections within Google App Engine.
+ */
 public class AppEngineRavenFactory extends DefaultRavenFactory {
     /**
      * Option for the queue name used in Google App Engine of threads assigned for the connection.
@@ -12,11 +15,11 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
     public static final String QUEUE_NAME = "raven.async.gaequeuename";
 
     /**
-     * Encapsulates an already existing connection in an {@link net.kencochrane.raven.appengine.connection.AppEngineAsyncConnection} and get the async options
+     * Encapsulates an already existing connection in an {@link AppEngineAsyncConnection} and get the async options
      * from the Sentry DSN.
      *
      * @param dsn        Data Source Name of the Sentry server.
-     * @param connection Connection to encapsulate in an {@link net.kencochrane.raven.appengine.connection.AppEngineAsyncConnection}.
+     * @param connection Connection to encapsulate in an {@link AppEngineAsyncConnection}.
      * @return the asynchronous connection.
      */
     @Override
