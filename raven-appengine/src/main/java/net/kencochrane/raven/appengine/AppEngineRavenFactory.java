@@ -12,7 +12,7 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
     /**
      * Option for the queue name used in Google App Engine of threads assigned for the connection.
      */
-    public static final String QUEUE_NAME = "raven.async.gaequeuename";
+    public static final String QUEUE_NAME = "raven.async.gae.queuename";
     /**
      * Option to define the identifier of the async connection across every instance of the application.
      * <p>
