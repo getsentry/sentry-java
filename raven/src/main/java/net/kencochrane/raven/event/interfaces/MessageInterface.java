@@ -81,4 +81,27 @@ public class MessageInterface implements SentryInterface {
     public List<String> getParameters() {
         return parameters;
     }
+
+    @Override
+    public String toString() {
+        return "MessageInterface{" +
+                "message='" + message + '\'' +
+                ", parameters=" + parameters +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MessageInterface that = (MessageInterface) o;
+
+        return message.equals(that.message) && parameters.equals(that.parameters);
+    }
+
+    @Override
+    public int hashCode() {
+        return message.hashCode();
+    }
 }

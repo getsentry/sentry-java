@@ -101,4 +101,39 @@ public final class SentryException {
     public StackTraceInterface getStackTraceInterface() {
         return stackTraceInterface;
     }
+
+    @Override
+    public String toString() {
+        return "SentryException{" +
+                "exceptionMessage='" + exceptionMessage + '\'' +
+                ", exceptionClassName='" + exceptionClassName + '\'' +
+                ", exceptionPackageName='" + exceptionPackageName + '\'' +
+                ", stackTraceInterface=" + stackTraceInterface +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SentryException that = (SentryException) o;
+
+        if (!exceptionClassName.equals(that.exceptionClassName)) return false;
+        if (exceptionMessage != null ? !exceptionMessage.equals(that.exceptionMessage) : that.exceptionMessage != null)
+            return false;
+        if (exceptionPackageName != null ? !exceptionPackageName.equals(that.exceptionPackageName) : that.exceptionPackageName != null)
+            return false;
+        if (!stackTraceInterface.equals(that.stackTraceInterface)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = exceptionMessage != null ? exceptionMessage.hashCode() : 0;
+        result = 31 * result + exceptionClassName.hashCode();
+        result = 31 * result + (exceptionPackageName != null ? exceptionPackageName.hashCode() : 0);
+        return result;
+    }
 }

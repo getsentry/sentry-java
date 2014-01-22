@@ -38,4 +38,27 @@ public class ExceptionInterface implements SentryInterface {
     public Deque<SentryException> getExceptions() {
         return exceptions;
     }
+
+    @Override
+    public String toString() {
+        return "ExceptionInterface{" +
+                "exceptions=" + exceptions +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ExceptionInterface that = (ExceptionInterface) o;
+
+        return exceptions.equals(that.exceptions);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return exceptions.hashCode();
+    }
 }
