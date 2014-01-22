@@ -30,11 +30,23 @@ Relies on:
 ## Usage
 
 This module provides a new `RavenFactory` which replaces the default async system with a GAE compatible one.
-By default, the default task queue will be used, but it's possible to specify which one will be used with the
-`raven.async.gaequeuename` option:
-
-    http://public:private@getsentry.com/1?raven.async.gaequeuename=MyQueueName
 
 The queue size and thread options will not be used as they are specific to the default multithreaded system.
 
 It is necessary to force the raven factory name to `net.kencochrane.raven.appengine.AppEngineRavenFactory`.
+
+### Queue name
+
+By default, the default task queue will be used, but it's possible to specify which one will be used with the
+`raven.async.gae.queuename` option:
+
+    http://public:private@getsentry.com/1?raven.async.gae.queuename=MyQueueName
+
+### Connection name
+
+As the queued tasks are sent across different instances of the application, it's important to be able to identify which
+connection should be used when processing the event.
+To do so, the GAE module will identify each connection based on an identifier either automatically generated or user defined.
+TO manually set the connection identifier (only used internally) use the option `raven.async.connectionid`:
+
+    http://public:private@getsentry.com/1?raven.async.gae.connectionid=MyConnection
