@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 public class InvalidAuthException extends RuntimeException {
-    private final Collection<String> detailedMessages = new LinkedList<String>();
+    private final Collection<String> detailedMessages = new LinkedList<>();
 
     public InvalidAuthException() {
     }

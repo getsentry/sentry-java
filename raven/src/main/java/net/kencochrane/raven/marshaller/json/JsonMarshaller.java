@@ -85,8 +85,7 @@ public class JsonMarshaller implements Marshaller {
     private static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
     private final JsonFactory jsonFactory = new JsonFactory();
-    private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings =
-            new HashMap<Class<? extends SentryInterface>, InterfaceBinding>();
+    private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings = new HashMap<>();
     /**
      * Enables disables the compression of JSON.
      */

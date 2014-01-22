@@ -57,7 +57,7 @@ public class SentryAuthenticationFilter implements Filter {
         }
 
         String[] authParameters = sentryAuth.split(",");
-        Map<String, String> authDetails = new HashMap<String, String>(authParameters.length);
+        Map<String, String> authDetails = new HashMap<>(authParameters.length);
         for (String authParameter : authParameters) {
             String[] splitParameter = authParameter.split("=");
             authDetails.put(splitParameter[0], splitParameter[1]);
