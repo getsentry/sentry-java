@@ -52,9 +52,9 @@ public class HttpInterfaceTest {
             mockHttpServletRequest.getRemoteUser();
             result = "remoteUser";
             mockHttpServletRequest.getHeaderNames();
-            result = new EmptyEnumeration<String>();
+            result = Collections.emptyEnumeration();
             mockHttpServletRequest.getHeaders(anyString);
-            result = new EmptyEnumeration<String>();
+            result = Collections.emptyEnumeration();
         }};
     }
 
@@ -159,15 +159,5 @@ public class HttpInterfaceTest {
         HttpInterface httpInterface = new HttpInterface(mockHttpServletRequest);
 
         assertThat(httpInterface.getCookies().size(), is(0));
-    }
-
-    private static class EmptyEnumeration<E> implements Enumeration<E> {
-        public boolean hasMoreElements() {
-            return false;
-        }
-
-        public E nextElement() {
-            throw new NoSuchElementException();
-        }
     }
 }
