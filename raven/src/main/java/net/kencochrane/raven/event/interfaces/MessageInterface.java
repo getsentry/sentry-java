@@ -84,10 +84,10 @@ public class MessageInterface implements SentryInterface {
 
     @Override
     public String toString() {
-        return "MessageInterface{" +
-                "message='" + message + '\'' +
-                ", parameters=" + parameters +
-                '}';
+        return "MessageInterface{"
+                + "message='" + message + '\''
+                + ", parameters=" + parameters
+                + '}';
     }
 
     @Override

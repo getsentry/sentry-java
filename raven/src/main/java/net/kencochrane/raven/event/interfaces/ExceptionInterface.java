@@ -41,9 +41,9 @@ public class ExceptionInterface implements SentryInterface {
 
     @Override
     public String toString() {
-        return "ExceptionInterface{" +
-                "exceptions=" + exceptions +
-                '}';
+        return "ExceptionInterface{"
+                + "exceptions=" + exceptions
+                + '}';
     }
 
     @Override

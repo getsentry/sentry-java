@@ -75,8 +75,8 @@ public class StackTraceInterface implements SentryInterface {
 
     @Override
     public String toString() {
-        return "StackTraceInterface{" +
-                "stackTrace=" + Arrays.toString(stackTrace) +
-                '}';
+        return "StackTraceInterface{"
+                + "stackTrace=" + Arrays.toString(stackTrace)
+                + '}';
     }
 }

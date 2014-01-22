@@ -140,12 +140,12 @@ public class HttpInterface implements SentryInterface {
 
     @Override
     public String toString() {
-        return "HttpInterface{" +
-                "requestUrl='" + requestUrl + '\'' +
-                ", method='" + method + '\'' +
-                ", queryString='" + queryString + '\'' +
-                ", parameters=" + parameters +
-                '}';
+        return "HttpInterface{"
+                + "requestUrl='" + requestUrl + '\''
+                + ", method='" + method + '\''
+                + ", queryString='" + queryString + '\''
+                + ", parameters=" + parameters
+                + '}';
     }
 
     @Override

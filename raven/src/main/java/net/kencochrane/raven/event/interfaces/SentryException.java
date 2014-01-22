@@ -104,12 +104,12 @@ public final class SentryException {
 
     @Override
     public String toString() {
-        return "SentryException{" +
-                "exceptionMessage='" + exceptionMessage + '\'' +
-                ", exceptionClassName='" + exceptionClassName + '\'' +
-                ", exceptionPackageName='" + exceptionPackageName + '\'' +
-                ", stackTraceInterface=" + stackTraceInterface +
-                '}';
+        return "SentryException{"
+                + "exceptionMessage='" + exceptionMessage + '\''
+                + ", exceptionClassName='" + exceptionClassName + '\''
+                + ", exceptionPackageName='" + exceptionPackageName + '\''
+                + ", stackTraceInterface=" + stackTraceInterface
+                + '}';
     }
 
     @Override
@@ -122,7 +122,8 @@ public final class SentryException {
         if (!exceptionClassName.equals(that.exceptionClassName)) return false;
         if (exceptionMessage != null ? !exceptionMessage.equals(that.exceptionMessage) : that.exceptionMessage != null)
             return false;
-        if (exceptionPackageName != null ? !exceptionPackageName.equals(that.exceptionPackageName) : that.exceptionPackageName != null)
+        if (exceptionPackageName != null ? !exceptionPackageName.equals(that.exceptionPackageName)
+                : that.exceptionPackageName != null)
             return false;
         if (!stackTraceInterface.equals(that.stackTraceInterface)) return false;
 

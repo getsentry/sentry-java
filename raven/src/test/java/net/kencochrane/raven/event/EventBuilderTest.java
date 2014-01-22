@@ -62,7 +62,7 @@ public class EventBuilderTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void builtEventWithCustomNullUuidFails() throws Exception {
-        final EventBuilder eventBuilder = new EventBuilder(null);
+        new EventBuilder(null);
     }
 
     @Test
