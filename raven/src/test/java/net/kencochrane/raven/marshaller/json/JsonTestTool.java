@@ -24,8 +24,8 @@ public final class JsonTestTool {
         return new JsonGeneratorTool();
     }
 
-    public static JsonOutpuStreamTool newJsonOutputStream() throws Exception {
-        return new JsonOutpuStreamTool();
+    public static JsonOutputStreamTool newJsonOutputStream() throws Exception {
+        return new JsonOutputStreamTool();
     }
 
     public static class JsonGeneratorTool {
@@ -56,7 +56,7 @@ public final class JsonTestTool {
         }
     }
 
-    public static class JsonOutpuStreamTool {
+    public static class JsonOutputStreamTool {
         private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         public OutputStream outputStream() {

@@ -13,7 +13,7 @@ import java.util.Map;
 
 public final class SentryStub {
     private static SentryStub instance = new SentryStub();
-    private final Collection<Event> events = new LinkedList<Event>();
+    private final Collection<Event> events = new LinkedList<>();
     private final AuthValidator authValidator = new AuthValidator();
     private final Unmarshaller unmarshaller = new JsonUnmarshaller();
 

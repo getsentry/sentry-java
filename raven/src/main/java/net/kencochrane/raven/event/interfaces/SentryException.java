@@ -64,8 +64,8 @@ public final class SentryException {
      * @return a queue of exception with StackTrace.
      */
     public static Deque<SentryException> extractExceptionQueue(Throwable throwable) {
-        Deque<SentryException> exceptions = new ArrayDeque<SentryException>();
-        Set<Throwable> circularityDetector = new HashSet<Throwable>();
+        Deque<SentryException> exceptions = new ArrayDeque<>();
+        Set<Throwable> circularityDetector = new HashSet<>();
         StackTraceElement[] childExceptionStackTrace = new StackTraceElement[0];
 
         //Stack the exceptions to send them in the reverse order
