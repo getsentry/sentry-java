@@ -1,7 +1,9 @@
 package net.kencochrane.raven.appengine;
 
 import net.kencochrane.raven.DefaultRavenFactory;
+import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.appengine.connection.AppEngineAsyncConnection;
+import net.kencochrane.raven.appengine.event.helper.AppEngineEventBuilderHelper;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.dsn.Dsn;
 
@@ -26,6 +28,13 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
      * {@see AppEngineAsyncConnection}
      */
     public static final String CONNECTION_IDENTIFIER = "raven.async.gae.connectionid";
+
+    @Override
+    public Raven createRavenInstance(Dsn dsn) {
+        Raven ravenInstance = super.createRavenInstance(dsn);
+        ravenInstance.addBuilderHelper(new AppEngineEventBuilderHelper());
+        return ravenInstance;
+    }
 
     /**
      * Encapsulates an already existing connection in an {@link AppEngineAsyncConnection} and get the async options
