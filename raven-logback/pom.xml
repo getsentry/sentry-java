@@ -81,7 +81,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <logback.configurationFile>
-                            ${project.basedir}/src/test/resources/logback-integration.xml
+                            ${project.build.directory}/test-classes/logback-integration.xml
                         </logback.configurationFile>
                     </systemPropertyVariables>
                 </configuration>
