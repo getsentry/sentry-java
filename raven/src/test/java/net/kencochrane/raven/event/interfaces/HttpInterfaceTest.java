@@ -7,7 +7,9 @@ import org.testng.annotations.Test;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -15,6 +17,8 @@ import static org.hamcrest.Matchers.*;
 public class HttpInterfaceTest {
     @Injectable
     private HttpServletRequest mockHttpServletRequest;
+    @Injectable
+    private Cookie mockCookie;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -81,53 +85,48 @@ public class HttpInterfaceTest {
         final String headerKey = UUID.randomUUID().toString();
         final String headerValue = UUID.randomUUID().toString();
 
-        new NonStrictExpectations() {
-            @Injectable
-            private Cookie mockCookie;
-
-            {
-                mockHttpServletRequest.getRequestURL();
-                result = new StringBuffer(requestUrl);
-                mockHttpServletRequest.getMethod();
-                result = method;
-                mockHttpServletRequest.getParameterMap();
-                result = Collections.singletonMap(parameterName, new String[]{parameterValue});
-                mockHttpServletRequest.getQueryString();
-                result = queryString;
-                mockCookie.getName();
-                result = cookieName;
-                mockCookie.getValue();
-                result = cookieValue;
-                mockHttpServletRequest.getCookies();
-                result = new Cookie[]{mockCookie};
-                mockHttpServletRequest.getRemoteAddr();
-                result = remoteAddr;
-                mockHttpServletRequest.getServerName();
-                result = serverName;
-                mockHttpServletRequest.getServerPort();
-                result = serverPort;
-                mockHttpServletRequest.getLocalAddr();
-                result = localAddr;
-                mockHttpServletRequest.getLocalName();
-                result = localName;
-                mockHttpServletRequest.getLocalPort();
-                result = localPort;
-                mockHttpServletRequest.getProtocol();
-                result = protocol;
-                mockHttpServletRequest.isSecure();
-                result = secure;
-                mockHttpServletRequest.isAsyncStarted();
-                result = asyncStarted;
-                mockHttpServletRequest.getAuthType();
-                result = authType;
-                mockHttpServletRequest.getRemoteUser();
-                result = remoteUser;
-                mockHttpServletRequest.getHeaderNames();
-                result = Collections.enumeration(Arrays.asList(headerKey));
-                mockHttpServletRequest.getHeaders(headerKey);
-                result = Collections.enumeration(Arrays.asList(headerValue));
-            }
-        };
+        new NonStrictExpectations() {{
+            mockHttpServletRequest.getRequestURL();
+            result = new StringBuffer(requestUrl);
+            mockHttpServletRequest.getMethod();
+            result = method;
+            mockHttpServletRequest.getParameterMap();
+            result = Collections.singletonMap(parameterName, new String[]{parameterValue});
+            mockHttpServletRequest.getQueryString();
+            result = queryString;
+            mockCookie.getName();
+            result = cookieName;
+            mockCookie.getValue();
+            result = cookieValue;
+            mockHttpServletRequest.getCookies();
+            result = new Cookie[]{mockCookie};
+            mockHttpServletRequest.getRemoteAddr();
+            result = remoteAddr;
+            mockHttpServletRequest.getServerName();
+            result = serverName;
+            mockHttpServletRequest.getServerPort();
+            result = serverPort;
+            mockHttpServletRequest.getLocalAddr();
+            result = localAddr;
+            mockHttpServletRequest.getLocalName();
+            result = localName;
+            mockHttpServletRequest.getLocalPort();
+            result = localPort;
+            mockHttpServletRequest.getProtocol();
+            result = protocol;
+            mockHttpServletRequest.isSecure();
+            result = secure;
+            mockHttpServletRequest.isAsyncStarted();
+            result = asyncStarted;
+            mockHttpServletRequest.getAuthType();
+            result = authType;
+            mockHttpServletRequest.getRemoteUser();
+            result = remoteUser;
+            mockHttpServletRequest.getHeaderNames();
+            result = Collections.enumeration(Arrays.asList(headerKey));
+            mockHttpServletRequest.getHeaders(headerKey);
+            result = Collections.enumeration(Arrays.asList(headerValue));
+        }};
 
         HttpInterface httpInterface = new HttpInterface(mockHttpServletRequest);
 

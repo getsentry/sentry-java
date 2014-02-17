@@ -32,29 +32,26 @@ public class HttpConnectionTest {
     private HttpsURLConnection mockUrlConnection;
     @Injectable
     private Marshaller mockMarshaller;
+    @Injectable
+    private URL mockUrl;
+    @Injectable
+    private OutputStream mockOutputStream;
+    @Injectable
+    private InputStream mockInputStream;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        new NonStrictExpectations() {
-            @Injectable
-            private URL mockUrl;
-            @Injectable
-            private OutputStream mockOutputStream;
-            @Injectable
-            private InputStream mockInputStream;
+        new NonStrictExpectations() {{
+            mockUrl.openConnection();
+            result = mockUrlConnection;
+            mockUrlConnection.getOutputStream();
+            result = mockOutputStream;
+            mockUrlConnection.getInputStream();
+            result = mockInputStream;
 
-            {
-                mockUrl.openConnection();
-                result = mockUrlConnection;
-                mockUrlConnection.getOutputStream();
-                result = mockOutputStream;
-                mockUrlConnection.getInputStream();
-                result = mockInputStream;
-
-                httpConnection = new HttpConnection(mockUrl, publicKey, secretKey);
-                httpConnection.setMarshaller(mockMarshaller);
-            }
-        };
+            httpConnection = new HttpConnection(mockUrl, publicKey, secretKey);
+            httpConnection.setMarshaller(mockMarshaller);
+        }};
     }
 
     @Test
@@ -80,23 +77,18 @@ public class HttpConnectionTest {
     }
 
     @Test
-    public void testByPassSecurity(@Injectable final Event mockEvent) throws Exception {
+    public void testByPassSecurity(@Injectable final Event mockEvent,
+                                   @Injectable("fakehostna.me") final String mockHostname,
+                                   @Injectable final SSLSession mockSslSession) throws Exception {
         httpConnection.setBypassSecurity(true);
 
         httpConnection.send(mockEvent);
 
-        new Verifications() {
-            @Injectable
-            private String mockString;
-            @Injectable
-            private SSLSession mockSslSession;
-
-            {
-                HostnameVerifier hostnameVerifier;
-                mockUrlConnection.setHostnameVerifier(hostnameVerifier = withCapture());
-                assertThat(hostnameVerifier.verify(mockString, mockSslSession), is(true));
-            }
-        };
+        new Verifications() {{
+            HostnameVerifier hostnameVerifier;
+            mockUrlConnection.setHostnameVerifier(hostnameVerifier = withCapture());
+            assertThat(hostnameVerifier.verify(mockHostname, mockSslSession), is(true));
+        }};
     }
 
     @Test
