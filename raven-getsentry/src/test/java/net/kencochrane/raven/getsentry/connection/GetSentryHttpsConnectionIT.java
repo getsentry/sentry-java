@@ -11,7 +11,7 @@ import java.net.URLConnection;
 import static mockit.Deencapsulation.setField;
 import static org.testng.Assert.fail;
 
-public class GetSentryHttpsConnectionTest {
+public class GetSentryHttpsConnectionIT {
     @Tested
     private GetSentryHttpsConnection connection;
     @Injectable("projectId")
