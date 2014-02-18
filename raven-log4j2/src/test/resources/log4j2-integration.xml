@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration status="all" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
+<configuration packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
     <appenders>
-        <Console name="STDOUT" target="SYSTEM_OUT"/>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="[RAVEN] [%-5p] %c - %m%n"/>
+        </Console>
         <Raven name="Sentry">
             <dsn>
                 http://8292bf61d620417282e68a72ae03154a:e3908e05ad874b24b7a168992bfa3577@localhost:8080/1?raven.async=false
