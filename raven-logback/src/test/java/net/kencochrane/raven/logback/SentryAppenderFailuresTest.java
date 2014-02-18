@@ -25,6 +25,7 @@ public class SentryAppenderFailuresTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        new MockUpStatusPrinter();
         new NonStrictExpectations() {{
             final BasicStatusManager statusManager = new BasicStatusManager();
             final OnConsoleStatusListener listener = new OnConsoleStatusListener();

@@ -38,6 +38,7 @@ public class SentryAppenderEventBuildingTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        new MockUpStatusPrinter();
         sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
         sentryAppender.initRaven();
