@@ -72,7 +72,7 @@ public class DefaultRavenFactory extends RavenFactory {
             Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
-            logger.trace("It seems that the current environment doesn't provide access to servlets.");
+            logger.debug("It seems that the current environment doesn't provide access to servlets.");
         }
         return raven;
     }
