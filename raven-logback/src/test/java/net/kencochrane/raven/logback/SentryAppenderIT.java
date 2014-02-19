@@ -3,6 +3,7 @@ package net.kencochrane.raven.logback;
 import net.kencochrane.raven.stub.SentryStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -17,6 +18,10 @@ public class SentryAppenderIT {
     public void setUp() {
         new MockUpStatusPrinter();
         sentryStub = new SentryStub();
+    }
+
+    @AfterMethod
+    public void tearDown() throws Exception {
         sentryStub.removeEvents();
     }
 

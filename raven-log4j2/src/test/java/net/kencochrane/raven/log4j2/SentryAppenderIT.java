@@ -17,7 +17,6 @@ public class SentryAppenderIT {
     @BeforeMethod
     public void setUp() {
         sentryStub = new SentryStub();
-        sentryStub.removeEvents();
     }
 
     @AfterMethod
