@@ -125,11 +125,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.RAVEN_THREAD.get())
+        if (Raven.isManagingThread())
             return;
 
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.manageThread();
 
             if (raven == null)
                 initRaven();
@@ -139,7 +139,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Raven", e);
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 

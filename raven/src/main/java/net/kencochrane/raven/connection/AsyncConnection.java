@@ -132,12 +132,12 @@ public class AsyncConnection implements Connection {
         public void run() {
             try {
                 // The current thread is managed by raven
-                Raven.RAVEN_THREAD.set(true);
+                Raven.manageThread();
                 actualConnection.send(event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
-                Raven.RAVEN_THREAD.remove();
+                Raven.stopManagingThread();
             }
         }
     }
