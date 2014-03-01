@@ -23,19 +23,19 @@ import java.util.Set;
  */
 public class Raven {
     /**
+     * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
+     * for each release of this project.
+     */
+    public static final String NAME = ResourceBundle.getBundle("raven-build").getString("build.name");
+    /**
      * Indicates whether the current thread is managed by raven or not.
      */
-    public static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>() {
+    private static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>() {
         @Override
         protected Boolean initialValue() {
             return false;
         }
     };
-    /**
-     * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
-     * for each release of this project.
-     */
-    public static final String NAME = ResourceBundle.getBundle("raven-build").getString("build.name");
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<>();
     private Connection connection;
@@ -47,9 +47,12 @@ public class Raven {
      * </p>
      */
     public static void manageThread() {
-        if (isManagingThread())
-            logger.warn("Thread already managed by Raven");
-        RAVEN_THREAD.set(true);
+        try {
+            if (isManagingThread())
+                logger.warn("Thread already managed by Raven");
+        } finally {
+            RAVEN_THREAD.set(true);
+        }
     }
 
     /**
@@ -59,12 +62,15 @@ public class Raven {
      * </p>
      */
     public static void stopManagingThread() {
-        if (!isManagingThread()) {
-            //Start managing the thread to send the warning only
-            manageThread();
-            logger.warn("Thread not yet managed by Raven");
+        try {
+            if (!isManagingThread()) {
+                //Start managing the thread only to send the warning
+                manageThread();
+                logger.warn("Thread not yet managed by Raven");
+            }
+        } finally {
+            RAVEN_THREAD.remove();
         }
-        RAVEN_THREAD.remove();
     }
 
     /**
