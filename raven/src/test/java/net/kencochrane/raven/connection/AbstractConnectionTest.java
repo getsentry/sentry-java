@@ -57,6 +57,7 @@ public class AbstractConnectionTest {
         abstractConnection.send(mockEvent);
 
         verify(reentrantLock).tryLock();
+        verify(reentrantLock).unlock();
     }
 
     private static final class DummyAbstractConnection extends AbstractConnection {
