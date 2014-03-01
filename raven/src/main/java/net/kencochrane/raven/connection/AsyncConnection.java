@@ -62,7 +62,7 @@ public class AsyncConnection implements Connection {
                     Raven.manageThread();
                     logger.info("Automatic shutdown of the async connection");
                     AsyncConnection.this.close();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     logger.error("An exception occurred while closing the connection.", e);
                 } finally {
                     Raven.stopManagingThread();
