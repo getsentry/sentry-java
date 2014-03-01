@@ -28,6 +28,15 @@ public class AsyncConnectionTest {
     }
 
     @Test
+    public void verifyShutdownHookIsAdded() throws Exception {
+        new AsyncConnection(mockConnection);
+
+        new Verifications() {{
+            mockRuntime.addShutdownHook((Thread) any);
+        }};
+    }
+
+    @Test
     public void verifyShutdownHookClosesConnection() throws Exception {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
