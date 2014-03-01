@@ -62,7 +62,7 @@ public class SentryAppenderFailuresTest {
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
-            Raven.manageThread();
+            Raven.startManagingThread();
 
             sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
 

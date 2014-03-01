@@ -35,7 +35,7 @@ public class AsyncConnectionTest {
 
     @Test
     public void verifyShutdownHookSetManagedByRavenAndCloseConnection(
-            @Mocked({"manageThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
@@ -48,7 +48,7 @@ public class AsyncConnectionTest {
         new AsyncConnection(mockConnection);
 
         new VerificationsInOrder() {{
-            Raven.manageThread();
+            Raven.startManagingThread();
             mockConnection.close();
             Raven.stopManagingThread();
         }};
@@ -56,7 +56,7 @@ public class AsyncConnectionTest {
 
     @Test
     public void ensureFailingShutdownHookStopsBeingManaged(
-            @Mocked({"manageThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {

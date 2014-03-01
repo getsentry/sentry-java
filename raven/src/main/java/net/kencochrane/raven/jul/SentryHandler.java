@@ -117,7 +117,7 @@ public class SentryHandler extends Handler {
             return;
 
         try {
-            Raven.manageThread();
+            Raven.startManagingThread();
             if (raven == null)
                 initRaven();
             Event event = buildEvent(record);

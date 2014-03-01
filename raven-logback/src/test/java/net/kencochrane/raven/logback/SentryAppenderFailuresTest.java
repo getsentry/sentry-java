@@ -75,7 +75,7 @@ public class SentryAppenderFailuresTest {
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
-            Raven.manageThread();
+            Raven.startManagingThread();
             final SentryAppender sentryAppender = new SentryAppender(mockRaven);
             sentryAppender.setContext(mockContext);
             sentryAppender.start();

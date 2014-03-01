@@ -59,7 +59,7 @@ public class AsyncConnection implements Connection {
             public void run() {
                 try {
                     // The current thread is managed by raven
-                    Raven.manageThread();
+                    Raven.startManagingThread();
                     logger.info("Automatic shutdown of the async connection");
                     AsyncConnection.this.close();
                 } catch (Exception e) {
@@ -132,7 +132,7 @@ public class AsyncConnection implements Connection {
         public void run() {
             try {
                 // The current thread is managed by raven
-                Raven.manageThread();
+                Raven.startManagingThread();
                 actualConnection.send(event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);

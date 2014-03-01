@@ -179,7 +179,7 @@ public class SentryAppender extends AbstractAppender {
             return;
 
         try {
-            Raven.manageThread();
+            Raven.startManagingThread();
             if (raven == null)
                 initRaven();
 

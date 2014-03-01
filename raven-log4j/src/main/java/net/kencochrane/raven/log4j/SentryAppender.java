@@ -139,7 +139,7 @@ public class SentryAppender extends AppenderSkeleton {
             return;
 
         try {
-            Raven.manageThread();
+            Raven.startManagingThread();
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {

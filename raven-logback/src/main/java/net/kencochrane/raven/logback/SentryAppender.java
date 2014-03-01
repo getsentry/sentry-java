@@ -129,7 +129,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             return;
 
         try {
-            Raven.manageThread();
+            Raven.startManagingThread();
 
             if (raven == null)
                 initRaven();
