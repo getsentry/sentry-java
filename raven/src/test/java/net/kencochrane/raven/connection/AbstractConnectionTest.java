@@ -45,6 +45,18 @@ public class AbstractConnectionTest {
     }
 
     @Test
+    public void testSuccessfulSendCallsDoSend(@Injectable final Event mockEvent) throws Exception {
+        new MockUp<DummyAbstractConnection>() {
+            @SuppressWarnings("unused")
+            @Mock(invocations = 1)
+            protected void doSend(Event event) throws ConnectionException {
+            }
+        };
+
+        abstractConnection.send(mockEvent);
+    }
+
+    @Test
     public void testExceptionOnSendStartLockDown(@Injectable final Event mockEvent) throws Exception {
         new MockUp<DummyAbstractConnection>() {
             @SuppressWarnings("unused")
