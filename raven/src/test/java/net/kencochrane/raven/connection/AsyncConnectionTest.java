@@ -1,9 +1,6 @@
 package net.kencochrane.raven.connection;
 
-import mockit.Delegate;
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -17,11 +14,35 @@ public class AsyncConnectionTest {
     private Connection mockConnection;
     @Injectable
     private ExecutorService mockExecutorService;
+    @Mocked
+    private Runtime mockRuntime;
 
     @BeforeMethod
     public void setUp() throws Exception {
+        new NonStrictExpectations() {{
+            Runtime.getRuntime();
+            result = mockRuntime;
+        }};
         asyncConnection = new AsyncConnection(mockConnection);
         asyncConnection.setExecutorService(mockExecutorService);
+    }
+
+    @Test
+    public void verifyShutdownHookClosesConnection() throws Exception {
+        new NonStrictExpectations() {{
+            mockRuntime.addShutdownHook((Thread) any);
+            result = new Delegate<Void>() {
+                public void addShutdownHook(Thread thread) {
+                    thread.run();
+                }
+            };
+        }};
+
+        new AsyncConnection(mockConnection);
+
+        new Verifications() {{
+            mockConnection.close();
+        }};
     }
 
     @Test
@@ -33,7 +54,6 @@ public class AsyncConnectionTest {
             mockExecutorService.awaitTermination(anyLong, (TimeUnit) any);
         }};
     }
-
 
     @Test
     public void testSendEventQueued(@Injectable final Event mockEvent) throws Exception {
