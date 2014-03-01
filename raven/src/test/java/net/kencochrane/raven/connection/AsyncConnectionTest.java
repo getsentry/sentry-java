@@ -14,15 +14,11 @@ public class AsyncConnectionTest {
     private Connection mockConnection;
     @Injectable
     private ExecutorService mockExecutorService;
-    @Mocked
+    @Mocked("addShutdownHook")
     private Runtime mockRuntime;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        new NonStrictExpectations() {{
-            Runtime.getRuntime();
-            result = mockRuntime;
-        }};
         asyncConnection = new AsyncConnection(mockConnection);
         asyncConnection.setExecutorService(mockExecutorService);
     }
