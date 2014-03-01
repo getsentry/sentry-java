@@ -59,12 +59,12 @@ public class AsyncConnection implements Connection {
             public void run() {
                 try {
                     // The current thread is managed by raven
-                    Raven.RAVEN_THREAD.set(true);
+                    Raven.manageThread();
                     AsyncConnection.this.close();
                 } catch (IOException e) {
                     logger.error("An exception occurred while closing the connection.", e);
                 } finally {
-                    Raven.RAVEN_THREAD.remove();
+                    Raven.stopManagingThread();
                 }
             }
         });

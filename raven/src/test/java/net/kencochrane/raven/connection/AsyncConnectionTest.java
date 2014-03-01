@@ -1,6 +1,7 @@
 package net.kencochrane.raven.connection;
 
 import mockit.*;
+import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -47,6 +48,26 @@ public class AsyncConnectionTest {
 
         new Verifications() {{
             mockConnection.close();
+        }};
+    }
+
+    @Test
+    public void verifyShutdownHookSetRavenManagedThreadFlag(
+            @Mocked({"manageThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+        new NonStrictExpectations() {{
+            mockRuntime.addShutdownHook((Thread) any);
+            result = new Delegate<Void>() {
+                public void addShutdownHook(Thread thread) {
+                    thread.run();
+                }
+            };
+        }};
+
+        new AsyncConnection(mockConnection);
+
+        new Verifications() {{
+            Raven.manageThread();
+            Raven.stopManagingThread();
         }};
     }
 
