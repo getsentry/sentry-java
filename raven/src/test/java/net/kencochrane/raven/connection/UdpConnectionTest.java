@@ -15,8 +15,6 @@ public class UdpConnectionTest {
     @Injectable
     private final String hostname = "127.0.0.1";
     @Injectable
-    private final int port = 1234;
-    @Injectable
     private final String publicKey = "44850120-9d2a-451b-8e00-998bddaa2800";
     @Injectable
     private final String secretKey = "1de38091-6e8c-42df-8298-cf7f8098617a";
