@@ -70,7 +70,7 @@ public class AsyncConnectionTest {
 
         new AsyncConnection(mockConnection);
 
-        new VerificationsInOrder() {{
+        new Verifications() {{
             Raven.stopManagingThread();
         }};
     }
