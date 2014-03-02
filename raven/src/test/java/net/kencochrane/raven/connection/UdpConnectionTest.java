@@ -1,15 +1,15 @@
 package net.kencochrane.raven.connection;
 
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.OutputStream;
-import java.net.InetAddress;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+
 
 public class UdpConnectionTest {
     @Injectable
@@ -22,10 +22,25 @@ public class UdpConnectionTest {
     private UdpConnection udpConnection;
     @Injectable
     private Marshaller mockMarshaller;
+    @Mocked
+    private DatagramSocket mockDatagramSocket;
 
     @BeforeMethod
     public void setUp() throws Exception {
         udpConnection = null;
+    }
+
+    @Test
+    public void testConnectionWorkingWithProperHost(@Injectable("customHostname") final String mockHostname,
+                                                    @Injectable("1234") final int mockPort) throws Exception {
+        new UdpConnection(mockHostname, mockPort, publicKey, secretKey);
+
+        new Verifications() {{
+            InetSocketAddress generatedAddress;
+            mockDatagramSocket.connect(generatedAddress = withCapture());
+            assertThat(generatedAddress.getHostName(), is(mockHostname));
+            assertThat(generatedAddress.getPort(), is(mockPort));
+        }};
     }
 
     @Test
