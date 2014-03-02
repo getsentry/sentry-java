@@ -44,6 +44,18 @@ public class UdpConnectionTest {
     }
 
     @Test
+    public void testConnectionDefaultPortIsWorking(@Injectable("customHostname") final String mockHostname)
+            throws Exception {
+        new UdpConnection(mockHostname, publicKey, secretKey);
+
+        new Verifications() {{
+            InetSocketAddress generatedAddress;
+            mockDatagramSocket.connect(generatedAddress = withCapture());
+            assertThat(generatedAddress.getPort(), is(UdpConnection.DEFAULT_UDP_PORT));
+        }};
+    }
+
+    @Test
     public void testContentMarshalled(@Injectable final Event event) throws Exception {
         udpConnection.send(event);
 
