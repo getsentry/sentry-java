@@ -31,7 +31,7 @@ public class AsyncConnection implements Connection {
     /**
      * Executor service in charge of running the connection in separate threads.
      */
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService;
     /**
      * Boolean used to check whether the connection is still open or not.
      */
@@ -44,9 +44,15 @@ public class AsyncConnection implements Connection {
      * </p>
      *
      * @param actualConnection connection used to send the events.
+     * @param executorService  executorService used to process events, if null, the executorService will automatically
+     *                         be set to {@code Executors.newSingleThreadExecutor()}
      */
-    public AsyncConnection(Connection actualConnection) {
+    public AsyncConnection(Connection actualConnection, ExecutorService executorService) {
         this.actualConnection = actualConnection;
+        if (executorService == null)
+            this.executorService = Executors.newSingleThreadExecutor();
+        else
+            this.executorService = executorService;
         addShutdownHook();
     }
 
@@ -111,10 +117,6 @@ public class AsyncConnection implements Connection {
         } finally {
             actualConnection.close();
         }
-    }
-
-    public void setExecutorService(ExecutorService executorService) {
-        this.executorService = executorService;
     }
 
     /**

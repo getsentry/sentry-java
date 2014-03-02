@@ -20,13 +20,12 @@ public class AsyncConnectionTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        asyncConnection = new AsyncConnection(mockConnection);
-        asyncConnection.setExecutorService(mockExecutorService);
+        asyncConnection = new AsyncConnection(mockConnection, mockExecutorService);
     }
 
     @Test
     public void verifyShutdownHookIsAdded() throws Exception {
-        new AsyncConnection(mockConnection);
+        new AsyncConnection(mockConnection, mockExecutorService);
 
         new Verifications() {{
             mockRuntime.addShutdownHook((Thread) any);
@@ -45,7 +44,7 @@ public class AsyncConnectionTest {
             };
         }};
 
-        new AsyncConnection(mockConnection);
+        new AsyncConnection(mockConnection, mockExecutorService);
 
         new VerificationsInOrder() {{
             Raven.startManagingThread();
@@ -68,7 +67,7 @@ public class AsyncConnectionTest {
             result = new RuntimeException("Close operation failed");
         }};
 
-        new AsyncConnection(mockConnection);
+        new AsyncConnection(mockConnection, mockExecutorService);
 
         new Verifications() {{
             Raven.stopManagingThread();

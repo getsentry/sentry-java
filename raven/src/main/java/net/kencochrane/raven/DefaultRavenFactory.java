@@ -114,7 +114,6 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return the asynchronous connection.
      */
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
-        AsyncConnection asyncConnection = new AsyncConnection(connection);
 
         int maxThreads;
         if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
@@ -137,13 +136,10 @@ public class DefaultRavenFactory extends RavenFactory {
             queue = new LinkedBlockingDeque<>();
         }
 
-        asyncConnection.setExecutorService(new ThreadPoolExecutor(
-                maxThreads, maxThreads,
-                0L, TimeUnit.MILLISECONDS,
-                queue,
-                new DaemonThreadFactory(priority)));
+        ExecutorService executorService = new ThreadPoolExecutor(
+                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue, new DaemonThreadFactory(priority));
 
-        return asyncConnection;
+        return new AsyncConnection(connection, executorService);
     }
 
     /**
