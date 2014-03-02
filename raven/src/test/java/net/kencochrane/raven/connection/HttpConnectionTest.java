@@ -143,7 +143,7 @@ public class HttpConnectionTest {
         final String projectId = "293b4958-71f8-40a9-b588-96f004f64463";
         new Expectations() {{
             sentryUri.toString();
-            result = "http://host/sentry/";
+            result = uri;
         }};
 
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(sentryUri, projectId);
