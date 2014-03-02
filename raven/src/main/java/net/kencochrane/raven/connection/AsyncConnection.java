@@ -33,6 +33,10 @@ public class AsyncConnection implements Connection {
      */
     private final ExecutorService executorService;
     /**
+     * Shutdown hook used to stop the async connection properly when the JVM quits.
+     */
+    private final ShutDownHook shutDownHook = new ShutDownHook();
+    /**
      * Boolean used to check whether the connection is still open or not.
      */
     private boolean closed;
@@ -61,20 +65,7 @@ public class AsyncConnection implements Connection {
      */
     private void addShutdownHook() {
         // JUL loggers are shutdown by an other shutdown hook, it's possible that nothing will get actually logged.
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                try {
-                    // The current thread is managed by raven
-                    Raven.startManagingThread();
-                    logger.info("Automatic shutdown of the async connection");
-                    AsyncConnection.this.close();
-                } catch (Exception e) {
-                    logger.error("An exception occurred while closing the connection.", e);
-                } finally {
-                    Raven.stopManagingThread();
-                }
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(shutDownHook);
     }
 
     /**
@@ -100,6 +91,14 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void close() throws IOException {
+        Runtime.getRuntime().removeShutdownHook(shutDownHook);
+        doClose();
+    }
+
+    /**
+     * @see #close()
+     */
+    private void doClose() throws IOException {
         logger.info("Gracefully shutdown sentry threads.");
         closed = true;
         executorService.shutdown();
@@ -138,6 +137,21 @@ public class AsyncConnection implements Connection {
                 actualConnection.send(event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
+            } finally {
+                Raven.stopManagingThread();
+            }
+        }
+    }
+
+    private final class ShutDownHook extends Thread {
+        public void run() {
+            try {
+                // The current thread is managed by raven
+                Raven.startManagingThread();
+                logger.info("Automatic shutdown of the async connection");
+                AsyncConnection.this.doClose();
+            } catch (Exception e) {
+                logger.error("An exception occurred while closing the connection.", e);
             } finally {
                 Raven.stopManagingThread();
             }
