@@ -1,9 +1,6 @@
 package net.kencochrane.raven.connection;
 
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -28,6 +25,7 @@ public class HttpConnectionTest {
     private final String publicKey = "6cc48e8f-380c-44cc-986b-f566247a2af5";
     @Injectable
     private final String secretKey = "e30cca23-3f97-470b-a8c2-e29b33dd25e0";
+    @Tested
     private HttpConnection httpConnection;
     @Injectable
     private HttpsURLConnection mockUrlConnection;
@@ -42,6 +40,7 @@ public class HttpConnectionTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        httpConnection = null;
         new NonStrictExpectations() {{
             mockUrl.openConnection();
             result = mockUrlConnection;
@@ -49,9 +48,6 @@ public class HttpConnectionTest {
             result = mockOutputStream;
             mockUrlConnection.getInputStream();
             result = mockInputStream;
-
-            httpConnection = new HttpConnection(mockUrl, publicKey, secretKey);
-            httpConnection.setMarshaller(mockMarshaller);
         }};
     }
 
