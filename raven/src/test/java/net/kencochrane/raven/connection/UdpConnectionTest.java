@@ -10,6 +10,8 @@ import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class UdpConnectionTest {
     @Injectable
