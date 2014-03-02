@@ -7,6 +7,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.OutputStream;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 
@@ -54,6 +55,27 @@ public class UdpConnectionTest {
             InetSocketAddress generatedAddress;
             mockDatagramSocket.connect(generatedAddress = withCapture());
             assertThat(generatedAddress.getPort(), is(UdpConnection.DEFAULT_UDP_PORT));
+        }};
+    }
+
+    @Test
+    public void udpMessageSentWorksAsExpected(@Injectable final Event event) throws Exception {
+        final String marshalledContent = "marshalledContent";
+        new NonStrictExpectations() {{
+            mockMarshaller.marshall(event, (OutputStream) any);
+            result = new Delegate<Void>() {
+                public void marshall(Event event, OutputStream os) throws Exception {
+                    os.write(marshalledContent.getBytes("UTF-8"));
+                }
+            };
+        }};
+        udpConnection.send(event);
+
+        new Verifications() {{
+            DatagramPacket capturedPacket;
+            mockDatagramSocket.send(capturedPacket = withCapture());
+            assertThat(new String(capturedPacket.getData(), "UTF-8"),
+                    is(udpConnection.getAuthHeader() + "\n\n" + marshalledContent));
         }};
     }
 
