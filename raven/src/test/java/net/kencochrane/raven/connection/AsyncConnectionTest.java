@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AsyncConnectionTest {
+    @Tested
     private AsyncConnection asyncConnection;
     @Injectable
     private Connection mockConnection;
@@ -20,7 +21,8 @@ public class AsyncConnectionTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        asyncConnection = new AsyncConnection(mockConnection, mockExecutorService);
+        // Reset Tested
+        asyncConnection = null;
     }
 
     @Test
