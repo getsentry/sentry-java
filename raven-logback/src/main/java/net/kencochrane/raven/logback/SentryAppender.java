@@ -16,8 +16,6 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -35,7 +33,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Name of the {@link Event#extra} property containing the Thread name.
      */
     public static final String THREAD_NAME = "Raven-Threadname";
-    private static final Logger logger = LoggerFactory.getLogger(SentryAppender.class);
     /**
      * Current instance of {@link Raven}.
      *
@@ -217,7 +214,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         //Stack the exceptions to send them in the reverse order
         while (throwableProxy != null) {
             if (!circularityDetector.add(throwableProxy)) {
-                logger.warn("Exiting a circular exception!");
+                addWarn("Exiting a circular exception!");
                 break;
             }
 
