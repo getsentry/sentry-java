@@ -14,6 +14,8 @@ import java.io.ObjectInputStream;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static mockit.Deencapsulation.getField;
+import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -23,7 +25,7 @@ public class AppEngineAsyncConnectionTest {
     private Connection mockConnection;
     @Injectable
     private Queue mockQueue;
-    @Mocked(methods = "getDefaultQueue")
+    @Mocked("getDefaultQueue")
     private QueueFactory queueFactory;
     @Injectable("7b55a129-6975-4434-8edc-29ceefd38c95")
     private String mockConnectionId;
@@ -35,7 +37,7 @@ public class AppEngineAsyncConnectionTest {
 
     private static AppEngineAsyncConnection getTaskConnection(DeferredTask deferredTask) throws Exception {
         Map<UUID, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
-                = Deencapsulation.getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
+                = getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
         return appEngineAsyncConnectionRegister.get(Deencapsulation.<UUID>getField(deferredTask, "connectionId"));
     }
 
@@ -54,7 +56,7 @@ public class AppEngineAsyncConnectionTest {
         AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
 
         Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
-                = Deencapsulation.getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
+                = getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
         assertThat(appEngineAsyncConnectionRegister, hasEntry(mockConnectionId, asyncConnection2));
     }
 
@@ -64,7 +66,7 @@ public class AppEngineAsyncConnectionTest {
         new AppEngineAsyncConnection(mockConnectionId, mockConnection).close();
 
         Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
-                = Deencapsulation.getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
+                = getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
         assertThat(appEngineAsyncConnectionRegister, not(hasKey(mockConnectionId)));
     }
 

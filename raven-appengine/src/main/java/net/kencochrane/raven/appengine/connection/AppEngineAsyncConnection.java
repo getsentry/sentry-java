@@ -140,7 +140,7 @@ public class AppEngineAsyncConnection implements Connection {
             setDoNotRetry(true);
             try {
                 // The current thread is managed by raven
-                Raven.RAVEN_THREAD.set(true);
+                Raven.startManagingThread();
                 AppEngineAsyncConnection connection = APP_ENGINE_ASYNC_CONNECTIONS.get(connectionId);
                 if (connection == null) {
                     logger.warn("Couldn't find the AppEngineAsyncConnection identified by '{}'. "
@@ -151,7 +151,7 @@ public class AppEngineAsyncConnection implements Connection {
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
-                Raven.RAVEN_THREAD.remove();
+                Raven.stopManagingThread();
             }
         }
     }
