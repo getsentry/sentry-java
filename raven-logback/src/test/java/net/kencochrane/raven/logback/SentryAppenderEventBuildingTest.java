@@ -13,6 +13,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
 import org.slf4j.MarkerFactory;
@@ -37,6 +38,7 @@ public class SentryAppenderEventBuildingTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        new MockUpStatusPrinter();
         sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
         sentryAppender.initRaven();
@@ -113,10 +115,9 @@ public class SentryAppenderEventBuildingTest {
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            Throwable capturedException = exceptionInterface.getThrowable();
-
-            assertThat(capturedException.getMessage(), is(exception.getMessage()));
-            assertThat(capturedException.getStackTrace(), is(exception.getStackTrace()));
+            SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+            assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInStatusManager();
     }
@@ -174,6 +175,43 @@ public class SentryAppenderEventBuildingTest {
             mockRaven.runBuilderHelpers((EventBuilder) any);
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testContextPropertiesAddedToExtra() throws Exception {
+        final String extraKey = UUID.randomUUID().toString();
+        final String extraValue = UUID.randomUUID().toString();
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null,
+                null, null, null, 0, Collections.singletonMap(extraKey, extraValue)).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.runBuilderHelpers((EventBuilder) any);
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testMdcTakesPrecedenceOverContextProperties() throws Exception {
+        final String mdcKey = UUID.randomUUID().toString();
+        final String mdcValue = UUID.randomUUID().toString();
+        final String contextKey = mdcKey;
+        final String contextValue = UUID.randomUUID().toString();
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null,
+                Collections.singletonMap(mdcKey, mdcValue), null, null, 0,
+                Collections.singletonMap(contextKey, contextValue)).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.runBuilderHelpers((EventBuilder) any);
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(mdcKey, mdcValue));
         }};
         assertNoErrorsInStatusManager();
     }

@@ -3,6 +3,7 @@ package net.kencochrane.raven.logback;
 import net.kencochrane.raven.stub.SentryStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -14,20 +15,24 @@ public class SentryAppenderIT {
     private SentryStub sentryStub;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
         sentryStub = new SentryStub();
+    }
+
+    @AfterMethod
+    public void tearDown() throws Exception {
         sentryStub.removeEvents();
     }
 
     @Test
-    public void testInfoLog() {
+    public void testInfoLog() throws Exception {
         assertThat(sentryStub.getEventCount(), is(0));
         logger.info("This is a test");
         assertThat(sentryStub.getEventCount(), is(1));
     }
 
     @Test
-    public void testChainedExceptions() {
+    public void testChainedExceptions() throws Exception {
         assertThat(sentryStub.getEventCount(), is(0));
         logger.error("This is an exception",
                 new UnsupportedOperationException("Test", new UnsupportedOperationException()));

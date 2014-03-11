@@ -1,0 +1,14 @@
+[
+    {
+        "type": "IllegalStateException",
+        "value": "a71e6132-9867-457d-8b04-5021cd7a251f",
+        "module": "java.lang",
+        "stacktrace": {}
+    },
+    {
+        "type": "IllegalStateException",
+        "value": "f1296959-5b86-45f7-853a-cdc25196710b",
+        "module": "java.lang",
+        "stacktrace": {}
+    }
+]

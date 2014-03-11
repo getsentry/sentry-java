@@ -6,6 +6,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -93,13 +94,12 @@ public class SentryHandlerEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            Throwable throwable;
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            throwable = exceptionInterface.getThrowable();
-            assertThat(throwable.getMessage(), is(exception.getMessage()));
-            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            final SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+            assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorManager();
     }

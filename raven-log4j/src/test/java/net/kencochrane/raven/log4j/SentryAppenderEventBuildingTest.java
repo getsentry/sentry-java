@@ -9,6 +9,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
+import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.is;
@@ -104,13 +106,12 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            Throwable throwable;
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            throwable = exceptionInterface.getThrowable();
-            assertThat(throwable.getMessage(), is(exception.getMessage()));
-            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+            assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorHandler();
     }

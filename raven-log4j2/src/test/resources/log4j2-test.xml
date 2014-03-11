@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration status="all" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
+<configuration packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
     <appenders>
-        <Console name="STDOUT" target="SYSTEM_OUT"/>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="[RAVEN] [%-5p] %c - %m%n%throwable{none}"/>
+        </Console>
     </appenders>
 
     <loggers>

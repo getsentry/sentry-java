@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.instanceOf;
 
 public class GetSentryRavenFactoryTest {
     @Test
-    public void checkServiceLoaderProvidesFactory() {
+    public void checkServiceLoaderProvidesFactory() throws Exception {
         ServiceLoader<RavenFactory> ravenFactories = ServiceLoader.load(RavenFactory.class);
 
         assertThat(ravenFactories, Matchers.<RavenFactory>hasItem(instanceOf(GetSentryRavenFactory.class)));

@@ -39,6 +39,12 @@ public class GetSentryHttpsConnection extends HttpConnection {
         }
     }
 
+    /**
+     * Gets the URL to GetSentry for a given projectId.
+     *
+     * @param projectId Identifier of the project.
+     * @return The URL to getSentry for the given project.
+     */
     protected static URL getSentryUrl(String projectId) {
         try {
             return new URL(String.format(GETSENTRY_API_URL, projectId));
@@ -57,7 +63,7 @@ public class GetSentryHttpsConnection extends HttpConnection {
     /**
      * Create an SSLSocketFactory only able to handle certificates provided by StartCom.
      *
-     * @return
+     * @return an SSL factory handling certificates from StartCom.
      * @throws Exception
      */
     private SSLSocketFactory getStartcomSslFactory() throws Exception {

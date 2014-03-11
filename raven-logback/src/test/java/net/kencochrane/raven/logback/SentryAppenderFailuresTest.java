@@ -25,6 +25,7 @@ public class SentryAppenderFailuresTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        new MockUpStatusPrinter();
         new NonStrictExpectations() {{
             final BasicStatusManager statusManager = new BasicStatusManager();
             final OnConsoleStatusListener listener = new OnConsoleStatusListener();
@@ -74,7 +75,7 @@ public class SentryAppenderFailuresTest {
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.startManagingThread();
             final SentryAppender sentryAppender = new SentryAppender(mockRaven);
             sentryAppender.setContext(mockContext);
             sentryAppender.start();
@@ -87,7 +88,7 @@ public class SentryAppenderFailuresTest {
             }};
             assertThat(mockContext.getStatusManager().getCount(), is(0));
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 }

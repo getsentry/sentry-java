@@ -82,7 +82,7 @@ public class Dsn {
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             dsn = JndiLookup.jndiLookup();
         } catch (ClassNotFoundException e) {
-            logger.trace("JNDI not available");
+            logger.debug("JNDI not available");
         }
 
         // Try to obtain the DSN from a System Environment Variable

@@ -57,6 +57,7 @@ public class SentryStub {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Object> getContent(HttpURLConnection connection) {
         try {
             connection.setDoInput(true);

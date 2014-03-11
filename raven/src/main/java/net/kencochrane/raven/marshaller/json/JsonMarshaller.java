@@ -100,19 +100,10 @@ public class JsonMarshaller implements Marshaller {
             destination = new DeflaterOutputStream(base64().encodingStream(
                     new OutputStreamWriter(destination, Charsets.UTF_8)));
 
-        JsonGenerator generator = null;
-        try {
-            generator = jsonFactory.createGenerator(destination);
+        try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
             writeContent(generator, event);
         } catch (IOException e) {
             logger.error("An exception occurred while serialising the event.", e);
-        } finally {
-            try {
-                if (generator != null)
-                    generator.close();
-            } catch (IOException e) {
-                logger.error("An exception occurred while closing the json stream.", e);
-            }
         }
     }
 

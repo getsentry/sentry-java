@@ -9,26 +9,20 @@ public class MockUpErrorHandler extends MockUp<ErrorHandler> {
     private int errorCount = 0;
 
     @Mock
-    public void error(String message, Exception e, int errorCode) {
+    public void error(String message) {
         errorCount++;
-        System.err.println(message);
-        e.printStackTrace(System.err);
+        System.err.println("[RAVEN] ErrorHandler - " + message);
         System.err.flush();
     }
 
     @Mock
-    public void error(String message) {
-        errorCount++;
-        System.err.println(message);
-        System.err.flush();
+    public void error(String message, Exception e, int errorCode) {
+        error(message);
     }
 
     @Mock
     public void error(String message, Exception e, int errorCode, LoggingEvent event) {
-        errorCount++;
-        System.err.println(message);
-        e.printStackTrace(System.err);
-        System.err.flush();
+        error(message);
     }
 
     public int getErrorCount() {
