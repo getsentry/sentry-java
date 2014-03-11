@@ -31,7 +31,7 @@ public class ExceptionInterfaceBindingTest {
 
         new NonStrictExpectations() {{
             mockStackTraceInterfaceBinding.writeInterface(withInstanceOf(JsonGenerator.class), (StackTraceInterface) any);
-            forEachInvocation = new Delegate() {
+            result = new Delegate() {
                 public void writeInterface(JsonGenerator jsonGenerator, StackTraceInterface stackTraceInterface)
                         throws IOException {
                     jsonGenerator.writeStartObject();
