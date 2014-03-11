@@ -58,6 +58,10 @@
         </contributor>
     </contributors>
 
+    <prerequisites>
+        <maven>3.0</maven>
+    </prerequisites>
+
     <modules>
         <module>raven</module>
         <module>raven-getsentry</module>
