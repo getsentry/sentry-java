@@ -130,21 +130,16 @@ public class SentryAppender extends AbstractAppender {
      * @return log level used within raven.
      */
     protected static Event.Level formatLevel(Level level) {
-        switch (level) {
-            case FATAL:
-                return Event.Level.FATAL;
-            case ERROR:
-                return Event.Level.ERROR;
-            case WARN:
-                return Event.Level.WARNING;
-            case INFO:
-                return Event.Level.INFO;
-            case DEBUG:
-            case TRACE:
-                return Event.Level.DEBUG;
-            default:
-                return null;
-        }
+        if (level.isAtLeastAsSpecificAs(Level.FATAL))
+            return Event.Level.FATAL;
+        else if (level.isAtLeastAsSpecificAs(Level.ERROR))
+            return Event.Level.ERROR;
+        else if (level.isAtLeastAsSpecificAs(Level.WARN))
+            return Event.Level.WARNING;
+        else if (level.isAtLeastAsSpecificAs(Level.INFO))
+            return Event.Level.INFO;
+        else
+            return Event.Level.DEBUG;
     }
 
     /**
