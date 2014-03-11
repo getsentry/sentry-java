@@ -96,6 +96,8 @@ public class AsyncConnection implements Connection {
     }
 
     /**
+     * Close the connection whether it's from the shutdown hook or not.
+     *
      * @see #close()
      */
     private void doClose() throws IOException {
