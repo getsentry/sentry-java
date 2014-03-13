@@ -1,5 +1,6 @@
 package net.kencochrane.raven.appengine;
 
+import com.google.appengine.api.utils.SystemProperty;
 import net.kencochrane.raven.DefaultRavenFactory;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.appengine.connection.AppEngineAsyncConnection;
@@ -50,7 +51,7 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
         if (dsn.getOptions().containsKey(QUEUE_NAME)) {
             connectionIdentifier = dsn.getOptions().get(CONNECTION_IDENTIFIER);
         } else {
-            connectionIdentifier = AppEngineRavenFactory.class.getCanonicalName() + dsn;
+            connectionIdentifier = AppEngineRavenFactory.class.getCanonicalName() + dsn + SystemProperty.version.get();
         }
 
         AppEngineAsyncConnection asyncConnection = new AppEngineAsyncConnection(connectionIdentifier, connection);
