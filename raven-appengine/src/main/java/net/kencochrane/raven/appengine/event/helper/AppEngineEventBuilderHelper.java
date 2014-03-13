@@ -1,5 +1,6 @@
 package net.kencochrane.raven.appengine.event.helper;
 
+import com.google.appengine.api.utils.SystemProperty;
 import com.google.apphosting.api.ApiProxy;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
@@ -20,5 +21,7 @@ public class AppEngineEventBuilderHelper implements EventBuilderHelper {
         ApiProxy.Environment env = ApiProxy.getCurrentEnvironment();
         // Set the hostname to the actual application hostname
         eventBuilder.setServerName((String) env.getAttributes().get(CURRENT_VERSION_HOSTNAME_PROPERTY));
+
+        eventBuilder.addTag("GAE Application Version", SystemProperty.applicationVersion.get());
     }
 }
