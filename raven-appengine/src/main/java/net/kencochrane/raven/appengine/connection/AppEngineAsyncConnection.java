@@ -3,7 +3,6 @@ package net.kencochrane.raven.appengine.connection;
 import com.google.appengine.api.taskqueue.DeferredTask;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
-import com.google.appengine.api.taskqueue.TaskHandle;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
@@ -12,9 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.appengine.api.taskqueue.DeferredTaskContext.setDoNotRetry;
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload;
@@ -38,15 +35,6 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
 public class AppEngineAsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AppEngineAsyncConnection.class);
     private static final Map<String, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS = new HashMap<>();
-    private static final String TASK_TAG = "RavenTask";
-    /**
-     * Maximum number of tasks that can be leased at once when closing the connection.
-     */
-    private static final long MAXIMUM_TASKS_LEASED = 1000L;
-    /**
-     * Maximum days of lease when removing tasks (7 days).
-     */
-    private static final long MAXIMUM_TASK_LEASE_PERIOD_DAYS = 7;
     /**
      * Identifier of the async connection.
      */
@@ -88,7 +76,7 @@ public class AppEngineAsyncConnection implements Connection {
     @Override
     public void send(Event event) {
         if (!closed)
-            queue.add(withPayload(new EventSubmitter(id, event)).tag(TASK_TAG));
+            queue.add(withPayload(new EventSubmitter(id, event)));
     }
 
     /**
@@ -101,17 +89,8 @@ public class AppEngineAsyncConnection implements Connection {
     public void close() throws IOException {
         logger.info("Gracefully stopping sentry tasks.");
         closed = true;
-        try {
-            List<TaskHandle> tasks;
-            do {
-                tasks = queue.leaseTasksByTag(MAXIMUM_TASK_LEASE_PERIOD_DAYS, TimeUnit.DAYS,
-                        MAXIMUM_TASKS_LEASED, TASK_TAG);
-                queue.deleteTask(tasks);
-            } while (!tasks.isEmpty());
-        } finally {
-            actualConnection.close();
-            APP_ENGINE_ASYNC_CONNECTIONS.remove(id);
-        }
+        actualConnection.close();
+        APP_ENGINE_ASYNC_CONNECTIONS.remove(id);
     }
 
     /**
