@@ -6,7 +6,6 @@ import mockit.NonStrictExpectations;
 import org.testng.annotations.Test;
 
 import java.util.Deque;
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

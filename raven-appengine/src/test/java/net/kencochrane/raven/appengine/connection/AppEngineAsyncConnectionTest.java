@@ -1,7 +1,6 @@
 package net.kencochrane.raven.appengine.connection;
 
 import com.google.appengine.api.taskqueue.*;
-import com.google.appengine.api.taskqueue.Queue;
 import mockit.*;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
@@ -11,8 +10,10 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static mockit.Deencapsulation.getField;
 import static mockit.Deencapsulation.setField;

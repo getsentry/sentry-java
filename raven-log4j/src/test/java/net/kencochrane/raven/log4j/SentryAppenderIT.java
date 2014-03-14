@@ -14,7 +14,7 @@ public class SentryAppenderIT {
     private SentryStub sentryStub;
 
     @BeforeMethod
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         sentryStub = new SentryStub();
     }
 

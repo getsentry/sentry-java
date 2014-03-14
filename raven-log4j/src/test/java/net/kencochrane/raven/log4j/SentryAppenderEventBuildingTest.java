@@ -22,7 +22,6 @@ import org.testng.annotations.Test;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.UUID;
 
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;

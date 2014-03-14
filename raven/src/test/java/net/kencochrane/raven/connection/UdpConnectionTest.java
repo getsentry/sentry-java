@@ -80,7 +80,7 @@ public class UdpConnectionTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class)
-    public void marshallingIssuePreventSend(@Injectable final Event event){
+    public void marshallingIssuePreventSend(@Injectable final Event event) {
         new NonStrictExpectations() {{
             mockMarshaller.marshall(event, (OutputStream) any);
             result = new RuntimeException("Marshalling doesn't work");

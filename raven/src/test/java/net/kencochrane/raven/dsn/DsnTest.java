@@ -7,11 +7,9 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -49,7 +47,7 @@ public class DsnTest {
 
     @Test
     public void testJndiLookupFailsWithException(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             JndiLookup.jndiLookup();
             result = new ClassNotFoundException("Couldn't find the JNDI classes");
         }};
@@ -59,7 +57,7 @@ public class DsnTest {
 
     @Test
     public void testJndiLookupFailsWithError(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             JndiLookup.jndiLookup();
             result = new NoClassDefFoundError("Couldn't find the JNDI classes");
         }};
