@@ -71,10 +71,8 @@ public class AppEngineAsyncConnectionTest {
     }
 
     @Test
-    public void testSendEventQueued(@Injectable final Event mockEvent) throws Exception {
-        new NonStrictExpectations() {{
-            setField(mockEvent, "id", UUID.randomUUID());
-        }};
+    public void testSendEventQueued(@Injectable final Event mockEvent, @Injectable UUID mockUuid) throws Exception {
+        setField(mockEvent, "id", mockUuid);
 
         asyncConnection.send(mockEvent);
 

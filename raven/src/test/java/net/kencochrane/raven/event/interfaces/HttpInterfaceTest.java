@@ -64,26 +64,26 @@ public class HttpInterfaceTest {
 
     @Test
     public void testHttpServletCopied() throws Exception {
-        final String requestUrl = UUID.randomUUID().toString();
-        final String method = UUID.randomUUID().toString();
-        final String parameterName = UUID.randomUUID().toString();
-        final String parameterValue = UUID.randomUUID().toString();
-        final String queryString = UUID.randomUUID().toString();
-        final String cookieName = UUID.randomUUID().toString();
-        final String cookieValue = UUID.randomUUID().toString();
-        final String remoteAddr = UUID.randomUUID().toString();
-        final String serverName = UUID.randomUUID().toString();
+        final String requestUrl = "713d97ff-bda1-4bbe-85bd-42a7bc203551";
+        final String method = "afee226d-1c77-41f3-8711-cec1f611af25";
+        final String parameterName = "dbb204d7-6332-43d6-bfac-3f112d5f290d";
+        final String parameterValue = "00ec3c3e-5ded-4bca-a49b-f7bc9987a914";
+        final String queryString = "31497680-12ce-41a6-8285-5de5d06968d3";
+        final String cookieName = "451cd683-f7cd-4691-a73f-64829412b5bb";
+        final String cookieValue = "5f9a9117-d806-4fd5-b472-a58529e913cd";
+        final String remoteAddr = "718d7ac1-d41a-4aa7-84c5-3a877ed2f41c";
+        final String serverName = "bf376b4e-a69c-4a2c-988e-5675096a028e";
         final int serverPort = 123;
-        final String localAddr = UUID.randomUUID().toString();
-        final String localName = UUID.randomUUID().toString();
+        final String localAddr = "1d4a9df3-9a2f-46f4-a913-96fe4220bd8a";
+        final String localName = "0698cd7f-5d8f-4ecd-8954-e25ac21e6161";
         final int localPort = 321;
-        final String protocol = UUID.randomUUID().toString();
+        final String protocol = "f4261066-8588-43d3-a71f-9e95fd3e0d65";
         final boolean secure = true;
         final boolean asyncStarted = true;
-        final String authType = UUID.randomUUID().toString();
-        final String remoteUser = UUID.randomUUID().toString();
-        final String headerKey = UUID.randomUUID().toString();
-        final String headerValue = UUID.randomUUID().toString();
+        final String authType = "b4ec1983-06d1-4f0a-b467-435d2322d69f";
+        final String remoteUser = "beae8915-1162-425e-afda-687146b3e3df";
+        final String headerKey = "2c4a28c6-cef6-4847-92be-bf161ec4edc6";
+        final String headerValue = "2327b4fe-c35f-4bbb-842a-a89c718f5f01";
 
         new NonStrictExpectations() {{
             mockHttpServletRequest.getRequestURL();

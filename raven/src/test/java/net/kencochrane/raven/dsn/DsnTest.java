@@ -69,7 +69,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithJndi() throws Exception {
-        final String dsn = UUID.randomUUID().toString();
+        final String dsn = "6621980c-e27b-4dc9-9130-7fc5e9ea9750";
         new Expectations() {{
             mockContext.lookup("java:comp/env/sentry/dsn");
             result = dsn;
@@ -80,7 +80,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithSystemProperty() throws Exception {
-        String dsn = UUID.randomUUID().toString();
+        String dsn = "aa9171a4-7e9b-4e3c-b3cc-fe537dc03527";
         System.setProperty("SENTRY_DSN", dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));
@@ -90,7 +90,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithEnvironmentVariable() throws Exception {
-        String dsn = UUID.randomUUID().toString();
+        String dsn = "759ed060-dd4f-4478-8a1a-3f23e044787c";
         setEnv("SENTRY_DSN", dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));

@@ -43,8 +43,8 @@ public class SentryHandlerEventBuildingTest {
 
     @Test
     public void testSimpleMessageLogging() throws Exception {
-        final String loggerName = UUID.randomUUID().toString();
-        final String message = UUID.randomUUID().toString();
+        final String loggerName = "e9cb78a9-aec8-4fcd-8580-42b428653061";
+        final String message = "1feb7133-1bf5-4982-a30d-44883aa3de9c";
         final Date date = new Date(1373883196416L);
         final long threadId = 12;
 
@@ -88,7 +88,7 @@ public class SentryHandlerEventBuildingTest {
 
     @Test
     public void testExceptionLogging() throws Exception {
-        final Exception exception = new Exception(UUID.randomUUID().toString());
+        final Exception exception = new Exception("c2712792-e1ef-4824-a0e1-0e3e22907661");
 
         sentryHandler.publish(newLogRecord(null, Level.SEVERE, null, null, exception));
 
@@ -123,7 +123,7 @@ public class SentryHandlerEventBuildingTest {
 
     @Test
     public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = UUID.randomUUID().toString();
+        final String loggerName = "0c929a2e-f2bc-4ebb-ad41-a29fb1591ffe";
 
         sentryHandler.publish(newLogRecord(loggerName, Level.SEVERE, null, null, null));
 

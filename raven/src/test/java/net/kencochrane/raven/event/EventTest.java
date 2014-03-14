@@ -19,13 +19,14 @@ public class EventTest {
 
     @Test
     public void returnsCloneOfTimestamp(@Injectable final Date mockTimestamp,
-                                        @Injectable final Date mockCloneTimestamp)
+                                        @Injectable final Date mockCloneTimestamp,
+                                        @Injectable final UUID mockUuid)
             throws Exception {
         new NonStrictExpectations() {{
             mockTimestamp.clone();
             result = mockCloneTimestamp;
         }};
-        final Event event = new Event(UUID.randomUUID());
+        final Event event = new Event(mockUuid);
 
         event.setTimestamp(mockTimestamp);
 
