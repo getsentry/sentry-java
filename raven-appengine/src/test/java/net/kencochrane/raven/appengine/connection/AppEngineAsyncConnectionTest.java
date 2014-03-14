@@ -71,26 +71,6 @@ public class AppEngineAsyncConnectionTest {
     }
 
     @Test
-    public void testCloseOperation(@Injectable final List<TaskHandle> mockTaskHandleList) throws Exception {
-        new NonStrictExpectations() {{
-            mockQueue.leaseTasksByTag(anyLong, (TimeUnit) any, anyLong, "RavenTask");
-            result = mockTaskHandleList;
-            result = Collections.emptyList();
-            mockTaskHandleList.isEmpty();
-            result = false;
-        }};
-
-        asyncConnection.close();
-
-        new Verifications() {{
-            mockConnection.close();
-            mockQueue.leaseTasksByTag(anyLong, (TimeUnit) any, anyLong, "RavenTask");
-            times = 2;
-            mockQueue.deleteTask(mockTaskHandleList);
-        }};
-    }
-
-    @Test
     public void testSendEventQueued(@Injectable final Event mockEvent) throws Exception {
         new NonStrictExpectations() {{
             setField(mockEvent, "id", UUID.randomUUID());
@@ -103,7 +83,6 @@ public class AppEngineAsyncConnectionTest {
             DeferredTask deferredTask;
             mockQueue.add(taskOptions = withCapture());
 
-            assertThat(taskOptions.getTag(), is("RavenTask"));
             deferredTask = extractDeferredTask(taskOptions);
             assertThat(getField(deferredTask, "event"), Matchers.<Object>equalTo(mockEvent));
         }};
