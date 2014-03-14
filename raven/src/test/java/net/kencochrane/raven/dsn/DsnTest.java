@@ -2,10 +2,12 @@ package net.kencochrane.raven.dsn;
 
 import mockit.Expectations;
 import mockit.Mocked;
+import mockit.NonStrictExpectations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.naming.Context;
+import javax.naming.InitialContext;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
@@ -42,6 +44,26 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithNothingSet() throws Exception {
+        assertThat(Dsn.dsnLookup(), is(nullValue()));
+    }
+
+    @Test
+    public void testJndiLookupFailsWithException(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
+        new NonStrictExpectations(){{
+            JndiLookup.jndiLookup();
+            result = new ClassNotFoundException("Couldn't find the JNDI classes");
+        }};
+
+        assertThat(Dsn.dsnLookup(), is(nullValue()));
+    }
+
+    @Test
+    public void testJndiLookupFailsWithError(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
+        new NonStrictExpectations(){{
+            JndiLookup.jndiLookup();
+            result = new NoClassDefFoundError("Couldn't find the JNDI classes");
+        }};
+
         assertThat(Dsn.dsnLookup(), is(nullValue()));
     }
 
