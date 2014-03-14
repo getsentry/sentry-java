@@ -24,10 +24,13 @@ public class AppEngineEventBuilderHelperTest {
     @Injectable
     private ApiProxy.Environment mockEnvironment;
     @Injectable
+    private SystemProperty mockApplicationId;
+    @Injectable
     private SystemProperty mockApplicationVersion;
 
     @BeforeMethod
     public void setUp() throws Exception {
+        setField(SystemProperty.class, "applicationId", mockApplicationId);
         setField(SystemProperty.class, "applicationVersion", mockApplicationVersion);
 
         new NonStrictExpectations() {{
@@ -81,4 +84,28 @@ public class AppEngineEventBuilderHelperTest {
         }};
     }
 
+    @Test
+    public void ensureApplicationIdIsAddedAsTag(
+            @Injectable("50a180eb-1484-4a07-9e44-b60d394cad18") final String applicationId) throws Exception {
+        new NonStrictExpectations() {{
+            mockApplicationId.get();
+            result = applicationId;
+        }};
+
+        eventBuilderHelper.helpBuildingEvent(mockEventBuilder);
+
+        new Verifications() {{
+            List<String> tagNames = new LinkedList<>();
+            List<String> tagValues = new LinkedList<>();
+            mockEventBuilder.addTag(withCapture(tagNames), withCapture(tagValues));
+
+            Map<String, String> tags = new HashMap<>();
+            for (int i = 0; i < tagNames.size(); i++) {
+                String tagName = tagNames.get(i);
+                tags.put(tagName, tagValues.get(i));
+            }
+
+            assertThat(tags, hasEntry("GAE Application Id", applicationId));
+        }};
+    }
 }

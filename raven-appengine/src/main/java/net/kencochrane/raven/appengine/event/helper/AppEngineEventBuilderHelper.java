@@ -23,5 +23,6 @@ public class AppEngineEventBuilderHelper implements EventBuilderHelper {
         eventBuilder.setServerName((String) env.getAttributes().get(CURRENT_VERSION_HOSTNAME_PROPERTY));
 
         eventBuilder.addTag("GAE Application Version", SystemProperty.applicationVersion.get());
+        eventBuilder.addTag("GAE Application Id", SystemProperty.applicationId.get());
     }
 }
