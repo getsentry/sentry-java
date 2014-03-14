@@ -40,7 +40,8 @@ public class AppEngineEventBuilderHelperTest {
 
     @Test
     public void ensureHostnameDefineByApiProxyEnvironment(
-            @Injectable("d7b8f251-ebe1-446f-8549-2b37982bd548") final String mockHostname) {
+            @Injectable("d7b8f251-ebe1-446f-8549-2b37982bd548") final String mockHostname)
+            throws Exception {
         new NonStrictExpectations() {{
             mockEnvironment.getAttributes();
             result = Collections.singletonMap("com.google.appengine.runtime.default_version_hostname", mockHostname);
