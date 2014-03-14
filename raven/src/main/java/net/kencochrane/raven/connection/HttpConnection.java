@@ -135,7 +135,7 @@ public class HttpConnection extends AbstractConnection {
         }
     }
 
-    private String getErrorMessageFromStream(InputStream errorStream) {
+    protected String getErrorMessageFromStream(InputStream errorStream) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, Charsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         try {
