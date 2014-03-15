@@ -1,31 +1,30 @@
 package net.kencochrane.raven.logback;
 
-import ch.qos.logback.core.CoreConstants;
 import ch.qos.logback.core.status.Status;
 import ch.qos.logback.core.util.StatusPrinter;
 import mockit.Mock;
 import mockit.MockUp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MockUpStatusPrinter extends MockUp<StatusPrinter> {
+    private static final Logger logger = LoggerFactory.getLogger("ErrorHandler");
+
     @Mock
     public static void buildStr(StringBuilder sb, String indentation, Status s) {
-        sb.append("[RAVEN] ErrorHandler ")
-                .append("[").append(getLevel(s)).append("] ")
-                .append(s.getOrigin()).append(" - ")
-                .append(s.getMessage())
-                .append(CoreConstants.LINE_SEPARATOR);
-    }
-
-    private static String getLevel(Status s) {
         switch (s.getEffectiveLevel()) {
             case Status.INFO:
-                return "INFO";
+                logger.info("{} - {}", s.getOrigin(), s.getMessage());
+                return;
             case Status.WARN:
-                return "WARN";
+                logger.warn("{} - {}", s.getOrigin(), s.getMessage());
+                return;
             case Status.ERROR:
-                return "ERROR";
+                logger.error("{} - {}", s.getOrigin(), s.getMessage());
+                return;
             default:
-                return "UNKOWN";
+                logger.debug("{} - {}", s.getOrigin(), s.getMessage());
+                return;
         }
     }
 }
