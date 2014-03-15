@@ -7,7 +7,7 @@
     </appenders>
 
     <loggers>
-        <root level="all">
+        <root level="OFF">
             <appender-ref ref="STDOUT"/>
         </root>
     </loggers>

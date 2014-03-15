@@ -4,15 +4,17 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.logging.log4j.core.ErrorHandler;
 import org.apache.logging.log4j.core.LogEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MockUpErrorHandler extends MockUp<ErrorHandler> {
+    private static final Logger logger = LoggerFactory.getLogger("ErrorHandler");
     private int errorCount = 0;
 
     @Mock
     public void error(String msg) {
         errorCount++;
-        System.err.println("[RAVEN] ErrorHandler - " + msg);
-        System.err.flush();
+        logger.error(msg);
     }
 
     @Mock
