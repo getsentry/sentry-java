@@ -130,6 +130,29 @@ public class SentryAppenderEventBuildingTest {
         }};
         assertNoErrorsInErrorHandler();
     }
+    
+    @Test
+    public void testMappedMdcAddedToTags() throws Exception {
+        final String mappedKey = "User";
+        final String mappedValue = "Test";
+        
+        sentryAppender.setMappedTags("User,foo");
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
+                null, null, null, Collections.singletonMap(mappedKey, mappedValue)));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(mappedKey, mappedValue));
+            assertThat(event.getTags(), Matchers.<String, Object>hasEntry(mappedKey, mappedValue));
+
+        }};
+        assertNoErrorsInErrorHandler();
+    }
+
+    
+    
+    
 
     @Test
     public void testNdcAddedToExtra() throws Exception {
