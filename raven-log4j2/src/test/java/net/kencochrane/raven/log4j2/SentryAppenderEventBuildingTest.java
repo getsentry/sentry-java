@@ -7,6 +7,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.MarkerManager;
@@ -20,7 +21,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -44,9 +48,9 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testSimpleMessageLogging() throws Exception {
-        final String loggerName = UUID.randomUUID().toString();
-        final String message = UUID.randomUUID().toString();
-        final String threadName = UUID.randomUUID().toString();
+        final String loggerName = "0a05c9ff-45ef-45cf-9595-9307b0729a0d";
+        final String message = "6ff10df4-2e27-43f5-b4e9-a957f8678176";
+        final String threadName = "f891f3c4-c619-4441-9c47-f5c8564d3c0a";
         final Date date = new Date(1373883196416L);
 
         sentryAppender.append(new Log4jLogEvent(loggerName, null, null, Level.INFO, new SimpleMessage(message),
@@ -89,19 +93,18 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testExceptionLogging() throws Exception {
-        final Exception exception = new Exception(UUID.randomUUID().toString());
+        final Exception exception = new Exception("d0d1b31f-e885-42e3-aac6-48c500f10ed1");
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), exception));
 
         new Verifications() {{
             Event event;
-            Throwable throwable;
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            throwable = exceptionInterface.getThrowable();
-            assertThat(throwable.getMessage(), is(exception.getMessage()));
-            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+            assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorHandler();
     }
@@ -130,7 +133,7 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testMarkerAddedToTag() throws Exception {
-        final String markerName = UUID.randomUUID().toString();
+        final String markerName = "c97e1fc0-9fff-41b3-8d0d-c24b54c670bb";
 
         sentryAppender.append(new Log4jLogEvent(null, MarkerManager.getMarker(markerName), null, Level.INFO,
                 new SimpleMessage(""), null));
@@ -145,8 +148,8 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testMdcAddedToExtra() throws Exception {
-        final String extraKey = UUID.randomUUID().toString();
-        final String extraValue = UUID.randomUUID().toString();
+        final String extraKey = "a4ce2632-8d9c-471d-8b06-1744be2ae8e9";
+        final String extraValue = "6dbeb494-197e-4f57-939a-613e2c16607d";
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null,
                 Collections.singletonMap(extraKey, extraValue), null, null, null, 0));
@@ -163,9 +166,9 @@ public class SentryAppenderEventBuildingTest {
     @SuppressWarnings("unchecked")
     public void testNdcAddedToExtra() throws Exception {
         final ThreadContext.ContextStack contextStack = new DefaultThreadContextStack(true);
-        contextStack.push(UUID.randomUUID().toString());
-        contextStack.push(UUID.randomUUID().toString());
-        contextStack.push(UUID.randomUUID().toString());
+        contextStack.push("444af01f-fb80-414f-b035-15bdb91cb8b2");
+        contextStack.push("a1cb5e08-480a-4b32-b675-212f00c44e05");
+        contextStack.push("0aa5db14-1579-46ef-aae2-350d974e7fb8");
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null,
                 contextStack, null, null, 0));
@@ -180,8 +183,8 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testSourceUsedAsStacktrace() throws Exception {
-        final StackTraceElement location = new StackTraceElement(UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(), UUID.randomUUID().toString(), 42);
+        final StackTraceElement location = new StackTraceElement("7039c1f7-21e3-4134-8ced-524281633224",
+                "c68f3af9-1618-4d80-ad1b-ea0701568153", "f87a8821-1c70-44b8-81c3-271d454e4b08", 42);
 
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null, null,
                 null, location, 0));
@@ -214,7 +217,7 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = UUID.randomUUID().toString();
+        final String loggerName = "150bbbfa-f729-460e-921b-a0fe1f7ab392 ";
 
         sentryAppender.append(new Log4jLogEvent(loggerName, null, null, Level.INFO, new SimpleMessage(""), null));
 

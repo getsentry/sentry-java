@@ -22,8 +22,12 @@ public class EventBuilderHostnameCacheTest {
     private InetAddress mockTimingOutLocalHost;
 
     private static void resetHostnameCache() {
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+        setField(getHostnameCache(), "expirationTimestamp", 0L);
+        setField(getHostnameCache(), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+    }
+
+    private static Object getHostnameCache() {
+        return getField(EventBuilder.class, "HOSTNAME_CACHE");
     }
 
     @BeforeMethod
@@ -33,22 +37,14 @@ public class EventBuilderHostnameCacheTest {
             result = mockLocalHostName;
 
             mockTimingOutLocalHost.getCanonicalHostName();
-            result = new Delegate() {
-                public String getCanonicalHostName() throws Exception {
-                    synchronized (EventBuilderHostnameCacheTest.this) {
-                        EventBuilderHostnameCacheTest.this.wait();
-                    }
-                    return "";
-                }
-            };
+            result = new RuntimeException("For all intents and purposes, an exception is the same as a timeout");
         }};
         // Clean Hostname Cache
         resetHostnameCache();
     }
 
     @Test
-    public void successfulHostnameRetrievalIsCachedForFiveHours(
-            @Mocked(methods = "currentTimeMillis") final System system)
+    public void successfulHostnameRetrievalIsCachedForFiveHours(@Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();
@@ -58,14 +54,13 @@ public class EventBuilderHostnameCacheTest {
         }};
 
         new EventBuilder().build();
-        final long expirationTime = Deencapsulation.<Long>getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
+        final long expirationTime = Deencapsulation.<Long>getField(getHostnameCache(), "expirationTimestamp");
 
         assertThat(expirationTime, is(TimeUnit.HOURS.toMillis(5) + System.currentTimeMillis()));
     }
 
-    @Test(timeOut = 5000)
-    public void unsucessfulHostnameRetrievalIsCachedForOneSecond(
-            @Mocked(methods = "currentTimeMillis") final System system)
+    @Test
+    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(@Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();
@@ -75,36 +70,27 @@ public class EventBuilderHostnameCacheTest {
         }};
 
         new EventBuilder().build();
-        unlockTimingOutLocalHost();
-        final long expirationTime = Deencapsulation.<Long>getField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp");
+        final long expirationTime = Deencapsulation.<Long>getField(getHostnameCache(), "expirationTimestamp");
 
         assertThat(expirationTime, is(TimeUnit.SECONDS.toMillis(1) + System.currentTimeMillis()));
     }
 
-    @Test(timeOut = 5000)
-    public void unsucessfulHostameRetrievalUsesLastKnownCachedValue() throws Exception {
+    @Test
+    public void unsuccessfulHostnameRetrievalUsesLastKnownCachedValue() throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             InetAddress.getLocalHost();
             result = mockLocalHost;
             result = mockTimingOutLocalHost;
         }};
 
-
         new EventBuilder().build();
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
+        setField(getHostnameCache(), "expirationTimestamp", 0l);
         Event event = new EventBuilder().build();
-        unlockTimingOutLocalHost();
 
         assertThat(event.getServerName(), is(mockLocalHostName));
         new Verifications() {{
             mockLocalHost.getCanonicalHostName();
             mockTimingOutLocalHost.getCanonicalHostName();
         }};
-    }
-
-    private void unlockTimingOutLocalHost() {
-        synchronized (this) {
-            this.notify();
-        }
     }
 }

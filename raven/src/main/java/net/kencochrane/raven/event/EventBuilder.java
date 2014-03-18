@@ -349,7 +349,7 @@ public class EventBuilder {
          * Force an update of the cache to get the current value of the hostname.
          */
         public void updateCache() {
-            FutureTask<String> futureTask = new FutureTask<String>(new HostRetriever());
+            FutureTask<String> futureTask = new FutureTask<>(new HostRetriever());
             try {
                 new Thread(futureTask).start();
                 logger.debug("Updating the hostname cache");

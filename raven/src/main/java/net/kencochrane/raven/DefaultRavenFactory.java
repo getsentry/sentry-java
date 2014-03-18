@@ -72,7 +72,7 @@ public class DefaultRavenFactory extends RavenFactory {
             Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
-            logger.trace("It seems that the current environment doesn't provide access to servlets.");
+            logger.debug("It seems that the current environment doesn't provide access to servlets.");
         }
         return raven;
     }
@@ -114,7 +114,6 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return the asynchronous connection.
      */
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
-        AsyncConnection asyncConnection = new AsyncConnection(connection);
 
         int maxThreads;
         if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
@@ -132,18 +131,15 @@ public class DefaultRavenFactory extends RavenFactory {
 
         BlockingDeque<Runnable> queue;
         if (dsn.getOptions().containsKey(QUEUE_SIZE_OPTION)) {
-            queue = new LinkedBlockingDeque<Runnable>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
+            queue = new LinkedBlockingDeque<>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
         } else {
-            queue = new LinkedBlockingDeque<Runnable>();
+            queue = new LinkedBlockingDeque<>();
         }
 
-        asyncConnection.setExecutorService(new ThreadPoolExecutor(
-                maxThreads, maxThreads,
-                0L, TimeUnit.MILLISECONDS,
-                queue,
-                new DaemonThreadFactory(priority)));
+        ExecutorService executorService = new ThreadPoolExecutor(
+                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue, new DaemonThreadFactory(priority));
 
-        return asyncConnection;
+        return new AsyncConnection(connection, executorService);
     }
 
     /**

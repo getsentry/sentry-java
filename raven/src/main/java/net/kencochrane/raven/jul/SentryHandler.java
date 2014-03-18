@@ -92,7 +92,7 @@ public class SentryHandler extends Handler {
      * @return the parameters formatted as Strings in a List.
      */
     protected static List<String> formatMessageParameters(Object[] parameters) {
-        List<String> formattedParameters = new ArrayList<String>(parameters.length);
+        List<String> formattedParameters = new ArrayList<>(parameters.length);
         for (Object parameter : parameters)
             formattedParameters.add((parameter != null) ? parameter.toString() : null);
         return formattedParameters;
@@ -113,11 +113,11 @@ public class SentryHandler extends Handler {
     @Override
     public void publish(LogRecord record) {
         // Do not log the event if the current thread is managed by raven
-        if (!isLoggable(record) || Raven.RAVEN_THREAD.get())
+        if (!isLoggable(record) || Raven.isManagingThread())
             return;
 
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.startManagingThread();
             if (raven == null)
                 initRaven();
             Event event = buildEvent(record);
@@ -125,7 +125,7 @@ public class SentryHandler extends Handler {
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Raven", e, ErrorManager.WRITE_FAILURE);
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 

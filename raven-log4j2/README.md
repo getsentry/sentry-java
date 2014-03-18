@@ -42,6 +42,14 @@ In the `log4j2.xml` file set:
             <tags>
                 tag1:value1,tag2:value2
             </tags>
+            <!--
+                Optional, allows to select the ravenFactory
+            -->
+            <!--
+            <ravenFactory>
+                net.kencochrane.raven.DefaultRavenFactory
+            </ravenFactory>
+            -->
         </Raven>
     </appenders>
 

@@ -62,7 +62,7 @@ public class SentryAppenderFailuresTest {
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.startManagingThread();
 
             sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
 
@@ -72,7 +72,7 @@ public class SentryAppenderFailuresTest {
             }};
             assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 }

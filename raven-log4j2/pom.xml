@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven-log4j2</artifactId>
@@ -72,6 +72,11 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -82,7 +87,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <log4j.configurationFile>
-                            ${project.basedir}/src/test/resources/log4j2-integration.xml
+                            ${project.build.directory}/test-classes/log4j2-integration.xml
                         </log4j.configurationFile>
                     </systemPropertyVariables>
                 </configuration>

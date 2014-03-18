@@ -2,7 +2,8 @@ package net.kencochrane.raven.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.ThrowableProxy;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
@@ -13,6 +14,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ import java.util.*;
  * Appender for logback in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
+
     /**
      * Name of the {@link Event#extra} property containing Maker details.
      */
@@ -83,7 +86,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @return the parameters formatted as Strings in a List.
      */
     protected static List<String> formatMessageParameters(Object[] parameters) {
-        List<String> arguments = new ArrayList<String>(parameters.length);
+        List<String> arguments = new ArrayList<>(parameters.length);
         for (Object argument : parameters) {
             arguments.add((argument != null) ? argument.toString() : null);
         }
@@ -119,11 +122,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.RAVEN_THREAD.get())
+        if (Raven.isManagingThread())
             return;
 
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.startManagingThread();
 
             if (raven == null)
                 initRaven();
@@ -133,7 +136,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Raven", e);
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 
@@ -173,8 +176,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         if (iLoggingEvent.getThrowableProxy() != null) {
-            Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
+            eventBuilder.addSentryInterface(new ExceptionInterface(extractExceptionQueue(iLoggingEvent)));
         } else if (iLoggingEvent.getCallerData().length > 0) {
             eventBuilder.addSentryInterface(new StackTraceInterface(iLoggingEvent.getCallerData()));
         }
@@ -183,6 +185,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.setCulprit(iLoggingEvent.getCallerData()[0]);
         } else {
             eventBuilder.setCulprit(iLoggingEvent.getLoggerName());
+        }
+
+        for (Map.Entry<String, String> contextEntry : iLoggingEvent.getLoggerContextVO().getPropertyMap().entrySet()) {
+            eventBuilder.addExtra(contextEntry.getKey(), contextEntry.getValue());
         }
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
@@ -197,6 +203,70 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
+    }
+
+    private Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
+        IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
+        Deque<SentryException> exceptions = new ArrayDeque<>();
+        Set<IThrowableProxy> circularityDetector = new HashSet<>();
+        StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
+
+        //Stack the exceptions to send them in the reverse order
+        while (throwableProxy != null) {
+            if (!circularityDetector.add(throwableProxy)) {
+                addWarn("Exiting a circular exception!");
+                break;
+            }
+
+            StackTraceElement[] stackTraceElements = toStackTraceElements(throwableProxy);
+            StackTraceInterface stackTrace = new StackTraceInterface(stackTraceElements, enclosingStackTrace);
+            exceptions.push(createSentryExceptionFrom(throwableProxy, stackTrace));
+            enclosingStackTrace = stackTraceElements;
+            throwableProxy = throwableProxy.getCause();
+        }
+
+        return exceptions;
+    }
+
+    private SentryException createSentryExceptionFrom(IThrowableProxy throwableProxy, StackTraceInterface stackTrace) {
+        String exceptionMessage = throwableProxy.getMessage();
+        String[] packageNameSimpleName = extractPackageSimpleClassName(throwableProxy.getClassName());
+        String exceptionPackageName = packageNameSimpleName[0];
+        String exceptionClassName = packageNameSimpleName[1];
+
+        return new SentryException(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
+    }
+
+    private String[] extractPackageSimpleClassName(String canonicalClassName) {
+        String[] packageNameSimpleName = new String[2];
+        try {
+            Class<?> exceptionClass = Class.forName(canonicalClassName);
+            Package exceptionPackage = exceptionClass.getPackage();
+            packageNameSimpleName[0] = exceptionPackage != null ? exceptionPackage.getName()
+                    : SentryException.DEFAULT_PACKAGE_NAME;
+            packageNameSimpleName[1] = exceptionClass.getSimpleName();
+        } catch (ClassNotFoundException e) {
+            int lastDot = canonicalClassName.lastIndexOf('.');
+            if (lastDot != -1) {
+                packageNameSimpleName[0] = canonicalClassName.substring(0, lastDot);
+                packageNameSimpleName[1] = canonicalClassName.substring(lastDot);
+            } else {
+                packageNameSimpleName[0] = SentryException.DEFAULT_PACKAGE_NAME;
+                packageNameSimpleName[1] = canonicalClassName;
+            }
+        }
+        return packageNameSimpleName;
+    }
+
+    private StackTraceElement[] toStackTraceElements(IThrowableProxy throwableProxy) {
+        StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
+        StackTraceElement[] stackTraceElements = new StackTraceElement[stackTraceElementProxies.length];
+
+        for (int i = 0, stackTraceElementsLength = stackTraceElementProxies.length; i < stackTraceElementsLength; i++) {
+            stackTraceElements[i] = stackTraceElementProxies[i].getStackTraceElement();
+        }
+
+        return stackTraceElements;
     }
 
     public void setDsn(String dsn) {

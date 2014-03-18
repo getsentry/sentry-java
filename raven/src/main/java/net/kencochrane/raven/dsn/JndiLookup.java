@@ -36,9 +36,9 @@ final class JndiLookup {
             Context c = new InitialContext();
             dsn = (String) c.lookup(JNDI_DSN_NAME);
         } catch (NoInitialContextException e) {
-            logger.trace("JNDI not configured for sentry (NoInitialContextEx)");
+            logger.debug("JNDI not configured for sentry (NoInitialContextEx)");
         } catch (NamingException e) {
-            logger.trace("No /sentry/dsn in JNDI");
+            logger.debug("No /sentry/dsn in JNDI");
         } catch (RuntimeException e) {
             logger.warn("Odd RuntimeException while testing for JNDI", e);
         }

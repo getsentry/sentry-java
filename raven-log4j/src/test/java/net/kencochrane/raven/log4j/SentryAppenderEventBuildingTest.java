@@ -9,6 +9,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -21,8 +22,8 @@ import org.testng.annotations.Test;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.UUID;
 
+import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.is;
@@ -49,9 +50,9 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testSimpleMessageLogging() throws Exception {
-        final String loggerName = UUID.randomUUID().toString();
-        final String message = UUID.randomUUID().toString();
-        final String threadName = UUID.randomUUID().toString();
+        final String loggerName = "cdc23028-9b1f-485d-90bf-853d2f5f52d6";
+        final String message = "fae94de0-0df3-4f96-92d5-a3fb66e714f3";
+        final String threadName = "78ecbf4d-aa61-4dd7-8ef4-b1c49232e8f4";
         final Date date = new Date(1373883196416L);
         new Expectations() {{
             mockLogger.getName();
@@ -98,27 +99,26 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testExceptionLogging() throws Exception {
-        final Exception exception = new Exception(UUID.randomUUID().toString());
+        final Exception exception = new Exception("027a0db3-fb98-4377-bafb-fe5a49f067e8");
 
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, exception));
 
         new Verifications() {{
             Event event;
-            Throwable throwable;
             mockRaven.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
-            throwable = exceptionInterface.getThrowable();
-            assertThat(throwable.getMessage(), is(exception.getMessage()));
-            assertThat(throwable.getStackTrace(), is(exception.getStackTrace()));
+            SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+            assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
         }};
         assertNoErrorsInErrorHandler();
     }
 
     @Test
     public void testMdcAddedToExtra() throws Exception {
-        final String extraKey = UUID.randomUUID().toString();
-        final String extraValue = UUID.randomUUID().toString();
+        final String extraKey = "1aeb7253-6e0d-4902-86d6-7e4b36571cfd";
+        final String extraValue = "b2e19866-08a2-4611-b72c-150fa6aa3394";
 
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
                 null, null, null, Collections.singletonMap(extraKey, extraValue)));
@@ -156,7 +156,8 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testNdcAddedToExtra() throws Exception {
-        final String ndcEntries = Joiner.on(' ').join(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        final String ndcEntries = Joiner.on(' ').join("930580ba-f92f-4893-855b-ac24efa1a6c2",
+                "fa32ad74-a015-492a-991f-c6a0e04accaf", "be9dd914-3690-4781-97b2-fe14aedb4cbd");
 
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
                 null, ndcEntries, null, null));
@@ -171,9 +172,9 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testSourceUsedAsStacktrace(@Injectable final LocationInfo locationInfo) throws Exception {
-        final String className = UUID.randomUUID().toString();
-        final String methodName = UUID.randomUUID().toString();
-        final String fileName = UUID.randomUUID().toString();
+        final String className = "8004ac1e-8bd3-4762-abe0-2d0d79ae4e40";
+        final String methodName = "ce7cd195-9e6d-4315-b883-12951be3da6e";
+        final String fileName = "1ab50f43-f11c-4439-a05c-d089281411fa";
         final int line = 42;
         new NonStrictExpectations() {{
             locationInfo.getClassName();
@@ -233,7 +234,7 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = UUID.randomUUID().toString();
+        final String loggerName = "2b27da1d-e03a-4292-9a81-78be5491a7e1";
         new Expectations() {{
             mockLogger.getName();
             result = loggerName;

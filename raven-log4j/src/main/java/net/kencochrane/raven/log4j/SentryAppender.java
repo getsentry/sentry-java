@@ -145,18 +145,18 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     protected void append(LoggingEvent loggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.RAVEN_THREAD.get())
+        if (Raven.isManagingThread())
             return;
 
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.startManagingThread();
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Raven", e,
                     ErrorCode.WRITE_FAILURE);
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 

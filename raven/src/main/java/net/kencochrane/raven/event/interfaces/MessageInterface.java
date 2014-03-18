@@ -61,12 +61,12 @@ public class MessageInterface implements SentryInterface {
     /**
      * Creates a parametrised message for an {@link net.kencochrane.raven.event.Event}.
      *
-     * @param message original message.
-     * @param parameters  parameters of the message.
+     * @param message    original message.
+     * @param parameters parameters of the message.
      */
     public MessageInterface(String message, List<String> parameters) {
         this.message = message;
-        this.parameters = Collections.unmodifiableList(new ArrayList<String>(parameters));
+        this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
     }
 
     @Override
@@ -80,5 +80,28 @@ public class MessageInterface implements SentryInterface {
 
     public List<String> getParameters() {
         return parameters;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageInterface{"
+                + "message='" + message + '\''
+                + ", parameters=" + parameters
+                + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MessageInterface that = (MessageInterface) o;
+
+        return message.equals(that.message) && parameters.equals(that.parameters);
+    }
+
+    @Override
+    public int hashCode() {
+        return message.hashCode();
     }
 }

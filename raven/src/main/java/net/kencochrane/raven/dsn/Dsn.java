@@ -47,8 +47,8 @@ public class Dsn {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 
-        options = new HashMap<String, String>();
-        protocolSettings = new HashSet<String>();
+        options = new HashMap<>();
+        protocolSettings = new HashSet<>();
 
         URI dsnUri = URI.create(dsn);
         extractProtocolInfo(dsnUri);
@@ -81,8 +81,8 @@ public class Dsn {
             // Check that JNDI is available (not available on Android) by loading InitialContext
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             dsn = JndiLookup.jndiLookup();
-        } catch (ClassNotFoundException e) {
-            logger.trace("JNDI not available");
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+            logger.debug("JNDI not available");
         }
 
         // Try to obtain the DSN from a System Environment Variable
@@ -186,7 +186,7 @@ public class Dsn {
      * </p>
      */
     private void validate() {
-        List<String> missingElements = new LinkedList<String>();
+        List<String> missingElements = new LinkedList<>();
         if (host == null)
             missingElements.add("host");
         if (publicKey == null)

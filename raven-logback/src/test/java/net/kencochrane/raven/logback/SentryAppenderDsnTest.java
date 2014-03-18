@@ -29,6 +29,7 @@ public class SentryAppenderDsnTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        new MockUpStatusPrinter();
         sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
 

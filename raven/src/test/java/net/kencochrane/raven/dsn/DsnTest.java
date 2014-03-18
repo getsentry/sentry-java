@@ -2,6 +2,7 @@ package net.kencochrane.raven.dsn;
 
 import mockit.Expectations;
 import mockit.Mocked;
+import mockit.NonStrictExpectations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -9,7 +10,6 @@ import javax.naming.Context;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -46,8 +46,28 @@ public class DsnTest {
     }
 
     @Test
+    public void testJndiLookupFailsWithException(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
+        new NonStrictExpectations() {{
+            JndiLookup.jndiLookup();
+            result = new ClassNotFoundException("Couldn't find the JNDI classes");
+        }};
+
+        assertThat(Dsn.dsnLookup(), is(nullValue()));
+    }
+
+    @Test
+    public void testJndiLookupFailsWithError(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
+        new NonStrictExpectations() {{
+            JndiLookup.jndiLookup();
+            result = new NoClassDefFoundError("Couldn't find the JNDI classes");
+        }};
+
+        assertThat(Dsn.dsnLookup(), is(nullValue()));
+    }
+
+    @Test
     public void testDsnLookupWithJndi() throws Exception {
-        final String dsn = UUID.randomUUID().toString();
+        final String dsn = "6621980c-e27b-4dc9-9130-7fc5e9ea9750";
         new Expectations() {{
             mockContext.lookup("java:comp/env/sentry/dsn");
             result = dsn;
@@ -58,7 +78,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithSystemProperty() throws Exception {
-        String dsn = UUID.randomUUID().toString();
+        String dsn = "aa9171a4-7e9b-4e3c-b3cc-fe537dc03527";
         System.setProperty("SENTRY_DSN", dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));
@@ -68,7 +88,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithEnvironmentVariable() throws Exception {
-        String dsn = UUID.randomUUID().toString();
+        String dsn = "759ed060-dd4f-4478-8a1a-3f23e044787c";
         setEnv("SENTRY_DSN", dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));

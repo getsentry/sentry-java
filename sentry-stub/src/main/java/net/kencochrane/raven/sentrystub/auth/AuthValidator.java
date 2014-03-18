@@ -18,8 +18,8 @@ public class AuthValidator {
     private static final String PUBLIC_KEY_PARAMETER = "sentry_key";
     private static final String SECRET_KEY_PARAMETER = "sentry_secret";
     private static final String SENTRY_CLIENT_PARAMETER = "sentry_client";
-    private final Map<String, String> publicKeySecretKey = new HashMap<String, String>();
-    private final Map<String, String> publicKeyProjectId = new HashMap<String, String>();
+    private final Map<String, String> publicKeySecretKey = new HashMap<>();
+    private final Map<String, String> publicKeyProjectId = new HashMap<>();
 
     /**
      * Adds a user to consider as valid of an Auth header.

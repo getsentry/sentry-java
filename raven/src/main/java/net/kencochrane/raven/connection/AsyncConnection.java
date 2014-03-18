@@ -31,7 +31,11 @@ public class AsyncConnection implements Connection {
     /**
      * Executor service in charge of running the connection in separate threads.
      */
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService;
+    /**
+     * Shutdown hook used to stop the async connection properly when the JVM quits.
+     */
+    private final ShutDownHook shutDownHook = new ShutDownHook();
     /**
      * Boolean used to check whether the connection is still open or not.
      */
@@ -44,9 +48,15 @@ public class AsyncConnection implements Connection {
      * </p>
      *
      * @param actualConnection connection used to send the events.
+     * @param executorService  executorService used to process events, if null, the executorService will automatically
+     *                         be set to {@code Executors.newSingleThreadExecutor()}
      */
-    public AsyncConnection(Connection actualConnection) {
+    public AsyncConnection(Connection actualConnection, ExecutorService executorService) {
         this.actualConnection = actualConnection;
+        if (executorService == null)
+            this.executorService = Executors.newSingleThreadExecutor();
+        else
+            this.executorService = executorService;
         addShutdownHook();
     }
 
@@ -55,19 +65,7 @@ public class AsyncConnection implements Connection {
      */
     private void addShutdownHook() {
         // JUL loggers are shutdown by an other shutdown hook, it's possible that nothing will get actually logged.
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                try {
-                    // The current thread is managed by raven
-                    Raven.RAVEN_THREAD.set(true);
-                    AsyncConnection.this.close();
-                } catch (IOException e) {
-                    logger.error("An exception occurred while closing the connection.", e);
-                } finally {
-                    Raven.RAVEN_THREAD.remove();
-                }
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(shutDownHook);
     }
 
     /**
@@ -93,6 +91,16 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void close() throws IOException {
+        Runtime.getRuntime().removeShutdownHook(shutDownHook);
+        doClose();
+    }
+
+    /**
+     * Close the connection whether it's from the shutdown hook or not.
+     *
+     * @see #close()
+     */
+    private void doClose() throws IOException {
         logger.info("Gracefully shutdown sentry threads.");
         closed = true;
         executorService.shutdown();
@@ -112,10 +120,6 @@ public class AsyncConnection implements Connection {
         }
     }
 
-    public void setExecutorService(ExecutorService executorService) {
-        this.executorService = executorService;
-    }
-
     /**
      * Simple runnable using the {@link #send(net.kencochrane.raven.event.Event)} method of the
      * {@link #actualConnection}.
@@ -131,12 +135,27 @@ public class AsyncConnection implements Connection {
         public void run() {
             try {
                 // The current thread is managed by raven
-                Raven.RAVEN_THREAD.set(true);
+                Raven.startManagingThread();
                 actualConnection.send(event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
-                Raven.RAVEN_THREAD.remove();
+                Raven.stopManagingThread();
+            }
+        }
+    }
+
+    private final class ShutDownHook extends Thread {
+        public void run() {
+            try {
+                // The current thread is managed by raven
+                Raven.startManagingThread();
+                logger.info("Automatic shutdown of the async connection");
+                AsyncConnection.this.doClose();
+            } catch (Exception e) {
+                logger.error("An exception occurred while closing the connection.", e);
+            } finally {
+                Raven.stopManagingThread();
             }
         }
     }

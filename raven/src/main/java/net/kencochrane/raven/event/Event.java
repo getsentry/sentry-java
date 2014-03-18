@@ -63,7 +63,7 @@ public class Event implements Serializable {
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
      * </p>
      */
-    private Map<String, String> tags = new HashMap<String, String>();
+    private Map<String, String> tags = new HashMap<>();
     /**
      * Identifies the host client from which the event was recorded.
      */
@@ -74,7 +74,7 @@ public class Event implements Serializable {
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
      * </p>
      */
-    private Map<String, Object> extra = new HashMap<String, Object>();
+    private Map<String, Object> extra = new HashMap<>();
     /**
      * Checksum for the event, allowing to group events with a similar checksum.
      */
@@ -85,7 +85,7 @@ public class Event implements Serializable {
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
      * </p>
      */
-    private Map<String, SentryInterface> sentryInterfaces = new HashMap<String, SentryInterface>();
+    private Map<String, SentryInterface> sentryInterfaces = new HashMap<>();
 
     /**
      * Creates a new Event (should be called only through {@link EventBuilder} with the specified identifier.

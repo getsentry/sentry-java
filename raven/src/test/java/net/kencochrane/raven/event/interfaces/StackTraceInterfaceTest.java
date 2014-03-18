@@ -8,7 +8,7 @@ import static org.hamcrest.Matchers.is;
 
 public class StackTraceInterfaceTest {
     @Test
-    public void testCalculationCommonStackFrames() {
+    public void testCalculationCommonStackFrames() throws Exception {
         Exception exception = new RuntimeException("exception1");
         exception = new RuntimeException("exception2", exception);
 

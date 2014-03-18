@@ -10,8 +10,6 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.UUID;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -39,7 +37,7 @@ public class RavenTest {
 
     @Test
     public void testSendMessage() throws Exception {
-        final String message = UUID.randomUUID().toString();
+        final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
 
         raven.sendMessage(message);
 
@@ -53,7 +51,7 @@ public class RavenTest {
 
     @Test
     public void testSendException() throws Exception {
-        final String message = UUID.randomUUID().toString();
+        final String message = "7b61ddb1-eb32-428d-bad9-a7d842605ba7";
         final Exception exception = new Exception(message);
 
         raven.sendException(exception);
@@ -102,7 +100,7 @@ public class RavenTest {
 
         raven.runBuilderHelpers(mockEventBuilder);
 
-        new Verifications(){{
+        new Verifications() {{
             mockBuilderHelper.helpBuildingEvent(mockEventBuilder);
         }};
     }

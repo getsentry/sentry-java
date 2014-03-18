@@ -15,25 +15,24 @@ public class SentryAppenderIT {
     private SentryStub sentryStub;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
         sentryStub = new SentryStub();
-        sentryStub.removeEvents();
     }
 
     @AfterMethod
-    public void tearDown() {
+    public void tearDown() throws Exception {
         sentryStub.removeEvents();
     }
 
     @Test
-    public void testInfoLog() {
+    public void testInfoLog() throws Exception {
         assertThat(sentryStub.getEventCount(), is(0));
         logger.info("This is a test");
         assertThat(sentryStub.getEventCount(), is(1));
     }
 
     @Test
-    public void testChainedExceptions() {
+    public void testChainedExceptions() throws Exception {
         assertThat(sentryStub.getEventCount(), is(0));
         logger.error("This is an exception",
                 new UnsupportedOperationException("Test", new UnsupportedOperationException()));
