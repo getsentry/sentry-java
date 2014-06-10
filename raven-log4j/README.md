@@ -22,7 +22,7 @@ Relies on:
 
  - [raven dependencies](../raven)
  - [log4j-1.2.17.jar](https://search.maven.org/#artifactdetails%7Clog4j%7Clog4j%7C1.2.17%7Cjar)
- - [slf4j-log4j12-1.7.5.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-log4j12%7C1.7.5%7Cjar)
+ - [slf4j-log4j12-1.7.7.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-log4j12%7C1.7.7%7Cjar)
  is recommended as the implementation of slf4j (instead of slf4j-jdk14).
 
 ## Usage
