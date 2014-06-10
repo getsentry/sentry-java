@@ -47,7 +47,7 @@ In the `logback.xml` file set:
 It's possible to add extra details to events captured by the logback module
 thanks to the [marker system](http://www.slf4j.org/faq.html#fatal) which will
 add a tag `logback-Marker`.
-[The MDC system provided by Log4j 2](http://logback.qos.ch/manual/mdc.html)
+[The MDC system provided by logback](http://logback.qos.ch/manual/mdc.html)
 allows to add extra information to the event.
 
 ### In practice
