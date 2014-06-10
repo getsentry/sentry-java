@@ -20,7 +20,7 @@ __This module is not useful outside of Google App Engine.__
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C5.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-appengine%7C5.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
