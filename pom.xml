@@ -98,7 +98,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <github.repo>kencochrane/raven-java</github.repo>
+        <github.repo>getsentry/raven-java</github.repo>
         <github.global.server>github</github.global.server>
 
         <!-- maven-compiler-plugin config -->
