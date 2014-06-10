@@ -19,6 +19,7 @@ manually with the main project [raven](raven).
 Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
 instance.
 
+Support for [Google App Engine](https://appengine.google.com/) is provided in [raven-appengine](raven-appengine)
 
 ## Sentry Protocol and Raven versions
 Since Sentry 2.0, the major version of raven matches the version of the Sentry protocol.
