@@ -20,17 +20,6 @@ Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
 instance.
 
 
-## Notes on GetSentry.com and Oracle JDK
-
-Due to GetSentry.com using a certificate provided by [StartCom](https://www.startcom.org/) and StartCom not being
-in the list of the [CAcerts of Oracle JDK 6](http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html#cacerts)
-it isn't possible to establish an HTTPS connection to GetSentry.com out of the box.
-
-The said certificate [might be available out of the box with Java 8](https://forum.startcom.org/viewtopic.php?f=15&t=1815)
-but in the mean time, you can use the [raven-getsentry](raven-getsentry) module which embeds the certificate and allows
-SSL connections to GetSentry.com
-
-
 ## Sentry Protocol and Raven versions
 Since 2.0, the major version of raven matches the version of the Sentry protocol.
 
