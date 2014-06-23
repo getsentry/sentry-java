@@ -149,7 +149,7 @@ public class Dsn {
      *
      * @param dsnUri DSN as an URI.
      */
-    private Map<String, String> extractOptions(URI dsnUri) {
+    private static Map<String, String> extractOptions(URI dsnUri) {
         String query = dsnUri.getQuery();
         if (query == null || query.isEmpty())
             return Collections.emptyMap();
