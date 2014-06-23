@@ -148,6 +148,7 @@ public class AsyncConnection implements Connection {
     }
 
     private final class ShutDownHook extends Thread {
+        @Override
         public void run() {
             try {
                 // The current thread is managed by raven
