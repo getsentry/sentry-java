@@ -40,22 +40,31 @@ public class Dsn {
     /**
      * Creates a DSN based on a String.
      *
-     * @param dsn dsn in a string form.
-     * @throws InvalidDsnException the given DSN isn't usable.
+     * @param dsn DSN in a string form.
+     * @throws InvalidDsnException the given DSN is not valid.
      */
     public Dsn(String dsn) throws InvalidDsnException {
+        this(URI.create(dsn));
+    }
+
+    /**
+     * Creates a DSN based on a URI.
+     *
+     * @param dsn DSN in URI form.
+     * @throws InvalidDsnException the given DSN is not valid.
+     */
+    public Dsn(URI dsn) throws InvalidDsnException {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 
         options = new HashMap<>();
         protocolSettings = new HashSet<>();
 
-        URI dsnUri = URI.create(dsn);
-        extractProtocolInfo(dsnUri);
-        extractUserKeys(dsnUri);
-        extractHostInfo(dsnUri);
-        extractPathInfo(dsnUri);
-        extractOptions(dsnUri);
+        extractProtocolInfo(dsn);
+        extractUserKeys(dsn);
+        extractHostInfo(dsn);
+        extractPathInfo(dsn);
+        extractOptions(dsn);
 
         makeOptionsImmutable();
 
@@ -171,7 +180,7 @@ public class Dsn {
     }
 
     /**
-     * Makes protocol and dsn options immutable to allow an external usage.
+     * Makes protocol and dsn options immutable to allow external usage.
      */
     private void makeOptionsImmutable() {
         // Make the options immutable
