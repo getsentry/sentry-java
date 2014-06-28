@@ -17,7 +17,6 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -288,13 +287,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void stop() {
-        super.stop();
-
         try {
+            Raven.startManagingThread();
+            super.stop();
             if (raven != null)
-                raven.getConnection().close();
-        } catch (IOException e) {
+                raven.closeConnection();
+        } catch (Exception e) {
             addError("An exception occurred while closing the Raven connection", e);
+        } finally {
+            Raven.stopManagingThread();
         }
     }
 }

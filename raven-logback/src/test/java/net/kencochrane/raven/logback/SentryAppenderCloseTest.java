@@ -19,8 +19,6 @@ public class SentryAppenderCloseTest {
     private Raven mockRaven = null;
     @Injectable
     private Context mockContext = null;
-    @Injectable
-    private Connection mockConnection = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -33,8 +31,6 @@ public class SentryAppenderCloseTest {
 
             mockContext.getStatusManager();
             result = statusManager;
-            mockRaven.getConnection();
-            result = mockConnection;
         }};
     }
 
@@ -50,7 +46,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.stop();
 
         new Verifications() {{
-            mockConnection.close();
+            mockRaven.closeConnection();
         }};
         assertNoErrorsInStatusManager();
     }

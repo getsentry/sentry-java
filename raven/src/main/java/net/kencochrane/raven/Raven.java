@@ -8,6 +8,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.ResourceBundle;
@@ -162,8 +163,15 @@ public class Raven {
         return Collections.unmodifiableSet(builderHelpers);
     }
 
-    public Connection getConnection() {
-        return connection;
+    /**
+     * Closes the connection for the Raven instance.
+     */
+    public void closeConnection() {
+        try {
+            connection.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Couldn't close the Raven connection", e);
+        }
     }
 
     public void setConnection(Connection connection) {

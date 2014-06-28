@@ -14,17 +14,11 @@ import static org.hamcrest.Matchers.is;
 public class SentryAppenderCloseTest {
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
-    private Connection mockConnection = null;
-    @Injectable
     private Raven mockRaven = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
         mockUpErrorHandler = new MockUpErrorHandler();
-        new NonStrictExpectations() {{
-            mockRaven.getConnection();
-            result = mockConnection;
-        }};
     }
 
     private void assertNoErrorsInErrorHandler() throws Exception {
@@ -40,7 +34,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.stop();
 
         new Verifications() {{
-            mockConnection.close();
+            mockRaven.closeConnection();
         }};
         assertNoErrorsInErrorHandler();
     }

@@ -20,7 +20,6 @@ import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.message.Message;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -275,13 +274,15 @@ public class SentryAppender extends AbstractAppender {
 
     @Override
     public void stop() {
-        super.stop();
-
         try {
+            Raven.startManagingThread();
+            super.stop();
             if (raven != null)
-                raven.getConnection().close();
-        } catch (IOException e) {
+                raven.closeConnection();
+        } catch (Exception e) {
             error("An exception occurred while closing the Raven connection", e);
+        } finally {
+            Raven.stopManagingThread();
         }
     }
 }

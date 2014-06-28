@@ -15,8 +15,6 @@ public class SentryAppenderCloseTest {
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private Raven mockRaven = null;
-    @Injectable
-    private Connection mockConnection = null;
     @Mocked("ravenInstance")
     private RavenFactory mockRavenFactory;
     @Mocked("dsnLookup")
@@ -25,10 +23,6 @@ public class SentryAppenderCloseTest {
     @BeforeMethod
     public void setUp() throws Exception {
         mockUpErrorHandler = new MockUpErrorHandler();
-        new NonStrictExpectations() {{
-            mockRaven.getConnection();
-            result = mockConnection;
-        }};
     }
 
     private void assertNoErrorsInErrorHandler() throws Exception {
@@ -44,7 +38,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.close();
 
         new Verifications() {{
-            mockConnection.close();
+            mockRaven.closeConnection();
         }};
         assertNoErrorsInErrorHandler();
     }
@@ -65,7 +59,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.close();
 
         new Verifications() {{
-            mockConnection.close();
+            mockRaven.closeConnection();
         }};
         assertNoErrorsInErrorHandler();
     }
@@ -107,7 +101,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.close();
 
         new Verifications() {{
-            mockConnection.close();
+            mockRaven.closeConnection();
             times = 1;
         }};
         assertNoErrorsInErrorHandler();
