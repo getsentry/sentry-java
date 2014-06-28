@@ -103,9 +103,10 @@ public class SentryHandler extends Handler {
      */
     protected void retrieveProperties() {
         LogManager manager = LogManager.getLogManager();
-        dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
-        ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
-        String tagsProperty = manager.getProperty(SentryHandler.class.getName() + ".tags");
+        String className = SentryHandler.class.getName();
+        dsn = manager.getProperty(className + ".dsn");
+        ravenFactory = manager.getProperty(className + ".ravenFactory");
+        String tagsProperty = manager.getProperty(className + ".tags");
         if (tagsProperty != null)
             tags = Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
     }
