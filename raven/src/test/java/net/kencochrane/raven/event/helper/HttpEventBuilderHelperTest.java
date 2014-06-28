@@ -15,6 +15,7 @@ public class HttpEventBuilderHelperTest {
     private HttpEventBuilderHelper httpEventBuilderHelper = null;
     @Injectable
     private EventBuilder mockEventBuilder = null;
+    @SuppressWarnings("unused")
     @Mocked
     private HttpInterface mockHttpInterface = null;
 

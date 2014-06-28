@@ -22,8 +22,10 @@ public class SentryAppenderDsnTest {
     private Raven mockRaven = null;
     @Injectable
     private Context mockContext = null;
+    @SuppressWarnings("unused")
     @Mocked("ravenInstance")
     private RavenFactory mockRavenFactory = null;
+    @SuppressWarnings("unused")
     @Mocked("dsnLookup")
     private Dsn mockDsn = null;
 

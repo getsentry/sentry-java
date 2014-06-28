@@ -44,7 +44,8 @@ public class EventBuilderHostnameCacheTest {
     }
 
     @Test
-    public void successfulHostnameRetrievalIsCachedForFiveHours(@Mocked("currentTimeMillis") final System system)
+    public void successfulHostnameRetrievalIsCachedForFiveHours(
+            @SuppressWarnings("unused") @Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();
@@ -60,7 +61,8 @@ public class EventBuilderHostnameCacheTest {
     }
 
     @Test
-    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(@Mocked("currentTimeMillis") final System system)
+    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(
+            @SuppressWarnings("unused") @Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();

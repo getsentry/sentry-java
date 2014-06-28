@@ -64,7 +64,8 @@ public class DsnTest {
     }
 
     @Test
-    public void testJndiLookupFailsWithException(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
+    public void testJndiLookupFailsWithException(
+            @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
         new NonStrictExpectations() {{
             JndiLookup.jndiLookup();
             result = new ClassNotFoundException("Couldn't find the JNDI classes");
@@ -74,7 +75,8 @@ public class DsnTest {
     }
 
     @Test
-    public void testJndiLookupFailsWithError(@Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
+    public void testJndiLookupFailsWithError(
+            @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
         new NonStrictExpectations() {{
             JndiLookup.jndiLookup();
             result = new NoClassDefFoundError("Couldn't find the JNDI classes");

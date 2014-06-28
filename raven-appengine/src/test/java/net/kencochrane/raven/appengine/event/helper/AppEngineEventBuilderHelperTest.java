@@ -19,6 +19,7 @@ public class AppEngineEventBuilderHelperTest {
     private AppEngineEventBuilderHelper eventBuilderHelper = null;
     @Injectable
     private EventBuilder mockEventBuilder = null;
+    @SuppressWarnings("unused")
     @Mocked("getCurrentEnvironment")
     private ApiProxy mockApiProxy;
     @Injectable

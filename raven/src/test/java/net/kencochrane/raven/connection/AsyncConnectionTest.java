@@ -19,6 +19,7 @@ public class AsyncConnectionTest {
     private ExecutorService mockExecutorService = null;
     @Injectable("false")
     private boolean mockGracefulShutdown = false;
+    @SuppressWarnings("unused")
     @Mocked("addShutdownHook")
     private Runtime mockRuntime = null;
 
@@ -57,7 +58,8 @@ public class AsyncConnectionTest {
 
     @Test
     public void verifyShutdownHookSetManagedByRavenAndCloseConnection(
-            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven)
+            throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();
 
@@ -81,7 +83,8 @@ public class AsyncConnectionTest {
 
     @Test
     public void ensureFailingShutdownHookStopsBeingManaged(
-            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven)
+            throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();
 

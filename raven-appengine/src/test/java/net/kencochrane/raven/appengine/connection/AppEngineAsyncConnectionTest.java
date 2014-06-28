@@ -27,6 +27,7 @@ public class AppEngineAsyncConnectionTest {
     private Connection mockConnection = null;
     @Injectable
     private Queue mockQueue = null;
+    @SuppressWarnings("unused")
     @Mocked("getDefaultQueue")
     private QueueFactory queueFactory = null;
     @Injectable("7b55a129-6975-4434-8edc-29ceefd38c95")
@@ -90,7 +91,7 @@ public class AppEngineAsyncConnectionTest {
 
     @Test
     public void testQueuedEventSubmitted(@Injectable final Event mockEvent,
-                                         @Mocked("setDoNotRetry") DeferredTaskContext deferredTaskContext)
+                                         @SuppressWarnings("unused") @Mocked("setDoNotRetry") DeferredTaskContext deferredTaskContext)
             throws Exception {
         new NonStrictExpectations() {{
             mockQueue.add((TaskOptions) any);

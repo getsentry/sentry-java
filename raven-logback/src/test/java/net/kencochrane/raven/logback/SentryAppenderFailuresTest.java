@@ -20,6 +20,7 @@ public class SentryAppenderFailuresTest {
     private Raven mockRaven = null;
     @Injectable
     private Context mockContext = null;
+    @SuppressWarnings("unused")
     @Mocked("ravenInstance")
     private RavenFactory mockRavenFactory;
 
