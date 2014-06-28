@@ -276,6 +276,8 @@ public class SentryAppender extends AbstractAppender {
     public void stop() {
         try {
             Raven.startManagingThread();
+            if (!isStarted())
+                return;
             super.stop();
             if (raven != null)
                 raven.closeConnection();
