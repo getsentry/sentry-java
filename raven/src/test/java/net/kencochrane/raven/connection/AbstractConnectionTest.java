@@ -32,7 +32,6 @@ public class AbstractConnectionTest {
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        setField(Raven.class, "NAME", "Raven-Java/Test");
         // Reset tested
         abstractConnection = null;
     }
