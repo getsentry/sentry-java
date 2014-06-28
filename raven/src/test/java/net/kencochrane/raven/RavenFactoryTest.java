@@ -42,4 +42,18 @@ public class RavenFactoryTest {
 
         assertThat(raven, is(mockRaven));
     }
+
+    @Test
+    public void testGetFactoriesManuallyAdded(@Injectable final Raven mockRaven,
+                                                  @Injectable final Dsn mockDsn) throws Exception {
+        new NonStrictExpectations() {{
+            RavenFactory.registerFactory(ravenFactory);
+            ravenFactory.createRavenInstance(mockDsn);
+            result = mockRaven;
+        }};
+
+        Raven raven = RavenFactory.ravenInstance(mockDsn);
+
+        assertThat(raven, is(mockRaven));
+    }
 }
