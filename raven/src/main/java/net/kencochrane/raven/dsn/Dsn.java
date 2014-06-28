@@ -286,6 +286,8 @@ public class Dsn {
 
     @Override
     public String toString() {
-        return getUri().toString();
+        return "Dsn{"
+                + "uri=" + uri
+                + '}';
     }
 }
