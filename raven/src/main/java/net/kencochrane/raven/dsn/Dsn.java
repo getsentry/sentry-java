@@ -23,12 +23,10 @@ public class Dsn {
     private String publicKey;
     private String projectId;
     private String protocol;
-    private String host;
-    private int port;
     private String path;
     private Set<String> protocolSettings;
-    private Map<String, String> options;
-    private URI uri;
+    private final Map<String, String> options;
+    private final URI uri;
 
     /**
      * Creates a DSN based on the {@link #dsnLookup()} result.
@@ -40,29 +38,36 @@ public class Dsn {
     /**
      * Creates a DSN based on a String.
      *
-     * @param dsn dsn in a string form.
+     * @param dsn DSN in a string form.
      * @throws InvalidDsnException the given DSN isn't usable.
      */
     public Dsn(String dsn) throws InvalidDsnException {
+        this(URI.create(dsn));
+    }
+
+    /**
+     * Creates a DSN based on a URI.
+     *
+     * @param dsn DSN in URI form.
+     * @throws InvalidDsnException the given DSN isn't usable.
+     */
+    public Dsn(URI dsn) throws InvalidDsnException {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 
-        options = new HashMap<>();
         protocolSettings = new HashSet<>();
 
-        URI dsnUri = URI.create(dsn);
-        extractProtocolInfo(dsnUri);
-        extractUserKeys(dsnUri);
-        extractHostInfo(dsnUri);
-        extractPathInfo(dsnUri);
-        extractOptions(dsnUri);
+        extractProtocolInfo(dsn);
+        extractUserKeys(dsn);
+        extractPathInfo(dsn);
+        options = Collections.unmodifiableMap(extractOptions(dsn));
 
-        makeOptionsImmutable();
+        makeSettingsImmutable();
 
         validate();
 
         try {
-            uri = new URI(protocol, null, host, port, path, null, null);
+            uri = new URI(protocol, null, dsn.getHost(), dsn.getPort(), path, null, null);
         } catch (URISyntaxException e) {
             throw new InvalidDsnException("Impossible to determine Sentry's URI from the DSN '" + dsn + "'", e);
         }
@@ -111,16 +116,6 @@ public class Dsn {
     }
 
     /**
-     * Extracts the hostname and port of the Sentry server from the DSN provided as an {@code URI}.
-     *
-     * @param dsnUri DSN as an URI.
-     */
-    private void extractHostInfo(URI dsnUri) {
-        host = dsnUri.getHost();
-        port = dsnUri.getPort();
-    }
-
-    /**
      * Extracts the scheme and additional protocol options from the DSN provided as an {@code URI}.
      *
      * @param dsnUri DSN as an URI.
@@ -154,28 +149,29 @@ public class Dsn {
      *
      * @param dsnUri DSN as an URI.
      */
-    private void extractOptions(URI dsnUri) {
+    private static Map<String, String> extractOptions(URI dsnUri) {
         String query = dsnUri.getQuery();
         if (query == null || query.isEmpty())
-            return;
+            return Collections.emptyMap();
+        Map<String, String> queryOptions = new HashMap<>();
         for (String optionPair : query.split("&")) {
             try {
                 String[] pairDetails = optionPair.split("=");
                 String key = URLDecoder.decode(pairDetails[0], "UTF-8");
                 String value = pairDetails.length > 1 ? URLDecoder.decode(pairDetails[1], "UTF-8") : null;
-                options.put(key, value);
+                queryOptions.put(key, value);
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalArgumentException("Impossible to decode the query parameter '" + optionPair + "'", e);
             }
         }
+        return queryOptions;
     }
 
     /**
-     * Makes protocol and dsn options immutable to allow an external usage.
+     * Makes protocol settings immutable to allow external usage.
      */
-    private void makeOptionsImmutable() {
+    private void makeSettingsImmutable() {
         // Make the options immutable
-        options = Collections.unmodifiableMap(options);
         protocolSettings = Collections.unmodifiableSet(protocolSettings);
     }
 
@@ -187,8 +183,6 @@ public class Dsn {
      */
     private void validate() {
         List<String> missingElements = new LinkedList<>();
-        if (host == null)
-            missingElements.add("host");
         if (publicKey == null)
             missingElements.add("public key");
         if (secretKey == null)
@@ -217,11 +211,11 @@ public class Dsn {
     }
 
     public String getHost() {
-        return host;
+        return uri.getHost();
     }
 
     public int getPort() {
-        return port;
+        return getUri().getPort();
     }
 
     public String getPath() {
@@ -252,12 +246,9 @@ public class Dsn {
 
         Dsn dsn = (Dsn) o;
 
-        if (port != dsn.port) return false;
-        if (!host.equals(dsn.host)) return false;
+        if (!uri.equals(dsn.uri)) return false;
         if (!options.equals(dsn.options)) return false;
-        if (!path.equals(dsn.path)) return false;
         if (!projectId.equals(dsn.projectId)) return false;
-        if (protocol != null ? !protocol.equals(dsn.protocol) : dsn.protocol != null) return false;
         if (!protocolSettings.equals(dsn.protocolSettings)) return false;
         if (!publicKey.equals(dsn.publicKey)) return false;
         if (!secretKey.equals(dsn.secretKey)) return false;
@@ -267,12 +258,7 @@ public class Dsn {
 
     @Override
     public int hashCode() {
-        int result = publicKey.hashCode();
-        result = 31 * result + projectId.hashCode();
-        result = 31 * result + host.hashCode();
-        result = 31 * result + port;
-        result = 31 * result + path.hashCode();
-        return result;
+        return Objects.hash(publicKey, projectId, uri);
     }
 
     @Override
