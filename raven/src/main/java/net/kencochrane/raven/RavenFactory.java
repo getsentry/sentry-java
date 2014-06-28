@@ -106,8 +106,8 @@ public abstract class RavenFactory {
 
     @Override
     public String toString() {
-        return "RavenFactory{" +
-                "name='" + this.getClass().getName() + '\'' +
-                '}';
+        return "RavenFactory{"
+                + "name='" + this.getClass().getName() + '\''
+                + '}';
     }
 }
