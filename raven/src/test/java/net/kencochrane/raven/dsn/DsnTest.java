@@ -8,6 +8,7 @@ import org.testng.annotations.Test;
 
 import javax.naming.Context;
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 
@@ -28,9 +29,26 @@ public class DsnTest {
         new Dsn("");
     }
 
+    @Test(expectedExceptions = InvalidDsnException.class)
+    public void testDsnFromInvalidUri() throws Exception {
+        new Dsn(URI.create(""));
+    }
+
     @Test
     public void testSimpleDsnValid() throws Exception {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
+
+        assertThat(dsn.getProtocol(), is("http"));
+        assertThat(dsn.getPublicKey(), is("publicKey"));
+        assertThat(dsn.getSecretKey(), is("secretKey"));
+        assertThat(dsn.getHost(), is("host"));
+        assertThat(dsn.getPath(), is("/"));
+        assertThat(dsn.getProjectId(), is("9"));
+    }
+
+    @Test
+    public void testSimpleDsnFromValidURI() throws Exception {
+        Dsn dsn = new Dsn(URI.create("http://publicKey:secretKey@host/9"));
 
         assertThat(dsn.getProtocol(), is("http"));
         assertThat(dsn.getPublicKey(), is("publicKey"));
