@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
@@ -31,10 +32,10 @@ public class Raven {
     /**
      * Indicates whether the current thread is managed by raven or not.
      */
-    private static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>() {
+    private static final ThreadLocal<AtomicInteger> RAVEN_THREAD = new ThreadLocal<AtomicInteger>() {
         @Override
-        protected Boolean initialValue() {
-            return false;
+        protected AtomicInteger initialValue() {
+            return new AtomicInteger();
         }
     };
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
@@ -52,7 +53,7 @@ public class Raven {
             if (isManagingThread())
                 logger.warn("Thread already managed by Raven");
         } finally {
-            RAVEN_THREAD.set(true);
+            RAVEN_THREAD.get().incrementAndGet();
         }
     }
 
@@ -70,7 +71,7 @@ public class Raven {
                 logger.warn("Thread not yet managed by Raven");
             }
         } finally {
-            RAVEN_THREAD.remove();
+            RAVEN_THREAD.get().decrementAndGet();
         }
     }
 
@@ -80,7 +81,7 @@ public class Raven {
      * @return {@code true} if the thread is managed by Raven, {@code false} otherwise.
      */
     public static boolean isManagingThread() {
-        return RAVEN_THREAD.get();
+        return RAVEN_THREAD.get().get() > 0;
     }
 
     /**

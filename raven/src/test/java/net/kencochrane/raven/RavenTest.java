@@ -12,6 +12,9 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static mockit.Deencapsulation.getField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -30,7 +33,8 @@ public class RavenTest {
 
     @AfterMethod
     public void tearDown() throws Exception {
-        Raven.stopManagingThread();
+        ThreadLocal<AtomicInteger> ravenThread = getField(Raven.class, "RAVEN_THREAD");
+        ravenThread.remove();
     }
 
     @Test
@@ -132,31 +136,43 @@ public class RavenTest {
 
     @Test
     public void testStartManagingThreadWorks() throws Exception {
-        assertThat(Raven.isManagingThread(), is(false));
         Raven.startManagingThread();
+
         assertThat(Raven.isManagingThread(), is(true));
     }
 
     @Test
     public void testStartManagingAlreadyManagedThreadWorks() throws Exception {
         Raven.startManagingThread();
-        assertThat(Raven.isManagingThread(), is(true));
+
         Raven.startManagingThread();
+
         assertThat(Raven.isManagingThread(), is(true));
     }
 
     @Test
     public void testStopManagingThreadWorks() throws Exception {
         Raven.startManagingThread();
-        assertThat(Raven.isManagingThread(), is(true));
+
         Raven.stopManagingThread();
+
         assertThat(Raven.isManagingThread(), is(false));
     }
 
     @Test
     public void testStopManagingNonManagedThreadWorks() throws Exception {
         Raven.stopManagingThread();
+
         assertThat(Raven.isManagingThread(), is(false));
+    }
+
+    @Test
+    public void testThreadManagedTwiceNeedsToBeUnmanagedTwice() throws Exception {
+        Raven.startManagingThread();
+        Raven.startManagingThread();
+
+        Raven.stopManagingThread();
+        assertThat(Raven.isManagingThread(), is(true));
         Raven.stopManagingThread();
         assertThat(Raven.isManagingThread(), is(false));
     }
