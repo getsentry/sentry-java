@@ -103,4 +103,11 @@ public abstract class RavenFactory {
      * @throws RuntimeException when an instance couldn't be created.
      */
     public abstract Raven createRavenInstance(Dsn dsn);
+
+    @Override
+    public String toString() {
+        return "RavenFactory{" +
+                "name='" + this.getClass().getName() + '\'' +
+                '}';
+    }
 }
