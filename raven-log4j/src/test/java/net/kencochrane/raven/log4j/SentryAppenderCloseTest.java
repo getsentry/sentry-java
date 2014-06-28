@@ -16,9 +16,9 @@ public class SentryAppenderCloseTest {
     @Injectable
     private Raven mockRaven = null;
     @Mocked("ravenInstance")
-    private RavenFactory mockRavenFactory;
+    private RavenFactory mockRavenFactory = null;
     @Mocked("dsnLookup")
-    private Dsn mockDsn;
+    private Dsn mockDsn = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

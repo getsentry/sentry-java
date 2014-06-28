@@ -21,15 +21,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class AppEngineAsyncConnectionTest {
-    private AppEngineAsyncConnection asyncConnection;
+    @Tested
+    private AppEngineAsyncConnection asyncConnection = null;
     @Injectable
-    private Connection mockConnection;
+    private Connection mockConnection = null;
     @Injectable
-    private Queue mockQueue;
+    private Queue mockQueue = null;
     @Mocked("getDefaultQueue")
-    private QueueFactory queueFactory;
+    private QueueFactory queueFactory = null;
     @Injectable("7b55a129-6975-4434-8edc-29ceefd38c95")
-    private String mockConnectionId;
+    private String mockConnectionId = null;
 
     private static DeferredTask extractDeferredTask(TaskOptions taskOptions) throws Exception {
         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(taskOptions.getPayload()));

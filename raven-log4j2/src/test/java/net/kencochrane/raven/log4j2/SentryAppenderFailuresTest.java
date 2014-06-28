@@ -23,7 +23,7 @@ public class SentryAppenderFailuresTest {
     @Injectable
     private Raven mockRaven = null;
     @Mocked("ravenInstance")
-    private RavenFactory mockRavenFactory;
+    private RavenFactory mockRavenFactory = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
