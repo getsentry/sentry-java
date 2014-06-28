@@ -16,6 +16,7 @@ import java.util.ServiceLoader;
 
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class RavenFactoryTest {
@@ -100,5 +101,23 @@ public class RavenFactoryTest {
         }};
 
         RavenFactory.ravenInstance(mockDsn, factoryName);
+    }
+
+    @Test
+    public void testRavenInstantiationFailureCaught(@Injectable final Dsn mockDsn) throws Exception {
+        RavenFactory.registerFactory(ravenFactory);
+        Exception exception = null;
+        new NonStrictExpectations() {{
+            ravenFactory.createRavenInstance(mockDsn);
+            result = new RuntimeException();
+        }};
+
+        try {
+            RavenFactory.ravenInstance(mockDsn);
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception, notNullValue());
     }
 }
