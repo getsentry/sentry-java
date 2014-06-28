@@ -169,4 +169,12 @@ public class Raven {
     public void setConnection(Connection connection) {
         this.connection = connection;
     }
+
+    @Override
+    public String toString() {
+        return "Raven{"
+                + "name=" + NAME
+                + ", connection=" + connection
+                + '}';
+    }
 }
