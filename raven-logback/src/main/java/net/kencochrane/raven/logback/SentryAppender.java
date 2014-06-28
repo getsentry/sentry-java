@@ -289,6 +289,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     public void stop() {
         try {
             Raven.startManagingThread();
+            if (!isStarted())
+                return;
             super.stop();
             if (raven != null)
                 raven.closeConnection();

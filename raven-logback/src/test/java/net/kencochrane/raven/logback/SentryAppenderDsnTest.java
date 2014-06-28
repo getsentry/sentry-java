@@ -3,10 +3,7 @@ package net.kencochrane.raven.logback;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
+import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -17,7 +14,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderDsnTest {
-    private SentryAppender sentryAppender;
+    @Tested
+    private SentryAppender sentryAppender = null;
     @Injectable
     private Raven mockRaven = null;
     @Injectable

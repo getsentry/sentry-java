@@ -3,10 +3,10 @@ package net.kencochrane.raven.logback;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.dsn.Dsn;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -18,6 +18,12 @@ public class SentryAppenderCloseTest {
     private Raven mockRaven = null;
     @Injectable
     private Context mockContext = null;
+    @SuppressWarnings("unused")
+    @Mocked("ravenInstance")
+    private RavenFactory mockRavenFactory = null;
+    @SuppressWarnings("unused")
+    @Mocked("dsnLookup")
+    private Dsn mockDsn = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -41,11 +47,80 @@ public class SentryAppenderCloseTest {
     public void testConnectionClosedWhenAppenderStopped() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
+        sentryAppender.start();
 
         sentryAppender.stop();
 
         new Verifications() {{
             mockRaven.closeConnection();
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testStopIfRavenInstanceNotProvided() throws Exception {
+        final String dsnUri = "protocol://public:private@host/1";
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setContext(mockContext);
+        new Expectations() {{
+            Dsn.dsnLookup();
+            result = dsnUri;
+            RavenFactory.ravenInstance(withEqual(new Dsn(dsnUri)), anyString);
+            result = mockRaven;
+        }};
+        sentryAppender.start();
+        sentryAppender.append(null);
+
+        sentryAppender.stop();
+
+        new Verifications() {{
+            mockRaven.closeConnection();
+        }};
+        //One error, because of the null event.
+        assertThat(mockContext.getStatusManager().getCount(), is(1));
+    }
+
+    @Test
+    public void testStopDoNotFailIfInitFailed() throws Exception {
+        // This checks that even if sentry wasn't setup correctly its appender can still be closed.
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setContext(mockContext);
+        new NonStrictExpectations() {{
+            RavenFactory.ravenInstance((Dsn) any, anyString);
+            result = new UnsupportedOperationException();
+        }};
+        sentryAppender.start();
+        sentryAppender.append(null);
+
+        sentryAppender.stop();
+
+        //Two errors, one because of the exception, one because of the null event.
+        assertThat(mockContext.getStatusManager().getCount(), is(2));
+    }
+
+    @Test
+    public void testStopDoNotFailIfNoInit()
+            throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setContext(mockContext);
+
+        sentryAppender.stop();
+
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testStopDoNotFailWhenMultipleCalls() throws Exception {
+        final SentryAppender sentryAppender = new SentryAppender(mockRaven);
+        sentryAppender.setContext(mockContext);
+        sentryAppender.start();
+
+        sentryAppender.stop();
+        sentryAppender.stop();
+
+        new Verifications() {{
+            mockRaven.closeConnection();
+            times = 1;
         }};
         assertNoErrorsInStatusManager();
     }
