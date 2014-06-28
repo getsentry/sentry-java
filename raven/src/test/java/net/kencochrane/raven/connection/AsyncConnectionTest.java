@@ -17,6 +17,8 @@ public class AsyncConnectionTest {
     private Connection mockConnection;
     @Injectable
     private ExecutorService mockExecutorService;
+    @Injectable("false")
+    private boolean gracefulShutdown;
     @Mocked("addShutdownHook")
     private Runtime mockRuntime;
 
@@ -29,14 +31,27 @@ public class AsyncConnectionTest {
     }
 
     @Test
-    public void verifyShutdownHookIsAdded() throws Exception {
+    public void verifyShutdownHookIsAddedWhenGraceful() throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();
 
-        new AsyncConnection(mockConnection, mockExecutorService);
+        new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new Verifications() {{
             mockRuntime.addShutdownHook((Thread) any);
+        }};
+    }
+
+    @Test
+    public void verifyShutdownHookNotAddedWhenNotGraceful() throws Exception {
+        // Ensure that the shutdown hooks for the unused @Tested instance are removed
+        asyncConnection.close();
+
+        new AsyncConnection(mockConnection, mockExecutorService, false);
+
+        new Verifications() {{
+            mockRuntime.addShutdownHook((Thread) any);
+            times = 0;
         }};
     }
 
@@ -55,7 +70,7 @@ public class AsyncConnectionTest {
             };
         }};
 
-        new AsyncConnection(mockConnection, mockExecutorService);
+        new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new VerificationsInOrder() {{
             Raven.startManagingThread();
@@ -81,7 +96,7 @@ public class AsyncConnectionTest {
             result = new RuntimeException("Close operation failed");
         }};
 
-        new AsyncConnection(mockConnection, mockExecutorService);
+        new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new Verifications() {{
             Raven.stopManagingThread();

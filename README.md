@@ -140,6 +140,23 @@ To disable the async mode, add `raven.async=false` to the DSN:
 
     http://public:private@host:port/1?raven.async=false
 
+#### Graceful Shutdown (advanced)
+In order to shutdown the asynchronous connection gracefully, a `ShutdownHook`
+is created.
+This could lead to memory leaks in an environment where the life cycle of
+Raven doesn't match the life cycle of the JVM.
+
+An example would be in a JEE environment where the application using Raven
+could be deployed and undeployed regularly.
+
+To avoid this behaviour, it is possible to disable the graceful shutdown.
+This might lead to some log entries being lost if the log application
+doesn't shut down the Raven instance nicely.
+
+The option to do so is `raven.async.gracefulshutdown`:
+
+    http://public:private@host:port/1?raven.async.gracefulshutdown=false
+
 #### Queue size (advanced)
 The default queue used to store the not yet processed events doesn't have a
 limit.

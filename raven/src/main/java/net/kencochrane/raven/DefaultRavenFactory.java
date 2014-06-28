@@ -46,6 +46,10 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String ASYNC_OPTION = "raven.async";
     /**
+     * Option to disable the graceful shutdown.
+     */
+    public static final String GRACEFUL_SHUTDOWN_OPTION = "raven.async.gracefulshutdown";
+    /**
      * Option for the number of threads assigned for the connection.
      */
     public static final String MAX_THREADS_OPTION = "raven.async.threads";
@@ -139,7 +143,9 @@ public class DefaultRavenFactory extends RavenFactory {
         ExecutorService executorService = new ThreadPoolExecutor(
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue, new DaemonThreadFactory(priority));
 
-        return new AsyncConnection(connection, executorService);
+        boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(GRACEFUL_SHUTDOWN_OPTION));
+
+        return new AsyncConnection(connection, executorService, gracefulShutdown);
     }
 
     /**
