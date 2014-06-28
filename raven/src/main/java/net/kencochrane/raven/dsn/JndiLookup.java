@@ -44,4 +44,11 @@ final class JndiLookup {
         }
         return dsn;
     }
+
+    @Override
+    public String toString() {
+        return "JndiLookup{"
+                + "JNDI_DSN_NAME='" + JNDI_DSN_NAME + '\''
+                + '}';
+    }
 }

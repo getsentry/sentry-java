@@ -372,4 +372,12 @@ public class EventBuilder {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "EventBuilder{" +
+                "event=" + event +
+                ", alreadyBuilt=" + alreadyBuilt +
+                '}';
+    }
 }
