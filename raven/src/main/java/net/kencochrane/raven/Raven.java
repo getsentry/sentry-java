@@ -144,7 +144,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.info("Removes '{}' to the list of builder helpers.", builderHelper);
+        logger.info("Removing '{}' from the list of builder helpers.", builderHelper);
         builderHelpers.remove(builderHelper);
     }
 
