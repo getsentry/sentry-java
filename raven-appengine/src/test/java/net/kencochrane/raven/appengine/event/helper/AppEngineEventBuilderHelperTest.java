@@ -27,7 +27,7 @@ public class AppEngineEventBuilderHelperTest {
     @Injectable
     private SystemProperty mockApplicationId = null;
     @Injectable
-    private SystemProperty mockApplicationVersion =null;
+    private SystemProperty mockApplicationVersion = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

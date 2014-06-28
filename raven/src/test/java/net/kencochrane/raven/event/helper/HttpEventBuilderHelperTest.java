@@ -5,7 +5,6 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.servlet.RavenServletRequestListener;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;

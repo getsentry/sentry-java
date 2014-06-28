@@ -3,7 +3,6 @@ package net.kencochrane.raven.log4j;
 import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
-import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.dsn.Dsn;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

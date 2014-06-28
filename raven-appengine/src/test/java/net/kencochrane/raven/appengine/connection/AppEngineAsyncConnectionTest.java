@@ -46,11 +46,11 @@ public class AppEngineAsyncConnectionTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        asyncConnection = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
         new NonStrictExpectations() {{
             QueueFactory.getDefaultQueue();
             result = mockQueue;
         }};
-        asyncConnection = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
     }
 
     @Test

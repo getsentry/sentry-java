@@ -4,7 +4,6 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;

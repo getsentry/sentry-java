@@ -10,7 +10,6 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.*;

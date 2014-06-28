@@ -10,7 +10,6 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,7 +43,7 @@ public class RavenTest {
 
     @Test
     public void testSendEventFailingIsCaught() throws Exception {
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             mockConnection.send((Event) any);
             result = new RuntimeException();
         }};

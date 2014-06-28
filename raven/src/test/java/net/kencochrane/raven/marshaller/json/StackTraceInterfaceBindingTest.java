@@ -4,7 +4,6 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static net.kencochrane.raven.marshaller.json.JsonTestTool.*;

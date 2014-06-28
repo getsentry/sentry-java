@@ -7,7 +7,6 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Verifications;
 import net.kencochrane.raven.Raven;
-import net.kencochrane.raven.connection.Connection;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

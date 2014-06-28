@@ -50,7 +50,7 @@ public class AsyncConnection implements Connection {
      * @param actualConnection connection used to send the events.
      * @param executorService  executorService used to process events, if null, the executorService will automatically
      *                         be set to {@code Executors.newSingleThreadExecutor()}
-     * @param gracefulShutdown  Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
+     * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
      */
     public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown) {
         this.actualConnection = actualConnection;

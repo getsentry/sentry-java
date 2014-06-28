@@ -3,7 +3,6 @@ package net.kencochrane.raven.connection;
 import mockit.*;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.OutputStream;
