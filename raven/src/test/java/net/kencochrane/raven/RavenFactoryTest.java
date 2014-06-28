@@ -25,6 +25,9 @@ public class RavenFactoryTest {
         new NonStrictExpectations() {{
             ServiceLoader.load(RavenFactory.class);
             result = mockServiceLoader;
+            mockServiceLoader.iterator();
+            result = Iterators.emptyIterator();
+
         }};
     }
 
@@ -45,7 +48,7 @@ public class RavenFactoryTest {
 
     @Test
     public void testGetFactoriesManuallyAdded(@Injectable final Raven mockRaven,
-                                                  @Injectable final Dsn mockDsn) throws Exception {
+                                              @Injectable final Dsn mockDsn) throws Exception {
         new NonStrictExpectations() {{
             RavenFactory.registerFactory(ravenFactory);
             ravenFactory.createRavenInstance(mockDsn);
@@ -55,5 +58,33 @@ public class RavenFactoryTest {
         Raven raven = RavenFactory.ravenInstance(mockDsn);
 
         assertThat(raven, is(mockRaven));
+    }
+
+    @Test
+    public void testRavenInstanceForFactoryNameSucceedsIfFactoryFound(@Injectable final Raven mockRaven,
+                                                                     @Injectable final Dsn mockDsn) throws Exception {
+        String factoryName = ravenFactory.getClass().getName();
+        new NonStrictExpectations() {{
+            RavenFactory.registerFactory(ravenFactory);
+            ravenFactory.createRavenInstance(mockDsn);
+            result = mockRaven;
+        }};
+
+        Raven raven = RavenFactory.ravenInstance(mockDsn, factoryName);
+
+        assertThat(raven, is(mockRaven));
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void testRavenInstanceForFactoryNameFailsIfNoFactoryFound(@Injectable final Raven mockRaven,
+                                            @Injectable final Dsn mockDsn) throws Exception {
+        String factoryName = "invalidName";
+        new NonStrictExpectations() {{
+            RavenFactory.registerFactory(ravenFactory);
+            ravenFactory.createRavenInstance(mockDsn);
+            result = mockRaven;
+        }};
+
+        RavenFactory.ravenInstance(mockDsn, factoryName);
     }
 }
