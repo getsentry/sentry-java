@@ -12,7 +12,7 @@ import static org.hamcrest.Matchers.is;
 
 public class SentryExceptionTest {
     @Injectable
-    private Throwable mockThrowable;
+    private Throwable mockThrowable = null;
 
     @Test
     public void ensureConversionToQueueKeepsOrder(@Injectable final Throwable mockCause) throws Exception {

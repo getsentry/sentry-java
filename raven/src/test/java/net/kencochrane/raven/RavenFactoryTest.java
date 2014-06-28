@@ -21,9 +21,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class RavenFactoryTest {
     @Tested
-    private RavenFactory ravenFactory;
+    private RavenFactory ravenFactory = null;
     @Injectable
-    private ServiceLoader mockServiceLoader;
+    private ServiceLoader mockServiceLoader = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

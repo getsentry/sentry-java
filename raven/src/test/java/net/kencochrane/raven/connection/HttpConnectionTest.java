@@ -26,21 +26,20 @@ public class HttpConnectionTest {
     @Injectable
     private final String secretKey = "e30cca23-3f97-470b-a8c2-e29b33dd25e0";
     @Tested
-    private HttpConnection httpConnection;
+    private HttpConnection httpConnection = null;
     @Injectable
-    private HttpsURLConnection mockUrlConnection;
+    private HttpsURLConnection mockUrlConnection = null;
     @Injectable
-    private Marshaller mockMarshaller;
+    private Marshaller mockMarshaller = null;
     @Injectable
-    private URL mockUrl;
+    private URL mockUrl = null;
     @Injectable
-    private OutputStream mockOutputStream;
+    private OutputStream mockOutputStream = null;
     @Injectable
-    private InputStream mockInputStream;
+    private InputStream mockInputStream = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        httpConnection = null;
         new NonStrictExpectations() {{
             mockUrl.openConnection();
             result = mockUrlConnection;

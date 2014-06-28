@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.*;
 
 public class DsnTest {
     @Mocked
-    private Context mockContext;
+    private Context mockContext = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

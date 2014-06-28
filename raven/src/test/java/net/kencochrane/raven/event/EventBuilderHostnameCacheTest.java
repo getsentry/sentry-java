@@ -15,11 +15,11 @@ import static org.hamcrest.Matchers.is;
 @Test(singleThreaded = true)
 public class EventBuilderHostnameCacheTest {
     @Injectable
-    private InetAddress mockLocalHost;
+    private InetAddress mockLocalHost = null;
     @Injectable("serverName")
-    private String mockLocalHostName;
+    private String mockLocalHostName = null;
     @Injectable
-    private InetAddress mockTimingOutLocalHost;
+    private InetAddress mockTimingOutLocalHost = null;
 
     private static void resetHostnameCache() {
         setField(getHostnameCache(), "expirationTimestamp", 0L);

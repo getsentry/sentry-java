@@ -12,15 +12,15 @@ import java.util.concurrent.TimeUnit;
 
 public class AsyncConnectionTest {
     @Tested
-    private AsyncConnection asyncConnection;
+    private AsyncConnection asyncConnection = null;
     @Injectable
-    private Connection mockConnection;
+    private Connection mockConnection = null;
     @Injectable
-    private ExecutorService mockExecutorService;
+    private ExecutorService mockExecutorService = null;
     @Injectable("false")
-    private boolean gracefulShutdown;
+    private boolean mockGracefulShutdown = false;
     @Mocked("addShutdownHook")
-    private Runtime mockRuntime;
+    private Runtime mockRuntime = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

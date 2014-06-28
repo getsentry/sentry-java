@@ -2,10 +2,7 @@ package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Charsets;
-import mockit.Delegate;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.testng.annotations.BeforeMethod;
@@ -24,14 +21,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class JsonMarshallerTest {
-    private final JsonMarshaller jsonMarshaller = new JsonMarshaller();
+    @Tested
+    private JsonMarshaller jsonMarshaller = null;
     @Injectable
-    private Event mockEvent;
+    private Event mockEvent = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
+        jsonMarshaller = new JsonMarshaller();
         // Do not compress by default during the tests
         jsonMarshaller.setCompression(false);
+
         new NonStrictExpectations() {{
             mockEvent.getId();
             result = UUID.fromString("00000000-0000-0000-0000-000000000000");

@@ -2,6 +2,7 @@ package net.kencochrane.raven;
 
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
+import mockit.Tested;
 import mockit.Verifications;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
@@ -19,17 +20,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class RavenTest {
-    private Raven raven;
+    @Tested
+    private Raven raven = null;
     @Injectable
-    private Connection mockConnection;
+    private Connection mockConnection = null;
     @Injectable
-    private Event mockEvent;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        raven = new Raven();
-        raven.setConnection(mockConnection);
-    }
+    private Event mockEvent = null;
 
     @AfterMethod
     public void tearDown() throws Exception {

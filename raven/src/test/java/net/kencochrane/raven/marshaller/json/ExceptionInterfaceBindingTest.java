@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
+import mockit.Tested;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
@@ -19,16 +20,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class ExceptionInterfaceBindingTest {
-    private ExceptionInterfaceBinding interfaceBinding;
+    @Tested
+    private ExceptionInterfaceBinding interfaceBinding = null;
     @Injectable
-    private ExceptionInterface mockExceptionInterface;
+    private ExceptionInterface mockExceptionInterface = null;
     @Injectable
-    private InterfaceBinding<StackTraceInterface> mockStackTraceInterfaceBinding;
+    private InterfaceBinding<StackTraceInterface> mockStackTraceInterfaceBinding = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        interfaceBinding = new ExceptionInterfaceBinding(mockStackTraceInterfaceBinding);
-
         new NonStrictExpectations() {{
             mockStackTraceInterfaceBinding.writeInterface(withInstanceOf(JsonGenerator.class), (StackTraceInterface) any);
             result = new Delegate() {

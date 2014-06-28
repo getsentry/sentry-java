@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.instanceOf;
 
 public class RavenServletContainerInitializerTest {
     @Tested
-    private RavenServletContainerInitializer ravenServletContainerInitializer;
+    private RavenServletContainerInitializer ravenServletContainerInitializer = null;
 
     @Test
     public void testInitializerInjectedViaServiceLoader() throws Exception {
