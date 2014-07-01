@@ -9,13 +9,10 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static mockit.Deencapsulation.getField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -26,12 +23,6 @@ public class RavenTest {
     private Connection mockConnection = null;
     @Injectable
     private Event mockEvent = null;
-
-    @AfterMethod
-    public void tearDown() throws Exception {
-        ThreadLocal<AtomicInteger> ravenThread = getField(Raven.class, "RAVEN_THREAD");
-        ravenThread.remove();
-    }
 
     @Test
     public void testSendEvent() throws Exception {

@@ -1,12 +1,21 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.environment;
 
-import net.kencochrane.raven.environment.RavenEnvironment;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static mockit.Deencapsulation.getField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class RavenEnvironmentTest {
+    @AfterMethod
+    public void tearDown() throws Exception {
+        ThreadLocal<AtomicInteger> ravenThread = getField(RavenEnvironment.class, "RAVEN_THREAD");
+        ravenThread.remove();
+    }
+
     @Test
     public void testThreadNotManagedByDefault() throws Exception {
         assertThat(RavenEnvironment.isManagingThread(), is(false));
