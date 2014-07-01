@@ -24,9 +24,9 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * <p>
  * Google App Engine serialises the tasks before queuing them, to keep a link between the task and the
  * {@link AppEngineAsyncConnection} associated, a register of the instances of {@code AppEngineAsyncConnection} is
- * kept in {@link #APP_ENGINE_ASYNC_CONNECTIONS}.<br />
+ * kept in {@link #APP_ENGINE_ASYNC_CONNECTIONS}.<br>
  * This register is populated when a new instance of {@code AppEngineAsyncConnection} is created and the connection
- * is removed from the register when it has been closed with {@link #close()}.<br />
+ * is removed from the register when it has been closed with {@link #close()}.<br>
  * The register works based on identifier defined by the user. There is no ID conflict handling, the user is expected
  * to manage the uniqueness of those ID.
  */

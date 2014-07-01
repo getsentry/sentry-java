@@ -23,7 +23,7 @@ public abstract class RavenFactory {
      * Manually adds a RavenFactory to the system.
      * <p>
      * Usually RavenFactories are automatically detected with the {@link ServiceLoader} system, but some systems
-     * such as Android do not provide a fully working ServiceLoader.<br />
+     * such as Android do not provide a fully working ServiceLoader.<br>
      * If the factory isn't detected automatically, it's possible to add it through this method.
      *
      * @param ravenFactory ravenFactory to support.

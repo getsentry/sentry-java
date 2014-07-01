@@ -14,9 +14,9 @@ import java.util.List;
  * won't be grouped with an Event with the message "<cite>User2 failed to provide an email address</cite>".
  * <p>
  * To allow this kind of grouping, sentry supports the message interface which will provide both the pattern of the
- * message and the parameters. In this example the pattern could be:<br />
- * <cite>{} failed to provide an email address</cite><br />
- * And the parameters would be <cite>User1</cite> in the first Event and <cite>User2</cite> in the second Event.<br />
+ * message and the parameters. In this example the pattern could be:<br>
+ * <cite>{} failed to provide an email address</cite><br>
+ * And the parameters would be <cite>User1</cite> in the first Event and <cite>User2</cite> in the second Event.<br>
  * This way, Sentry will be able to put the two events in the same category.
  * <p>
  * Note: Sentry won't attempt to format the message, this is why the formatted message should be set through

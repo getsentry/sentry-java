@@ -84,7 +84,7 @@ public class AsyncConnection implements Connection {
      * <p>
      * Closing the {@link AsyncConnection} will attempt a graceful shutdown of the {@link #executorService} with a
      * timeout of {@link #SHUTDOWN_TIMEOUT}, allowing the current events to be submitted while new events will
-     * be rejected.<br />
+     * be rejected.<br>
      * If the shutdown times out, the {@code executorService} will be forced to shutdown.
      */
     @Override

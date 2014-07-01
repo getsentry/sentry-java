@@ -158,7 +158,7 @@ public class SentryAppender extends AbstractAppender {
      * {@inheritDoc}
      * <p>
      * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Raven}.<br />
+     * being generated during the instantiation of {@link Raven}.<br>
      *
      * @param logEvent The LogEvent.
      */

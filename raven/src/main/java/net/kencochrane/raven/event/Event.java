@@ -21,7 +21,7 @@ import java.util.UUID;
  * </li>
  * <li>
  * A proper immutable Object should only contain immutable Objects and primitives, this must be ensured before
- * publishing the Event.<br />
+ * publishing the Event.<br>
  * There is one exception, the {@link #extra} section can't be transformed to be completely immutable.
  * </li>
  * </ul>

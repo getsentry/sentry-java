@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Abstract connection to a Sentry server.
  * <p>
- * Provide the basic tools to submit events to the server (authentication header, dsn).<br />
+ * Provide the basic tools to submit events to the server (authentication header, dsn).<br>
  * To avoid spamming the network if and when Sentry is down, automatically lock the connection each time a
  * {@link ConnectionException} is caught.
  */

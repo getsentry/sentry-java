@@ -299,7 +299,7 @@ public class EventBuilder {
      * <p>
      * The {@code InetAddress.getLocalHost().getCanonicalHostName()} call can be quite expensive and could be called
      * for the creation of each {@link Event}. This system will prevent unnecessary costs by keeping track of the
-     * hostname for a period defined during the construction.<br />
+     * hostname for a period defined during the construction.<br>
      * For performance purposes, the operation of retrieving the hostname will automatically fail after a period of time
      * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
      */
