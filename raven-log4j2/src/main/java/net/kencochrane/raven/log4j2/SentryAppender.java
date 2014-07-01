@@ -130,13 +130,13 @@ public class SentryAppender extends AbstractAppender {
      * @return log level used within raven.
      */
     protected static Event.Level formatLevel(Level level) {
-        if (level.isAtLeastAsSpecificAs(Level.FATAL))
+        if (level.isMoreSpecificThan(Level.FATAL))
             return Event.Level.FATAL;
-        else if (level.isAtLeastAsSpecificAs(Level.ERROR))
+        else if (level.isMoreSpecificThan(Level.ERROR))
             return Event.Level.ERROR;
-        else if (level.isAtLeastAsSpecificAs(Level.WARN))
+        else if (level.isMoreSpecificThan(Level.WARN))
             return Event.Level.WARNING;
-        else if (level.isAtLeastAsSpecificAs(Level.INFO))
+        else if (level.isMoreSpecificThan(Level.INFO))
             return Event.Level.INFO;
         else
             return Event.Level.DEBUG;
@@ -212,7 +212,7 @@ public class SentryAppender extends AbstractAppender {
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
-                .setTimestamp(new Date(event.getMillis()))
+                .setTimestamp(new Date(event.getTimeMillis()))
                 .setMessage(eventMessage.getFormattedMessage())
                 .setLogger(event.getLoggerName())
                 .setLevel(formatLevel(event.getLevel()))
