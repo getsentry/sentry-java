@@ -18,7 +18,7 @@ public class Dsn {
      * Name of the environment and system variables containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
-    private static final Logger logger = LoggerFactory.getLogger(Raven.class);
+    private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
     private String secretKey;
     private String publicKey;
     private String projectId;
