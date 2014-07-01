@@ -66,8 +66,9 @@ public class AsyncConnectionTest {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
-                public void addShutdownHook(Thread thread) {
-                    thread.run();
+                @SuppressWarnings("unused")
+                public void addShutdownHook(Thread hook) {
+                    hook.run();
                 }
             };
         }};
@@ -91,8 +92,9 @@ public class AsyncConnectionTest {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
-                public void addShutdownHook(Thread thread) {
-                    thread.run();
+                @SuppressWarnings("unused")
+                public void addShutdownHook(Thread hook) {
+                    hook.run();
                 }
             };
             mockConnection.close();
@@ -132,9 +134,10 @@ public class AsyncConnectionTest {
     public void testQueuedEventExecuted(@Injectable final Event mockEvent) throws Exception {
         new NonStrictExpectations() {{
             mockExecutorService.execute((Runnable) any);
-            result = new Delegate() {
-                public void execute(Runnable runnable) {
-                    runnable.run();
+            result = new Delegate<Void>() {
+                @SuppressWarnings("unused")
+                public void execute(Runnable command) {
+                    command.run();
                 }
             };
         }};

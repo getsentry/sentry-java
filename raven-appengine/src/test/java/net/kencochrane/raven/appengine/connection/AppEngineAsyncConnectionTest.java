@@ -95,9 +95,15 @@ public class AppEngineAsyncConnectionTest {
             throws Exception {
         new NonStrictExpectations() {{
             mockQueue.add((TaskOptions) any);
-            result = new Delegate<Void>() {
-                void add(TaskOptions taskOptions) throws Exception {
-                    extractDeferredTask(taskOptions).run();
+            result = new Delegate<TaskHandle>() {
+                @SuppressWarnings("unused")
+                TaskHandle add(TaskOptions taskOptions) {
+                    try {
+                        extractDeferredTask(taskOptions).run();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Couldn't extract the task", e);
+                    }
+                    return null;
                 }
             };
         }};

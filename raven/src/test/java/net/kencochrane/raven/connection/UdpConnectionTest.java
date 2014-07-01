@@ -5,6 +5,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -58,8 +59,13 @@ public class UdpConnectionTest {
         new NonStrictExpectations() {{
             mockMarshaller.marshall(event, (OutputStream) any);
             result = new Delegate<Void>() {
-                public void marshall(Event event, OutputStream os) throws Exception {
-                    os.write(marshalledContent.getBytes("UTF-8"));
+                @SuppressWarnings("unused")
+                public void marshall(Event event, OutputStream destination) {
+                    try {
+                        destination.write(marshalledContent.getBytes("UTF-8"));
+                    } catch (IOException e) {
+                        throw new RuntimeException("Couldn't write to destination", e);
+                    }
                 }
             };
         }};

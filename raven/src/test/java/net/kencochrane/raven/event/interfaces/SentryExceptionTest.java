@@ -21,6 +21,7 @@ public class SentryExceptionTest {
         new NonStrictExpectations() {{
             mockThrowable.getCause();
             result = new Delegate<Throwable>() {
+                @SuppressWarnings("unused")
                 public Throwable getCause() {
                     return mockCause;
                 }

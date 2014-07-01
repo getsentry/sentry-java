@@ -243,6 +243,7 @@ public class JsonMarshallerTest {
             result = Collections.singletonMap("interfaceKey", mockSentryInterface);
             mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
             result = new Delegate<Void>() {
+                @SuppressWarnings("unused")
                 public void writeInterface(JsonGenerator generator, SentryInterface sentryInterface) throws IOException {
                     generator.writeNull();
                 }

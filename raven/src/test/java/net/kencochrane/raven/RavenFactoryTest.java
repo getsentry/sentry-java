@@ -45,6 +45,7 @@ public class RavenFactoryTest {
         new NonStrictExpectations() {{
             mockServiceLoader.iterator();
             result = new Delegate<Iterator<RavenFactory>>() {
+                @SuppressWarnings("unused")
                 public Iterator<RavenFactory> iterator() {
                     return Iterators.singletonIterator(ravenFactory);
                 }
