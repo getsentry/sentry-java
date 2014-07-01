@@ -30,6 +30,9 @@ public final class RavenEnvironment {
     };
     private static final Logger logger = LoggerFactory.getLogger(RavenEnvironment.class);
 
+    private RavenEnvironment(){
+    }
+
     /**
      * Sets the current thread as managed by Raven.
      * <p>
