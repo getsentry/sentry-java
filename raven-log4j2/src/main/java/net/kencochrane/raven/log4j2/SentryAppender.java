@@ -223,8 +223,8 @@ public class SentryAppender extends AbstractAppender {
                     formatMessageParameters(eventMessage.getParameters())));
         }
 
-        if (event.getThrown() != null) {
-            Throwable throwable = event.getThrown();
+        Throwable throwable = event.getThrown();
+        if (throwable != null) {
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
         } else if (event.getSource() != null) {
             StackTraceElement[] stackTrace = {event.getSource()};

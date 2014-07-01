@@ -170,8 +170,9 @@ public class SentryHandler extends Handler {
         }
         eventBuilder.setMessage(message);
 
-        if (record.getThrown() != null)
-            eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()));
+        Throwable throwable = record.getThrown();
+        if (throwable != null)
+            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
 
         if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
             StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
