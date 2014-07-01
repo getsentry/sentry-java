@@ -6,6 +6,7 @@ import mockit.NonStrictExpectations;
 import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import org.apache.logging.log4j.Level;
@@ -62,9 +63,8 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
-
             sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
 
             new Verifications() {{
@@ -73,7 +73,7 @@ public class SentryAppenderFailuresTest {
             }};
             assertThat(mockUpErrorHandler.getErrorCount(), is(0));
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 }

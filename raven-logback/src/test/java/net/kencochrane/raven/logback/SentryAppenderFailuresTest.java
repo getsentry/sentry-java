@@ -7,6 +7,7 @@ import ch.qos.logback.core.status.OnConsoleStatusListener;
 import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
@@ -75,8 +76,8 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testAppendFailIfCurrentThreadSpawnedByRaven() throws Exception {
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             final SentryAppender sentryAppender = new SentryAppender(mockRaven);
             sentryAppender.setContext(mockContext);
             sentryAppender.start();
@@ -89,7 +90,7 @@ public class SentryAppenderFailuresTest {
             }};
             assertThat(mockContext.getStatusManager().getCount(), is(0));
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 }

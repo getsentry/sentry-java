@@ -1,7 +1,7 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public abstract class AbstractConnection implements Connection {
      */
     protected AbstractConnection(String publicKey, String secretKey) {
         authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
-                + "sentry_client=" + Raven.NAME + ","
+                + "sentry_client=" + RavenEnvironment.NAME + ","
                 + "sentry_key=" + publicKey + ","
                 + "sentry_secret=" + secretKey;
     }

@@ -1,9 +1,9 @@
 package net.kencochrane.raven.connection;
 
 import com.google.common.base.Charsets;
-import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,7 +106,7 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setConnectTimeout(timeout);
-            connection.setRequestProperty(USER_AGENT, Raven.NAME);
+            connection.setRequestProperty(USER_AGENT, RavenEnvironment.NAME);
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {

@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j;
 import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
@@ -134,18 +135,18 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     protected void append(LoggingEvent loggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.isManagingThread())
+        if (RavenEnvironment.isManagingThread())
             return;
 
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Raven", e,
                     ErrorCode.WRITE_FAILURE);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 
@@ -215,8 +216,8 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void close() {
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             if (this.closed)
                 return;
             this.closed = true;
@@ -226,7 +227,7 @@ public class SentryAppender extends AppenderSkeleton {
             getErrorHandler().error("An exception occurred while closing the Raven connection", e,
                     ErrorCode.CLOSE_FAILURE);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 

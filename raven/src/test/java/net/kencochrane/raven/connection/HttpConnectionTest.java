@@ -1,9 +1,9 @@
 package net.kencochrane.raven.connection;
 
 import mockit.*;
-import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -114,7 +114,7 @@ public class HttpConnectionTest {
 
 
         new Verifications() {{
-            mockUrlConnection.setRequestProperty("User-Agent", Raven.NAME);
+            mockUrlConnection.setRequestProperty("User-Agent", RavenEnvironment.NAME);
             mockUrlConnection.setRequestProperty("X-Sentry-Auth", httpConnection.getAuthHeader());
         }};
     }

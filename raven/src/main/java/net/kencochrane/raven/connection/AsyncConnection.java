@@ -1,6 +1,6 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,14 +135,14 @@ public class AsyncConnection implements Connection {
 
         @Override
         public void run() {
+            RavenEnvironment.startManagingThread();
             try {
                 // The current thread is managed by raven
-                Raven.startManagingThread();
                 actualConnection.send(event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
-                Raven.stopManagingThread();
+                RavenEnvironment.stopManagingThread();
             }
         }
     }
@@ -150,15 +150,15 @@ public class AsyncConnection implements Connection {
     private final class ShutDownHook extends Thread {
         @Override
         public void run() {
+            RavenEnvironment.startManagingThread();
             try {
                 // The current thread is managed by raven
-                Raven.startManagingThread();
                 logger.info("Automatic shutdown of the async connection");
                 AsyncConnection.this.doClose();
             } catch (Exception e) {
                 logger.error("An exception occurred while closing the connection.", e);
             } finally {
-                Raven.stopManagingThread();
+                RavenEnvironment.stopManagingThread();
             }
         }
     }

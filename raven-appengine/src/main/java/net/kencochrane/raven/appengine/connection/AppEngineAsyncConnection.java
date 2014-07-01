@@ -3,7 +3,7 @@ package net.kencochrane.raven.appengine.connection;
 import com.google.appengine.api.taskqueue.DeferredTask;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
-import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import org.slf4j.Logger;
@@ -117,9 +117,9 @@ public class AppEngineAsyncConnection implements Connection {
         @Override
         public void run() {
             setDoNotRetry(true);
+            RavenEnvironment.startManagingThread();
             try {
                 // The current thread is managed by raven
-                Raven.startManagingThread();
                 AppEngineAsyncConnection connection = APP_ENGINE_ASYNC_CONNECTIONS.get(connectionId);
                 if (connection == null) {
                     logger.warn("Couldn't find the AppEngineAsyncConnection identified by '{}'. "
@@ -130,7 +130,7 @@ public class AppEngineAsyncConnection implements Connection {
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
-                Raven.stopManagingThread();
+                RavenEnvironment.stopManagingThread();
             }
         }
     }

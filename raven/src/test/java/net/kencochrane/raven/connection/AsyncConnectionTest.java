@@ -2,6 +2,7 @@ package net.kencochrane.raven.connection;
 
 import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -74,9 +75,9 @@ public class AsyncConnectionTest {
         new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new VerificationsInOrder() {{
-            Raven.startManagingThread();
+            RavenEnvironment.startManagingThread();
             mockConnection.close();
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }};
     }
 
@@ -101,7 +102,7 @@ public class AsyncConnectionTest {
         new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new Verifications() {{
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }};
     }
 

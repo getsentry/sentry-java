@@ -3,6 +3,7 @@ package net.kencochrane.raven.jul;
 import com.google.common.base.Splitter;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
@@ -113,11 +114,11 @@ public class SentryHandler extends Handler {
     @Override
     public void publish(LogRecord record) {
         // Do not log the event if the current thread is managed by raven
-        if (!isLoggable(record) || Raven.isManagingThread())
+        if (!isLoggable(record) || RavenEnvironment.isManagingThread())
             return;
 
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             if (raven == null)
                 initRaven();
             Event event = buildEvent(record);
@@ -125,7 +126,7 @@ public class SentryHandler extends Handler {
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Raven", e, ErrorManager.WRITE_FAILURE);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 
@@ -196,14 +197,14 @@ public class SentryHandler extends Handler {
 
     @Override
     public void close() throws SecurityException {
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             if (raven != null)
                 raven.closeConnection();
         } catch (Exception e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 }
