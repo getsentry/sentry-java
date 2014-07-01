@@ -43,21 +43,18 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * DSN property of the appender.
      * <p>
      * Might be null in which case the DSN should be detected automatically.
-     * </p>
      */
     protected String dsn;
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
-     * </p>
      */
     protected String ravenFactory;
     /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
-     * </p>
      */
     protected Map<String, String> tags = Collections.emptyMap();
 
@@ -80,7 +77,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Extracts message parameters into a List of Strings.
      * <p>
      * null parameters are kept as null.
-     * </p>
      *
      * @param parameters parameters provided to the logging system.
      * @return the parameters formatted as Strings in a List.
@@ -117,7 +113,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * The raven instance is started in this method instead of {@link #start()} in order to avoid substitute loggers
      * being generated during the instantiation of {@link Raven}.<br />
      * More on <a href="http://www.slf4j.org/codes.html#substituteLogger">www.slf4j.org/codes.html#substituteLogger</a>
-     * </p>
      */
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {

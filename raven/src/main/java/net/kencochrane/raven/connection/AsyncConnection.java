@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Instead of synchronously sending each event to a connection, use a ThreadPool to establish the connection
  * and submit the event.
- * </p>
  */
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
@@ -45,7 +44,6 @@ public class AsyncConnection implements Connection {
      * Creates a connection which will rely on an executor to send events.
      * <p>
      * Will propagate the {@link #close()} operation.
-     * </p>
      *
      * @param actualConnection connection used to send the events.
      * @param executorService  executorService used to process events, if null, the executorService will automatically
@@ -74,7 +72,6 @@ public class AsyncConnection implements Connection {
      * {@inheritDoc}
      * <p>
      * The event will be added to a queue and will be handled by a separate {@code Thread} later on.
-     * </p>
      */
     @Override
     public void send(Event event) {
@@ -89,7 +86,6 @@ public class AsyncConnection implements Connection {
      * timeout of {@link #SHUTDOWN_TIMEOUT}, allowing the current events to be submitted while new events will
      * be rejected.<br />
      * If the shutdown times out, the {@code executorService} will be forced to shutdown.
-     * </p>
      */
     @Override
     public void close() throws IOException {

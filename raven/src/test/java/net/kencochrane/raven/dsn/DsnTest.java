@@ -120,7 +120,6 @@ public class DsnTest {
      * Sets an environment variable during Unit-Test.
      * <p>
      * DO NOT USE THIS METHOD OUTSIDE OF THE UNIT TESTS!
-     * </p>
      *
      * @param key   name of the environment variable.
      * @param value value for the variable.
@@ -145,7 +144,6 @@ public class DsnTest {
      * Removes an environment variable during Unit-Test.
      * <p>
      * DO NOT USE THIS METHOD OUTSIDE OF THE UNIT TESTS!
-     * </p>
      *
      * @param key name of the environment variable.
      * @throws Exception if anything goes wrong.

@@ -21,7 +21,6 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * <p>
  * Instead of synchronously sending each event to a connection, use a the task queue system to establish the connection
  * and submit the event.
- * </p>
  * <p>
  * Google App Engine serialises the tasks before queuing them, to keep a link between the task and the
  * {@link AppEngineAsyncConnection} associated, a register of the instances of {@code AppEngineAsyncConnection} is
@@ -30,7 +29,6 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * is removed from the register when it has been closed with {@link #close()}.<br />
  * The register works based on identifier defined by the user. There is no ID conflict handling, the user is expected
  * to manage the uniqueness of those ID.
- * </p>
  */
 public class AppEngineAsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AppEngineAsyncConnection.class);
@@ -56,7 +54,6 @@ public class AppEngineAsyncConnection implements Connection {
      * Creates a connection which will rely on an executor to send events.
      * <p>
      * Will propagate the {@link #close()} operation.
-     * </p>
      *
      * @param id               Identifier of the connection shared across all the instances of the application.
      * @param actualConnection Connection used to send the events.
@@ -71,7 +68,6 @@ public class AppEngineAsyncConnection implements Connection {
      * {@inheritDoc}
      * <p>
      * The event will be added to a queue and will be handled by a separate {@code Thread} later on.
-     * </p>
      */
     @Override
     public void send(Event event) {
@@ -83,7 +79,6 @@ public class AppEngineAsyncConnection implements Connection {
      * {@inheritDoc}.
      * <p>
      * Closing the {@link AppEngineAsyncConnection} will gracefully remove every task created earlier from the queue.
-     * </p>
      */
     @Override
     public void close() throws IOException {

@@ -23,7 +23,6 @@ public final class SentryException {
      * <p>
      * The {@code childExceptionStackTrace} parameter is used to define the common frames with the child exception
      * (Exception caused by {@code throwable}).
-     * </p>
      *
      * @param throwable                Java exception to send to Sentry.
      * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
@@ -58,7 +57,6 @@ public final class SentryException {
      * Transforms a {@link Throwable} into a Queue of {@link SentryException}.
      * <p>
      * Exceptions are stored in the queue from the most recent one to the oldest one.
-     * </p>
      *
      * @param throwable throwable to transform in a queue of exceptions.
      * @return a queue of exception with StackTrace.
@@ -90,7 +88,6 @@ public final class SentryException {
      * Gets the exception package name.
      * <p>
      * If there is no package, the value will be {@link #DEFAULT_PACKAGE_NAME}.
-     * </p>
      *
      * @return the exception package name or {@link #DEFAULT_PACKAGE_NAME} if it isn't defined.
      */

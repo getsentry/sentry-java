@@ -14,7 +14,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * Provide the basic tools to submit events to the server (authentication header, dsn).<br />
  * To avoid spamming the network if and when Sentry is down, automatically lock the connection each time a
  * {@link ConnectionException} is caught.
- * </p>
  */
 public abstract class AbstractConnection implements Connection {
     /**
@@ -40,7 +39,6 @@ public abstract class AbstractConnection implements Connection {
      * Base duration for a lockdown.
      * <p>
      * On each attempt the time is doubled until it reaches {@link #maxWaitingTime}.
-     * </p>
      */
     private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
     private long waitingTime = baseWaitingTime;

@@ -24,7 +24,6 @@ import static com.google.common.io.BaseEncoding.base64;
  * <p>
  * The content can also be compressed with {@link DeflaterOutputStream} in which case the binary result is encoded
  * in base 64.
- * </p>
  */
 public class JsonMarshaller implements Marshaller {
     /**

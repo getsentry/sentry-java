@@ -21,11 +21,9 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
      * <p>
      * It is important to set a different connection identifier for each opened connection to keep the uniqueness
      * of connection ID.
-     * </p>
      * <p>
      * If the connection identifier is not specified, the system will define a connection identifier itself, but its
      * uniqueness within an instance isn't guaranteed.
-     * </p>
      * {@see AppEngineAsyncConnection}
      */
     public static final String CONNECTION_IDENTIFIER = "raven.async.gae.connectionid";

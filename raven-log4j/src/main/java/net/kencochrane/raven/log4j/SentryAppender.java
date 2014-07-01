@@ -42,21 +42,18 @@ public class SentryAppender extends AppenderSkeleton {
      * DSN property of the appender.
      * <p>
      * Might be null in which case the DSN should be detected automatically.
-     * </p>
      */
     protected String dsn;
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
-     * </p>
      */
     protected String ravenFactory;
     /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
-     * </p>
      */
     protected Map<String, String> tags = Collections.emptyMap();
 

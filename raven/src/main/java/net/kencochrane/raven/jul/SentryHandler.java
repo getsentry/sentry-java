@@ -33,14 +33,12 @@ public class SentryHandler extends Handler {
      * DSN property of the appender.
      * <p>
      * Might be null in which case the DSN should be detected automatically.
-     * </p>
      */
     protected String dsn;
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
-     * </p>
      */
     protected String ravenFactory;
     /**
@@ -86,7 +84,6 @@ public class SentryHandler extends Handler {
      * Extracts message parameters into a List of Strings.
      * <p>
      * null parameters are kept as null.
-     * </p>
      *
      * @param parameters parameters provided to the logging system.
      * @return the parameters formatted as Strings in a List.

@@ -112,7 +112,6 @@ public class ExceptionInterfaceBindingTest {
  * Obviously we can't use an Exception which is really defined in the default package within those tests
  * (can't import it), so instead set the name of the class to remove the package name.<br />
  * {@code Deencapsulation.setField(Object) DefaultPackageException.class, "name", "DefaultPackageClass")}
- * </p>
  */
 class DefaultPackageException extends Exception {
 }

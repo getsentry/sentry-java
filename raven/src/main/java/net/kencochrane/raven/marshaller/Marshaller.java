@@ -14,7 +14,6 @@ public interface Marshaller {
      * <p>
      * The marshaller should not close the given stream, use {@link UncloseableOutputStream} to prevent automatic calls
      * to {@link OutputStream#close()}.
-     * </p>
      *
      * @param event       event to serialise.
      * @param destination destination stream.

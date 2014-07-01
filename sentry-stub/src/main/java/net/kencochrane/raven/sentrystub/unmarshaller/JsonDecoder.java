@@ -22,7 +22,6 @@ import static com.google.common.io.BaseEncoding.base64;
  * <li>Base 64'd JSON streams (base64 decoded)</li>
  * <li>Base 64'd and deflated JSON streams (base64 decoded and inflated)</li>
  * </ul>
- * </p>
  */
 public class JsonDecoder {
     private static Logger logger = Logger.getLogger(JsonDecoder.class.getCanonicalName());
@@ -31,7 +30,6 @@ public class JsonDecoder {
      * Attempts to read the content of the stream and determine if it's compressed, encoded or simple JSON.
      * <p>
      * This method isn't efficient but it isn't really a problem as this part of the project is not about performances.
-     * </p>
      *
      * @param originalStream origin stream of information that can be compressed or encoded in base64.
      * @return a Stream containing pure JSON.

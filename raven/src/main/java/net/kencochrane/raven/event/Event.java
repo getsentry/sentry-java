@@ -13,7 +13,6 @@ import java.util.UUID;
  * <p>
  * For security purposes, an event should be created from an {@link EventBuilder} only, and be completely immutable
  * once it has been fully generated.
- * </p>
  * <p>
  * Notes to developers:
  * <ul>
@@ -26,7 +25,6 @@ import java.util.UUID;
  * There is one exception, the {@link #extra} section can't be transformed to be completely immutable.
  * </li>
  * </ul>
- * </p>
  */
 public class Event implements Serializable {
     /**
@@ -61,7 +59,6 @@ public class Event implements Serializable {
      * A map or list of tags for this event.
      * <p>
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
-     * </p>
      */
     private Map<String, String> tags = new HashMap<>();
     /**
@@ -72,7 +69,6 @@ public class Event implements Serializable {
      * A map or list of additional properties for this event.
      * <p>
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
-     * </p>
      */
     private Map<String, Object> extra = new HashMap<>();
     /**
@@ -83,7 +79,6 @@ public class Event implements Serializable {
      * Additional interfaces for other information and metadata.
      * <p>
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
-     * </p>
      */
     private Map<String, SentryInterface> sentryInterfaces = new HashMap<>();
 

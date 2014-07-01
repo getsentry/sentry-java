@@ -24,7 +24,6 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
      * <p>
      * Exceptions may contain StackTraces, this means that the system should also be able to send a
      * {@link StackTraceInterface} on the JSON stream.
-     * </p>
      *
      * @param stackTraceInterfaceBinding InterfaceBinding allowing to send a {@link StackTraceInterface} on the JSON
      *                                   stream.

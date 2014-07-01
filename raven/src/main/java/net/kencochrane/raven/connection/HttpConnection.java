@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
  * Basic connection to a Sentry server, using HTTP and HTTPS.
  * <p>
  * It is possible to enable the "naive mode" to allow a connection over SSL using a certificate with a wildcard.
- * </p>
  */
 public class HttpConnection extends AbstractConnection {
     private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);

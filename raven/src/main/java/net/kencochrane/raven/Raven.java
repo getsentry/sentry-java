@@ -20,7 +20,6 @@ import java.util.Set;
  * It is recommended to create an instance of Raven through
  * {@link RavenFactory#createRavenInstance(net.kencochrane.raven.dsn.Dsn)}, this will use the best factory available to
  * create a sensible instance of Raven.
- * </p>
  */
 public class Raven {
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
@@ -56,7 +55,6 @@ public class Raven {
      * Sends a message to the Sentry server.
      * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
-     * </p>
      *
      * @param message message to send to Sentry.
      */
@@ -71,7 +69,6 @@ public class Raven {
      * Sends an exception to the Sentry server.
      * <p>
      * The Exception will be logged at the {@link Event.Level#ERROR} level.
-     * </p>
      *
      * @param exception exception to send to Sentry.
      */

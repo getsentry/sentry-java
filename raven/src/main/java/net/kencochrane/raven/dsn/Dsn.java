@@ -191,7 +191,6 @@ public class Dsn {
      * Validates internally the DSN, and check for mandatory elements.
      * <p>
      * Mandatory elements are the {@link #host}, {@link #publicKey}, {@link #secretKey} and {@link #projectId}.
-     * </p>
      */
     private void validate() {
         List<String> missingElements = new LinkedList<>();
