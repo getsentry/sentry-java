@@ -13,23 +13,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  * whether or not the thread is managed by Raven.
  * </p>
  */
-public class RavenEnvironment {
+public final class RavenEnvironment {
     /**
      * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
      * for each release of this project.
      */
     public static final String NAME = ResourceBundle.getBundle("raven-build").getString("build.name");
-    private static final Logger logger = LoggerFactory.getLogger(RavenEnvironment.class);
-
     /**
      * Indicates whether the current thread is managed by raven or not.
      */
-    private static final ThreadLocal<AtomicInteger> RAVEN_THREAD = new ThreadLocal<AtomicInteger>() {
+    protected static final ThreadLocal<AtomicInteger> RAVEN_THREAD = new ThreadLocal<AtomicInteger>() {
         @Override
         protected AtomicInteger initialValue() {
             return new AtomicInteger();
         }
     };
+    private static final Logger logger = LoggerFactory.getLogger(RavenEnvironment.class);
 
     /**
      * Sets the current thread as managed by Raven.
