@@ -30,7 +30,7 @@ public final class RavenEnvironment {
     };
     private static final Logger logger = LoggerFactory.getLogger(RavenEnvironment.class);
 
-    private RavenEnvironment(){
+    private RavenEnvironment() {
     }
 
     /**
