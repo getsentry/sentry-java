@@ -1,10 +1,7 @@
 package net.kencochrane.raven;
 
 import com.google.common.collect.Iterators;
-import mockit.Delegate;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Tested;
+import mockit.*;
 import net.kencochrane.raven.dsn.Dsn;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -119,5 +116,44 @@ public class RavenFactoryTest {
         }
 
         assertThat(exception, notNullValue());
+    }
+
+    @Test
+    public void testAutoDetectDsnIfNotProvided(@Injectable final Raven mockRaven,
+                                               @SuppressWarnings("unused") @Mocked final Dsn mockDsn) throws Exception {
+        final String dsn = "protocol://user:password@host:port/3";
+        RavenFactory.registerFactory(ravenFactory);
+        new NonStrictExpectations() {{
+            Dsn.dsnLookup();
+            result = dsn;
+
+            ravenFactory.createRavenInstance((Dsn) any);
+            result = mockRaven;
+        }};
+
+        Raven raven = RavenFactory.ravenInstance();
+
+        assertThat(raven, is(mockRaven));
+        new Verifications() {{
+            new Dsn(dsn);
+        }};
+    }
+
+    @Test
+    public void testCreateDsnIfStringProvided(@Injectable final Raven mockRaven,
+                                              @SuppressWarnings("unused") @Mocked final Dsn mockDsn) throws Exception {
+        final String dsn = "protocol://user:password@host:port/2";
+        RavenFactory.registerFactory(ravenFactory);
+        new NonStrictExpectations() {{
+            ravenFactory.createRavenInstance((Dsn) any);
+            result = mockRaven;
+        }};
+
+        Raven raven = RavenFactory.ravenInstance(dsn);
+
+        assertThat(raven, is(mockRaven));
+        new Verifications() {{
+            new Dsn(dsn);
+        }};
     }
 }
