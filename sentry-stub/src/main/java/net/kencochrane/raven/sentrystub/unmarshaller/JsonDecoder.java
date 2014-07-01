@@ -20,7 +20,7 @@ import static com.google.common.io.BaseEncoding.base64;
  * <ul>
  * <li>JSON Stream (nothing to do)</li>
  * <li>Base 64'd JSON streams (base64 decoded)</li>
- * <li>Base 64'd & deflated JSON streams (base64 decoded and inflated)</li>
+ * <li>Base 64'd and deflated JSON streams (base64 decoded and inflated)</li>
  * </ul>
  * </p>
  */
