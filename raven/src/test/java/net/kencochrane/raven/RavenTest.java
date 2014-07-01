@@ -12,6 +12,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static mockit.Deencapsulation.getField;
@@ -122,5 +123,24 @@ public class RavenTest {
         new Verifications() {{
             mockBuilderHelper.helpBuildingEvent(mockEventBuilder);
         }};
+    }
+
+    @Test
+    public void testCloseConnectionSuccessful() throws Exception {
+        raven.closeConnection();
+
+        new Verifications(){{
+            mockConnection.close();
+        }};
+    }
+
+    @Test(expectedExceptions = RuntimeException.class)
+    public void testCloseConnectionFailed() throws Exception {
+        new NonStrictExpectations(){{
+            mockConnection.close();
+            result = new IOException();
+        }};
+
+        raven.closeConnection();
     }
 }
