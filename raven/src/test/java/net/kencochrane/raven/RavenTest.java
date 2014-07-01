@@ -120,14 +120,14 @@ public class RavenTest {
     public void testCloseConnectionSuccessful() throws Exception {
         raven.closeConnection();
 
-        new Verifications(){{
+        new Verifications() {{
             mockConnection.close();
         }};
     }
 
     @Test(expectedExceptions = RuntimeException.class)
     public void testCloseConnectionFailed() throws Exception {
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             mockConnection.close();
             result = new IOException();
         }};

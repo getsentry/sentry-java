@@ -1,11 +1,11 @@
 package net.kencochrane.raven;
 
 import net.kencochrane.raven.connection.Connection;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.environment.RavenEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
