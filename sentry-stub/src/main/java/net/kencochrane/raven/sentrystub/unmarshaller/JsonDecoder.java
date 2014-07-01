@@ -18,9 +18,9 @@ import static com.google.common.io.BaseEncoding.base64;
  * <p>
  * The supported stream formats are:
  * <ul>
- * <li>JSON Stream (nothing to do)</li>
- * <li>Base 64'd JSON streams (base64 decoded)</li>
- * <li>Base 64'd and deflated JSON streams (base64 decoded and inflated)</li>
+ * <li>JSON Stream (nothing to do)
+ * <li>Base 64'd JSON streams (base64 decoded)
+ * <li>Base 64'd and deflated JSON streams (base64 decoded and inflated)
  * </ul>
  */
 public class JsonDecoder {

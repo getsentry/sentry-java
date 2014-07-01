@@ -18,12 +18,10 @@ import java.util.UUID;
  * <ul>
  * <li>
  * In order to ensure that a Event can't be modified externally, the setters should have a package visibility.
- * </li>
  * <li>
  * A proper immutable Object should only contain immutable Objects and primitives, this must be ensured before
  * publishing the Event.<br>
  * There is one exception, the {@link #extra} section can't be transformed to be completely immutable.
- * </li>
  * </ul>
  */
 public class Event implements Serializable {
