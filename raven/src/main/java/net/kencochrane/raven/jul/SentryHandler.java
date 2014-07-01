@@ -22,7 +22,7 @@ public class SentryHandler extends Handler {
     /**
      * Name of the {@link Event#extra} property containing the Thread id.
      */
-    public static final String THREAD_ID = "Raven-Threadid";
+    public static final String THREAD_ID = "Raven-ThreadId";
     /**
      * Current instance of {@link Raven}.
      *
