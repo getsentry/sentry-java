@@ -20,7 +20,7 @@ public class RavenFactoryTest {
     @Tested
     private RavenFactory ravenFactory = null;
     @Injectable
-    private ServiceLoader mockServiceLoader = null;
+    private ServiceLoader<RavenFactory> mockServiceLoader = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -28,7 +28,7 @@ public class RavenFactoryTest {
 
         new NonStrictExpectations() {{
             mockServiceLoader.iterator();
-            result = Iterators.emptyIterator();
+            result = Iterators.<RavenFactory>emptyIterator();
         }};
     }
 
