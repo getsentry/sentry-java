@@ -107,60 +107,14 @@ public class DsnTest {
     }
 
     @Test
-    public void testDsnLookupWithEnvironmentVariable() throws Exception {
-        String dsn = "759ed060-dd4f-4478-8a1a-3f23e044787c";
-        setEnv("SENTRY_DSN", dsn);
+    public void testDsnLookupWithEnvironmentVariable(@Mocked("getenv") final System system) throws Exception {
+        final String dsn = "759ed060-dd4f-4478-8a1a-3f23e044787c";
+        new NonStrictExpectations(){{
+            System.getenv("SENTRY_DSN");
+            result = dsn;
+        }};
 
         assertThat(Dsn.dsnLookup(), is(dsn));
-
-        removeEnv("SENTRY_DSN");
-    }
-
-    /**
-     * Sets an environment variable during Unit-Test.
-     * <p>
-     * DO NOT USE THIS METHOD OUTSIDE OF THE UNIT TESTS!
-     *
-     * @param key   name of the environment variable.
-     * @param value value for the variable.
-     * @throws Exception if anything goes wrong.
-     */
-    @SuppressWarnings("unchecked")
-    private void setEnv(String key, String value) throws Exception {
-        Class[] classes = Collections.class.getDeclaredClasses();
-        Map<String, String> env = System.getenv();
-        for (Class cl : classes) {
-            if (env.getClass().equals(cl)) {
-                Field field = cl.getDeclaredField("m");
-                field.setAccessible(true);
-                Map<String, String> map = (Map<String, String>) field.get(env);
-                map.put(key, value);
-                break;
-            }
-        }
-    }
-
-    /**
-     * Removes an environment variable during Unit-Test.
-     * <p>
-     * DO NOT USE THIS METHOD OUTSIDE OF THE UNIT TESTS!
-     *
-     * @param key name of the environment variable.
-     * @throws Exception if anything goes wrong.
-     */
-    @SuppressWarnings("unchecked")
-    private void removeEnv(String key) throws Exception {
-        Class[] classes = Collections.class.getDeclaredClasses();
-        Map<String, String> env = System.getenv();
-        for (Class cl : classes) {
-            if (env.getClass().equals(cl)) {
-                Field field = cl.getDeclaredField("m");
-                field.setAccessible(true);
-                Map<String, String> map = (Map<String, String>) field.get(env);
-                map.remove(key);
-                break;
-            }
-        }
     }
 
     @Test(expectedExceptions = InvalidDsnException.class)
