@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.zip.DeflaterOutputStream;
 
@@ -81,7 +82,15 @@ public class JsonMarshaller implements Marshaller {
     /**
      * Date format for ISO 8601.
      */
-    private static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+    private static final ThreadLocal<DateFormat> ISO_FORMAT = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            dateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+            return dateFormat;
+        }
+    };
+
     private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Map<Class<? extends SentryInterface>, InterfaceBinding<?>> interfaceBindings = new HashMap<>();
@@ -111,7 +120,7 @@ public class JsonMarshaller implements Marshaller {
 
         generator.writeStringField(EVENT_ID, formatId(event.getId()));
         generator.writeStringField(MESSAGE, formatMessage(event.getMessage()));
-        generator.writeStringField(TIMESTAMP, formatTimestamp(event.getTimestamp()));
+        generator.writeStringField(TIMESTAMP, ISO_FORMAT.get().format(event.getTimestamp()));
         generator.writeStringField(LEVEL, formatLevel(event.getLevel()));
         generator.writeStringField(LOGGER, event.getLogger());
         generator.writeStringField(PLATFORM, event.getPlatform());
@@ -247,18 +256,6 @@ public class JsonMarshaller implements Marshaller {
                         level.name());
                 return null;
         }
-    }
-
-    /**
-     * Formats a timestamp in the ISO-8601 format without timezone.
-     *
-     * @param timestamp date to format.
-     * @return timestamp as a formatted String.
-     */
-    private String formatTimestamp(Date timestamp) {
-        DateFormat isoFormat = new SimpleDateFormat(ISO_8601_FORMAT);
-        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return isoFormat.format(timestamp);
     }
 
     /**
