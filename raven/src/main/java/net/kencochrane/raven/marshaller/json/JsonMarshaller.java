@@ -189,6 +189,7 @@ public class JsonMarshaller implements Marshaller {
             generator.writeNull();
         } else {
             try {
+                /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
                 generator.writeObject(value);
             } catch (IllegalStateException e) {
                 logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
