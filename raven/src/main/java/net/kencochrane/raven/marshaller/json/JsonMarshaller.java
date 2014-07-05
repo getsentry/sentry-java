@@ -84,7 +84,7 @@ public class JsonMarshaller implements Marshaller {
     private static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
     private final JsonFactory jsonFactory = new JsonFactory();
-    private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings = new HashMap<>();
+    private final Map<Class<? extends SentryInterface>, InterfaceBinding<?>> interfaceBindings = new HashMap<>();
     /**
      * Enables disables the compression of JSON.
      */
@@ -125,7 +125,6 @@ public class JsonMarshaller implements Marshaller {
         generator.writeEndObject();
     }
 
-    @SuppressWarnings("unchecked")
     private void writeInterfaces(JsonGenerator generator, Map<String, SentryInterface> sentryInterfaces)
             throws IOException {
         for (Map.Entry<String, SentryInterface> interfaceEntry : sentryInterfaces.entrySet()) {
@@ -133,12 +132,18 @@ public class JsonMarshaller implements Marshaller {
 
             if (interfaceBindings.containsKey(sentryInterface.getClass())) {
                 generator.writeFieldName(interfaceEntry.getKey());
-                interfaceBindings.get(sentryInterface.getClass()).writeInterface(generator, sentryInterface);
+                getInterfaceBinding(sentryInterface).writeInterface(generator, interfaceEntry.getValue());
             } else {
                 logger.error("Couldn't parse the content of '{}' provided in {}.",
                         interfaceEntry.getKey(), sentryInterface);
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends SentryInterface> InterfaceBinding<? super T> getInterfaceBinding(T sentryInterface) {
+        // Reduces the @SuppressWarnings to a oneliner
+        return (InterfaceBinding<? super T>) interfaceBindings.get(sentryInterface.getClass());
     }
 
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
