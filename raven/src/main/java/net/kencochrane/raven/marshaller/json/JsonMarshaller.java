@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.zip.DeflaterOutputStream;
 
@@ -86,7 +85,7 @@ public class JsonMarshaller implements Marshaller {
         @Override
         protected DateFormat initialValue() {
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-            dateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             return dateFormat;
         }
     };
