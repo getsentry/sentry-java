@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j;
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
+import mockit.Tested;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
@@ -13,14 +14,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderDsnTest {
-    private SentryAppender sentryAppender;
+    @Tested
+    private SentryAppender sentryAppender = null;
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private Raven mockRaven = null;
+    @SuppressWarnings("unused")
     @Mocked("ravenInstance")
-    private RavenFactory mockRavenFactory;
+    private RavenFactory mockRavenFactory = null;
+    @SuppressWarnings("unused")
     @Mocked("dsnLookup")
-    private Dsn mockDsn;
+    private Dsn mockDsn = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

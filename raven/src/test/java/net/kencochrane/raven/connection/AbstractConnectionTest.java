@@ -4,7 +4,6 @@ import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
 import mockit.Verifications;
-import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -24,7 +23,7 @@ public class AbstractConnectionTest {
     @Injectable
     private final String secretKey = "56a9d05e-9032-4fdd-8f67-867d526422f9";
     @Tested
-    private AbstractConnection abstractConnection;
+    private AbstractConnection abstractConnection = null;
     //Spying with mockito as jMockit doesn't support mocks of ReentrantLock
     @Spy
     private ReentrantLock reentrantLock = new ReentrantLock();
@@ -32,9 +31,6 @@ public class AbstractConnectionTest {
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        setField(Raven.class, "NAME", "Raven-Java/Test");
-        // Reset tested
-        abstractConnection = null;
     }
 
     @Test

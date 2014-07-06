@@ -1,6 +1,5 @@
 package net.kencochrane.raven.dsn;
 
-import net.kencochrane.raven.Raven;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,7 @@ public class Dsn {
      * Name of the environment and system variables containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
-    private static final Logger logger = LoggerFactory.getLogger(Raven.class);
+    private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
     private String secretKey;
     private String publicKey;
     private String projectId;
@@ -40,22 +39,31 @@ public class Dsn {
     /**
      * Creates a DSN based on a String.
      *
-     * @param dsn dsn in a string form.
-     * @throws InvalidDsnException the given DSN isn't usable.
+     * @param dsn DSN in a string form.
+     * @throws InvalidDsnException the given DSN is not valid.
      */
     public Dsn(String dsn) throws InvalidDsnException {
+        this(URI.create(dsn));
+    }
+
+    /**
+     * Creates a DSN based on a URI.
+     *
+     * @param dsn DSN in URI form.
+     * @throws InvalidDsnException the given DSN is not valid.
+     */
+    public Dsn(URI dsn) throws InvalidDsnException {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 
         options = new HashMap<>();
         protocolSettings = new HashSet<>();
 
-        URI dsnUri = URI.create(dsn);
-        extractProtocolInfo(dsnUri);
-        extractUserKeys(dsnUri);
-        extractHostInfo(dsnUri);
-        extractPathInfo(dsnUri);
-        extractOptions(dsnUri);
+        extractProtocolInfo(dsn);
+        extractUserKeys(dsn);
+        extractHostInfo(dsn);
+        extractPathInfo(dsn);
+        extractOptions(dsn);
 
         makeOptionsImmutable();
 
@@ -171,7 +179,7 @@ public class Dsn {
     }
 
     /**
-     * Makes protocol and dsn options immutable to allow an external usage.
+     * Makes protocol and dsn options immutable to allow external usage.
      */
     private void makeOptionsImmutable() {
         // Make the options immutable
@@ -183,7 +191,6 @@ public class Dsn {
      * Validates internally the DSN, and check for mandatory elements.
      * <p>
      * Mandatory elements are the {@link #host}, {@link #publicKey}, {@link #secretKey} and {@link #projectId}.
-     * </p>
      */
     private void validate() {
         List<String> missingElements = new LinkedList<>();
@@ -277,6 +284,8 @@ public class Dsn {
 
     @Override
     public String toString() {
-        return getUri().toString();
+        return "Dsn{"
+                + "uri=" + uri
+                + '}';
     }
 }

@@ -15,11 +15,11 @@ import static org.hamcrest.Matchers.is;
 @Test(singleThreaded = true)
 public class EventBuilderHostnameCacheTest {
     @Injectable
-    private InetAddress mockLocalHost;
+    private InetAddress mockLocalHost = null;
     @Injectable("serverName")
-    private String mockLocalHostName;
+    private String mockLocalHostName = null;
     @Injectable
-    private InetAddress mockTimingOutLocalHost;
+    private InetAddress mockTimingOutLocalHost = null;
 
     private static void resetHostnameCache() {
         setField(getHostnameCache(), "expirationTimestamp", 0L);
@@ -44,7 +44,8 @@ public class EventBuilderHostnameCacheTest {
     }
 
     @Test
-    public void successfulHostnameRetrievalIsCachedForFiveHours(@Mocked("currentTimeMillis") final System system)
+    public void successfulHostnameRetrievalIsCachedForFiveHours(
+            @SuppressWarnings("unused") @Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();
@@ -60,7 +61,8 @@ public class EventBuilderHostnameCacheTest {
     }
 
     @Test
-    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(@Mocked("currentTimeMillis") final System system)
+    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(
+            @SuppressWarnings("unused") @Mocked("currentTimeMillis") final System system)
             throws Exception {
         new NonStrictExpectations(InetAddress.class) {{
             System.currentTimeMillis();

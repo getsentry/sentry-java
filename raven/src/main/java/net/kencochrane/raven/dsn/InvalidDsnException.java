@@ -5,7 +5,6 @@ package net.kencochrane.raven.dsn;
  * <p>
  * The invalidity of the DSN can either be due on the content of the DSN (invalid or missing parameters) or the sentry
  * server issuing an authentication error.
- * </p>
  */
 public class InvalidDsnException extends RuntimeException {
     //CHECKSTYLE.OFF: JavadocMethod

@@ -15,9 +15,9 @@ import static org.hamcrest.Matchers.*;
 
 public class HttpInterfaceTest {
     @Injectable
-    private HttpServletRequest mockHttpServletRequest;
+    private HttpServletRequest mockHttpServletRequest = null;
     @Injectable
-    private Cookie mockCookie;
+    private Cookie mockCookie = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

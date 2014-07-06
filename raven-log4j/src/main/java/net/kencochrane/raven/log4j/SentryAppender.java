@@ -5,6 +5,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.dsn.InvalidDsnException;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -15,7 +16,6 @@ import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -44,21 +44,18 @@ public class SentryAppender extends AppenderSkeleton {
      * DSN property of the appender.
      * <p>
      * Might be null in which case the DSN should be detected automatically.
-     * </p>
      */
     protected String dsn;
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
-     * </p>
      */
     protected String ravenFactory;
     /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
-     * </p>
      */
     protected Map<String, String> tags = Collections.emptyMap();
 
@@ -145,18 +142,18 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     protected void append(LoggingEvent loggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.isManagingThread())
+        if (RavenEnvironment.isManagingThread())
             return;
 
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Raven", e,
                     ErrorCode.WRITE_FAILURE);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 
@@ -243,16 +240,18 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void close() {
-        if (this.closed)
-            return;
-        this.closed = true;
-
+        RavenEnvironment.startManagingThread();
         try {
+            if (this.closed)
+                return;
+            this.closed = true;
             if (raven != null)
-                raven.getConnection().close();
-        } catch (IOException e) {
+                raven.closeConnection();
+        } catch (Exception e) {
             getErrorHandler().error("An exception occurred while closing the Raven connection", e,
                     ErrorCode.CLOSE_FAILURE);
+        } finally {
+            RavenEnvironment.stopManagingThread();
         }
     }
 

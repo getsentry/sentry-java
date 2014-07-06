@@ -23,7 +23,6 @@ import java.util.logging.Logger;
  * ContextListener stating an UDP socket when the servlet container starts.
  * <p>
  * This listener allows a {@link DatagramSocket} to be started to listen to UDP requests.
- * </p>
  */
 @WebListener
 public class SentryUdpContextListener implements ServletContextListener {

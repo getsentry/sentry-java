@@ -3,8 +3,8 @@ package net.kencochrane.raven.appengine.connection;
 import com.google.appengine.api.taskqueue.DeferredTask;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
-import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.connection.Connection;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +21,14 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * <p>
  * Instead of synchronously sending each event to a connection, use a the task queue system to establish the connection
  * and submit the event.
- * </p>
  * <p>
  * Google App Engine serialises the tasks before queuing them, to keep a link between the task and the
  * {@link AppEngineAsyncConnection} associated, a register of the instances of {@code AppEngineAsyncConnection} is
- * kept in {@link #APP_ENGINE_ASYNC_CONNECTIONS}.<br />
+ * kept in {@link #APP_ENGINE_ASYNC_CONNECTIONS}.<br>
  * This register is populated when a new instance of {@code AppEngineAsyncConnection} is created and the connection
- * is removed from the register when it has been closed with {@link #close()}.<br />
+ * is removed from the register when it has been closed with {@link #close()}.<br>
  * The register works based on identifier defined by the user. There is no ID conflict handling, the user is expected
  * to manage the uniqueness of those ID.
- * </p>
  */
 public class AppEngineAsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AppEngineAsyncConnection.class);
@@ -56,7 +54,6 @@ public class AppEngineAsyncConnection implements Connection {
      * Creates a connection which will rely on an executor to send events.
      * <p>
      * Will propagate the {@link #close()} operation.
-     * </p>
      *
      * @param id               Identifier of the connection shared across all the instances of the application.
      * @param actualConnection Connection used to send the events.
@@ -71,7 +68,6 @@ public class AppEngineAsyncConnection implements Connection {
      * {@inheritDoc}
      * <p>
      * The event will be added to a queue and will be handled by a separate {@code Thread} later on.
-     * </p>
      */
     @Override
     public void send(Event event) {
@@ -83,7 +79,6 @@ public class AppEngineAsyncConnection implements Connection {
      * {@inheritDoc}.
      * <p>
      * Closing the {@link AppEngineAsyncConnection} will gracefully remove every task created earlier from the queue.
-     * </p>
      */
     @Override
     public void close() throws IOException {
@@ -117,9 +112,9 @@ public class AppEngineAsyncConnection implements Connection {
         @Override
         public void run() {
             setDoNotRetry(true);
+            RavenEnvironment.startManagingThread();
             try {
                 // The current thread is managed by raven
-                Raven.startManagingThread();
                 AppEngineAsyncConnection connection = APP_ENGINE_ASYNC_CONNECTIONS.get(connectionId);
                 if (connection == null) {
                     logger.warn("Couldn't find the AppEngineAsyncConnection identified by '{}'. "
@@ -130,7 +125,7 @@ public class AppEngineAsyncConnection implements Connection {
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
-                Raven.stopManagingThread();
+                RavenEnvironment.stopManagingThread();
             }
         }
     }

@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Default implementation of {@link RavenFactory}.
  * <p>
  * In most cases this is the implementation to use or extend for additional features.
- * </p>
  */
 public class DefaultRavenFactory extends RavenFactory {
     //TODO: Add support for tags set by default
@@ -45,6 +44,10 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option to send events asynchronously.
      */
     public static final String ASYNC_OPTION = "raven.async";
+    /**
+     * Option to disable the graceful shutdown.
+     */
+    public static final String GRACEFUL_SHUTDOWN_OPTION = "raven.async.gracefulshutdown";
     /**
      * Option for the number of threads assigned for the connection.
      */
@@ -139,7 +142,9 @@ public class DefaultRavenFactory extends RavenFactory {
         ExecutorService executorService = new ThreadPoolExecutor(
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue, new DaemonThreadFactory(priority));
 
-        return new AsyncConnection(connection, executorService);
+        boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(GRACEFUL_SHUTDOWN_OPTION));
+
+        return new AsyncConnection(connection, executorService, gracefulShutdown);
     }
 
     /**
@@ -210,7 +215,6 @@ public class DefaultRavenFactory extends RavenFactory {
      * <p>
      * Those packages will be used with the {@link StackTraceInterface} to hide frames that aren't a part of
      * the main application.
-     * </p>
      *
      * @return the list of "not in-app" packages.
      */
@@ -229,7 +233,6 @@ public class DefaultRavenFactory extends RavenFactory {
      * <p>
      * Those (usually) low priority threads will allow to send event details to sentry concurrently without slowing
      * down the main application.
-     * </p>
      */
     @SuppressWarnings("PMD.AvoidThreadGroup")
     protected static final class DaemonThreadFactory implements ThreadFactory {

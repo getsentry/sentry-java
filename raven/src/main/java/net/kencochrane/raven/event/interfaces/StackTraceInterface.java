@@ -27,7 +27,6 @@ public class StackTraceInterface implements SentryInterface {
      * <p>
      * With the help of the enclosing StackTrace, figure out which frames are in common with the parent exception
      * to potentially hide them later in Sentry.
-     * </p>
      *
      * @param stackTrace          StackTrace to provide to Sentry.
      * @param enclosingStackTrace StackTrace of the enclosing exception, to determine how many Stack frames

@@ -2,8 +2,8 @@ package net.kencochrane.raven.connection;
 
 import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -12,38 +12,31 @@ import java.util.concurrent.TimeUnit;
 
 public class AsyncConnectionTest {
     @Tested
-    private AsyncConnection asyncConnection;
+    private AsyncConnection asyncConnection = null;
     @Injectable
-    private Connection mockConnection;
+    private Connection mockConnection = null;
     @Injectable
-    private ExecutorService mockExecutorService;
+    private ExecutorService mockExecutorService = null;
+    @Injectable("false")
+    private boolean mockGracefulShutdown = false;
+    @SuppressWarnings("unused")
     @Mocked("addShutdownHook")
-    private Runtime mockRuntime;
+    private Runtime mockRuntime = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        // Reset Tested
-        asyncConnection = null;
         new NonStrictExpectations() {{
             mockExecutorService.awaitTermination(anyLong, (TimeUnit) any);
             result = true;
         }};
-    }
-
-    @AfterMethod
-    public void tearDown() throws Exception {
-        // Reset the expectation that has been already removed.
-        new NonStrictExpectations() {{
-            mockExecutorService.awaitTermination(anyLong, (TimeUnit) any);
-            result = true;
-        }};
-        // Ensure that the shutdown hooks are removed
-        asyncConnection.close();
     }
 
     @Test
-    public void verifyShutdownHookIsAdded() throws Exception {
-        new AsyncConnection(mockConnection, mockExecutorService);
+    public void verifyShutdownHookIsAddedWhenGraceful() throws Exception {
+        // Ensure that the shutdown hooks for the unused @Tested instance are removed
+        asyncConnection.close();
+
+        new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new Verifications() {{
             mockRuntime.addShutdownHook((Thread) any);
@@ -51,44 +44,67 @@ public class AsyncConnectionTest {
     }
 
     @Test
+    public void verifyShutdownHookNotAddedWhenNotGraceful() throws Exception {
+        // Ensure that the shutdown hooks for the unused @Tested instance are removed
+        asyncConnection.close();
+
+        new AsyncConnection(mockConnection, mockExecutorService, false);
+
+        new Verifications() {{
+            mockRuntime.addShutdownHook((Thread) any);
+            times = 0;
+        }};
+    }
+
+    @Test
     public void verifyShutdownHookSetManagedByRavenAndCloseConnection(
-            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven)
+            throws Exception {
+        // Ensure that the shutdown hooks for the unused @Tested instance are removed
+        asyncConnection.close();
+
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
-                public void addShutdownHook(Thread thread) {
-                    thread.run();
+                @SuppressWarnings("unused")
+                public void addShutdownHook(Thread hook) {
+                    hook.run();
                 }
             };
         }};
 
-        new AsyncConnection(mockConnection, mockExecutorService);
+        new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new VerificationsInOrder() {{
-            Raven.startManagingThread();
+            RavenEnvironment.startManagingThread();
             mockConnection.close();
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }};
     }
 
     @Test
     public void ensureFailingShutdownHookStopsBeingManaged(
-            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven)
+            throws Exception {
+        // Ensure that the shutdown hooks for the unused @Tested instance are removed
+        asyncConnection.close();
+
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
-                public void addShutdownHook(Thread thread) {
-                    thread.run();
+                @SuppressWarnings("unused")
+                public void addShutdownHook(Thread hook) {
+                    hook.run();
                 }
             };
             mockConnection.close();
             result = new RuntimeException("Close operation failed");
         }};
 
-        new AsyncConnection(mockConnection, mockExecutorService);
+        new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new Verifications() {{
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }};
     }
 
@@ -109,15 +125,19 @@ public class AsyncConnectionTest {
         new Verifications() {{
             mockExecutorService.execute((Runnable) any);
         }};
+
+        // Ensure that the shutdown hooks for the used @Tested instance are removed
+        asyncConnection.close();
     }
 
     @Test
     public void testQueuedEventExecuted(@Injectable final Event mockEvent) throws Exception {
-        new Expectations() {{
+        new NonStrictExpectations() {{
             mockExecutorService.execute((Runnable) any);
-            result = new Delegate() {
-                public void execute(Runnable runnable) {
-                    runnable.run();
+            result = new Delegate<Void>() {
+                @SuppressWarnings("unused")
+                public void execute(Runnable command) {
+                    command.run();
                 }
             };
         }};
@@ -127,5 +147,8 @@ public class AsyncConnectionTest {
         new Verifications() {{
             mockConnection.send(mockEvent);
         }};
+
+        // Ensure that the shutdown hooks for the used @Tested instance are removed
+        asyncConnection.close();
     }
 }

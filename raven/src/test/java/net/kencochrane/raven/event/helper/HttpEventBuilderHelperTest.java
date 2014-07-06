@@ -1,29 +1,22 @@
 package net.kencochrane.raven.event.helper;
 
-import mockit.Injectable;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.servlet.RavenServletRequestListener;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;
 
 public class HttpEventBuilderHelperTest {
-    private HttpEventBuilderHelper httpEventBuilderHelper;
+    @Tested
+    private HttpEventBuilderHelper httpEventBuilderHelper = null;
     @Injectable
-    private EventBuilder mockEventBuilder;
+    private EventBuilder mockEventBuilder = null;
+    @SuppressWarnings("unused")
     @Mocked
-    private HttpInterface mockHttpInterface;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        httpEventBuilderHelper = new HttpEventBuilderHelper();
-    }
+    private HttpInterface mockHttpInterface = null;
 
     @Test
     public void testNoRequest() throws Exception {

@@ -12,18 +12,15 @@ import java.util.List;
  * Sentry's ability to regroup event with the same messages is based on the content of the message, meaning that an
  * {@link net.kencochrane.raven.event.Event} with the message "<cite>User1 failed to provide an email address</cite>"
  * won't be grouped with an Event with the message "<cite>User2 failed to provide an email address</cite>".
- * </p>
  * <p>
  * To allow this kind of grouping, sentry supports the message interface which will provide both the pattern of the
- * message and the parameters. In this example the pattern could be:<br />
- * <cite>{} failed to provide an email address</cite><br />
- * And the parameters would be <cite>User1</cite> in the first Event and <cite>User2</cite> in the second Event.<br />
+ * message and the parameters. In this example the pattern could be:<br>
+ * <cite>{} failed to provide an email address</cite><br>
+ * And the parameters would be <cite>User1</cite> in the first Event and <cite>User2</cite> in the second Event.<br>
  * This way, Sentry will be able to put the two events in the same category.
- * </p>
  * <p>
  * Note: Sentry won't attempt to format the message, this is why the formatted message should be set through
  * {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} in any case.
- * </p>
  */
 public class MessageInterface implements SentryInterface {
     /**
@@ -38,7 +35,6 @@ public class MessageInterface implements SentryInterface {
      * <p>
      * While it's technically possible to create a non parametrised message with {@code MessageInterface}, it's
      * recommended to use {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} instead.
-     * </p>
      *
      * @param message message to add to the event.
      * @deprecated Use {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} instead.

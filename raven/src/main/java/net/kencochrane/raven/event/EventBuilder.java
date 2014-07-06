@@ -41,7 +41,6 @@ public class EventBuilder {
      * Creates a new EventBuilder to prepare a new {@link Event}.
      * <p>
      * Automatically generates the id of the new event.
-     * </p>
      */
     public EventBuilder() {
         this(UUID.randomUUID());
@@ -198,7 +197,6 @@ public class EventBuilder {
      * Adds a tag to an event.
      * <p>
      * This allows to set a tag value in different contexts.
-     * </p>
      *
      * @param tagKey   name of the tag.
      * @param tagValue value of the tag.
@@ -246,7 +244,6 @@ public class EventBuilder {
      * Sets the checksum for the current event.
      * <p>
      * It's recommended to rely instead on the checksum system provided by Sentry.
-     * </p>
      *
      * @param checksum checksum for the event.
      * @return the current {@code EventBuilder} for chained calls.
@@ -261,7 +258,6 @@ public class EventBuilder {
      * <p>
      * If a {@code SentryInterface} with the same interface name has already been added, the new one will replace
      * the old one.
-     * </p>
      *
      * @param sentryInterface sentry interface to add to the event.
      * @return the current {@code EventBuilder} for chained calls.
@@ -275,7 +271,6 @@ public class EventBuilder {
      * Finalises the {@link Event} and returns it.
      * <p>
      * This operations will automatically set the missing values and make the mutable values immutable.
-     * </p>
      *
      * @return an immutable event.
      */
@@ -291,15 +286,22 @@ public class EventBuilder {
         return event;
     }
 
+    @Override
+    public String toString() {
+        return "EventBuilder{"
+                + "event=" + event
+                + ", alreadyBuilt=" + alreadyBuilt
+                + '}';
+    }
+
     /**
      * Time sensitive cache in charge of keeping track of the hostname.
      * <p>
      * The {@code InetAddress.getLocalHost().getCanonicalHostName()} call can be quite expensive and could be called
      * for the creation of each {@link Event}. This system will prevent unnecessary costs by keeping track of the
-     * hostname for a period defined during the construction.<br />
+     * hostname for a period defined during the construction.<br>
      * For performance purposes, the operation of retrieving the hostname will automatically fail after a period of time
      * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
-     * </p>
      */
     private static final class HostnameCache {
         /**
@@ -333,7 +335,6 @@ public class EventBuilder {
          * Gets the hostname of the current machine.
          * <p>
          * Gets the value from the cache if possible otherwise calls {@link #updateCache()}.
-         * </p>
          *
          * @return the hostname of the current machine.
          */

@@ -10,20 +10,20 @@ for Log4j 2 to send the logged events to Sentry.
 <dependency>
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven-log4j2</artifactId>
-    <version>4.1.2</version>
+    <version>5.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-log4j2%7C4.1.2%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-log4j2%7C5.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
 
  - [raven dependencies](../raven)
- - [log4j-api-2.0-beta9.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7C2.0-beta9%7Cjar)
- - [log4j-core-2.0-beta9.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7C2.0-beta9%7Cjar)
- - [log4j-slf4j-impl-2.0-beta9.jar](http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7C2.0-beta9%7Cjar)
+ - [log4j-api-2.0-rc1.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7C2.0-rc1%7Cjar)
+ - [log4j-core-2.0-rc1.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7C2.0-rc1%7Cjar)
+ - [log4j-slf4j-impl-2.0-rc1.jar](http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7C2.0-rc1%7Cjar)
  is recommended as the implementation of slf4j (instead of slf4j-jdk14).
 
 

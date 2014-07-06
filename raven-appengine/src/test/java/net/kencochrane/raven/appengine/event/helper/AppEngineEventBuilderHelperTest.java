@@ -16,17 +16,18 @@ import static org.hamcrest.Matchers.is;
 
 public class AppEngineEventBuilderHelperTest {
     @Tested
-    private AppEngineEventBuilderHelper eventBuilderHelper;
+    private AppEngineEventBuilderHelper eventBuilderHelper = null;
     @Injectable
-    private EventBuilder mockEventBuilder;
+    private EventBuilder mockEventBuilder = null;
+    @SuppressWarnings("unused")
     @Mocked("getCurrentEnvironment")
     private ApiProxy mockApiProxy;
     @Injectable
-    private ApiProxy.Environment mockEnvironment;
+    private ApiProxy.Environment mockEnvironment = null;
     @Injectable
-    private SystemProperty mockApplicationId;
+    private SystemProperty mockApplicationId = null;
     @Injectable
-    private SystemProperty mockApplicationVersion;
+    private SystemProperty mockApplicationVersion = null;
 
     @BeforeMethod
     public void setUp() throws Exception {

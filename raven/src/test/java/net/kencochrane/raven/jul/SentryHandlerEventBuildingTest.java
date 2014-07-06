@@ -1,6 +1,7 @@
 package net.kencochrane.raven.jul;
 
 import mockit.Injectable;
+import mockit.Tested;
 import mockit.Verifications;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
@@ -8,7 +9,6 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.SentryException;
 import org.hamcrest.Matchers;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -21,17 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryHandlerEventBuildingTest {
-    private SentryHandler sentryHandler;
+    @Tested
+    private SentryHandler sentryHandler = null;
     @Injectable
     private ErrorManager errorManager = null;
     @Injectable
     private Raven mockRaven = null;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        sentryHandler = new SentryHandler(mockRaven);
-        sentryHandler.setErrorManager(errorManager);
-    }
 
     private void assertNoErrorsInErrorManager() throws Exception {
         new Verifications() {{

@@ -1,7 +1,7 @@
 package net.kencochrane.raven.connection;
 
 import com.google.common.base.Charsets;
-import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
 import org.slf4j.Logger;
@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
  * Basic connection to a Sentry server, using HTTP and HTTPS.
  * <p>
  * It is possible to enable the "naive mode" to allow a connection over SSL using a certificate with a wildcard.
- * </p>
  */
 public class HttpConnection extends AbstractConnection {
     private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
@@ -106,7 +105,7 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setConnectTimeout(timeout);
-            connection.setRequestProperty(USER_AGENT, Raven.NAME);
+            connection.setRequestProperty(USER_AGENT, RavenEnvironment.NAME);
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {

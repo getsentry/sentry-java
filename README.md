@@ -1,6 +1,6 @@
 # Raven
 
-[![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=master)](https://travis-ci.org/kencochrane/raven-java)
+[![Build Status](https://travis-ci.org/getsentry/raven-java.svg?branch=master)](https://travis-ci.org/getsentry/raven-java) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/net.kencochrane.raven/raven-all/badge.svg)](https://maven-badges.herokuapp.com/maven-central/net.kencochrane.raven/raven-all)
 
 Raven is the Java client for [Sentry](https://www.getsentry.com/).
 Raven relies on the most popular logging libraries to capture and convert logs
@@ -19,27 +19,17 @@ manually with the main project [raven](raven).
 Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
 instance.
 
-
-## Notes on GetSentry.com and Oracle JDK
-
-Due to GetSentry.com using a certificate provided by [StartCom](https://www.startcom.org/) and StartCom not being
-in the list of the [CAcerts of Oracle JDK 6](http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html#cacerts)
-it isn't possible to establish an HTTPS connection to GetSentry.com out of the box.
-
-The said certificate [might be available out of the box with Java 8](https://forum.startcom.org/viewtopic.php?f=15&t=1815)
-but in the mean time, you can use the [raven-getsentry](raven-getsentry) module which embeds the certificate and allows
-SSL connections to GetSentry.com
-
+Support for [Google App Engine](https://appengine.google.com/) is provided in [raven-appengine](raven-appengine)
 
 ## Sentry Protocol and Raven versions
-Since 2.0, the major version of raven matches the version of the Sentry protocol.
+Since Sentry 2.0, the major version of raven matches the version of the Sentry protocol.
 
 | Raven version | Protocol version | Sentry version |
 | ------------- | ---------------- | -------------- |
-| Raven 2.x     | V2               | >= 2.0         |
-| Raven 3.x     | V3               | >= 5.1         |
+| Raven 2.x(old)| V2               | >= 2.0         |
+| Raven 3.x(old)| V3               | >= 5.1         |
 | Raven 4.x     | V4               | >= 6.0         |
-| Raven 5.x(dev)| V5               | >= 6.4         |
+| Raven 5.x     | V5               | >= 6.4         |
 
 
 Each release of Sentry supports the last two version of the protocol
@@ -149,6 +139,23 @@ is set up, using a low priority thread pool to submit events to Sentry.
 To disable the async mode, add `raven.async=false` to the DSN:
 
     http://public:private@host:port/1?raven.async=false
+
+#### Graceful Shutdown (advanced)
+In order to shutdown the asynchronous connection gracefully, a `ShutdownHook`
+is created.
+This could lead to memory leaks in an environment where the life cycle of
+Raven doesn't match the life cycle of the JVM.
+
+An example would be in a JEE environment where the application using Raven
+could be deployed and undeployed regularly.
+
+To avoid this behaviour, it is possible to disable the graceful shutdown.
+This might lead to some log entries being lost if the log application
+doesn't shut down the Raven instance nicely.
+
+The option to do so is `raven.async.gracefulshutdown`:
+
+    http://public:private@host:port/1?raven.async.gracefulshutdown=false
 
 #### Queue size (advanced)
 The default queue used to store the not yet processed events doesn't have a
