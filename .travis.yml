@@ -11,4 +11,4 @@ env:
     - SONATYPE_USERNAME=JAZGbCvS
     - secure: x6UWj3ICsut4u3HS0pFt3b5vxqT9gM+zFn9+3YgM01G9NPiM3yXtGCUsq3T3exajfsmH2ax2fd6vRDWv7wUIsyVCf9tJ84TRJuDFNU0Zkqo7doC6EaY2bgTrjREBpfWhDiIXtsHpU44yM/NTx9aTfW9Tm+GO4+lxymm6kb3IPpE=
 after_success:
-  - "[[ $TRAVIS_BRANCH == \"master\" ]] && { python .travis/addServer.py; mvn clean deploy --settings ~/.m2/mySettings.xml; };"
+  - "{ [[ $TRAVIS_BRANCH == 'master' ]] || [[ $TRAVIS_BRANCH == raven-*.x ]]; } && { python .travis/addServer.py; mvn clean deploy --settings $HOME/.m2/mySettings.xml; };"
