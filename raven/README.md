@@ -33,7 +33,7 @@ Relies on:
 In the `logging.properties` file set:
 
 ```properties
-level=WARN
+.level=WARN
 handlers=net.kencochrane.raven.jul.SentryHandler
 net.kencochrane.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
 net.kencochrane.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
