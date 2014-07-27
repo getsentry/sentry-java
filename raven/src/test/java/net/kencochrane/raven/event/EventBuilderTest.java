@@ -99,7 +99,6 @@ public class EventBuilderTest {
             result = mockTimestamp;
         }};
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setTimestamp(mockTimestamp);
 
         final Event event = eventBuilder.build();
 
