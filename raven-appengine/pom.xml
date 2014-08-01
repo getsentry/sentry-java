@@ -15,6 +15,7 @@
 
     <properties>
         <appengine-api.version>1.9.7</appengine-api.version>
+        <logback.version>1.1.2</logback.version>
     </properties>
 
     <dependencies>
@@ -35,6 +36,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
