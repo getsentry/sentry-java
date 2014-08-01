@@ -14,6 +14,10 @@
     <name>Sentry stub</name>
     <description>Stub for tests against a Sentry server.</description>
 
+    <properties>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -34,6 +38,7 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
+            <version>${javax.servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

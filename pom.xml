@@ -109,7 +109,6 @@
         <slf4j.version>1.7.7</slf4j.version>
         <guava.version>17.0</guava.version>
         <jackson.version>2.4.1</jackson.version>
-        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
         <mockito.version>1.9.5</mockito.version>
         <jmockit.version>1.10</jmockit.version>
         <testng.version>6.8.8</testng.version>
@@ -154,11 +153,6 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>${javax.servlet-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>

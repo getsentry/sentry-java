@@ -14,6 +14,10 @@
     <name>Raven-Java client</name>
     <description>Sentry client written in Java.</description>
 
+    <properties>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -32,6 +36,7 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+            <version>${javax.servlet-api.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
