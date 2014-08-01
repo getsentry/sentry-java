@@ -59,7 +59,7 @@
     </contributors>
 
     <prerequisites>
-        <maven>3.0</maven>
+        <maven>3.2</maven>
     </prerequisites>
 
     <modules>
