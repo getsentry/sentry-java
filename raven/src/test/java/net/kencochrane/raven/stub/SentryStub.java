@@ -1,6 +1,7 @@
 package net.kencochrane.raven.stub;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ public class SentryStub {
     }
 
     public int getEventCount() {
+        RavenEnvironment.startManagingThread();
         try {
             HttpURLConnection connection = connnectTo("count");
             connection.setRequestMethod("GET");
@@ -42,10 +44,13 @@ public class SentryStub {
         } catch (Exception e) {
             logger.error("Couldn't get the number of events created.", e);
             return -1;
+        } finally {
+            RavenEnvironment.stopManagingThread();
         }
     }
 
     public void removeEvents() {
+        RavenEnvironment.startManagingThread();
         try {
             HttpURLConnection connection = connnectTo("cleanup");
             connection.setRequestMethod("DELETE");
@@ -54,6 +59,8 @@ public class SentryStub {
             connection.getInputStream().close();
         } catch (Exception e) {
             logger.error("Couldn't remove stub events.", e);
+        } finally {
+            RavenEnvironment.stopManagingThread();
         }
     }
 
