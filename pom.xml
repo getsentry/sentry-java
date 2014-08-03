@@ -502,11 +502,15 @@
         <!-- Run the Mutation tests -->
         <profile>
             <id>pitest</id>
+            <properties>
+                <jmockit.version>1.8</jmockit.version>
+                <junit.version>4.11</junit.version>
+            </properties>
             <dependencies>
                 <dependency>
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
-                    <version>4.11</version>
+                    <version>${junit.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
