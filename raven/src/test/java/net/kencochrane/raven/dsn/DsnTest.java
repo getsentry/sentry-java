@@ -7,10 +7,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.naming.Context;
-import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.Collections;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -109,7 +106,7 @@ public class DsnTest {
     @Test
     public void testDsnLookupWithEnvironmentVariable(@Mocked("getenv") final System system) throws Exception {
         final String dsn = "759ed060-dd4f-4478-8a1a-3f23e044787c";
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             System.getenv("SENTRY_DSN");
             result = dsn;
         }};
