@@ -524,6 +524,11 @@
                             <targetTests>
                                 <param>*Test</param>
                             </targetTests>
+                            <excludedMethods>
+                                <method>equals()</method>
+                                <method>toString()</method>
+                                <method>hashCode()</method>
+                            </excludedMethods>
                         </configuration>
                     </plugin>
                 </plugins>
