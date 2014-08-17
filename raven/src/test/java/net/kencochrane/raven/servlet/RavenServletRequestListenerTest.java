@@ -80,7 +80,7 @@ public class RavenServletRequestListenerTest {
             result = mockHttpServletRequest;
         }};
 
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 ravenServletRequestListener.requestInitialized(mockServletRequestEvent);
