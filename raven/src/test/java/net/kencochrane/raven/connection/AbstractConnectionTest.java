@@ -2,18 +2,15 @@ package net.kencochrane.raven.connection;
 
 import mockit.*;
 import net.kencochrane.raven.event.Event;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 import static mockit.Deencapsulation.getField;
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.verify;
 
 public class AbstractConnectionTest {
     @Injectable
@@ -22,17 +19,13 @@ public class AbstractConnectionTest {
     private final String secretKey = "56a9d05e-9032-4fdd-8f67-867d526422f9";
     @Tested
     private AbstractConnection abstractConnection = null;
-    //Spying with mockito as jMockit doesn't support mocks of ReentrantLock
-    @Spy
-    private ReentrantLock reentrantLock = new ReentrantLock();
+    @Injectable
+    private Lock mockLock = null;
+    @Injectable
+    private Condition mockCondition = null;
     //Disable thread sleep during the tests
     @Mocked("sleep")
     private Thread mockThread = null;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void testAuthHeader() throws Exception {
@@ -46,7 +39,8 @@ public class AbstractConnectionTest {
 
     @Test
     public void testSuccessfulSendCallsDoSend(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lock", reentrantLock);
+        setField(abstractConnection, "lock", mockLock);
+        setField(abstractConnection, "condition", mockCondition);
 
         abstractConnection.send(mockEvent);
 
@@ -57,7 +51,8 @@ public class AbstractConnectionTest {
 
     @Test
     public void testExceptionOnSendStartLockDown(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lock", reentrantLock);
+        setField(abstractConnection, "lock", mockLock);
+        setField(abstractConnection, "condition", mockCondition);
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
             result = new ConnectionException();
@@ -65,8 +60,11 @@ public class AbstractConnectionTest {
 
         abstractConnection.send(mockEvent);
 
-        verify(reentrantLock).tryLock();
-        verify(reentrantLock).unlock();
+        new Verifications() {{
+            mockLock.lock();
+            mockCondition.signalAll();
+            mockLock.unlock();
+        }};
     }
 
     @Test
