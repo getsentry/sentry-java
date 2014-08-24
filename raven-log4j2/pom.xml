@@ -15,7 +15,7 @@
     <description>log4j2 appender allowing to send logs to the Raven-Java client.</description>
 
     <properties>
-        <log4j2.version>2.0</log4j2.version>
+        <log4j2.version>2.0.2</log4j2.version>
     </properties>
 
     <dependencies>
