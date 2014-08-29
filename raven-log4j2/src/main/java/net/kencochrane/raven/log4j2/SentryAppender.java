@@ -68,6 +68,13 @@ public class SentryAppender extends AbstractAppender {
      * Might be empty in which case no tags are sent.
      */
     protected Map<String, String> tags = Collections.emptyMap();
+    /**
+     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no mapped tags are set.
+     * </p>
+     */
+    private Set<String> extraTags = Collections.emptySet();
 
     /**
      * Creates an instance of SentryAppender.
@@ -97,6 +104,7 @@ public class SentryAppender extends AbstractAppender {
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
      * @param tags         Tags to add to each event.
+     * @param extraTags    Tags to search through the MDC.
      * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
@@ -105,6 +113,7 @@ public class SentryAppender extends AbstractAppender {
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,
                                                 @PluginAttribute("tags") final String tags,
+                                                @PluginAttribute("extraTags") final String extraTags,
                                                 @PluginElement("filters") final Filter filter) {
 
         if (name == null) {
@@ -116,6 +125,8 @@ public class SentryAppender extends AbstractAppender {
         sentryAppender.setDsn(dsn);
         if (tags != null)
             sentryAppender.setTags(tags);
+        if (extraTags != null)
+            sentryAppender.setExtraTags(extraTags);
         sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
     }
@@ -237,7 +248,11 @@ public class SentryAppender extends AbstractAppender {
 
         if (event.getContextMap() != null) {
             for (Map.Entry<String, String> mdcEntry : event.getContextMap().entrySet()) {
-                eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                if (extraTags.contains(mdcEntry.getKey())) {
+                    eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue());
+                } else {
+                    eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                }
             }
         }
 
@@ -266,6 +281,15 @@ public class SentryAppender extends AbstractAppender {
      */
     public void setTags(String tags) {
         this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
+    }
+
+    /**
+     * Set the mapped extras that will be used to search MDC and upgrade key pair to a tag sent along with the events.
+     *
+     * @param extraTags A String of mappedTags. mappedTags are separated by commas(,).
+     */
+    public void setExtraTags(String extraTags) {
+        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
     }
 
     @Override

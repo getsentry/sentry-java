@@ -22,10 +22,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -36,12 +33,14 @@ public class SentryAppenderEventBuildingTest {
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private Raven mockRaven = null;
+    private String mockExtraTag = "d421627f-7a25-4d43-8210-140dfe73ff10";
 
     @BeforeMethod
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setExtraTags(mockExtraTag);
     }
 
     private void assertNoErrorsInErrorHandler() throws Exception {
@@ -227,6 +226,25 @@ public class SentryAppenderEventBuildingTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
+        }};
+        assertNoErrorsInErrorHandler();
+    }
+
+    @Test
+    public void testExtraTagObtainedFromMdc() throws Exception {
+        Map<String, String> mdc = new HashMap<>();
+        mdc.put(mockExtraTag, "565940d2-f4a4-42f6-9496-42e3c7c85c43");
+        mdc.put("other_property", "395856e8-fa1d-474f-8fa9-c062b4886527");
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, mdc, null, null, null, 0));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getTags().entrySet(), hasSize(1));
+            assertThat(event.getTags(), hasEntry(mockExtraTag, "565940d2-f4a4-42f6-9496-42e3c7c85c43"));
+            assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "395856e8-fa1d-474f-8fa9-c062b4886527"));
         }};
         assertNoErrorsInErrorHandler();
     }
