@@ -22,12 +22,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class SentryAppenderEventBuildingTest {
     @Tested
@@ -36,12 +34,14 @@ public class SentryAppenderEventBuildingTest {
     private Raven mockRaven = null;
     @Injectable
     private Context mockContext = null;
+    private String mockExtraTag = "60f42409-c029-447d-816a-fb2722913c93";
 
     @BeforeMethod
     public void setUp() throws Exception {
         new MockUpStatusPrinter();
         sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
+        sentryAppender.setExtraTags(mockExtraTag);
         sentryAppender.initRaven();
 
         new NonStrictExpectations() {{
@@ -265,6 +265,26 @@ public class SentryAppenderEventBuildingTest {
             mockRaven.runBuilderHelpers((EventBuilder) any);
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testExtraTagObtainedFromMdc() throws Exception {
+        Map<String, String> mdcPropertyMap = new HashMap<>();
+        mdcPropertyMap.put(mockExtraTag, "47008f35-50c8-4e40-94ca-c8c1a3ddb729");
+        mdcPropertyMap.put("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196");
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
+                null, 0).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getTags().entrySet(), hasSize(1));
+            assertThat(event.getTags(), hasEntry(mockExtraTag, "47008f35-50c8-4e40-94ca-c8c1a3ddb729"));
+            assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196"));
         }};
         assertNoErrorsInStatusManager();
     }

@@ -57,6 +57,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Might be empty in which case no tags are sent.
      */
     protected Map<String, String> tags = Collections.emptyMap();
+    /**
+     * Extras to use as tags.
+     */
+    protected Set<String> extraTags = Collections.emptySet();
 
     /**
      * Creates an instance of SentryAppender.
@@ -186,7 +190,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
-            eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+            if (extraTags.contains(mdcEntry.getKey())) {
+                eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue());
+            } else {
+                eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+            }
         }
 
         if (iLoggingEvent.getMarker() != null)
@@ -278,6 +286,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     public void setTags(String tags) {
         this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
+    }
+
+    /**
+     * Set the mapped extras that will be used to search MDC and upgrade key pair to a tag sent along with the events.
+     *
+     * @param extraTags A String of mappedTags. mappedTags are separated by commas(,).
+     */
+    public void setExtraTags(String extraTags) {
+        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
     }
 
     @Override
