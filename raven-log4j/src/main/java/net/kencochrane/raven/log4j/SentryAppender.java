@@ -16,11 +16,7 @@ import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Appender for log4j in charge of sending the logged events to a Sentry server.
@@ -58,6 +54,13 @@ public class SentryAppender extends AppenderSkeleton {
      * Might be empty in which case no tags are sent.
      */
     protected Map<String, String> tags = Collections.emptyMap();
+    /**
+     * List of tags to look for in the MDC. These will be added as tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no mapped tags are set.
+     * </p>
+     */
+    private Set<String> extraTags = Collections.emptySet();
 
     /**
      * List of tags to look for in log4j's MDC. These will be added as tags to be sent to sentry.
@@ -195,14 +198,12 @@ public class SentryAppender extends AppenderSkeleton {
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet()) {
-            eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
-            //If MDC key is a mappedTag then add it to the event tag
-            if (this.mappedTags.contains(mdcEntry.getKey())) {
+            if (extraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue().toString());
+            } else {
+                eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
-
-
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet())
             eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
@@ -229,14 +230,13 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     /**
-     * Set the mapped tags that will be used to search MDC and upgrade key pair to a tag sent along with the events.
+     * Set the mapped extras that will be used to search MDC and upgrade key pair to a tag sent along with the events.
      *
-     * @param mappedTags A String of mappedTags. mappedTags are separated by commas(,).
+     * @param extraTags A String of mappedTags. mappedTags are separated by commas(,).
      */
-    public void setMappedTags(String mappedTags) {
-        this.mappedTags = Arrays.asList(mappedTags.split(","));
+    public void setExtraTags(String extraTags) {
+        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
     }
-
 
     @Override
     public void close() {

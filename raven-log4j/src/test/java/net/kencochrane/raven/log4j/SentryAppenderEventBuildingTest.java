@@ -19,11 +19,12 @@ import org.testng.annotations.Test;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class SentryAppenderEventBuildingTest {
     @Tested
@@ -33,12 +34,14 @@ public class SentryAppenderEventBuildingTest {
     private Raven mockRaven = null;
     @Injectable
     private Logger mockLogger = null;
+    private String mockExtraTag = "a8e0ad33-3c11-4899-b8c7-c99926c6d7b8";
 
     @BeforeMethod
     public void setUp() throws Exception {
         sentryAppender = new SentryAppender(mockRaven);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setExtraTags(mockExtraTag);
         sentryAppender.activateOptions();
     }
 
@@ -128,29 +131,6 @@ public class SentryAppenderEventBuildingTest {
         }};
         assertNoErrorsInErrorHandler();
     }
-    
-    @Test
-    public void testMappedMdcAddedToTags() throws Exception {
-        final String mappedKey = "User";
-        final String mappedValue = "Test";
-        
-        sentryAppender.setMappedTags("User,foo");
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
-                null, null, null, Collections.singletonMap(mappedKey, mappedValue)));
-
-        new Verifications() {{
-            Event event;
-            mockRaven.sendEvent(event = withCapture());
-            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(mappedKey, mappedValue));
-            assertThat(event.getTags(), Matchers.<String, Object>hasEntry(mappedKey, mappedValue));
-
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    
-    
-    
 
     @Test
     public void testNdcAddedToExtra() throws Exception {
@@ -244,6 +224,45 @@ public class SentryAppenderEventBuildingTest {
             Event event;
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
+        }};
+        assertNoErrorsInErrorHandler();
+    }
+
+    @Test
+    public void testExtraTagObtainedFromMdc() throws Exception {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(mockExtraTag, "ac84f38a-3889-41ed-9519-201402688abb");
+        properties.put("other_property", "10ebc4f6-a915-46d0-bb60-75bc9bd71371");
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null, null, null, null, properties));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getTags().entrySet(), hasSize(1));
+            assertThat(event.getTags(), hasEntry(mockExtraTag, "ac84f38a-3889-41ed-9519-201402688abb"));
+            assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
+            assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "10ebc4f6-a915-46d0-bb60-75bc9bd71371"));
+        }};
+        assertNoErrorsInErrorHandler();
+    }
+
+    @Test
+    public void testExtraTagObtainedFromMdcConvertedToString(@Injectable final Object extraTagValue) throws Exception {
+        Map<String, Object> properties = Collections.singletonMap(mockExtraTag, extraTagValue);
+        new NonStrictExpectations() {{
+            extraTagValue.toString();
+            result = "3c8981b4-01ad-47ec-8a3a-77a0bbcb42e2";
+        }};
+
+        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null, null, null, null, properties));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getTags().entrySet(), hasSize(1));
+            assertThat(event.getTags(), hasEntry(mockExtraTag, "3c8981b4-01ad-47ec-8a3a-77a0bbcb42e2"));
+            assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
         }};
         assertNoErrorsInErrorHandler();
     }
