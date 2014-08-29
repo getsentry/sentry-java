@@ -23,6 +23,8 @@ public class RavenTest {
     private Connection mockConnection = null;
     @Injectable
     private Event mockEvent = null;
+    @Injectable
+    private EventBuilderHelper mockEventBuilderHelper = null;
 
     @Test
     public void testSendEvent() throws Exception {
@@ -39,6 +41,7 @@ public class RavenTest {
             mockConnection.send((Event) any);
             result = new RuntimeException();
         }};
+
         raven.sendEvent(mockEvent);
 
         new Verifications() {{
@@ -49,11 +52,13 @@ public class RavenTest {
     @Test
     public void testSendMessage() throws Exception {
         final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
+        raven.addBuilderHelper(mockEventBuilderHelper);
 
         raven.sendMessage(message);
 
         new Verifications() {{
             Event event;
+            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
             mockConnection.send(event = withCapture());
             assertThat(event.getLevel(), equalTo(Event.Level.INFO));
             assertThat(event.getMessage(), equalTo(message));
@@ -64,11 +69,13 @@ public class RavenTest {
     public void testSendException() throws Exception {
         final String message = "7b61ddb1-eb32-428d-bad9-a7d842605ba7";
         final Exception exception = new Exception(message);
+        raven.addBuilderHelper(mockEventBuilderHelper);
 
         raven.sendException(exception);
 
         new Verifications() {{
             Event event;
+            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
             mockConnection.send(event = withCapture());
             assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
             assertThat(event.getMessage(), equalTo(message));

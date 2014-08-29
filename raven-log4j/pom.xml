@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven-log4j</artifactId>
@@ -13,6 +13,10 @@
 
     <name>Raven-Java for log4j</name>
     <description>log4j appender allowing to send logs to the Raven-Java client.</description>
+
+    <properties>
+        <log4j.version>1.2.17</log4j.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -22,6 +26,7 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -66,6 +71,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

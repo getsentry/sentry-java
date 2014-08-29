@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven-logback</artifactId>
@@ -13,6 +13,10 @@
 
     <name>Raven-Java for Logback</name>
     <description>Logback appender allowing to send logs to the Raven-Java client.</description>
+
+    <properties>
+        <logback.version>1.1.2</logback.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -26,10 +30,12 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

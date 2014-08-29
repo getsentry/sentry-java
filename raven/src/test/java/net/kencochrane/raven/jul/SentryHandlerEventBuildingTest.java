@@ -7,18 +7,23 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
+import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryException;
+import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.hamcrest.Matchers;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.ErrorManager;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class SentryHandlerEventBuildingTest {
     @Tested
@@ -39,16 +44,21 @@ public class SentryHandlerEventBuildingTest {
     public void testSimpleMessageLogging() throws Exception {
         final String loggerName = "e9cb78a9-aec8-4fcd-8580-42b428653061";
         final String message = "1feb7133-1bf5-4982-a30d-44883aa3de9c";
+        final Object[] arguments = {"341ecbc9-3d0a-4799-9ff9-bdd18bb2b399", "acbb0393-57a8-4fff-a8b7-bb391867628c"};
         final Date date = new Date(1373883196416L);
         final long threadId = 12;
 
-        sentryHandler.publish(newLogRecord(loggerName, Level.INFO, message, null, null, null, threadId, date.getTime()));
+        sentryHandler.publish(newLogRecord(loggerName, Level.INFO, message, arguments, null, null, threadId, date.getTime()));
 
         new Verifications() {{
             Event event;
             mockRaven.runBuilderHelpers((EventBuilder) any);
             mockRaven.sendEvent(event = withCapture());
             assertThat(event.getMessage(), is(message));
+            Map<String, SentryInterface> sentryInterfaces = event.getSentryInterfaces();
+            assertThat(sentryInterfaces, hasKey(MessageInterface.MESSAGE_INTERFACE));
+            MessageInterface messageInterface = (MessageInterface) sentryInterfaces.get(MessageInterface.MESSAGE_INTERFACE);
+            assertThat(messageInterface.getParameters(), contains(arguments));
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryHandler.THREAD_ID, (int) threadId));
             assertThat(event.getTimestamp(), is(date));

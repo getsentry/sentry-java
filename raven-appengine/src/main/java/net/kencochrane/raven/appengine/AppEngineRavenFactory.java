@@ -24,6 +24,7 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
      * <p>
      * If the connection identifier is not specified, the system will define a connection identifier itself, but its
      * uniqueness within an instance isn't guaranteed.
+     *
      * @see AppEngineAsyncConnection
      */
     public static final String CONNECTION_IDENTIFIER = "raven.async.gae.connectionid";

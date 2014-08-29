@@ -140,7 +140,8 @@ public class DefaultRavenFactory extends RavenFactory {
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
-                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue, new DaemonThreadFactory(priority));
+                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
+                new DaemonThreadFactory(priority), new ThreadPoolExecutor.DiscardOldestPolicy());
 
         boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(GRACEFUL_SHUTDOWN_OPTION));
 

@@ -6,6 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -29,7 +32,9 @@ public abstract class AbstractConnection implements Connection {
      */
     public static final long DEFAULT_BASE_WAITING_TIME = TimeUnit.MILLISECONDS.toMillis(10);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
-    private final ReentrantLock lock = new ReentrantLock();
+    private final AtomicBoolean lockdown = new AtomicBoolean();
+    private final Lock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
     private final String authHeader;
     /**
      * Maximum duration for a lockdown.
@@ -68,23 +73,40 @@ public abstract class AbstractConnection implements Connection {
     @Override
     public final void send(Event event) {
         try {
-            if (!lock.isLocked()) {
-                doSend(event);
-                waitingTime = baseWaitingTime;
-            }
+            waitIfLockedDown();
+
+            doSend(event);
+            waitingTime = baseWaitingTime;
         } catch (ConnectionException e) {
-            lock.tryLock();
             logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
-        } finally {
-            if (lock.isHeldByCurrentThread())
-                lockDown();
+            lockDown();
         }
     }
 
     /**
-     * Initiates a lockdown for {@link #waitingTime}ms and release the lock once the lockdown ends.
+     * Pauses the current thread if there is a lockdown.
+     */
+    private void waitIfLockedDown() {
+        while (lockdown.get()) {
+            lock.lock();
+            try {
+                if (lockdown.get())
+                    condition.await();
+            } catch (InterruptedException e) {
+                logger.warn("An exception occurred during the lockdown.", e);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * Initiates a lockdown for {@link #waitingTime}ms and resume the paused threads once the lockdown ends.
      */
     private void lockDown() {
+        if (!lockdown.compareAndSet(false, true))
+            return;
+
         try {
             logger.warn("Lockdown started for {}ms.", waitingTime);
             Thread.sleep(waitingTime);
@@ -95,7 +117,14 @@ public abstract class AbstractConnection implements Connection {
         } catch (Exception e) {
             logger.warn("An exception occurred during the lockdown.", e);
         } finally {
-            lock.unlock();
+            lockdown.set(false);
+
+            lock.lock();
+            try {
+                condition.signalAll();
+            } finally {
+                lock.unlock();
+            }
             logger.warn("Lockdown ended.");
         }
     }

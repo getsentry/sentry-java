@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven</artifactId>
@@ -13,6 +13,10 @@
 
     <name>Raven-Java client</name>
     <description>Sentry client written in Java.</description>
+
+    <properties>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -32,23 +36,19 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+            <version>${javax.servlet-api.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
+            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Only there to mock classes which aren't handled by jmockit such as ReentrantLock -->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

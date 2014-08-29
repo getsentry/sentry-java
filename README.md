@@ -167,8 +167,8 @@ It is possible to set a maximum with the option `raven.async.queuesize`:
 
     http://public:private@host:port/1?raven.async.queuesize=100
 
-This means that if the connection to the Sentry server is down, only the first
-100 events will be stored and be processed as soon as the server is back up.
+This means that if the connection to the Sentry server is down, only the 100
+most recent events will be stored and processed as soon as the server is back up.
 
 #### Threads count (advanced)
 By default the thread pool used by the async connection contains one thread per
