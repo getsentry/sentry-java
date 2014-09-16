@@ -10,6 +10,7 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
+import org.slf4j.MDC;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -52,6 +53,14 @@ public class SentryHandler extends Handler {
     public SentryHandler() {
         retrieveProperties();
     }
+
+    /**
+     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no mapped tags are set.
+     * </p>
+     */
+    private Set<String> extraTags = Collections.emptySet();
 
     /**
      * Creates an instance of SentryHandler.
@@ -106,6 +115,9 @@ public class SentryHandler extends Handler {
         String tagsProperty = manager.getProperty(className + ".tags");
         if (tagsProperty != null)
             tags = Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
+        String extraTagsProperty = manager.getProperty(className + ".extraTags");
+        if (extraTagsProperty != null)
+            extraTags = new HashSet<>(Arrays.asList(extraTagsProperty.split(",")));
     }
 
     @Override
@@ -177,6 +189,17 @@ public class SentryHandler extends Handler {
             eventBuilder.setCulprit(fakeFrame);
         } else {
             eventBuilder.setCulprit(record.getLoggerName());
+        }
+
+        Map<String, String> mdc = MDC.getMDCAdapter().getCopyOfContextMap();
+        if (mdc != null) {
+            for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {
+                if (extraTags.contains(mdcEntry.getKey())) {
+                    eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue());
+                } else {
+                    eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                }
+            }
         }
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
