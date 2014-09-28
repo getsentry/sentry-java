@@ -34,6 +34,7 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
             username = servletRequest.getUserPrincipal().getName();
         }
 
-        eventBuilder.withSentryInterface(new UserInterface(null, username, servletRequest.getRemoteAddr(), null), false);
+        UserInterface userInterface = new UserInterface(null, username, servletRequest.getRemoteAddr(), null);
+        eventBuilder.withSentryInterface(userInterface, false);
     }
 }

@@ -67,11 +67,11 @@ public class UserInterface implements SentryInterface {
 
     @Override
     public String toString() {
-        return "UserInterface{" +
-                "id='" + id + '\'' +
-                ", username='" + username + '\'' +
-                ", ipAddress='" + ipAddress + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+        return "UserInterface{"
+                + "id='" + id + '\''
+                + ", username='" + username + '\''
+                + ", ipAddress='" + ipAddress + '\''
+                + ", email='" + email + '\''
+                + '}';
     }
 }
