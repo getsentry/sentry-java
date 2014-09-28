@@ -31,7 +31,7 @@ public class HttpEventBuilderHelperTest {
         new Verifications() {{
             new HttpInterface(withInstanceOf(HttpServletRequest.class));
             times = 0;
-            mockEventBuilder.addSentryInterface(withInstanceOf(SentryInterface.class), anyBoolean);
+            mockEventBuilder.withSentryInterface(withInstanceOf(SentryInterface.class), anyBoolean);
             times = 0;
         }};
     }
@@ -49,8 +49,8 @@ public class HttpEventBuilderHelperTest {
         new Verifications() {{
             new HttpInterface(mockHttpServletRequest);
             new UserInterface(null, null, null, null);
-            mockEventBuilder.addSentryInterface(this.<HttpInterface>withNotNull(), false);
-            mockEventBuilder.addSentryInterface(this.<UserInterface>withNotNull(), false);
+            mockEventBuilder.withSentryInterface(this.<HttpInterface>withNotNull(), false);
+            mockEventBuilder.withSentryInterface(this.<UserInterface>withNotNull(), false);
         }};
     }
 
@@ -72,7 +72,7 @@ public class HttpEventBuilderHelperTest {
 
         new Verifications() {{
             new UserInterface(null, mockUsername, null, null);
-            mockEventBuilder.addSentryInterface(this.<UserInterface>withNotNull(), false);
+            mockEventBuilder.withSentryInterface(this.<UserInterface>withNotNull(), false);
         }};
     }
 
@@ -91,7 +91,7 @@ public class HttpEventBuilderHelperTest {
 
         new Verifications() {{
             new UserInterface(null, null, mockIpAddress, null);
-            mockEventBuilder.addSentryInterface(this.<UserInterface>withNotNull(), false);
+            mockEventBuilder.withSentryInterface(this.<UserInterface>withNotNull(), false);
         }};
     }
 }

@@ -109,7 +109,7 @@ public class EventBuilder {
      * @param message message of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setMessage(String message) {
+    public EventBuilder withMessage(String message) {
         event.setMessage(message);
         return this;
     }
@@ -120,7 +120,7 @@ public class EventBuilder {
      * @param timestamp timestamp of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setTimestamp(Date timestamp) {
+    public EventBuilder withTimestamp(Date timestamp) {
         event.setTimestamp(timestamp);
         return this;
     }
@@ -131,7 +131,7 @@ public class EventBuilder {
      * @param level log level of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setLevel(Event.Level level) {
+    public EventBuilder withLevel(Event.Level level) {
         event.setLevel(level);
         return this;
     }
@@ -142,7 +142,7 @@ public class EventBuilder {
      * @param logger logger of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setLogger(String logger) {
+    public EventBuilder withLogger(String logger) {
         event.setLogger(logger);
         return this;
     }
@@ -153,7 +153,7 @@ public class EventBuilder {
      * @param platform platform of the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setPlatform(String platform) {
+    public EventBuilder withPlatform(String platform) {
         event.setPlatform(platform);
         return this;
     }
@@ -164,7 +164,7 @@ public class EventBuilder {
      * @param frame stack frame during which the event was captured.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setCulprit(StackTraceElement frame) {
+    public EventBuilder withCulprit(StackTraceElement frame) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(frame.getClassName())
@@ -179,7 +179,7 @@ public class EventBuilder {
             sb.append(")");
         }
 
-        return setCulprit(sb.toString());
+        return withCulprit(sb.toString());
     }
 
     /**
@@ -188,7 +188,7 @@ public class EventBuilder {
      * @param culprit culprit.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setCulprit(String culprit) {
+    public EventBuilder withCulprit(String culprit) {
         event.setCulprit(culprit);
         return this;
     }
@@ -202,7 +202,7 @@ public class EventBuilder {
      * @param tagValue value of the tag.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder addTag(String tagKey, String tagValue) {
+    public EventBuilder withTag(String tagKey, String tagValue) {
         event.getTags().put(tagKey, tagValue);
         return this;
     }
@@ -213,7 +213,7 @@ public class EventBuilder {
      * @param serverName name of the server responsible for the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setServerName(String serverName) {
+    public EventBuilder withServerName(String serverName) {
         event.setServerName(serverName);
         return this;
     }
@@ -225,7 +225,7 @@ public class EventBuilder {
      * @param extraValue value of the extra property.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder addExtra(String extraName, Object extraValue) {
+    public EventBuilder withExtra(String extraName, Object extraValue) {
         event.getExtra().put(extraName, extraValue);
         return this;
     }
@@ -236,8 +236,8 @@ public class EventBuilder {
      * @param contentToChecksum content to checksum.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder generateChecksum(String contentToChecksum) {
-        return setChecksum(calculateChecksum(contentToChecksum));
+    public EventBuilder withChecksumFor(String contentToChecksum) {
+        return withChecksum(calculateChecksum(contentToChecksum));
     }
 
     /**
@@ -248,7 +248,7 @@ public class EventBuilder {
      * @param checksum checksum for the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder setChecksum(String checksum) {
+    public EventBuilder withChecksum(String checksum) {
         event.setChecksum(checksum);
         return this;
     }
@@ -262,8 +262,8 @@ public class EventBuilder {
      * @param sentryInterface sentry interface to add to the event.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder addSentryInterface(SentryInterface sentryInterface) {
-        return addSentryInterface(sentryInterface, true);
+    public EventBuilder withSentryInterface(SentryInterface sentryInterface) {
+        return withSentryInterface(sentryInterface, true);
     }
 
     /**
@@ -277,7 +277,7 @@ public class EventBuilder {
      *                        If false the statement will be ignored.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder addSentryInterface(SentryInterface sentryInterface, boolean replace) {
+    public EventBuilder withSentryInterface(SentryInterface sentryInterface, boolean replace) {
         if (replace || !event.getSentryInterfaces().containsKey(sentryInterface.getInterfaceName()))
             event.getSentryInterfaces().put(sentryInterface.getInterfaceName(), sentryInterface);
         return this;
@@ -308,6 +308,189 @@ public class EventBuilder {
                 + "event=" + event
                 + ", alreadyBuilt=" + alreadyBuilt
                 + '}';
+    }
+
+
+    /**
+     * Sets the message in the event.
+     *
+     * @param message message of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withMessage(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder setMessage(String message) {
+        return withMessage(message);
+    }
+
+    /**
+     * Sets the timestamp in the event.
+     *
+     * @param timestamp timestamp of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withTimestamp(Date)} instead.
+     */
+    @Deprecated
+    public EventBuilder setTimestamp(Date timestamp) {
+        return withTimestamp(timestamp);
+    }
+
+    /**
+     * Sets the log level in the event.
+     *
+     * @param level log level of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withLevel(Event.Level)} instead.
+     */
+    @Deprecated
+    public EventBuilder setLevel(Event.Level level) {
+        return withLevel(level);
+    }
+
+    /**
+     * Sets the logger in the event.
+     *
+     * @param logger logger of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withLogger(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder setLogger(String logger) {
+        return withLogger(logger);
+    }
+
+    /**
+     * Sets the platform in the event.
+     *
+     * @param platform platform of the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withPlatform(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder setPlatform(String platform) {
+        return withPlatform(platform);
+    }
+
+    /**
+     * Sets the culprit in the event based on a {@link StackTraceElement}.
+     *
+     * @param frame stack frame during which the event was captured.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withCulprit(StackTraceElement)} instead.
+     */
+    @Deprecated
+    public EventBuilder setCulprit(StackTraceElement frame) {
+        return withCulprit(frame);
+    }
+
+    /**
+     * Sets the culprit in the event.
+     *
+     * @param culprit culprit.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Use {@link #withCulprit(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder setCulprit(String culprit) {
+        return withCulprit(culprit);
+    }
+
+    /**
+     * Adds a tag to an event.
+     * <p>
+     * This allows to set a tag value in different contexts.
+     *
+     * @param tagKey   name of the tag.
+     * @param tagValue value of the tag.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withTag(String, String)} instead.
+     */
+    @Deprecated
+    public EventBuilder addTag(String tagKey, String tagValue) {
+        return withTag(tagKey, tagValue);
+    }
+
+    /**
+     * Sets the serverName in the event.
+     *
+     * @param serverName name of the server responsible for the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withServerName(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder setServerName(String serverName) {
+        return withServerName(serverName);
+    }
+
+    /**
+     * Adds an extra property to the event.
+     *
+     * @param extraName  name of the extra property.
+     * @param extraValue value of the extra property.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withExtra(String, Object)} instead.
+     */
+    @Deprecated
+    public EventBuilder addExtra(String extraName, Object extraValue) {
+        return withExtra(extraName, extraValue);
+    }
+
+    /**
+     * Generates a checksum from a given content and set it to the current event.
+     *
+     * @param contentToChecksum content to checksum.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withChecksumFor(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder generateChecksum(String contentToChecksum) {
+        return withChecksumFor(contentToChecksum);
+    }
+
+    /**
+     * Sets the checksum for the current event.
+     * <p>
+     * It's recommended to rely instead on the checksum system provided by Sentry.
+     *
+     * @param checksum checksum for the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withChecksum(String)} instead.
+     */
+    @Deprecated
+    public EventBuilder setChecksum(String checksum) {
+        return withChecksum(checksum);
+    }
+
+    /**
+     * Adds a {@link SentryInterface} to the event.
+     * <p>
+     * If a {@code SentryInterface} with the same interface name has already been added, the new one will replace
+     * the old one.
+     *
+     * @param sentryInterface sentry interface to add to the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withSentryInterface(SentryInterface)} instead.
+     */
+    @Deprecated
+    public EventBuilder addSentryInterface(SentryInterface sentryInterface) {
+        return withSentryInterface(sentryInterface);
+    }
+
+    /**
+     * Adds a {@link SentryInterface} to the event.
+     * <p>
+     * Checks whether or not the entry already exists, and replaces it only if {@code replace} is true.
+     *
+     * @param sentryInterface sentry interface to add to the event.
+     * @param replace         If true and a Sentry Interface with the same name has already been added it will be
+     *                        replaced.
+     *                        If false the statement will be ignored.
+     * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated use {@link #withSentryInterface(SentryInterface, boolean)} instead.
+     */
+    @Deprecated
+    public EventBuilder addSentryInterface(SentryInterface sentryInterface, boolean replace) {
+        return withSentryInterface(sentryInterface, replace);
     }
 
     /**

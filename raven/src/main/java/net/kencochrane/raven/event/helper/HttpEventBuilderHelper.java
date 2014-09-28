@@ -25,7 +25,7 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
     }
 
     private void addHttpInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
-        eventBuilder.addSentryInterface(new HttpInterface(servletRequest), false);
+        eventBuilder.withSentryInterface(new HttpInterface(servletRequest), false);
     }
 
     private void addUserInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
@@ -34,6 +34,6 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
             username = servletRequest.getUserPrincipal().getName();
         }
 
-        eventBuilder.addSentryInterface(new UserInterface(null, username, servletRequest.getRemoteAddr(), null), false);
+        eventBuilder.withSentryInterface(new UserInterface(null, username, servletRequest.getRemoteAddr(), null), false);
     }
 }

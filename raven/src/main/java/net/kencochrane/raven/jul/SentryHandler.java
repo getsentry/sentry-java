@@ -152,9 +152,9 @@ public class SentryHandler extends Handler {
      */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
-                .setLevel(getLevel(record.getLevel()))
-                .setTimestamp(new Date(record.getMillis()))
-                .setLogger(record.getLoggerName());
+                .withLevel(getLevel(record.getLevel()))
+                .withTimestamp(new Date(record.getMillis()))
+                .withLogger(record.getLoggerName());
 
         String message = record.getMessage();
         if (record.getResourceBundle() != null && record.getResourceBundle().containsKey(record.getMessage())) {
@@ -162,28 +162,28 @@ public class SentryHandler extends Handler {
         }
         if (record.getParameters() != null) {
             List<String> parameters = formatMessageParameters(record.getParameters());
-            eventBuilder.addSentryInterface(new MessageInterface(message, parameters));
+            eventBuilder.withSentryInterface(new MessageInterface(message, parameters));
             message = MessageFormat.format(message, record.getParameters());
         }
-        eventBuilder.setMessage(message);
+        eventBuilder.withMessage(message);
 
         Throwable throwable = record.getThrown();
         if (throwable != null)
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
+            eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
 
         if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
             StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
                     record.getSourceMethodName(), null, -1);
-            eventBuilder.setCulprit(fakeFrame);
+            eventBuilder.withCulprit(fakeFrame);
         } else {
-            eventBuilder.setCulprit(record.getLoggerName());
+            eventBuilder.withCulprit(record.getLoggerName());
         }
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        eventBuilder.addExtra(THREAD_ID, record.getThreadID());
+        eventBuilder.withExtra(THREAD_ID, record.getThreadID());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
