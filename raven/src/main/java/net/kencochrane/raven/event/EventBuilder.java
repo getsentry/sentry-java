@@ -263,7 +263,23 @@ public class EventBuilder {
      * @return the current {@code EventBuilder} for chained calls.
      */
     public EventBuilder addSentryInterface(SentryInterface sentryInterface) {
-        event.getSentryInterfaces().put(sentryInterface.getInterfaceName(), sentryInterface);
+        return addSentryInterface(sentryInterface, true);
+    }
+
+    /**
+     * Adds a {@link SentryInterface} to the event.
+     * <p>
+     * Checks whether or not the entry already exists, and replaces it only if {@code replace} is true.
+     *
+     * @param sentryInterface sentry interface to add to the event.
+     * @param replace         If true and a Sentry Interface with the same name has already been added it will be
+     *                        replaced.
+     *                        If false the statement will be ignored.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder addSentryInterface(SentryInterface sentryInterface, boolean replace) {
+        if (replace || !event.getSentryInterfaces().containsKey(sentryInterface.getInterfaceName()))
+            event.getSentryInterfaces().put(sentryInterface.getInterfaceName(), sentryInterface);
         return this;
     }
 

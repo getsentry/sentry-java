@@ -407,8 +407,9 @@ public class EventBuilderTest {
         assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
+
     @Test
-    public void builtEventReplacesSentryInterfacesWithSameName(
+    public void builtEventReplacesSentryInterfacesWithSameNameByDefault(
             @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
             @Injectable final SentryInterface mockSentryInterface,
             @Injectable final SentryInterface mockSentryInterface2)
@@ -426,6 +427,51 @@ public class EventBuilderTest {
         final Event event = eventBuilder.build();
 
         assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface2));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
+
+
+    @Test
+    public void builtEventReplacesSentryInterfacesWithSameNameIfReplacementEnabled(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final SentryInterface mockSentryInterface2)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+            mockSentryInterface2.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addSentryInterface(mockSentryInterface);
+        eventBuilder.addSentryInterface(mockSentryInterface2, true);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface2));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
+
+    @Test
+    public void builtEventKeepsSentryInterfacesWithSameNameIfReplacementDisabled(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final SentryInterface mockSentryInterface2)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+            mockSentryInterface2.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addSentryInterface(mockSentryInterface);
+        eventBuilder.addSentryInterface(mockSentryInterface2, false);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
 
