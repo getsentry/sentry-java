@@ -155,9 +155,9 @@ public class MyClass {
     void logSimpleMessage() {
         // This adds a simple message to the logs
         EventBuilder eventBuilder = new EventBuilder()
-                        .setMessage("This is a test")
-                        .setLevel(Event.Level.INFO)
-                        .setLogger(MyClass.class.getName());
+                        .withMessage("This is a test")
+                        .withLevel(Event.Level.INFO)
+                        .withLogger(MyClass.class.getName());
         raven.runBuilderHelpers(eventBuilder); // Optional
         raven.sendEvent(eventBuilder.build());
     }
@@ -168,10 +168,10 @@ public class MyClass {
         } catch (Exception e) {
             // This adds an exception to the logs
             EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("Exception caught")
-                            .setLevel(Event.Level.ERROR)
-                            .setLogger(MyClass.class.getName())
-                            .addSentryInterface(new ExceptionInterface(e));
+                            .withMessage("Exception caught")
+                            .withLevel(Event.Level.ERROR)
+                            .withLogger(MyClass.class.getName())
+                            .withSentryInterface(new ExceptionInterface(e));
             raven.runBuilderHelpers(eventBuilder); // Optional
             raven.sendEvent(eventBuilder.build());
         }
