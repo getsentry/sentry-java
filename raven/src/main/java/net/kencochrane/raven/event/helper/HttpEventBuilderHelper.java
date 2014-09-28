@@ -2,6 +2,7 @@ package net.kencochrane.raven.event.helper;
 
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
+import net.kencochrane.raven.event.interfaces.UserInterface;
 import net.kencochrane.raven.servlet.RavenServletRequestListener;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,8 +17,23 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         HttpServletRequest servletRequest = RavenServletRequestListener.getServletRequest();
-        if (servletRequest != null) {
-            eventBuilder.addSentryInterface(new HttpInterface(servletRequest));
+        if (servletRequest == null)
+            return;
+
+        addHttpInterface(eventBuilder, servletRequest);
+        addUserInterface(eventBuilder, servletRequest);
+    }
+
+    private void addHttpInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
+        eventBuilder.addSentryInterface(new HttpInterface(servletRequest), false);
+    }
+
+    private void addUserInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
+        String username = null;
+        if (servletRequest.getUserPrincipal() != null) {
+            username = servletRequest.getUserPrincipal().getName();
         }
+
+        eventBuilder.addSentryInterface(new UserInterface(null, username, servletRequest.getRemoteAddr(), null), false);
     }
 }
