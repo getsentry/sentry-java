@@ -181,7 +181,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.5</version>
+                <version>2.5.1</version>
                 <configuration>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <localCheckout>true</localCheckout>
@@ -198,7 +198,7 @@
             <plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
-                <version>0.9</version>
+                <version>0.10</version>
                 <configuration>
                     <message>Creating site for ${project.artifactId} ${project.version}</message>
                     <path>${project.distributionManagement.site.url}</path>
@@ -217,7 +217,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.3</version>
+                <version>3.4</version>
                 <configuration>
                     <skipDeploy>true</skipDeploy>
                 </configuration>
@@ -225,7 +225,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.10</version>
+                <version>1.11</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
@@ -249,7 +249,7 @@
                 <plugin>
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-maven-plugin</artifactId>
-                    <version>9.1.3.v20140225</version>
+                    <version>9.2.3.v20140905</version>
                     <configuration>
                         <scanIntervalSeconds>10</scanIntervalSeconds>
                         <stopKey>foo</stopKey>
@@ -281,12 +281,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.16</version>
+                    <version>2.17</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>2.16</version>
+                    <version>2.17</version>
                     <executions>
                         <execution>
                             <id>integration-tests</id>
@@ -300,7 +300,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.8</version>
+                    <version>2.9</version>
                     <executions>
                         <execution>
                             <id>analyze</id>
@@ -347,7 +347,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.12</version>
+                    <version>2.13</version>
                     <configuration>
                         <configLocation>src/checkstyle/checkstyle.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
@@ -366,7 +366,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>2.6</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -374,15 +374,15 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.8.1</version>
+                    <version>2.8.2</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.1</version>
+                    <version>2.5.2</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.4</version>
+                    <version>2.5</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
@@ -390,7 +390,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>3.3</version>
+                    <version>3.4</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-war-plugin</artifactId>
@@ -410,17 +410,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>2.10</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.16</version>
+                <version>2.17</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.12</version>
+                <version>2.13</version>
                 <configuration>
                     <configLocation>src/checkstyle/checkstyle.xml</configLocation>
                 </configuration>
@@ -442,7 +442,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>2.2.1</version>
+                        <version>2.3</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -455,7 +455,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.9.1</version>
+                        <version>2.10</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -482,7 +482,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.2</version>
+                        <version>1.6.4</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>sonatype-nexus-staging</serverId>
@@ -513,7 +513,7 @@
                     <plugin>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-maven</artifactId>
-                        <version>1.0.0</version>
+                        <version>1.1.0</version>
                         <configuration>
                             <targetTests>
                                 <param>*Test</param>
