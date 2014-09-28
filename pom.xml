@@ -109,7 +109,7 @@
         <slf4j.version>1.7.7</slf4j.version>
         <guava.version>18.0</guava.version>
         <jackson.version>2.4.2</jackson.version>
-        <jmockit.version>1.10</jmockit.version>
+        <jmockit.version>1.12</jmockit.version>
         <testng.version>6.8.8</testng.version>
         <hamcrest.version>1.3</hamcrest.version>
     </properties>
