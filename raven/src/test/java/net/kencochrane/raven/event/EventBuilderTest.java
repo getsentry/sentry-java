@@ -407,6 +407,27 @@ public class EventBuilderTest {
         assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
+    @Test
+    public void builtEventReplacesSentryInterfacesWithSameName(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final SentryInterface mockSentryInterface2)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+            mockSentryInterface2.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.addSentryInterface(mockSentryInterface);
+        eventBuilder.addSentryInterface(mockSentryInterface2);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface2));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void buildingTheEventTwiceFails() throws Exception {
