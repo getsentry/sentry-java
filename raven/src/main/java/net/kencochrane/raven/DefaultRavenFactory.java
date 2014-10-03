@@ -6,10 +6,7 @@ import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.helper.HttpEventBuilderHelper;
-import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import net.kencochrane.raven.event.interfaces.HttpInterface;
-import net.kencochrane.raven.event.interfaces.MessageInterface;
-import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import net.kencochrane.raven.event.interfaces.*;
 import net.kencochrane.raven.marshaller.Marshaller;
 import net.kencochrane.raven.marshaller.json.*;
 import org.slf4j.Logger;
@@ -200,6 +197,7 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
         marshaller.addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
         marshaller.addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
+        marshaller.addInterfaceBinding(UserInterface.class, new UserInterfaceBinding());
         HttpInterfaceBinding httpBinding = new HttpInterfaceBinding();
         //TODO: Add a way to clean the HttpRequest
         //httpBinding.
