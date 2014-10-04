@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
-import static net.kencochrane.raven.marshaller.json.JsonTestTool.*;
+import static net.kencochrane.raven.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -42,7 +42,7 @@ public class JsonMarshallerTest {
 
     @Test
     public void testEventIdWrittenProperly(@Injectable final UUID mockUuid) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getId();
             result = mockUuid;
@@ -50,27 +50,27 @@ public class JsonMarshallerTest {
             result = "3b71fba5-413e-4022-ae98-5f0b80a155a5";
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testEventId.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testEventId.json")));
     }
 
     @Test
     public void testEventMessageWrittenProperly(@Injectable("message") final String mockMessage) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getMessage();
             result = mockMessage;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testMessage.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testMessage.json")));
     }
 
     @Test
     public void testEventTimestampWrittenProperly(@Injectable final Date mockTimestamp) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getTimestamp();
             result = mockTimestamp;
@@ -79,9 +79,9 @@ public class JsonMarshallerTest {
             result = 1385266295338L;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTimestamp.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTimestamp.json")));
     }
 
     @DataProvider(name = "levelProvider")
@@ -97,94 +97,94 @@ public class JsonMarshallerTest {
 
     @Test(dataProvider = "levelProvider")
     public void testEventLevelWrittenProperly(final Event.Level eventLevel, String levelFile) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getLevel();
             result = eventLevel;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource(levelFile)));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource(levelFile)));
     }
 
     @Test
     public void testEventLoggerWrittenProperly(@Injectable("logger") final String mockLogger) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getLogger();
             result = mockLogger;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLogger.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testLogger.json")));
     }
 
     @Test
     public void testEventPlaftormWrittenProperly(@Injectable("platform") final String mockPlatform) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getPlatform();
             result = mockPlatform;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testPlatform.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testPlatform.json")));
     }
 
     @Test
     public void testEventCulpritWrittenProperly(@Injectable("culprit") final String mockCulprit) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getCulprit();
             result = mockCulprit;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testCulprit.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testCulprit.json")));
     }
 
     @Test
     public void testEventTagsWrittenProperly(@Injectable("tagName") final String mockTagName,
                                              @Injectable("tagValue") final String mockTagValue) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getTags();
             result = Collections.singletonMap(mockTagName, mockTagValue);
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTags.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testTags.json")));
     }
 
     @Test
     public void testEventServerNameWrittenProperly(@Injectable("serverName") final String mockServerName) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getServerName();
             result = mockServerName;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testServerName.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testServerName.json")));
     }
 
     @Test
     public void testEventChecksumWrittenProperly(@Injectable("1234567890abcdef") final String mockChecksum) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getChecksum();
             result = mockChecksum;
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testChecksum.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testChecksum.json")));
     }
 
     @DataProvider(name = "extraProvider")
@@ -206,21 +206,21 @@ public class JsonMarshallerTest {
 
     @Test(dataProvider = "extraProvider")
     public void testEventExtraWrittenProperly(final String extraKey, final Object extraValue, String extraFile) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getExtra();
             result = Collections.singletonMap(extraKey, extraValue);
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource(extraFile)));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource(extraFile)));
     }
 
     @Test
     public void testEventExtraWrittenProperly(@Injectable("key") final String mockExtraKey,
                                               @Injectable final Object mockExtraValue) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getExtra();
             result = Collections.singletonMap(mockExtraKey, mockExtraValue);
@@ -228,16 +228,16 @@ public class JsonMarshallerTest {
             result = "test";
         }};
 
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraCustomValue.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testExtraCustomValue.json")));
     }
 
     @Test
     public void testInterfaceBindingIsProperlyUsed(
             @Injectable final SentryInterface mockSentryInterface,
             @Injectable final InterfaceBinding<SentryInterface> mockInterfaceBinding) throws Exception {
-        final JsonOutputStreamTool outputStreamTool = newJsonOutputStream();
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
             mockEvent.getSentryInterfaces();
             result = Collections.singletonMap("interfaceKey", mockSentryInterface);
@@ -251,12 +251,12 @@ public class JsonMarshallerTest {
         }};
 
         jsonMarshaller.addInterfaceBinding(mockSentryInterface.getClass(), mockInterfaceBinding);
-        jsonMarshaller.marshall(mockEvent, outputStreamTool.outputStream());
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
         new Verifications() {{
             mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
         }};
-        assertThat(outputStreamTool.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testInterfaceBinding.json")));
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testInterfaceBinding.json")));
     }
 
     @Test
