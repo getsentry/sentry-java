@@ -195,9 +195,9 @@ public class SentryHandler extends Handler {
         if (mdc != null) {
             for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {
                 if (extraTags.contains(mdcEntry.getKey())) {
-                    eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue());
+                    eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
                 } else {
-                    eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                    eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
                 }
             }
         }
