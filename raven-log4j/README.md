@@ -83,7 +83,9 @@ public class MyClass {
 ```
 
 ### Mapped Tags
-By default all MDC parameters are sent under the Additional Data Tab. By specifiy the mappedTags paramter in your properties file. You can specify MDC keys to send as tags in addition to including them in Additional Data. This allows them to be filtered within Sentry.
+By default all MDC parameters are sent under the Additional Data Tab. By specify the mappedTags parameter in your
+configuration file. You can specify MDC keys to send as tags instead of including them in Additional Data.
+This allows them to be filtered within Sentry.
 
 ```properties
 log4j.appender.SentryAppender.mappedTags=User,OS

@@ -68,6 +68,27 @@ which will add a tag `log4j2-Marker`.
 Both [the MDC and the NDC systems provided by Log4j 2](https://logging.apache.org/log4j/2.x/manual/thread-context.html)
 are usable, allowing to attach extras information to the event.
 
+### Mapped Tags
+By default all MDC parameters are sent under the Additional Data Tab. By specify the mappedTags parameter in your
+configuration file. You can specify MDC keys to send as tags instead of including them in Additional Data.
+This allows them to be filtered within Sentry.
+
+```xml
+<mappedTags>
+    User,OS
+</mappedTags>
+```
+```java
+    void logWithExtras() {
+        // MDC extras
+        MDC.put("User", "test user");
+        MDC.put("OS", "Linux");
+
+        // This adds a message with extras and MDC keys declared in mappedTags as tags to Sentry
+        logger.info("This is a test");
+    }
+```
+
 ### In practice
 ```java
 import org.apache.logging.log4j.LogManager;
