@@ -168,45 +168,45 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .setTimestamp(new Date(loggingEvent.getTimeStamp()))
-                .setMessage(loggingEvent.getRenderedMessage())
-                .setLogger(loggingEvent.getLoggerName())
-                .setLevel(formatLevel(loggingEvent.getLevel()))
-                .addExtra(THREAD_NAME, loggingEvent.getThreadName());
+                .withTimestamp(new Date(loggingEvent.getTimeStamp()))
+                .withMessage(loggingEvent.getRenderedMessage())
+                .withLogger(loggingEvent.getLoggerName())
+                .withLevel(formatLevel(loggingEvent.getLevel()))
+                .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
+            eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
         } else if (loggingEvent.getLocationInformation().fullInfo != null) {
             LocationInfo location = loggingEvent.getLocationInformation();
             if (!LocationInfo.NA.equals(location.getFileName()) && !LocationInfo.NA.equals(location.getLineNumber())) {
                 StackTraceElement[] stackTrace = {asStackTraceElement(location)};
-                eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
+                eventBuilder.withSentryInterface(new StackTraceInterface(stackTrace));
             }
         }
 
         // Set culprit
         if (loggingEvent.getLocationInformation().fullInfo != null) {
-            eventBuilder.setCulprit(asStackTraceElement(loggingEvent.getLocationInformation()));
+            eventBuilder.withCulprit(asStackTraceElement(loggingEvent.getLocationInformation()));
         } else {
-            eventBuilder.setCulprit(loggingEvent.getLoggerName());
+            eventBuilder.withCulprit(loggingEvent.getLoggerName());
         }
 
         if (loggingEvent.getNDC() != null)
-            eventBuilder.addExtra(LOG4J_NDC, loggingEvent.getNDC());
+            eventBuilder.withExtra(LOG4J_NDC, loggingEvent.getNDC());
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet()) {
             if (extraTags.contains(mdcEntry.getKey())) {
-                eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue().toString());
+                eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue().toString());
             } else {
-                eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet())
-            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();

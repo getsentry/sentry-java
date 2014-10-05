@@ -55,7 +55,7 @@ public class AppEngineEventBuilderHelperTest {
 
         new Verifications() {{
             String hostname;
-            mockEventBuilder.setServerName(hostname = withCapture());
+            mockEventBuilder.withServerName(hostname = withCapture());
             assertThat(hostname, is(mockHostname));
         }};
     }
@@ -73,7 +73,7 @@ public class AppEngineEventBuilderHelperTest {
         new Verifications() {{
             List<String> tagNames = new LinkedList<>();
             List<String> tagValues = new LinkedList<>();
-            mockEventBuilder.addTag(withCapture(tagNames), withCapture(tagValues));
+            mockEventBuilder.withTag(withCapture(tagNames), withCapture(tagValues));
 
             Map<String, String> tags = new HashMap<>();
             for (int i = 0; i < tagNames.size(); i++) {
@@ -98,7 +98,7 @@ public class AppEngineEventBuilderHelperTest {
         new Verifications() {{
             List<String> tagNames = new LinkedList<>();
             List<String> tagValues = new LinkedList<>();
-            mockEventBuilder.addTag(withCapture(tagNames), withCapture(tagValues));
+            mockEventBuilder.withTag(withCapture(tagNames), withCapture(tagValues));
 
             Map<String, String> tags = new HashMap<>();
             for (int i = 0; i < tagNames.size(); i++) {

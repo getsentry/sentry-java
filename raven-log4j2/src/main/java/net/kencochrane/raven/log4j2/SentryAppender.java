@@ -218,49 +218,49 @@ public class SentryAppender extends AbstractAppender {
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
-                .setTimestamp(new Date(event.getTimeMillis()))
-                .setMessage(eventMessage.getFormattedMessage())
-                .setLogger(event.getLoggerName())
-                .setLevel(formatLevel(event.getLevel()))
-                .addExtra(THREAD_NAME, event.getThreadName());
+                .withTimestamp(new Date(event.getTimeMillis()))
+                .withMessage(eventMessage.getFormattedMessage())
+                .withLogger(event.getLoggerName())
+                .withLevel(formatLevel(event.getLevel()))
+                .withExtra(THREAD_NAME, event.getThreadName());
 
         if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
-            eventBuilder.addSentryInterface(new MessageInterface(eventMessage.getFormat(),
+            eventBuilder.withSentryInterface(new MessageInterface(eventMessage.getFormat(),
                     formatMessageParameters(eventMessage.getParameters())));
         }
 
         Throwable throwable = event.getThrown();
         if (throwable != null) {
-            eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
+            eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
         } else if (event.getSource() != null) {
             StackTraceElement[] stackTrace = {event.getSource()};
-            eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
+            eventBuilder.withSentryInterface(new StackTraceInterface(stackTrace));
         }
 
         if (event.getSource() != null) {
-            eventBuilder.setCulprit(event.getSource());
+            eventBuilder.withCulprit(event.getSource());
         } else {
-            eventBuilder.setCulprit(event.getLoggerName());
+            eventBuilder.withCulprit(event.getLoggerName());
         }
 
         if (event.getContextStack() != null)
-            eventBuilder.addExtra(LOG4J_NDC, event.getContextStack().asList());
+            eventBuilder.withExtra(LOG4J_NDC, event.getContextStack().asList());
 
         if (event.getContextMap() != null) {
             for (Map.Entry<String, String> mdcEntry : event.getContextMap().entrySet()) {
                 if (extraTags.contains(mdcEntry.getKey())) {
-                    eventBuilder.addTag(mdcEntry.getKey(), mdcEntry.getValue());
+                    eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
                 } else {
-                    eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                    eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
                 }
             }
         }
 
         if (event.getMarker() != null)
-            eventBuilder.addTag(LOG4J_MARKER, event.getMarker().getName());
+            eventBuilder.withTag(LOG4J_MARKER, event.getMarker().getName());
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet())
-            eventBuilder.addTag(tagEntry.getKey(), tagEntry.getValue());
+            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();

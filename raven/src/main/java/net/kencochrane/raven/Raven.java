@@ -59,8 +59,8 @@ public class Raven {
      * @param message message to send to Sentry.
      */
     public void sendMessage(String message) {
-        EventBuilder eventBuilder = new EventBuilder().setMessage(message)
-                .setLevel(Event.Level.INFO);
+        EventBuilder eventBuilder = new EventBuilder().withMessage(message)
+                .withLevel(Event.Level.INFO);
         runBuilderHelpers(eventBuilder);
         sendEvent(eventBuilder.build());
     }
@@ -73,9 +73,9 @@ public class Raven {
      * @param exception exception to send to Sentry.
      */
     public void sendException(Exception exception) {
-        EventBuilder eventBuilder = new EventBuilder().setMessage(exception.getMessage())
-                .setLevel(Event.Level.ERROR)
-                .addSentryInterface(new ExceptionInterface(exception));
+        EventBuilder eventBuilder = new EventBuilder().withMessage(exception.getMessage())
+                .withLevel(Event.Level.ERROR)
+                .withSentryInterface(new ExceptionInterface(exception));
         runBuilderHelpers(eventBuilder);
         sendEvent(eventBuilder.build());
     }

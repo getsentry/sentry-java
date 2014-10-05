@@ -20,7 +20,7 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 ### Manual dependency management
 Relies on:
 
- - [guava-17.0.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C17.0%7Cjar)
+ - [guava-18.0.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C18.0%7Cjar)
  - [jackson-core-2.4.0.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.4.0%7Cjar)
  - [slf4j-api-1.7.7.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.7%7Cjar)
  - [slf4j-jdk14-1.7.7.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-jdk14%7C1.7.7%7Cjar)
@@ -155,9 +155,9 @@ public class MyClass {
     void logSimpleMessage() {
         // This adds a simple message to the logs
         EventBuilder eventBuilder = new EventBuilder()
-                        .setMessage("This is a test")
-                        .setLevel(Event.Level.INFO)
-                        .setLogger(MyClass.class.getName());
+                        .withMessage("This is a test")
+                        .withLevel(Event.Level.INFO)
+                        .withLogger(MyClass.class.getName());
         raven.runBuilderHelpers(eventBuilder); // Optional
         raven.sendEvent(eventBuilder.build());
     }
@@ -168,10 +168,10 @@ public class MyClass {
         } catch (Exception e) {
             // This adds an exception to the logs
             EventBuilder eventBuilder = new EventBuilder()
-                            .setMessage("Exception caught")
-                            .setLevel(Event.Level.ERROR)
-                            .setLogger(MyClass.class.getName())
-                            .addSentryInterface(new ExceptionInterface(e));
+                            .withMessage("Exception caught")
+                            .withLevel(Event.Level.ERROR)
+                            .withLogger(MyClass.class.getName())
+                            .withSentryInterface(new ExceptionInterface(e));
             raven.runBuilderHelpers(eventBuilder); // Optional
             raven.sendEvent(eventBuilder.build());
         }

@@ -82,7 +82,7 @@ public class EventBuilderTest {
             @Injectable("message") final String mockMessage)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setMessage(mockMessage);
+        eventBuilder.withMessage(mockMessage);
 
         final Event event = eventBuilder.build();
 
@@ -113,7 +113,7 @@ public class EventBuilderTest {
             result = mockTimestamp;
         }};
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setTimestamp(mockTimestamp);
+        eventBuilder.withTimestamp(mockTimestamp);
 
         final Event event = eventBuilder.build();
 
@@ -133,7 +133,7 @@ public class EventBuilderTest {
     public void builtEventWithLevelHasProperLevel(@Injectable final Event.Level mockLevel)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setLevel(mockLevel);
+        eventBuilder.withLevel(mockLevel);
 
         final Event event = eventBuilder.build();
 
@@ -153,7 +153,7 @@ public class EventBuilderTest {
     public void builtEventWithLoggerHasProperLogger(@Injectable("logger") final String mockLogger)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setLogger(mockLogger);
+        eventBuilder.withLogger(mockLogger);
 
         final Event event = eventBuilder.build();
 
@@ -173,7 +173,7 @@ public class EventBuilderTest {
     public void builtEventWithPlatformHasProperPlatform(@Injectable("platform") final String mockPlatform)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setPlatform(mockPlatform);
+        eventBuilder.withPlatform(mockPlatform);
 
         final Event event = eventBuilder.build();
 
@@ -193,7 +193,7 @@ public class EventBuilderTest {
     public void builtEventWithCulpritHasProperCulprit(@Injectable("culprit") final String mockCulprit)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setCulprit(mockCulprit);
+        eventBuilder.withCulprit(mockCulprit);
 
         final Event event = eventBuilder.build();
 
@@ -215,7 +215,7 @@ public class EventBuilderTest {
                                                                   String expectedCulprit)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setCulprit(mockStackFrame);
+        eventBuilder.withCulprit(mockStackFrame);
 
         final Event event = eventBuilder.build();
 
@@ -244,7 +244,7 @@ public class EventBuilderTest {
                                                 @Injectable("tagValue") final String mockTagValue)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.addTag(mockTagKey, mockTagValue);
+        eventBuilder.withTag(mockTagKey, mockTagValue);
 
         final Event event = eventBuilder.build();
 
@@ -294,7 +294,7 @@ public class EventBuilderTest {
             throws Exception {
         resetHostnameCache();
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setServerName(mockServerName);
+        eventBuilder.withServerName(mockServerName);
 
         final Event event = eventBuilder.build();
 
@@ -323,7 +323,7 @@ public class EventBuilderTest {
                                                     @Injectable("extraValue") final String mockExtraValue)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.addExtra(mockExtraKey, mockExtraValue);
+        eventBuilder.withExtra(mockExtraKey, mockExtraValue);
 
         final Event event = eventBuilder.build();
 
@@ -345,7 +345,7 @@ public class EventBuilderTest {
             @Injectable("checksum") final String mockChecksum)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setChecksum(mockChecksum);
+        eventBuilder.withChecksum(mockChecksum);
 
         final Event event = eventBuilder.build();
 
@@ -365,7 +365,7 @@ public class EventBuilderTest {
     public void builtEventWithGeneratedChecksumHasCRC32Checksum(String string, String expectedChecksum)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.generateChecksum(string);
+        eventBuilder.withChecksumFor(string);
 
         final Event event = eventBuilder.build();
 
@@ -400,7 +400,74 @@ public class EventBuilderTest {
             result = mockSentryInterfaceName;
         }};
         final EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.addSentryInterface(mockSentryInterface);
+        eventBuilder.withSentryInterface(mockSentryInterface);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
+
+    @Test
+    public void builtEventReplacesSentryInterfacesWithSameNameByDefault(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final SentryInterface mockSentryInterface2)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+            mockSentryInterface2.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withSentryInterface(mockSentryInterface);
+        eventBuilder.withSentryInterface(mockSentryInterface2);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface2));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
+
+
+    @Test
+    public void builtEventReplacesSentryInterfacesWithSameNameIfReplacementEnabled(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final SentryInterface mockSentryInterface2)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+            mockSentryInterface2.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withSentryInterface(mockSentryInterface);
+        eventBuilder.withSentryInterface(mockSentryInterface2, true);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface2));
+        assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
+    }
+
+    @Test
+    public void builtEventKeepsSentryInterfacesWithSameNameIfReplacementDisabled(
+            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
+            @Injectable final SentryInterface mockSentryInterface,
+            @Injectable final SentryInterface mockSentryInterface2)
+            throws Exception {
+        new NonStrictExpectations() {{
+            mockSentryInterface.getInterfaceName();
+            result = mockSentryInterfaceName;
+            mockSentryInterface2.getInterfaceName();
+            result = mockSentryInterfaceName;
+        }};
+        final EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withSentryInterface(mockSentryInterface);
+        eventBuilder.withSentryInterface(mockSentryInterface2, false);
 
         final Event event = eventBuilder.build();
 

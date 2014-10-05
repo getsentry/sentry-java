@@ -20,9 +20,9 @@ public class AppEngineEventBuilderHelper implements EventBuilderHelper {
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         ApiProxy.Environment env = ApiProxy.getCurrentEnvironment();
         // Set the hostname to the actual application hostname
-        eventBuilder.setServerName((String) env.getAttributes().get(CURRENT_VERSION_HOSTNAME_PROPERTY));
+        eventBuilder.withServerName((String) env.getAttributes().get(CURRENT_VERSION_HOSTNAME_PROPERTY));
 
-        eventBuilder.addTag("GAE Application Version", SystemProperty.applicationVersion.get());
-        eventBuilder.addTag("GAE Application Id", SystemProperty.applicationId.get());
+        eventBuilder.withTag("GAE Application Version", SystemProperty.applicationVersion.get());
+        eventBuilder.withTag("GAE Application Id", SystemProperty.applicationId.get());
     }
 }

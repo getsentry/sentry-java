@@ -20,7 +20,7 @@ import java.util.List;
  * This way, Sentry will be able to put the two events in the same category.
  * <p>
  * Note: Sentry won't attempt to format the message, this is why the formatted message should be set through
- * {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} in any case.
+ * {@link net.kencochrane.raven.event.EventBuilder#withMessage(String)} in any case.
  */
 public class MessageInterface implements SentryInterface {
     /**
@@ -34,10 +34,10 @@ public class MessageInterface implements SentryInterface {
      * Creates a non parametrised message.
      * <p>
      * While it's technically possible to create a non parametrised message with {@code MessageInterface}, it's
-     * recommended to use {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} instead.
+     * recommended to use {@link net.kencochrane.raven.event.EventBuilder#withMessage(String)} instead.
      *
      * @param message message to add to the event.
-     * @deprecated Use {@link net.kencochrane.raven.event.EventBuilder#setMessage(String)} instead.
+     * @deprecated Use {@link net.kencochrane.raven.event.EventBuilder#withMessage(String)} instead.
      */
     @Deprecated
     public MessageInterface(String message) {
