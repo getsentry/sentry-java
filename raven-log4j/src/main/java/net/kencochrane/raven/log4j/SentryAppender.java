@@ -58,7 +58,6 @@ public class SentryAppender extends AppenderSkeleton {
      * List of tags to look for in the MDC. These will be added as tags to be sent to sentry.
      * <p>
      * Might be empty in which case no mapped tags are set.
-     * </p>
      */
     private Set<String> extraTags = Collections.emptySet();
 
@@ -66,7 +65,6 @@ public class SentryAppender extends AppenderSkeleton {
      * List of tags to look for in log4j's MDC. These will be added as tags to be sent to sentry.
      * <p>
      * Might be empty in which case no mapped tags are set.
-     * </p>
      */
     protected List<String> mappedTags = Collections.emptyList();
 

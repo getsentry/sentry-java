@@ -48,19 +48,18 @@ public class SentryHandler extends Handler {
     protected Map<String, String> tags = Collections.emptyMap();
 
     /**
+     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no mapped tags are set.
+     */
+    private Set<String> extraTags = Collections.emptySet();
+
+    /**
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
         retrieveProperties();
     }
-
-    /**
-     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no mapped tags are set.
-     * </p>
-     */
-    private Set<String> extraTags = Collections.emptySet();
 
     /**
      * Creates an instance of SentryHandler.
