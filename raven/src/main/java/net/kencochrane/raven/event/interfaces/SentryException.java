@@ -1,5 +1,6 @@
 package net.kencochrane.raven.event.interfaces;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -8,7 +9,7 @@ import java.util.Set;
 /**
  * Class associating a Sentry exception to its {@link StackTraceInterface}.
  */
-public final class SentryException {
+public final class SentryException implements Serializable {
     /**
      * Name used when the class' package is the default one.
      */
