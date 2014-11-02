@@ -4,6 +4,7 @@ import com.google.appengine.api.taskqueue.*;
 import mockit.*;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
+import net.kencochrane.raven.event.EventBuilder;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -74,10 +75,10 @@ public class AppEngineAsyncConnectionTest {
     }
 
     @Test
-    public void testSendEventQueued(@Injectable final Event mockEvent, @Injectable UUID mockUuid) throws Exception {
-        setField(mockEvent, "id", mockUuid);
+    public void testSendEventQueued() throws Exception {
+        final Event event = new EventBuilder().build();
 
-        asyncConnection.send(mockEvent);
+        asyncConnection.send(event);
 
         new Verifications() {{
             TaskOptions taskOptions;
@@ -85,14 +86,15 @@ public class AppEngineAsyncConnectionTest {
             mockQueue.add(taskOptions = withCapture());
 
             deferredTask = extractDeferredTask(taskOptions);
-            assertThat(getField(deferredTask, "event"), Matchers.<Object>equalTo(mockEvent));
+            assertThat(getField(deferredTask, "event"), Matchers.<Object>equalTo(event));
         }};
     }
 
     @Test
-    public void testQueuedEventSubmitted(@Injectable final Event mockEvent,
-                                         @SuppressWarnings("unused") @Mocked("setDoNotRetry") DeferredTaskContext deferredTaskContext)
+    public void testQueuedEventSubmitted(@SuppressWarnings("unused")
+                                         @Mocked("setDoNotRetry") DeferredTaskContext deferredTaskContext)
             throws Exception {
+        final Event event = new EventBuilder().build();
         new NonStrictExpectations() {{
             mockQueue.add((TaskOptions) any);
             result = new Delegate<TaskHandle>() {
@@ -108,7 +110,7 @@ public class AppEngineAsyncConnectionTest {
             };
         }};
 
-        asyncConnection.send(mockEvent);
+        asyncConnection.send(event);
 
         new Verifications() {{
             DeferredTaskContext.setDoNotRetry(true);
@@ -118,12 +120,12 @@ public class AppEngineAsyncConnectionTest {
 
     @Test
     public void testEventLinkedToCorrectConnection(
-            @Injectable("eb37bfe4-7316-47e8-94e4-073aefd0fbf8") final String mockConnectionId,
-            @Injectable final Event mockEvent) throws Exception {
+            @Injectable("eb37bfe4-7316-47e8-94e4-073aefd0fbf8") final String mockConnectionId) throws Exception {
         final AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
+        final Event event = new EventBuilder().build();
 
-        asyncConnection.send(mockEvent);
-        asyncConnection2.send(mockEvent);
+        asyncConnection.send(event);
+        asyncConnection2.send(event);
 
         new Verifications() {{
             List<TaskOptions> taskOptionsList = new ArrayList<>();
