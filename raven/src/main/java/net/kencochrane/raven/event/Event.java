@@ -211,6 +211,7 @@ public class Event implements Serializable {
      * @param objectMap original Map containing various Objects.
      * @return A serializable map which contains only serializable entries.
      */
+    //CHECKSTYLE.OFF: IllegalType
     private static HashMap<String, ? super Serializable> convertToSerializable(Map<String, Object> objectMap) {
         HashMap<String, ? super Serializable> serializableMap = new HashMap<>(objectMap.size());
         for (Map.Entry<String, Object> objectEntry : objectMap.entrySet()) {
@@ -221,6 +222,7 @@ public class Event implements Serializable {
         }
         return serializableMap;
     }
+    //CHECKSTYLE.ON: IllegalType
 
     @Override
     public boolean equals(Object o) {
