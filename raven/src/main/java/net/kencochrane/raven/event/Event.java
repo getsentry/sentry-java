@@ -2,6 +2,9 @@ package net.kencochrane.raven.event;
 
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,8 +70,11 @@ public class Event implements Serializable {
      * A map or list of additional properties for this event.
      * <p>
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
+     * <p>
+     * This transient map may contain objects which aren't serializable. They will be automatically be taken care of
+     * by {@link #readObject(ObjectInputStream)} and {@link #writeObject(ObjectOutputStream)}.
      */
-    private Map<String, Object> extra = new HashMap<>();
+    private transient Map<String, Object> extra = new HashMap<>();
     /**
      * Checksum for the event, allowing to group events with a similar checksum.
      */
@@ -181,6 +187,39 @@ public class Event implements Serializable {
 
     void setSentryInterfaces(Map<String, SentryInterface> sentryInterfaces) {
         this.sentryInterfaces = sentryInterfaces;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        extra = (Map<String, Object>) stream.readObject();
+    }
+
+    private void writeObject(ObjectOutputStream stream)
+            throws IOException {
+        stream.defaultWriteObject();
+        stream.writeObject(convertToSerializable(extra));
+    }
+
+    /**
+     * Returns a serializable Map (HashMap) with the content of the parameter Map.
+     * <p>
+     * Serializable objects are kept as is in the Map, while the non serializable ones are converted into string
+     * using the {@code toString()} method.
+     *
+     * @param objectMap original Map containing various Objects.
+     * @return A serializable map which contains only serializable entries.
+     */
+    private static HashMap<String, ? super Serializable> convertToSerializable(Map<String, Object> objectMap) {
+        HashMap<String, ? super Serializable> serializableMap = new HashMap<>(objectMap.size());
+        for (Map.Entry<String, Object> objectEntry : objectMap.entrySet()) {
+            if (objectEntry.getValue() instanceof Serializable)
+                serializableMap.put(objectEntry.getKey(), (Serializable) objectEntry.getValue());
+            else
+                serializableMap.put(objectEntry.getKey(), objectEntry.getValue().toString());
+        }
+        return serializableMap;
     }
 
     @Override
