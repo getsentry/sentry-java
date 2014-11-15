@@ -10,6 +10,9 @@ import java.io.IOException;
  * Only use it when no DSN is set.
  */
 public class NoopConnection extends AbstractConnection {
+    /**
+     * Creates a connection that drops events
+     */
     public NoopConnection() {
         super(null, null);
     }

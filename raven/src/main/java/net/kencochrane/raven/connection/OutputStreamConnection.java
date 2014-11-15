@@ -14,6 +14,11 @@ public class OutputStreamConnection extends AbstractConnection {
     private final OutputStream outputStream;
     private Marshaller marshaller;
 
+    /**
+     * Creates a connection that sends event on an outputStream.
+     *
+     * @param outputStream stream on which the events are submitted.
+     */
     public OutputStreamConnection(OutputStream outputStream) {
         super(null, null);
         this.outputStream = outputStream;
