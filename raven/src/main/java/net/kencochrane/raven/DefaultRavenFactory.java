@@ -90,6 +90,9 @@ public class DefaultRavenFactory extends RavenFactory {
         } else if (protocol.equalsIgnoreCase("udp")) {
             logger.info("Using an UDP connection to Sentry.");
             connection = createUdpConnection(dsn);
+        } else if (protocol.equalsIgnoreCase("out")) {
+            logger.info("Using StdOut to send events.");
+            connection = createStdOutConnection(dsn);
         } else if (protocol.equalsIgnoreCase("noop")) {
             logger.info("Using noop to send events.");
             connection = new NoopConnection();
@@ -175,6 +178,18 @@ public class DefaultRavenFactory extends RavenFactory {
         UdpConnection udpConnection = new UdpConnection(dsn.getHost(), port, dsn.getPublicKey(), dsn.getSecretKey());
         udpConnection.setMarshaller(createMarshaller(dsn));
         return udpConnection;
+    }
+
+    /**
+     * Uses stdout to send the logs.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an {@link OutputStreamConnection} using {@code System.out}.
+     */
+    protected Connection createStdOutConnection(Dsn dsn) {
+        OutputStreamConnection stdOutConnection = new OutputStreamConnection(System.out);
+        stdOutConnection.setMarshaller(createMarshaller(dsn));
+        return stdOutConnection;
     }
 
     /**
