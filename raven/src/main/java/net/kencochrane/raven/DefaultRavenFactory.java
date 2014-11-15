@@ -187,7 +187,9 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return an {@link OutputStreamConnection} using {@code System.out}.
      */
     protected Connection createStdOutConnection(Dsn dsn) {
+        //CHECKSTYLE.OFF: RegexpSinglelineJava
         OutputStreamConnection stdOutConnection = new OutputStreamConnection(System.out);
+        //CHECKSTYLE.ON: RegexpSinglelineJava
         stdOutConnection.setMarshaller(createMarshaller(dsn));
         return stdOutConnection;
     }
