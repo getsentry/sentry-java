@@ -101,6 +101,11 @@ public class Dsn {
         if (dsn == null)
             dsn = System.getProperty(DSN_VARIABLE);
 
+        if (dsn == null) {
+            logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");
+            dsn = "noop://user:password@localhost:0/0";
+        }
+
         return dsn;
     }
 

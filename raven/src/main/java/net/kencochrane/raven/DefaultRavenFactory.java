@@ -1,9 +1,6 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.raven.connection.AsyncConnection;
-import net.kencochrane.raven.connection.Connection;
-import net.kencochrane.raven.connection.HttpConnection;
-import net.kencochrane.raven.connection.UdpConnection;
+import net.kencochrane.raven.connection.*;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.helper.HttpEventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.*;
@@ -93,6 +90,9 @@ public class DefaultRavenFactory extends RavenFactory {
         } else if (protocol.equalsIgnoreCase("udp")) {
             logger.info("Using an UDP connection to Sentry.");
             connection = createUdpConnection(dsn);
+        } else if (protocol.equalsIgnoreCase("noop")) {
+            logger.info("Using noop to send events.");
+            connection = new NoopConnection();
         } else {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
