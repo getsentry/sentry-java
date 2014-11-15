@@ -1,12 +1,14 @@
 package net.kencochrane.raven.connection;
 
-import com.google.common.base.Charsets;
 import net.kencochrane.raven.event.Event;
-import net.kencochrane.raven.marshaller.Marshaller;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
+/**
+ * Connection that drops events.
+ *
+ * Only use it when no DSN is set.
+ */
 public class NoopConnection extends AbstractConnection {
     public NoopConnection() {
         super(null, null);

@@ -17,6 +17,10 @@ public class Dsn {
      * Name of the environment and system variables containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
+    /**
+     * Default DSN to use when auto detection fails.
+     */
+    public static final String DEFAULT_DSN = "noop://user:password@localhost:0/0";
     private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
     private String secretKey;
     private String publicKey;
@@ -103,7 +107,7 @@ public class Dsn {
 
         if (dsn == null) {
             logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");
-            dsn = "noop://user:password@localhost:0/0";
+            dsn = DEFAULT_DSN;
         }
 
         return dsn;

@@ -57,7 +57,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithNothingSet() throws Exception {
-        assertThat(Dsn.dsnLookup(), is("noop://user:password@localhost:0/0"));
+        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class DsnTest {
             result = new ClassNotFoundException("Couldn't find the JNDI classes");
         }};
 
-        assertThat(Dsn.dsnLookup(), is(nullValue()));
+        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class DsnTest {
             result = new NoClassDefFoundError("Couldn't find the JNDI classes");
         }};
 
-        assertThat(Dsn.dsnLookup(), is(nullValue()));
+        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
     }
 
     @Test

@@ -7,6 +7,9 @@ import net.kencochrane.raven.marshaller.Marshaller;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Connection using StdOut to sent marshalled events.
+ */
 public class OutputStreamConnection extends AbstractConnection {
     private final OutputStream outputStream;
     private Marshaller marshaller;
