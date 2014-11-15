@@ -57,7 +57,7 @@ public class DsnTest {
 
     @Test
     public void testDsnLookupWithNothingSet() throws Exception {
-        assertThat(Dsn.dsnLookup(), is(nullValue()));
+        assertThat(Dsn.dsnLookup(), is("noop://user:password@localhost:0/0"));
     }
 
     @Test
