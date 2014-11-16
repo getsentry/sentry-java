@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public class NoopConnection extends AbstractConnection {
     /**
-     * Creates a connection that drops events
+     * Creates a connection that drops events.
      */
     public NoopConnection() {
         super(null, null);
