@@ -47,7 +47,7 @@ public class AppEngineRavenFactory extends DefaultRavenFactory {
     @Override
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
         String connectionIdentifier;
-        if (dsn.getOptions().containsKey(QUEUE_NAME)) {
+        if (dsn.getOptions().containsKey(CONNECTION_IDENTIFIER)) {
             connectionIdentifier = dsn.getOptions().get(CONNECTION_IDENTIFIER);
         } else {
             connectionIdentifier = AppEngineRavenFactory.class.getCanonicalName() + dsn + SystemProperty.version.get();
