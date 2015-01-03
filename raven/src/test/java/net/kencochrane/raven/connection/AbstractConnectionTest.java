@@ -31,7 +31,7 @@ public class AbstractConnectionTest {
     public void testAuthHeader() throws Exception {
         String authHeader = abstractConnection.getAuthHeader();
 
-        assertThat(authHeader, is("Sentry sentry_version=5,"
+        assertThat(authHeader, is("Sentry sentry_version=6,"
                 + "sentry_client=Raven-Java/Test,"
                 + "sentry_key=" + publicKey + ","
                 + "sentry_secret=" + secretKey));
