@@ -10,7 +10,7 @@
 
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven-all</artifactId>
-    <version>5.0.3-SNAPSHOT</version>
+    <version>5.0.2</version>
     <packaging>pom</packaging>
 
     <name>Raven-Java</name>
@@ -75,7 +75,7 @@
         <url>https://github.com/${github.repo}</url>
         <connection>scm:git:git://github.com/${github.repo}.git</connection>
         <developerConnection>scm:git:git@github.com:${github.repo}.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v5.0.2</tag>
     </scm>
     <issueManagement>
         <url>https://github.com/${github.repo}/issues</url>
