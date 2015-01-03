@@ -71,17 +71,7 @@ public class AppEngineEventBuilderHelperTest {
         eventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
         new Verifications() {{
-            List<String> tagNames = new LinkedList<>();
-            List<String> tagValues = new LinkedList<>();
-            mockEventBuilder.withTag(withCapture(tagNames), withCapture(tagValues));
-
-            Map<String, String> tags = new HashMap<>();
-            for (int i = 0; i < tagNames.size(); i++) {
-                String tagName = tagNames.get(i);
-                tags.put(tagName, tagValues.get(i));
-            }
-
-            assertThat(tags, hasEntry("GAE Application Version", version));
+            mockEventBuilder.withTag("GAE Application Version", version);
         }};
     }
 
@@ -96,17 +86,7 @@ public class AppEngineEventBuilderHelperTest {
         eventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
         new Verifications() {{
-            List<String> tagNames = new LinkedList<>();
-            List<String> tagValues = new LinkedList<>();
-            mockEventBuilder.withTag(withCapture(tagNames), withCapture(tagValues));
-
-            Map<String, String> tags = new HashMap<>();
-            for (int i = 0; i < tagNames.size(); i++) {
-                String tagName = tagNames.get(i);
-                tags.put(tagName, tagValues.get(i));
-            }
-
-            assertThat(tags, hasEntry("GAE Application Id", applicationId));
+            mockEventBuilder.withTag("GAE Application Id", applicationId);
         }};
     }
 }
