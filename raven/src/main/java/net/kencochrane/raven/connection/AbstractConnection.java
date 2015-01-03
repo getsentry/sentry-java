@@ -22,7 +22,7 @@ public abstract class AbstractConnection implements Connection {
     /**
      * Current sentry protocol version.
      */
-    public static final String SENTRY_PROTOCOL_VERSION = "5";
+    public static final String SENTRY_PROTOCOL_VERSION = "6";
     /**
      * Default maximum duration for a lockdown.
      */
