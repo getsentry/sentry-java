@@ -15,12 +15,12 @@ __This module is not useful outside of Google App Engine.__
 <dependency>
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven-appengine</artifactId>
-    <version>5.0.2</version>
+    <version>6.0.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-appengine%7C5.0.2%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-appengine%7C6.0.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
