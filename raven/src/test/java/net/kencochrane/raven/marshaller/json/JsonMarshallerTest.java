@@ -37,6 +37,8 @@ public class JsonMarshallerTest {
             result = UUID.fromString("00000000-0000-0000-0000-000000000000");
             mockEvent.getTimestamp();
             result = new Date(0);
+            mockEvent.getLevel();
+            result = null;
         }};
     }
 
