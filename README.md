@@ -16,7 +16,7 @@ While it's **strongly recommended to use one of the supported logging
 frameworks** to capture and send messages to Sentry, a it is possible to do so
 manually with the main project [raven](raven).
 
-Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
+Raven supports both HTTP(S) as transport protocols to the Sentry
 instance.
 
 Support for [Google App Engine](https://appengine.google.com/) is provided in [raven-appengine](raven-appengine)
@@ -86,8 +86,6 @@ Solutions exist for that problem:
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
 on the security and performance requirements.
-So far Sentry accepts HTTP(S) and UDP which are both fully supported by
-Raven.
 
 ### HTTP
 The most common way send events to Sentry is through HTTP, this can be done by
@@ -111,17 +109,6 @@ truststore, it is possible to add a protocol setting to tell the client to be
 naive and ignore the hostname verification:
 
     naive+https://public:private@host:port/1
-
-### UDP
-It is possible to use a DSN with the UDP protocol:
-
-    udp://public:private@host:port/1
-
-If not provided the port will default to `9001`.
-
-While being faster because there is no TCP and HTTP overhead, UDP doesn't wait
-for a reply, and if a connection problem occurs, there will be no notification.
-
 
 ## Options
 It is possible to enable some options by adding data to the query string of the

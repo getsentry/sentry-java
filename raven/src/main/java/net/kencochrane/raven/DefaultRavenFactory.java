@@ -87,9 +87,6 @@ public class DefaultRavenFactory extends RavenFactory {
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
             logger.info("Using an HTTP connection to Sentry.");
             connection = createHttpConnection(dsn);
-        } else if (protocol.equalsIgnoreCase("udp")) {
-            logger.info("Using an UDP connection to Sentry.");
-            connection = createUdpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("out")) {
             logger.info("Using StdOut to send events.");
             connection = createStdOutConnection(dsn);
@@ -165,19 +162,6 @@ public class DefaultRavenFactory extends RavenFactory {
         if (dsn.getOptions().containsKey(TIMEOUT_OPTION))
             httpConnection.setTimeout(Integer.parseInt(dsn.getOptions().get(TIMEOUT_OPTION)));
         return httpConnection;
-    }
-
-    /**
-     * Creates an UDP connection to the Sentry server.
-     *
-     * @param dsn Data Source Name of the Sentry server.
-     * @return an {@link UdpConnection} to the server.
-     */
-    protected Connection createUdpConnection(Dsn dsn) {
-        int port = dsn.getPort() != -1 ? dsn.getPort() : UdpConnection.DEFAULT_UDP_PORT;
-        UdpConnection udpConnection = new UdpConnection(dsn.getHost(), port, dsn.getPublicKey(), dsn.getSecretKey());
-        udpConnection.setMarshaller(createMarshaller(dsn));
-        return udpConnection;
     }
 
     /**
