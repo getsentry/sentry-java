@@ -42,7 +42,6 @@ public class SentryAppenderEventBuildingTest {
         sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
         sentryAppender.setExtraTags(mockExtraTag);
-        sentryAppender.initRaven();
 
         new NonStrictExpectations() {{
             final BasicStatusManager statusManager = new BasicStatusManager();
