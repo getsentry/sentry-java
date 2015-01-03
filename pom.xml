@@ -106,11 +106,11 @@
         <maven.compiler.target>7</maven.compiler.target>
 
         <!-- dependencies versions -->
-        <slf4j.version>1.7.7</slf4j.version>
+        <slf4j.version>1.7.9</slf4j.version>
         <guava.version>18.0</guava.version>
-        <jackson.version>2.4.2</jackson.version>
+        <jackson.version>2.5.0</jackson.version>
         <jmockit.version>1.10</jmockit.version>
-        <testng.version>6.8.8</testng.version>
+        <testng.version>6.8.13</testng.version>
         <hamcrest.version>1.3</hamcrest.version>
     </properties>
 
