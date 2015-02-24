@@ -161,7 +161,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @return Event containing details provided by the logging system.
      */
     protected Event buildEvent(ILoggingEvent iLoggingEvent) {
-        EventBuilder eventBuilder = new EventBuilder()
+        EventBuilder eventBuilder = getEventBuilder()
                 .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .withMessage(iLoggingEvent.getFormattedMessage())
                 .withLogger(iLoggingEvent.getLoggerName())
@@ -205,6 +205,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
+    }
+
+    private EventBuilder getEventBuilder() {
+        return new EventBuilder();
     }
 
     private Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
