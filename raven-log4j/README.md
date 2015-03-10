@@ -38,6 +38,17 @@ log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
 #log4j.appender.SentryAppender.ravenFactory=net.kencochrane.raven.DefaultRavenFactory
 ```
 
+Alternatively in the `log4j.xml` file set:
+
+```
+  <appender name="sentry" class="net.kencochrane.raven.log4j.SentryAppender">
+    <param name="dsn" value="https://publicKey:secretKey@host:port/1"/>
+    <filter class="org.apache.log4j.varia.LevelRangeFilter">
+      <param name="levelMin" value="WARN"/>
+    </filter>
+  </appender>
+```
+
 ### Additional data and information
 It's possible to add extra details to events captured by the Log4j module
 thanks to both [the MDC](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/MDC.html)
