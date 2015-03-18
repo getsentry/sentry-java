@@ -66,4 +66,30 @@ public class StackTraceInterfaceBindingTest {
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/StackTrace3.json")));
     }
+
+    @Test
+    public void testFramesCleanLambdaFrames() throws Exception {
+        testFramesCleanLambdaFrames(true, "/net/kencochrane/raven/marshaller/json/StackTrace4.json");
+    }
+
+    @Test
+    public void testFramesCleanLambdaFramesDisabled() throws Exception {
+        testFramesCleanLambdaFrames(false, "/net/kencochrane/raven/marshaller/json/StackTrace5.json");
+    }
+
+    private void testFramesCleanLambdaFrames(boolean cleanLambdaFrames, String jsonResource) throws Exception {
+        final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
+        final String methodName = "lambda$work$1";
+        final String className = "com.company.module.$$Lambda$30/2081171245";
+        final StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, 0);
+        new NonStrictExpectations() {{
+            mockStackTraceInterface.getStackTrace();
+            result = new StackTraceElement[]{stackTraceElement};
+        }};
+        interfaceBinding.setCleanLambdaFrames(cleanLambdaFrames);
+
+        interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
+
+        assertThat(jsonGeneratorParser.value(), is(jsonResource(jsonResource)));
+    }
 }

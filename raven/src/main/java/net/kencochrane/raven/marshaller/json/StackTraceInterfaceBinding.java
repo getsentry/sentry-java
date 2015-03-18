@@ -22,8 +22,11 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String POST_CONTEXT_PARAMETER = "post_context";
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
+    private static final String LAMBDA_METHOD_NAME = "lambda$work$";
+    private static final String LAMBDA_CLASS_NAME = "$$Lambda$";
     private Collection<String> notInAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
+    private boolean cleanLambdaFrames = true;
 
     /**
      * Writes a single frame based on a {@code StackTraceElement}.
@@ -35,10 +38,10 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         generator.writeStartObject();
         // Do not display the file name (irrelevant) as it replaces the module in the sentry interface.
         //generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
-        generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getClassName());
+        generator.writeStringField(MODULE_PARAMETER, cleanLambdaClassName(stackTraceElement.getClassName()));
         generator.writeBooleanField(IN_APP_PARAMETER, !(removeCommonFramesWithEnclosing && commonWithEnclosing)
                 && isFrameInApp(stackTraceElement));
-        generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getMethodName());
+        generator.writeStringField(FUNCTION_PARAMETER, cleanLambdaMethodName(stackTraceElement.getMethodName()));
         generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineNumber());
         generator.writeEndObject();
     }
@@ -51,6 +54,26 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
             }
         }
         return true;
+    }
+
+    // instead of method name "lambda$work$1", use "lambda$work$"
+    private String cleanLambdaMethodName(String methodName) {
+        if (!cleanLambdaFrames) {
+            return methodName;
+        }
+        return methodName.startsWith(LAMBDA_METHOD_NAME) ? LAMBDA_METHOD_NAME : methodName;
+    }
+
+    // instead of class name "xxx.$$Lambda$30/2081171245", use "xxx.$$Lambda$"
+    private String cleanLambdaClassName(String className) {
+        if (!cleanLambdaFrames) {
+            return className;
+        }
+        int idx = className.indexOf(LAMBDA_CLASS_NAME);
+        if (idx >= 0) {
+            return className.substring(0, idx + LAMBDA_CLASS_NAME.length());
+        }
+        return className;
     }
 
     @Override
@@ -72,6 +95,10 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
     public void setRemoveCommonFramesWithEnclosing(boolean removeCommonFramesWithEnclosing) {
         this.removeCommonFramesWithEnclosing = removeCommonFramesWithEnclosing;
+    }
+
+    public void setCleanLambdaFrames(boolean cleanLambdaFrames) {
+        this.cleanLambdaFrames = cleanLambdaFrames;
     }
 
     public void setNotInAppFrames(Collection<String> notInAppFrames) {

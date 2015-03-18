@@ -58,6 +58,10 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
+    /**
+     * Option to clean auto-generated Java 8 lambda class and method names from stacktrace frames.
+     */
+    public static final String CLEAN_LAMBDA_FRAMES_OPTION = "raven.stacktrace.cleanlambda";
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
 
@@ -193,6 +197,9 @@ public class DefaultRavenFactory extends RavenFactory {
         // Enable common frames hiding unless its value is 'false'.
         stackTraceBinding.setRemoveCommonFramesWithEnclosing(
                 !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION)));
+        // Enable cleaning lambda frames unless its value is 'false'.
+        stackTraceBinding.setCleanLambdaFrames(
+                !FALSE.equalsIgnoreCase(dsn.getOptions().get(CLEAN_LAMBDA_FRAMES_OPTION)));
         stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
