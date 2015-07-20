@@ -143,7 +143,7 @@ public class HttpConnection extends AbstractConnection {
             // ensure we do not add "\n" to the last line
             boolean first = true;
             while ((line = reader.readLine()) != null) {
-                if (! first) {
+                if (!first) {
                     sb.append("\n");
                 }
                 sb.append(line);
