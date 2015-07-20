@@ -19,6 +19,8 @@ import java.net.URL;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
 
 public class HttpConnectionTest {
     @Injectable
@@ -144,5 +146,21 @@ public class HttpConnectionTest {
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(sentryUri, projectId);
 
         assertThat(sentryApiUrl.toString(), is(uri + "api/" + projectId + "/store/"));
+    }
+
+    @Test
+    public void testEmptyStringDoesNotSIOOBE(@Injectable final Event mockEvent) throws Exception {
+        new NonStrictExpectations() {{
+            mockUrlConnection.getOutputStream();
+            result = new IOException();
+            mockUrlConnection.getErrorStream();
+            result = new ByteArrayInputStream(new byte[0]);
+        }};
+        try {
+            httpConnection.doSend(mockEvent);
+            assertThat("Should not exit normally with IOE", false);
+        } catch (ConnectionException ce) {
+            assertThat(ce.getMessage(), not(isEmptyOrNullString()));
+        }
     }
 }
