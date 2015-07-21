@@ -1,7 +1,14 @@
-.. class:: platform-java
+.. sentry:edition:: self
 
-Java
-====
+    Raven-Java
+    ==========
+
+.. sentry:edition:: on-premise, hosted
+
+    .. class:: platform-java
+
+    Java
+    ====
 
 Raven is the Java client for Sentry. Raven relies on the most popular
 logging libraries to capture and convert logs before sending details to a
