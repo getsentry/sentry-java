@@ -79,15 +79,15 @@ Mapped Tags
 -----------
 
 By default all MDC parameters are sent under the Additional Data Tab. By
-specify the mappedTags parameter in your configuration file. You can
+specify the ``extraTags`` parameter in your configuration file. You can
 specify MDC keys to send as tags instead of including them in Additional
 Data. This allows them to be filtered within Sentry.
 
 .. sourcecode:: xml
 
-    <mappedTags>
+    <extraTags>
       User,OS
-    </mappedTags>
+    </extraTags>
 
 .. sourcecode:: java
 
@@ -96,7 +96,7 @@ Data. This allows them to be filtered within Sentry.
         MDC.put("User", "test user");
         MDC.put("OS", "Linux");
 
-        // This adds a message with extras and MDC keys declared in mappedTags as tags to Sentry
+        // This adds a message with extras and MDC keys declared in extraTags as tags to Sentry
         logger.info("This is a test");
     }
 

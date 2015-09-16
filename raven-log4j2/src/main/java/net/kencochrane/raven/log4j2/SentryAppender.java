@@ -286,7 +286,7 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Set the mapped extras that will be used to search MDC and upgrade key pair to a tag sent along with the events.
      *
-     * @param extraTags A String of mappedTags. mappedTags are separated by commas(,).
+     * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
         this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
