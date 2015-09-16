@@ -62,13 +62,6 @@ public class SentryAppender extends AppenderSkeleton {
     protected Set<String> extraTags = Collections.emptySet();
 
     /**
-     * List of tags to look for in log4j's MDC. These will be added as tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no mapped tags are set.
-     */
-    protected List<String> mappedTags = Collections.emptyList();
-
-    /**
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
@@ -230,7 +223,7 @@ public class SentryAppender extends AppenderSkeleton {
     /**
      * Set the mapped extras that will be used to search MDC and upgrade key pair to a tag sent along with the events.
      *
-     * @param extraTags A String of mappedTags. mappedTags are separated by commas(,).
+     * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
         this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
