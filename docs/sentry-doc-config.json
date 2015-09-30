@@ -4,7 +4,7 @@
       "name": "Java",
       "type": "language",
       "doc_link": "modules/raven/",
-      "wizards": [
+      "wizard": [
         "modules/raven#installation",
         "modules/raven#usage"
       ]
@@ -13,7 +13,7 @@
       "name": "Log4j",
       "type": "framework",
       "doc_link": "modules/log4j/",
-      "wizards": [
+      "wizard": [
         "modules/log4j#installation",
         "modules/log4j#usage"
       ]
@@ -22,7 +22,7 @@
       "name": "Log4j 2",
       "type": "framework",
       "doc_link": "modules/log4j2/",
-      "wizards": [
+      "wizard": [
         "modules/log4j2#installation",
         "modules/log4j2#usage"
       ]
@@ -31,7 +31,7 @@
       "name": "Logback",
       "type": "framework",
       "doc_link": "modules/logback/",
-      "wizards": [
+      "wizard": [
         "modules/logback#installation",
         "modules/logback#usage"
       ]
@@ -40,7 +40,7 @@
       "name": "App Engine",
       "type": "framework",
       "doc_link": "modules/appengine/",
-      "wizards": [
+      "wizard": [
         "modules/appengine#installation",
         "modules/appengine#usage"
       ]
