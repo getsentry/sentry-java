@@ -1,51 +1,46 @@
 {
-  "wizards": {
+  "platforms": {
     "java": {
       "name": "Java",
-      "client_lib": "raven-java",
-      "is_framework": false,
+      "type": "language",
       "doc_link": "modules/raven/",
-      "snippets": [
+      "wizards": [
         "modules/raven#installation",
         "modules/raven#usage"
       ]
     },
-    "java-log4j": {
+    "java.log4j": {
       "name": "Log4j",
-      "client_lib": "raven-java",
-      "is_framework": true,
+      "type": "framework",
       "doc_link": "modules/log4j/",
-      "snippets": [
+      "wizards": [
         "modules/log4j#installation",
         "modules/log4j#usage"
       ]
     },
-    "java-log4j2": {
+    "java.log4j2": {
       "name": "Log4j 2",
-      "client_lib": "raven-java",
-      "is_framework": true,
+      "type": "framework",
       "doc_link": "modules/log4j2/",
-      "snippets": [
+      "wizards": [
         "modules/log4j2#installation",
         "modules/log4j2#usage"
       ]
     },
-    "java-logback": {
+    "java.logback": {
       "name": "Logback",
-      "client_lib": "raven-java",
-      "is_framework": true,
+      "type": "framework",
       "doc_link": "modules/logback/",
-      "snippets": [
+      "wizards": [
         "modules/logback#installation",
         "modules/logback#usage"
       ]
     },
-    "java-appengine": {
+    "java.appengine": {
       "name": "App Engine",
-      "client_lib": "raven-java",
-      "is_framework": true,
+      "type": "framework",
       "doc_link": "modules/appengine/",
-      "snippets": [
+      "wizards": [
         "modules/appengine#installation",
         "modules/appengine#usage"
       ]
