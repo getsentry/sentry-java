@@ -67,6 +67,10 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String RELEASE = "release";
     /**
+     * Event fingerprint, a list of strings used to dictate the deduplicating for this event.
+     */
+    public static final String FINGERPRINT = "fingerprint";
+    /**
      * A list of relevant modules and their versions.
      */
     public static final String MODULES = "modules";
@@ -132,6 +136,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(SERVER_NAME, event.getServerName());
         generator.writeStringField(RELEASE, event.getRelease());
         writeExtras(generator, event.getExtra());
+        writeCollection(generator, FINGERPRINT, event.getFingerprint());
         generator.writeStringField(CHECKSUM, event.getChecksum());
         writeInterfaces(generator, event.getSentryInterfaces());
 
@@ -166,6 +171,16 @@ public class JsonMarshaller implements Marshaller {
             safelyWriteObject(generator, extra.getValue());
         }
         generator.writeEndObject();
+    }
+
+    private void writeCollection(JsonGenerator generator, String name, Collection<String> value) throws IOException {
+        if (value != null && !value.isEmpty()) {
+            generator.writeArrayFieldStart(name);
+            for (String element: value) {
+                generator.writeString(element);
+            }
+            generator.writeEndArray();
+        }
     }
 
     private void safelyWriteObject(JsonGenerator generator, Object value) throws IOException {

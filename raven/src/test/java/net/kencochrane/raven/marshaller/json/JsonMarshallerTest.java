@@ -164,6 +164,21 @@ public class JsonMarshallerTest {
     }
 
     @Test
+    public void testFingerPrintWrittenProperly(@Injectable("fingerprint1") final String mockFingerprint1,
+                                             @Injectable("fingerprint2") final String mockFingerprint2) throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getFingerprint();
+            result = Arrays.asList(mockFingerprint1, mockFingerprint2);
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/net/kencochrane/raven/marshaller/json/jsonmarshallertest/testFingerprint.json")));
+    }
+
+
+    @Test
     public void testEventServerNameWrittenProperly(@Injectable("serverName") final String mockServerName) throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
