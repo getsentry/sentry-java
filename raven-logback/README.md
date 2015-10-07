@@ -36,6 +36,8 @@ In the `logback.xml` file set:
         <tags>tag1:value1,tag2:value2</tags>
         <!-- Optional, allows to select the ravenFactory -->
         <!--<ravenFactory>net.kencochrane.raven.DefaultRavenFactory</ravenFactory>-->
+        <!-- Optional, allows setting app release information -->
+        <!-- <release>1.0.0</release>
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>

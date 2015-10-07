@@ -30,6 +30,8 @@ public class Event {
     private Map<String, String> tags;
     @JsonProperty(value = "server_name")
     private String serverName;
+    @JsonProperty(value = "release")
+    private String release;
     @JsonProperty(value = "modules")
     private Map<String, String> modules;
     @JsonProperty(value = "extra")
