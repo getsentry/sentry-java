@@ -52,6 +52,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String ravenFactory;
     /**
+     * Identifies the version of the application.
+     * <p>
+     * Might be null in which case the release information will not be sent with the event.
+     */
+    protected String release;
+    /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
@@ -168,6 +174,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .withLevel(formatLevel(iLoggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
+        if (this.release != null) {
+            eventBuilder.withRelease(this.release);
+        }
+
         if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.withSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
                     formatMessageParameters(iLoggingEvent.getArgumentArray())));
@@ -279,6 +289,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.ravenFactory = ravenFactory;
     }
 
+    public void setRelease(String release) {
+        this.release = release;
+    }
     /**
      * Set the tags that should be sent along with the events.
      *

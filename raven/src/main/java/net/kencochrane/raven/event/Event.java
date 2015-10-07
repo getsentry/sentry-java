@@ -67,6 +67,10 @@ public class Event implements Serializable {
      */
     private String serverName;
     /**
+     * Identifies the version of the application.
+     */
+    private String release;
+    /**
      * A map or list of additional properties for this event.
      * <p>
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
@@ -163,6 +167,14 @@ public class Event implements Serializable {
 
     void setServerName(String serverName) {
         this.serverName = serverName;
+    }
+
+    public String getRelease() {
+        return release;
+    }
+
+    void setRelease(String release) {
+        this.release = release;
     }
 
     public Map<String, Object> getExtra() {

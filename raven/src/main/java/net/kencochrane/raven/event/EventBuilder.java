@@ -137,6 +137,17 @@ public class EventBuilder {
     }
 
     /**
+     * Sets application release version in the event.
+     *
+     * @param release application release version in the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withRelease(String release) {
+        event.setRelease(release);
+        return this;
+    }
+
+    /**
      * Sets the logger in the event.
      *
      * @param logger logger of the event.

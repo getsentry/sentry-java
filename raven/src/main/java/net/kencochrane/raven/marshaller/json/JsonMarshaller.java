@@ -21,7 +21,7 @@ import static com.google.common.io.BaseEncoding.base64;
 
 /**
  * Event marshaller using JSON to send the data.
- * <p>
+ * <p/>
  * The content can also be compressed with {@link DeflaterOutputStream} in which case the binary result is encoded
  * in base 64.
  */
@@ -62,6 +62,10 @@ public class JsonMarshaller implements Marshaller {
      * Identifies the host client from which the event was recorded.
      */
     public static final String SERVER_NAME = "server_name";
+    /**
+     * Identifies the host client from which the event was recorded.
+     */
+    public static final String RELEASE = "release";
     /**
      * A list of relevant modules and their versions.
      */
@@ -126,6 +130,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(CULPRIT, event.getCulprit());
         writeTags(generator, event.getTags());
         generator.writeStringField(SERVER_NAME, event.getServerName());
+        generator.writeStringField(RELEASE, event.getRelease());
         writeExtras(generator, event.getExtra());
         generator.writeStringField(CHECKSUM, event.getChecksum());
         writeInterfaces(generator, event.getSentryInterfaces());
