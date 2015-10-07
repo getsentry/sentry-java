@@ -1,6 +1,7 @@
 package net.kencochrane.raven.event;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -238,6 +240,28 @@ public class EventBuilder {
      */
     public EventBuilder withExtra(String extraName, Object extraValue) {
         event.getExtra().put(extraName, extraValue);
+        return this;
+    }
+
+    /**
+     * Sets event fingerprint, an array of strings used to dictate the deduplicating for this event.
+     *
+     * @param fingerprint fingerprint
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withFingerprint(String... fingerprint) {
+        event.setFingerprint(Lists.newArrayList(fingerprint));
+        return this;
+    }
+
+    /**
+     * Sets event fingerprint, a list of strings used to dictate the deduplicating for this event.
+     *
+     * @param fingerprint fingerprint
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withFingerprint(List<String> fingerprint) {
+        event.setFingerprint(fingerprint);
         return this;
     }
 

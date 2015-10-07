@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -79,6 +80,11 @@ public class Event implements Serializable {
      * by {@link #readObject(ObjectInputStream)} and {@link #writeObject(ObjectOutputStream)}.
      */
     private transient Map<String, Object> extra = new HashMap<>();
+
+    /**
+     * Event fingerprint, a list of strings used to dictate the deduplicating for this event.
+     */
+    private List<String> fingerprint;
     /**
      * Checksum for the event, allowing to group events with a similar checksum.
      */
@@ -183,6 +189,14 @@ public class Event implements Serializable {
 
     void setExtra(Map<String, Object> extra) {
         this.extra = extra;
+    }
+
+    public List<String> getFingerprint() {
+        return fingerprint;
+    }
+
+    public void setFingerprint(List<String> fingerprint) {
+        this.fingerprint = fingerprint;
     }
 
     public String getChecksum() {
