@@ -43,6 +43,7 @@ public class SentryAppenderFailuresTest {
     public void testRavenFailureDoesNotPropagate() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
+        sentryAppender.setMinLevel("ALL");
         new NonStrictExpectations() {{
             mockRaven.sendEvent((Event) any);
             result = new UnsupportedOperationException();

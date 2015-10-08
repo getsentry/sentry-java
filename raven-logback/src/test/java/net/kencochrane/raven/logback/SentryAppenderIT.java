@@ -25,9 +25,9 @@ public class SentryAppenderIT {
     }
 
     @Test
-    public void testInfoLog() throws Exception {
+    public void testWarnLog() throws Exception {
         assertThat(sentryStub.getEventCount(), is(0));
-        logger.info("This is a test");
+        logger.warn("This is a test");
         assertThat(sentryStub.getEventCount(), is(1));
     }
 
