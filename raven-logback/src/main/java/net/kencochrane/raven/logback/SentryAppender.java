@@ -58,6 +58,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String release;
     /**
+     * If set, only events with level = minLevel and up will be recorded.
+     */
+    protected Level minLevel = Level.WARN;
+    /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
@@ -134,6 +138,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         try {
             if (raven == null)
                 initRaven();
+
+            if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel))
+                return;
 
             Event event = buildEvent(iLoggingEvent);
             raven.sendEvent(event);
@@ -292,6 +299,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     public void setRelease(String release) {
         this.release = release;
     }
+
+    public void setMinLevel(String minLevel) {
+        this.minLevel = Level.toLevel(minLevel, Level.WARN);
+    }
+
     /**
      * Set the tags that should be sent along with the events.
      *

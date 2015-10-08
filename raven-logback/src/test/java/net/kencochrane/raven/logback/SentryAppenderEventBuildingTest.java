@@ -35,6 +35,7 @@ public class SentryAppenderEventBuildingTest {
     @Injectable
     private Context mockContext = null;
     private String mockExtraTag = "60f42409-c029-447d-816a-fb2722913c93";
+    private String mockMinLevel = "ALL";
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -42,6 +43,7 @@ public class SentryAppenderEventBuildingTest {
         sentryAppender = new SentryAppender(mockRaven);
         sentryAppender.setContext(mockContext);
         sentryAppender.setExtraTags(mockExtraTag);
+        sentryAppender.setMinLevel(mockMinLevel);
 
         new NonStrictExpectations() {{
             final BasicStatusManager statusManager = new BasicStatusManager();
