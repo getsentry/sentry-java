@@ -46,7 +46,7 @@ logging with log4j2 and Sentry:
       <appenders>
         <Raven name="Sentry">
           <dsn>
-            https://publicKey:secretKey@host:port/1?options
+            ___DSN___?options
           </dsn>
           <tags>
             tag1:value1,tag2:value2

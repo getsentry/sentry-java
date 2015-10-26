@@ -50,7 +50,7 @@ Alternatively in the ``log4j.xml`` file set:
 .. sourcecode:: xml
 
     <appender name="sentry" class="net.kencochrane.raven.log4j.SentryAppender">
-      <param name="dsn" value="https://publicKey:secretKey@host:port/1"/>
+      <param name="dsn" value="___DSN___"/>
       <filter class="org.apache.log4j.varia.LevelRangeFilter">
         <param name="levelMin" value="WARN"/>
       </filter>
