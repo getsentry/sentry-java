@@ -21,7 +21,7 @@ import static com.google.common.io.BaseEncoding.base64;
 
 /**
  * Event marshaller using JSON to send the data.
- * <p/>
+ * <p>
  * The content can also be compressed with {@link DeflaterOutputStream} in which case the binary result is encoded
  * in base 64.
  */
