@@ -22,7 +22,7 @@ public class StackTraceInterfaceBindingTest {
         final String methodName = "0cce55c9-478f-4386-8ede-4b6f000da3e6";
         final String className = "31b26f01-9b97-442b-9f36-8a317f94ad76";
         final int lineNumber = 1;
-        final StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, lineNumber);
+        final StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, "File.java", lineNumber);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
             result = new StackTraceElement[]{stackTraceElement};
@@ -36,7 +36,7 @@ public class StackTraceInterfaceBindingTest {
     @Test
     public void testFramesCommonWithEnclosing() throws Exception {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
-        final StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
+        final StackTraceElement stackTraceElement = new StackTraceElement("", "", "File.java", 0);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
             result = new StackTraceElement[]{stackTraceElement, stackTraceElement};
@@ -53,7 +53,7 @@ public class StackTraceInterfaceBindingTest {
     @Test
     public void testFramesCommonWithEnclosingDisabled() throws Exception {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
-        final StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
+        final StackTraceElement stackTraceElement = new StackTraceElement("", "", "File.java", 0);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
             result = new StackTraceElement[]{stackTraceElement, stackTraceElement};

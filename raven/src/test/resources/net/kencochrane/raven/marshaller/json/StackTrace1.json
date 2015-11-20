@@ -3,6 +3,7 @@
         "module": "31b26f01-9b97-442b-9f36-8a317f94ad76",
         "in_app": true,
         "function": "0cce55c9-478f-4386-8ede-4b6f000da3e6",
-        "lineno": 1
+        "lineno": 1,
+        "filename": "File.java"
     }
 ]}
