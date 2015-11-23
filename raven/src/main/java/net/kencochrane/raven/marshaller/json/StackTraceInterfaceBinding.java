@@ -33,8 +33,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private void writeFrame(JsonGenerator generator, StackTraceElement stackTraceElement, boolean commonWithEnclosing)
             throws IOException {
         generator.writeStartObject();
-        // Do not display the file name (irrelevant) as it replaces the module in the sentry interface.
-        //generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
+        generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
         generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getClassName());
         generator.writeBooleanField(IN_APP_PARAMETER, !(removeCommonFramesWithEnclosing && commonWithEnclosing)
                 && isFrameInApp(stackTraceElement));
