@@ -36,6 +36,10 @@ public class AsyncConnection implements Connection {
      */
     private final ShutDownHook shutDownHook = new ShutDownHook();
     /**
+     * Boolean used to check whether the graceful shutdown disabled or not.
+     */
+    private boolean gracefulShutdown;
+    /**
      * Boolean used to check whether the connection is still open or not.
      */
     private boolean closed;
@@ -56,8 +60,10 @@ public class AsyncConnection implements Connection {
             this.executorService = Executors.newSingleThreadExecutor();
         else
             this.executorService = executorService;
-        if (gracefulShutdown)
+        if (gracefulShutdown) {
+            this.gracefulShutdown = gracefulShutdown;
             addShutdownHook();
+        }
     }
 
     /**
@@ -89,7 +95,8 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void close() throws IOException {
-        Runtime.getRuntime().removeShutdownHook(shutDownHook);
+        if (gracefulShutdown)
+            Runtime.getRuntime().removeShutdownHook(shutDownHook);
         doClose();
     }
 
