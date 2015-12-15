@@ -36,7 +36,7 @@ public class AsyncConnection implements Connection {
      */
     private final ShutDownHook shutDownHook = new ShutDownHook();
     /**
-     * Boolean used to check whether the graceful shutdown disabled or not.
+     * Boolean that represents if graceful shutdown is enabled.
      */
     private boolean gracefulShutdown;
     /**
