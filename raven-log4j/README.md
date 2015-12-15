@@ -53,7 +53,7 @@ Alternatively in the `log4j.xml` file set:
 It's possible to add extra details to events captured by the Log4j module
 thanks to both [the MDC](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/MDC.html)
 and [the NDC](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/NDC.html) systems provided by Log4j are
-usable, allowing to attach extras information to the event.
+usable, allowing to attach extra information to the event.
 
 ### In practice
 ```java
