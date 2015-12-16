@@ -38,8 +38,6 @@ In the `logback.xml` file set:
         <!--<ravenFactory>net.kencochrane.raven.DefaultRavenFactory</ravenFactory>-->
         <!-- Optional, allows setting app release information -->
         <!-- <release>1.0.0</release>
-        <!-- Optional, events with level bellow minLevel won't be sent, defaults to WARN -->
-        <!-- <minLevel>ERROR</minLevel>
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>
