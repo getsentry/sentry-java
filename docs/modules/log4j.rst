@@ -114,10 +114,10 @@ Data. This allows them to be filtered within Sentry.
 
 .. sourcecode:: java
 
-    log4j.appender.SentryAppender.extraTags=User,OS
+    log4j.appender.SentryAppender.extraTags=Environment,OS
         void logWithExtras() {
             // MDC extras
-            MDC.put("User", "test user");
+            MDC.put("Environment", "Development");
             MDC.put("OS", "Linux");
 
             // This adds a message with extras and MDC keys declared in extraTags as tags to Sentry
