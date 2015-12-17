@@ -123,10 +123,11 @@ public class HttpConnection extends AbstractConnection {
             outputStream.close();
             connection.getInputStream().close();
         } catch (IOException e) {
-            String errorMessage;
-            if (connection.getErrorStream() != null)
-                errorMessage = getErrorMessageFromStream(connection.getErrorStream());
-            else
+            String errorMessage = null;
+            final InputStream errorStream = connection.getErrorStream();
+            if (errorStream != null)
+                errorMessage = getErrorMessageFromStream(errorStream);
+            if (null == errorMessage || errorMessage.isEmpty())
                 errorMessage = "An exception occurred while submitting the event to the sentry server.";
             throw new ConnectionException(errorMessage, e);
         } finally {
@@ -139,11 +140,15 @@ public class HttpConnection extends AbstractConnection {
         StringBuilder sb = new StringBuilder();
         try {
             String line;
-            while ((line = reader.readLine()) != null)
-                sb.append(line).append("\n");
-            //Remove last \n
-            sb.deleteCharAt(sb.length() - 1);
-
+            // ensure we do not add "\n" to the last line
+            boolean first = true;
+            while ((line = reader.readLine()) != null) {
+                if (!first) {
+                    sb.append("\n");
+                }
+                sb.append(line);
+                first = false;
+            }
         } catch (Exception e2) {
             logger.error("Exception while reading the error message from the connection.", e2);
         }
