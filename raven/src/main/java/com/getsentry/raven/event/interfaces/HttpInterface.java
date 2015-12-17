@@ -1,5 +1,8 @@
 package com.getsentry.raven.event.interfaces;
 
+import net.kencochrane.raven.event.helper.BasicRemoteAddressResolver;
+import net.kencochrane.raven.event.helper.RemoteAddressResolver;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -30,12 +33,17 @@ public class HttpInterface implements SentryInterface {
     private final String remoteUser;
     private final Map<String, Collection<String>> headers;
 
+    public HttpInterface(HttpServletRequest request) {
+        // This constructor is for compatibility reasons and should not be used.
+        this(request, new BasicRemoteAddressResolver());
+    }
+
     /**
      * Creates a an HTTP element for an {@link com.getsentry.raven.event.Event}.
      *
      * @param request Captured HTTP request to send to Sentry.
      */
-    public HttpInterface(HttpServletRequest request) {
+    public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver) {
         this.requestUrl = request.getRequestURL().toString();
         this.method = request.getMethod();
         this.parameters = new HashMap<>();
@@ -49,7 +57,7 @@ public class HttpInterface implements SentryInterface {
         } else {
             this.cookies = Collections.emptyMap();
         }
-        this.remoteAddr = request.getRemoteAddr();
+        this.remoteAddr = remoteAddressResolver.getRemoteAddress(request);
         this.serverName = request.getServerName();
         this.serverPort = request.getServerPort();
         this.localAddr = request.getLocalAddr();
