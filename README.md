@@ -83,6 +83,13 @@ Solutions exist for that problem:
  RavenFactory.registerFactory(new DefaultRavenFactory());
  ```
 
+## HTTP Request Context
+
+If the runtime environment utilizes Servlets, events that are created during
+the processing of an HTTP request will include additional contextual data about
+that active request, such as the URL, method, parameters, and other data. (This
+feature requires version 2.4 the Servlet API.)
+
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
 on the security and performance requirements.

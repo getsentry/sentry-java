@@ -66,10 +66,14 @@ public class DefaultRavenFactory extends RavenFactory {
         Raven raven = new Raven();
         raven.setConnection(createConnection(dsn));
         try {
-            Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
+            // `ServletRequestListener` was added in the Servlet 2.4 API, and
+            // is used as part of the `HttpEventBuilderHelper`, see:
+            // https://tomcat.apache.org/tomcat-5.5-doc/servletapi/
+            Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
-            logger.debug("It seems that the current environment doesn't provide access to servlets.");
+            logger.debug("The current environment doesn't provide access to servlets,"
+                         + "or provides an unsupported version.");
         }
         return raven;
     }
