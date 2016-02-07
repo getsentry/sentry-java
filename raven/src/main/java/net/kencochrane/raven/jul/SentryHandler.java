@@ -37,6 +37,12 @@ public class SentryHandler extends Handler {
      */
     protected String dsn;
     /**
+     * If true, <code>String.format()</code> is used to render parameterized log
+     * messages instead of <code>MessageFormat.format()</code>; Defaults to
+     * false.
+     */
+    protected boolean printfStyle;
+    /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
@@ -72,6 +78,10 @@ public class SentryHandler extends Handler {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setPrintfStyle(boolean printfStyle) {
+        this.printfStyle = printfStyle;
     }
 
     /**
@@ -129,6 +139,7 @@ public class SentryHandler extends Handler {
         String className = SentryHandler.class.getName();
         dsn = manager.getProperty(className + ".dsn");
         ravenFactory = manager.getProperty(className + ".ravenFactory");
+        printfStyle = Boolean.valueOf(manager.getProperty(className + ".printfStyle"));
         String tagsProperty = manager.getProperty(className + ".tags");
         tags = parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
@@ -191,7 +202,11 @@ public class SentryHandler extends Handler {
         if (record.getParameters() != null) {
             List<String> parameters = formatMessageParameters(record.getParameters());
             eventBuilder.withSentryInterface(new MessageInterface(message, parameters));
-            message = MessageFormat.format(message, record.getParameters());
+            if (printfStyle) {
+                message = String.format(message, record.getParameters());
+            } else {
+                message = MessageFormat.format(message, record.getParameters());
+            }
         }
         eventBuilder.withMessage(message);
 
