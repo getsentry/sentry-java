@@ -203,7 +203,11 @@ public class SentryHandler extends Handler {
             List<String> parameters = formatMessageParameters(record.getParameters());
             eventBuilder.withSentryInterface(new MessageInterface(message, parameters));
             if (printfStyle) {
-                message = String.format(message, record.getParameters());
+                try {
+                    message = String.format(message, record.getParameters());
+                } catch (MissingFormatArgumentException e) {
+                    // use unformatted message
+                }
             } else {
                 message = MessageFormat.format(message, record.getParameters());
             }
