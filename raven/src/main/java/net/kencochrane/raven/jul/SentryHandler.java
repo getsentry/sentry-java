@@ -37,6 +37,12 @@ public class SentryHandler extends Handler {
      */
     protected String dsn;
     /**
+     * If true, <code>String.format()</code> is used to render parameterized log
+     * messages instead of <code>MessageFormat.format()</code>; Defaults to
+     * false.
+     */
+    protected boolean printfStyle;
+    /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
@@ -68,6 +74,28 @@ public class SentryHandler extends Handler {
      */
     public SentryHandler(Raven raven) {
         this.raven = raven;
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
+    }
+
+    public void setPrintfStyle(boolean printfStyle) {
+        this.printfStyle = printfStyle;
+    }
+
+    /**
+     * Populates the tags map by parsing the given tags property string.
+     * @param tagsProperty comma-delimited key-value pairs, e.g.
+     *                     "tag1:value1,tag2:value2".
+     */
+    public void setTags(String tagsProperty) {
+        this.tags = parseTags(tagsProperty);
+    }
+
+    private Map<String, String> parseTags(String tagsProperty) {
+        return tagsProperty == null ? Collections.<String, String>emptyMap()
+                : Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
     }
 
     /**
@@ -111,9 +139,9 @@ public class SentryHandler extends Handler {
         String className = SentryHandler.class.getName();
         dsn = manager.getProperty(className + ".dsn");
         ravenFactory = manager.getProperty(className + ".ravenFactory");
+        printfStyle = Boolean.valueOf(manager.getProperty(className + ".printfStyle"));
         String tagsProperty = manager.getProperty(className + ".tags");
-        if (tagsProperty != null)
-            tags = Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
+        tags = parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
         if (extraTagsProperty != null)
             extraTags = new HashSet<>(Arrays.asList(extraTagsProperty.split(",")));
@@ -174,7 +202,16 @@ public class SentryHandler extends Handler {
         if (record.getParameters() != null) {
             List<String> parameters = formatMessageParameters(record.getParameters());
             eventBuilder.withSentryInterface(new MessageInterface(message, parameters));
-            message = MessageFormat.format(message, record.getParameters());
+            if (printfStyle) {
+                try {
+                    message = String.format(message, record.getParameters());
+                } catch (MissingFormatArgumentException e) {
+                    // use unformatted message
+                    message = record.getMessage();
+                }
+            } else {
+                message = MessageFormat.format(message, record.getParameters());
+            }
         }
         eventBuilder.withMessage(message);
 
