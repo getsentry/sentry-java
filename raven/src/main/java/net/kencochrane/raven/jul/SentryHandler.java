@@ -207,6 +207,7 @@ public class SentryHandler extends Handler {
                     message = String.format(message, record.getParameters());
                 } catch (MissingFormatArgumentException e) {
                     // use unformatted message
+                    message = record.getMessage();
                 }
             } else {
                 message = MessageFormat.format(message, record.getParameters());
