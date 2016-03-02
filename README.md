@@ -117,6 +117,30 @@ naive and ignore the hostname verification:
 
     naive+https://public:private@host:port/1
 
+### Proxying HTTP(S) connections
+If your application sends outbound requests through an HTTP proxy, you can use
+JVM networking properties to configure the proxy information.
+
+E.g.
+
+`java \
+  # if you are using the HTTP protocol \
+  -Dhttp.proxyHost=proxy.example.com \
+  -Dhttp.proxyPort=8080 \
+  \
+  # if you are using the HTTPS protocol \
+  -Dhttps.proxyHost=proxy.example.com \
+  -Dhttps.proxyPort=8080 \
+  \
+  # relevant to both HTTP and HTTPS
+  -Dhttp.nonProxyHosts=”localhost|host.example.com” \
+  \
+  MyApp`
+
+See [Java Networking and
+Proxies](http://docs.oracle.com/javase/8/docs/technotes/guides/net/proxies.html)
+for more information about the proxy properties.
+
 ## Options
 It is possible to enable some options by adding data to the query string of the
 DSN:
