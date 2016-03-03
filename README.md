@@ -16,13 +16,13 @@ While it's **strongly recommended to use one of the supported logging
 frameworks** to capture and send messages to Sentry, a it is possible to do so
 manually with the main project [raven](raven).
 
-Raven supports both HTTP(S) as transport protocols to the Sentry
+Raven supports both HTTP and HTTPS as transport protocols to the Sentry
 instance.
 
 Support for [Google App Engine](https://appengine.google.com/) is provided in [raven-appengine](raven-appengine)
 
 ## Sentry Protocol and Raven versions
-Since Sentry 2.0, the major version of raven matches the version of the Sentry protocol.
+Since Sentry 2.0, the major version of Raven matches the version of the Sentry protocol.
 
 | Raven version | Protocol version | Sentry version |
 | ------------- | ---------------- | -------------- |
@@ -38,7 +38,7 @@ Each release of Sentry supports the last two version of the protocol
 the two last stable versions of Raven are actively maintained.
 
 ### Snapshot versions
-While the stable versions of raven are available on the
+While the stable versions of Raven are available on the
 [central Maven Repository](https://search.maven.org), newer (but less stable)
 versions (AKA snapshots) are available in Sonatype's snapshot repository.
 
@@ -59,7 +59,6 @@ To use it with maven, add the following repository:
 ```
 
 ## Android
-
 Raven works on Android, and relies on the
 [ServiceLoader](https://developer.android.com/reference/java/util/ServiceLoader.html)
 system which uses the content of `META-INF/services`.
@@ -67,24 +66,23 @@ This is used to declare the `RavenFactory` implementations (to allow more
 control over the automatically generated instances of `Raven`) in
 `META-INF/services/net.kencochrane.raven.RavenFactory`.
 
-Unfortunately, when the APK is build, the content of `META-INF/services` of
-the dependencies is lost, this prevent Raven to work properly.
-Solutions exist for that problem:
+Unfortunately, when the APK is built, the content of `META-INF/services` in
+the dependencies is lost, this prevents Raven from working properly. Some
+solutions exist:
 
- - Use [maven-android-plugin](https://code.google.com/p/maven-android-plugin/)
+ - Use [maven-android-plugin](http://simpligility.github.io/android-maven-plugin/)
  which has already solved this
-[problem](https://code.google.com/p/maven-android-plugin/issues/detail?id=97)
- - Create manually a `META-INF/services/net.kencochrane.raven.RavenFactory` for
- the project which will contain the  canonical name of of implementation of
+[problem](https://web.archive.org/web/20150523160437/http://code.google.com/p/maven-android-plugin/issues/detail?id=97)
+ - Manually create a `META-INF/services/net.kencochrane.raven.RavenFactory` for
+ the project which will contain the canonical name of the implementation of
  `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
- - Register manually the `RavenFactory` when the application starts:
+ - Manually register the `RavenFactory` when the application starts:
 
  ```java
  RavenFactory.registerFactory(new DefaultRavenFactory());
  ```
 
 ## HTTP Request Context
-
 If the runtime environment utilizes Servlets, events that are created during
 the processing of an HTTP request will include additional contextual data about
 that active request, such as the URL, method, parameters, and other data. (This
@@ -95,7 +93,7 @@ It is possible to send events to Sentry over different protocols, depending
 on the security and performance requirements.
 
 ### HTTP
-The most common way send events to Sentry is through HTTP, this can be done by
+The most common way to send events to Sentry is via HTTP, this can be done by
 using a DSN of this form:
 
     http://public:private@host:port/1
@@ -103,7 +101,7 @@ using a DSN of this form:
 If not provided, the port will default to `80`.
 
 ### HTTPS
-It is possible to use an encrypted connection to Sentry using HTTPS:
+It is possible to use an encrypted connection to Sentry via HTTPS:
 
     https://public:private@host:port/1
 
@@ -112,8 +110,8 @@ If not provided, the port will default to `443`.
 ### HTTPS (naive)
 If the certificate used over HTTPS is a wildcard certificate (which is not
 handled by every version of Java), and the certificate isn't added to the
-truststore, it is possible to add a protocol setting to tell the client to be
-naive and ignore the hostname verification:
+truststore, you can add a protocol setting to tell the client to be
+naive and ignore hostname verification:
 
     naive+https://public:private@host:port/1
 
@@ -153,7 +151,7 @@ The option to do so is `raven.async.gracefulshutdown`:
     http://public:private@host:port/1?raven.async.gracefulshutdown=false
 
 #### Queue size (advanced)
-The default queue used to store the not yet processed events doesn't have a
+The default queue used to store unprocessed events doesn't have a
 limit.
 Depending on the environment (if the memory is sparse) it is important to be
 able to control the size of that queue to avoid memory issues.
@@ -167,7 +165,7 @@ most recent events will be stored and processed as soon as the server is back up
 
 #### Threads count (advanced)
 By default the thread pool used by the async connection contains one thread per
-processor available to the JVM (more threads wouldn't be useful).
+processor available to the JVM.
 
 It's possible to manually set the number of threads (for example if you want
 only one thread) with the option `raven.async.threads`:
@@ -175,8 +173,8 @@ only one thread) with the option `raven.async.threads`:
     http://public:private@host:port/1?raven.async.threads=1
 
 #### Threads priority (advanced)
-As in most cases sending logs to Sentry isn't as important as an application
-running smoothly, the threads have a
+In most cases sending logs to Sentry isn't as important as an application
+running smoothly, so the threads have a
 [minimal priority](http://docs.oracle.com/javase/6/docs/api/java/lang/Thread.html#MIN_PRIORITY).
 
 It is possible to customise this value to increase the priority of those threads
@@ -212,7 +210,7 @@ Usually when a StackTrace is printed, the result looks like this:
 Some frames are replaced by the `... N more` line as they are the same frames
 as in the enclosing exception.
 
-To enable a similar behaviour from raven use the `raven.stacktrace.hidecommon` option.
+To enable a similar behaviour from Raven use the `raven.stacktrace.hidecommon` option.
 
     http://public:private@host:port/1?raven.stacktrace.hidecommon
 
@@ -236,12 +234,11 @@ Currently this is not configurable (see #49) and some packages are ignored by de
 ### Compression
 By default the content sent to Sentry is compressed and encoded in base64 before
 being sent.
-This operation allows to send a smaller amount of data for each event.
-However compressing and encoding the data adds a CPU and memory overhead which
+However, compressing and encoding the data adds a small CPU and memory hit which
 might not be useful if the connection to Sentry is fast and reliable.
 
-Depending on the limitations of the project (ie: a mobile application with a
-limited connection, Sentry hosted on an external network), it can be interesting
+Depending on the limitations of the project (e.g. a mobile application with a
+limited connection, Sentry hosted on an external network), it can be useful
 to compress the data beforehand or not.
 
 It's possible to manually enable/disable the compression with the option
@@ -250,10 +247,10 @@ It's possible to manually enable/disable the compression with the option
     http://public:private@host:port/1?raven.compression=false
 
 ### Timeout (advanced)
-To avoid blocking the thread because of a connection taking too much time, a
-timeout can be set by the connection.
+A timeout is set to avoid blocking Raven threads because establishing a
+connection is taking too long.
 
-By default the connection will set up its own timeout, but it's possible to
-manually set one with `raven.timeout` (in milliseconds):
+It's possible to manually set the timeout length with `raven.timeout`
+(in milliseconds):
 
     http://public:private@host:port/1?raven.timeout=10000
