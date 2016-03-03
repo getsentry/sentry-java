@@ -43,6 +43,12 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected String dsn;
     /**
+     * Release to be sent to sentry.
+     * <p>
+     * Might be null in which case no release is sent.
+     */
+    protected String release;
+    /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
@@ -165,6 +171,10 @@ public class SentryAppender extends AppenderSkeleton {
                 .withLevel(formatLevel(loggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
+        if (release != null && release.trim().length() > 0) {
+            eventBuilder.withRelease(release.trim());
+        }
+
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
@@ -209,6 +219,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setRelease(String release) {
+        this.release = release;
     }
 
     /**
