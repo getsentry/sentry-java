@@ -119,9 +119,10 @@ naive and ignore hostname verification:
 If your application sends outbound requests through an HTTP proxy, you can use
 JVM networking properties to configure the proxy information.
 
-E.g.
+For example,
 
-`java \
+```
+java \
   # if you are using the HTTP protocol \
   -Dhttp.proxyHost=proxy.example.com \
   -Dhttp.proxyPort=8080 \
@@ -133,7 +134,8 @@ E.g.
   # relevant to both HTTP and HTTPS
   -Dhttp.nonProxyHosts=”localhost|host.example.com” \
   \
-  MyApp`
+  MyApp
+```
 
 See [Java Networking and
 Proxies](http://docs.oracle.com/javase/8/docs/technotes/guides/net/proxies.html)
