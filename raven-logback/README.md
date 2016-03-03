@@ -8,14 +8,14 @@ for logback to send the logged events to Sentry.
 ### Maven
 ```xml
 <dependency>
-    <groupId>net.kencochrane.raven</groupId>
+    <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-logback</artifactId>
-    <version>6.0.0</version>
+    <version>7.0.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-logback%7C6.0.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C7.0.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
@@ -31,11 +31,11 @@ In the `logback.xml` file set:
 
 ```xml
 <configuration>
-    <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
+    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
         <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
         <tags>tag1:value1,tag2:value2</tags>
         <!-- Optional, allows to select the ravenFactory -->
-        <!--<ravenFactory>net.kencochrane.raven.DefaultRavenFactory</ravenFactory>-->
+        <!--<ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>-->
         <!-- Optional, allows setting app release information -->
         <!-- <release>1.0.0</release>
     </appender>

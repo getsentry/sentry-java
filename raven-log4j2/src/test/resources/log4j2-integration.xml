@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
+<configuration packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
     <appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="[RAVEN] [%-5p] %c - %m%n%throwable{none}"/>
@@ -11,7 +11,7 @@
             <extraTags>
                 User,OS
             </extraTags>
-            <ravenFactory>net.kencochrane.raven.DefaultRavenFactory</ravenFactory>
+            <ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>
         </Raven>
     </appenders>
 

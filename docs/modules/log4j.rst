@@ -17,9 +17,9 @@ If you want to use Maven you can install Raven-Log4j as dependency:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>net.kencochrane.raven</groupId>
+        <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-log4j</artifactId>
-        <version>6.0.0</version>
+        <version>7.0.0</version>
     </dependency>
 
 If you manually want to manage your dependencies:
@@ -39,17 +39,17 @@ logging with log4j and Sentry:
 .. sourcecode:: ini
 
     log4j.rootLogger=WARN, SentryAppender
-    log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
+    log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
     log4j.appender.SentryAppender.dsn=___DSN___
     log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
     # Optional, allows to select the ravenFactory
-    #log4j.appender.SentryAppender.ravenFactory=net.kencochrane.raven.DefaultRavenFactory
+    #log4j.appender.SentryAppender.ravenFactory=com.getsentry.raven.DefaultRavenFactory
 
 Alternatively in the ``log4j.xml`` file set:
 
 .. sourcecode:: xml
 
-    <appender name="sentry" class="net.kencochrane.raven.log4j.SentryAppender">
+    <appender name="sentry" class="com.getsentry.raven.log4j.SentryAppender">
       <param name="dsn" value="___DSN___"/>
       <filter class="org.apache.log4j.varia.LevelRangeFilter">
         <param name="levelMin" value="WARN"/>

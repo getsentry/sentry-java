@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+
+"""
+This script adjusts the existing ~/.m2/settings.xml on Travis so that it includes
+the Sonatype server, username and password for SNAPSHOT deploys. The user and password
+come from secure environment variables in .travis.yml
+"""
+
+
 import sys
 import os
 import os.path
@@ -19,7 +27,7 @@ if not serversNodes:
   settings.appendChild(serversNode)
 else:
   serversNode = serversNodes[0]
-  
+
 sonatypeServerNode = m2.createElement("server")
 sonatypeServerId = m2.createElement("id")
 sonatypeServerUser = m2.createElement("username")
@@ -38,7 +46,7 @@ sonatypeServerNode.appendChild(sonatypeServerUser)
 sonatypeServerNode.appendChild(sonatypeServerPass)
 
 serversNode.appendChild(sonatypeServerNode)
-  
+
 m2Str = m2.toxml()
 f = open(homedir + '/.m2/mySettings.xml', 'w')
 f.write(m2Str)

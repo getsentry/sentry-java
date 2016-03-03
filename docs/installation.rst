@@ -51,7 +51,7 @@ Raven works on Android, and relies on the `ServiceLoader
 system which uses the content of ``META-INF/services``. This is used to
 declare the ``RavenFactory`` implementations (to allow more control over
 the automatically generated instances of ``Raven``) in
-``META-INF/services/net.kencochrane.raven.RavenFactory``.
+``META-INF/services/com.getsentry.raven.RavenFactory``.
 
 Unfortunately, when the APK is build, the content of ``META-INF/services`` of
 the dependencies is lost, this prevent Raven to work properly. Solutions
@@ -61,9 +61,9 @@ exist for that problem:
     <https://code.google.com/p/maven-android-plugin/>`_ which has already
     solved `this problem <https://code.google.com/p/maven-android-plugin/issues/detail?id=97>`_
 *   Create manually a
-    ``META-INF/services/net.kencochrane.raven.RavenFactory`` for the
+    ``META-INF/services/com.getsentry.raven.RavenFactory`` for the
     project which will contain the canonical name of of implementation of
-    ``RavenFactory`` (ie. ``net.kencochrane.raven.DefaultRavenFactory``).
+    ``RavenFactory`` (ie. ``com.getsentry.raven.DefaultRavenFactory``).
 *   Register manually the ``RavenFactory`` when the application starts:
 
     .. sourcecode:: java

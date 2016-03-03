@@ -17,9 +17,9 @@ If you want to use Maven you can install Raven-Log4j2 as dependency:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>net.kencochrane.raven</groupId>
+        <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-log4j2</artifactId>
-        <version>6.0.0</version>
+        <version>7.0.0</version>
     </dependency>
 
 If you manually want to manage your dependencies:
@@ -42,7 +42,7 @@ logging with log4j2 and Sentry:
 .. sourcecode:: java
 
     <?xml version="1.0" encoding="UTF-8"?>
-    <configuration status="warn" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
+    <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
       <appenders>
         <Raven name="Sentry">
           <dsn>
@@ -56,7 +56,7 @@ logging with log4j2 and Sentry:
           -->
           <!--
           <ravenFactory>
-            net.kencochrane.raven.DefaultRavenFactory
+            com.getsentry.raven.DefaultRavenFactory
           </ravenFactory>
           -->
         </Raven>

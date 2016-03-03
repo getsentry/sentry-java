@@ -23,9 +23,9 @@ If you want to use Maven you can install Raven-AppEngine as dependency:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>net.kencochrane.raven</groupId>
+        <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-appengine</artifactId>
-        <version>6.0.0</version>
+        <version>7.0.0</version>
     </dependency>
 
 Usage
@@ -38,7 +38,7 @@ The queue size and thread options will not be used as they are specific to
 the default multithreaded system.
 
 It is necessary to force the raven factory name to
-``net.kencochrane.raven.appengine.AppEngineRavenFactory``.
+``com.getsentry.raven.appengine.AppEngineRavenFactory``.
 
 Queue Name
 ----------

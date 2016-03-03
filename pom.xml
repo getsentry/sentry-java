@@ -8,9 +8,9 @@
         <version>7</version>
     </parent>
 
-    <groupId>net.kencochrane.raven</groupId>
+    <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-all</artifactId>
-    <version>6.0.1-SNAPSHOT</version>
+    <version>7.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Raven-Java</name>
@@ -41,6 +41,13 @@
             <name>Colin Hebert</name>
             <email>hebert.colin@gmail.com</email>
             <url>https://github.com/ColinHebert</url>
+        </developer>
+        <developer>
+            <id>bretthoerner</id>
+            <name>Brett Hoerner</name>
+            <email>brett@sentry.com</email>
+            <organization>Sentry</organization>
+            <organizationUrl>https://getsentry.com/</organizationUrl>
         </developer>
     </developers>
     <contributors>

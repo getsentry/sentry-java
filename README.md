@@ -1,6 +1,6 @@
 # Raven
 
-[![Build Status](https://travis-ci.org/getsentry/raven-java.svg?branch=master)](https://travis-ci.org/getsentry/raven-java) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/net.kencochrane.raven/raven-all/badge.svg)](https://maven-badges.herokuapp.com/maven-central/net.kencochrane.raven/raven-all)
+[![Build Status](https://travis-ci.org/getsentry/raven-java.svg?branch=master)](https://travis-ci.org/getsentry/raven-java) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.getsentry.raven/raven-all/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.getsentry.raven/raven-all)
 
 Raven is the Java client for [Sentry](https://www.getsentry.com/).
 Raven relies on the most popular logging libraries to capture and convert logs
@@ -21,26 +21,16 @@ instance.
 
 Support for [Google App Engine](https://appengine.google.com/) is provided in [raven-appengine](raven-appengine)
 
-## Sentry Protocol and Raven versions
-Since Sentry 2.0, the major version of Raven matches the version of the Sentry protocol.
+## Maven
+Stable versions of Raven are available on the
+[central Maven Repository](https://search.maven.org) under the `com.getsentry`
+groupId. (NOTE: This is change from the previous `net.kencochrane` groupId)
 
-| Raven version | Protocol version | Sentry version |
-| ------------- | ---------------- | -------------- |
-| Raven 2.x(old)| V2               | >= 2.0         |
-| Raven 3.x(old)| V3               | >= 5.1         |
-| Raven 4.x(old)| V4               | >= 6.0         |
-| Raven 5.x     | V5               | >= 6.4         |
-| Raven 6.x     | V6               | >= 7.0         |
-
-
-Each release of Sentry supports the last two version of the protocol
-(i.e. Sentry 6.4.2 supports both the protocol V5 and V4), for this reason, only
-the two last stable versions of Raven are actively maintained.
+Please see individual module `README`s for more information.
 
 ### Snapshot versions
-While the stable versions of Raven are available on the
-[central Maven Repository](https://search.maven.org), newer (but less stable)
-versions (AKA snapshots) are available in Sonatype's snapshot repository.
+Newer (but less stable) versions (AKA snapshots) are available in Sonatype's
+snapshot repository.
 
 To use it with maven, add the following repository:
 
@@ -64,7 +54,7 @@ Raven works on Android, and relies on the
 system which uses the content of `META-INF/services`.
 This is used to declare the `RavenFactory` implementations (to allow more
 control over the automatically generated instances of `Raven`) in
-`META-INF/services/net.kencochrane.raven.RavenFactory`.
+`META-INF/services/com.getsentry.raven.RavenFactory`.
 
 Unfortunately, when the APK is built, the content of `META-INF/services` in
 the dependencies is lost, this prevents Raven from working properly. Some
@@ -73,9 +63,9 @@ solutions exist:
  - Use [maven-android-plugin](http://simpligility.github.io/android-maven-plugin/)
  which has already solved this
 [problem](https://web.archive.org/web/20150523160437/http://code.google.com/p/maven-android-plugin/issues/detail?id=97)
- - Manually create a `META-INF/services/net.kencochrane.raven.RavenFactory` for
+ - Manually create a `META-INF/services/com.getsentry.raven.RavenFactory` for
  the project which will contain the canonical name of the implementation of
- `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
+ `RavenFactory` (ie. `com.getsentry.raven.DefaultRavenFactory`).
  - Manually register the `RavenFactory` when the application starts:
 
  ```java

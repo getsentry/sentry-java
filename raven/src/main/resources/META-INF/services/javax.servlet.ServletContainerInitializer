@@ -1,1 +1,1 @@
-net.kencochrane.raven.servlet.RavenServletContainerInitializer
+com.getsentry.raven.servlet.RavenServletContainerInitializer
