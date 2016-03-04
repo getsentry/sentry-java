@@ -13,14 +13,14 @@ __This module is not useful outside of Google App Engine.__
 ### Maven
 ```xml
 <dependency>
-    <groupId>net.kencochrane.raven</groupId>
+    <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-appengine</artifactId>
-    <version>6.0.0</version>
+    <version>7.0.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-appengine%7C6.0.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-appengine%7C7.0.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
@@ -33,7 +33,7 @@ This module provides a new `RavenFactory` which replaces the default async syste
 
 The queue size and thread options will not be used as they are specific to the default multithreaded system.
 
-It is necessary to force the raven factory name to `net.kencochrane.raven.appengine.AppEngineRavenFactory`.
+It is necessary to force the raven factory name to `com.getsentry.raven.appengine.AppEngineRavenFactory`.
 
 ### Queue name
 

@@ -8,14 +8,14 @@ for log4j to send the logged events to Sentry.
 ### Maven
 ```xml
 <dependency>
-    <groupId>net.kencochrane.raven</groupId>
+    <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-log4j</artifactId>
-    <version>6.0.0</version>
+    <version>7.0.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-log4j%7C6.0.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.0.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
@@ -31,17 +31,17 @@ In the `log4j.properties` file set:
 
 ```properties
 log4j.rootLogger=WARN, SentryAppender
-log4j.appender.SentryAppender=net.kencochrane.raven.log4j.SentryAppender
+log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
 log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
 log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
 # Optional, allows to select the ravenFactory
-#log4j.appender.SentryAppender.ravenFactory=net.kencochrane.raven.DefaultRavenFactory
+#log4j.appender.SentryAppender.ravenFactory=com.getsentry.raven.DefaultRavenFactory
 ```
 
 Alternatively in the `log4j.xml` file set:
 
 ```
-  <appender name="sentry" class="net.kencochrane.raven.log4j.SentryAppender">
+  <appender name="sentry" class="com.getsentry.raven.log4j.SentryAppender">
     <param name="dsn" value="https://publicKey:secretKey@host:port/1"/>
     <filter class="org.apache.log4j.varia.LevelRangeFilter">
       <param name="levelMin" value="WARN"/>

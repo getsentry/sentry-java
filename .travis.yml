@@ -8,7 +8,7 @@ cache:
     - $HOME/.m2
 env:
   global:
-    - secure: "zMIHdOO4YgG/JRV7ehaETA0HVOxKgnqanHy3B9Pva4zBBi/N7egeFXFhupvFzsP87DcwJ3+2j7epZCJLz4VTHB0ipwB9MkUld1Ru01ipw0+Q8LIbpRbjOuxYFUyrWgZocU3LhE3blsx41m6DCBFDgyjLjt2Ls3ZOmW9XoFDjeGU="
-    - secure: "DjtLq0ox97khmljLMUJGcEE77430uddUJFwPHxYtajQjXwz4AVQ2Wj2zTzUTLmHmxJ8Cuq4i+7LXsMApDfW2yUUlK2naWuknvSBFLOWa+HedSXodsZC3I937V4DGFB0v1gLxsOxuCCa50erB0y8Cc89hdDL8Xa1EHldKQvqOx5M="
+    - secure: "Xs3g5ZOMymPp0EvxF0T0tk5xMaV3htMPii5uDS17z9wDWYg7hj78mrP2cFea0ZjIqIjENG7YuxIjw34yb7507pvIxv8v+QvSkwlzVz4XJNzh2w1gbB2C+oVvbmbFd0A2Pmpf3jvkey6Tk5jhW7lxNVAZ7QzONuAf66iWdi6bwSg="
+    - secure: "PBz5Jjoaf33a+Iqv5eJsFHbCYP1ZdeiQvrQBH7hJK5/Kdrbn4GCrDx+RkA58ZC8i8ZHfsW2MkMuD7RphcrgHuB3UwcvHwUgrEZaV1/ypIOe5O8CQ4Z0gkHCj2Ei/dsL3fpDU8WuPJSLa13tsMoQTdGaOhluCuSXpuArx3B3gX28="
 after_success:
   - "{ [[ $TRAVIS_BRANCH == 'master' ]] || [[ $TRAVIS_BRANCH == raven-*.x ]]; } && { python .travis/addServer.py; mvn clean deploy --settings $HOME/.m2/mySettings.xml; };"

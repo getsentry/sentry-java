@@ -1,0 +1,4 @@
+Version 7.0.0
+-------------
+
+- Changed Maven groupId to ``com.getsentry``

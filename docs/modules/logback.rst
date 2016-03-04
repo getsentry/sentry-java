@@ -14,9 +14,9 @@ If you want to use Maven you can install Raven-Logback as dependency:
 .. sourcecode:: xml
 
     <dependency>
-      <groupId>net.kencochrane.raven</groupId>
+      <groupId>com.getsentry.raven</groupId>
       <artifactId>raven-logback</artifactId>
-      <version>6.0.0</version>
+      <version>7.0.0</version>
     </dependency>
 
 - :doc:`raven dependencies <raven>`
@@ -34,11 +34,11 @@ In the ``logback.xml`` file set:
 .. sourcecode:: xml
 
     <configuration>
-      <appender name="Sentry" class="net.kencochrane.raven.logback.SentryAppender">
+      <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
         <dsn>___DSN___?options</dsn>
         <tags>tag1:value1,tag2:value2</tags>
         <!-- Optional, allows to select the ravenFactory -->
-        <!--<ravenFactory>net.kencochrane.raven.DefaultRavenFactory</ravenFactory>-->
+        <!--<ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>-->
       </appender>
       <root level="warn">
         <appender-ref ref="Sentry"/>

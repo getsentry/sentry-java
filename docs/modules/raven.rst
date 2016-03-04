@@ -17,9 +17,9 @@ If you want to use Maven you can install Raven as dependency:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>net.kencochrane.raven</groupId>
+        <groupId>com.getsentry.raven</groupId>
         <artifactId>raven</artifactId>
-        <version>6.0.0</version>
+        <version>7.0.0</version>
     </dependency>
 
 If you manually want to manage your dependencies:
@@ -41,11 +41,11 @@ following configuration (``logging.properties``) gets you started:
 .. sourcecode:: ini
 
     .level=WARN
-    handlers=net.kencochrane.raven.jul.SentryHandler
-    net.kencochrane.raven.jul.SentryHandler.dsn=___DSN___
-    net.kencochrane.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
+    handlers=com.getsentry.raven.jul.SentryHandler
+    com.getsentry.raven.jul.SentryHandler.dsn=___DSN___
+    com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
     # Optional, allows to select the ravenFactory
-    #net.kencochrane.raven.jul.SentryHandler.ravenFactory=net.kencochrane.raven.DefaultRavenFactory
+    #com.getsentry.raven.jul.SentryHandler.ravenFactory=com.getsentry.raven.DefaultRavenFactory
 
 When starting your application, add the ``java.util.logging.config.file`` to
 the system properties, with the full path to the ``logging.properties`` as
@@ -98,8 +98,8 @@ specify the value of each field sent to Sentry:
 
 .. sourcecode:: java
 
-    import net.kencochrane.raven.Raven;
-    import net.kencochrane.raven.RavenFactory;
+    import com.getsentry.raven.Raven;
+    import com.getsentry.raven.RavenFactory;
 
     public class MyClass {
         private static Raven raven;
@@ -137,12 +137,12 @@ For more complex messages, it will be necessary to build an ``Event`` with the
 
 .. sourcecode:: java
 
-    import net.kencochrane.raven.Raven;
-    import net.kencochrane.raven.RavenFactory;
-    import net.kencochrane.raven.event.Event;
-    import net.kencochrane.raven.event.EventBuilder;
-    import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-    import net.kencochrane.raven.event.interfaces.MessageInterface;
+    import com.getsentry.raven.Raven;
+    import com.getsentry.raven.RavenFactory;
+    import com.getsentry.raven.event.Event;
+    import com.getsentry.raven.event.EventBuilder;
+    import com.getsentry.raven.event.interfaces.ExceptionInterface;
+    import com.getsentry.raven.event.interfaces.MessageInterface;
 
     public class MyClass {
         private static Raven raven;
@@ -156,7 +156,7 @@ For more complex messages, it will be necessary to build an ``Event`` with the
             raven = RavenFactory.ravenInstance();
 
             // Advanced: To specify the ravenFactory used
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), "net.kencochrane.raven.DefaultRavenFactory");
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), "com.getsentry.raven.DefaultRavenFactory");
         }
 
         void logSimpleMessage() {

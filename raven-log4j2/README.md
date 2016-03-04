@@ -8,14 +8,14 @@ for Log4j 2 to send the logged events to Sentry.
 ### Maven
 ```xml
 <dependency>
-    <groupId>net.kencochrane.raven</groupId>
+    <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-log4j2</artifactId>
-    <version>6.0.0</version>
+    <version>7.0.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven-log4j2%7C6.0.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j2%7C7.0.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
@@ -33,7 +33,7 @@ In the `log4j2.xml` file set:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration status="warn" packages="org.apache.logging.log4j.core,net.kencochrane.raven.log4j2">
+<configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
     <appenders>
         <Raven name="Sentry">
             <dsn>
@@ -47,7 +47,7 @@ In the `log4j2.xml` file set:
             -->
             <!--
             <ravenFactory>
-                net.kencochrane.raven.DefaultRavenFactory
+                com.getsentry.raven.DefaultRavenFactory
             </ravenFactory>
             -->
         </Raven>
