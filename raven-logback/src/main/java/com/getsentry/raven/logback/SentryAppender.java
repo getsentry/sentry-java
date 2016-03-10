@@ -17,6 +17,7 @@ import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.MessageInterface;
 import com.getsentry.raven.event.interfaces.SentryException;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
+import com.google.common.base.Strings;
 
 import java.util.*;
 
@@ -181,8 +182,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .withLevel(formatLevel(iLoggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
-        if (this.release != null) {
-            eventBuilder.withRelease(this.release);
+        if (!Strings.isNullOrEmpty(release)) {
+            eventBuilder.withRelease(release.trim());
         }
 
         if (iLoggingEvent.getArgumentArray() != null) {

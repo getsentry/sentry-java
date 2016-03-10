@@ -10,6 +10,7 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
+import com.google.common.base.Strings;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.spi.ErrorCode;
@@ -42,6 +43,12 @@ public class SentryAppender extends AppenderSkeleton {
      * Might be null in which case the DSN should be detected automatically.
      */
     protected String dsn;
+    /**
+     * Release to be sent to sentry.
+     * <p>
+     * Might be null in which case no release is sent.
+     */
+    protected String release;
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
@@ -165,6 +172,10 @@ public class SentryAppender extends AppenderSkeleton {
                 .withLevel(formatLevel(loggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
+        if (!Strings.isNullOrEmpty(release)) {
+            eventBuilder.withRelease(release.trim());
+        }
+
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
@@ -209,6 +220,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setRelease(String release) {
+        this.release = release;
     }
 
     /**

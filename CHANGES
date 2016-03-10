@@ -2,6 +2,7 @@ Version 7.0.1
 -------------
 
 - Use RavenFactory's class loader when creating the service loader, fixing some issues in containers.
+- Add ``release`` property to ``raven-log4j``.
 
 
 Version 7.0.0
