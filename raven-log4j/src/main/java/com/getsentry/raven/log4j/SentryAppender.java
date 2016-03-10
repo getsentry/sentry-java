@@ -44,17 +44,17 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected String dsn;
     /**
-     * Release to be sent to sentry.
-     * <p>
-     * Might be null in which case no release is sent.
-     */
-    protected String release;
-    /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
     protected String ravenFactory;
+    /**
+     * Release to be sent to sentry.
+     * <p>
+     * Might be null in which case no release is sent.
+     */
+    protected String release;
     /**
      * Additional tags to be sent to sentry.
      * <p>

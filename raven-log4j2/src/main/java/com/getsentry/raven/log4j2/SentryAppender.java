@@ -11,6 +11,7 @@ import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.MessageInterface;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
+import com.google.common.base.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.LogEvent;
@@ -62,6 +63,12 @@ public class SentryAppender extends AbstractAppender {
      * Might be null in which case the factory should be defined automatically.
      */
     protected String ravenFactory;
+    /**
+     * Release to be sent to sentry.
+     * <p>
+     * Might be null in which case no release is sent.
+     */
+    protected String release;
     /**
      * Additional tags to be sent to sentry.
      * <p>
@@ -224,6 +231,10 @@ public class SentryAppender extends AbstractAppender {
                 .withLevel(formatLevel(event.getLevel()))
                 .withExtra(THREAD_NAME, event.getThreadName());
 
+        if (!Strings.isNullOrEmpty(release)) {
+            eventBuilder.withRelease(release.trim());
+        }
+
         if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
             eventBuilder.withSentryInterface(new MessageInterface(eventMessage.getFormat(),
                     formatMessageParameters(eventMessage.getParameters())));
@@ -272,6 +283,10 @@ public class SentryAppender extends AbstractAppender {
 
     public void setRavenFactory(String ravenFactory) {
         this.ravenFactory = ravenFactory;
+    }
+
+    public void setRelease(String release) {
+        this.release = release;
     }
 
     /**

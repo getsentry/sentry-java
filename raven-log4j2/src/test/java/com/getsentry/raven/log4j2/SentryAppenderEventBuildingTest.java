@@ -248,4 +248,19 @@ public class SentryAppenderEventBuildingTest {
         }};
         assertNoErrorsInErrorHandler();
     }
+
+    @Test
+    public void testReleaseAddedToEvent() throws Exception {
+        final String release = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
+        sentryAppender.setRelease(release);
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getRelease(), is(release));
+        }};
+        assertNoErrorsInErrorHandler();
+    }
 }
