@@ -1,9 +1,9 @@
 Version 7.0.1
 -------------
 
-- Use RavenFactory's class loader when creating the service loader, fixing some issues in containers.
-- Add ``release`` property to ``raven-log4j``.
-- Add setters for ``dsn`` and ``tags`` in JUL integration, fixes integration with WildFly.
+- Use RavenFactory's class loader when creating the service loader, fixing some issues in containers. (thanks exell-christopher)
+- Add ``release`` property to ``raven-log4j``. (thanks molaschi)
+- Add setters for ``dsn`` and ``tags`` in JUL integration, fixes integration with WildFly. (thanks giilby)
 
 
 Version 7.0.0
