@@ -64,7 +64,7 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String ravenFactory;
     /**
-     * Release to be sent to sentry.
+     * Release to be sent to Sentry.
      * <p>
      * Might be null in which case no release is sent.
      */
@@ -76,7 +76,7 @@ public class SentryAppender extends AbstractAppender {
      */
     protected Map<String, String> tags = Collections.emptyMap();
     /**
-     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
+     * Set of tags to look for in the MDC. These will be added as tags to be sent to Sentry.
      * <p>
      * Might be empty in which case no mapped tags are set.
      * </p>
@@ -110,6 +110,7 @@ public class SentryAppender extends AbstractAppender {
      * @param name         The name of the Appender.
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
+     * @param release      Release to be sent to Sentry.
      * @param tags         Tags to add to each event.
      * @param extraTags    Tags to search through the MDC.
      * @param filter       The filter, if any, to use.
@@ -119,6 +120,7 @@ public class SentryAppender extends AbstractAppender {
     public static SentryAppender createAppender(@PluginAttribute("name") final String name,
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,
+                                                @PluginAttribute("release") final String release,
                                                 @PluginAttribute("tags") final String tags,
                                                 @PluginAttribute("extraTags") final String extraTags,
                                                 @PluginElement("filters") final Filter filter) {
@@ -127,9 +129,10 @@ public class SentryAppender extends AbstractAppender {
             LOGGER.error("No name provided for SentryAppender");
             return null;
         }
-
         SentryAppender sentryAppender = new SentryAppender(name, filter);
         sentryAppender.setDsn(dsn);
+        if (release != null)
+            sentryAppender.setRelease(release);
         if (tags != null)
             sentryAppender.setTags(tags);
         if (extraTags != null)
