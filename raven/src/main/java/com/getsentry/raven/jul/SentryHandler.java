@@ -77,6 +77,24 @@ public class SentryHandler extends Handler {
         this.raven = raven;
     }
 
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
+    }
+
+    /**
+     * Populates the tags map by parsing the given tags property string.
+     * @param tagsProperty comma-delimited key-value pairs, e.g.
+     *                     "tag1:value1,tag2:value2".
+     */
+    public void setTags(String tagsProperty) {
+        this.tags = parseTags(tagsProperty);
+    }
+
+    private Map<String, String> parseTags(String tagsProperty) {
+        return tagsProperty == null ? Collections.<String, String>emptyMap()
+                : Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
+    }
+
     /**
      * Transforms a {@link Level} into an {@link Event.Level}.
      *
@@ -119,8 +137,7 @@ public class SentryHandler extends Handler {
         dsn = manager.getProperty(className + ".dsn");
         ravenFactory = manager.getProperty(className + ".ravenFactory");
         String tagsProperty = manager.getProperty(className + ".tags");
-        if (tagsProperty != null)
-            tags = Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
+        tags = parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
         if (extraTagsProperty != null)
             extraTags = new HashSet<>(Arrays.asList(extraTagsProperty.split(",")));
