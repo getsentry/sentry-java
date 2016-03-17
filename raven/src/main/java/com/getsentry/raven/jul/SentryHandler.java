@@ -136,6 +136,7 @@ public class SentryHandler extends Handler {
         String className = SentryHandler.class.getName();
         dsn = manager.getProperty(className + ".dsn");
         ravenFactory = manager.getProperty(className + ".ravenFactory");
+        release = manager.getProperty(className + ".release");
         String tagsProperty = manager.getProperty(className + ".tags");
         tags = parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
