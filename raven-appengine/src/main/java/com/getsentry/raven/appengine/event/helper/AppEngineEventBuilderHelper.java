@@ -14,7 +14,8 @@ public class AppEngineEventBuilderHelper implements EventBuilderHelper {
      *
      * @see <a href="https://developers.google.com/appengine/docs/java/appidentity/">GAE: App Identity Java API</a>
      */
-    private static final String CURRENT_VERSION_HOSTNAME_PROPERTY = "com.google.appengine.runtime.default_version_hostname";
+    private static final String CURRENT_VERSION_HOSTNAME_PROPERTY =
+        "com.google.appengine.runtime.default_version_hostname";
 
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
