@@ -69,9 +69,9 @@ Both [the MDC and the NDC systems provided by Log4j 2](https://logging.apache.or
 are usable, allowing to attach extras information to the event.
 
 ### Mapped Tags
-By default all MDC parameters are sent under the Additional Data Tab. By specifying the extraTags parameter in your
-configuration file. You can specify MDC keys to send as tags instead of including them in Additional Data.
-This allows them to be filtered within Sentry.
+By default all ThreadContext parameters are sent under the Additional Data Tab. By specifying the extraTags parameter in your
+configuration file. You can specify ThreadContext keys to send as tags instead of including them in Additional Data.
+This allows them to be filtered within Sentry. In older Log4J versions, ThreadContext was known as MDC.
 
 ```xml
 <extraTags>
@@ -80,11 +80,11 @@ This allows them to be filtered within Sentry.
 ```
 ```java
     void logWithExtras() {
-        // MDC extras
-        MDC.put("User", "test user");
-        MDC.put("OS", "Linux");
+        // ThreadContext extras
+        ThreadContext.put("User", "test user");
+        ThreadContext.put("OS", "Linux");
 
-        // This adds a message with extras and MDC keys declared in extraTags as tags to Sentry
+        // This adds a message with extras and ThreadContext keys declared in extraTags as tags to Sentry
         logger.info("This is a test");
     }
 ```
