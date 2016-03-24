@@ -1,4 +1,4 @@
-Version 7.0.1
+Version 7.1.0
 -------------
 
 - Use RavenFactory's class loader when creating the service loader, fixing some issues in containers. (thanks exell-christopher)
