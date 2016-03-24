@@ -14,10 +14,8 @@ import org.hamcrest.Matchers;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.ErrorManager;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -158,5 +156,20 @@ public class SentryHandlerEventBuildingTest {
             logRecord.setSourceMethodName(callerData[0].getMethodName());
         }
         return logRecord;
+    }
+
+    @Test
+    public void testReleaseAddedToEvent() throws Exception {
+        final String release = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
+        sentryHandler.setRelease(release);
+
+        sentryHandler.publish(newLogRecord(null, Level.INFO, null, null, null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getRelease(), is(release));
+        }};
+        assertNoErrorsInErrorManager();
     }
 }

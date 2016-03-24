@@ -38,7 +38,7 @@ public class SentryStub {
     public int getEventCount() {
         RavenEnvironment.startManagingThread();
         try {
-            HttpURLConnection connection = connnectTo("count");
+            HttpURLConnection connection = connectTo("count");
             connection.setRequestMethod("GET");
             return (Integer) getContent(connection).get("count");
         } catch (Exception e) {
@@ -52,7 +52,7 @@ public class SentryStub {
     public void removeEvents() {
         RavenEnvironment.startManagingThread();
         try {
-            HttpURLConnection connection = connnectTo("cleanup");
+            HttpURLConnection connection = connectTo("cleanup");
             connection.setRequestMethod("DELETE");
             connection.setDoOutput(false);
             connection.connect();
@@ -78,7 +78,7 @@ public class SentryStub {
         }
     }
 
-    private HttpURLConnection connnectTo(String path) {
+    private HttpURLConnection connectTo(String path) {
         try {
             URL test = new URL(url, path);
             return (HttpURLConnection) test.openConnection();

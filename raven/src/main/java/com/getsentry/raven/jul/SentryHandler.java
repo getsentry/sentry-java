@@ -10,6 +10,7 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.MessageInterface;
+import com.google.common.base.Strings;
 import org.slf4j.MDC;
 
 import java.text.MessageFormat;
@@ -42,6 +43,12 @@ public class SentryHandler extends Handler {
      * Might be null in which case the factory should be defined automatically.
      */
     protected String ravenFactory;
+    /**
+     * Release to be sent to sentry.
+     * <p>
+     * Might be null in which case no release is sent.
+     */
+    protected String release;
     /**
      * Tags to add to every event.
      */
@@ -129,6 +136,7 @@ public class SentryHandler extends Handler {
         String className = SentryHandler.class.getName();
         dsn = manager.getProperty(className + ".dsn");
         ravenFactory = manager.getProperty(className + ".ravenFactory");
+        release = manager.getProperty(className + ".release");
         String tagsProperty = manager.getProperty(className + ".tags");
         tags = parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
@@ -224,6 +232,10 @@ public class SentryHandler extends Handler {
 
         eventBuilder.withExtra(THREAD_ID, record.getThreadID());
 
+        if (!Strings.isNullOrEmpty(release)) {
+            eventBuilder.withRelease(release.trim());
+        }
+
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
@@ -243,5 +255,9 @@ public class SentryHandler extends Handler {
         } finally {
             RavenEnvironment.stopManagingThread();
         }
+    }
+
+    public void setRelease(String release) {
+        this.release = release;
     }
 }
