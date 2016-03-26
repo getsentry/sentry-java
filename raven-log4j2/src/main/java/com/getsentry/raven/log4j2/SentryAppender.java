@@ -76,7 +76,7 @@ public class SentryAppender extends AbstractAppender {
      */
     protected Map<String, String> tags = Collections.emptyMap();
     /**
-     * Set of tags to look for in the MDC. These will be added as tags to be sent to Sentry.
+     * Set of tags to look for in the Thread Context Map. These will be added as tags to be sent to Sentry.
      * <p>
      * Might be empty in which case no mapped tags are set.
      * </p>
@@ -112,7 +112,7 @@ public class SentryAppender extends AbstractAppender {
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
      * @param release      Release to be sent to Sentry.
      * @param tags         Tags to add to each event.
-     * @param extraTags    Tags to search through the MDC.
+     * @param extraTags    Tags to search through the Thread Context Map.
      * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
@@ -261,11 +261,11 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withExtra(LOG4J_NDC, event.getContextStack().asList());
 
         if (event.getContextMap() != null) {
-            for (Map.Entry<String, String> mdcEntry : event.getContextMap().entrySet()) {
-                if (extraTags.contains(mdcEntry.getKey())) {
-                    eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
+            for (Map.Entry<String, String> contextEntry : event.getContextMap().entrySet()) {
+                if (extraTags.contains(contextEntry.getKey())) {
+                    eventBuilder.withTag(contextEntry.getKey(), contextEntry.getValue());
                 } else {
-                    eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
+                    eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
                 }
             }
         }
@@ -302,7 +302,8 @@ public class SentryAppender extends AbstractAppender {
     }
 
     /**
-     * Set the mapped extras that will be used to search MDC and upgrade key pair to a tag sent along with the events.
+     * Set the mapped extras that will be used to search the Thread Context Map and upgrade key pair to
+     * a tag sent along with the events.
      *
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
