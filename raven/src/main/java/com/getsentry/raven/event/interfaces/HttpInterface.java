@@ -1,7 +1,7 @@
 package com.getsentry.raven.event.interfaces;
 
-import net.kencochrane.raven.event.helper.BasicRemoteAddressResolver;
-import net.kencochrane.raven.event.helper.RemoteAddressResolver;
+import com.getsentry.raven.event.helper.BasicRemoteAddressResolver;
+import com.getsentry.raven.event.helper.RemoteAddressResolver;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;

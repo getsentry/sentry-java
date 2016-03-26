@@ -1,4 +1,4 @@
-package net.kencochrane.raven.event.helper;
+package com.getsentry.raven.event.helper;
 
 import javax.servlet.http.HttpServletRequest;
 
