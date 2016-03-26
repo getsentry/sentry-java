@@ -17,7 +17,10 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
 
     private final RemoteAddressResolver remoteAddressResolver;
 
-    public HttpEventBuilderHelper() {
+  /**
+   * EventBuilderHelper that uses a {@link BasicRemoteAddressResolver}.
+   */
+  public HttpEventBuilderHelper() {
         this.remoteAddressResolver = new BasicRemoteAddressResolver();
     }
 

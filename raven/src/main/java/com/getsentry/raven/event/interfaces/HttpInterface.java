@@ -33,8 +33,12 @@ public class HttpInterface implements SentryInterface {
     private final String remoteUser;
     private final Map<String, Collection<String>> headers;
 
-    public HttpInterface(HttpServletRequest request) {
-        // This constructor is for compatibility reasons and should not be used.
+  /**
+   * This constructor is for compatibility reasons and should not be used.
+   *
+   * @param request HttpServletRequest
+   */
+  public HttpInterface(HttpServletRequest request) {
         this(request, new BasicRemoteAddressResolver());
     }
 
@@ -42,6 +46,7 @@ public class HttpInterface implements SentryInterface {
      * Creates a an HTTP element for an {@link com.getsentry.raven.event.Event}.
      *
      * @param request Captured HTTP request to send to Sentry.
+     * @param remoteAddressResolver RemoteAddressResolver
      */
     public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver) {
         this.requestUrl = request.getRequestURL().toString();
