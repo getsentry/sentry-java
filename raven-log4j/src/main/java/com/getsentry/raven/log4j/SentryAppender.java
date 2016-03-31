@@ -55,6 +55,9 @@ public class SentryAppender extends AppenderSkeleton {
      * Might be null in which case no release is sent.
      */
     protected String release;
+
+    protected String serverName;
+
     /**
      * Additional tags to be sent to sentry.
      * <p>
@@ -171,6 +174,10 @@ public class SentryAppender extends AppenderSkeleton {
                 .withLogger(loggingEvent.getLoggerName())
                 .withLevel(formatLevel(loggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, loggingEvent.getThreadName());
+
+        if (!Strings.isNullOrEmpty(serverName)) {
+            eventBuilder.withServerName(serverName.trim());
+        }
 
         if (!Strings.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
