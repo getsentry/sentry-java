@@ -96,7 +96,7 @@ public class AsyncConnection implements Connection {
     @Override
     public void close() throws IOException {
         if (gracefulShutdown)
-            Runtime.getRuntime().removeShutdownHook(shutDownHook);
+            shutDownHook.enabled = false;
         doClose();
     }
 
@@ -151,8 +151,18 @@ public class AsyncConnection implements Connection {
     }
 
     private final class ShutDownHook extends Thread {
+
+      /**
+       * Whether or not this ShutDownHook instance will do anything when run.
+       */
+      private volatile boolean enabled = true;
+
         @Override
         public void run() {
+            if (!enabled) {
+                return;
+            }
+
             RavenEnvironment.startManagingThread();
             try {
                 // The current thread is managed by raven
