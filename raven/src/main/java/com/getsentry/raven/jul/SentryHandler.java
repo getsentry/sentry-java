@@ -38,6 +38,12 @@ public class SentryHandler extends Handler {
      */
     protected String dsn;
     /**
+     * If true, <code>String.format()</code> is used to render parameterized log
+     * messages instead of <code>MessageFormat.format()</code>; Defaults to
+     * false.
+     */
+    protected boolean printfStyle;
+    /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
@@ -79,6 +85,10 @@ public class SentryHandler extends Handler {
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setPrintfStyle(boolean printfStyle) {
+        this.printfStyle = printfStyle;
     }
 
     /**
@@ -135,6 +145,7 @@ public class SentryHandler extends Handler {
         LogManager manager = LogManager.getLogManager();
         String className = SentryHandler.class.getName();
         dsn = manager.getProperty(className + ".dsn");
+        printfStyle = Boolean.valueOf(manager.getProperty(className + ".printfStyle"));
         ravenFactory = manager.getProperty(className + ".ravenFactory");
         release = manager.getProperty(className + ".release");
         String tagsProperty = manager.getProperty(className + ".tags");
@@ -199,7 +210,16 @@ public class SentryHandler extends Handler {
         if (record.getParameters() != null) {
             List<String> parameters = formatMessageParameters(record.getParameters());
             eventBuilder.withSentryInterface(new MessageInterface(message, parameters));
-            message = MessageFormat.format(message, record.getParameters());
+            if (printfStyle) {
+                try {
+                    message = String.format(message, record.getParameters());
+                } catch (MissingFormatArgumentException e) {
+                    // use unformatted message
+                    message = record.getMessage();
+                }
+            } else {
+                message = MessageFormat.format(message, record.getParameters());
+            }
         }
         eventBuilder.withMessage(message);
 
