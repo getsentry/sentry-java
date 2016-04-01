@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.is;
 public class RemoteAddressResolverTest {
 
     @Mocked
-    HttpServletRequest request;
+    private HttpServletRequest request;
 
     @Test
     public void testBasicRemoteAddressResolver() {

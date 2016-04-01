@@ -4,6 +4,7 @@ Version 7.1.1
 - Add printfStyle option to JUL integration. (thanks giilby)
 - Updated Log4j2 documentation to refer to the Thread Context rather than the MDC. (thanks grobmeier)
 - Fix duplicate ShutdownHook warnings in ``raven-log4j2``.
+- Add way to override how remote addresses are resolved (RemoteAddressResolver interface).
 
 Version 7.1.0
 -------------
