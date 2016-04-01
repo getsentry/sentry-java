@@ -13,27 +13,27 @@ import java.util.List;
  */
 public class ForwardedAddressResolver implements RemoteAddressResolver {
 
-  private BasicRemoteAddressResolver basicRemoteAddressResolver;
+    private BasicRemoteAddressResolver basicRemoteAddressResolver;
 
-  /**
-   * Default constructor, creates fallback {@link BasicRemoteAddressResolver} instance.
-   */
-  public ForwardedAddressResolver() {
-    this.basicRemoteAddressResolver = new BasicRemoteAddressResolver();
-  }
-
-  private static String firstAddress(String csvAddrs) {
-    List<String> ips = Arrays.asList(csvAddrs.split(","));
-    return ips.get(0).trim();
-  }
-
-  @Override
-  public String getRemoteAddress(HttpServletRequest request) {
-    String forwarded = request.getHeader("X-FORWARDED-FOR");
-    if (!Strings.isNullOrEmpty(forwarded)) {
-      return firstAddress(forwarded);
+    /**
+     * Default constructor, creates fallback {@link BasicRemoteAddressResolver} instance.
+     */
+    public ForwardedAddressResolver() {
+        this.basicRemoteAddressResolver = new BasicRemoteAddressResolver();
     }
-    return basicRemoteAddressResolver.getRemoteAddress(request);
-  }
+
+    private static String firstAddress(String csvAddrs) {
+        List<String> ips = Arrays.asList(csvAddrs.split(","));
+        return ips.get(0).trim();
+    }
+
+    @Override
+    public String getRemoteAddress(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-FORWARDED-FOR");
+        if (!Strings.isNullOrEmpty(forwarded)) {
+            return firstAddress(forwarded);
+        }
+        return basicRemoteAddressResolver.getRemoteAddress(request);
+    }
 
 }

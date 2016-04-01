@@ -7,13 +7,13 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class BasicRemoteAddressResolver implements RemoteAddressResolver {
 
-  /**
-   * Uses {@link HttpServletRequest#getRemoteAddr()} to resolve the REMOTE_ADDR.
-   *
-   * @param request HttpServletRequest
-   * @return the IP address of the client or last proxy that sent the request.
-   */
-  public String getRemoteAddress(HttpServletRequest request) {
+    /**
+     * Uses {@link HttpServletRequest#getRemoteAddr()} to resolve the REMOTE_ADDR.
+     *
+     * @param request HttpServletRequest
+     * @return the IP address of the client or last proxy that sent the request.
+     */
+    public String getRemoteAddress(HttpServletRequest request) {
         return request.getRemoteAddr();
     }
 

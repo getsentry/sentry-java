@@ -8,12 +8,12 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface RemoteAddressResolver {
 
-  /**
-   * Returns the REMOTE_ADDR for the provided request.
-   *
-   * @param request HttpServletRequest
-   * @return String representing the desired REMOTE_ADDR.
-   */
+    /**
+     * Returns the REMOTE_ADDR for the provided request.
+     *
+     * @param request HttpServletRequest
+     * @return String representing the desired REMOTE_ADDR.
+     */
     String getRemoteAddress(HttpServletRequest request);
 
 }

@@ -33,12 +33,12 @@ public class HttpInterface implements SentryInterface {
     private final String remoteUser;
     private final Map<String, Collection<String>> headers;
 
-  /**
-   * This constructor is for compatibility reasons and should not be used.
-   *
-   * @param request HttpServletRequest
-   */
-  public HttpInterface(HttpServletRequest request) {
+    /**
+     * This constructor is for compatibility reasons and should not be used.
+     *
+     * @param request HttpServletRequest
+     */
+    public HttpInterface(HttpServletRequest request) {
         this(request, new BasicRemoteAddressResolver());
     }
 
@@ -154,11 +154,11 @@ public class HttpInterface implements SentryInterface {
     @Override
     public String toString() {
         return "HttpInterface{"
-                + "requestUrl='" + requestUrl + '\''
-                + ", method='" + method + '\''
-                + ", queryString='" + queryString + '\''
-                + ", parameters=" + parameters
-                + '}';
+            + "requestUrl='" + requestUrl + '\''
+            + ", method='" + method + '\''
+            + ", queryString='" + queryString + '\''
+            + ", parameters=" + parameters
+            + '}';
     }
 
     @Override
