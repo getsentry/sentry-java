@@ -55,14 +55,12 @@ public class SentryAppender extends AppenderSkeleton {
      * Might be null in which case no release is sent.
      */
     protected String release;
-
     /**
-     * Server Name to be sent to sentry.
+     * Server name to be sent to sentry.
      * <p>
      * Might be null in which case the hostname is found via a reverse DNS lookup.
      */
     protected String serverName;
-
     /**
      * Additional tags to be sent to sentry.
      * <p>
