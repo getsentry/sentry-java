@@ -13,6 +13,7 @@ import com.getsentry.raven.event.interfaces.StackTraceInterface;
 import com.google.common.base.Strings;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
@@ -67,6 +68,13 @@ public class SentryAppender extends AppenderSkeleton {
      * Might be empty in which case no mapped tags are set.
      */
     protected Set<String> extraTags = Collections.emptySet();
+    /**
+     * Log4j Pattern Layout String used to format the culprit
+     * <p>
+     * Might be null in which case culprit will be defined automatically.
+     * See: https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PatternLayout.html
+     */
+    protected String culpritPattern;
 
     /**
      * Creates an instance of SentryAppender.
@@ -188,7 +196,9 @@ public class SentryAppender extends AppenderSkeleton {
         }
 
         // Set culprit
-        if (loggingEvent.getLocationInformation().fullInfo != null) {
+        if (culpritPattern != null) {
+            eventBuilder.withCulprit(new PatternLayout("%c{3}").format(loggingEvent));
+        } else if (loggingEvent.getLocationInformation().fullInfo != null) {
             eventBuilder.withCulprit(asStackTraceElement(loggingEvent.getLocationInformation()));
         } else {
             eventBuilder.withCulprit(loggingEvent.getLoggerName());
