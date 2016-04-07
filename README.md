@@ -270,3 +270,32 @@ It's possible to manually set the timeout length with `raven.timeout`
 (in milliseconds):
 
     http://public:private@host:port/1?raven.timeout=10000
+
+## Custom RavenFactory
+At times, you may require custom functionality that is not included in `raven-java`
+already. The most common way to do this is to create your own RavenFactory instance
+as seen in the example below.
+
+```java
+public class MyRavenFactory extends DefaultRavenFactory {
+
+    @Override
+    public Raven createRavenInstance(Dsn dsn) {
+        Raven raven = new Raven();
+        raven.setConnection(createConnection(dsn));
+
+        /*
+        Create and use the ForwardedAddressResolver, which will use the
+        X-FORWARDED-FOR header for the remote address if it exists.
+         */
+        ForwardedAddressResolver forwardedAddressResolver = new ForwardedAddressResolver();
+        raven.addBuilderHelper(new HttpEventBuilderHelper(forwardedAddressResolver));
+
+        return raven;
+    }
+
+}
+```
+
+See the README for the logger integration you use to find out how to
+make use of your own RavenFactory.
