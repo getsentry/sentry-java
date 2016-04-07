@@ -47,7 +47,7 @@ public class HttpEventBuilderHelperTest {
         httpEventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
         new Verifications() {{
-            new HttpInterface(mockHttpServletRequest);
+            new HttpInterface(mockHttpServletRequest, httpEventBuilderHelper.getRemoteAddressResolver());
             new UserInterface(null, null, null, null);
             mockEventBuilder.withSentryInterface(this.<HttpInterface>withNotNull(), false);
             mockEventBuilder.withSentryInterface(this.<UserInterface>withNotNull(), false);

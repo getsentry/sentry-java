@@ -1,5 +1,8 @@
 package com.getsentry.raven.event.interfaces;
 
+import com.getsentry.raven.event.helper.BasicRemoteAddressResolver;
+import com.getsentry.raven.event.helper.RemoteAddressResolver;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -31,11 +34,21 @@ public class HttpInterface implements SentryInterface {
     private final Map<String, Collection<String>> headers;
 
     /**
+     * This constructor is for compatibility reasons and should not be used.
+     *
+     * @param request HttpServletRequest
+     */
+    public HttpInterface(HttpServletRequest request) {
+        this(request, new BasicRemoteAddressResolver());
+    }
+
+    /**
      * Creates a an HTTP element for an {@link com.getsentry.raven.event.Event}.
      *
      * @param request Captured HTTP request to send to Sentry.
+     * @param remoteAddressResolver RemoteAddressResolver
      */
-    public HttpInterface(HttpServletRequest request) {
+    public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver) {
         this.requestUrl = request.getRequestURL().toString();
         this.method = request.getMethod();
         this.parameters = new HashMap<>();
@@ -49,7 +62,7 @@ public class HttpInterface implements SentryInterface {
         } else {
             this.cookies = Collections.emptyMap();
         }
-        this.remoteAddr = request.getRemoteAddr();
+        this.remoteAddr = remoteAddressResolver.getRemoteAddress(request);
         this.serverName = request.getServerName();
         this.serverPort = request.getServerPort();
         this.localAddr = request.getLocalAddr();
@@ -141,11 +154,11 @@ public class HttpInterface implements SentryInterface {
     @Override
     public String toString() {
         return "HttpInterface{"
-                + "requestUrl='" + requestUrl + '\''
-                + ", method='" + method + '\''
-                + ", queryString='" + queryString + '\''
-                + ", parameters=" + parameters
-                + '}';
+            + "requestUrl='" + requestUrl + '\''
+            + ", method='" + method + '\''
+            + ", queryString='" + queryString + '\''
+            + ", parameters=" + parameters
+            + '}';
     }
 
     @Override

@@ -14,6 +14,25 @@ import javax.servlet.http.HttpServletRequest;
  * be called from the thread in which the HTTP request has been handled.
  */
 public class HttpEventBuilderHelper implements EventBuilderHelper {
+
+    private final RemoteAddressResolver remoteAddressResolver;
+
+    /**
+     * {@link EventBuilderHelper} that uses a {@link BasicRemoteAddressResolver}.
+     */
+    public HttpEventBuilderHelper() {
+        this.remoteAddressResolver = new BasicRemoteAddressResolver();
+    }
+
+    /**
+     * {@link EventBuilderHelper} that uses the provided {@link RemoteAddressResolver}.
+     *
+     * @param remoteAddressResolver RemoteAddressResolver
+     */
+    public HttpEventBuilderHelper(RemoteAddressResolver remoteAddressResolver) {
+        this.remoteAddressResolver = remoteAddressResolver;
+    }
+
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         HttpServletRequest servletRequest = RavenServletRequestListener.getServletRequest();
@@ -25,7 +44,7 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
     }
 
     private void addHttpInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
-        eventBuilder.withSentryInterface(new HttpInterface(servletRequest), false);
+        eventBuilder.withSentryInterface(new HttpInterface(servletRequest, remoteAddressResolver), false);
     }
 
     private void addUserInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
@@ -34,7 +53,12 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
             username = servletRequest.getUserPrincipal().getName();
         }
 
-        UserInterface userInterface = new UserInterface(null, username, servletRequest.getRemoteAddr(), null);
+        UserInterface userInterface = new UserInterface(null, username,
+            remoteAddressResolver.getRemoteAddress(servletRequest), null);
         eventBuilder.withSentryInterface(userInterface, false);
+    }
+
+    public RemoteAddressResolver getRemoteAddressResolver() {
+        return remoteAddressResolver;
     }
 }
