@@ -141,6 +141,8 @@ public class SentryAppender extends AbstractAppender {
         sentryAppender.setDsn(dsn);
         if (release != null)
             sentryAppender.setRelease(release);
+        if (serverName != null)
+            sentryAppender.setServerName(serverName);
         if (tags != null)
             sentryAppender.setTags(tags);
         if (extraTags != null)
@@ -302,6 +304,10 @@ public class SentryAppender extends AbstractAppender {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
     }
 
     /**
