@@ -127,6 +127,7 @@ public class SentryAppender extends AbstractAppender {
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,
                                                 @PluginAttribute("release") final String release,
+                                                @PluginAttribute("serverName") final String serverName,
                                                 @PluginAttribute("tags") final String tags,
                                                 @PluginAttribute("extraTags") final String extraTags,
                                                 @PluginElement("filters") final Filter filter) {
