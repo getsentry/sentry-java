@@ -56,6 +56,12 @@ public class SentryHandler extends Handler {
      */
     protected String release;
     /**
+     * Server name to be sent to sentry.
+     * <p>
+     * Might be null in which case the hostname is found via a reverse DNS lookup.
+     */
+    protected String serverName;
+    /**
      * Tags to add to every event.
      */
     protected Map<String, String> tags = Collections.emptyMap();
@@ -254,6 +260,10 @@ public class SentryHandler extends Handler {
 
         if (!Strings.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
+        }
+
+        if (!Strings.isNullOrEmpty(serverName)) {
+            eventBuilder.withServerName(serverName.trim());
         }
 
         raven.runBuilderHelpers(eventBuilder);
