@@ -117,6 +117,7 @@ public class SentryAppender extends AbstractAppender {
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
      * @param release      Release to be sent to Sentry.
+     * @param serverName   serverName to be sent to Sentry.
      * @param tags         Tags to add to each event.
      * @param extraTags    Tags to search through the MDC.
      * @param filter       The filter, if any, to use.
