@@ -124,6 +124,7 @@ public class SentryAppender extends AbstractAppender {
      * @return The SentryAppender.
      */
     @PluginFactory
+    @SuppressWarnings("checkstyle:parameternumber")
     public static SentryAppender createAppender(@PluginAttribute("name") final String name,
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,

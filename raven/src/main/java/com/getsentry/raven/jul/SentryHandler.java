@@ -154,6 +154,7 @@ public class SentryHandler extends Handler {
         printfStyle = Boolean.valueOf(manager.getProperty(className + ".printfStyle"));
         ravenFactory = manager.getProperty(className + ".ravenFactory");
         release = manager.getProperty(className + ".release");
+        serverName = manager.getProperty(className + ".serverName");
         String tagsProperty = manager.getProperty(className + ".tags");
         tags = parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
