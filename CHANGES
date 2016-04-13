@@ -6,6 +6,7 @@ Version 7.1.1
 - Fix duplicate ShutdownHook warnings in ``raven-log4j2``.
 - Add way to override how remote addresses are resolved (RemoteAddressResolver interface). (thanks j-fernandes)
 - Drop dependency on Guava.
+- Add way to set ``serverName`` statically in configuration. (thanks mattbillenstein)
 
 Version 7.1.0
 -------------
