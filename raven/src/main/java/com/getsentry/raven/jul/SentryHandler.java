@@ -1,6 +1,5 @@
 package com.getsentry.raven.jul;
 
-import com.google.common.base.Splitter;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
 import com.getsentry.raven.dsn.Dsn;
@@ -10,12 +9,24 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.MessageInterface;
-import com.google.common.base.Strings;
+import com.getsentry.raven.util.Util;
 import org.slf4j.MDC;
 
 import java.text.MessageFormat;
-import java.util.*;
-import java.util.logging.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.MissingFormatArgumentException;
+import java.util.Set;
+import java.util.logging.ErrorManager;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
 
 /**
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
@@ -97,12 +108,7 @@ public class SentryHandler extends Handler {
      *                     "tag1:value1,tag2:value2".
      */
     public void setTags(String tagsProperty) {
-        this.tags = parseTags(tagsProperty);
-    }
-
-    private Map<String, String> parseTags(String tagsProperty) {
-        return tagsProperty == null ? Collections.<String, String>emptyMap()
-                : Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
+        this.tags = Util.parseTags(tagsProperty);
     }
 
     /**
@@ -149,7 +155,7 @@ public class SentryHandler extends Handler {
         ravenFactory = manager.getProperty(className + ".ravenFactory");
         release = manager.getProperty(className + ".release");
         String tagsProperty = manager.getProperty(className + ".tags");
-        tags = parseTags(tagsProperty);
+        tags = Util.parseTags(tagsProperty);
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
         if (extraTagsProperty != null)
             extraTags = new HashSet<>(Arrays.asList(extraTagsProperty.split(",")));
@@ -252,7 +258,7 @@ public class SentryHandler extends Handler {
 
         eventBuilder.withExtra(THREAD_ID, record.getThreadID());
 
-        if (!Strings.isNullOrEmpty(release)) {
+        if (!Util.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
         }
 

@@ -2,7 +2,8 @@ package com.getsentry.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.google.common.base.Charsets;
+import com.getsentry.raven.util.Base64;
+import com.getsentry.raven.util.Base64OutputStream;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.interfaces.SentryInterface;
 import com.getsentry.raven.marshaller.Marshaller;
@@ -11,13 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.DeflaterOutputStream;
-
-import static com.google.common.io.BaseEncoding.base64;
 
 /**
  * Event marshaller using JSON to send the data.
@@ -112,8 +110,7 @@ public class JsonMarshaller implements Marshaller {
         destination = new UncloseableOutputStream(destination);
 
         if (compression)
-            destination = new DeflaterOutputStream(base64().encodingStream(
-                    new OutputStreamWriter(destination, Charsets.UTF_8)));
+            destination = new DeflaterOutputStream(new Base64OutputStream(destination, Base64.NO_WRAP));
 
         try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
             writeContent(generator, event);

@@ -5,7 +5,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
-import com.google.common.base.Splitter;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
 import com.getsentry.raven.dsn.Dsn;
@@ -17,9 +16,18 @@ import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.MessageInterface;
 import com.getsentry.raven.event.interfaces.SentryException;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
-import com.google.common.base.Strings;
+import com.getsentry.raven.util.Util;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Appender for logback in charge of sending the logged events to a Sentry server.
@@ -182,7 +190,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .withLevel(formatLevel(iLoggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
-        if (!Strings.isNullOrEmpty(release)) {
+        if (!Util.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
         }
 
@@ -311,7 +319,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
-        this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
+        this.tags = Util.parseTags(tags);
     }
 
     /**
