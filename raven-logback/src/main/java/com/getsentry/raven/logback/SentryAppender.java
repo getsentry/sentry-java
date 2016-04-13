@@ -59,6 +59,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String release;
     /**
+     * Server name to be sent to sentry.
+     * <p>
+     * Might be null in which case the hostname is found via a reverse DNS lookup.
+     */
+    protected String serverName;
+    /**
      * If set, only events with level = minLevel and up will be recorded.
      */
     protected Level minLevel = Level.WARN;
@@ -181,6 +187,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .withLogger(iLoggingEvent.getLoggerName())
                 .withLevel(formatLevel(iLoggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
+
+        if (!Strings.isNullOrEmpty(serverName)) {
+            eventBuilder.withServerName(serverName.trim());
+        }
 
         if (!Strings.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());

@@ -56,6 +56,12 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected String release;
     /**
+     * Server name to be sent to sentry.
+     * <p>
+     * Might be null in which case the hostname is found via a reverse DNS lookup.
+     */
+    protected String serverName;
+    /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
@@ -171,6 +177,10 @@ public class SentryAppender extends AppenderSkeleton {
                 .withLogger(loggingEvent.getLoggerName())
                 .withLevel(formatLevel(loggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, loggingEvent.getThreadName());
+
+        if (!Strings.isNullOrEmpty(serverName)) {
+            eventBuilder.withServerName(serverName.trim());
+        }
 
         if (!Strings.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());

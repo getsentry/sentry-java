@@ -70,6 +70,12 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String release;
     /**
+     * Server name to be sent to sentry.
+     * <p>
+     * Might be null in which case the hostname is found via a reverse DNS lookup.
+     */
+    protected String serverName;
+    /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
@@ -111,16 +117,19 @@ public class SentryAppender extends AbstractAppender {
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
      * @param release      Release to be sent to Sentry.
+     * @param serverName   serverName to be sent to Sentry.
      * @param tags         Tags to add to each event.
      * @param extraTags    Tags to search through the Thread Context Map.
      * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
     @PluginFactory
+    @SuppressWarnings("checkstyle:parameternumber")
     public static SentryAppender createAppender(@PluginAttribute("name") final String name,
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,
                                                 @PluginAttribute("release") final String release,
+                                                @PluginAttribute("serverName") final String serverName,
                                                 @PluginAttribute("tags") final String tags,
                                                 @PluginAttribute("extraTags") final String extraTags,
                                                 @PluginElement("filters") final Filter filter) {
@@ -133,6 +142,8 @@ public class SentryAppender extends AbstractAppender {
         sentryAppender.setDsn(dsn);
         if (release != null)
             sentryAppender.setRelease(release);
+        if (serverName != null)
+            sentryAppender.setServerName(serverName);
         if (tags != null)
             sentryAppender.setTags(tags);
         if (extraTags != null)
@@ -234,6 +245,10 @@ public class SentryAppender extends AbstractAppender {
                 .withLevel(formatLevel(event.getLevel()))
                 .withExtra(THREAD_NAME, event.getThreadName());
 
+        if (!Strings.isNullOrEmpty(serverName)) {
+            eventBuilder.withServerName(serverName.trim());
+        }
+
         if (!Strings.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
         }
@@ -290,6 +305,10 @@ public class SentryAppender extends AbstractAppender {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
     }
 
     /**

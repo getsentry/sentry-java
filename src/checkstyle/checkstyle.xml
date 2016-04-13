@@ -40,6 +40,7 @@
         <property name="onCommentFormat" value="CHECKSTYLE.ON\: (.+)"/>
         <property name="checkFormat" value="$1"/>
     </module>
+    <module name="SuppressWarningsFilter" />
 
     <!-- Checks whether files end with a new line.                        -->
     <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
@@ -69,6 +70,7 @@
     <module name="TreeWalker">
         <property name="tabWidth" value="4"/>
 
+        <module name="SuppressWarningsHolder" />
         <module name="FileContentsHolder"/>
 
         <!-- Checks for Javadoc comments.                     -->
