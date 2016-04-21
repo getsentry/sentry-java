@@ -10,6 +10,7 @@ Version 7.2.0
 - Updated Log4j2 documentation to refer to the Thread Context rather than the MDC. (thanks grobmeier)
 - Fix duplicate ShutdownHook warnings in ``raven-log4j2``.
 - Add way to override how remote addresses are resolved (RemoteAddressResolver interface). (thanks j-fernandes)
+- Drop dependency on Guava.
 - Add way to set ``serverName`` statically in configuration. (thanks mattbillenstein)
 
 Version 7.1.0
