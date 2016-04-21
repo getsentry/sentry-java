@@ -20,7 +20,6 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 ### Manual dependency management
 Relies on:
 
- - [guava-18.0.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C18.0%7Cjar)
  - [jackson-core-2.5.0.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.5.0%7Cjar)
  - [slf4j-api-1.7.9.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.9%7Cjar)
  - [slf4j-jdk14-1.7.9.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-jdk14%7C1.7.9%7Cjar)

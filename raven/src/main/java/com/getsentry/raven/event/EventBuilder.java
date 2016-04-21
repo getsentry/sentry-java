@@ -1,12 +1,12 @@
 package com.getsentry.raven.event;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
 import com.getsentry.raven.event.interfaces.SentryInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -35,6 +35,7 @@ public class EventBuilder {
      * @see HostnameCache
      */
     public static final long HOSTNAME_CACHE_DURATION = TimeUnit.HOURS.toMillis(5);
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
@@ -64,7 +65,7 @@ public class EventBuilder {
      * @return a checksum allowing two events with the same properties to be grouped later.
      */
     private static String calculateChecksum(String string) {
-        byte[] bytes = string.getBytes(Charsets.UTF_8);
+        byte[] bytes = string.getBytes(UTF_8);
         Checksum checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
         return Long.toHexString(checksum.getValue()).toUpperCase();
@@ -250,7 +251,9 @@ public class EventBuilder {
      * @return the current {@code EventBuilder} for chained calls.
      */
     public EventBuilder withFingerprint(String... fingerprint) {
-        event.setFingerprint(Lists.newArrayList(fingerprint));
+        List<String> list = new ArrayList<>(fingerprint.length);
+        Collections.addAll(list, fingerprint);
+        event.setFingerprint(list);
         return this;
     }
 

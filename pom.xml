@@ -117,7 +117,7 @@
 
         <!-- dependencies versions -->
         <slf4j.version>1.7.21</slf4j.version>
-        <guava.version>18.0</guava.version>
+        <findbugs.version>3.0.1</findbugs.version>
         <jackson.version>2.7.3</jackson.version>
         <jmockit.version>1.14</jmockit.version>
         <testng.version>6.9.10</testng.version>
@@ -144,9 +144,9 @@
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${findbugs.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

@@ -1,14 +1,16 @@
 package com.getsentry.raven;
 
-import com.google.common.collect.Iterators;
 import mockit.*;
 import com.getsentry.raven.dsn.Dsn;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 
 import static mockit.Deencapsulation.setField;
@@ -28,7 +30,7 @@ public class RavenFactoryTest {
 
         new NonStrictExpectations() {{
             mockServiceLoader.iterator();
-            result = Iterators.<RavenFactory>emptyIterator();
+            result = Collections.emptyIterator();
         }};
     }
 
@@ -47,7 +49,7 @@ public class RavenFactoryTest {
             result = new Delegate<Iterator<RavenFactory>>() {
                 @SuppressWarnings("unused")
                 public Iterator<RavenFactory> iterator() {
-                    return Iterators.singletonIterator(ravenFactory);
+                    return Collections.singletonList(ravenFactory).iterator();
                 }
             };
             ravenFactory.createRavenInstance(mockDsn);

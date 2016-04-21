@@ -1,6 +1,5 @@
 package com.getsentry.raven.log4j;
 
-import com.google.common.base.Joiner;
 import mockit.*;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.event.Event;
@@ -134,8 +133,7 @@ public class SentryAppenderEventBuildingTest {
 
     @Test
     public void testNdcAddedToExtra() throws Exception {
-        final String ndcEntries = Joiner.on(' ').join("930580ba-f92f-4893-855b-ac24efa1a6c2",
-                "fa32ad74-a015-492a-991f-c6a0e04accaf", "be9dd914-3690-4781-97b2-fe14aedb4cbd");
+        final String ndcEntries = "930580ba-f92f-4893-855b-ac24efa1a6c2 fa32ad74-a015-492a-991f-c6a0e04accaf be9dd914-3690-4781-97b2-fe14aedb4cbd";
 
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
                 null, ndcEntries, null, null));

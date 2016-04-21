@@ -1,6 +1,5 @@
 package com.getsentry.raven.connection;
 
-import com.google.common.base.Charsets;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.marshaller.Marshaller;
@@ -15,6 +14,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  * It is possible to enable the "naive mode" to allow a connection over SSL using a certificate with a wildcard.
  */
 public class HttpConnection extends AbstractConnection {
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
     /**
      * HTTP Header for the user agent.
@@ -136,7 +137,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     private String getErrorMessageFromStream(InputStream errorStream) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, Charsets.UTF_8));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8));
         StringBuilder sb = new StringBuilder();
         try {
             String line;

@@ -1,11 +1,12 @@
 package com.getsentry.raven;
 
-import com.google.common.collect.Iterables;
 import com.getsentry.raven.dsn.Dsn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -34,7 +35,12 @@ public abstract class RavenFactory {
     }
 
     private static Iterable<RavenFactory> getRegisteredFactories() {
-        return Iterables.concat(MANUALLY_REGISTERED_FACTORIES, AUTO_REGISTERED_FACTORIES);
+        List<RavenFactory> ravenFactories = new LinkedList<>();
+        ravenFactories.addAll(MANUALLY_REGISTERED_FACTORIES);
+        for (RavenFactory autoRegisteredFactory : AUTO_REGISTERED_FACTORIES) {
+            ravenFactories.add(autoRegisteredFactory);
+        }
+        return ravenFactories;
     }
 
     /**

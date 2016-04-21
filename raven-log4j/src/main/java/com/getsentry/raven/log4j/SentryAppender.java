@@ -1,6 +1,5 @@
 package com.getsentry.raven.log4j;
 
-import com.google.common.base.Splitter;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
 import com.getsentry.raven.dsn.Dsn;
@@ -10,14 +9,19 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
-import com.google.common.base.Strings;
+import com.getsentry.raven.util.Util;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Appender for log4j in charge of sending the logged events to a Sentry server.
@@ -178,11 +182,11 @@ public class SentryAppender extends AppenderSkeleton {
                 .withLevel(formatLevel(loggingEvent.getLevel()))
                 .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
-        if (!Strings.isNullOrEmpty(serverName)) {
+        if (!Util.isNullOrEmpty(serverName)) {
             eventBuilder.withServerName(serverName.trim());
         }
 
-        if (!Strings.isNullOrEmpty(release)) {
+        if (!Util.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
         }
 
@@ -242,7 +246,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
-        this.tags = Splitter.on(",").withKeyValueSeparator(":").split(tags);
+        this.tags = Util.parseTags(tags);
     }
 
     /**

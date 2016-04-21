@@ -1,6 +1,6 @@
 package com.getsentry.raven.event.helper;
 
-import com.google.common.base.Strings;
+import com.getsentry.raven.util.Util;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
@@ -30,7 +30,7 @@ public class ForwardedAddressResolver implements RemoteAddressResolver {
     @Override
     public String getRemoteAddress(HttpServletRequest request) {
         String forwarded = request.getHeader("X-FORWARDED-FOR");
-        if (!Strings.isNullOrEmpty(forwarded)) {
+        if (!Util.isNullOrEmpty(forwarded)) {
             return firstAddress(forwarded);
         }
         return basicRemoteAddressResolver.getRemoteAddress(request);

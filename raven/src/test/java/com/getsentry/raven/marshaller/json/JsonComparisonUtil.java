@@ -3,7 +3,6 @@ package com.getsentry.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -40,7 +39,7 @@ public final class JsonComparisonUtil {
         public String toString() {
             closeStream();
             try {
-                return outputStream.toString(Charsets.UTF_8.name());
+                return outputStream.toString("UTF-8");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

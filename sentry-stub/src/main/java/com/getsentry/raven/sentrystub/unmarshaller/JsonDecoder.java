@@ -2,16 +2,15 @@ package com.getsentry.raven.sentrystub.unmarshaller;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.getsentry.raven.sentrystub.util.Base64;
+import com.getsentry.raven.sentrystub.util.Base64InputStream;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.InflaterInputStream;
-
-import static com.google.common.io.BaseEncoding.base64;
 
 /**
  * Decodes a Stream as a JSON stream.
@@ -43,12 +42,12 @@ public class JsonDecoder {
         originalStream.mark(messageSize);
         InputStream inputStream = originalStream;
         if (!isJson(originalStream)) {
-            inputStream = base64().decodingStream(new InputStreamReader(inputStream));
+            inputStream = new Base64InputStream(inputStream, Base64.NO_WRAP);
             originalStream.reset();
-            if (!isJson(base64().decodingStream(new InputStreamReader(originalStream)))) {
+            if (!isJson(new Base64InputStream(originalStream, Base64.NO_WRAP))) {
                 inputStream = new InflaterInputStream(inputStream);
                 originalStream.reset();
-                if (!isJson(new InflaterInputStream(base64().decodingStream(new InputStreamReader(originalStream))))) {
+                if (!isJson(new InflaterInputStream(new Base64InputStream(originalStream, Base64.NO_WRAP)))) {
                     throw new IllegalArgumentException("The given Stream is neither JSON, Base64'd JSON "
                             + "nor Base64'd deflated JSON.");
                 }

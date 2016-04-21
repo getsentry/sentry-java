@@ -1,7 +1,6 @@
 package com.getsentry.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.google.common.base.Charsets;
 import mockit.*;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.interfaces.SentryInterface;
@@ -296,7 +295,7 @@ public class JsonMarshallerTest {
 
         jsonMarshaller.marshall(mockEvent, outputStream);
 
-        assertThat(new String(outputStream.toByteArray(), Charsets.UTF_8.name()), is(""
+        assertThat(new String(outputStream.toByteArray(), "UTF-8"), is(""
                 + "eJyFjU0KAjEMhe+SdYXOSuw53A+hxlpMOyVpB2GYu"
                 + "1vU6dbwNl94PxvQSrnO8QYO7J8DA4lUMRC43JgN1N"
                 + "gfFVPp6elytic7dV2tdR/1APd+Puy8hEByUGGs90X"
