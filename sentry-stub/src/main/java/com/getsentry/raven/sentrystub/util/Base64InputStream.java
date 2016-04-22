@@ -51,8 +51,6 @@ public class Base64InputStream extends FilterInputStream {
      * @param flags bit flags for controlling the decoder; see the
      *        constants in {@link Base64}
      * @param encode true to encode, false to decode
-     *
-     * @hide
      */
     public Base64InputStream(InputStream in, int flags, boolean encode) {
         super(in);

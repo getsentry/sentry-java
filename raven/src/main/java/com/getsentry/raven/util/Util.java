@@ -26,10 +26,10 @@ public final class Util {
     }
 
     /**
-     * Parses the provided tags string into a Map of String -> String.
+     * Parses the provided tags string into a Map of String -&gt; String.
      *
      * @param tagsString comma-delimited key-value pairs, e.g. "tag1:value1,tag2:value2".
-     * @return Map of tags e.g. (tag1 -> value1, tag2 -> value2)
+     * @return Map of tags e.g. (tag1 -&gt; value1, tag2 -&gt; value2)
      */
     public static Map<String, String> parseTags(String tagsString) {
         if (isNullOrEmpty(tagsString)) {
