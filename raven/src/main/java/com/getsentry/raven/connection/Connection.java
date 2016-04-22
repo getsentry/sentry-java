@@ -14,4 +14,7 @@ public interface Connection extends Closeable {
      * @param event captured event to add in Sentry.
      */
     void send(Event event);
+
+    void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback);
+
 }

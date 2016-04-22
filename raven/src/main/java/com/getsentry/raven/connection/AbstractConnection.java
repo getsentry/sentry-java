@@ -5,6 +5,9 @@ import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
@@ -47,6 +50,10 @@ public abstract class AbstractConnection implements Connection {
      */
     private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
     private long waitingTime = baseWaitingTime;
+    /**
+     * TODO
+     */
+    private Set<EventSendFailureCallback> eventSendFailureCallbacks;
 
     /**
      * Creates a connection based on the public and secret keys.
@@ -55,6 +62,7 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
+        eventSendFailureCallbacks = new HashSet<>();
         authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
                 + "sentry_client=" + RavenEnvironment.NAME + ","
                 + "sentry_key=" + publicKey + ","
@@ -78,6 +86,9 @@ public abstract class AbstractConnection implements Connection {
             doSend(event);
             waitingTime = baseWaitingTime;
         } catch (ConnectionException e) {
+            for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
+                eventSendFailureCallback.onFailure(event, e);
+            }
             logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
             lockDown();
         }
@@ -144,4 +155,9 @@ public abstract class AbstractConnection implements Connection {
     public void setBaseWaitingTime(long baseWaitingTime) {
         this.baseWaitingTime = baseWaitingTime;
     }
+
+    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+        eventSendFailureCallbacks.add(eventSendFailureCallback);
+    }
+
 }
