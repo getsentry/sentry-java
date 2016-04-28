@@ -33,8 +33,13 @@ In the `log4j.properties` file set:
 log4j.rootLogger=WARN, SentryAppender
 log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
 log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
+// Optional, provide tags
 log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
-# Optional, allows to select the ravenFactory
+// Optional, provide release version of your application
+log4j.appender.SentryAppender.release=1.0.0
+// Optional, override the server name (rather than looking it up dynamically)
+log4j.appender.SentryAppender.serverName=server1
+# Optional, select the ravenFactory class
 #log4j.appender.SentryAppender.ravenFactory=com.getsentry.raven.DefaultRavenFactory
 ```
 

@@ -297,4 +297,8 @@ public class SentryHandler extends Handler {
     public void setRelease(String release) {
         this.release = release;
     }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
 }

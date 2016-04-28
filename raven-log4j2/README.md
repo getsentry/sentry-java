@@ -39,11 +39,26 @@ In the `log4j2.xml` file set:
             <dsn>
                 https://publicKey:secretKey@host:port/1?options
             </dsn>
+            <!--
+                Optional, provide tags
+            -->
             <tags>
                 tag1:value1,tag2:value2
             </tags>
             <!--
-                Optional, allows to select the ravenFactory
+                Optional, provide release version of your application
+            -->
+            <release>
+                1.0.0
+            </release>
+            <!--
+                Optional, override the server name (rather than looking it up dynamically)
+            -->
+            <serverName>
+                server1
+            </serverName>
+            <!--
+                Optional, select the ravenFactory class
             -->
             <!--
             <ravenFactory>
