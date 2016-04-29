@@ -86,11 +86,17 @@ public abstract class AbstractConnection implements Connection {
             doSend(event);
             waitingTime = baseWaitingTime;
         } catch (ConnectionException e) {
-            for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
-                eventSendFailureCallback.onFailure(event, e);
-            }
             logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
             lockDown();
+
+            for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
+                try {
+                    eventSendFailureCallback.onFailure(event, e);
+                } catch (Exception exc) {
+                    logger.warn("An exception occurred while running an EventSendFailureCallback: "
+                        + eventSendFailureCallback.getClass().getName(), exc);
+                }
+            }
         }
     }
 
