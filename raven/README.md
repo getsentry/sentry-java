@@ -35,9 +35,14 @@ In the `logging.properties` file set:
 .level=WARN
 handlers=com.getsentry.raven.jul.SentryHandler
 com.getsentry.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
+#  Optional, provide tags 
 com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
-# Optional, allows to select the ravenFactory
-#com.getsentry.raven.jul.SentryHandler.ravenFactory=com.getsentry.raven.DefaultRavenFactory
+# Optional, provide release version of your application 
+com.getsentry.raven.jul.SentryHandler.release=1.0.0
+# Optional, override the server name (rather than looking it up dynamically)
+com.getsentry.raven.jul.SentryHandler.serverName=server1
+# Optional, select the ravenFactory class 
+com.getsentry.raven.jul.SentryHandler.ravenFactory=com.getsentry.raven.DefaultRavenFactory
 ```
 
 When starting your application, add the `java.util.logging.config.file` to the

@@ -33,11 +33,14 @@ In the `logback.xml` file set:
 <configuration>
     <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
         <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
+        <!-- Optional, provide tags -->
         <tags>tag1:value1,tag2:value2</tags>
-        <!-- Optional, allows to select the ravenFactory -->
-        <!--<ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>-->
-        <!-- Optional, allows setting app release information -->
-        <!-- <release>1.0.0</release>
+        <!-- Optional, provide release version of your application -->
+        <release>1.0.0</release>
+        <!-- Optional, override the server name (rather than looking it up dynamically) -->
+        <serverName>server1</serverName>
+        <!-- Optional, select the ravenFactory class -->
+        <ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>
