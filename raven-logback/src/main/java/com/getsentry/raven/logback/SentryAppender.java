@@ -320,6 +320,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.release = release;
     }
 
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
     public void setMinLevel(String minLevel) {
         this.minLevel = Level.toLevel(minLevel, Level.WARN);
     }

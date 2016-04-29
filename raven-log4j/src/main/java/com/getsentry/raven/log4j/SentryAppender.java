@@ -240,6 +240,10 @@ public class SentryAppender extends AppenderSkeleton {
         this.release = release;
     }
 
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
     /**
      * Set the tags that should be sent along with the events.
      *
