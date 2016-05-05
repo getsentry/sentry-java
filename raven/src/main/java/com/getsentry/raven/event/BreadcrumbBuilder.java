@@ -1,6 +1,7 @@
 package com.getsentry.raven.event;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Builder to assist the creation of {@link Breadcrumb}s.
@@ -13,6 +14,7 @@ public class BreadcrumbBuilder {
     private String level;
     private String message;
     private String category;
+    private Map<String, String> data;
 
     /**
      * Type of the {@link Breadcrumb}.
@@ -59,7 +61,8 @@ public class BreadcrumbBuilder {
     }
 
     /**
-     * Message of the {@link Breadcrumb}.
+     * Message of the {@link Breadcrumb}. At least one of message or
+     * data is required.
      *
      * @param newMessage String
      * @return current BreadcrumbBuilder
@@ -81,12 +84,24 @@ public class BreadcrumbBuilder {
     }
 
     /**
+     * Data related to the {@link Breadcrumb}. At least one of message or
+     * data is required.
+     *
+     * @param newData Map of String to String
+     * @return current BreadcrumbBuilder
+     */
+    public BreadcrumbBuilder setData(Map<String, String> newData) {
+        this.data = newData;
+        return this;
+    }
+
+    /**
      * Build and return the {@link Breadcrumb} object.
      *
      * @return Breadcrumb
      */
     public Breadcrumb build() {
-        return new Breadcrumb(type, timestamp, duration, level, message, category);
+        return new Breadcrumb(type, timestamp, duration, level, message, category, data);
     }
 
 }

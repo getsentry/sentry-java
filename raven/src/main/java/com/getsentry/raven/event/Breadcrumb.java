@@ -1,6 +1,7 @@
 package com.getsentry.raven.event;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * An object that represents a single breadcrumb. Events may include a list
@@ -35,6 +36,11 @@ public class Breadcrumb {
     private final String category;
 
     /**
+     * Data related to the breadcrumb.
+     */
+    private final Map<String, String> data;
+
+    /**
      * Create an immutable {@link Breadcrumb} object.
      *
      * @param type String
@@ -43,15 +49,21 @@ public class Breadcrumb {
      * @param level String
      * @param message String
      * @param category String
+     * @param data Map of String to String
      */
-    Breadcrumb(String type, Date timestamp, float duration, String level, String message, String category) {
+    Breadcrumb(String type, Date timestamp, float duration, String level, String message,
+        String category, Map<String, String> data) {
+
         if (timestamp == null) {
             timestamp = new Date();
         }
 
         checkNotNull(level, "level");
-        checkNotNull(message, "message");
         checkNotNull(category, "category");
+
+        if (message == null && (data == null || data.size() < 1)) {
+            throw new IllegalArgumentException("one of 'message' or 'data' must be set");
+        }
 
         this.type = type;
         this.timestamp = timestamp;
@@ -59,11 +71,12 @@ public class Breadcrumb {
         this.level = level;
         this.message = message;
         this.category = category;
+        this.data = data;
     }
 
     private void checkNotNull(String str, String name) {
-        if (str == null || str.trim().equals("")) {
-            throw new IllegalArgumentException("field '" + name + "' is required but set to '" + str + "'");
+        if (str == null) {
+            throw new IllegalArgumentException("field '" + name + "' is required but got null");
         }
     }
 
@@ -89,6 +102,10 @@ public class Breadcrumb {
 
     public String getCategory() {
         return category;
+    }
+
+    public Map<String, String> getData() {
+        return data;
     }
 
 }

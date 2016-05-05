@@ -239,20 +239,30 @@ public class JsonMarshaller implements Marshaller {
         generator.writeArrayFieldStart("values");
         for (Breadcrumb breadcrumb : breadcrumbs) {
             generator.writeStartObject();
+            // getTime() returns ts in millis, but breadcrumbs expect seconds
+            generator.writeNumberField("timestamp", breadcrumb.getTimestamp().getTime() / 1000);
+
             if (breadcrumb.getType() != null) {
                 generator.writeStringField("type", breadcrumb.getType());
             }
-            // getTime() returns ts in millis, but breadcrumbs expect seconds
-            generator.writeNumberField("timestamp", breadcrumb.getTimestamp().getTime() / 1000);
             if (breadcrumb.getDuration() != 0.0) {
                 generator.writeNumberField("duration", breadcrumb.getDuration());
             }
             if (breadcrumb.getLevel() != null) {
                 generator.writeStringField("level", breadcrumb.getLevel());
             }
-            generator.writeStringField("message", breadcrumb.getMessage());
+            if (breadcrumb.getMessage() != null) {
+                generator.writeStringField("message", breadcrumb.getMessage());
+            }
             if (breadcrumb.getCategory() != null) {
                 generator.writeStringField("category", breadcrumb.getCategory());
+            }
+            if (breadcrumb.getData() != null && breadcrumb.getData().size() > 0) {
+                generator.writeObjectFieldStart("data");
+                for (Map.Entry<String, String> entry : breadcrumb.getData().entrySet()) {
+                    generator.writeStringField(entry.getKey(), entry.getValue());
+                }
+                generator.writeEndObject();
             }
             generator.writeEndObject();
         }
