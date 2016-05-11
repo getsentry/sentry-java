@@ -13,7 +13,7 @@ before sending details to a Sentry instance.
  - [logback](http://logback.qos.ch/) support is provided in [raven-logback](raven-logback)
 
 While it's **strongly recommended to use one of the supported logging
-frameworks** to capture and send messages to Sentry, a it is possible to do so
+frameworks** to capture and send messages to Sentry, it is also possible to do so
 manually with the main project [raven](raven).
 
 Raven supports both HTTP and HTTPS as transport protocols to the Sentry
