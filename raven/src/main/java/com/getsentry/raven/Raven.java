@@ -66,16 +66,16 @@ public class Raven {
     }
 
     /**
-     * Sends an exception to the Sentry server.
+     * Sends an exception (or throwable) to the Sentry server.
      * <p>
-     * The Exception will be logged at the {@link Event.Level#ERROR} level.
+     * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
-     * @param exception exception to send to Sentry.
+     * @param throwable exception to send to Sentry.
      */
-    public void sendException(Exception exception) {
-        EventBuilder eventBuilder = new EventBuilder().withMessage(exception.getMessage())
+    public void sendException(Throwable throwable) {
+        EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
                 .withLevel(Event.Level.ERROR)
-                .withSentryInterface(new ExceptionInterface(exception));
+                .withSentryInterface(new ExceptionInterface(throwable));
         runBuilderHelpers(eventBuilder);
         sendEvent(eventBuilder.build());
     }
