@@ -73,9 +73,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String serverName;
     /**
-     * If set, only events with level = minLevel and up will be recorded.
+     * If set, only events with level = minLevel and up will be recorded. (This
+     * configuration parameter is deprecated in favor of using Logback
+     * Filters.)
      */
-    protected Level minLevel = Level.WARN;
+    protected Level minLevel;
     /**
      * Additional tags to be sent to sentry.
      * <p>
@@ -325,7 +327,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     public void setMinLevel(String minLevel) {
-        this.minLevel = Level.toLevel(minLevel, Level.WARN);
+        this.minLevel = minLevel != null ? Level.toLevel(minLevel) : null;
     }
 
     /**
