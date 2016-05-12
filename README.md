@@ -157,6 +157,9 @@ to shutdown gracefully, but this can be adjusted via
 
     http://public:private@host:port/1?raven.async.shutdowntimeout=5000
 
+The special value `-1` can be used to disable the timeout and wait
+indefinitely for the executor to terminate.
+
 The `ShutdownHook` could lead to memory leaks in an environment where
 the life cycle of Raven doesn't match the life cycle of the JVM.
 

@@ -57,7 +57,7 @@ public class DefaultRavenFactory extends RavenFactory {
     /**
      * Option for the graceful shutdown timeout of the async executor, in milliseconds.
      */
-    public static final String SHUTDOWN_TIMEOUT = "raven.async.shutdowntimeout";
+    public static final String SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
     /**
      * Option to hide common stackframes with enclosing exceptions.
      */
@@ -150,7 +150,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
         boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(GRACEFUL_SHUTDOWN_OPTION));
 
-        String shutdownTimeoutStr = dsn.getOptions().get(SHUTDOWN_TIMEOUT);
+        String shutdownTimeoutStr = dsn.getOptions().get(SHUTDOWN_TIMEOUT_OPTION);
         if (shutdownTimeoutStr != null) {
             long shutdownTimeout = Long.parseLong(shutdownTimeoutStr);
             return new AsyncConnection(connection, executorService, gracefulShutdown, shutdownTimeout);

@@ -131,7 +131,16 @@ public class AsyncConnection implements Connection {
         closed = true;
         executorService.shutdown();
         try {
-            if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
+            if (shutdownTimeout == -1L) {
+                // Block until the executor terminates, but log periodically.
+                long waitBetweenLoggingMs = 5000L;
+                while (true) {
+                    if (executorService.awaitTermination(waitBetweenLoggingMs, TimeUnit.MILLISECONDS)) {
+                        break;
+                    }
+                    logger.info("Still waiting on async executor to terminate.");
+                }
+            } else if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
                 logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
                 logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
