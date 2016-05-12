@@ -20,9 +20,13 @@ import java.util.concurrent.TimeUnit;
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
     /**
-     * Timeout of the {@link #executorService}.
+     * Default timeout of the {@link #executorService}, in milliseconds.
      */
-    private static final long SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+    private static final long DEFAULT_SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+    /**
+     * Timeout of the {@link #executorService}, in milliseconds.
+     */
+    private final long shutdownTimeout;
     /**
      * Connection used to actually send the events.
      */
@@ -53,8 +57,10 @@ public class AsyncConnection implements Connection {
      * @param executorService  executorService used to process events, if null, the executorService will automatically
      *                         be set to {@code Executors.newSingleThreadExecutor()}
      * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
+     * @param shutdownTimeout  timeout for graceful shutdown of the executor, in milliseconds.
      */
-    public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown) {
+    public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown,
+        long shutdownTimeout) {
         this.actualConnection = actualConnection;
         if (executorService == null)
             this.executorService = Executors.newSingleThreadExecutor();
@@ -64,6 +70,21 @@ public class AsyncConnection implements Connection {
             this.gracefulShutdown = gracefulShutdown;
             addShutdownHook();
         }
+        this.shutdownTimeout = shutdownTimeout;
+    }
+
+    /**
+     * Creates a connection which will rely on an executor to send events.
+     * <p>
+     * Will propagate the {@link #close()} operation.
+     *
+     * @param actualConnection connection used to send the events.
+     * @param executorService  executorService used to process events, if null, the executorService will automatically
+     *                         be set to {@code Executors.newSingleThreadExecutor()}
+     * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
+     */
+    public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown) {
+        this(actualConnection, executorService, gracefulShutdown, DEFAULT_SHUTDOWN_TIMEOUT);
     }
 
     /**
@@ -89,7 +110,7 @@ public class AsyncConnection implements Connection {
      * {@inheritDoc}.
      * <p>
      * Closing the {@link AsyncConnection} will attempt a graceful shutdown of the {@link #executorService} with a
-     * timeout of {@link #SHUTDOWN_TIMEOUT}, allowing the current events to be submitted while new events will
+     * timeout of {@link #shutdownTimeout}, allowing the current events to be submitted while new events will
      * be rejected.<br>
      * If the shutdown times out, the {@code executorService} will be forced to shutdown.
      */
@@ -105,12 +126,22 @@ public class AsyncConnection implements Connection {
      *
      * @see #close()
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void doClose() throws IOException {
         logger.info("Gracefully shutdown sentry threads.");
         closed = true;
         executorService.shutdown();
         try {
-            if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS)) {
+            if (shutdownTimeout == -1L) {
+                // Block until the executor terminates, but log periodically.
+                long waitBetweenLoggingMs = 5000L;
+                while (true) {
+                    if (executorService.awaitTermination(waitBetweenLoggingMs, TimeUnit.MILLISECONDS)) {
+                        break;
+                    }
+                    logger.info("Still waiting on async executor to terminate.");
+                }
+            } else if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
                 logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
                 logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
