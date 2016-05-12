@@ -245,9 +245,6 @@ public class JsonMarshaller implements Marshaller {
             if (breadcrumb.getType() != null) {
                 generator.writeStringField("type", breadcrumb.getType());
             }
-            if (breadcrumb.getDuration() != 0.0) {
-                generator.writeNumberField("duration", breadcrumb.getDuration());
-            }
             if (breadcrumb.getLevel() != null) {
                 generator.writeStringField("level", breadcrumb.getLevel());
             }

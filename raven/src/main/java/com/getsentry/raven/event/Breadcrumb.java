@@ -19,10 +19,6 @@ public class Breadcrumb {
      */
     private final Date timestamp;
     /**
-     * (Optional) Duration of the portion this breadcrumb represents.
-     */
-    private final float duration;
-    /**
      * Level of the breadcrumb.
      */
     private final String level;
@@ -45,13 +41,12 @@ public class Breadcrumb {
      *
      * @param type String
      * @param timestamp Date
-     * @param duration float
      * @param level String
      * @param message String
      * @param category String
      * @param data Map of String to String
      */
-    Breadcrumb(String type, Date timestamp, float duration, String level, String message,
+    Breadcrumb(String type, Date timestamp, String level, String message,
         String category, Map<String, String> data) {
 
         if (timestamp == null) {
@@ -67,7 +62,6 @@ public class Breadcrumb {
 
         this.type = type;
         this.timestamp = timestamp;
-        this.duration = duration;
         this.level = level;
         this.message = message;
         this.category = category;
@@ -86,10 +80,6 @@ public class Breadcrumb {
 
     public Date getTimestamp() {
         return timestamp;
-    }
-
-    public float getDuration() {
-        return duration;
     }
 
     public String getLevel() {

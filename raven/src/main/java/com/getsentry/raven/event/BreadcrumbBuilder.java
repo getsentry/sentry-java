@@ -10,7 +10,6 @@ public class BreadcrumbBuilder {
 
     private String type;
     private Date timestamp;
-    private float duration;
     private String level;
     private String message;
     private String category;
@@ -35,17 +34,6 @@ public class BreadcrumbBuilder {
      */
     public BreadcrumbBuilder setTimestamp(Date newTimestamp) {
         this.timestamp = newTimestamp;
-        return this;
-    }
-
-    /**
-     * Duration of the {@link Breadcrumb}.
-     *
-     * @param newDuration float
-     * @return current BreadcrumbBuilder
-     */
-    public BreadcrumbBuilder setDuration(float newDuration) {
-        this.duration = newDuration;
         return this;
     }
 
@@ -101,7 +89,7 @@ public class BreadcrumbBuilder {
      * @return Breadcrumb
      */
     public Breadcrumb build() {
-        return new Breadcrumb(type, timestamp, duration, level, message, category, data);
+        return new Breadcrumb(type, timestamp, level, message, category, data);
     }
 
 }
