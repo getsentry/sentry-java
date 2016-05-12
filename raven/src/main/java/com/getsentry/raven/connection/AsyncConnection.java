@@ -126,6 +126,7 @@ public class AsyncConnection implements Connection {
      *
      * @see #close()
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void doClose() throws IOException {
         logger.info("Gracefully shutdown sentry threads.");
         closed = true;
