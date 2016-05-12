@@ -1,3 +1,8 @@
+Version 7.2.3
+-------------
+
+- Accept `Throwable` instances as parameter to `Raven.sendException`.
+
 Version 7.2.2
 -------------
 
