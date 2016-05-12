@@ -151,9 +151,14 @@ To disable the async mode, add `raven.async=false` to the DSN:
 
 #### Graceful Shutdown (advanced)
 In order to shutdown the asynchronous connection gracefully, a `ShutdownHook`
-is created.
-This could lead to memory leaks in an environment where the life cycle of
-Raven doesn't match the life cycle of the JVM.
+is created. By default, the asynchronous connection is given 1 second
+to shutdown gracefully, but this can be adjusted via
+`raven.async.shutdowntimeout` (represented in milliseconds):
+
+    http://public:private@host:port/1?raven.async.shutdowntimeout=5000
+
+The `ShutdownHook` could lead to memory leaks in an environment where
+the life cycle of Raven doesn't match the life cycle of the JVM.
 
 An example would be in a JEE environment where the application using Raven
 could be deployed and undeployed regularly.
