@@ -3,16 +3,22 @@ package com.getsentry.raven;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.util.CircularFifoQueue;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
  * {@link Breadcrumb}s) so that data may be collected in different parts
- * of an appliation and then sent together when (e.g.) an exception occurs.
+ * of an application and then sent together when (e.g.) an exception occurs.
  */
 public class RavenContext implements AutoCloseable {
+    /**
+     * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
+     */
+    private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
 
     /**
      * Thread local set of activate context objects. Note that a {@link ConcurrentHashMap}
@@ -37,7 +43,7 @@ public class RavenContext implements AutoCloseable {
      */
     public RavenContext() {
         // TODO: ringbuffer size parameter
-        breadcrumbs = new CircularFifoQueue<>(100);
+        breadcrumbs = new CircularFifoQueue<>(DEFAULT_BREADCRUMB_LIMIT);
     }
 
     /**
@@ -65,25 +71,31 @@ public class RavenContext implements AutoCloseable {
 
     /**
      * Calls deactivate, used by try-with-resources ({@link AutoCloseable}).
-     *
-     * @throws Exception
      */
     @Override
-    public void close() throws Exception {
+    public void close() {
         deactivate();
     }
 
     /**
      * Returns all activate contexts for the current thread.
      *
-     * @return Set of active {@link RavenContext} objects.
+     * @return List of active {@link RavenContext} objects.
      */
-    public static Set<RavenContext> getActiveContexts() {
-        return Collections.unmodifiableSet(activeContexts.get().keySet());
+    public static List<RavenContext> getActiveContexts() {
+        Collection<RavenContext> ravenContexts = activeContexts.get().values();
+        List<RavenContext> retList = new ArrayList<>(ravenContexts.size());
+        retList.addAll(ravenContexts);
+        return retList;
     }
 
-    public CircularFifoQueue<Breadcrumb> getBreadcrumbs() {
-        return breadcrumbs;
+    /**
+     * Return {@link Breadcrumb}s attached to this RavenContext.
+     *
+     * @return Iterator of {@link Breadcrumb}s.
+     */
+    public Iterator<Breadcrumb> getBreadcrumbs() {
+        return breadcrumbs.iterator();
     }
 
 }
