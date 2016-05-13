@@ -3,10 +3,11 @@ package com.getsentry.raven;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.util.CircularFifoQueue;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.List;
 
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
@@ -15,13 +16,15 @@ import java.util.Set;
  */
 public class RavenContext implements AutoCloseable {
     /**
-     * Thread local set of activate context objects.
+     * Thread local set of activate context objects. Note that an {@link IdentityHashMap}
+     * is used instead of a Set because there is no identity-set in the Java
+     * standard library.
      */
-    private static ThreadLocal<Set<RavenContext>> activeContexts =
-        new ThreadLocal<Set<RavenContext>>() {
+    private static ThreadLocal<IdentityHashMap<RavenContext, RavenContext>> activeContexts =
+        new ThreadLocal<IdentityHashMap<RavenContext, RavenContext>>() {
             @Override
-            protected Set<RavenContext> initialValue() {
-                return new HashSet<>();
+            protected IdentityHashMap<RavenContext, RavenContext> initialValue() {
+                return new IdentityHashMap<>();
             }
     };
     /**
@@ -45,7 +48,7 @@ public class RavenContext implements AutoCloseable {
      * Add this context to the activate contexts for this thread.
      */
     public void activate() {
-        activeContexts.get().add(this);
+        activeContexts.get().put(this, this);
     }
 
     /**
@@ -75,10 +78,13 @@ public class RavenContext implements AutoCloseable {
     /**
      * Returns all activate contexts for the current thread.
      *
-     * @return Set of active {@link RavenContext} objects.
+     * @return List of active {@link RavenContext} objects.
      */
-    public static Set<RavenContext> getActiveContexts() {
-        return Collections.unmodifiableSet(activeContexts.get());
+    public static List<RavenContext> getActiveContexts() {
+        Collection<RavenContext> ravenContexts = activeContexts.get().values();
+        List<RavenContext> list = new ArrayList<>(ravenContexts.size());
+        list.addAll(ravenContexts);
+        return list;
     }
 
     /**
