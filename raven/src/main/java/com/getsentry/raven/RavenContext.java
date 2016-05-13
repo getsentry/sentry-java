@@ -15,6 +15,7 @@ import java.util.List;
  * of an application and then sent together when (e.g.) an exception occurs.
  */
 public class RavenContext implements AutoCloseable {
+
     /**
      * Thread local set of activate context objects. Note that an {@link IdentityHashMap}
      * is used instead of a Set because there is no identity-set in the Java
@@ -27,10 +28,12 @@ public class RavenContext implements AutoCloseable {
                 return new IdentityHashMap<>();
             }
     };
+
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
+
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
