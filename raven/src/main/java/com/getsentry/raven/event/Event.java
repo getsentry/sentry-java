@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -64,10 +63,6 @@ public class Event implements Serializable {
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
      */
     private Map<String, String> tags = new HashMap<>();
-    /**
-     * List of Breadcrumb objects related to the event.
-     */
-    private List<Breadcrumb> breadcrumbs = new ArrayList<>();
     /**
      * Identifies the host client from which the event was recorded.
      */
@@ -162,14 +157,6 @@ public class Event implements Serializable {
 
     void setCulprit(String culprit) {
         this.culprit = culprit;
-    }
-
-    public List<Breadcrumb> getBreadcrumbs() {
-        return breadcrumbs;
-    }
-
-    void setBreadcrumbs(List<Breadcrumb> breadcrumbs) {
-        this.breadcrumbs = breadcrumbs;
     }
 
     public Map<String, String> getTags() {

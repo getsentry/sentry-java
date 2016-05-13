@@ -135,7 +135,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(PLATFORM, event.getPlatform());
         generator.writeStringField(CULPRIT, event.getCulprit());
         writeTags(generator, event.getTags());
-        writeBreadcumbs(generator, event.getBreadcrumbs());
+        // TODO: write out context?
         generator.writeStringField(SERVER_NAME, event.getServerName());
         generator.writeStringField(RELEASE, event.getRelease());
         writeExtras(generator, event.getExtra());
@@ -227,6 +227,11 @@ public class JsonMarshaller implements Marshaller {
             generator.writeStringField(tag.getKey(), tag.getValue());
         }
         generator.writeEndObject();
+    }
+
+    private void writeContext(JsonGenerator generator) throws IOException {
+        // TODO: which context? all activate contexts for this thread?
+        // TODO: for each (?) context: writeBreadcrumbs
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
