@@ -25,6 +25,14 @@ public class Raven {
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<>();
     private Connection connection;
+    private RavenContext context;
+
+    /**
+     * Create a Raven object with an empty {@link RavenContext}.
+     */
+    public Raven() {
+        context = new RavenContext();
+    }
 
     /**
      * Runs the {@link EventBuilderHelper} against the {@link EventBuilder} to obtain additional information with a
@@ -117,6 +125,10 @@ public class Raven {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public RavenContext getContext() {
+        return context;
     }
 
     @Override

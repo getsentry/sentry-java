@@ -30,7 +30,6 @@ public class Breadcrumb {
      * Category of the breadcrumb.
      */
     private final String category;
-
     /**
      * Data related to the breadcrumb.
      */
