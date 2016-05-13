@@ -40,11 +40,19 @@ public class RavenContext implements AutoCloseable {
     private CircularFifoQueue<Breadcrumb> breadcrumbs;
 
     /**
-     * Create a new (empty) RavenContext object.
+     * Create a new (empty) RavenContext object with the default Breadcrumb limit.
      */
     public RavenContext() {
-        // TODO: ringbuffer size parameter
-        breadcrumbs = new CircularFifoQueue<>(DEFAULT_BREADCRUMB_LIMIT);
+        this(DEFAULT_BREADCRUMB_LIMIT);
+    }
+
+    /**
+     * Create a new (empty) RavenContext object with the specified Breadcrumb limit.
+     *
+     * @param breadcrumbLimit Number of Breadcrumb objects to retain in ring buffer.
+     */
+    public RavenContext(int breadcrumbLimit) {
+        breadcrumbs = new CircularFifoQueue<>(breadcrumbLimit);
     }
 
     /**
