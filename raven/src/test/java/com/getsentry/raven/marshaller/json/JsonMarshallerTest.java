@@ -1,6 +1,8 @@
 package com.getsentry.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.getsentry.raven.event.Breadcrumb;
+import com.getsentry.raven.event.BreadcrumbBuilder;
 import mockit.*;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.interfaces.SentryInterface;
@@ -10,9 +12,11 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static com.getsentry.raven.marshaller.json.JsonComparisonUtil.*;
@@ -201,6 +205,37 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
         assertThat(jsonOutputStreamParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/jsonmarshallertest/testRelease.json")));
+    }
+
+    @Test
+    public void testEventBreadcrumbsWrittenProperly() throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+
+        Breadcrumb breadcrumb1 = new BreadcrumbBuilder()
+            .setTimestamp(new Date(1463169342000L))
+            .setLevel("info")
+            .setCategory("foo")
+            .setMessage("test1")
+            .build();
+        Breadcrumb breadcrumb2 = new BreadcrumbBuilder()
+            .setTimestamp(new Date(1463169343000L))
+            .setLevel("info")
+            .setCategory("foo")
+            .setMessage("test2")
+            .build();
+
+        final List<Breadcrumb> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add(breadcrumb1);
+        breadcrumbs.add(breadcrumb2);
+
+        new NonStrictExpectations() {{
+            mockEvent.getBreadcrumbs();
+            result = breadcrumbs;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/jsonmarshallertest/testBreadcrumbs.json")));
     }
 
     @Test

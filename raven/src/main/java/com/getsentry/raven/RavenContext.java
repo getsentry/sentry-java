@@ -74,8 +74,6 @@ public class RavenContext implements AutoCloseable {
      */
     public void clear() {
         breadcrumbs.clear();
-        // TODO: deactivate if not main thread id like python does?
-        //   https://github.com/getsentry/raven-python/blob/master/raven/context.py#L127-L133
     }
 
     /**
