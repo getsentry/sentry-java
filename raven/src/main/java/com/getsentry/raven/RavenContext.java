@@ -90,4 +90,13 @@ public class RavenContext implements AutoCloseable {
         return breadcrumbs.iterator();
     }
 
+    /**
+     * Record a single {@link Breadcrumb} into this context.
+     *
+     * @param breadcrumb Breadcrumb object to record
+     */
+    public void recordBreadcrumb(Breadcrumb breadcrumb) {
+        breadcrumbs.add(breadcrumb);
+    }
+
 }
