@@ -3,11 +3,10 @@ package com.getsentry.raven;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.util.CircularFifoQueue;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
@@ -16,23 +15,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RavenContext implements AutoCloseable {
     /**
+     * Thread local set of activate context objects.
+     */
+    private static ThreadLocal<Set<RavenContext>> activeContexts =
+        new ThreadLocal<Set<RavenContext>>() {
+            @Override
+            protected Set<RavenContext> initialValue() {
+                return new HashSet<>();
+            }
+    };
+    /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
-
-    /**
-     * Thread local set of activate context objects. Note that a {@link ConcurrentHashMap}
-     * is used here because no Concurrent Set exists in the Java standard library.
-     * We use the same object for the Key and the Value and treat it like a Set.
-     */
-    private static ThreadLocal<ConcurrentHashMap<RavenContext, RavenContext>> activeContexts =
-        new ThreadLocal<ConcurrentHashMap<RavenContext, RavenContext>>() {
-            @Override
-            protected ConcurrentHashMap<RavenContext, RavenContext> initialValue() {
-                return new ConcurrentHashMap<>();
-            }
-    };
-
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
@@ -50,7 +45,7 @@ public class RavenContext implements AutoCloseable {
      * Add this context to the activate contexts for this thread.
      */
     public void activate() {
-        activeContexts.get().put(this, this);
+        activeContexts.get().add(this);
     }
 
     /**
@@ -80,13 +75,10 @@ public class RavenContext implements AutoCloseable {
     /**
      * Returns all activate contexts for the current thread.
      *
-     * @return List of active {@link RavenContext} objects.
+     * @return Set of active {@link RavenContext} objects.
      */
-    public static List<RavenContext> getActiveContexts() {
-        Collection<RavenContext> ravenContexts = activeContexts.get().values();
-        List<RavenContext> retList = new ArrayList<>(ravenContexts.size());
-        retList.addAll(ravenContexts);
-        return retList;
+    public static Set<RavenContext> getActiveContexts() {
+        return Collections.unmodifiableSet(activeContexts.get());
     }
 
     /**
