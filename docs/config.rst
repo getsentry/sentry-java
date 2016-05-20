@@ -90,7 +90,7 @@ Queue size (advanced):
 
     It is possible to set a maximum with the option ``raven.async.queuesize``::
 
-        ___DSN__?raven.async.queuesize=100
+        ___DSN___?raven.async.queuesize=100
 
     This means that if the connection to the Sentry server is down, only
     the 100 most recent events will be stored and processed as soon as the
