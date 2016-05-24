@@ -179,10 +179,6 @@
         <module name="IllegalThrows">
             <property name="illegalClassNames" value="java.lang.Error, java.lang.Throwable"/>
         </module>
-        <module name="RedundantThrows">
-            <property name="allowUnchecked" value="true"/>
-            <property name="allowSubclasses" value="true"/>
-        </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="IllegalType"/>
