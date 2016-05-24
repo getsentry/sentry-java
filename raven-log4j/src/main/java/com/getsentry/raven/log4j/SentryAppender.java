@@ -194,7 +194,9 @@ public class SentryAppender extends AppenderSkeleton {
         ThrowableInformation throwableInformation = null;
         try {
             throwableInformation = loggingEvent.getThrowableInformation();
-        } catch (NullPointerException e) {}
+        } catch (NullPointerException expected) {
+            // `throwableInformation` is already set.
+        }
 
         if (throwableInformation != null) {
             Throwable throwable = throwableInformation.getThrowable();
