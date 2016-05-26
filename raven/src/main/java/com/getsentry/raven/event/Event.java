@@ -275,7 +275,7 @@ public class Event implements Serializable {
     /**
      * Levels of log available in Sentry.
      */
-    public static enum Level {
+    public enum Level {
         /**
          * Fatal is the highest form of log available, use it for unrecoverable issues.
          */
