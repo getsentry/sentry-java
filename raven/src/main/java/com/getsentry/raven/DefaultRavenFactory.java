@@ -76,11 +76,11 @@ public class DefaultRavenFactory extends RavenFactory {
             // https://tomcat.apache.org/tomcat-5.5-doc/servletapi/
             Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
             raven.addBuilderHelper(new HttpEventBuilderHelper());
-            raven.addBuilderHelper(new ContextBuilderHelper(raven));
         } catch (ClassNotFoundException e) {
             logger.debug("The current environment doesn't provide access to servlets,"
                          + "or provides an unsupported version.");
         }
+        raven.addBuilderHelper(new ContextBuilderHelper(raven));
         return raven;
     }
 

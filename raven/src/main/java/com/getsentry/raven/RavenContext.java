@@ -17,7 +17,7 @@ import java.util.List;
 public class RavenContext implements AutoCloseable {
 
     /**
-     * Thread local set of activate context objects. Note that an {@link IdentityHashMap}
+     * Thread local set of active context objects. Note that an {@link IdentityHashMap}
      * is used instead of a Set because there is no identity-set in the Java
      * standard library.
      */
