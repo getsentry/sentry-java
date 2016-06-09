@@ -2,6 +2,8 @@ Version 7.2.4
 -------------
 
 - Add (manual) support for breadcrumbs to event objects.
+- Add ``RavenContext`` which tracks thread-local state.
+- Add ``Breadcrumbs`` helper to log breadcrumbs from anywhere without manually passing context around.
 
 Version 7.2.3
 -------------
