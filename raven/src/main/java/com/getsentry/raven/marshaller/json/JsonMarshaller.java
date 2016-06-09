@@ -2,6 +2,7 @@ package com.getsentry.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.util.Base64;
 import com.getsentry.raven.util.Base64OutputStream;
 import com.getsentry.raven.event.Event;
@@ -56,6 +57,10 @@ public class JsonMarshaller implements Marshaller {
      * A map or list of tags for this event.
      */
     public static final String TAGS = "tags";
+    /**
+     * List of breadcrumbs for this event.
+     */
+    public static final String BREADCRUMBS = "breadcrumbs";
     /**
      * Identifies the host client from which the event was recorded.
      */
@@ -130,6 +135,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(PLATFORM, event.getPlatform());
         generator.writeStringField(CULPRIT, event.getCulprit());
         writeTags(generator, event.getTags());
+        writeBreadcumbs(generator, event.getBreadcrumbs());
         generator.writeStringField(SERVER_NAME, event.getServerName());
         generator.writeStringField(RELEASE, event.getRelease());
         writeExtras(generator, event.getExtra());
@@ -220,6 +226,44 @@ public class JsonMarshaller implements Marshaller {
         for (Map.Entry<String, String> tag : tags.entrySet()) {
             generator.writeStringField(tag.getKey(), tag.getValue());
         }
+        generator.writeEndObject();
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private void writeBreadcumbs(JsonGenerator generator, List<Breadcrumb> breadcrumbs) throws IOException {
+        if (breadcrumbs.size() < 1) {
+            return;
+        }
+
+        generator.writeObjectFieldStart(BREADCRUMBS);
+        generator.writeArrayFieldStart("values");
+        for (Breadcrumb breadcrumb : breadcrumbs) {
+            generator.writeStartObject();
+            // getTime() returns ts in millis, but breadcrumbs expect seconds
+            generator.writeNumberField("timestamp", breadcrumb.getTimestamp().getTime() / 1000);
+
+            if (breadcrumb.getType() != null) {
+                generator.writeStringField("type", breadcrumb.getType());
+            }
+            if (breadcrumb.getLevel() != null) {
+                generator.writeStringField("level", breadcrumb.getLevel());
+            }
+            if (breadcrumb.getMessage() != null) {
+                generator.writeStringField("message", breadcrumb.getMessage());
+            }
+            if (breadcrumb.getCategory() != null) {
+                generator.writeStringField("category", breadcrumb.getCategory());
+            }
+            if (breadcrumb.getData() != null && breadcrumb.getData().size() > 0) {
+                generator.writeObjectFieldStart("data");
+                for (Map.Entry<String, String> entry : breadcrumb.getData().entrySet()) {
+                    generator.writeStringField(entry.getKey(), entry.getValue());
+                }
+                generator.writeEndObject();
+            }
+            generator.writeEndObject();
+        }
+        generator.writeEndArray();
         generator.writeEndObject();
     }
 
