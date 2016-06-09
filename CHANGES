@@ -1,3 +1,8 @@
+Version 7.2.4
+-------------
+
+- Add (manual) support for breadcrumbs to event objects.
+
 Version 7.2.3
 -------------
 
