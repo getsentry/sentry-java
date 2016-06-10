@@ -9,9 +9,9 @@ Version 7.2.4
 Version 7.2.3
 -------------
 
-- Accept `Throwable` instances as parameter to `Raven.sendException`.
-- Add `raven.async.shutdowntimeout` option.
-- Remove default `WARNING` filter level for the Logback appender.
+- Accept ``Throwable`` instances as parameter to ``Raven.sendException``.
+- Add ``raven.async.shutdowntimeout`` option.
+- Remove default ``WARNING`` filter level for the Logback appender.
 
 Version 7.2.2
 -------------
