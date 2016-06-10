@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
  * {@link Breadcrumb}s) so that data may be collected in different parts
- * of an application and then sent together when (e.g.) an exception occurs.
+ * of an application and then sent together when an exception occurs.
  */
 public class RavenContext implements AutoCloseable {
 
