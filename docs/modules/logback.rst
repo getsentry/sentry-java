@@ -16,7 +16,7 @@ If you want to use Maven you can install Raven-Logback as dependency:
     <dependency>
       <groupId>com.getsentry.raven</groupId>
       <artifactId>raven-logback</artifactId>
-      <version>7.2.3</version>
+      <version>7.3.0</version>
     </dependency>
 
 - :doc:`raven dependencies <raven>`
