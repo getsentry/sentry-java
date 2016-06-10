@@ -36,6 +36,24 @@ public class RavenTest {
     }
 
     @Test
+    public void testSendEventBuilder() throws Exception {
+        final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
+        raven.addBuilderHelper(mockEventBuilderHelper);
+
+        raven.sendEvent(new EventBuilder()
+            .withMessage(message)
+            .withLevel(Event.Level.INFO));
+
+        new Verifications() {{
+            Event event;
+            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
+            mockConnection.send(event = withCapture());
+            assertThat(event.getLevel(), equalTo(Event.Level.INFO));
+            assertThat(event.getMessage(), equalTo(message));
+        }};
+    }
+
+    @Test
     public void testSendEventFailingIsCaught() throws Exception {
         new NonStrictExpectations() {{
             mockConnection.send((Event) any);
