@@ -2,6 +2,7 @@ package com.getsentry.raven;
 
 import com.getsentry.raven.connection.*;
 import com.getsentry.raven.dsn.Dsn;
+import com.getsentry.raven.event.helper.ContextBuilderHelper;
 import com.getsentry.raven.event.helper.HttpEventBuilderHelper;
 import com.getsentry.raven.event.interfaces.*;
 import com.getsentry.raven.marshaller.Marshaller;
@@ -79,6 +80,7 @@ public class DefaultRavenFactory extends RavenFactory {
             logger.debug("The current environment doesn't provide access to servlets,"
                          + "or provides an unsupported version.");
         }
+        raven.addBuilderHelper(new ContextBuilderHelper(raven));
         return raven;
     }
 
