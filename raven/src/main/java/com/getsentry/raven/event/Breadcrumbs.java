@@ -15,7 +15,7 @@ public final class Breadcrumbs {
     }
 
     /**
-     * Record a {@link Breadcrumb} into all of this thread's activate contexts.
+     * Record a {@link Breadcrumb} into all of this thread's active contexts.
      *
      * @param breadcrumb Breadcrumb to record
      */

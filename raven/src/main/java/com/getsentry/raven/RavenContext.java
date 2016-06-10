@@ -20,6 +20,14 @@ public class RavenContext implements AutoCloseable {
      * Thread local set of active context objects. Note that an {@link IdentityHashMap}
      * is used instead of a Set because there is no identity-set in the Java
      * standard library.
+     *
+     * A set of active contexts is required in order to support running multiple Raven
+     * clients within a single process. In *most* cases this set will contain a single
+     * active context object.
+     *
+     * This must be static and {@link ThreadLocal} so that users can retrieve any active
+     * context objects globally, without passing context objects all the way down their
+     * stacks. See {@link com.getsentry.raven.event.Breadcrumbs} for an example of how this may be used.
      */
     private static ThreadLocal<IdentityHashMap<RavenContext, RavenContext>> activeContexts =
         new ThreadLocal<IdentityHashMap<RavenContext, RavenContext>>() {
@@ -56,14 +64,14 @@ public class RavenContext implements AutoCloseable {
     }
 
     /**
-     * Add this context to the activate contexts for this thread.
+     * Add this context to the active contexts for this thread.
      */
     public void activate() {
         activeContexts.get().put(this, this);
     }
 
     /**
-     * Remove this context from the activate contexts for this thread.
+     * Remove this context from the active contexts for this thread.
      */
     public void deactivate() {
         activeContexts.get().remove(this);
@@ -85,7 +93,7 @@ public class RavenContext implements AutoCloseable {
     }
 
     /**
-     * Returns all activate contexts for the current thread.
+     * Returns all active contexts for the current thread.
      *
      * @return List of active {@link RavenContext} objects.
      */
