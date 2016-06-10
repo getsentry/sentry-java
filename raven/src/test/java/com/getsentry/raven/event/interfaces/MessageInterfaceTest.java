@@ -23,8 +23,9 @@ public class MessageInterfaceTest {
 
     @Test
     public void testListParameters() throws Exception {
-        final String message = "b88145c2-8c46-49fc-81cc-8982f288e5c2";
+        final String message = "b88145c2-8c46-49fc-81cc-8982f288e5c2 %s";
         final List<String> parameters = Collections.singletonList("e703048a-0084-4306-a04e-04eaca572046");
+        final String formatted = "b88145c2-8c46-49fc-81cc-8982f288e5c2 e703048a-0084-4306-a04e-04eaca572046";
 
         final MessageInterface messageInterface = new MessageInterface(message, parameters);
 
@@ -35,7 +36,35 @@ public class MessageInterfaceTest {
 
     @Test
     public void testVarargsParameters() throws Exception {
+        final String message = "b3b31d87-de49-47fb-8f83-e3be45e7a611 %s";
+        final String parameter = "9113953f-3306-4aeb-8d3a-319b1ea83683";
+        final String formatted = "b3b31d87-de49-47fb-8f83-e3be45e7a611 9113953f-3306-4aeb-8d3a-319b1ea83683";
+
+        final MessageInterface messageInterface = new MessageInterface(message, parameter);
+
+        assertThat(messageInterface.getMessage(), is(message));
+        assertThat(messageInterface.getParameters(), equalTo(Collections.singletonList(parameter)));
+        assertThat(messageInterface.getInterfaceName(), is(MessageInterface.MESSAGE_INTERFACE));
+        assertThat(messageInterface.getFormatted(), is(formatted));
+    }
+
+    @Test
+    public void notEnoughParametersOK() {
         final String message = "b3b31d87-de49-47fb-8f83-e3be45e7a611";
+        final String parameter = "9113953f-3306-4aeb-8d3a-319b1ea83683";
+        final String formatted = "b3b31d87-de49-47fb-8f83-e3be45e7a611";
+
+        final MessageInterface messageInterface = new MessageInterface(message, parameter);
+
+        assertThat(messageInterface.getMessage(), is(message));
+        assertThat(messageInterface.getParameters(), equalTo(Collections.singletonList(parameter)));
+        assertThat(messageInterface.getInterfaceName(), is(MessageInterface.MESSAGE_INTERFACE));
+        assertThat(messageInterface.getFormatted(), is(formatted));
+    }
+
+    @Test
+    public void tooManyParametersOK() {
+        final String message = "b3b31d87-de49-47fb-8f83-e3be45e7a611 %s %s";
         final String parameter = "9113953f-3306-4aeb-8d3a-319b1ea83683";
 
         final MessageInterface messageInterface = new MessageInterface(message, parameter);
@@ -43,5 +72,7 @@ public class MessageInterfaceTest {
         assertThat(messageInterface.getMessage(), is(message));
         assertThat(messageInterface.getParameters(), equalTo(Collections.singletonList(parameter)));
         assertThat(messageInterface.getInterfaceName(), is(MessageInterface.MESSAGE_INTERFACE));
+        assertThat(messageInterface.getFormatted(), isEmptyOrNullString());
     }
+
 }

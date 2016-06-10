@@ -29,6 +29,7 @@ public class MessageInterface implements SentryInterface {
     public static final String MESSAGE_INTERFACE = "sentry.interfaces.Message";
     private final String message;
     private final List<String> parameters;
+    private final String formatted;
 
     /**
      * Creates a non parametrised message.
@@ -63,6 +64,13 @@ public class MessageInterface implements SentryInterface {
     public MessageInterface(String message, List<String> parameters) {
         this.message = message;
         this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
+        String fmt;
+        try {
+            fmt = String.format(message, parameters.toArray());
+        } catch (Exception e) {
+            fmt = null;
+        }
+        this.formatted = fmt;
     }
 
     @Override
@@ -76,6 +84,10 @@ public class MessageInterface implements SentryInterface {
 
     public List<String> getParameters() {
         return parameters;
+    }
+
+    public String getFormatted() {
+        return formatted;
     }
 
     @Override

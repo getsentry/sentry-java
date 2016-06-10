@@ -15,6 +15,7 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
     public static final int MAX_MESSAGE_LENGTH = 1000;
     private static final String MESSAGE_PARAMETER = "message";
     private static final String PARAMS_PARAMETER = "params";
+    private static final String FORMATTED_PARAMETER = "formatted";
 
     /**
      * Formats a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
@@ -39,6 +40,9 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
             generator.writeString(parameter);
         }
         generator.writeEndArray();
+        if (messageInterface.getFormatted() != null) {
+            generator.writeStringField(FORMATTED_PARAMETER, formatMessage(messageInterface.getFormatted()));
+        }
         generator.writeEndObject();
     }
 }
