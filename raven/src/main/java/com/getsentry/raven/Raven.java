@@ -52,6 +52,16 @@ public class Raven {
     }
 
     /**
+     * Builds and sends an {@link Event} to the Sentry server.
+     *
+     * @param eventBuilder {@link EventBuilder} to send to Sentry.
+     */
+    public void sendEvent(EventBuilder eventBuilder) {
+        runBuilderHelpers(eventBuilder);
+        sendEvent(eventBuilder.build());
+    }
+
+    /**
      * Sends a message to the Sentry server.
      * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
