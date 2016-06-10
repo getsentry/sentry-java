@@ -28,7 +28,9 @@ public class Raven {
     private ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
         @Override
         protected RavenContext initialValue() {
-            return new RavenContext();
+            RavenContext ctx = new RavenContext();
+            ctx.activate();
+            return ctx;
         }
     };
 
