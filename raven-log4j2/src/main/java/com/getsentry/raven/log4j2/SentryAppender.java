@@ -260,8 +260,10 @@ public class SentryAppender extends AbstractAppender {
         }
 
         if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
-            eventBuilder.withSentryInterface(new MessageInterface(eventMessage.getFormat(),
-                    formatMessageParameters(eventMessage.getParameters())));
+            eventBuilder.withSentryInterface(new MessageInterface(
+                eventMessage.getFormat(),
+                formatMessageParameters(eventMessage.getParameters()),
+                eventMessage.getFormattedMessage()));
         }
 
         Throwable throwable = event.getThrown();

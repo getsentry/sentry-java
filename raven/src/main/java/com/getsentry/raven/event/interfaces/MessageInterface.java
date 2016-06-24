@@ -1,9 +1,11 @@
 package com.getsentry.raven.event.interfaces;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The Message interface for Sentry allows to send the original pattern to Sentry, allowing the events to be grouped
@@ -29,6 +31,7 @@ public class MessageInterface implements SentryInterface {
     public static final String MESSAGE_INTERFACE = "sentry.interfaces.Message";
     private final String message;
     private final List<String> parameters;
+    @Nullable private final String formatted;
 
     /**
      * Creates a non parametrised message.
@@ -61,8 +64,20 @@ public class MessageInterface implements SentryInterface {
      * @param parameters parameters of the message.
      */
     public MessageInterface(String message, List<String> parameters) {
+        this(message, parameters, null);
+    }
+
+    /**
+     * Creates a parametrised message for an {@link com.getsentry.raven.event.Event}.
+     *
+     * @param message    original message.
+     * @param parameters parameters of the message.
+     * @param formatted  message formatted with parameters
+     */
+    public MessageInterface(String message, List<String> parameters, String formatted) {
         this.message = message;
         this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
+        this.formatted = formatted;
     }
 
     @Override
@@ -78,26 +93,35 @@ public class MessageInterface implements SentryInterface {
         return parameters;
     }
 
+    public String getFormatted() {
+        return formatted;
+    }
+
     @Override
     public String toString() {
         return "MessageInterface{"
-                + "message='" + message + '\''
-                + ", parameters=" + parameters
-                + '}';
+            + "message='" + message + '\''
+            + ", parameters=" + parameters
+            + ", formatted=" + formatted
+            + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         MessageInterface that = (MessageInterface) o;
-
-        return message.equals(that.message) && parameters.equals(that.parameters);
+        return Objects.equals(message, that.message)
+            && Objects.equals(parameters, that.parameters)
+            && Objects.equals(formatted, that.formatted);
     }
 
     @Override
     public int hashCode() {
-        return message.hashCode();
+        return Objects.hash(message, parameters, formatted);
     }
 }

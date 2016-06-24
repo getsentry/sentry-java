@@ -220,21 +220,23 @@ public class SentryHandler extends Handler {
         if (record.getResourceBundle() != null && record.getResourceBundle().containsKey(record.getMessage())) {
             message = record.getResourceBundle().getString(record.getMessage());
         }
+
+        String formatted = message; // default to plain message
         if (record.getParameters() != null) {
             List<String> parameters = formatMessageParameters(record.getParameters());
-            eventBuilder.withSentryInterface(new MessageInterface(message, parameters));
             if (printfStyle) {
                 try {
-                    message = String.format(message, record.getParameters());
+                    formatted = String.format(message, record.getParameters());
                 } catch (MissingFormatArgumentException e) {
                     // use unformatted message
-                    message = record.getMessage();
+                    formatted = message;
                 }
             } else {
-                message = MessageFormat.format(message, record.getParameters());
+                formatted = MessageFormat.format(message, record.getParameters());
             }
+            eventBuilder.withSentryInterface(new MessageInterface(message, parameters, formatted));
         }
-        eventBuilder.withMessage(message);
+        eventBuilder.withMessage(formatted);
 
         Throwable throwable = record.getThrown();
         if (throwable != null)
