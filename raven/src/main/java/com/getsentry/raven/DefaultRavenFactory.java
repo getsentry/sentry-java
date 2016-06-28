@@ -63,6 +63,11 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
+    /**
+     * The default async queue size if none is provided.
+     */
+    public static final int QUEUE_SIZE_DEFAULT = 50;
+
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
 
@@ -141,9 +146,14 @@ public class DefaultRavenFactory extends RavenFactory {
 
         BlockingDeque<Runnable> queue;
         if (dsn.getOptions().containsKey(QUEUE_SIZE_OPTION)) {
-            queue = new LinkedBlockingDeque<>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
+            int queueSize = Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION));
+            if (queueSize == -1) {
+                queue = new LinkedBlockingDeque<>();
+            } else {
+                queue = new LinkedBlockingDeque<>(queueSize);
+            }
         } else {
-            queue = new LinkedBlockingDeque<>();
+            queue = new LinkedBlockingDeque<>(QUEUE_SIZE_DEFAULT);
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
