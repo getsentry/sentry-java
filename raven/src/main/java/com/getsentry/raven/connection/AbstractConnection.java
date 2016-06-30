@@ -5,7 +5,6 @@ import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +50,8 @@ public abstract class AbstractConnection implements Connection {
     private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
     private long waitingTime = baseWaitingTime;
     /**
-     * TODO
+     * Set of callbacks that will be called when an exception occurs while attempting to
+     * send events to the Sentry server.
      */
     private Set<EventSendFailureCallback> eventSendFailureCallbacks;
 
@@ -162,6 +162,12 @@ public abstract class AbstractConnection implements Connection {
         this.baseWaitingTime = baseWaitingTime;
     }
 
+    /**
+     * Add a callback that is called when an exception occurs while attempting to
+     * send events to the Sentry server.
+     *
+     * @param eventSendFailureCallback callback instance
+     */
     public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
         eventSendFailureCallbacks.add(eventSendFailureCallback);
     }

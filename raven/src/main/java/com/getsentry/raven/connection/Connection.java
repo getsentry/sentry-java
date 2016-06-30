@@ -9,12 +9,18 @@ import java.io.Closeable;
  */
 public interface Connection extends Closeable {
     /**
-     * Sends an event to the sentry server.
+     * Sends an event to the Sentry server.
      *
      * @param event captured event to add in Sentry.
      */
     void send(Event event);
 
+    /**
+     * Add a callback that is called when an exception occurs while attempting to
+     * send events to the Sentry server.
+     *
+     * @param eventSendFailureCallback callback instance
+     */
     void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback);
 
 }
