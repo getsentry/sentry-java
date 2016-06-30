@@ -15,6 +15,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.log4j.spi.ThrowableInformation;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -190,8 +191,15 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withRelease(release.trim());
         }
 
-        if (loggingEvent.getThrowableInformation() != null) {
-            Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
+        ThrowableInformation throwableInformation = null;
+        try {
+            throwableInformation = loggingEvent.getThrowableInformation();
+        } catch (NullPointerException expected) {
+            // `throwableInformation` is already set.
+        }
+
+        if (throwableInformation != null) {
+            Throwable throwable = throwableInformation.getThrowable();
             eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
         } else if (loggingEvent.getLocationInformation().fullInfo != null) {
             LocationInfo location = loggingEvent.getLocationInformation();

@@ -39,8 +39,8 @@ public class SentryAppenderEventLevelFilterTest {
                 {"WARN", 2},
                 {"ERROR", 1},
                 {"error", 1},
-                {"xxx", 2},
-                {null, 2}};
+                {"xxx", 4},  // invalid level will be coerced to DEBUG
+                {null, 5}};
     }
 
     @Test(dataProvider = "levels")
@@ -69,8 +69,8 @@ public class SentryAppenderEventLevelFilterTest {
 
         new Verifications() {{
             mockRaven.sendEvent((Event) any);
-            minTimes = 2;
-            maxTimes = 2;
+            minTimes = 5;
+            maxTimes = 5;
         }};
     }
 

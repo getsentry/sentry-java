@@ -83,18 +83,23 @@ Queue and Thread Settings
 `````````````````````````
 
 Queue size (advanced):
-    The default queue used to store the not yet processed events doesn't
-    have a limit. Depending on the environment (if the memory is sparse)
-    it is important to be able to control the size of that queue to avoid
-    memory issues.
+    The default queue used to store unprocessed events is limited to 50
+    items. Additional items added once the queue is full are dropped and
+    never sent to the Sentry server. Depending on the environment (if the
+    memory is sparse) it is important to be able to control the size of
+    that queue to avoid memory issues.
 
     It is possible to set a maximum with the option ``raven.async.queuesize``::
 
-        ___DSN__?raven.async.queuesize=100
+        ___DSN___?raven.async.queuesize=100
 
     This means that if the connection to the Sentry server is down, only
     the 100 most recent events will be stored and processed as soon as the
     server is back up.
+
+    The special value ``-1`` can be used to enable an unlimited queue. Beware
+    that network connectivity or Sentry server issues could mean your process
+    will run out of memory.
 
 Threads count (advanced):
     By default the thread pool used by the async connection contains one

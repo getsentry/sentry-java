@@ -2,6 +2,7 @@ package com.getsentry.raven;
 
 import com.getsentry.raven.connection.*;
 import com.getsentry.raven.dsn.Dsn;
+import com.getsentry.raven.event.helper.ContextBuilderHelper;
 import com.getsentry.raven.event.helper.HttpEventBuilderHelper;
 import com.getsentry.raven.event.interfaces.*;
 import com.getsentry.raven.marshaller.Marshaller;
@@ -55,9 +56,18 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String QUEUE_SIZE_OPTION = "raven.async.queuesize";
     /**
+     * Option for the graceful shutdown timeout of the async executor, in milliseconds.
+     */
+    public static final String SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
+    /**
      * Option to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
+    /**
+     * The default async queue size if none is provided.
+     */
+    public static final int QUEUE_SIZE_DEFAULT = 50;
+
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
 
@@ -75,6 +85,7 @@ public class DefaultRavenFactory extends RavenFactory {
             logger.debug("The current environment doesn't provide access to servlets,"
                          + "or provides an unsupported version.");
         }
+        raven.addBuilderHelper(new ContextBuilderHelper(raven));
         return raven;
     }
 
@@ -135,9 +146,14 @@ public class DefaultRavenFactory extends RavenFactory {
 
         BlockingDeque<Runnable> queue;
         if (dsn.getOptions().containsKey(QUEUE_SIZE_OPTION)) {
-            queue = new LinkedBlockingDeque<>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
+            int queueSize = Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION));
+            if (queueSize == -1) {
+                queue = new LinkedBlockingDeque<>();
+            } else {
+                queue = new LinkedBlockingDeque<>(queueSize);
+            }
         } else {
-            queue = new LinkedBlockingDeque<>();
+            queue = new LinkedBlockingDeque<>(QUEUE_SIZE_DEFAULT);
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
@@ -146,7 +162,13 @@ public class DefaultRavenFactory extends RavenFactory {
 
         boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(GRACEFUL_SHUTDOWN_OPTION));
 
-        return new AsyncConnection(connection, executorService, gracefulShutdown);
+        String shutdownTimeoutStr = dsn.getOptions().get(SHUTDOWN_TIMEOUT_OPTION);
+        if (shutdownTimeoutStr != null) {
+            long shutdownTimeout = Long.parseLong(shutdownTimeoutStr);
+            return new AsyncConnection(connection, executorService, gracefulShutdown, shutdownTimeout);
+        } else {
+            return new AsyncConnection(connection, executorService, gracefulShutdown);
+        }
     }
 
     /**

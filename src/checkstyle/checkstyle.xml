@@ -153,6 +153,9 @@
         <!-- See http://checkstyle.sf.net/config_blocks.html -->
         <module name="AvoidNestedBlocks"/>
         <module name="EmptyBlock"/>
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="expected"/>
+        </module>
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
 
@@ -178,10 +181,6 @@
         </module>
         <module name="IllegalThrows">
             <property name="illegalClassNames" value="java.lang.Error, java.lang.Throwable"/>
-        </module>
-        <module name="RedundantThrows">
-            <property name="allowUnchecked" value="true"/>
-            <property name="allowSubclasses" value="true"/>
         </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>

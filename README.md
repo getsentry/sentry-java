@@ -13,7 +13,7 @@ before sending details to a Sentry instance.
  - [logback](http://logback.qos.ch/) support is provided in [raven-logback](raven-logback)
 
 While it's **strongly recommended to use one of the supported logging
-frameworks** to capture and send messages to Sentry, a it is possible to do so
+frameworks** to capture and send messages to Sentry, it is also possible to do so
 manually with the main project [raven](raven).
 
 Raven supports both HTTP and HTTPS as transport protocols to the Sentry
@@ -151,9 +151,17 @@ To disable the async mode, add `raven.async=false` to the DSN:
 
 #### Graceful Shutdown (advanced)
 In order to shutdown the asynchronous connection gracefully, a `ShutdownHook`
-is created.
-This could lead to memory leaks in an environment where the life cycle of
-Raven doesn't match the life cycle of the JVM.
+is created. By default, the asynchronous connection is given 1 second
+to shutdown gracefully, but this can be adjusted via
+`raven.async.shutdowntimeout` (represented in milliseconds):
+
+    http://public:private@host:port/1?raven.async.shutdowntimeout=5000
+
+The special value `-1` can be used to disable the timeout and wait
+indefinitely for the executor to terminate.
+
+The `ShutdownHook` could lead to memory leaks in an environment where
+the life cycle of Raven doesn't match the life cycle of the JVM.
 
 An example would be in a JEE environment where the application using Raven
 could be deployed and undeployed regularly.
@@ -167,8 +175,9 @@ The option to do so is `raven.async.gracefulshutdown`:
     http://public:private@host:port/1?raven.async.gracefulshutdown=false
 
 #### Queue size (advanced)
-The default queue used to store unprocessed events doesn't have a
-limit.
+The default queue used to store unprocessed events is limited to 50
+items. Additional items added once the queue is full are dropped and
+never sent to the Sentry server.
 Depending on the environment (if the memory is sparse) it is important to be
 able to control the size of that queue to avoid memory issues.
 
@@ -178,6 +187,10 @@ It is possible to set a maximum with the option `raven.async.queuesize`:
 
 This means that if the connection to the Sentry server is down, only the 100
 most recent events will be stored and processed as soon as the server is back up.
+
+The special value `-1` can be used to enable an unlimited queue. Beware
+that network connectivity or Sentry server issues could mean your process
+will run out of memory.
 
 #### Threads count (advanced)
 By default the thread pool used by the async connection contains one thread per

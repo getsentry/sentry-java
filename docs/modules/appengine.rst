@@ -25,7 +25,7 @@ If you want to use Maven you can install Raven-AppEngine as dependency:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-appengine</artifactId>
-        <version>7.2.1</version>
+        <version>7.3.0</version>
     </dependency>
 
 Usage

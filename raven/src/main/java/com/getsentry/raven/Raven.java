@@ -25,6 +25,14 @@ public class Raven {
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<>();
     private Connection connection;
+    private ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
+        @Override
+        protected RavenContext initialValue() {
+            RavenContext ctx = new RavenContext();
+            ctx.activate();
+            return ctx;
+        }
+    };
 
     /**
      * Runs the {@link EventBuilderHelper} against the {@link EventBuilder} to obtain additional information with a
@@ -52,6 +60,16 @@ public class Raven {
     }
 
     /**
+     * Builds and sends an {@link Event} to the Sentry server.
+     *
+     * @param eventBuilder {@link EventBuilder} to send to Sentry.
+     */
+    public void sendEvent(EventBuilder eventBuilder) {
+        runBuilderHelpers(eventBuilder);
+        sendEvent(eventBuilder.build());
+    }
+
+    /**
      * Sends a message to the Sentry server.
      * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
@@ -66,16 +84,16 @@ public class Raven {
     }
 
     /**
-     * Sends an exception to the Sentry server.
+     * Sends an exception (or throwable) to the Sentry server.
      * <p>
-     * The Exception will be logged at the {@link Event.Level#ERROR} level.
+     * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
-     * @param exception exception to send to Sentry.
+     * @param throwable exception to send to Sentry.
      */
-    public void sendException(Exception exception) {
-        EventBuilder eventBuilder = new EventBuilder().withMessage(exception.getMessage())
+    public void sendException(Throwable throwable) {
+        EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
                 .withLevel(Event.Level.ERROR)
-                .withSentryInterface(new ExceptionInterface(exception));
+                .withSentryInterface(new ExceptionInterface(throwable));
         runBuilderHelpers(eventBuilder);
         sendEvent(eventBuilder.build());
     }
@@ -117,6 +135,10 @@ public class Raven {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public RavenContext getContext() {
+        return context.get();
     }
 
     @Override
