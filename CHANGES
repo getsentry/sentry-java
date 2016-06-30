@@ -2,6 +2,7 @@ Version 7.4.0
 -------------
 
 - Changed default ``raven.async.queuesize`` from unlimited to 50.
+- Add ``formatted`` field to JSON payload if possible.
 
 Version 7.3.0
 -------------
