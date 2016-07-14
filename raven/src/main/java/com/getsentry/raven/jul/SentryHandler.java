@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.MissingFormatArgumentException;
 import java.util.Set;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
@@ -221,22 +220,18 @@ public class SentryHandler extends Handler {
             message = record.getResourceBundle().getString(record.getMessage());
         }
 
-        String formatted = message; // default to plain message
         if (record.getParameters() != null) {
+            String formatted;
             List<String> parameters = formatMessageParameters(record.getParameters());
-            if (printfStyle) {
-                try {
-                    formatted = String.format(message, record.getParameters());
-                } catch (MissingFormatArgumentException e) {
-                    // use unformatted message
-                    formatted = message;
-                }
-            } else {
-                formatted = MessageFormat.format(message, record.getParameters());
+            try {
+                formatted = formatMessage(message, record.getParameters());
+            } catch (Exception e) {
+                // local formatting failed, send message and parameters without formatted string
+                formatted = null;
             }
             eventBuilder.withSentryInterface(new MessageInterface(message, parameters, formatted));
         }
-        eventBuilder.withMessage(formatted);
+        eventBuilder.withMessage(message);
 
         Throwable throwable = record.getThrown();
         if (throwable != null)
@@ -277,6 +272,16 @@ public class SentryHandler extends Handler {
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
+    }
+
+    private String formatMessage(String message, Object[] parameters) {
+        String formatted;
+        if (printfStyle) {
+            formatted = String.format(message, parameters);
+        } else {
+            formatted = MessageFormat.format(message, parameters);
+        }
+        return formatted;
     }
 
     @Override
