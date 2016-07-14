@@ -54,6 +54,16 @@ Alternatively in the `log4j.xml` file set:
   </appender>
 ```
 
+You'll also need to associate the `sentry` appender with your root logger, like so:
+
+```
+  <root>
+    <priority value="info" />
+    <appender-ref ref="my-other-appender" />
+    <appender-ref ref="sentry" />
+  </root>
+```
+
 ### Additional data and information
 It's possible to add extra data to events,
 thanks to both [the MDC](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/MDC.html)
