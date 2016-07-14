@@ -5,6 +5,8 @@ import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
@@ -47,6 +49,11 @@ public abstract class AbstractConnection implements Connection {
      */
     private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
     private long waitingTime = baseWaitingTime;
+    /**
+     * Set of callbacks that will be called when an exception occurs while attempting to
+     * send events to the Sentry server.
+     */
+    private Set<EventSendFailureCallback> eventSendFailureCallbacks;
 
     /**
      * Creates a connection based on the public and secret keys.
@@ -55,6 +62,7 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
+        eventSendFailureCallbacks = new HashSet<>();
         authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
                 + "sentry_client=" + RavenEnvironment.NAME + ","
                 + "sentry_key=" + publicKey + ","
@@ -80,6 +88,15 @@ public abstract class AbstractConnection implements Connection {
         } catch (ConnectionException e) {
             logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
             lockDown();
+
+            for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
+                try {
+                    eventSendFailureCallback.onFailure(event, e);
+                } catch (Exception exc) {
+                    logger.warn("An exception occurred while running an EventSendFailureCallback: "
+                        + eventSendFailureCallback.getClass().getName(), exc);
+                }
+            }
         }
     }
 
@@ -144,4 +161,15 @@ public abstract class AbstractConnection implements Connection {
     public void setBaseWaitingTime(long baseWaitingTime) {
         this.baseWaitingTime = baseWaitingTime;
     }
+
+    /**
+     * Add a callback that is called when an exception occurs while attempting to
+     * send events to the Sentry server.
+     *
+     * @param eventSendFailureCallback callback instance
+     */
+    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+        eventSendFailureCallbacks.add(eventSendFailureCallback);
+    }
+
 }

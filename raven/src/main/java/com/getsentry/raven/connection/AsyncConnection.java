@@ -106,6 +106,11 @@ public class AsyncConnection implements Connection {
             executorService.execute(new EventSubmitter(event));
     }
 
+    @Override
+    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+        actualConnection.addEventSendFailureCallback(eventSendFailureCallback);
+    }
+
     /**
      * {@inheritDoc}.
      * <p>
