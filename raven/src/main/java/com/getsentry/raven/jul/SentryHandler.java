@@ -220,18 +220,20 @@ public class SentryHandler extends Handler {
             message = record.getResourceBundle().getString(record.getMessage());
         }
 
+        String topLevelMessage = message;
         if (record.getParameters() != null) {
             String formatted;
             List<String> parameters = formatMessageParameters(record.getParameters());
             try {
                 formatted = formatMessage(message, record.getParameters());
+                topLevelMessage = formatted; // write out formatted as Event's message key
             } catch (Exception e) {
                 // local formatting failed, send message and parameters without formatted string
                 formatted = null;
             }
             eventBuilder.withSentryInterface(new MessageInterface(message, parameters, formatted));
         }
-        eventBuilder.withMessage(message);
+        eventBuilder.withMessage(topLevelMessage);
 
         Throwable throwable = record.getThrown();
         if (throwable != null)
