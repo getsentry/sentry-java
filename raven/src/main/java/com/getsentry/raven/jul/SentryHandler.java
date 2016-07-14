@@ -221,7 +221,9 @@ public class SentryHandler extends Handler {
         }
 
         String topLevelMessage = message;
-        if (record.getParameters() != null) {
+        if (record.getParameters() == null) {
+            eventBuilder.withSentryInterface(new MessageInterface(message));
+        } else {
             String formatted;
             List<String> parameters = formatMessageParameters(record.getParameters());
             try {
