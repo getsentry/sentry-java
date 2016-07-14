@@ -4,6 +4,10 @@ import mockit.*;
 import com.getsentry.raven.event.Event;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
@@ -99,4 +103,30 @@ public class AbstractConnectionTest {
             Thread.sleep(AbstractConnection.DEFAULT_MAX_WAITING_TIME);
         }};
     }
+
+    @Test
+    public void testEventSendFailureCallback(@Injectable final Event mockEvent) throws Exception {
+        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
+        EventSendFailureCallback callback = new EventSendFailureCallback() {
+
+            @Override
+            public void onFailure(Event event, Exception exception) {
+                callbackCalled.set(true);
+            }
+
+        };
+        HashSet<EventSendFailureCallback> callbacks = new HashSet<>();
+        callbacks.add(callback);
+
+        setField(abstractConnection, "eventSendFailureCallbacks", callbacks);
+        new NonStrictExpectations() {{
+            abstractConnection.doSend((Event) any);
+            result = new ConnectionException();
+        }};
+
+        abstractConnection.send(mockEvent);
+
+        assertThat(callbackCalled.get(), is(true));
+    }
+
 }

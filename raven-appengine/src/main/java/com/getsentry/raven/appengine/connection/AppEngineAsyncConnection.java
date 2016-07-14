@@ -1,5 +1,6 @@
 package com.getsentry.raven.appengine.connection;
 
+import com.getsentry.raven.connection.EventSendFailureCallback;
 import com.google.appengine.api.taskqueue.DeferredTask;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
@@ -73,6 +74,11 @@ public class AppEngineAsyncConnection implements Connection {
     public void send(Event event) {
         if (!closed)
             queue.add(withPayload(new EventSubmitter(id, event)));
+    }
+
+    @Override
+    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+        actualConnection.addEventSendFailureCallback(eventSendFailureCallback);
     }
 
     /**
