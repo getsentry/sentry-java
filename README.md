@@ -106,10 +106,11 @@ naive and ignore hostname verification:
     naive+https://public:private@host:port/1
 
 ### Proxying HTTP(S) connections
-If your application sends outbound requests through an HTTP proxy, you can use
-JVM networking properties to configure the proxy information.
+If your application needs to send outbound requests through an HTTP proxy,
+you can configure the proxy information via JVM networking properties or
+as part of the Sentry DSN.
 
-For example,
+For example, using JVM networking properties (affects the entire JVM process),
 
 ```
 java \
@@ -130,6 +131,11 @@ java \
 See [Java Networking and
 Proxies](http://docs.oracle.com/javase/8/docs/technotes/guides/net/proxies.html)
 for more information about the proxy properties.
+
+Alternatively, using the Sentry DSN (only affects the Sentry HTTP client,
+useful inside shared application containers),
+
+    http://public:private@host:port/1?raven.http.proxy.host=proxy.example.com&raven.http.proxy.port=8080
 
 ## Options
 It is possible to enable some options by adding data to the query string of the
