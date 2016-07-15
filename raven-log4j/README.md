@@ -10,12 +10,12 @@ for log4j to send the logged events to Sentry.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-log4j</artifactId>
-    <version>7.3.0</version>
+    <version>7.4.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.3.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.4.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
@@ -52,6 +52,16 @@ Alternatively in the `log4j.xml` file set:
       <param name="levelMin" value="WARN"/>
     </filter>
   </appender>
+```
+
+You'll also need to associate the `sentry` appender with your root logger, like so:
+
+```
+  <root>
+    <priority value="info" />
+    <appender-ref ref="my-other-appender" />
+    <appender-ref ref="sentry" />
+  </root>
 ```
 
 ### Additional data and information
