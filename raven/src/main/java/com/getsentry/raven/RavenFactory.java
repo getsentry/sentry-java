@@ -4,6 +4,7 @@ import com.getsentry.raven.dsn.Dsn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,23 +82,70 @@ public abstract class RavenFactory {
      * @throws IllegalStateException when no instance of Raven has been created.
      */
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
-        //Loop through registered factories
         logger.debug("Attempting to find a working Raven factory");
+
+        // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
+        // and the last exception thrown.
+        ArrayList<String> skippedFactories = new ArrayList<>();
+        ArrayList<String> triedFactories = new ArrayList<>();
+        RuntimeException lastExc = null;
+
         for (RavenFactory ravenFactory : getRegisteredFactories()) {
-            if (ravenFactoryName != null && !ravenFactoryName.equals(ravenFactory.getClass().getName()))
+            String name = ravenFactory.getClass().getName();
+            if (ravenFactoryName != null && !ravenFactoryName.equals(name)) {
+                skippedFactories.add(name);
                 continue;
+            }
 
             logger.debug("Attempting to use '{}' as a Raven factory.", ravenFactory);
+            triedFactories.add(name);
             try {
                 Raven ravenInstance = ravenFactory.createRavenInstance(dsn);
                 logger.debug("The raven factory '{}' created an instance of Raven.", ravenFactory);
                 return ravenInstance;
             } catch (RuntimeException e) {
+                lastExc = e;
                 logger.debug("The raven factory '{}' couldn't create an instance of Raven.", ravenFactory, e);
             }
         }
 
-        throw new IllegalStateException("Couldn't create a raven instance for '" + dsn + "'");
+        // Throw an IllegalStateException that attempts to be helpful.
+        StringBuilder sb = new StringBuilder();
+        sb.append("Couldn't create a raven instance for: '");
+        sb.append(dsn);
+        sb.append('\'');
+        if (ravenFactoryName != null) {
+            sb.append("; ravenFactoryName: ");
+            sb.append(ravenFactoryName);
+
+            if (skippedFactories.isEmpty()) {
+                sb.append("; no skipped factories");
+            } else {
+                sb.append("; skipped factories: ");
+                String delim = "";
+                for (String skippedFactory : skippedFactories) {
+                    sb.append(delim);
+                    sb.append(skippedFactory);
+                    delim = ", ";
+                }
+            }
+        }
+
+        if (triedFactories.isEmpty()) {
+            sb.append("; no factories tried!");
+            throw new IllegalStateException(sb.toString());
+        }
+
+        sb.append("; tried factories: ");
+        String delim = "";
+        for (String triedFactory : triedFactories) {
+            sb.append(delim);
+            sb.append(triedFactory);
+            delim = ", ";
+        }
+
+        sb.append("; cause contains exception thrown by the last factory tried.");
+        throw new IllegalStateException(sb.toString(), lastExc);
     }
 
     /**
