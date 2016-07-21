@@ -128,7 +128,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStartObject();
 
         generator.writeStringField(EVENT_ID, formatId(event.getId()));
-        generator.writeStringField(MESSAGE, formatMessage(event.getMessage()));
+        generator.writeStringField(MESSAGE, trimMessage(event.getMessage()));
         generator.writeStringField(TIMESTAMP, ISO_FORMAT.get().format(event.getTimestamp()));
         generator.writeStringField(LEVEL, formatLevel(event.getLevel()));
         generator.writeStringField(LOGGER, event.getLogger());
@@ -268,12 +268,12 @@ public class JsonMarshaller implements Marshaller {
     }
 
     /**
-     * Formats a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
+     * Trims a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
      *
      * @param message message to format.
-     * @return formatted message (shortened if necessary).
+     * @return trimmed message (shortened if necessary).
      */
-    private String formatMessage(String message) {
+    private String trimMessage(String message) {
         if (message == null)
             return null;
         else if (message.length() > MAX_MESSAGE_LENGTH)

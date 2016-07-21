@@ -208,8 +208,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         if (iLoggingEvent.getArgumentArray() != null) {
-            eventBuilder.withSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
-                    formatMessageParameters(iLoggingEvent.getArgumentArray())));
+            eventBuilder.withSentryInterface(new MessageInterface(
+                iLoggingEvent.getMessage(),
+                formatMessageParameters(iLoggingEvent.getArgumentArray()),
+                iLoggingEvent.getFormattedMessage()));
         }
 
         if (iLoggingEvent.getThrowableProxy() != null) {

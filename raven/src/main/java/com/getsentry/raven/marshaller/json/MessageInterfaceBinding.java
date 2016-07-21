@@ -15,14 +15,15 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
     public static final int MAX_MESSAGE_LENGTH = 1000;
     private static final String MESSAGE_PARAMETER = "message";
     private static final String PARAMS_PARAMETER = "params";
+    private static final String FORMATTED_PARAMETER = "formatted";
 
     /**
-     * Formats a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
+     * Trims a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
      *
      * @param message message to format.
-     * @return formatted message (shortened if necessary).
+     * @return trimmed message (shortened if necessary).
      */
-    private String formatMessage(String message) {
+    private String trimMessage(String message) {
         if (message == null)
             return null;
         else if (message.length() > MAX_MESSAGE_LENGTH)
@@ -33,12 +34,15 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
     @Override
     public void writeInterface(JsonGenerator generator, MessageInterface messageInterface) throws IOException {
         generator.writeStartObject();
-        generator.writeStringField(MESSAGE_PARAMETER, formatMessage(messageInterface.getMessage()));
+        generator.writeStringField(MESSAGE_PARAMETER, trimMessage(messageInterface.getMessage()));
         generator.writeArrayFieldStart(PARAMS_PARAMETER);
         for (String parameter : messageInterface.getParameters()) {
             generator.writeString(parameter);
         }
         generator.writeEndArray();
+        if (messageInterface.getFormatted() != null) {
+            generator.writeStringField(FORMATTED_PARAMETER, trimMessage(messageInterface.getFormatted()));
+        }
         generator.writeEndObject();
     }
 }
