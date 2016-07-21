@@ -12,6 +12,7 @@ import javax.net.ssl.SSLSession;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -51,6 +52,10 @@ public class HttpConnection extends AbstractConnection {
      */
     private final URL sentryUrl;
     /**
+     * Optional instance of an HTTP proxy server to use.
+     */
+    private final Proxy proxy;
+    /**
      * Marshaller used to transform and send the {@link Event} over a stream.
      */
     private Marshaller marshaller;
@@ -72,8 +77,20 @@ public class HttpConnection extends AbstractConnection {
      * @param secretKey private key of the current project.
      */
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
+        this(sentryUrl, publicKey, secretKey, null);
+    }
+
+    /**
+     * Creates an HTTP connection to a Sentry server.
+     *  @param sentryUrl URL to the Sentry API.
+     * @param publicKey public key of the current project.
+     * @param secretKey private key of the current project.
+     * @param proxy address of HTTP proxy or null if using direct connections.
+     */
+    public HttpConnection(URL sentryUrl, String publicKey, String secretKey, Proxy proxy) {
         super(publicKey, secretKey);
         this.sentryUrl = sentryUrl;
+        this.proxy = proxy;
     }
 
     /**
@@ -99,7 +116,13 @@ public class HttpConnection extends AbstractConnection {
      */
     protected HttpURLConnection getConnection() {
         try {
-            HttpURLConnection connection = (HttpURLConnection) sentryUrl.openConnection();
+            HttpURLConnection connection;
+            if (proxy != null) {
+                connection = (HttpURLConnection) sentryUrl.openConnection(proxy);
+            } else {
+                connection = (HttpURLConnection) sentryUrl.openConnection();
+            }
+
             if (bypassSecurity && connection instanceof HttpsURLConnection) {
                 ((HttpsURLConnection) connection).setHostnameVerifier(NAIVE_VERIFIER);
             }

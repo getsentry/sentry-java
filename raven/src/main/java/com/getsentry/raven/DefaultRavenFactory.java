@@ -10,6 +10,8 @@ import com.getsentry.raven.marshaller.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,9 +66,21 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
     /**
+     * Option to set an HTTP proxy hostname for Sentry connections.
+     */
+    public static final String HTTP_PROXY_HOST_OPTION = "raven.http.proxy.host";
+    /**
+     * Option to set an HTTP proxy port for Sentry connections.
+     */
+    public static final String HTTP_PROXY_PORT_OPTION = "raven.http.proxy.port";
+    /**
      * The default async queue size if none is provided.
      */
     public static final int QUEUE_SIZE_DEFAULT = 50;
+    /**
+     * The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not.
+     */
+    public static final int HTTP_PROXY_PORT_DEFAULT = 80;
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
@@ -179,7 +193,24 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected Connection createHttpConnection(Dsn dsn) {
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
-        HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(), dsn.getSecretKey());
+
+        String proxyHost = null;
+        if (dsn.getOptions().containsKey(HTTP_PROXY_HOST_OPTION)) {
+            proxyHost = dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
+        }
+
+        int proxyPort = HTTP_PROXY_PORT_DEFAULT;
+        if (dsn.getOptions().containsKey(HTTP_PROXY_PORT_OPTION)) {
+            proxyPort = Integer.parseInt(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION));
+        }
+
+        Proxy proxy = null;
+        if (proxyHost != null) {
+            InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
+            proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
+        }
+
+        HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(), dsn.getSecretKey(), proxy);
         httpConnection.setMarshaller(createMarshaller(dsn));
 
         // Set the naive mode

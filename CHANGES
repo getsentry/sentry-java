@@ -1,3 +1,9 @@
+Version 7.5.0
+-------------
+
+- Add support for configuring an HTTP proxy in the DSN.
+- Add more debugging information to ``RavenFactory.ravenInstance``.
+
 Version 7.4.0
 -------------
 
