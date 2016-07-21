@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -203,9 +204,10 @@ public class DefaultRavenFactory extends RavenFactory {
             proxyPort = Integer.parseInt(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION));
         }
 
-        InetSocketAddress proxy = null;
+        Proxy proxy = null;
         if (proxyHost != null) {
-            proxy = new InetSocketAddress(proxyHost, proxyPort);
+            InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
+            proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
         }
 
         HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(), dsn.getSecretKey(), proxy);
