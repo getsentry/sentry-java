@@ -40,9 +40,7 @@ public class MessageInterface implements SentryInterface {
      * recommended to use {@link com.getsentry.raven.event.EventBuilder#withMessage(String)} instead.
      *
      * @param message message to add to the event.
-     * @deprecated Use {@link com.getsentry.raven.event.EventBuilder#withMessage(String)} instead.
      */
-    @Deprecated
     public MessageInterface(String message) {
         this(message, Collections.<String>emptyList());
     }
