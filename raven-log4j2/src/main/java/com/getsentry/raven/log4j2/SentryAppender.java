@@ -70,11 +70,17 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String ravenFactory;
     /**
-     * Release to be sent to Sentry.
+     * Identifies the version of the application.
      * <p>
-     * Might be null in which case no release is sent.
+     * Might be null in which case the release information will not be sent with the event.
      */
     protected String release;
+    /**
+     * Identifies the environment the application is running in.
+     * <p>
+     * Might be null in which case the environment information will not be sent with the event.
+     */
+    protected String environment;
     /**
      * Server name to be sent to sentry.
      * <p>
@@ -123,6 +129,7 @@ public class SentryAppender extends AbstractAppender {
      * @param dsn          Data Source Name to access the Sentry server.
      * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
      * @param release      Release to be sent to Sentry.
+     * @param environment  Environment to be sent to Sentry.
      * @param serverName   serverName to be sent to Sentry.
      * @param tags         Tags to add to each event.
      * @param extraTags    Tags to search through the Thread Context Map.
@@ -135,6 +142,7 @@ public class SentryAppender extends AbstractAppender {
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("ravenFactory") final String ravenFactory,
                                                 @PluginAttribute("release") final String release,
+                                                @PluginAttribute("environment") final String environment,
                                                 @PluginAttribute("serverName") final String serverName,
                                                 @PluginAttribute("tags") final String tags,
                                                 @PluginAttribute("extraTags") final String extraTags,
@@ -148,6 +156,8 @@ public class SentryAppender extends AbstractAppender {
         sentryAppender.setDsn(dsn);
         if (release != null)
             sentryAppender.setRelease(release);
+        if (environment != null)
+            sentryAppender.setEnvironment(environment);
         if (serverName != null)
             sentryAppender.setServerName(serverName);
         if (tags != null)
@@ -259,6 +269,10 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withRelease(release.trim());
         }
 
+        if (!Util.isNullOrEmpty(environment)) {
+            eventBuilder.withEnvironment(environment.trim());
+        }
+
         if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
             eventBuilder.withSentryInterface(new MessageInterface(
                 eventMessage.getFormat(),
@@ -313,6 +327,10 @@ public class SentryAppender extends AbstractAppender {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public void setServerName(String serverName) {

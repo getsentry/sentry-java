@@ -69,13 +69,17 @@ public class Event implements Serializable {
      */
     private List<Breadcrumb> breadcrumbs = new ArrayList<>();
     /**
-     * Identifies the host client from which the event was recorded.
-     */
-    private String serverName;
-    /**
      * Identifies the version of the application.
      */
     private String release;
+    /**
+     * Identifies the environment the application is running in.
+     */
+    private String environment;
+    /**
+     * Identifies the host client from which the event was recorded.
+     */
+    private String serverName;
     /**
      * A map or list of additional properties for this event.
      * <p>
@@ -194,6 +198,14 @@ public class Event implements Serializable {
 
     void setRelease(String release) {
         this.release = release;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public Map<String, Object> getExtra() {

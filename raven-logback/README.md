@@ -37,6 +37,8 @@ In the `logback.xml` file set:
         <tags>tag1:value1,tag2:value2</tags>
         <!-- Optional, provide release version of your application -->
         <release>1.0.0</release>
+        <!-- Optional, provide environment your application is running in -->
+        <environment>production</environment>
         <!-- Optional, override the server name (rather than looking it up dynamically) -->
         <serverName>server1</serverName>
         <!-- Optional, select the ravenFactory class -->

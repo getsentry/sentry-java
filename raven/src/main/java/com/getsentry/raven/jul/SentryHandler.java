@@ -60,11 +60,17 @@ public class SentryHandler extends Handler {
      */
     protected String ravenFactory;
     /**
-     * Release to be sent to sentry.
+     * Identifies the version of the application.
      * <p>
-     * Might be null in which case no release is sent.
+     * Might be null in which case the release information will not be sent with the event.
      */
     protected String release;
+    /**
+     * Identifies the environment the application is running in.
+     * <p>
+     * Might be null in which case the environment information will not be sent with the event.
+     */
+    protected String environment;
     /**
      * Server name to be sent to sentry.
      * <p>
@@ -159,6 +165,7 @@ public class SentryHandler extends Handler {
         printfStyle = Boolean.valueOf(manager.getProperty(className + ".printfStyle"));
         ravenFactory = manager.getProperty(className + ".ravenFactory");
         release = manager.getProperty(className + ".release");
+        environment = manager.getProperty(className + ".environment");
         serverName = manager.getProperty(className + ".serverName");
         String tagsProperty = manager.getProperty(className + ".tags");
         tags = Util.parseTags(tagsProperty);
@@ -270,6 +277,10 @@ public class SentryHandler extends Handler {
             eventBuilder.withRelease(release.trim());
         }
 
+        if (!Util.isNullOrEmpty(environment)) {
+            eventBuilder.withEnvironment(environment.trim());
+        }
+
         if (!Util.isNullOrEmpty(serverName)) {
             eventBuilder.withServerName(serverName.trim());
         }
@@ -307,6 +318,10 @@ public class SentryHandler extends Handler {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public void setServerName(String serverName) {
