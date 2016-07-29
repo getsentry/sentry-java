@@ -6,7 +6,7 @@ import com.getsentry.raven.connection.EventSendFailureCallback;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.Event;
 
-public class AndroidRavenFactory extends DefaultRavenFactory {
+public class RavenFactory extends DefaultRavenFactory {
 
     @Override
     protected Connection createConnection(Dsn dsn) {
