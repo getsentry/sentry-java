@@ -23,9 +23,16 @@ import java.util.Set;
  */
 public class Raven {
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
+    /**
+     * The most recently constructed Raven instance, used by static helper methods like {@link Raven#capture(Event)}.
+     */
+    private static volatile Raven stored = null;
+    /**
+     * The underlying {@link Connection} to use for sending events to Sentry.
+     */
+    private volatile Connection connection;
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<>();
-    private Connection connection;
-    private ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
+    private final ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
         @Override
         protected RavenContext initialValue() {
             RavenContext ctx = new RavenContext();
@@ -33,6 +40,33 @@ public class Raven {
             return ctx;
         }
     };
+
+    /**
+     * Constructs a Raven instance.
+     *
+     * Note that the most recently constructed instance is stored statically so it can be used with
+     * the static helper methods.
+     *
+     * @deprecated in favor of {@link Raven#Raven(Connection)} because until you call
+     * {@link Raven#setConnection(Connection)} this instance will throw exceptions when used.
+     */
+    @Deprecated
+    public Raven() {
+        stored = this;
+    }
+
+    /**
+     * Constructs a Raven instance using the provided connection.
+     *
+     * Note that the most recently constructed instance is stored statically so it can be used with
+     * the static helper methods.
+     *
+     * @param connection Underlying Connection instance to use for sending events
+     */
+    public Raven(Connection connection) {
+        this.connection = connection;
+        stored = this;
+    }
 
     /**
      * Runs the {@link EventBuilderHelper} against the {@link EventBuilder} to obtain additional information with a
@@ -148,4 +182,68 @@ public class Raven {
                 + ", connection=" + connection
                 + '}';
     }
+
+    // --------------------------------------------------------
+    // Static helper methods follow
+    // --------------------------------------------------------
+
+    private static void checkStored() {
+        if (stored == null) {
+            throw new NullPointerException("No stored Raven instance is available to use."
+                + " You must construct a Raven instance before using the static Raven methods.");
+        }
+    }
+
+    /**
+     * Send an Event using the statically stored Raven instance.
+     *
+     * @param event Event to send to the Sentry server
+     */
+    public static void capture(Event event) {
+        checkStored();
+        stored.sendEvent(event);
+    }
+
+    /**
+     * Sends an exception (or throwable) to the Sentry server using the statically stored Raven instance.
+     * <p>
+     * The exception will be logged at the {@link Event.Level#ERROR} level.
+     *
+     * @param throwable exception to send to Sentry.
+     */
+    public static void capture(Throwable throwable) {
+        checkStored();
+        EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
+            .withLevel(Event.Level.ERROR)
+            .withSentryInterface(new ExceptionInterface(throwable));
+        stored.runBuilderHelpers(eventBuilder);
+        stored.sendEvent(eventBuilder.build());
+    }
+
+    /**
+     * Sends a message to the Sentry server using the statically stored Raven instance.
+     * <p>
+     * The message will be logged at the {@link Event.Level#INFO} level.
+     *
+     * @param message message to send to Sentry.
+     */
+    public static void capture(String message) {
+        checkStored();
+        EventBuilder eventBuilder = new EventBuilder().withMessage(message)
+            .withLevel(Event.Level.INFO);
+        stored.runBuilderHelpers(eventBuilder);
+        stored.sendEvent(eventBuilder.build());
+    }
+
+    /**
+     * Builds and sends an {@link Event} to the Sentry server using the statically stored Raven instance.
+     *
+     * @param eventBuilder {@link EventBuilder} to send to Sentry.
+     */
+    public static void capture(EventBuilder eventBuilder) {
+        checkStored();
+        stored.runBuilderHelpers(eventBuilder);
+        stored.sendEvent(eventBuilder.build());
+    }
+
 }
