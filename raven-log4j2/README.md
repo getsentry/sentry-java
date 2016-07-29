@@ -52,6 +52,12 @@ In the `log4j2.xml` file set:
                 1.0.0
             </release>
             <!--
+                Optional, provide environment your application is running in
+            -->
+            <environment>
+                production
+            </environment>
+            <!--
                 Optional, override the server name (rather than looking it up dynamically)
             -->
             <serverName>

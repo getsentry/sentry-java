@@ -10,5 +10,6 @@
     "server_name": null,
     "release": null,
     "extra": {},
+    "environment": null,
     "checksum": null
 }

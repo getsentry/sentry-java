@@ -55,11 +55,17 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected String ravenFactory;
     /**
-     * Release to be sent to sentry.
+     * Identifies the version of the application.
      * <p>
-     * Might be null in which case no release is sent.
+     * Might be null in which case the release information will not be sent with the event.
      */
     protected String release;
+    /**
+     * Identifies the environment the application is running in.
+     * <p>
+     * Might be null in which case the environment information will not be sent with the event.
+     */
+    protected String environment;
     /**
      * Server name to be sent to sentry.
      * <p>
@@ -191,6 +197,10 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withRelease(release.trim());
         }
 
+        if (!Util.isNullOrEmpty(environment)) {
+            eventBuilder.withEnvironment(environment.trim());
+        }
+
         ThrowableInformation throwableInformation = null;
         try {
             throwableInformation = loggingEvent.getThrowableInformation();
@@ -246,6 +256,10 @@ public class SentryAppender extends AppenderSkeleton {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public void setServerName(String serverName) {

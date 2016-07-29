@@ -154,6 +154,17 @@ public class EventBuilder {
     }
 
     /**
+     * Sets application environment in the event.
+     *
+     * @param environment application environment in the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withEnvironment(String environment) {
+        event.setEnvironment(environment);
+        return this;
+    }
+
+    /**
      * Sets the logger in the event.
      *
      * @param logger logger of the event.
