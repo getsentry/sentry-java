@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
@@ -31,7 +31,12 @@ public class Raven {
      * The underlying {@link Connection} to use for sending events to Sentry.
      */
     private volatile Connection connection;
-    private final Set<EventBuilderHelper> builderHelpers = new HashSet<>();
+    /**
+     * Set of {@link EventBuilderHelper}s. Note that we wrap a {@link ConcurrentHashMap} because there
+     * isn't a concurrent set in the standard library.
+     */
+    private final Set<EventBuilderHelper> builderHelpers =
+        Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
     private final ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
         @Override
         protected RavenContext initialValue() {
@@ -190,11 +195,12 @@ public class Raven {
     // Static helper methods follow
     // --------------------------------------------------------
 
-    private static void checkStored() {
+    private static Raven getStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
                 + " You must construct a Raven instance before using the static Raven methods.");
         }
+        return stored;
     }
 
     /**
@@ -203,8 +209,7 @@ public class Raven {
      * @param event Event to send to the Sentry server
      */
     public static void capture(Event event) {
-        checkStored();
-        stored.sendEvent(event);
+        getStoredInstance().sendEvent(event);
     }
 
     /**
@@ -215,8 +220,7 @@ public class Raven {
      * @param throwable exception to send to Sentry.
      */
     public static void capture(Throwable throwable) {
-        checkStored();
-        stored.sendException(throwable);
+        getStoredInstance().sendException(throwable);
     }
 
     /**
@@ -227,8 +231,7 @@ public class Raven {
      * @param message message to send to Sentry.
      */
     public static void capture(String message) {
-        checkStored();
-        stored.sendMessage(message);
+        getStoredInstance().sendMessage(message);
     }
 
     /**
@@ -237,7 +240,7 @@ public class Raven {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public static void capture(EventBuilder eventBuilder) {
-        checkStored();
+        getStoredInstance();
         stored.sendEvent(eventBuilder);
     }
 
