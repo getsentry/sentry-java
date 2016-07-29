@@ -10,7 +10,7 @@ public class RavenFactory extends DefaultRavenFactory {
     private Context context;
 
     RavenFactory(Context ctx) {
-        this.context = ctx;
+        context = ctx;
     }
 
     @Override

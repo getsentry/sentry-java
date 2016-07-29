@@ -3,6 +3,7 @@ package com.getsentry.raven.android;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 import com.getsentry.raven.connection.EventSendFailureCallback;
 import com.getsentry.raven.connection.HttpConnection;
 import com.getsentry.raven.event.Event;
@@ -10,6 +11,12 @@ import com.getsentry.raven.event.Event;
 import java.io.IOException;
 
 public class Connection implements com.getsentry.raven.connection.Connection {
+
+    /**
+     * Logger tag.
+     */
+    public static final String TAG = Raven.class.getName();
+
     private Context context;
     private HttpConnection httpConnection;
 
@@ -21,9 +28,12 @@ public class Connection implements com.getsentry.raven.connection.Connection {
     @Override
     public void send(Event event) {
         if (shouldAttemptToSend(context)) {
+            Log.d(TAG, "attempting to send event to Sentry");
             httpConnection.send(event);
+        } else {
+            Log.d(TAG, "skipping event send because network is down");
+            // TODO: in the future, store offline if we don't want to send here
         }
-        // TODO: in the future, store offline if we don't want to send here
     }
 
     @Override

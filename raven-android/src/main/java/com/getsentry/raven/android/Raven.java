@@ -26,6 +26,8 @@ public final class Raven {
      */
     private static volatile Context context;
 
+    private static volatile com.getsentry.raven.Raven raven;
+
     /**
      * Hide constructor.
      */
@@ -83,15 +85,15 @@ public final class Raven {
 
         context = ctx.getApplicationContext();
 
-        if (!Util.checkPermission(ctx, Manifest.permission.INTERNET)) {
+        if (!Util.checkPermission(context, Manifest.permission.INTERNET)) {
             Log.e(TAG, Manifest.permission.INTERNET + " is required to connect to the Sentry server,"
                 + " please add it to your AndroidManifest.xml");
         }
 
         Log.d(TAG, "raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
-        // actual instance is stored statically on Raven
-        RavenFactory.ravenInstance(dsn);
+        com.getsentry.raven.RavenFactory.registerFactory(new RavenFactory(context));
+        raven = RavenFactory.ravenInstance(dsn);
         setupUncaughtExceptionHandler();
     }
 
@@ -119,7 +121,7 @@ public final class Raven {
      * @param event Event to send to the Sentry server
      */
     public static void capture(Event event) {
-        com.getsentry.raven.Raven.capture(event);
+        raven.sendEvent(event);
     }
 
     /**
@@ -130,7 +132,7 @@ public final class Raven {
      * @param throwable exception to send to Sentry.
      */
     public static void capture(Throwable throwable) {
-        com.getsentry.raven.Raven.capture(throwable);
+        raven.sendException(throwable);
     }
 
     /**
@@ -141,7 +143,7 @@ public final class Raven {
      * @param message message to send to Sentry.
      */
     public static void capture(String message) {
-        com.getsentry.raven.Raven.capture(message);
+        raven.sendMessage(message);
     }
 
     /**
@@ -150,7 +152,7 @@ public final class Raven {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public static void capture(EventBuilder eventBuilder) {
-        com.getsentry.raven.Raven.capture(eventBuilder);
+        raven.sendEvent(eventBuilder);
     }
 
 }
