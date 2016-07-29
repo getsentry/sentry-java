@@ -99,7 +99,8 @@ public class Raven {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public void sendEvent(EventBuilder eventBuilder) {
-        Event event = toEvent(eventBuilder);
+        runBuilderHelpers(eventBuilder);
+        Event event = eventBuilder.build();
         sendEvent(event);
     }
 
@@ -111,7 +112,10 @@ public class Raven {
      * @param message message to send to Sentry.
      */
     public void sendMessage(String message) {
-        Event event = toEvent(message);
+        EventBuilder eventBuilder = new EventBuilder().withMessage(message)
+            .withLevel(Event.Level.INFO);
+        runBuilderHelpers(eventBuilder);
+        Event event = eventBuilder.build();
         sendEvent(event);
     }
 
@@ -123,28 +127,12 @@ public class Raven {
      * @param throwable exception to send to Sentry.
      */
     public void sendException(Throwable throwable) {
-        Event event = toEvent(throwable);
-        sendEvent(event);
-    }
-
-    private Event toEvent(String message) {
-        EventBuilder eventBuilder = new EventBuilder().withMessage(message)
-            .withLevel(Event.Level.INFO);
-        runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
-    }
-
-    private Event toEvent(Throwable throwable) {
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
             .withLevel(Event.Level.ERROR)
             .withSentryInterface(new ExceptionInterface(throwable));
         runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
-    }
-
-    private Event toEvent(EventBuilder eventBuilder) {
-        runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        Event event = eventBuilder.build();
+        sendEvent(event);
     }
 
     /**
@@ -207,42 +195,6 @@ public class Raven {
             throw new NullPointerException("No stored Raven instance is available to use."
                 + " You must construct a Raven instance before using the static Raven methods.");
         }
-    }
-
-    /**
-     * Convert a string message to an {@link Event} using the statically stored
-     * Raven instance.
-     *
-     * @param message String message
-     * @return Event object
-     */
-    public static Event createEvent(String message) {
-        checkStored();
-        return stored.toEvent(message);
-    }
-
-    /**
-     * Convert a throwable instance to an {@link Event} using the statically stored
-     * Raven instance.
-     *
-     * @param throwable Throwable instance
-     * @return Event object
-     */
-    public static Event createEvent(Throwable throwable) {
-        checkStored();
-        return stored.toEvent(throwable);
-    }
-
-    /**
-     * Convert an {@link EventBuilder} instance to an {@link Event} using the statically stored
-     * Raven instance.
-     *
-     * @param eventBuilder EventBuilder instance
-     * @return Event object
-     */
-    public static Event createEvent(EventBuilder eventBuilder) {
-        checkStored();
-        return stored.toEvent(eventBuilder);
     }
 
     /**
