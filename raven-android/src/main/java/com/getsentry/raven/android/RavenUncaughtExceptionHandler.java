@@ -6,11 +6,9 @@ class RavenUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
     private static final String TAG = RavenUncaughtExceptionHandler.class.getName();
 
-    private com.getsentry.raven.Raven raven;
     private Thread.UncaughtExceptionHandler defaultExceptionHandler;
 
-    public RavenUncaughtExceptionHandler(com.getsentry.raven.Raven raven, Thread.UncaughtExceptionHandler defaultExceptionHandler) {
-        this.raven = raven;
+    public RavenUncaughtExceptionHandler(Thread.UncaughtExceptionHandler defaultExceptionHandler) {
         this.defaultExceptionHandler = defaultExceptionHandler;
     }
 
@@ -19,7 +17,7 @@ class RavenUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
         Log.d(TAG, "uncaught exception received");
 
         try {
-            raven.sendException(thrown);
+            // TODO: Raven.capture
         } catch (Exception e) {
             Log.e(TAG, "error sending excepting to Sentry", e);
         }
