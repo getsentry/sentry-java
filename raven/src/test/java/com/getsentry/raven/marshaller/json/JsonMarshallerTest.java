@@ -208,6 +208,19 @@ public class JsonMarshallerTest {
     }
 
     @Test
+    public void testEventEnvironmentWrittenProperly(@Injectable("environment") final String mockEnvironment) throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getEnvironment();
+            result = mockEnvironment;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/jsonmarshallertest/testEnvironment.json")));
+    }
+
+    @Test
     public void testEventBreadcrumbsWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
 
@@ -331,10 +344,10 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, outputStream);
 
         assertThat(new String(outputStream.toByteArray(), "UTF-8"), is(""
-                + "eJyFjU0KAjEMhe+SdYXOSuw53A+hxlpMOyVpB2GYu"
-                + "1vU6dbwNl94PxvQSrnO8QYO7J8DA4lUMRC43JgN1N"
-                + "gfFVPp6elytic7dV2tdR/1APd+Puy8hEByUGGs90X"
-                + "Swb5xkVhHNwYFt+0GlGQlmTOmMSzEhDqQXlXwa/YP"
-                + "8k9tv9b9DbsbRo8="));
+                + "eJyFT8sKAjEQ+5c5V+iexH6H92WoYy1OH0zbRVj23"
+                + "y1qe3XIJWGSkB1oo1hXfwMD+s+BgkCloCMwsTErqL"
+                + "4LFUPu7uVy1ie9dFy1Nh90A/d8Hu+cnCMZLDPWe5I"
+                + "wuG2cxdeZja6A2Q8FhWQjWSOGWSzEhGVSipuXFEOf"
+                + "MqVXFfz67YPss7Rf0fEGRZpNqQ=="));
     }
 }

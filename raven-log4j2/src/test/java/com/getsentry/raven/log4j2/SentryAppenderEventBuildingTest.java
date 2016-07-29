@@ -263,4 +263,19 @@ public class SentryAppenderEventBuildingTest {
         }};
         assertNoErrorsInErrorHandler();
     }
+
+    @Test
+    public void testEnvironmentAddedToEvent() throws Exception {
+        final String environment = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
+        sentryAppender.setEnvironment(environment);
+
+        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), null));
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getEnvironment(), is(environment));
+        }};
+        assertNoErrorsInErrorHandler();
+    }
 }

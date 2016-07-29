@@ -9,6 +9,7 @@
     "tags": {},
     "server_name": null,
     "release": null,
+    "environment": null,
     "extra": {
         "key": {
             "key": "value"

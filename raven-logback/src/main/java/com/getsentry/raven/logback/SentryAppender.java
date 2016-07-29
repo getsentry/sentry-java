@@ -67,6 +67,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String release;
     /**
+     * Identifies the environment the application is running in.
+     * <p>
+     * Might be null in which case the environment information will not be sent with the event.
+     */
+    protected String environment;
+    /**
      * Server name to be sent to sentry.
      * <p>
      * Might be null in which case the hostname is found via a reverse DNS lookup.
@@ -207,6 +213,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withRelease(release.trim());
         }
 
+        if (!Util.isNullOrEmpty(environment)) {
+            eventBuilder.withEnvironment(environment.trim());
+        }
+
         if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.withSentryInterface(new MessageInterface(
                 iLoggingEvent.getMessage(),
@@ -322,6 +332,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public void setServerName(String serverName) {

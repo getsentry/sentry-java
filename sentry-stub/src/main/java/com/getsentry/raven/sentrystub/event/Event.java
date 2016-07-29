@@ -32,6 +32,8 @@ public class Event {
     private String serverName;
     @JsonProperty(value = "release")
     private String release;
+    @JsonProperty(value = "environment")
+    private String environment;
     @JsonProperty(value = "modules")
     private Map<String, String> modules;
     @JsonProperty(value = "extra")

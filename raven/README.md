@@ -10,12 +10,12 @@ for `java.util.logging`.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven</artifactId>
-    <version>7.5.0</version>
+    <version>7.6.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C7.5.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C7.6.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
@@ -39,6 +39,8 @@ com.getsentry.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/
 com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
 # Optional, provide release version of your application 
 com.getsentry.raven.jul.SentryHandler.release=1.0.0
+# Optional, provide environment your application is running in
+com.getsentry.raven.jul.SentryHandler.environment=production
 # Optional, override the server name (rather than looking it up dynamically)
 com.getsentry.raven.jul.SentryHandler.serverName=server1
 # Optional, select the ravenFactory class 

@@ -66,9 +66,13 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String SERVER_NAME = "server_name";
     /**
-     * Identifies the host client from which the event was recorded.
+     * Identifies the the version of the application.
      */
     public static final String RELEASE = "release";
+    /**
+     * Identifies the environment the application is running in.
+     */
+    public static final String ENVIRONMENT = "environment";
     /**
      * Event fingerprint, a list of strings used to dictate the deduplicating for this event.
      */
@@ -138,6 +142,7 @@ public class JsonMarshaller implements Marshaller {
         writeBreadcumbs(generator, event.getBreadcrumbs());
         generator.writeStringField(SERVER_NAME, event.getServerName());
         generator.writeStringField(RELEASE, event.getRelease());
+        generator.writeStringField(ENVIRONMENT, event.getEnvironment());
         writeExtras(generator, event.getExtra());
         writeCollection(generator, FINGERPRINT, event.getFingerprint());
         generator.writeStringField(CHECKSUM, event.getChecksum());
