@@ -1,12 +1,12 @@
 Version 7.7.0
 -------------
 
-- Add static `Raven.capture` methods that send to the most recently constructed Raven instance.
+- Add static ``Raven.capture`` methods that send to the most recently constructed Raven instance.
 
 Version 7.6.0
 -------------
 
-- Add `environment` property to events and appenders.
+- Add ``environment`` property to events and appenders.
 
 Version 7.5.0
 -------------

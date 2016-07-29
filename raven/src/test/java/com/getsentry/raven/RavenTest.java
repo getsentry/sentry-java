@@ -176,7 +176,7 @@ public class RavenTest {
     }
 
     @Test
-    public void testSendEventBuilerStatically() throws Exception {
+    public void testSendEventBuilderStatically() throws Exception {
         final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
         EventBuilder eventBuilder = new EventBuilder().withMessage(message).withLevel(Event.Level.ERROR);
         raven.addBuilderHelper(mockEventBuilderHelper);
