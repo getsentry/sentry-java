@@ -10,6 +10,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.dsn.Dsn;
+import com.getsentry.raven.event.Event;
+import com.getsentry.raven.event.EventBuilder;
 
 /**
  * Android specific class to interface with Raven. Supplements the default Java classes
@@ -153,6 +155,46 @@ public final class Raven {
             Thread.setDefaultUncaughtExceptionHandler(
                 new RavenUncaughtExceptionHandler(currentHandler));
         }
+    }
+
+    /**
+     * Send an Event using the statically stored Raven instance.
+     *
+     * @param event Event to send to the Sentry server
+     */
+    public static void capture(Event event) {
+        com.getsentry.raven.Raven.capture(event);
+    }
+
+    /**
+     * Sends an exception (or throwable) to the Sentry server using the statically stored Raven instance.
+     * <p>
+     * The exception will be logged at the {@link Event.Level#ERROR} level.
+     *
+     * @param throwable exception to send to Sentry.
+     */
+    public static void capture(Throwable throwable) {
+        com.getsentry.raven.Raven.capture(throwable);
+    }
+
+    /**
+     * Sends a message to the Sentry server using the statically stored Raven instance.
+     * <p>
+     * The message will be logged at the {@link Event.Level#INFO} level.
+     *
+     * @param message message to send to Sentry.
+     */
+    public static void capture(String message) {
+        com.getsentry.raven.Raven.capture(message);
+    }
+
+    /**
+     * Builds and sends an {@link Event} to the Sentry server using the statically stored Raven instance.
+     *
+     * @param eventBuilder {@link EventBuilder} to send to Sentry.
+     */
+    public static void capture(EventBuilder eventBuilder) {
+        com.getsentry.raven.Raven.capture(eventBuilder);
     }
 
 }
