@@ -87,8 +87,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
     @Override
     public Raven createRavenInstance(Dsn dsn) {
-        Raven raven = new Raven();
-        raven.setConnection(createConnection(dsn));
+        Raven raven = new Raven(createConnection(dsn));
         try {
             // `ServletRequestListener` was added in the Servlet 2.4 API, and
             // is used as part of the `HttpEventBuilderHelper`, see:

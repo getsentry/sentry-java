@@ -191,3 +191,39 @@ public class MyClass {
 
 This gives more control over the content of the `Event` and gives access to the
 complete API supported by Sentry.
+
+### Static access
+
+The most recently constructed `Raven` instance is stored statically so it may
+be used easily from anywhere in your application.
+
+```java
+import com.getsentry.raven.Raven;
+import com.getsentry.raven.RavenFactory;
+
+public class MyClass {
+    public static void main(String... args) {
+        // Create a Raven instance
+        RavenFactory.ravenInstance();
+    }
+    
+    public somewhereElse() {
+        // Use the Raven instance statically. Note that we are
+        // using the Class (and a static method) here 
+        Raven.capture("Error message");
+        
+        // Or pass it a throwable
+        Raven.capture(new Exception("Error message"));
+        
+        // Or build an event yourself
+        EventBuilder eventBuilder = new EventBuilder()
+                        .withMessage("Exception caught")
+                        .withLevel(Event.Level.ERROR);
+        Raven.capture(eventBuilder.build());
+    }
+
+}
+```
+
+Note that a Raven instance *must* be created before you can use the `Raven.capture`
+method, otherwise a `NullPointerException` (with an explaination) will be thrown.
