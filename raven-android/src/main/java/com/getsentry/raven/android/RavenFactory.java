@@ -7,6 +7,12 @@ import com.getsentry.raven.connection.HttpConnection;
 import com.getsentry.raven.dsn.Dsn;
 
 public class RavenFactory extends DefaultRavenFactory {
+    private Context context;
+
+    RavenFactory(Context ctx) {
+        this.context = ctx;
+    }
+
     @Override
     protected Connection createConnection(Dsn dsn) {
         String protocol = dsn.getProtocol();
@@ -22,7 +28,7 @@ public class RavenFactory extends DefaultRavenFactory {
         }
 
         HttpConnection httpConnection = (HttpConnection) createHttpConnection(dsn);
-        Connection androidConnection = new com.getsentry.raven.android.Connection(httpConnection);
+        Connection androidConnection = new com.getsentry.raven.android.Connection(context, httpConnection);
         return createAsyncConnection(dsn, androidConnection);
     }
 }

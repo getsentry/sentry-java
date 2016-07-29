@@ -10,16 +10,20 @@ import com.getsentry.raven.event.Event;
 import java.io.IOException;
 
 public class Connection implements com.getsentry.raven.connection.Connection {
+    private Context context;
     private HttpConnection httpConnection;
 
-    Connection(HttpConnection httpConnection) {
+    Connection(Context ctx, HttpConnection httpConnection) {
+        context = ctx;
         this.httpConnection = httpConnection;
     }
 
     @Override
     public void send(Event event) {
-        // TODO: use Android context to decide whether to send or not
-        httpConnection.send(event);
+        if (shouldAttemptToSend(context)) {
+            httpConnection.send(event);
+        }
+        // TODO: in the future, store offline if we don't want to send here
     }
 
     @Override

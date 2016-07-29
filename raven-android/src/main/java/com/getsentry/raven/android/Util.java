@@ -2,8 +2,6 @@ package com.getsentry.raven.android;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 
 /**
  * Raven Android utility methods.
