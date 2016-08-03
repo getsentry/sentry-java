@@ -35,7 +35,7 @@ In the `logging.properties` file set:
 .level=WARN
 handlers=com.getsentry.raven.jul.SentryHandler
 com.getsentry.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
-#  Optional, provide tags 
+# Optional, provide tags
 com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
 # Optional, provide release version of your application 
 com.getsentry.raven.jul.SentryHandler.release=1.0.0
@@ -45,6 +45,8 @@ com.getsentry.raven.jul.SentryHandler.environment=production
 com.getsentry.raven.jul.SentryHandler.serverName=server1
 # Optional, select the ravenFactory class 
 com.getsentry.raven.jul.SentryHandler.ravenFactory=com.getsentry.raven.DefaultRavenFactory
+# Optional, provide tag names to be extracted from MDC when using SLF4J
+com.getsentry.raven.jul.SentryHandler.extraTags=foo,bar,baz
 ```
 
 When starting your application, add the `java.util.logging.config.file` to the
@@ -81,10 +83,9 @@ public class MyClass {
 ```
 
 ### Unsupported features
-`java.util.logging` does not support either MDC nor NDC, meaning that it is not
-possible to attach additional/custom context values to the logs.
-In other terms, it is not possible to use the "extra" field supported by Sentry.
 
+As `java.util.logging` has no notion of MDC, the `extraTags` parameter is only
+available when logging via SLF4J.
 
 ## Manual usage (NOT RECOMMENDED)
 It is possible to use the client manually rather than using a logging framework

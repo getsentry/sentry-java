@@ -122,6 +122,10 @@ public class SentryHandler extends Handler {
         this.tags = Util.parseTags(tagsProperty);
     }
 
+    public void setExtraTags(String extraTags) {
+        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
+    }
+
     /**
      * Transforms a {@link Level} into an {@link Event.Level}.
      *
