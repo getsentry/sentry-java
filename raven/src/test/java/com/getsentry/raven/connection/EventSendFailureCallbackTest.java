@@ -38,6 +38,8 @@ public class EventSendFailureCallbackTest {
         raven.sendMessage("Message that will fail because DSN points to garbage.");
 
         assertThat(flag.get(), is(true));
+
+        raven.getContext().deactivate();
     }
 
     @Test
@@ -61,6 +63,8 @@ public class EventSendFailureCallbackTest {
         String dsn = "https://foo:bar@localhost:1234/1?raven.async=false";
         Raven raven = factory.createRavenInstance(new Dsn(dsn));
         raven.sendMessage("Message that will fail because DSN points to garbage.");
+
+        raven.getContext().deactivate();
     }
 
 }
