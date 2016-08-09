@@ -2,8 +2,10 @@ package com.getsentry.raven.connection;
 
 import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.Raven;
+import com.getsentry.raven.RavenContext;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.Event;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,6 +14,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EventSendFailureCallbackTest {
+
+    @AfterMethod
+    private void afterMethod() {
+        for (RavenContext ctx : RavenContext.getActiveContexts()) {
+            ctx.deactivate();
+        }
+    }
 
     @Test
     public void testSimpleCallback() {
