@@ -6,9 +6,17 @@ import com.getsentry.raven.connection.Connection;
 import com.getsentry.raven.connection.HttpConnection;
 import com.getsentry.raven.dsn.Dsn;
 
+/**
+ * RavenFactory for Android clients.
+ */
 public class RavenFactory extends DefaultRavenFactory {
     private Context context;
 
+    /**
+     * Builds this factory, storing the provided Android Context object.
+     *
+     * @param ctx Android Context
+     */
     RavenFactory(Context ctx) {
         context = ctx;
     }

@@ -10,16 +10,26 @@ import com.getsentry.raven.event.Event;
 
 import java.io.IOException;
 
+/**
+ * Connection implementation that handles Android specific logic such as
+ * checking for internet connectivity.
+ */
 public class Connection implements com.getsentry.raven.connection.Connection {
 
     /**
      * Logger tag.
      */
-    public static final String TAG = Raven.class.getName();
+    private static final String TAG = Raven.class.getName();
 
     private Context context;
     private HttpConnection httpConnection;
 
+    /**
+     * Builds a Connection using the provided Android Context and underlying HttpConnection.
+     *
+     * @param ctx Android Connection
+     * @param httpConnection HttpConnection
+     */
     Connection(Context ctx, HttpConnection httpConnection) {
         context = ctx;
         this.httpConnection = httpConnection;
