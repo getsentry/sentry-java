@@ -28,6 +28,8 @@ public final class Raven {
 
     private static volatile com.getsentry.raven.Raven raven;
 
+    private static volatile EventCache eventCache;
+
     /**
      * Hide constructor.
      */
@@ -93,7 +95,8 @@ public final class Raven {
 
         Log.d(TAG, "raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
-        raven = new RavenFactory(context).createRavenInstance(dsn);
+        eventCache = new EventCache(context);
+        raven = new RavenFactory(context, eventCache).createRavenInstance(dsn);
         setupUncaughtExceptionHandler();
     }
 

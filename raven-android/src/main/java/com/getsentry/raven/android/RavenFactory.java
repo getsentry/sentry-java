@@ -11,14 +11,16 @@ import com.getsentry.raven.dsn.Dsn;
  */
 public class RavenFactory extends DefaultRavenFactory {
     private Context context;
+    private EventCache eventCache;
 
     /**
      * Builds this factory, storing the provided Android Context object.
      *
      * @param ctx Android Context
      */
-    RavenFactory(Context ctx) {
+    RavenFactory(Context ctx, EventCache eventCache) {
         context = ctx;
+        this.eventCache = eventCache;
     }
 
     @Override
@@ -36,7 +38,7 @@ public class RavenFactory extends DefaultRavenFactory {
         }
 
         HttpConnection httpConnection = (HttpConnection) createHttpConnection(dsn);
-        Connection androidConnection = new com.getsentry.raven.android.Connection(context, httpConnection);
+        Connection androidConnection = new com.getsentry.raven.android.Connection(context, eventCache, httpConnection);
         return createAsyncConnection(dsn, androidConnection);
     }
 }

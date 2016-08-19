@@ -22,6 +22,7 @@ public class Connection implements com.getsentry.raven.connection.Connection {
     private static final String TAG = Raven.class.getName();
 
     private Context context;
+    private EventCache eventCache;
     private HttpConnection httpConnection;
 
     /**
@@ -30,8 +31,9 @@ public class Connection implements com.getsentry.raven.connection.Connection {
      * @param ctx Android Connection
      * @param httpConnection HttpConnection
      */
-    Connection(Context ctx, HttpConnection httpConnection) {
+    Connection(Context ctx, EventCache eventCache, HttpConnection httpConnection) {
         context = ctx;
+        this.eventCache = eventCache;
         this.httpConnection = httpConnection;
     }
 
@@ -42,7 +44,7 @@ public class Connection implements com.getsentry.raven.connection.Connection {
             httpConnection.send(event);
         } else {
             Log.d(TAG, "skipping event send because network is down");
-            // TODO: in the future, store offline if we don't want to send here
+            eventCache.storeEvent(event);
         }
     }
 
