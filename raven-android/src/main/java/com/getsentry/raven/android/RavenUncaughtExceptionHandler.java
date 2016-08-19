@@ -45,8 +45,10 @@ class RavenUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
             Log.e(TAG, "error sending excepting to Sentry", e);
         }
 
-        // call the original handler
-        defaultExceptionHandler.uncaughtException(thread, thrown);
+        if (defaultExceptionHandler != null) {
+            // call the original handler
+            defaultExceptionHandler.uncaughtException(thread, thrown);
+        }
     }
 
 }

@@ -80,8 +80,9 @@ public final class Raven {
      * @param dsn Sentry DSN object
      */
     public static void init(Context ctx, Dsn dsn) {
-        // TODO: I think we should either throw an exception OR log and return (leaving the original
-        //       Raven assigned) if a user tries to `init` more than once...
+        if (raven != null) {
+            throw new IllegalStateException("Attempted to initialize Raven multiple times.");
+        }
 
         context = ctx.getApplicationContext();
 
@@ -92,8 +93,7 @@ public final class Raven {
 
         Log.d(TAG, "raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
-        com.getsentry.raven.RavenFactory.registerFactory(new RavenFactory(context));
-        raven = RavenFactory.ravenInstance(dsn);
+        raven = new RavenFactory(context).createRavenInstance(dsn);
         setupUncaughtExceptionHandler();
     }
 
