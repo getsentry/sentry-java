@@ -33,7 +33,7 @@ public class BreadcrumbBuilder {
      * @return current BreadcrumbBuilder
      */
     public BreadcrumbBuilder setTimestamp(Date newTimestamp) {
-        this.timestamp = newTimestamp;
+        this.timestamp = new Date(newTimestamp.getTime());
         return this;
     }
 
