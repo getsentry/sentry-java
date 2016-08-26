@@ -49,28 +49,7 @@ To use it with maven, add the following repository:
 ```
 
 ## Android
-Raven works on Android, and relies on the
-[ServiceLoader](https://developer.android.com/reference/java/util/ServiceLoader.html)
-system which uses the content of `META-INF/services`.
-This is used to declare the `RavenFactory` implementations (to allow more
-control over the automatically generated instances of `Raven`) in
-`META-INF/services/com.getsentry.raven.RavenFactory`.
-
-Unfortunately, when the APK is built, the content of `META-INF/services` in
-the dependencies is lost, this prevents Raven from working properly. Some
-solutions exist:
-
- - Use [maven-android-plugin](http://simpligility.github.io/android-maven-plugin/)
- which has already solved this
-[problem](https://web.archive.org/web/20150523160437/http://code.google.com/p/maven-android-plugin/issues/detail?id=97)
- - Manually create a `META-INF/services/com.getsentry.raven.RavenFactory` for
- the project which will contain the canonical name of the implementation of
- `RavenFactory` (ie. `com.getsentry.raven.DefaultRavenFactory`).
- - Manually register the `RavenFactory` when the application starts:
-
- ```java
- RavenFactory.registerFactory(new DefaultRavenFactory());
- ```
+Raven works on Android, please see the [Android README](https://github.com/getsentry/raven-java/blob/raven-android-start/raven-android/README.md).
 
 ## HTTP Request Context
 If the runtime environment utilizes Servlets, events that are created during
