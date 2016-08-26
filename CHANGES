@@ -2,6 +2,8 @@ Version 7.7.0
 -------------
 
 - Add static ``Raven.capture`` methods that send to the most recently constructed Raven instance.
+- Add support for setting ``ravenFactory``, ``release``, ``environment`` and ``serverName``
+  via System Environment or Java System Properties.
 
 Version 7.6.0
 -------------

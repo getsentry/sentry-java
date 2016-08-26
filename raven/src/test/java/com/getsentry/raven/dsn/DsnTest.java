@@ -1,5 +1,6 @@
 package com.getsentry.raven.dsn;
 
+import com.getsentry.raven.config.JndiLookup;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
@@ -64,7 +65,7 @@ public class DsnTest {
     public void testJndiLookupFailsWithException(
             @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
         new NonStrictExpectations() {{
-            JndiLookup.jndiLookup();
+            JndiLookup.jndiLookup("dsn");
             result = new ClassNotFoundException("Couldn't find the JNDI classes");
         }};
 
@@ -75,7 +76,7 @@ public class DsnTest {
     public void testJndiLookupFailsWithError(
             @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
         new NonStrictExpectations() {{
-            JndiLookup.jndiLookup();
+            JndiLookup.jndiLookup("dsn");
             result = new NoClassDefFoundError("Couldn't find the JNDI classes");
         }};
 

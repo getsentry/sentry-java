@@ -7,6 +7,7 @@ import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
+import com.getsentry.raven.config.Lookup;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.dsn.InvalidDsnException;
 import com.getsentry.raven.environment.RavenEnvironment;
@@ -99,6 +100,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
+        ravenFactory = Lookup.lookup("ravenFactory");
+        release = Lookup.lookup("release");
+        environment = Lookup.lookup("environment");
+        serverName = Lookup.lookup("serverName");
     }
 
     /**
@@ -107,6 +112,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
+        this();
         this.raven = raven;
     }
 
@@ -154,16 +160,19 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (RavenEnvironment.isManagingThread())
+        if (RavenEnvironment.isManagingThread()) {
             return;
+        }
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null)
+            if (raven == null) {
                 initRaven();
+            }
 
-            if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel))
+            if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel)) {
                 return;
+            }
 
             Event event = buildEvent(iLoggingEvent);
             raven.sendEvent(event);
@@ -179,8 +188,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected void initRaven() {
         try {
-            if (dsn == null)
+            if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (InvalidDsnException e) {

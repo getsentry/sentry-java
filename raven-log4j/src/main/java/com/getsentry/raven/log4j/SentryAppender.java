@@ -2,6 +2,7 @@ package com.getsentry.raven.log4j;
 
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
+import com.getsentry.raven.config.Lookup;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.dsn.InvalidDsnException;
 import com.getsentry.raven.environment.RavenEnvironment;
@@ -89,6 +90,10 @@ public class SentryAppender extends AppenderSkeleton {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
+        ravenFactory = Lookup.lookup("ravenFactory");
+        release = Lookup.lookup("release");
+        environment = Lookup.lookup("environment");
+        serverName = Lookup.lookup("serverName");
     }
 
     /**
@@ -97,6 +102,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
+        this();
         this.raven = raven;
     }
 

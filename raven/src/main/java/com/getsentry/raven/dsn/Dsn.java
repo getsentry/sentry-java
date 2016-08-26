@@ -1,5 +1,6 @@
 package com.getsentry.raven.dsn;
 
+import com.getsentry.raven.config.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,10 +14,6 @@ import java.util.*;
  * Data Source name allowing a direct connection to a Sentry server.
  */
 public class Dsn {
-    /**
-     * Name of the environment and system variables containing the DSN.
-     */
-    public static final String DSN_VARIABLE = "SENTRY_DSN";
     /**
      * Default DSN to use when auto detection fails.
      */
@@ -86,24 +83,7 @@ public class Dsn {
      * @return a DSN configuration or null if nothing could be found.
      */
     public static String dsnLookup() {
-        String dsn = null;
-
-        // Try to obtain the DSN from JNDI
-        try {
-            // Check that JNDI is available (not available on Android) by loading InitialContext
-            Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
-            dsn = JndiLookup.jndiLookup();
-        } catch (ClassNotFoundException | NoClassDefFoundError e) {
-            logger.debug("JNDI not available");
-        }
-
-        // Try to obtain the DSN from a System Environment Variable
-        if (dsn == null)
-            dsn = System.getenv(DSN_VARIABLE);
-
-        // Try to obtain the DSN from a Java System Property
-        if (dsn == null)
-            dsn = System.getProperty(DSN_VARIABLE);
+        String dsn = Lookup.lookup("dsn");
 
         if (dsn == null) {
             logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");

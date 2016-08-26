@@ -2,6 +2,7 @@ package com.getsentry.raven.jul;
 
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
+import com.getsentry.raven.config.Lookup;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.dsn.InvalidDsnException;
 import com.getsentry.raven.environment.RavenEnvironment;
@@ -93,6 +94,10 @@ public class SentryHandler extends Handler {
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
+        ravenFactory = Lookup.lookup("ravenFactory");
+        release = Lookup.lookup("release");
+        environment = Lookup.lookup("environment");
+        serverName = Lookup.lookup("serverName");
         retrieveProperties();
     }
 
@@ -102,6 +107,7 @@ public class SentryHandler extends Handler {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryHandler(Raven raven) {
+        this();
         this.raven = raven;
     }
 
