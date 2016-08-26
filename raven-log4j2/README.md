@@ -29,7 +29,62 @@ Relies on:
 
 ## Usage
 ### Configuration
-In the `log4j2.xml` file set:
+Add the `SentryAppender` to your `log4j2.xml` file:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
+    <appenders>
+        <Raven name="Sentry">
+        </Raven>
+    </appenders>
+
+    <loggers>
+        <root level="all">
+            <appender-ref ref="Sentry"/>
+        </root>
+    </loggers>
+</configuration>
+```
+
+Next, you'll need to configure your DSN (client key) and optionally other
+values such as `environment` and `release`. See below for the two
+ways you can do this.
+
+#### Configuration via runtime environment
+
+This is the most flexible method to configure the `SentryAppender`,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+```bash
+EXAMPLE=xxx java -jar app.jar
+```
+
+or as Java System Properties:
+
+```bash
+java -DEXAMPLE=xxx -jar app.jar
+```
+
+Configuration parameters follow:
+
+| Parameter                                                     | Description                                                                |
+|---------------------------------------------------------------|----------------------------------------------------------------------------|
+| `SENTRY_DSN=https://publicKey:secretKey@host:port/1?options`  | Your Sentry DSN (client key), if left blank Raven will no-op               |
+| `SENTRY_RELEASE=1.0.0`                                        | Optional, provide release version of your application                      |
+| `SENTRY_ENVIRONMENT=production`                               | Optional, provide environment your application is running in               |
+| `SENTRY_SERVERNAME=server1`                                   | Optional, override the server name (rather than looking it up dynamically) |
+| `SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class                                    |
+| `SENTRY_TAGS=tag1:value1,tag2:value2`                         | Optional, provide tags                                                     |
+
+#### Configuration via `log4j2.xml`
+
+You can also configure everything statically within the `log4j2.xml` file
+itself. This is less flexible because it's harder to change when you run
+your application in different environments.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>

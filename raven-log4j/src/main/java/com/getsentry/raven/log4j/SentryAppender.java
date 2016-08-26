@@ -90,10 +90,11 @@ public class SentryAppender extends AppenderSkeleton {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        ravenFactory = Lookup.lookup("ravenFactory");
-        release = Lookup.lookup("release");
-        environment = Lookup.lookup("environment");
-        serverName = Lookup.lookup("serverName");
+        setRavenFactory(Lookup.lookup("ravenFactory"));
+        setRelease(Lookup.lookup("release"));
+        setEnvironment(Lookup.lookup("environment"));
+        setServerName(Lookup.lookup("serverName"));
+        setTags(Lookup.lookup("tags"));
     }
 
     /**

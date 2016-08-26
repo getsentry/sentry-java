@@ -54,6 +54,7 @@ public class SentryHandler extends Handler {
      * false.
      */
     protected boolean printfStyle;
+
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
@@ -94,10 +95,11 @@ public class SentryHandler extends Handler {
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
-        ravenFactory = Lookup.lookup("ravenFactory");
-        release = Lookup.lookup("release");
-        environment = Lookup.lookup("environment");
-        serverName = Lookup.lookup("serverName");
+        setRavenFactory(Lookup.lookup("ravenFactory"));
+        setRelease(Lookup.lookup("release"));
+        setEnvironment(Lookup.lookup("environment"));
+        setServerName(Lookup.lookup("serverName"));
+        setTags(Lookup.lookup("tags"));
         retrieveProperties();
     }
 
@@ -109,27 +111,6 @@ public class SentryHandler extends Handler {
     public SentryHandler(Raven raven) {
         this();
         this.raven = raven;
-    }
-
-    public void setDsn(String dsn) {
-        this.dsn = dsn;
-    }
-
-    public void setPrintfStyle(boolean printfStyle) {
-        this.printfStyle = printfStyle;
-    }
-
-    /**
-     * Populates the tags map by parsing the given tags property string.
-     * @param tagsProperty comma-delimited key-value pairs, e.g.
-     *                     "tag1:value1,tag2:value2".
-     */
-    public void setTags(String tagsProperty) {
-        this.tags = Util.parseTags(tagsProperty);
-    }
-
-    public void setExtraTags(String extraTags) {
-        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
     }
 
     /**
@@ -171,17 +152,35 @@ public class SentryHandler extends Handler {
     protected void retrieveProperties() {
         LogManager manager = LogManager.getLogManager();
         String className = SentryHandler.class.getName();
-        dsn = manager.getProperty(className + ".dsn");
-        printfStyle = Boolean.valueOf(manager.getProperty(className + ".printfStyle"));
-        ravenFactory = manager.getProperty(className + ".ravenFactory");
-        release = manager.getProperty(className + ".release");
-        environment = manager.getProperty(className + ".environment");
-        serverName = manager.getProperty(className + ".serverName");
+        String dsnProperty = manager.getProperty(className + ".dsn");
+        if (dsnProperty != null) {
+            setDsn(dsnProperty);
+        }
+        String ravenFactoryProperty = manager.getProperty(className + ".ravenFactory");
+        if (ravenFactoryProperty != null) {
+            setRavenFactory(ravenFactoryProperty);
+        }
+        String releaseProperty = manager.getProperty(className + ".release");
+        if (releaseProperty != null) {
+            setRelease(releaseProperty);
+        }
+        String environmentProperty = manager.getProperty(className + ".environment");
+        if (environmentProperty != null) {
+            setEnvironment(environmentProperty);
+        }
+        String serverNameProperty = manager.getProperty(className + ".serverName");
+        if (serverNameProperty != null) {
+            setServerName(serverNameProperty);
+        }
         String tagsProperty = manager.getProperty(className + ".tags");
-        tags = Util.parseTags(tagsProperty);
+        if (tagsProperty != null) {
+            setTags(tagsProperty);
+        }
         String extraTagsProperty = manager.getProperty(className + ".extraTags");
-        if (extraTagsProperty != null)
-            extraTags = new HashSet<>(Arrays.asList(extraTagsProperty.split(",")));
+        if (extraTagsProperty != null) {
+            setExtraTags(extraTagsProperty);
+        }
+        setPrintfStyle(Boolean.valueOf(manager.getProperty(className + ".printfStyle")));
     }
 
     @Override
@@ -326,6 +325,18 @@ public class SentryHandler extends Handler {
         }
     }
 
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
+    }
+
+    public void setPrintfStyle(boolean printfStyle) {
+        this.printfStyle = printfStyle;
+    }
+
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
+    }
+
     public void setRelease(String release) {
         this.release = release;
     }
@@ -337,4 +348,18 @@ public class SentryHandler extends Handler {
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
+
+    /**
+     * Populates the tags map by parsing the given tags property string.
+     * @param tags comma-delimited key-value pairs, e.g.
+     *                     "tag1:value1,tag2:value2".
+     */
+    public void setTags(String tags) {
+        this.tags = Util.parseTags(tags);
+    }
+
+    public void setExtraTags(String extraTags) {
+        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
+    }
+
 }

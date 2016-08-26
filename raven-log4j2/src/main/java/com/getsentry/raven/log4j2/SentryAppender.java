@@ -107,10 +107,11 @@ public class SentryAppender extends AbstractAppender {
      */
     public SentryAppender() {
         this(APPENDER_NAME, null);
-        ravenFactory = Lookup.lookup("ravenFactory");
-        release = Lookup.lookup("release");
-        environment = Lookup.lookup("environment");
-        serverName = Lookup.lookup("serverName");
+        setRavenFactory(Lookup.lookup("ravenFactory"));
+        setRelease(Lookup.lookup("release"));
+        setEnvironment(Lookup.lookup("environment"));
+        setServerName(Lookup.lookup("serverName"));
+        setTags(Lookup.lookup("tags"));
     }
 
     /**
