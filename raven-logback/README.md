@@ -61,11 +61,13 @@ or as Java System Properties:
 java -DEXAMPLE=xxx -jar app.jar
 ```
 
-| ``SENTRY_DSN=https://publicKey:secretKey@host:port/1?options`` | Your Sentry DSN (client key) |
-| ``SENTRY_RELEASE=1.0.0`` | Optional, provide release version of your application |
-| ``SENTRY_ENVIRONMENT=production`` | Optional, provide environment your application is running in |
-| ``SENTRY_SERVERNAME=server1`` | Optional, override the server name (rather than looking it up dynamically) |
-| ``SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory`` | Optional, select the ravenFactory class |
+| Parameter                                                       | Description                                                                |
+|-----------------------------------------------------------------|----------------------------------------------------------------------------|
+| ``SENTRY_DSN=https://publicKey:secretKey@host:port/1?options``  | Your Sentry DSN (client key)                                               |
+| ``SENTRY_RELEASE=1.0.0``                                        | Optional, provide release version of your application                      |
+| ``SENTRY_ENVIRONMENT=production``                               | Optional, provide environment your application is running in               |
+| ``SENTRY_SERVERNAME=server1``                                   | Optional, override the server name (rather than looking it up dynamically) |
+| ``SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory`` | Optional, select the ravenFactory class                                    |
 
 #### Configuration via `logback.xml`
 
