@@ -27,7 +27,51 @@ Relies on:
 
 ## Usage
 ### Configuration
-In the `logback.xml` file set:
+In your `logback.xml` file, add the ``SentryAppender``:
+
+```xml
+<configuration>
+    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+    </appender>
+    <root level="warn">
+        <appender-ref ref="Sentry"/>
+    </root>
+</configuration>
+```
+
+Next, you'll need to configure your DSN (client key) and optionally other
+values such as ``environment`` and ``release``. See below for the two
+ways you can do this.
+
+#### Configuration via runtime environment
+
+This is the most flexible method to configure the ``SentryAppender``,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+```bash
+EXAMPLE=xxx java -jar app.jar
+```
+
+or as Java System Properties:
+
+```bash
+java -DEXAMPLE=xxx -jar app.jar
+```
+
+ - ``SENTRY_DSN=https://publicKey:secretKey@host:port/1?options`` Your Sentry DSN (client key)
+ - ``SENTRY_RELEASE=1.0.0`` Optional, provide release version of your application
+ - ``SENTRY_ENVIRONMENT=production`` Optional, provide environment your application is running in
+ - ``SENTRY_SERVERNAME=server1`` Optional, override the server name (rather than looking it up dynamically)
+ - ``SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory`` Optional, select the ravenFactory class
+
+#### Configuration via `logback.xml`
+
+You can also configure everything statically within the ``SentryAppender``
+itself. This is less flexible because it's harder to change when you run
+your application in different environments.
 
 ```xml
 <configuration>
