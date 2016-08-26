@@ -17,10 +17,10 @@ Configure your Sentry DSN (client key) in `AndroidManifest.xml`:
 
 ```xml
 <application
-        <meta-data
-            android:name="com.getsentry.raven.android.DSN"
-            android:value="https://publicKey:secretKey@host:port/1?options" />
-    </application>
+  <meta-data
+    android:name="com.getsentry.raven.android.DSN"
+    android:value="https://publicKey:secretKey@host:port/1?options" />
+</application>
 ```
 
 Your application must also have permission to access the internet in order to send
@@ -36,6 +36,7 @@ Then, in your application's `onCreate`, initialize the Raven client:
 ```java
 import com.getsentry.raven.android.Raven;
 
+// `this` is your main Activity
 Raven.init(this.getApplicationContext());
 ```
 
@@ -54,7 +55,7 @@ try {
 
 // Or build an event yourself
 EventBuilder eventBuilder = new EventBuilder()
-                .withMessage("Exception caught")
-                .withLevel(Event.Level.ERROR);
+                              .withMessage("Exception caught")
+                              .withLevel(Event.Level.ERROR);
 Raven.capture(eventBuilder.build());
 ```
