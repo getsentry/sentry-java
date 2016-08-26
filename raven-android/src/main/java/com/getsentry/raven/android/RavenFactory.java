@@ -17,6 +17,7 @@ public class RavenFactory extends DefaultRavenFactory {
      * Builds this factory, storing the provided Android Context object.
      *
      * @param ctx Android Context
+     * @param eventCache EventCache used to store Events when offline
      */
     RavenFactory(Context ctx, EventCache eventCache) {
         context = ctx;

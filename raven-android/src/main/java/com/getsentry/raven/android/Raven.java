@@ -93,11 +93,16 @@ public final class Raven {
                 + " please add it to your AndroidManifest.xml");
         }
 
-        Log.d(TAG, "raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
+        Log.d(TAG, "Raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
         eventCache = new EventCache(context);
         raven = new RavenFactory(context, eventCache).createRavenInstance(dsn);
+
         setupUncaughtExceptionHandler();
+
+        if (Util.shouldAttemptToSend(context)) {
+            eventCache.flushEvents();
+        }
     }
 
     /**

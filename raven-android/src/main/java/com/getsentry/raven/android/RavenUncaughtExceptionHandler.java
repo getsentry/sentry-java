@@ -37,12 +37,12 @@ class RavenUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
      */
     @Override
     public void uncaughtException(Thread thread, Throwable thrown) {
-        Log.d(TAG, "uncaught exception received");
+        Log.d(TAG, "Uncaught exception received.");
 
         try {
             com.getsentry.raven.Raven.capture(thrown);
         } catch (Exception e) {
-            Log.e(TAG, "error sending excepting to Sentry", e);
+            Log.e(TAG, "Error sending excepting to Sentry.", e);
         }
 
         if (defaultExceptionHandler != null) {
