@@ -118,13 +118,20 @@ public class JsonMarshaller implements Marshaller {
         // Prevent the stream from being closed automatically
         destination = new UncloseableOutputStream(destination);
 
-        if (compression)
+        if (compression) {
             destination = new DeflaterOutputStream(new Base64OutputStream(destination, Base64.NO_WRAP));
+        }
 
         try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
             writeContent(generator, event);
         } catch (IOException e) {
             logger.error("An exception occurred while serialising the event.", e);
+        } finally {
+            try {
+                destination.close();
+            } catch (IOException e) {
+                logger.error("An exception occurred while serialising the event.", e);
+            }
         }
     }
 

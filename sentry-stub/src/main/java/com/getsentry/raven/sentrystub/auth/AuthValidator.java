@@ -1,5 +1,6 @@
 package com.getsentry.raven.sentrystub.auth;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -146,8 +147,9 @@ public class AuthValidator {
 
     public void loadSentryUsers(String resourceName) {
         Properties sentryProperties = new Properties();
-        try {
-            sentryProperties.load(AuthValidator.class.getResourceAsStream(resourceName));
+
+        try(InputStream resourceAsStream = AuthValidator.class.getResourceAsStream(resourceName)) {
+            sentryProperties.load(resourceAsStream);
             int userCount = Integer.parseInt(sentryProperties.getProperty("sentry.user.count", "0"));
             for (int i = 1; i <= userCount; i++) {
                 String publicKey = sentryProperties.getProperty("sentry.user." + i + ".publicKey");
