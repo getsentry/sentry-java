@@ -97,7 +97,7 @@ public class DsnTest {
     @Test
     public void testDsnLookupWithSystemProperty() throws Exception {
         String dsn = "aa9171a4-7e9b-4e3c-b3cc-fe537dc03527";
-        System.setProperty("SENTRY_DSN", dsn);
+        System.setProperty("sentry.dsn", dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));
 
