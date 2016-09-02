@@ -101,7 +101,7 @@ public class DsnTest {
 
         assertThat(Dsn.dsnLookup(), is(dsn));
 
-        System.clearProperty("SENTRY_DSN");
+        System.clearProperty("sentry.dsn");
     }
 
     @Test
