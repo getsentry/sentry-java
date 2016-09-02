@@ -64,7 +64,7 @@ Configuration parameters follow:
 
 | Environment variable | Java System Property | Example value | Description |
 |---|---|---|---|
-| `SENTRY_DSN` | `sentry.dsn` | `https://publicKey:secretKey@host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
+| `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
 | `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
 | `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
 | `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
@@ -81,7 +81,7 @@ your application in different environments.
 ```xml
 <configuration>
     <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
-        <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
+        <dsn>https://host:port/1?options</dsn>
         <!-- Optional, provide release version of your application -->
         <release>1.0.0</release>
         <!-- Optional, provide environment your application is running in -->
