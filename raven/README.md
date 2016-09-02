@@ -94,7 +94,7 @@ com.getsentry.raven.jul.SentryHandler.environment=production
 # Optional, override the server name (rather than looking it up dynamically)
 com.getsentry.raven.jul.SentryHandler.serverName=server1
 # Optional, select the ravenFactory class 
-com.getsentry.raven.jul.SentryHandler.ravenFactory=com.getsentry.raven.DefaultRavenFactory
+com.getsentry.raven.jul.SentryHandler.ravenFactory=com.foo.RavenFactory
 # Optional, provide tag names to be extracted from MDC when using SLF4J
 com.getsentry.raven.jul.SentryHandler.extraTags=foo,bar,baz
 ```

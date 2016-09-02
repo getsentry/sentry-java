@@ -105,7 +105,7 @@ log4j.appender.SentryAppender.environment=production
 // Optional, override the server name (rather than looking it up dynamically)
 log4j.appender.SentryAppender.serverName=server1
 # Optional, select the ravenFactory class
-#log4j.appender.SentryAppender.ravenFactory=com.getsentry.raven.DefaultRavenFactory
+#log4j.appender.SentryAppender.ravenFactory=com.foo.RavenFactory
 // Optional, provide tags
 log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
 # Optional, provide tag names to be extracted from MDC when using SLF4J

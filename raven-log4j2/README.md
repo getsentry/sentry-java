@@ -117,7 +117,7 @@ your application in different environments.
             -->
             <!--
             <ravenFactory>
-                com.getsentry.raven.DefaultRavenFactory
+                com.foo.RavenFactory
             </ravenFactory>
             -->
             <!--
