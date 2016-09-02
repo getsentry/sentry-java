@@ -64,7 +64,7 @@ Configuration parameters follow:
 
 | Environment variable | Java System Property | Example value | Description |
 |---|---|---|---|
-| `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
+| `SENTRY_DSN` | `sentry.dsn` | `https://publicKey:secretKey@host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
 | `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
 | `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
 | `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
@@ -89,7 +89,7 @@ your application in different environments.
         <!-- Optional, override the server name (rather than looking it up dynamically) -->
         <serverName>server1</serverName>
         <!-- Optional, select the ravenFactory class -->
-        <ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>
+        <ravenFactory>com.foo.RavenFactory</ravenFactory>
         <!-- Optional, provide tags -->
         <tags>tag1:value1,tag2:value2</tags>
         <!-- Optional, provide tag names to be extracted from MDC when using SLF4J -->
