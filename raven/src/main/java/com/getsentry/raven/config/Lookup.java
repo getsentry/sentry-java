@@ -32,17 +32,16 @@ public final class Lookup {
             logger.debug("JNDI not available", e);
         }
 
-        // Use SENTRY_$KEY for Environment and Java System Properties
-        String sentryfiedName = "SENTRY_" + key.toUpperCase();
-
-        // Try to obtain from a System Environment Variable
+        // Try to obtain from a Java System Property
+        String propName = "sentry." + key.toLowerCase();
         if (value == null) {
-            value = System.getenv(sentryfiedName);
+            value = System.getProperty(propName);
         }
 
-        // Try to obtain from a Java System Property
+        // Try to obtain from a System Environment Variable
+        String envName = "SENTRY_" + key.toUpperCase();
         if (value == null) {
-            value = System.getProperty(sentryfiedName);
+            value = System.getenv(envName);
         }
 
         if (value != null) {
