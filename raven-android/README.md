@@ -59,3 +59,16 @@ EventBuilder eventBuilder = new EventBuilder()
                               .withLevel(Event.Level.ERROR);
 Raven.capture(eventBuilder.build());
 ```
+
+### Options
+In addition to the DSN options available to all `raven-java` users, there are
+additional Android-only options available.
+
+### EventCache size
+The `EventCache` is used to store Sentry `Event` objects in the application's
+cache directory when the network is unavailable. These `Event`s are sent
+at a later time when the network becomes available again. By default, up to
+50 `Event`s are cached on disk, but this can be adjusted by using
+`raven.eventcache.size` as follows:
+
+    http://public:private@host:port/1?raven.eventcache.size=100
