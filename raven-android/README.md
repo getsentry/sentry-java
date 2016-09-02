@@ -16,7 +16,7 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 Configure your Sentry DSN (client key) in `AndroidManifest.xml`:
 
 ```xml
-<application
+<application>
   <meta-data
     android:name="com.getsentry.raven.android.DSN"
     android:value="https://publicKey:secretKey@host:port/1?options" />

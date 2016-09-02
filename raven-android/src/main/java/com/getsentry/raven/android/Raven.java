@@ -22,12 +22,19 @@ public final class Raven {
     public static final String TAG = Raven.class.getName();
 
     /**
+     * Option for maximum number of events to cache offline when network is down.
+     */
+    public static final String EVENTCACHE_SIZE_OPTION = "raven.eventcache.size";
+    /**
+     * Default number of events to cache offline when network is down.
+     */
+    public static final int EVENTCACHE_SIZE_DEFAULT = 50;
+
+    /**
      * Android application context.
      */
     private static volatile Context context;
-
     private static volatile com.getsentry.raven.Raven raven;
-
     private static volatile EventCache eventCache;
 
     /**
@@ -95,7 +102,12 @@ public final class Raven {
 
         Log.d(TAG, "Raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
-        eventCache = new EventCache(context);
+        int eventCacheSize = EVENTCACHE_SIZE_DEFAULT;
+        if (dsn.getOptions().containsKey(EVENTCACHE_SIZE_OPTION)) {
+            eventCacheSize = Integer.parseInt(dsn.getOptions().get(EVENTCACHE_SIZE_OPTION));
+        }
+
+        eventCache = new EventCache(context, eventCacheSize);
         raven = new RavenFactory(context, eventCache).createRavenInstance(dsn);
 
         setupUncaughtExceptionHandler();

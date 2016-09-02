@@ -8,7 +8,6 @@ import com.getsentry.raven.event.Event;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -20,16 +19,18 @@ public class EventCache {
 
     private static final String TAG = EventCache.class.getName();
     private static final String DIR_NAME = "raven_unsent_events";
-    private static final int MAX_EVENTS = 50;
 
+    private int maxEvents;
     private File cacheDir;
 
     /**
      * Construct an EventCache which stores errors in a subdirectory of the Android cache directory.
      *
      * @param ctx Android application context
+     * @param maxEvents The maximum number of events to store offline
      */
-    public EventCache(Context ctx) {
+    public EventCache(Context ctx, int maxEvents) {
+        this.maxEvents = maxEvents;
         this.cacheDir = initEventDir(ctx);
 
         if (canAccessCache()) {
@@ -62,44 +63,24 @@ public class EventCache {
      */
     public void storeEvent(Event event) {
         if (!canAccessCache()) {
-            Log.d(TAG, "Cache directory does not exist, not writing Event '" + event.getId() + "'.");
+            Log.w(TAG, "Cache directory does not exist, not writing Event '" + event.getId() + "'.");
             return;
         } else {
             Log.d(TAG, "Adding Event '" + event.getId() + "' to offline storage.");
         }
 
-        if (getNumStoredEvents() > MAX_EVENTS) {
-            Log.d(TAG, "Skipping Event '" + event.getId() + "' because at least "
-                + Integer.toString(MAX_EVENTS) + " events are already stored.");
+        if (getNumStoredEvents() >= maxEvents) {
+            Log.w(TAG, "Skipping Event '" + event.getId() + "' because at least "
+                + Integer.toString(maxEvents) + " events are already stored.");
             return;
         }
 
-        String errorMsg = "Error writing Event '" + event.getId() + "' to offline storage.";
-        FileOutputStream fos = null;
-        ObjectOutputStream oos = null;
-        try {
-            String eventPath = cacheDir.getAbsolutePath() + "/" + event.getId();
-            fos = new FileOutputStream(new File(eventPath));
-            oos = new ObjectOutputStream(fos);
+        String eventPath = cacheDir.getAbsolutePath() + "/" + event.getId();
+        try (FileOutputStream fos = new FileOutputStream(new File(eventPath));
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(event);
         } catch (Exception e) {
-            Log.e(TAG, errorMsg, e);
-        } finally {
-            if (oos != null) {
-                try {
-                    oos.close();
-                } catch (IOException e) {
-                    Log.e(TAG, errorMsg, e);
-                }
-            }
-
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    Log.e(TAG, errorMsg, e);
-                }
-            }
+            Log.e(TAG, "Error writing Event '" + event.getId() + "' to offline storage.", e);
         }
 
         Log.d(TAG, Integer.toString(getNumStoredEvents()) + " stored events are now in '" + DIR_NAME + "'.");
@@ -111,7 +92,7 @@ public class EventCache {
      */
     public void flushEvents() {
         if (!canAccessCache()) {
-            Log.d(TAG, "Cache directory does not exist, not flushing Events.");
+            Log.w(TAG, "Cache directory does not exist, not flushing Events.");
             return;
         } else {
             Log.d(TAG, "Flushing Events from offline storage.");
@@ -150,7 +131,7 @@ public class EventCache {
     private boolean deleteFile(File eventFile) {
         boolean deleted = eventFile.delete();
         if (!deleted) {
-            Log.d(TAG, "Error deleting stored Event file '" + eventFile.getName() + "'.");
+            Log.e(TAG, "Error deleting stored Event file '" + eventFile.getName() + "'.");
         }
         return deleted;
     }
