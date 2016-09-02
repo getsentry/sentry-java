@@ -35,8 +35,7 @@ Add the `SentryAppender` to your `log4j2.xml` file:
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
     <appenders>
-        <Raven name="Sentry">
-        </Raven>
+        <Raven name="Sentry" />
     </appenders>
 
     <loggers>
@@ -79,6 +78,7 @@ Configuration parameters follow:
 | `SENTRY_SERVERNAME=server1`                                   | Optional, override the server name (rather than looking it up dynamically) |
 | `SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class                                    |
 | `SENTRY_TAGS=tag1:value1,tag2:value2`                         | Optional, provide tags                                                     |
+| `SENTRY_EXTRA_TAGS=foo,bar,baz`                               | Optional, provide tag names to be extracted from MDC when using SLF4J      |
 
 #### Configuration via `log4j2.xml`
 
@@ -94,12 +94,6 @@ your application in different environments.
             <dsn>
                 https://publicKey:secretKey@host:port/1?options
             </dsn>
-            <!--
-                Optional, provide tags
-            -->
-            <tags>
-                tag1:value1,tag2:value2
-            </tags>
             <!--
                 Optional, provide release version of your application
             -->
@@ -126,6 +120,18 @@ your application in different environments.
                 com.getsentry.raven.DefaultRavenFactory
             </ravenFactory>
             -->
+            <!--
+                Optional, provide tags
+            -->
+            <tags>
+                tag1:value1,tag2:value2
+            </tags>
+            <!--
+                Optional, provide tag names to be extracted from MDC when using SLF4J
+            -->
+            <extraTags>
+                foo,bar,baz
+            </extraTags>
         </Raven>
     </appenders>
 

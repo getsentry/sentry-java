@@ -23,10 +23,8 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.message.Message;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -112,6 +110,7 @@ public class SentryAppender extends AbstractAppender {
         setEnvironment(Lookup.lookup("environment"));
         setServerName(Lookup.lookup("serverName"));
         setTags(Lookup.lookup("tags"));
+        setExtraTags(Lookup.lookup("extraTags"));
     }
 
     /**
@@ -360,7 +359,7 @@ public class SentryAppender extends AbstractAppender {
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
-        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
+        this.extraTags = Util.parseExtraTags(extraTags);
     }
 
     @Override

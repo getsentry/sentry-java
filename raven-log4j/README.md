@@ -86,6 +86,7 @@ Configuration parameters follow:
 | `SENTRY_SERVERNAME=server1`                                   | Optional, override the server name (rather than looking it up dynamically) |
 | `SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class                                    |
 | `SENTRY_TAGS=tag1:value1,tag2:value2`                         | Optional, provide tags                                                     |
+| `SENTRY_EXTRA_TAGS=foo,bar,baz`                               | Optional, provide tag names to be extracted from MDC when using SLF4J      |
 
 #### Configuration via `log4j.properties`
 
@@ -97,8 +98,6 @@ your application in different environments.
 log4j.rootLogger=WARN, SentryAppender
 log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
 log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
-// Optional, provide tags
-log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
 // Optional, provide release version of your application
 log4j.appender.SentryAppender.release=1.0.0
 // Optional, provide environment your application is running in
@@ -107,6 +106,10 @@ log4j.appender.SentryAppender.environment=production
 log4j.appender.SentryAppender.serverName=server1
 # Optional, select the ravenFactory class
 #log4j.appender.SentryAppender.ravenFactory=com.getsentry.raven.DefaultRavenFactory
+// Optional, provide tags
+log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
+# Optional, provide tag names to be extracted from MDC when using SLF4J
+log4j.appender.SentryAppender.extraTags=foo,bar,baz
 ```
 
 ### Additional data and information

@@ -15,10 +15,8 @@ import org.slf4j.MDC;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,6 +98,9 @@ public class SentryHandler extends Handler {
         setEnvironment(Lookup.lookup("environment"));
         setServerName(Lookup.lookup("serverName"));
         setTags(Lookup.lookup("tags"));
+        setExtraTags(Lookup.lookup("extraTags"));
+
+
         retrieveProperties();
     }
 
@@ -359,7 +360,7 @@ public class SentryHandler extends Handler {
     }
 
     public void setExtraTags(String extraTags) {
-        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
+        this.extraTags = Util.parseExtraTags(extraTags);
     }
 
 }

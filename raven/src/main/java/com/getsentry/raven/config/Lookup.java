@@ -29,7 +29,7 @@ public final class Lookup {
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             value = JndiLookup.jndiLookup(key);
         } catch (ClassNotFoundException | NoClassDefFoundError e) {
-            logger.debug("JNDI not available");
+            logger.debug("JNDI not available", e);
         }
 
         // Use SENTRY_$KEY for Environment and Java System Properties

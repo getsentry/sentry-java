@@ -73,6 +73,7 @@ Configuration parameters follow:
 | `SENTRY_SERVERNAME=server1`                                   | Optional, override the server name (rather than looking it up dynamically) |
 | `SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class                                    |
 | `SENTRY_TAGS=tag1:value1,tag2:value2`                         | Optional, provide tags                                                     |
+| `SENTRY_EXTRA_TAGS=foo,bar,baz`                               | Optional, provide tag names to be extracted from MDC when using SLF4J      |
 
 #### Configuration via `logging.properties`
 

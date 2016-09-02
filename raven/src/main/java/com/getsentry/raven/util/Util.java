@@ -1,9 +1,12 @@
 package com.getsentry.raven.util;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Raven static Utility class.
@@ -46,6 +49,20 @@ public final class Util {
             map.put(split[0], split[1]);
         }
         return map;
+    }
+
+    /**
+     * Parses the provided extraTags string into a Set of Strings.
+     *
+     * @param extraTagsString comma-delimited tags
+     * @return Set of Strings representing extra tags
+     */
+    public static Set<String> parseExtraTags(String extraTagsString) {
+        if (isNullOrEmpty(extraTagsString)) {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<>(Arrays.asList(extraTagsString.split(",")));
     }
 
 }

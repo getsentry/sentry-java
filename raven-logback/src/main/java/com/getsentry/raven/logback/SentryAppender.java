@@ -21,7 +21,6 @@ import com.getsentry.raven.util.Util;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Deque;
@@ -105,6 +104,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         setEnvironment(Lookup.lookup("environment"));
         setServerName(Lookup.lookup("serverName"));
         setTags(Lookup.lookup("tags"));
+        setExtraTags(Lookup.lookup("extraTags"));
     }
 
     /**
@@ -372,7 +372,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
-        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
+        this.extraTags = Util.parseExtraTags(extraTags);
     }
 
     @Override

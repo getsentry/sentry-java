@@ -31,8 +31,7 @@ Add the `SentryAppender` to your `logback.xml` file:
 
 ```xml
 <configuration>
-    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
-    </appender>
+    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender" />
     <root level="warn">
         <appender-ref ref="Sentry"/>
     </root>
@@ -71,6 +70,7 @@ Configuration parameters follow:
 | `SENTRY_SERVERNAME=server1`                                   | Optional, override the server name (rather than looking it up dynamically) |
 | `SENTRY_RAVENFACTORY=com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class                                    |
 | `SENTRY_TAGS=tag1:value1,tag2:value2`                         | Optional, provide tags                                                     |
+| `SENTRY_EXTRA_TAGS=foo,bar,baz`                               | Optional, provide tag names to be extracted from MDC when using SLF4J      |
 
 #### Configuration via `logback.xml`
 
@@ -82,8 +82,6 @@ your application in different environments.
 <configuration>
     <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
         <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
-        <!-- Optional, provide tags -->
-        <tags>tag1:value1,tag2:value2</tags>
         <!-- Optional, provide release version of your application -->
         <release>1.0.0</release>
         <!-- Optional, provide environment your application is running in -->
@@ -92,6 +90,10 @@ your application in different environments.
         <serverName>server1</serverName>
         <!-- Optional, select the ravenFactory class -->
         <ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>
+        <!-- Optional, provide tags -->
+        <tags>tag1:value1,tag2:value2</tags>
+        <!-- Optional, provide tag names to be extracted from MDC when using SLF4J -->
+        <extraTags>foo,bar,baz</extraTags>
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>
