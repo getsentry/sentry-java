@@ -33,15 +33,13 @@ public final class Lookup {
         }
 
         // Try to obtain from a Java System Property
-        String propName = "sentry." + key.toLowerCase();
         if (value == null) {
-            value = System.getProperty(propName);
+            value = System.getProperty("sentry." + key.toLowerCase());
         }
 
         // Try to obtain from a System Environment Variable
-        String envName = "SENTRY_" + key.toUpperCase();
         if (value == null) {
-            value = System.getenv(envName);
+            value = System.getenv("SENTRY_" + key.toUpperCase());
         }
 
         if (value != null) {

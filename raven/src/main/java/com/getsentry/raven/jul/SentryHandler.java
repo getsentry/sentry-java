@@ -100,7 +100,6 @@ public class SentryHandler extends Handler {
         setTags(Lookup.lookup("tags"));
         setExtraTags(Lookup.lookup("extraTags"));
 
-
         retrieveProperties();
     }
 
