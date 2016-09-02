@@ -51,26 +51,26 @@ application in.
 The following can be set as System Environment variables:
 
 ```bash
-EXAMPLE=xxx java -jar app.jar
+SENTRY_EXAMPLE=xxx java -jar app.jar
 ```
 
 or as Java System Properties:
 
 ```bash
-java -DEXAMPLE=xxx -jar app.jar
+java -Dsentry.example=xxx -jar app.jar
 ```
 
 Configuration parameters follow:
 
-| Environment Var | Java Property | Example Value | Description|
+| Environment var | Java System Property | Example value | Description |
 |---|---|---|---|
 | `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
-| `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application|
+| `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
 | `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
 | `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
-| `SENTRY_RAVENFACTORY` | `sentry.ravenfactory` | `com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class|
+| `SENTRY_RAVENFACTORY` | `sentry.ravenfactory` | `com.getsentry.raven.DefaultRavenFactory` | Optional, select the ravenFactory class |
 | `SENTRY_TAGS` | `sentry.tags` | `tag1:value1,tag2:value2` | Optional, provide tags |
-| `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J|
+| `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J |
 
 #### Configuration via `logback.xml`
 
