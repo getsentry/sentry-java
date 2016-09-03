@@ -5,7 +5,6 @@ import com.getsentry.raven.event.interfaces.HttpInterface;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -66,20 +65,16 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
     }
 
     private void writeHeaders(JsonGenerator generator, Map<String, Collection<String>> headers) throws IOException {
-        generator.writeStartObject();
+        generator.writeStartArray();
         for (Map.Entry<String, Collection<String>> headerEntry : headers.entrySet()) {
-            generator.writeFieldName(headerEntry.getKey());
-
-            StringBuilder sb = new StringBuilder();
-            for (Iterator<String> it = headerEntry.getValue().iterator(); it.hasNext(); ) {
-                sb.append("' ").append(it.next()).append(" '");
-                if (it.hasNext()) {
-                    sb.append(",");
-                }
+            for (String value : headerEntry.getValue()) {
+                generator.writeStartArray();
+                generator.writeString(headerEntry.getKey());
+                generator.writeString(value);
+                generator.writeEndArray();
             }
-            generator.writeString(sb.toString());
         }
-        generator.writeEndObject();
+        generator.writeEndArray();
     }
 
     private void writeCookies(JsonGenerator generator, Map<String, String> cookies) throws IOException {
