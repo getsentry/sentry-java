@@ -2,6 +2,7 @@ package com.getsentry.raven.log4j;
 
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
+import com.getsentry.raven.config.Lookup;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.dsn.InvalidDsnException;
 import com.getsentry.raven.environment.RavenEnvironment;
@@ -17,10 +18,8 @@ import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,6 +88,12 @@ public class SentryAppender extends AppenderSkeleton {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
+        setRavenFactory(Lookup.lookup("ravenFactory"));
+        setRelease(Lookup.lookup("release"));
+        setEnvironment(Lookup.lookup("environment"));
+        setServerName(Lookup.lookup("serverName"));
+        setTags(Lookup.lookup("tags"));
+        setExtraTags(Lookup.lookup("extraTags"));
     }
 
     /**
@@ -97,6 +102,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
+        this();
         this.raven = raven;
     }
 
@@ -281,7 +287,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
-        this.extraTags = new HashSet<>(Arrays.asList(extraTags.split(",")));
+        this.extraTags = Util.parseExtraTags(extraTags);
     }
 
     @Override

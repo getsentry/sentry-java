@@ -1,5 +1,6 @@
 package com.getsentry.raven.dsn;
 
+import com.getsentry.raven.config.JndiLookup;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
@@ -64,7 +65,7 @@ public class DsnTest {
     public void testJndiLookupFailsWithException(
             @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
         new NonStrictExpectations() {{
-            JndiLookup.jndiLookup();
+            JndiLookup.jndiLookup("dsn");
             result = new ClassNotFoundException("Couldn't find the JNDI classes");
         }};
 
@@ -75,7 +76,7 @@ public class DsnTest {
     public void testJndiLookupFailsWithError(
             @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
         new NonStrictExpectations() {{
-            JndiLookup.jndiLookup();
+            JndiLookup.jndiLookup("dsn");
             result = new NoClassDefFoundError("Couldn't find the JNDI classes");
         }};
 
@@ -96,11 +97,11 @@ public class DsnTest {
     @Test
     public void testDsnLookupWithSystemProperty() throws Exception {
         String dsn = "aa9171a4-7e9b-4e3c-b3cc-fe537dc03527";
-        System.setProperty("SENTRY_DSN", dsn);
+        System.setProperty("sentry.dsn", dsn);
 
         assertThat(Dsn.dsnLookup(), is(dsn));
 
-        System.clearProperty("SENTRY_DSN");
+        System.clearProperty("sentry.dsn");
     }
 
     @Test

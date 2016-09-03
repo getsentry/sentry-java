@@ -27,29 +27,17 @@ Relies on:
 
 ## Usage
 ### Configuration
-In the `log4j.properties` file set:
+Add the `SentryAppender` to the `log4j.properties` file:
 
 ```properties
 log4j.rootLogger=WARN, SentryAppender
 log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
-log4j.appender.SentryAppender.dsn=https://publicKey:secretKey@host:port/1?options
-// Optional, provide tags
-log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
-// Optional, provide release version of your application
-log4j.appender.SentryAppender.release=1.0.0
-// Optional, provide environment your application is running in
-log4j.appender.SentryAppender.environment=production
-// Optional, override the server name (rather than looking it up dynamically)
-log4j.appender.SentryAppender.serverName=server1
-# Optional, select the ravenFactory class
-#log4j.appender.SentryAppender.ravenFactory=com.getsentry.raven.DefaultRavenFactory
 ```
 
 Alternatively in the `log4j.xml` file set:
 
 ```
   <appender name="sentry" class="com.getsentry.raven.log4j.SentryAppender">
-    <param name="dsn" value="https://publicKey:secretKey@host:port/1"/>
     <filter class="org.apache.log4j.varia.LevelRangeFilter">
       <param name="levelMin" value="WARN"/>
     </filter>
@@ -64,6 +52,64 @@ You'll also need to associate the `sentry` appender with your root logger, like 
     <appender-ref ref="my-other-appender" />
     <appender-ref ref="sentry" />
   </root>
+```
+
+Next, you'll need to configure your DSN (client key) and optionally other
+values such as `environment` and `release`. See below for the two
+ways you can do this.
+
+#### Configuration via runtime environment
+
+This is the most flexible method to configure the `SentryAppender`,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+```bash
+SENTRY_EXAMPLE=xxx java -jar app.jar
+```
+
+or as Java System Properties:
+
+```bash
+java -Dsentry.example=xxx -jar app.jar
+```
+
+Configuration parameters follow:
+
+| Environment variable | Java System Property | Example value | Description |
+|---|---|---|---|
+| `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
+| `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
+| `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
+| `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
+| `SENTRY_RAVENFACTORY` | `sentry.ravenfactory` | `com.foo.RavenFactory` | Optional, select the ravenFactory class |
+| `SENTRY_TAGS` | `sentry.tags` | `tag1:value1,tag2:value2` | Optional, provide tags |
+| `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J |
+
+#### Configuration via `log4j.properties`
+
+You can also configure everything statically within the `log4j.properties` file
+itself. This is less flexible because it's harder to change when you run
+your application in different environments.
+
+```properties
+log4j.rootLogger=WARN, SentryAppender
+log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
+log4j.appender.SentryAppender.dsn=https://host:port/1?options
+// Optional, provide release version of your application
+log4j.appender.SentryAppender.release=1.0.0
+// Optional, provide environment your application is running in
+log4j.appender.SentryAppender.environment=production
+// Optional, override the server name (rather than looking it up dynamically)
+log4j.appender.SentryAppender.serverName=server1
+# Optional, select the ravenFactory class
+#log4j.appender.SentryAppender.ravenFactory=com.foo.RavenFactory
+// Optional, provide tags
+log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
+# Optional, provide tag names to be extracted from MDC when using SLF4J
+log4j.appender.SentryAppender.extraTags=foo,bar,baz
 ```
 
 ### Additional data and information

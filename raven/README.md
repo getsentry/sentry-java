@@ -29,12 +29,62 @@ Relies on:
 
 ## Usage (`java.util.logging`)
 ### Configuration
-In the `logging.properties` file set:
+Add the `SentryHandler` to the `logging.properties` file:
 
 ```properties
 .level=WARN
 handlers=com.getsentry.raven.jul.SentryHandler
-com.getsentry.raven.jul.SentryHandler.dsn=https://publicKey:secretKey@host:port/1?options
+```
+
+When starting your application, add the `java.util.logging.config.file` to the
+system properties, with the full path to the `logging.properties` as its value.
+
+    $ java -Djava.util.logging.config.file=/path/to/app.properties MyClass
+
+Next, you'll need to configure your DSN (client key) and optionally other
+values such as `environment` and `release`. See below for the two
+ways you can do this.
+
+#### Configuration via runtime environment
+
+This is the most flexible method to configure the `SentryAppender`,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+```bash
+SENTRY_EXAMPLE=xxx java -jar app.jar
+```
+
+or as Java System Properties:
+
+```bash
+java -Dsentry.example=xxx -jar app.jar
+```
+
+Configuration parameters follow:
+
+| Environment variable | Java System Property | Example value | Description |
+|---|---|---|---|
+| `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
+| `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
+| `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
+| `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
+| `SENTRY_RAVENFACTORY` | `sentry.ravenfactory` | `com.foo.RavenFactory` | Optional, select the ravenFactory class |
+| `SENTRY_TAGS` | `sentry.tags` | `tag1:value1,tag2:value2` | Optional, provide tags |
+| `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J |
+
+#### Configuration via `logging.properties`
+
+You can also configure everything statically within the `logging.properties` file
+itself. This is less flexible because it's harder to change when you run
+your application in different environments.
+
+```properties
+.level=WARN
+handlers=com.getsentry.raven.jul.SentryHandler
+com.getsentry.raven.jul.SentryHandler.dsn=https://host:port/1?options
 # Optional, provide tags
 com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
 # Optional, provide release version of your application 
@@ -44,15 +94,10 @@ com.getsentry.raven.jul.SentryHandler.environment=production
 # Optional, override the server name (rather than looking it up dynamically)
 com.getsentry.raven.jul.SentryHandler.serverName=server1
 # Optional, select the ravenFactory class 
-com.getsentry.raven.jul.SentryHandler.ravenFactory=com.getsentry.raven.DefaultRavenFactory
+com.getsentry.raven.jul.SentryHandler.ravenFactory=com.foo.RavenFactory
 # Optional, provide tag names to be extracted from MDC when using SLF4J
 com.getsentry.raven.jul.SentryHandler.extraTags=foo,bar,baz
 ```
-
-When starting your application, add the `java.util.logging.config.file` to the
-system properties, with the full path to the `logging.properties` as its value.
-
-    $ java -Djava.util.logging.config.file=/path/to/app.properties MyClass
 
 ### In practice
 ```java

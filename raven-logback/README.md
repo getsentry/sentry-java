@@ -27,14 +27,61 @@ Relies on:
 
 ## Usage
 ### Configuration
-In the `logback.xml` file set:
+Add the `SentryAppender` to your `logback.xml` file:
+
+```xml
+<configuration>
+    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender" />
+    <root level="warn">
+        <appender-ref ref="Sentry"/>
+    </root>
+</configuration>
+```
+
+Next, you'll need to configure your DSN (client key) and optionally other
+values such as `environment` and `release`. See below for the two
+ways you can do this.
+
+#### Configuration via runtime environment
+
+This is the most flexible method to configure the `SentryAppender`,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+```bash
+SENTRY_EXAMPLE=xxx java -jar app.jar
+```
+
+or as Java System Properties:
+
+```bash
+java -Dsentry.example=xxx -jar app.jar
+```
+
+Configuration parameters follow:
+
+| Environment variable | Java System Property | Example value | Description |
+|---|---|---|---|
+| `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
+| `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
+| `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
+| `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
+| `SENTRY_RAVENFACTORY` | `sentry.ravenfactory` | `com.foo.RavenFactory` | Optional, select the ravenFactory class |
+| `SENTRY_TAGS` | `sentry.tags` | `tag1:value1,tag2:value2` | Optional, provide tags |
+| `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J |
+
+#### Configuration via `logback.xml`
+
+You can also configure everything statically within the `logback.xml` file
+itself. This is less flexible because it's harder to change when you run
+your application in different environments.
 
 ```xml
 <configuration>
     <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
-        <dsn>https://publicKey:secretKey@host:port/1?options</dsn>
-        <!-- Optional, provide tags -->
-        <tags>tag1:value1,tag2:value2</tags>
+        <dsn>https://host:port/1?options</dsn>
         <!-- Optional, provide release version of your application -->
         <release>1.0.0</release>
         <!-- Optional, provide environment your application is running in -->
@@ -42,7 +89,11 @@ In the `logback.xml` file set:
         <!-- Optional, override the server name (rather than looking it up dynamically) -->
         <serverName>server1</serverName>
         <!-- Optional, select the ravenFactory class -->
-        <ravenFactory>com.getsentry.raven.DefaultRavenFactory</ravenFactory>
+        <ravenFactory>com.foo.RavenFactory</ravenFactory>
+        <!-- Optional, provide tags -->
+        <tags>tag1:value1,tag2:value2</tags>
+        <!-- Optional, provide tag names to be extracted from MDC when using SLF4J -->
+        <extraTags>foo,bar,baz</extraTags>
     </appender>
     <root level="warn">
         <appender-ref ref="Sentry"/>
