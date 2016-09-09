@@ -18,6 +18,7 @@
         <android.version>4.1.1.4</android.version>
         <junit.version>4.12</junit.version>
         <robolectric.version>2.4</robolectric.version>
+        <maven-ant.version>2.1.3</maven-ant.version>
     </properties>
 
     <dependencies>
@@ -43,6 +44,12 @@
             <groupId>org.robolectric</groupId>
             <artifactId>robolectric</artifactId>
             <version>${robolectric.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-ant-tasks</artifactId>
+            <version>${maven-ant.version}</version>
             <scope>test</scope>
         </dependency>
 
