@@ -9,8 +9,10 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.concurrent.Callable;
+
 @RunWith(RobolectricTestRunner.class)
-public class RavenIT {
+public class RavenIT extends AndroidTest {
     private SentryStub sentryStub;
 
     @Before
@@ -25,15 +27,19 @@ public class RavenIT {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         Assert.assertEquals(sentryStub.getEventCount(), 0);
+
         TestActivity activity = Robolectric.setupActivity(TestActivity.class);
         activity.sendEvent();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+        waitUntilTrue(1000, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return sentryStub.getEventCount() == 1;
+            }
+        });
+
         Assert.assertEquals(sentryStub.getEventCount(), 1);
     }
 }
