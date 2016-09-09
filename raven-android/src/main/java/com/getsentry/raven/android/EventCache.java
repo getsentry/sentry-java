@@ -1,6 +1,5 @@
 package com.getsentry.raven.android;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.getsentry.raven.event.Event;
@@ -18,7 +17,6 @@ import java.io.ObjectOutputStream;
 public class EventCache {
 
     private static final String TAG = EventCache.class.getName();
-    private static final String DIR_NAME = "raven_unsent_events";
 
     private int maxEvents;
     private File cacheDir;
@@ -26,25 +24,17 @@ public class EventCache {
     /**
      * Construct an EventCache which stores errors in a subdirectory of the Android cache directory.
      *
-     * @param ctx Android application context
+     * @param cacheDir File representing directory to store cached Events in
      * @param maxEvents The maximum number of events to store offline
      */
-    public EventCache(Context ctx, int maxEvents) {
+    public EventCache(File cacheDir, int maxEvents) {
         this.maxEvents = maxEvents;
-        this.cacheDir = initEventDir(ctx);
 
-        if (canAccessCache()) {
-            Log.d(TAG, Integer.toString(getNumStoredEvents()) + " stored events found in '" + DIR_NAME + "'.");
-        }
-    }
-
-    private File initEventDir(Context ctx) {
         try {
-            File tmpDir = new File(ctx.getCacheDir().getAbsolutePath(), DIR_NAME);
-            tmpDir.mkdirs();
-            if (tmpDir.isDirectory() && tmpDir.canWrite()) {
+            cacheDir.mkdirs();
+            if (cacheDir.isDirectory() && cacheDir.canWrite()) {
                 // store the directory for future use
-                return tmpDir;
+                this.cacheDir = cacheDir;
             } else {
                 Log.e(TAG, "Could not create Raven offline event storage directory.");
             }
@@ -52,7 +42,9 @@ public class EventCache {
             Log.e(TAG, "Could not create Raven offline event storage directory.", e);
         }
 
-        return null;
+        if (canAccessCache()) {
+            Log.d(TAG, Integer.toString(getNumStoredEvents()) + " stored events found in '" + cacheDir + "'.");
+        }
     }
 
     /**
@@ -83,7 +75,7 @@ public class EventCache {
             Log.e(TAG, "Error writing Event '" + event.getId() + "' to offline storage.", e);
         }
 
-        Log.d(TAG, Integer.toString(getNumStoredEvents()) + " stored events are now in '" + DIR_NAME + "'.");
+        Log.d(TAG, Integer.toString(getNumStoredEvents()) + " stored events are now in '" + cacheDir + "'.");
     }
 
     /**

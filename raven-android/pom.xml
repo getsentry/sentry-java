@@ -16,6 +16,8 @@
 
     <properties>
         <android.version>4.1.1.4</android.version>
+        <junit.version>4.12</junit.version>
+        <robolectric.version>2.4</robolectric.version>
     </properties>
 
     <dependencies>
@@ -32,23 +34,15 @@
 
         <!-- Test dependencies -->
         <dependency>
-            <groupId>org.jmockit</groupId>
-            <artifactId>jmockit</artifactId>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
+            <groupId>org.robolectric</groupId>
+            <artifactId>robolectric</artifactId>
+            <version>${robolectric.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -69,6 +63,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

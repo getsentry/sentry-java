@@ -10,6 +10,8 @@ import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 
+import java.io.File;
+
 /**
  * Android specific class to interface with Raven. Supplements the default Java classes
  * with Android specific state and features.
@@ -29,6 +31,10 @@ public final class Raven {
      * Default number of events to cache offline when network is down.
      */
     public static final int EVENTCACHE_SIZE_DEFAULT = 50;
+    /**
+     * EventCache subdirectory name.
+     */
+    private static final String EVENTCACHE_DIR_NAME = "raven_unsent_events";
 
     /**
      * Android application context.
@@ -107,7 +113,8 @@ public final class Raven {
             eventCacheSize = Integer.parseInt(dsn.getOptions().get(EVENTCACHE_SIZE_OPTION));
         }
 
-        eventCache = new EventCache(context, eventCacheSize);
+        File cacheDir = new File(ctx.getCacheDir().getAbsolutePath(), EVENTCACHE_DIR_NAME);
+        eventCache = new EventCache(cacheDir, eventCacheSize);
         raven = new RavenFactory(context, eventCache).createRavenInstance(dsn);
 
         setupUncaughtExceptionHandler();
