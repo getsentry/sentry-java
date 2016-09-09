@@ -10,26 +10,81 @@ for Log4j 2 to send the logged events to Sentry.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-log4j2</artifactId>
-    <version>7.6.0</version>
+    <version>7.7.0</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j2%7C7.6.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j2%7C7.7.0%7Cjar).
 
 ### Manual dependency management
 Relies on:
 
  - [raven dependencies](../raven)
- - [log4j-api-2.1.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7.6.0%7Cjar)
- - [log4j-core-2.1.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7.6.0%7Cjar)
- - [log4j-slf4j-impl-2.1.jar](http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7.6.0%7Cjar)
+ - [log4j-api-2.1.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7.7.0%7Cjar)
+ - [log4j-core-2.1.jar](https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7.7.0%7Cjar)
+ - [log4j-slf4j-impl-2.1.jar](http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7.7.0%7Cjar)
  is recommended as the implementation of slf4j (instead of slf4j-jdk14).
 
 
 ## Usage
 ### Configuration
-In the `log4j2.xml` file set:
+Add the `SentryAppender` to your `log4j2.xml` file:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
+    <appenders>
+        <Raven name="Sentry" />
+    </appenders>
+
+    <loggers>
+        <root level="all">
+            <appender-ref ref="Sentry"/>
+        </root>
+    </loggers>
+</configuration>
+```
+
+Next, you'll need to configure your DSN (client key) and optionally other
+values such as `environment` and `release`. See below for the two
+ways you can do this.
+
+#### Configuration via runtime environment
+
+This is the most flexible method to configure the `SentryAppender`,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+```bash
+SENTRY_EXAMPLE=xxx java -jar app.jar
+```
+
+or as Java System Properties:
+
+```bash
+java -Dsentry.example=xxx -jar app.jar
+```
+
+Configuration parameters follow:
+
+| Environment variable | Java System Property | Example value | Description |
+|---|---|---|---|
+| `SENTRY_DSN` | `sentry.dsn` | `https://host:port/1?options` | Your Sentry DSN (client key), if left blank Raven will no-op |
+| `SENTRY_RELEASE` | `sentry.release` | `1.0.0` | Optional, provide release version of your application |
+| `SENTRY_ENVIRONMENT` | `sentry.environment` | `production` | Optional, provide environment your application is running in |
+| `SENTRY_SERVERNAME` | `sentry.servername` | `server1` | Optional, override the server name (rather than looking it up dynamically) |
+| `SENTRY_RAVENFACTORY` | `sentry.ravenfactory` | `com.foo.RavenFactory` | Optional, select the ravenFactory class |
+| `SENTRY_TAGS` | `sentry.tags` | `tag1:value1,tag2:value2` | Optional, provide tags |
+| `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J |
+
+#### Configuration via `log4j2.xml`
+
+You can also configure everything statically within the `log4j2.xml` file
+itself. This is less flexible because it's harder to change when you run
+your application in different environments.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,14 +92,8 @@ In the `log4j2.xml` file set:
     <appenders>
         <Raven name="Sentry">
             <dsn>
-                https://publicKey:secretKey@host:port/1?options
+                https://host:port/1?options
             </dsn>
-            <!--
-                Optional, provide tags
-            -->
-            <tags>
-                tag1:value1,tag2:value2
-            </tags>
             <!--
                 Optional, provide release version of your application
             -->
@@ -68,9 +117,21 @@ In the `log4j2.xml` file set:
             -->
             <!--
             <ravenFactory>
-                com.getsentry.raven.DefaultRavenFactory
+                com.foo.RavenFactory
             </ravenFactory>
             -->
+            <!--
+                Optional, provide tags
+            -->
+            <tags>
+                tag1:value1,tag2:value2
+            </tags>
+            <!--
+                Optional, provide tag names to be extracted from MDC when using SLF4J
+            -->
+            <extraTags>
+                foo,bar,baz
+            </extraTags>
         </Raven>
     </appenders>
 
