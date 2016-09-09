@@ -3,7 +3,8 @@ package com.getsentry.raven.android;
 import android.app.Activity;
 import android.os.Bundle;
 
-public class TestActivity extends Activity {
+public class RavenITActivity extends Activity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -15,4 +16,5 @@ public class TestActivity extends Activity {
     public void sendEvent() {
         Raven.capture("sendEvent()");
     }
+
 }

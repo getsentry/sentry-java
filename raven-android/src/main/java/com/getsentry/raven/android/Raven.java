@@ -36,12 +36,7 @@ public final class Raven {
      */
     private static final String EVENTCACHE_DIR_NAME = "raven_unsent_events";
 
-    /**
-     * Android application context.
-     */
-    private static volatile Context context;
     private static volatile com.getsentry.raven.Raven raven;
-    private static volatile EventCache eventCache;
 
     /**
      * Hide constructor.
@@ -99,7 +94,8 @@ public final class Raven {
             throw new IllegalStateException("Attempted to initialize Raven multiple times.");
         }
 
-        context = ctx.getApplicationContext();
+        // Ensure we have the application context
+        Context context = ctx.getApplicationContext();
 
         if (!Util.checkPermission(context, Manifest.permission.INTERNET)) {
             Log.e(TAG, Manifest.permission.INTERNET + " is required to connect to the Sentry server,"
@@ -114,7 +110,7 @@ public final class Raven {
         }
 
         File cacheDir = new File(ctx.getCacheDir().getAbsolutePath(), EVENTCACHE_DIR_NAME);
-        eventCache = new EventCache(cacheDir, eventCacheSize);
+        EventCache eventCache = new EventCache(cacheDir, eventCacheSize);
         raven = new RavenFactory(context, eventCache).createRavenInstance(dsn);
 
         setupUncaughtExceptionHandler();
@@ -180,6 +176,13 @@ public final class Raven {
      */
     public static void capture(EventBuilder eventBuilder) {
         raven.sendEvent(eventBuilder);
+    }
+
+    /**
+     * Clear statically stored Raven instance. Useful for tests.
+     */
+    public static void clearStoredRaven() {
+        raven = null;
     }
 
 }

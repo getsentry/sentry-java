@@ -1,8 +1,27 @@
 package com.getsentry.raven.android;
 
+import com.getsentry.raven.stub.SentryStub;
+import org.junit.After;
+import org.junit.Before;
+
 import java.util.concurrent.Callable;
 
 public class AndroidTest {
+
+    protected SentryStub sentryStub;
+
+    @Before
+    public void setUp() throws Exception {
+        sentryStub = new SentryStub();
+        sentryStub.removeEvents();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        Raven.clearStoredRaven();
+        sentryStub.removeEvents();
+    }
+
     /**
      * To avoid littering tests with static Thread.sleep calls (because Android code must do async I/O),
      * we use this method to repeatedly test a predicate with a maximum wait time, returning as
@@ -25,4 +44,5 @@ public class AndroidTest {
         }
         throw new RuntimeException("Waited too long for predicate to come true.");
     }
+
 }
