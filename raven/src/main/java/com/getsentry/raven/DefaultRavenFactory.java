@@ -1,5 +1,6 @@
 package com.getsentry.raven;
 
+import com.getsentry.raven.buffer.DiskEventBuffer;
 import com.getsentry.raven.connection.*;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
@@ -10,6 +11,7 @@ import com.getsentry.raven.marshaller.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
@@ -37,6 +39,18 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
+    /**
+     * Option to buffer events to disk when network is down.
+     */
+    public static final String BUFFER_DISK_OPTION = "raven.buffer.disk";
+    /**
+     * Option for maximum number of events to cache offline when network is down.
+     */
+    public static final String BUFFER_SIZE_OPTION = "raven.buffer.size";
+    /**
+     * Default number of events to cache offline when network is down.
+     */
+    public static final int BUFFER_SIZE_DEFAULT = 50;
     /**
      * Option to send events asynchronously.
      */
@@ -123,6 +137,16 @@ public class DefaultRavenFactory extends RavenFactory {
             connection = new NoopConnection();
         } else {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
+        }
+
+        String bufferDir = dsn.getOptions().get(BUFFER_DISK_OPTION);
+        if (bufferDir != null) {
+            int bufferSize = BUFFER_SIZE_DEFAULT;
+            if (dsn.getOptions().containsKey(BUFFER_SIZE_OPTION)) {
+                bufferSize = Integer.parseInt(dsn.getOptions().get(BUFFER_SIZE_OPTION));
+            }
+            DiskEventBuffer eventBuffer = new DiskEventBuffer(new File(bufferDir), bufferSize);
+            connection = new BufferedConnection(connection, eventBuffer);
         }
 
         // Enable async unless its value is 'false'.

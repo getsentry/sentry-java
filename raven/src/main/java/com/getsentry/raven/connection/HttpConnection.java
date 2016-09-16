@@ -138,7 +138,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     @Override
-    protected void doSend(Event event) {
+    protected void doSend(Event event) throws ConnectionException {
         HttpURLConnection connection = getConnection();
         try {
             connection.connect();
