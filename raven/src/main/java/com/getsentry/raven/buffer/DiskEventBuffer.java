@@ -113,12 +113,17 @@ public class DiskEventBuffer implements EventBuffer {
                 event = (Event) uncastedEvent;
             } catch (Exception e) {
                 logger.error("Error casting Object to Event.", e);
-                deleteFile(eventFile);
                 continue;
+            } finally {
+                /*
+                 Delete regardless of whether it deserialized.
+                 - If serialization failed: the class has changed too much and we punt
+                 - If it worked, we delete now and allow it to be rewritten if the send fails again below
+                 */
+                deleteFile(eventFile);
             }
 
             Raven.capture(event);
-            deleteFile(eventFile);
         }
     }
 
