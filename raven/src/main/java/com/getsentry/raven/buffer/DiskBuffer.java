@@ -1,19 +1,14 @@
 package com.getsentry.raven.buffer;
 
-import com.getsentry.raven.Raven;
 import com.getsentry.raven.connection.AsyncConnection;
 import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Stores {@link Event} objects to a directory on the filesystem and allows
@@ -92,6 +87,7 @@ public class DiskBuffer extends BaseBuffer {
 
         logger.debug(Integer.toString(getNumStoredEvents()) + " stored events are now in '" + bufferDir + "'.");
 
+        // Since an event was just added, we can assume the connection is down.
         flusher.setConnected(false);
     }
 
@@ -107,12 +103,13 @@ public class DiskBuffer extends BaseBuffer {
             eventFile.delete();
         }
 
+        // Since an event was just discarded, we can assume the connection is up.
         flusher.setConnected(true);
     }
 
     @Override
     public Iterator<Event> getEvents() {
-        // TODO
+        // TODO: impl
         return new Iterator<Event>() {
             @Override
             public boolean hasNext() {

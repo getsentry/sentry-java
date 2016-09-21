@@ -27,8 +27,12 @@ public abstract class BaseBuffer implements Buffer  {
         @Override
         public void run() {
             if (isConnected) {
+                // We're connected, go crazy!
                 sendEvents(Integer.MAX_VALUE);
             } else {
+                // We don't know if we're connected, send a canary...
+                // If this works, we'll get a discard, which will loop back
+                // around and notify flusher...
                 sendEvents(1);
             }
         }
