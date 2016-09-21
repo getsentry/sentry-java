@@ -1,34 +1,35 @@
 package com.getsentry.raven.connection;
 
-import com.getsentry.raven.buffer.EventBuffer;
+import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.event.Event;
 
 import java.io.IOException;
 
 /**
- * Connection wrapper that sends Events to an EventBuffer when send fails.
+ * Connection wrapper that sends Events to an Buffer when send fails.
  */
 public class BufferedConnection implements Connection {
     private Connection actualConnection;
-    private EventBuffer eventBuffer;
+    private Buffer buffer;
 
     /**
-     * Construct a BufferedConnection with a {@link Connection} to wrap and an {@link EventBuffer}.
+     * Construct a BufferedConnection with a {@link Connection} to wrap and an {@link Buffer}.
      *
      * @param actualConnection Connection to wrap.
-     * @param eventBuffer EventBuffer to be used when {@link Connection#send(Event)}s fail.
+     * @param buffer Buffer to be used when {@link Connection#send(Event)}s fail.
      */
-    public BufferedConnection(Connection actualConnection, EventBuffer eventBuffer) {
+    public BufferedConnection(Connection actualConnection, Buffer buffer) {
         this.actualConnection = actualConnection;
-        this.eventBuffer = eventBuffer;
+        this.buffer = buffer;
     }
 
     @Override
     public void send(Event event) {
         try {
             actualConnection.send(event);
+            buffer.discard(event);
         } catch (Exception e) {
-            eventBuffer.buffer(event);
+            buffer.add(event);
             throw e;
         }
     }

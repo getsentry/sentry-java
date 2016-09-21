@@ -1,6 +1,7 @@
 package com.getsentry.raven;
 
-import com.getsentry.raven.buffer.DiskEventBuffer;
+import com.getsentry.raven.buffer.Buffer;
+import com.getsentry.raven.buffer.DiskBuffer;
 import com.getsentry.raven.connection.*;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
@@ -145,7 +146,7 @@ public class DefaultRavenFactory extends RavenFactory {
             if (dsn.getOptions().containsKey(BUFFER_SIZE_OPTION)) {
                 bufferSize = Integer.parseInt(dsn.getOptions().get(BUFFER_SIZE_OPTION));
             }
-            DiskEventBuffer eventBuffer = new DiskEventBuffer(new File(bufferDir), bufferSize);
+            Buffer eventBuffer = DiskBuffer.newDiskBuffer(new File(bufferDir), bufferSize);
             connection = new BufferedConnection(connection, eventBuffer);
         }
 
