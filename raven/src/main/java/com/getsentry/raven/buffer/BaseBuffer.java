@@ -50,15 +50,15 @@ public abstract class BaseBuffer implements Buffer  {
                 Event event = events.next();
                 Raven.capture(event);
 
-                if (!isConnected) {
-                    return;
-                }
-
                 // TODO: should we sleep? configurable?
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                }
+
+                if (!isConnected) {
+                    return;
                 }
             }
         }
