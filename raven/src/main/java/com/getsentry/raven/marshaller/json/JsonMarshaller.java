@@ -99,14 +99,14 @@ public class JsonMarshaller implements Marshaller {
     private final int maxMessageLength;
 
     /**
-     * Create instance of JsonMarshaller with default message length
+     * Create instance of JsonMarshaller with default message length.
      */
     public JsonMarshaller() {
         maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
     }
 
     /**
-     * Create instance of JsonMarshaller with provided the maximum length of the messages
+     * Create instance of JsonMarshaller with provided the maximum length of the messages.
      *
      * @param maxMessageLength the maximum message length
      */

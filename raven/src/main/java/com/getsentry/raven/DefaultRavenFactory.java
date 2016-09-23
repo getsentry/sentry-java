@@ -248,7 +248,8 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return a {@link JsonMarshaller} to process the events.
      */
     protected Marshaller createMarshaller(Dsn dsn) {
-        int maxMessageLength = Util.parseInteger(dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
+        int maxMessageLength = Util.parseInteger(
+                dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
         JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength);
 
         // Set JSON marshaller bindings

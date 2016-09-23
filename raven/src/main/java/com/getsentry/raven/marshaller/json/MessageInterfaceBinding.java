@@ -23,14 +23,14 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
     private final int maxMessageLength;
 
     /**
-     * Create instance of MessageInterfaceBinding with default message length
+     * Create instance of MessageInterfaceBinding with default message length.
      */
     public MessageInterfaceBinding() {
         maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
     }
 
     /**
-     * Create instance of MessageInterfaceBinding with provided the maximum length of the messages
+     * Create instance of MessageInterfaceBinding with provided the maximum length of the messages.
      *
      * @param maxMessageLength the maximum message length
      */
