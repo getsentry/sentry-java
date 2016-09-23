@@ -90,9 +90,9 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String CHECKSUM = "checksum";
     /**
-     * Maximum length for a message.
+     * Default maximum length for a message.
      */
-    public static final int MAX_MESSAGE_LENGTH = 1000;
+    public static final int DEFAULT_MAX_MESSAGE_LENGTH = 1000;
     /**
      * Date format for ISO 8601.
      */
@@ -112,6 +112,26 @@ public class JsonMarshaller implements Marshaller {
      * Enables disables the compression of JSON.
      */
     private boolean compression = true;
+    /**
+     * Maximum length for a message.
+     */
+    private final int maxMessageLength;
+
+    /**
+     * Create instance of JsonMarshaller with default message length.
+     */
+    public JsonMarshaller() {
+        maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
+    }
+
+    /**
+     * Create instance of JsonMarshaller with provided the maximum length of the messages.
+     *
+     * @param maxMessageLength the maximum message length
+     */
+    public JsonMarshaller(int maxMessageLength) {
+        this.maxMessageLength = maxMessageLength;
+    }
 
     @Override
     public void marshall(Event event, OutputStream destination) {
@@ -280,7 +300,7 @@ public class JsonMarshaller implements Marshaller {
     }
 
     /**
-     * Trims a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
+     * Trims a message, ensuring that the maximum length {@link #maxMessageLength} isn't reached.
      *
      * @param message message to format.
      * @return trimmed message (shortened if necessary).
@@ -288,8 +308,8 @@ public class JsonMarshaller implements Marshaller {
     private String trimMessage(String message) {
         if (message == null)
             return null;
-        else if (message.length() > MAX_MESSAGE_LENGTH)
-            return message.substring(0, MAX_MESSAGE_LENGTH);
+        else if (message.length() > maxMessageLength)
+            return message.substring(0, maxMessageLength);
         else return message;
     }
 
