@@ -9,16 +9,25 @@ import java.io.IOException;
  * Binding allowing to transform a {@link MessageInterface} into a JSON stream.
  */
 public class MessageInterfaceBinding implements InterfaceBinding<MessageInterface> {
-    /**
-     * Maximum length for a message.
-     */
-    public static final int MAX_MESSAGE_LENGTH = 1000;
     private static final String MESSAGE_PARAMETER = "message";
     private static final String PARAMS_PARAMETER = "params";
     private static final String FORMATTED_PARAMETER = "formatted";
 
     /**
-     * Trims a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
+     * Maximum length for a message.
+     */
+    private final int maxMessageLength;
+
+    public MessageInterfaceBinding() {
+        maxMessageLength = 1000;
+    }
+
+    public MessageInterfaceBinding(int maxMessageLength) {
+        this.maxMessageLength = maxMessageLength;
+    }
+
+    /**
+     * Trims a message, ensuring that the maximum length {@link #maxMessageLength} isn't reached.
      *
      * @param message message to format.
      * @return trimmed message (shortened if necessary).
@@ -26,8 +35,8 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
     private String trimMessage(String message) {
         if (message == null)
             return null;
-        else if (message.length() > MAX_MESSAGE_LENGTH)
-            return message.substring(0, MAX_MESSAGE_LENGTH);
+        else if (message.length() > maxMessageLength)
+            return message.substring(0, maxMessageLength);
         else return message;
     }
 

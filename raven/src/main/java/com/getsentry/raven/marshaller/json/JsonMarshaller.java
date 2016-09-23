@@ -92,7 +92,18 @@ public class JsonMarshaller implements Marshaller {
     /**
      * Maximum length for a message.
      */
-    public static final int MAX_MESSAGE_LENGTH = 1000;
+    /**
+     * Maximum length for a message.
+     */
+    private final int maxMessageLength;
+
+    public JsonMarshaller() {
+        maxMessageLength = 1000;
+    }
+
+    public JsonMarshaller(int maxMessageLength) {
+        this.maxMessageLength = maxMessageLength;
+    }
     /**
      * Date format for ISO 8601.
      */
@@ -280,7 +291,7 @@ public class JsonMarshaller implements Marshaller {
     }
 
     /**
-     * Trims a message, ensuring that the maximum length {@link #MAX_MESSAGE_LENGTH} isn't reached.
+     * Trims a message, ensuring that the maximum length {@link #maxMessageLength} isn't reached.
      *
      * @param message message to format.
      * @return trimmed message (shortened if necessary).
@@ -288,8 +299,8 @@ public class JsonMarshaller implements Marshaller {
     private String trimMessage(String message) {
         if (message == null)
             return null;
-        else if (message.length() > MAX_MESSAGE_LENGTH)
-            return message.substring(0, MAX_MESSAGE_LENGTH);
+        else if (message.length() > maxMessageLength)
+            return message.substring(0, maxMessageLength);
         else return message;
     }
 
