@@ -35,7 +35,8 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String COMPRESSION_OPTION = "raven.compression";
     /**
-     * Option specific to raven-java, allowing to set maximum length of the message body in the requests to the Sentry Server.
+     * Option specific to raven-java, allowing to set maximum length of the message body in the requests to the
+     * Sentry Server.
      */
     public static final String MAX_MESSAGE_LENGTH_OPTION = "raven.maxmessagelength";
     /**
@@ -247,7 +248,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return a {@link JsonMarshaller} to process the events.
      */
     protected Marshaller createMarshaller(Dsn dsn) {
-        int maxMessageLength = Util.parseInteger(dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), 1000);
+        int maxMessageLength = Util.parseInteger(dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
         JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength);
 
         // Set JSON marshaller bindings

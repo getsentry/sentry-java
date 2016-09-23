@@ -12,16 +12,28 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
     private static final String MESSAGE_PARAMETER = "message";
     private static final String PARAMS_PARAMETER = "params";
     private static final String FORMATTED_PARAMETER = "formatted";
+    /**
+     * Default maximum length for a message.
+     */
+    public static final int DEFAULT_MAX_MESSAGE_LENGTH = 1000;
 
     /**
      * Maximum length for a message.
      */
     private final int maxMessageLength;
 
+    /**
+     * Create instance of MessageInterfaceBinding with default message length
+     */
     public MessageInterfaceBinding() {
-        maxMessageLength = 1000;
+        maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
     }
 
+    /**
+     * Create instance of MessageInterfaceBinding with provided the maximum length of the messages
+     *
+     * @param maxMessageLength the maximum message length
+     */
     public MessageInterfaceBinding(int maxMessageLength) {
         this.maxMessageLength = maxMessageLength;
     }
