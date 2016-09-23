@@ -66,8 +66,8 @@ public final class Util {
     }
 
     /**
-     * Parses the provided string value into integer value.
-     * <p>If parsing can't be performed then return default value.</p>
+     * Parses the provided string value into an integer value.
+     * <p>If the string is null or empty this returns the default value.</p>
      *
      * @param value        value to parse
      * @param defaultValue default value
@@ -77,10 +77,6 @@ public final class Util {
         if (isNullOrEmpty(value)) {
             return defaultValue;
         }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
+        return Integer.parseInt(value);
     }
 }
