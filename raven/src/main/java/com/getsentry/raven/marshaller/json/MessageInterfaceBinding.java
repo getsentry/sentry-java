@@ -9,13 +9,13 @@ import java.io.IOException;
  * Binding allowing to transform a {@link MessageInterface} into a JSON stream.
  */
 public class MessageInterfaceBinding implements InterfaceBinding<MessageInterface> {
-    private static final String MESSAGE_PARAMETER = "message";
-    private static final String PARAMS_PARAMETER = "params";
-    private static final String FORMATTED_PARAMETER = "formatted";
     /**
      * Default maximum length for a message.
      */
     public static final int DEFAULT_MAX_MESSAGE_LENGTH = 1000;
+    private static final String MESSAGE_PARAMETER = "message";
+    private static final String PARAMS_PARAMETER = "params";
+    private static final String FORMATTED_PARAMETER = "formatted";
 
     /**
      * Maximum length for a message.

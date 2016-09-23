@@ -94,6 +94,25 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final int DEFAULT_MAX_MESSAGE_LENGTH = 1000;
     /**
+     * Date format for ISO 8601.
+     */
+    private static final ThreadLocal<DateFormat> ISO_FORMAT = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return dateFormat;
+        }
+    };
+
+    private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
+    private final JsonFactory jsonFactory = new JsonFactory();
+    private final Map<Class<? extends SentryInterface>, InterfaceBinding<?>> interfaceBindings = new HashMap<>();
+    /**
+     * Enables disables the compression of JSON.
+     */
+    private boolean compression = true;
+    /**
      * Maximum length for a message.
      */
     private final int maxMessageLength;
@@ -113,25 +132,6 @@ public class JsonMarshaller implements Marshaller {
     public JsonMarshaller(int maxMessageLength) {
         this.maxMessageLength = maxMessageLength;
     }
-    /**
-     * Date format for ISO 8601.
-     */
-    private static final ThreadLocal<DateFormat> ISO_FORMAT = new ThreadLocal<DateFormat>() {
-        @Override
-        protected DateFormat initialValue() {
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            return dateFormat;
-        }
-    };
-
-    private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
-    private final JsonFactory jsonFactory = new JsonFactory();
-    private final Map<Class<? extends SentryInterface>, InterfaceBinding<?>> interfaceBindings = new HashMap<>();
-    /**
-     * Enables disables the compression of JSON.
-     */
-    private boolean compression = true;
 
     @Override
     public void marshall(Event event, OutputStream destination) {
