@@ -76,13 +76,19 @@ public class BufferedConnection implements Connection {
     private class Flusher implements Runnable {
         @Override
         public void run() {
+            logger.debug("Running Flusher");
+
             Iterator<Event> events = buffer.getEvents();
             while (events.hasNext()) {
                 Event event = events.next();
 
                 try {
+                    logger.debug("Flusher attempting to send Event: " + event.getId());
                     send(event);
+                    logger.debug("Flusher successfully sent Event: " + event.getId());
                 } catch (Exception e) {
+                    logger.debug("Flusher failed to send Event: " + event.getId(), e);
+
                     // Connectivity issues, give up until next Flusher run.
                     return;
                 }

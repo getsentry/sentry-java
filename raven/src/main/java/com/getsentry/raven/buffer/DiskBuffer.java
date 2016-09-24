@@ -40,7 +40,9 @@ public class DiskBuffer implements Buffer {
         this.bufferDir = bufferDir;
         this.maxEvents = maxEvents;
 
-        logger.debug(Integer.toString(getNumStoredEvents()) + " stored events found in dir: " + bufferDir.getAbsolutePath());
+        logger.debug(Integer.toString(getNumStoredEvents())
+            + " stored events found in dir: "
+            + bufferDir.getAbsolutePath());
     }
 
     /**
@@ -92,7 +94,9 @@ public class DiskBuffer implements Buffer {
             logger.error("Error writing Event '" + event.getId() + "' to offline storage.", e);
         }
 
-        logger.debug(Integer.toString(getNumStoredEvents()) + " stored events are now in dir: " + bufferDir.getAbsolutePath());
+        logger.debug(Integer.toString(getNumStoredEvents())
+            + " stored events are now in dir: "
+            + bufferDir.getAbsolutePath());
     }
 
     /**
