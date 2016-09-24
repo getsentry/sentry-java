@@ -1,13 +1,15 @@
 package com.getsentry.raven.connection;
 
-import com.getsentry.raven.Raven;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.event.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -15,7 +17,22 @@ import java.util.concurrent.TimeUnit;
  */
 public class BufferedConnection implements Connection {
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static final Logger logger = LoggerFactory.getLogger(BufferedConnection.class);
+
+    /**
+     * Flusher ExecutorService, created in a verbose way so that it doesn't keep
+     * the JVM running after main() exits.
+     */
+    private final ScheduledExecutorService scheduler =
+        Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
+
     private final Flusher flusher;
 
     private Connection actualConnection;
@@ -32,7 +49,7 @@ public class BufferedConnection implements Connection {
         this.buffer = buffer;
 
         this.flusher = new BufferedConnection.Flusher();
-        scheduler.scheduleAtFixedRate(flusher, 1, 1, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(flusher, 0, 1, TimeUnit.MINUTES);
     }
 
     @Override
@@ -56,12 +73,7 @@ public class BufferedConnection implements Connection {
         actualConnection.close();
     }
 
-    class Flusher implements Runnable {
-        /**
-         * Use the Events iterator, always try to send 1 Event (if one exists) as a canary,
-         * even if we think the connection is down. Then only keep sending events if we still
-         * think the connection is up.
-         */
+    private class Flusher implements Runnable {
         @Override
         public void run() {
             Iterator<Event> events = buffer.getEvents();
