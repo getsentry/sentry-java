@@ -7,6 +7,7 @@ import com.getsentry.raven.event.helper.HttpEventBuilderHelper;
 import com.getsentry.raven.event.interfaces.*;
 import com.getsentry.raven.marshaller.Marshaller;
 import com.getsentry.raven.marshaller.json.*;
+import com.getsentry.raven.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,11 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option specific to raven-java, allowing to enable/disable the compression of requests to the Sentry Server.
      */
     public static final String COMPRESSION_OPTION = "raven.compression";
+    /**
+     * Option specific to raven-java, allowing to set maximum length of the message body in the requests to the
+     * Sentry Server.
+     */
+    public static final String MAX_MESSAGE_LENGTH_OPTION = "raven.maxmessagelength";
     /**
      * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
      */
@@ -242,7 +248,9 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return a {@link JsonMarshaller} to process the events.
      */
     protected Marshaller createMarshaller(Dsn dsn) {
-        JsonMarshaller marshaller = new JsonMarshaller();
+        int maxMessageLength = Util.parseInteger(
+                dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
+        JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength);
 
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
@@ -253,7 +261,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
         marshaller.addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
-        marshaller.addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
+        marshaller.addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding(maxMessageLength));
         marshaller.addInterfaceBinding(UserInterface.class, new UserInterfaceBinding());
         HttpInterfaceBinding httpBinding = new HttpInterfaceBinding();
         //TODO: Add a way to clean the HttpRequest

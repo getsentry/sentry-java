@@ -65,4 +65,18 @@ public final class Util {
         return new HashSet<>(Arrays.asList(extraTagsString.split(",")));
     }
 
+    /**
+     * Parses the provided string value into an integer value.
+     * <p>If the string is null or empty this returns the default value.</p>
+     *
+     * @param value        value to parse
+     * @param defaultValue default value
+     * @return integer representation of provided value or default value.
+     */
+    public static int parseInteger(String value, int defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return Integer.parseInt(value);
+    }
 }

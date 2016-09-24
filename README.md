@@ -260,6 +260,12 @@ It's possible to manually enable/disable the compression with the option
 
     http://public:private@host:port/1?raven.compression=false
 
+### Max message size
+By default only the first 1000 characters of a message will be sent to
+the server. This can be changed with the `raven.maxmessagelength` option.
+
+    http://public:private@host:port/1?raven.maxmessagelength=1500
+
 ### Timeout (advanced)
 A timeout is set to avoid blocking Raven threads because establishing a
 connection is taking too long.
