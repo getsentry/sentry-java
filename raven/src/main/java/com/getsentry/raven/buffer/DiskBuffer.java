@@ -14,23 +14,13 @@ import java.util.Iterator;
  * Stores {@link Event} objects to a directory on the filesystem and allows
  * them to be flushed to Sentry (and deleted) at a later time.
  */
-public class DiskBuffer extends BaseBuffer {
+public class DiskBuffer implements Buffer {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
 
     private int maxEvents;
     private File bufferDir;
 
-    /**
-     * TODO: This exists because I'm not sure a disk/dir you can't write too should be
-     * a fatal error. By returning a NoopBuffer if we can't write to the dir, we don't
-     * have to manually check for sanity everywhere in the code, and we can debug/warn
-     * log inside of NoopBuffer.
-     *
-     * @param bufferDir
-     * @param maxEvents
-     * @return
-     */
     public static Buffer newDiskBuffer(File bufferDir, int maxEvents) {
         try {
             bufferDir.mkdirs();
@@ -86,9 +76,6 @@ public class DiskBuffer extends BaseBuffer {
         }
 
         logger.debug(Integer.toString(getNumStoredEvents()) + " stored events are now in '" + bufferDir + "'.");
-
-        // Since an event was just added, we can assume the connection is down.
-        flusher.setConnected(false);
     }
 
     /**
@@ -102,9 +89,6 @@ public class DiskBuffer extends BaseBuffer {
         if (eventFile.exists()) {
             eventFile.delete();
         }
-
-        // Since an event was just discarded, we can assume the connection is up.
-        flusher.setConnected(true);
     }
 
     @Override
