@@ -6,6 +6,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
 import android.util.Log;
+import com.getsentry.raven.DefaultRavenFactory;
+import com.getsentry.raven.RavenFactory;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
@@ -109,15 +111,26 @@ public final class Raven {
             eventCacheSize = Integer.parseInt(dsn.getOptions().get(EVENTCACHE_SIZE_OPTION));
         }
 
+        String protocol = dsn.getProtocol();
+        if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
+            throw new IllegalArgumentException("Only 'http' or 'https' connections are supported in"
+                + " Raven Android, but received: " + protocol);
+        }
+
+        if ("false".equalsIgnoreCase(dsn.getOptions().get(DefaultRavenFactory.ASYNC_OPTION))) {
+            throw new IllegalArgumentException("Raven Android cannot use synchronous connections, remove '"
+                + DefaultRavenFactory.ASYNC_OPTION + "=false' from your DSN.");
+        }
+
         File cacheDir = new File(ctx.getCacheDir().getAbsolutePath(), EVENTCACHE_DIR_NAME);
-        EventCache eventCache = new EventCache(cacheDir, eventCacheSize);
-        raven = new RavenFactory(context, eventCache).createRavenInstance(dsn);
+        if (!dsn.getOptions().containsKey(DefaultRavenFactory.BUFFER_DISK_OPTION)) {
+            // TODO: do we default this to on like so?
+            dsn.getOptions().put(DefaultRavenFactory.BUFFER_DISK_OPTION, cacheDir.getAbsolutePath());
+        }
+
+        raven = RavenFactory.ravenInstance(dsn);
 
         setupUncaughtExceptionHandler();
-
-        if (Util.shouldAttemptToSend(context)) {
-            eventCache.flushEvents();
-        }
     }
 
     /**
