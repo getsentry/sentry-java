@@ -79,7 +79,7 @@ public abstract class AbstractConnection implements Connection {
     }
 
     @Override
-    public final void send(Event event) {
+    public final void send(Event event) throws ConnectionException {
         try {
             waitIfLockedDown();
 
@@ -97,6 +97,8 @@ public abstract class AbstractConnection implements Connection {
                         + eventSendFailureCallback.getClass().getName(), exc);
                 }
             }
+
+            throw e;
         }
     }
 

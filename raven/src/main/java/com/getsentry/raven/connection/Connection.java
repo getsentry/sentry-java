@@ -12,8 +12,9 @@ public interface Connection extends Closeable {
      * Sends an event to the Sentry server.
      *
      * @param event captured event to add in Sentry.
+     * @throws ConnectionException Thrown when an Event send fails.
      */
-    void send(Event event);
+    void send(Event event) throws ConnectionException;
 
     /**
      * Add a callback that is called when an exception occurs while attempting to
