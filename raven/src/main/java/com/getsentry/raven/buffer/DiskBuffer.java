@@ -18,9 +18,12 @@ import java.util.Iterator;
  */
 public class DiskBuffer implements Buffer {
 
-    private static final Logger logger = LoggerFactory.getLogger(DiskBuffer.class);
+    /**
+     * File suffix added to all serialized event files.
+     */
+    public static final String FILE_SUFFIX = ".raven-event";
 
-    private static final String FILE_SUFFIX = ".raven-event";
+    private static final Logger logger = LoggerFactory.getLogger(DiskBuffer.class);
 
     private int maxEvents;
     private final File bufferDir;
@@ -79,8 +82,8 @@ public class DiskBuffer implements Buffer {
     @Override
     public void add(Event event) {
         if (getNumStoredEvents() >= maxEvents) {
-            logger.warn("Not adding Event '" + event.getId() + "' because at least "
-                + Integer.toString(maxEvents) + " events are already stored.");
+            logger.warn("Not adding Event because at least "
+                + Integer.toString(maxEvents) + " events are already stored: " + event.getId());
             return;
         }
 
@@ -91,7 +94,7 @@ public class DiskBuffer implements Buffer {
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             objectOutputStream.writeObject(event);
         } catch (Exception e) {
-            logger.error("Error writing Event '" + event.getId() + "' to offline storage.", e);
+            logger.error("Error writing Event to offline storage: " + event.getId(), e);
         }
 
         logger.debug(Integer.toString(getNumStoredEvents())
@@ -129,6 +132,7 @@ public class DiskBuffer implements Buffer {
             eventObj = ois.readObject();
         } catch (Exception e) {
             logger.error("Error reading Event file: " + eventFile.getAbsolutePath(), e);
+            eventFile.delete();
             return null;
         }
 
@@ -136,6 +140,7 @@ public class DiskBuffer implements Buffer {
             return (Event) eventObj;
         } catch (Exception e) {
             logger.error("Error casting Object to Event: " + eventFile.getAbsolutePath(), e);
+            eventFile.delete();
             return null;
         }
     }
