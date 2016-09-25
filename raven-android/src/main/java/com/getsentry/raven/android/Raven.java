@@ -123,9 +123,10 @@ public final class Raven {
         }
 
         File cacheDir = new File(ctx.getCacheDir().getAbsolutePath(), EVENTCACHE_DIR_NAME);
-        if (!dsn.getOptions().containsKey(DefaultRavenFactory.BUFFER_DISK_OPTION)) {
+        if (!dsn.getOptions().containsKey(DefaultRavenFactory.BUFFER_DIR_OPTION)) {
             // TODO: do we default this to on like so?
-            dsn.getOptions().put(DefaultRavenFactory.BUFFER_DISK_OPTION, cacheDir.getAbsolutePath());
+            // TODO: can't edit DSN options like this, need another way
+            dsn.getOptions().put(DefaultRavenFactory.BUFFER_DIR_OPTION, cacheDir.getAbsolutePath());
         }
 
         raven = RavenFactory.ravenInstance(dsn);
