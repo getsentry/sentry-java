@@ -46,7 +46,7 @@ public class AsyncConnection implements Connection {
     /**
      * Boolean used to check whether the connection is still open or not.
      */
-    private boolean closed;
+    private volatile boolean closed;
 
     /**
      * Creates a connection which will rely on an executor to send events.
@@ -121,8 +121,10 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void close() throws IOException {
-        if (gracefulShutdown)
+        if (gracefulShutdown) {
             shutDownHook.enabled = false;
+        }
+
         doClose();
     }
 
