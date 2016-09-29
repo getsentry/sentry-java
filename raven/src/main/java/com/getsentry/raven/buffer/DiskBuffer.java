@@ -31,46 +31,28 @@ public class DiskBuffer implements Buffer {
     /**
      * Construct an DiskBuffer which stores errors in the specified directory on disk.
      *
-     * Private, you should use {@link DiskBuffer#newDiskBuffer(File, int)} to create
-     * an instance.
-     *
      * @param bufferDir File representing directory to store buffered Events in
      * @param maxEvents The maximum number of events to store offline
      */
-    protected DiskBuffer(File bufferDir, int maxEvents) {
+    public DiskBuffer(File bufferDir, int maxEvents) {
         super();
 
         this.bufferDir = bufferDir;
         this.maxEvents = maxEvents;
 
-        logger.debug(Integer.toString(getNumStoredEvents())
-            + " stored events found in dir: "
-            + bufferDir.getAbsolutePath());
-    }
-
-    /**
-     * Attempt to create a new {@link DiskBuffer} instance backed by the provided bufferDir. If the
-     * bufferDir cannot be created or written to, this returns a {@link NoopBuffer} instance.
-     *
-     * @param bufferDir File representing the directory to write buffered Events to
-     * @param maxEvents the maximum number of Events to store in the bufferDir
-     * @return DiskBuffer if possible, otherwise NoopBuffer
-     */
-    public static Buffer newDiskBuffer(File bufferDir, int maxEvents) {
-        String errMsg = "Could not create or write to " + bufferDir.toString() + ", using Noop buffer instance.";
-
+        String errMsg = "Could not create or write to disk buffer dir: " + bufferDir.getAbsolutePath();
         try {
             bufferDir.mkdirs();
-            if (bufferDir.isDirectory() && bufferDir.canWrite()) {
-                return new DiskBuffer(bufferDir, maxEvents);
-            } else {
+            if (!bufferDir.isDirectory() || !bufferDir.canWrite()) {
                 logger.error(errMsg);
             }
         } catch (Exception e) {
             logger.error(errMsg, e);
         }
 
-        return new NoopBuffer();
+        logger.debug(Integer.toString(getNumStoredEvents())
+            + " stored events found in dir: "
+            + bufferDir.getAbsolutePath());
     }
 
     /**
@@ -170,10 +152,13 @@ public class DiskBuffer implements Buffer {
     }
 
     /**
-     * Returns an Iterator of Events that are stored to disk at the point in time this method
-     * is called. Note that files may not deserialize correctly, may be corrupted,
-     * or may be missing by the time we attempt to open them - so some care is taken to
+     * Returns an Iterator of Events that are stored on disk <b>at the point in time this method
+     * is called</b>. Note that files may not deserialize correctly, may be corrupted,
+     * or may be missing on disk by the time we attempt to open them - so some care is taken to
      * only return valid {@link Event}s.
+     *
+     * If Events are written to disk after this Iterator is created they <b>will not</b> be returned
+     * by this Iterator.
      *
      * @return Iterator of Events on disk
      */

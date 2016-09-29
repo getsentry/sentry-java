@@ -22,7 +22,7 @@ public class DiskBufferTest extends BufferTest {
 
     @BeforeMethod
     public void setup() {
-        buffer = (DiskBuffer) DiskBuffer.newDiskBuffer(BUFFER_DIR, maxEvents);
+        buffer = (DiskBuffer) new DiskBuffer(BUFFER_DIR, maxEvents);
     }
 
     @AfterMethod
