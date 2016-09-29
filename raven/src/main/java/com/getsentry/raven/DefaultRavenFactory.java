@@ -167,7 +167,7 @@ public class DefaultRavenFactory extends RavenFactory {
             int bufferSize = Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
             long flushtime = Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
             boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
-            Buffer eventBuffer = DiskBuffer.newDiskBuffer(new File(bufferDir), bufferSize);
+            Buffer eventBuffer = new DiskBuffer(new File(bufferDir), bufferSize);
 
             String shutdownTimeoutStr = dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION);
             if (shutdownTimeoutStr != null) {
