@@ -47,7 +47,7 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
     /**
-     * Option to buffer events to disk when network is down.
+     * Option specifying directory to buffer events into when the network is down.
      */
     public static final String BUFFER_DIR_OPTION = "raven.buffer.dir";
     /**
@@ -162,12 +162,10 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
-        String bufferDir = dsn.getOptions().get(BUFFER_DIR_OPTION);
-        if (bufferDir != null) {
-            int bufferSize = Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
+        Buffer eventBuffer = getBuffer(dsn);
+        if (eventBuffer != null) {
             long flushtime = Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
             boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
-            Buffer eventBuffer = new DiskBuffer(new File(bufferDir), bufferSize);
 
             String shutdownTimeoutStr = dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION);
             if (shutdownTimeoutStr != null) {
@@ -338,6 +336,30 @@ public class DefaultRavenFactory extends RavenFactory {
                 "sun.",
                 "junit.",
                 "com.intellij.rt.");
+    }
+
+    /**
+     * Get the {@link Buffer} where events are stored when network is down.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return the {@link Buffer} where events are stored when network is down.
+     */
+    protected Buffer getBuffer(Dsn dsn) {
+        String bufferDir = dsn.getOptions().get(BUFFER_DIR_OPTION);
+        if (bufferDir != null) {
+            return new DiskBuffer(new File(bufferDir), getBufferSize(dsn));
+        }
+        return null;
+    }
+
+    /**
+     * Get the maximum number of events to cache offline when network is down.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return the maximum number of events to cache offline when network is down.
+     */
+    protected int getBufferSize(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
     }
 
     /**

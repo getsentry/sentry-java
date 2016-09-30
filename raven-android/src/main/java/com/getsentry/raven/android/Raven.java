@@ -12,8 +12,6 @@ import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 
-import java.io.File;
-
 /**
  * Android specific class to interface with Raven. Supplements the default Java classes
  * with Android specific state and features.
@@ -24,19 +22,6 @@ public final class Raven {
      * Logger tag.
      */
     public static final String TAG = Raven.class.getName();
-
-    /**
-     * Option for maximum number of events to cache offline when network is down.
-     */
-    public static final String EVENTCACHE_SIZE_OPTION = "raven.eventcache.size";
-    /**
-     * Default number of events to cache offline when network is down.
-     */
-    public static final int EVENTCACHE_SIZE_DEFAULT = 50;
-    /**
-     * EventCache subdirectory name.
-     */
-    private static final String EVENTCACHE_DIR_NAME = "raven_unsent_events";
 
     private static volatile com.getsentry.raven.Raven raven;
 
@@ -106,11 +91,6 @@ public final class Raven {
 
         Log.d(TAG, "Raven init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
-        int eventCacheSize = EVENTCACHE_SIZE_DEFAULT;
-        if (dsn.getOptions().containsKey(EVENTCACHE_SIZE_OPTION)) {
-            eventCacheSize = Integer.parseInt(dsn.getOptions().get(EVENTCACHE_SIZE_OPTION));
-        }
-
         String protocol = dsn.getProtocol();
         if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
             throw new IllegalArgumentException("Only 'http' or 'https' connections are supported in"
@@ -122,13 +102,7 @@ public final class Raven {
                 + DefaultRavenFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
 
-        File cacheDir = new File(ctx.getCacheDir().getAbsolutePath(), EVENTCACHE_DIR_NAME);
-        if (!dsn.getOptions().containsKey(DefaultRavenFactory.BUFFER_DIR_OPTION)) {
-            // TODO: do we default this to on like so?
-            // TODO: can't edit DSN options like this, need another way
-            dsn.getOptions().put(DefaultRavenFactory.BUFFER_DIR_OPTION, cacheDir.getAbsolutePath());
-        }
-
+        RavenFactory.registerFactory(new AndroidRavenFactory(ctx));
         raven = RavenFactory.ravenInstance(dsn);
 
         setupUncaughtExceptionHandler();
