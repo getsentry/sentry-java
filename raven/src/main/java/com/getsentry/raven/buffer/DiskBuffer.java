@@ -44,10 +44,10 @@ public class DiskBuffer implements Buffer {
         try {
             bufferDir.mkdirs();
             if (!bufferDir.isDirectory() || !bufferDir.canWrite()) {
-                logger.error(errMsg);
+                throw new RuntimeException(errMsg);
             }
         } catch (Exception e) {
-            logger.error(errMsg, e);
+            throw new RuntimeException(errMsg, e);
         }
 
         logger.debug(Integer.toString(getNumStoredEvents())
