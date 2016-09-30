@@ -5,8 +5,6 @@ import com.getsentry.raven.stub.SentryStub;
 import org.junit.After;
 import org.junit.Before;
 
-import java.util.concurrent.Callable;
-
 public class AndroidTest extends BaseTest {
 
     protected SentryStub sentryStub;
