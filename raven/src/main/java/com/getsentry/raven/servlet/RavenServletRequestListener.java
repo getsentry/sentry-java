@@ -1,5 +1,7 @@
 package com.getsentry.raven.servlet;
 
+import com.getsentry.raven.Raven;
+
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -20,12 +22,15 @@ public class RavenServletRequestListener implements ServletRequestListener {
     @Override
     public void requestDestroyed(ServletRequestEvent servletRequestEvent) {
         THREAD_REQUEST.remove();
+
+        Raven.getStoredInstance().getContext().clear();
     }
 
     @Override
     public void requestInitialized(ServletRequestEvent servletRequestEvent) {
         ServletRequest servletRequest = servletRequestEvent.getServletRequest();
-        if (servletRequest instanceof HttpServletRequest)
+        if (servletRequest instanceof HttpServletRequest) {
             THREAD_REQUEST.set((HttpServletRequest) servletRequest);
+        }
     }
 }
