@@ -2,7 +2,8 @@ package com.getsentry.raven.android;
 
 import android.content.Context;
 import android.util.Log;
-import com.getsentry.raven.DefaultRavenFactory;
+import com.getsentry.raven.*;
+import com.getsentry.raven.android.event.helper.AndroidEventBuilderHelper;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.buffer.DiskBuffer;
 import com.getsentry.raven.dsn.Dsn;
@@ -35,6 +36,13 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
         this.ctx = ctx;
 
         Log.d(TAG, "Construction of Android Raven.");
+    }
+
+    @Override
+    public com.getsentry.raven.Raven createRavenInstance(Dsn dsn) {
+        com.getsentry.raven.Raven ravenInstance = super.createRavenInstance(dsn);
+        ravenInstance.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+        return ravenInstance;
     }
 
     @Override
