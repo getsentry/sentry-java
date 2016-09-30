@@ -79,4 +79,19 @@ public final class Util {
         }
         return Integer.parseInt(value);
     }
+
+    /**
+     * Parses the provided string value into a long value.
+     * <p>If the string is null or empty this returns the default value.</p>
+     *
+     * @param value        value to parse
+     * @param defaultValue default value
+     * @return long representation of provided value or default value.
+     */
+    public static long parseLong(String value, long defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return Long.parseLong(value);
+    }
 }
