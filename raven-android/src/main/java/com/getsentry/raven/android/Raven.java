@@ -78,7 +78,9 @@ public final class Raven {
      */
     public static void init(Context ctx, Dsn dsn) {
         if (raven != null) {
-            throw new IllegalStateException("Attempted to initialize Raven multiple times.");
+            Log.e(TAG, "Initializing Raven multiple times.");
+            // cleanup existing connections
+            raven.closeConnection();
         }
 
         // Ensure we have the application context

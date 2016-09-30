@@ -1,6 +1,7 @@
 package com.getsentry.raven.android;
 
 import android.content.Context;
+import android.util.Log;
 import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.buffer.DiskBuffer;
@@ -21,7 +22,7 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
     /**
      * Default Buffer directory name.
      */
-    private static final String DEFAULT_BUFFER_DIR = "raven_unsent_events";
+    private static final String DEFAULT_BUFFER_DIR = "raven-buffered-events";
 
     private Context ctx;
 
@@ -32,6 +33,8 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
      */
     public AndroidRavenFactory(Context ctx) {
         this.ctx = ctx;
+
+        Log.d(TAG, "Construction of Android Raven.");
     }
 
     @Override
@@ -43,6 +46,7 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
             bufferDir = new File(ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
         }
 
+        Log.d(TAG, "Using buffer dir: " + bufferDir.getAbsolutePath());
         return new DiskBuffer(bufferDir, getBufferSize(dsn));
     }
 
