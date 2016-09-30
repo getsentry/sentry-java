@@ -47,6 +47,10 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
     /**
+     * Default timeout of an HTTP connection to Sentry.
+     */
+    public static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
+    /**
      * Option to buffer events to disk when network is down.
      */
     public static final String BUFFER_DIR_OPTION = "raven.buffer.dir";
@@ -75,6 +79,10 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String BUFFER_SHUTDOWN_TIMEOUT_OPTION = "raven.buffer.shutdowntimeout";
     /**
+     * Default timeout of the {@link BufferedConnection} shutdown, in milliseconds.
+     */
+    public static final long BUFFER_SHUTDOWN_TIMEOUT_DEFAULT = TimeUnit.SECONDS.toMillis(1);
+    /**
      * Option to send events asynchronously.
      */
     public static final String ASYNC_OPTION = "raven.async";
@@ -98,6 +106,10 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option for the graceful shutdown timeout of the async executor, in milliseconds.
      */
     public static final String ASYNC_SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
+    /**
+     * Default timeout of the {@link AsyncConnection} executor, in milliseconds.
+     */
+    public static final long ASYNC_SHUTDOWN_TIMEOUT_DEFAULT = TimeUnit.SECONDS.toMillis(1);
     /**
      * Option to hide common stackframes with enclosing exceptions.
      */
@@ -162,25 +174,17 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
-        String bufferDir = dsn.getOptions().get(BUFFER_DIR_OPTION);
-        if (bufferDir != null) {
-            int bufferSize = Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
-            long flushtime = Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
-            boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
-            Buffer eventBuffer = new DiskBuffer(new File(bufferDir), bufferSize);
-
-            String shutdownTimeoutStr = dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION);
-            if (shutdownTimeoutStr != null) {
-                long shutdownTimeout = Long.parseLong(shutdownTimeoutStr);
-                connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
-                    shutdownTimeout);
-            } else {
-                connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown);
-            }
+        Buffer eventBuffer = getBuffer(dsn);
+        if (eventBuffer != null) {
+            long flushtime = getBufferFlushtime(dsn);
+            boolean gracefulShutdown = getBufferedConnectionGracefulShutdown(dsn);
+            Long shutdownTimeout = getBufferedConnectionShutdownTimeout(dsn);
+            connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
+                shutdownTimeout);
         }
 
         // Enable async unless its value is 'false'.
-        if (!FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION))) {
+        if (getAsync(dsn)) {
             connection = createAsyncConnection(dsn, connection);
         }
 
@@ -197,45 +201,25 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
 
-        int maxThreads;
-        if (dsn.getOptions().containsKey(ASYNC_THREADS_OPTION)) {
-            maxThreads = Integer.parseInt(dsn.getOptions().get(ASYNC_THREADS_OPTION));
-        } else {
-            maxThreads = Runtime.getRuntime().availableProcessors();
-        }
-
-        int priority;
-        if (dsn.getOptions().containsKey(ASYNC_PRIORITY_OPTION)) {
-            priority = Integer.parseInt(dsn.getOptions().get(ASYNC_PRIORITY_OPTION));
-        } else {
-            priority = Thread.MIN_PRIORITY;
-        }
+        int maxThreads = getAsyncThreads(dsn);
+        int priority = getAsyncPriority(dsn);
 
         BlockingDeque<Runnable> queue;
-        if (dsn.getOptions().containsKey(ASYNC_QUEUE_SIZE_OPTION)) {
-            int queueSize = Integer.parseInt(dsn.getOptions().get(ASYNC_QUEUE_SIZE_OPTION));
-            if (queueSize == -1) {
-                queue = new LinkedBlockingDeque<>();
-            } else {
-                queue = new LinkedBlockingDeque<>(queueSize);
-            }
+        int queueSize = getAsyncQueueSize(dsn);
+        if (queueSize == -1) {
+            queue = new LinkedBlockingDeque<>();
         } else {
-            queue = new LinkedBlockingDeque<>(QUEUE_SIZE_DEFAULT);
+            queue = new LinkedBlockingDeque<>(queueSize);
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
                 new DaemonThreadFactory(priority), new ThreadPoolExecutor.DiscardOldestPolicy());
 
-        boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_GRACEFUL_SHUTDOWN_OPTION));
+        boolean gracefulShutdown = getAsyncGracefulShutdown(dsn);
 
-        String shutdownTimeoutStr = dsn.getOptions().get(ASYNC_SHUTDOWN_TIMEOUT_OPTION);
-        if (shutdownTimeoutStr != null) {
-            long shutdownTimeout = Long.parseLong(shutdownTimeoutStr);
-            return new AsyncConnection(connection, executorService, gracefulShutdown, shutdownTimeout);
-        } else {
-            return new AsyncConnection(connection, executorService, gracefulShutdown);
-        }
+        long shutdownTimeout = getAsyncShutdownTimeout(dsn);
+        return new AsyncConnection(connection, executorService, gracefulShutdown, shutdownTimeout);
     }
 
     /**
@@ -247,15 +231,8 @@ public class DefaultRavenFactory extends RavenFactory {
     protected Connection createHttpConnection(Dsn dsn) {
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
 
-        String proxyHost = null;
-        if (dsn.getOptions().containsKey(HTTP_PROXY_HOST_OPTION)) {
-            proxyHost = dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
-        }
-
-        int proxyPort = HTTP_PROXY_PORT_DEFAULT;
-        if (dsn.getOptions().containsKey(HTTP_PROXY_PORT_OPTION)) {
-            proxyPort = Integer.parseInt(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION));
-        }
+        String proxyHost = getProxyHost(dsn);
+        int proxyPort = getProxyPort(dsn);
 
         Proxy proxy = null;
         if (proxyHost != null) {
@@ -269,8 +246,7 @@ public class DefaultRavenFactory extends RavenFactory {
         // Set the naive mode
         httpConnection.setBypassSecurity(dsn.getProtocolSettings().contains(NAIVE_PROTOCOL));
         // Set the HTTP timeout
-        if (dsn.getOptions().containsKey(TIMEOUT_OPTION))
-            httpConnection.setTimeout(Integer.parseInt(dsn.getOptions().get(TIMEOUT_OPTION)));
+        httpConnection.setTimeout(getTimeout(dsn));
         return httpConnection;
     }
 
@@ -296,15 +272,13 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return a {@link JsonMarshaller} to process the events.
      */
     protected Marshaller createMarshaller(Dsn dsn) {
-        int maxMessageLength = Util.parseInteger(
-                dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
+        int maxMessageLength = getMaxMessageLength(dsn);
         JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength);
 
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
         // Enable common frames hiding unless its value is 'false'.
-        stackTraceBinding.setRemoveCommonFramesWithEnclosing(
-                !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION)));
+        stackTraceBinding.setRemoveCommonFramesWithEnclosing(getHideCommonFrames(dsn));
         stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
@@ -317,7 +291,7 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.addInterfaceBinding(HttpInterface.class, httpBinding);
 
         // Enable compression unless the option is set to false
-        marshaller.setCompression(!FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION)));
+        marshaller.setCompression(getCompression(dsn));
 
         return marshaller;
     }
@@ -338,6 +312,182 @@ public class DefaultRavenFactory extends RavenFactory {
                 "sun.",
                 "junit.",
                 "com.intellij.rt.");
+    }
+
+    /**
+     * Returns whether or not to wrap the underlying connection in an {@link AsyncConnection}.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return whether or not to wrap the underlying connection in an {@link AsyncConnection}.
+     */
+    protected boolean getAsync(Dsn dsn) {
+        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION));
+    }
+
+    /**
+     * Returns maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
+     */
+    protected long getBufferedConnectionShutdownTimeout(Dsn dsn) {
+        return Util.parseLong(dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION), BUFFER_SHUTDOWN_TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Returns whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
+     */
+    protected boolean getBufferedConnectionGracefulShutdown(Dsn dsn) {
+        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected long getBufferFlushtime(Dsn dsn) {
+        return Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected long getAsyncShutdownTimeout(Dsn dsn) {
+        return Util.parseLong(dsn.getOptions().get(ASYNC_SHUTDOWN_TIMEOUT_OPTION), ASYNC_SHUTDOWN_TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected boolean getAsyncGracefulShutdown(Dsn dsn) {
+        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_GRACEFUL_SHUTDOWN_OPTION));
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected int getAsyncQueueSize(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(ASYNC_QUEUE_SIZE_OPTION), QUEUE_SIZE_DEFAULT);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected int getAsyncPriority(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(ASYNC_PRIORITY_OPTION), Thread.MIN_PRIORITY);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected int getAsyncThreads(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(ASYNC_THREADS_OPTION),
+            Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected int getProxyPort(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION), HTTP_PROXY_PORT_DEFAULT);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected String getProxyHost(Dsn dsn) {
+        return dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected boolean getCompression(Dsn dsn) {
+        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION));
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected boolean getHideCommonFrames(Dsn dsn) {
+        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION));
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected int getMaxMessageLength(Dsn dsn) {
+        return Util.parseInteger(
+            dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
+    protected int getTimeout(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(TIMEOUT_OPTION), TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Get the {@link Buffer} where events are stored when network is down.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return the {@link Buffer} where events are stored when network is down.
+     */
+    protected Buffer getBuffer(Dsn dsn) {
+        String bufferDir = dsn.getOptions().get(BUFFER_DIR_OPTION);
+        if (bufferDir != null) {
+            return new DiskBuffer(new File(bufferDir), getBufferSize(dsn));
+        }
+        return null;
+    }
+
+    /**
+     * Get the maximum number of events to cache offline when network is down.
+     *
+     * @param dsn Dsn passed in by the user.
+     * @return the maximum number of events to cache offline when network is down.
+     */
+    protected int getBufferSize(Dsn dsn) {
+        return Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
     }
 
     /**

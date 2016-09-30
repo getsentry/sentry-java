@@ -1,5 +1,6 @@
 package com.getsentry.raven.connection;
 
+import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
@@ -21,10 +22,6 @@ public class BufferedConnection implements Connection {
 
     private static final Logger logger = LoggerFactory.getLogger(BufferedConnection.class);
 
-    /**
-     * Default timeout of the {@link #executorService}, in milliseconds.
-     */
-    private static final long DEFAULT_SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
     /**
      * Shutdown hook used to stop the buffered connection properly when the JVM quits.
      */
@@ -99,7 +96,8 @@ public class BufferedConnection implements Connection {
      * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
      */
     public BufferedConnection(Connection actualConnection, Buffer buffer, long flushtime, boolean gracefulShutdown) {
-        this(actualConnection, buffer, flushtime, gracefulShutdown, DEFAULT_SHUTDOWN_TIMEOUT);
+        this(actualConnection, buffer, flushtime, gracefulShutdown,
+            DefaultRavenFactory.BUFFER_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     @Override

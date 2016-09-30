@@ -1,5 +1,6 @@
 package com.getsentry.raven.connection;
 
+import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
@@ -19,10 +20,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
-    /**
-     * Default timeout of the {@link #executorService}, in milliseconds.
-     */
-    private static final long DEFAULT_SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
     /**
      * Timeout of the {@link #executorService}, in milliseconds.
      */
@@ -84,7 +81,7 @@ public class AsyncConnection implements Connection {
      * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
      */
     public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown) {
-        this(actualConnection, executorService, gracefulShutdown, DEFAULT_SHUTDOWN_TIMEOUT);
+        this(actualConnection, executorService, gracefulShutdown, DefaultRavenFactory.ASYNC_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     /**
