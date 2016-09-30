@@ -196,6 +196,49 @@ with the option `raven.async.priority`:
 
     http://public:private@host:port/1?raven.async.priority=10
 
+### Buffering to disk upon network error
+Raven can be configured to write events to a specified directory on disk
+anytime communication with the Sentry server fails with the `raven.buffer.dir`
+option. If the directory doesn't exist, Raven will attempt to create it
+on startup and may therefore need write permission on the parent directory.
+Raven always requires write permission on the buffer directory itself.
+
+    http://public:private@host:port/1?raven.buffer.dir=raven-events
+
+The maximum number of events that will be stored on disk defaults to 50,
+but can also be configured with the option `raven.buffer.size`:
+
+    http://public:private@host:port/1?raven.buffer.size=100
+
+If a buffer directory is provided, a background thread will periodically
+attempt to re-send the events that are found on disk. By default it will
+attempt to send events every 60 seconds. You can change this with the
+`raven.buffer.flushtime` option (in milliseconds):
+
+    http://public:private@host:port/1?raven.buffer.flushtime=10000
+
+#### Graceful Shutdown (advanced)
+In order to shutdown the buffer flushing thread gracefully, a `ShutdownHook`
+is created. By default, the buffer flushing thread is given 1 second
+to shutdown gracefully, but this can be adjusted via
+`raven.buffer.shutdowntimeout` (represented in milliseconds):
+
+    http://public:private@host:port/1?raven.buffer.shutdowntimeout=5000
+
+The special value `-1` can be used to disable the timeout and wait
+indefinitely for the executor to terminate.
+
+The `ShutdownHook` could lead to memory leaks in an environment where
+the life cycle of Raven doesn't match the life cycle of the JVM.
+
+An example would be in a JEE environment where the application using Raven
+could be deployed and undeployed regularly.
+
+To avoid this behaviour, it is possible to disable the graceful shutdown
+by setting the `raven.buffer.gracefulshutdown` option:
+
+    http://public:private@host:port/1?raven.buffer.gracefulshutdown=false
+
 ### Inapp classes
 Sentry differentiate `in_app` stack frames (which are directly related to your application)
 and the "not `in_app`" ones.
