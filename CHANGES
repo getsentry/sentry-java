@@ -2,6 +2,8 @@ Version 7.7.1
 -------------
 
 - Add ``raven.maxmessagelength`` DSN option. (thanks vektory79)
+- Add ``Buffer`` interface, used to store events that fail to be sent to the Sentry server.
+  Includes a DiskBuffer implementation and related ``raven.buffer.*`` options.
 
 Version 7.7.0
 -------------

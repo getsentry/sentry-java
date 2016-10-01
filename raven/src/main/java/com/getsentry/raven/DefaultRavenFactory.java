@@ -1,5 +1,7 @@
 package com.getsentry.raven;
 
+import com.getsentry.raven.buffer.Buffer;
+import com.getsentry.raven.buffer.DiskBuffer;
 import com.getsentry.raven.connection.*;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
@@ -11,6 +13,7 @@ import com.getsentry.raven.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
@@ -44,29 +47,57 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
     /**
+     * Option to buffer events to disk when network is down.
+     */
+    public static final String BUFFER_DIR_OPTION = "raven.buffer.dir";
+    /**
+     * Option for maximum number of events to cache offline when network is down.
+     */
+    public static final String BUFFER_SIZE_OPTION = "raven.buffer.size";
+    /**
+     * Default number of events to cache offline when network is down.
+     */
+    public static final int BUFFER_SIZE_DEFAULT = 50;
+    /**
+     * Option for how long to wait between attempts to flush the disk buffer, in milliseconds.
+     */
+    public static final String BUFFER_FLUSHTIME_OPTION = "raven.buffer.flushtime";
+    /**
+     * Default number of milliseconds between attempts to flush buffered events.
+     */
+    public static final int BUFFER_FLUSHTIME_DEFAULT = 60000;
+    /**
+     * Option to disable the graceful shutdown of the buffer flusher.
+     */
+    public static final String BUFFER_GRACEFUL_SHUTDOWN_OPTION = "raven.buffer.gracefulshutdown";
+    /**
+     * Option for the graceful shutdown timeout of the buffer flushing executor, in milliseconds.
+     */
+    public static final String BUFFER_SHUTDOWN_TIMEOUT_OPTION = "raven.buffer.shutdowntimeout";
+    /**
      * Option to send events asynchronously.
      */
     public static final String ASYNC_OPTION = "raven.async";
     /**
-     * Option to disable the graceful shutdown.
+     * Option to disable the graceful shutdown of the async connection.
      */
-    public static final String GRACEFUL_SHUTDOWN_OPTION = "raven.async.gracefulshutdown";
+    public static final String ASYNC_GRACEFUL_SHUTDOWN_OPTION = "raven.async.gracefulshutdown";
     /**
      * Option for the number of threads assigned for the connection.
      */
-    public static final String MAX_THREADS_OPTION = "raven.async.threads";
+    public static final String ASYNC_THREADS_OPTION = "raven.async.threads";
     /**
      * Option for the priority of threads assigned for the connection.
      */
-    public static final String PRIORITY_OPTION = "raven.async.priority";
+    public static final String ASYNC_PRIORITY_OPTION = "raven.async.priority";
     /**
      * Option for the maximum size of the queue.
      */
-    public static final String QUEUE_SIZE_OPTION = "raven.async.queuesize";
+    public static final String ASYNC_QUEUE_SIZE_OPTION = "raven.async.queuesize";
     /**
      * Option for the graceful shutdown timeout of the async executor, in milliseconds.
      */
-    public static final String SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
+    public static final String ASYNC_SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
     /**
      * Option to hide common stackframes with enclosing exceptions.
      */
@@ -131,6 +162,23 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
+        String bufferDir = dsn.getOptions().get(BUFFER_DIR_OPTION);
+        if (bufferDir != null) {
+            int bufferSize = Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
+            long flushtime = Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
+            boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
+            Buffer eventBuffer = new DiskBuffer(new File(bufferDir), bufferSize);
+
+            String shutdownTimeoutStr = dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION);
+            if (shutdownTimeoutStr != null) {
+                long shutdownTimeout = Long.parseLong(shutdownTimeoutStr);
+                connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
+                    shutdownTimeout);
+            } else {
+                connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown);
+            }
+        }
+
         // Enable async unless its value is 'false'.
         if (!FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION))) {
             connection = createAsyncConnection(dsn, connection);
@@ -150,22 +198,22 @@ public class DefaultRavenFactory extends RavenFactory {
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
 
         int maxThreads;
-        if (dsn.getOptions().containsKey(MAX_THREADS_OPTION)) {
-            maxThreads = Integer.parseInt(dsn.getOptions().get(MAX_THREADS_OPTION));
+        if (dsn.getOptions().containsKey(ASYNC_THREADS_OPTION)) {
+            maxThreads = Integer.parseInt(dsn.getOptions().get(ASYNC_THREADS_OPTION));
         } else {
             maxThreads = Runtime.getRuntime().availableProcessors();
         }
 
         int priority;
-        if (dsn.getOptions().containsKey(PRIORITY_OPTION)) {
-            priority = Integer.parseInt(dsn.getOptions().get(PRIORITY_OPTION));
+        if (dsn.getOptions().containsKey(ASYNC_PRIORITY_OPTION)) {
+            priority = Integer.parseInt(dsn.getOptions().get(ASYNC_PRIORITY_OPTION));
         } else {
             priority = Thread.MIN_PRIORITY;
         }
 
         BlockingDeque<Runnable> queue;
-        if (dsn.getOptions().containsKey(QUEUE_SIZE_OPTION)) {
-            int queueSize = Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION));
+        if (dsn.getOptions().containsKey(ASYNC_QUEUE_SIZE_OPTION)) {
+            int queueSize = Integer.parseInt(dsn.getOptions().get(ASYNC_QUEUE_SIZE_OPTION));
             if (queueSize == -1) {
                 queue = new LinkedBlockingDeque<>();
             } else {
@@ -179,9 +227,9 @@ public class DefaultRavenFactory extends RavenFactory {
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
                 new DaemonThreadFactory(priority), new ThreadPoolExecutor.DiscardOldestPolicy());
 
-        boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(GRACEFUL_SHUTDOWN_OPTION));
+        boolean gracefulShutdown = !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_GRACEFUL_SHUTDOWN_OPTION));
 
-        String shutdownTimeoutStr = dsn.getOptions().get(SHUTDOWN_TIMEOUT_OPTION);
+        String shutdownTimeoutStr = dsn.getOptions().get(ASYNC_SHUTDOWN_TIMEOUT_OPTION);
         if (shutdownTimeoutStr != null) {
             long shutdownTimeout = Long.parseLong(shutdownTimeoutStr);
             return new AsyncConnection(connection, executorService, gracefulShutdown, shutdownTimeout);

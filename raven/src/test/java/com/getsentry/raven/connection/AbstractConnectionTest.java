@@ -62,7 +62,11 @@ public class AbstractConnectionTest {
             result = new ConnectionException();
         }};
 
-        abstractConnection.send(mockEvent);
+        try {
+            abstractConnection.send(mockEvent);
+        } catch (Exception e) {
+            // ignore
+        }
 
         new Verifications() {{
             mockLock.lock();
@@ -78,7 +82,11 @@ public class AbstractConnectionTest {
             result = new ConnectionException();
         }};
 
-        abstractConnection.send(mockEvent);
+        try {
+            abstractConnection.send(mockEvent);
+        } catch (Exception e) {
+            // ignore
+        }
 
         long waitingTimeAfter = getField(abstractConnection, "waitingTime");
         assertThat(waitingTimeAfter, is(AbstractConnection.DEFAULT_BASE_WAITING_TIME * 2));
@@ -95,7 +103,11 @@ public class AbstractConnectionTest {
             result = new ConnectionException();
         }};
 
-        abstractConnection.send(mockEvent);
+        try {
+            abstractConnection.send(mockEvent);
+        } catch (Exception e) {
+            // ignore
+        }
 
         long waitingTimeAfter = getField(abstractConnection, "waitingTime");
         assertThat(waitingTimeAfter, is(AbstractConnection.DEFAULT_MAX_WAITING_TIME));
@@ -124,7 +136,12 @@ public class AbstractConnectionTest {
             result = new ConnectionException();
         }};
 
-        abstractConnection.send(mockEvent);
+        try {
+            abstractConnection.send(mockEvent);
+        } catch (Exception e) {
+            // ignore
+        }
+
 
         assertThat(callbackCalled.get(), is(true));
     }
