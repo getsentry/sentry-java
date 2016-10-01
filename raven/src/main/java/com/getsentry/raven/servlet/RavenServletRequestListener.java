@@ -1,6 +1,8 @@
 package com.getsentry.raven.servlet;
 
 import com.getsentry.raven.Raven;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
@@ -13,6 +15,8 @@ import javax.servlet.http.HttpServletRequest;
  * in the event sent to Sentry.
  */
 public class RavenServletRequestListener implements ServletRequestListener {
+    private static final Logger logger = LoggerFactory.getLogger(RavenServletRequestListener.class);
+
     private static final ThreadLocal<HttpServletRequest> THREAD_REQUEST = new ThreadLocal<>();
 
     public static HttpServletRequest getServletRequest() {
@@ -23,7 +27,11 @@ public class RavenServletRequestListener implements ServletRequestListener {
     public void requestDestroyed(ServletRequestEvent servletRequestEvent) {
         THREAD_REQUEST.remove();
 
-        Raven.getStoredInstance().getContext().clear();
+        try {
+            Raven.getStoredInstance().getContext().clear();
+        } catch (Exception e) {
+            logger.error("Error clearing RavenContext state.", e);
+        }
     }
 
     @Override

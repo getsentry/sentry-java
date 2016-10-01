@@ -197,6 +197,12 @@ public class Raven {
     // Static helper methods follow
     // --------------------------------------------------------
 
+    /**
+     * Returns the last statically stored Raven instance or throws a {@link NullPointerException}
+     * if one hasn't been constructed and stored yet.
+     *
+     * @return statically stored {@link Raven} instance
+     */
     public static Raven getStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."

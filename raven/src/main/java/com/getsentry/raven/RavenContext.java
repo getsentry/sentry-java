@@ -136,7 +136,11 @@ public class RavenContext implements AutoCloseable {
     }
 
     /**
-     * Get the UUID of the last sent event by this thread, useful for handling user feedback.
+     * Get the UUID of the last event sent by this thread, useful for handling user feedback.
+     *
+     * <b>Returns null</b> if no event has been sent by this thread or if the event has been
+     * cleared. For example the RavenServletRequestListener clears the thread's RavenContext
+     * at the end of each request.
      *
      * @return UUID of the last event sent by this thread.
      */
