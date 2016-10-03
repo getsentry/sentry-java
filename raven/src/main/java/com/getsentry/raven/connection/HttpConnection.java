@@ -16,6 +16,7 @@ import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Basic connection to a Sentry server, using HTTP and HTTPS.
@@ -33,6 +34,10 @@ public class HttpConnection extends AbstractConnection {
      * HTTP Header for the authentication to Sentry.
      */
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
+    /**
+     * Default timeout of an HTTP connection to Sentry.
+     */
+    private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
     /**
      * HostnameVerifier allowing wildcard certificates to work without adding them to the truststore.
      */
@@ -57,7 +62,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Timeout of an HTTP connection to Sentry.
      */
-    private int timeout;
+    private int timeout = DEFAULT_TIMEOUT;
     /**
      * Setting allowing to bypass the security system which requires wildcard certificates
      * to be added to the truststore.
