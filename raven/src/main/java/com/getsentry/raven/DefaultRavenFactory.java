@@ -177,14 +177,14 @@ public class DefaultRavenFactory extends RavenFactory {
         Buffer eventBuffer = getBuffer(dsn);
         if (eventBuffer != null) {
             long flushtime = getBufferFlushtime(dsn);
-            boolean gracefulShutdown = getBufferedConnectionGracefulShutdown(dsn);
+            boolean gracefulShutdown = getBufferedConnectionGracefulShutdownEnabled(dsn);
             Long shutdownTimeout = getBufferedConnectionShutdownTimeout(dsn);
             connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
                 shutdownTimeout);
         }
 
         // Enable async unless its value is 'false'.
-        if (getAsync(dsn)) {
+        if (getAsyncEnabled(dsn)) {
             connection = createAsyncConnection(dsn, connection);
         }
 
@@ -216,7 +216,7 @@ public class DefaultRavenFactory extends RavenFactory {
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
                 new DaemonThreadFactory(priority), new ThreadPoolExecutor.DiscardOldestPolicy());
 
-        boolean gracefulShutdown = getAsyncGracefulShutdown(dsn);
+        boolean gracefulShutdown = getAsyncGracefulShutdownEnabled(dsn);
 
         long shutdownTimeout = getAsyncShutdownTimeout(dsn);
         return new AsyncConnection(connection, executorService, gracefulShutdown, shutdownTimeout);
@@ -240,13 +240,18 @@ public class DefaultRavenFactory extends RavenFactory {
             proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
         }
 
-        HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(), dsn.getSecretKey(), proxy);
-        httpConnection.setMarshaller(createMarshaller(dsn));
+        HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(),
+            dsn.getSecretKey(), proxy);
 
-        // Set the naive mode
-        httpConnection.setBypassSecurity(dsn.getProtocolSettings().contains(NAIVE_PROTOCOL));
-        // Set the HTTP timeout
-        httpConnection.setTimeout(getTimeout(dsn));
+        Marshaller marshaller = createMarshaller(dsn);
+        httpConnection.setMarshaller(marshaller);
+
+        int timeout = getTimeout(dsn);
+        httpConnection.setTimeout(timeout);
+
+        boolean bypassSecurityEnabled = getBypassSecurityEnabled(dsn);
+        httpConnection.setBypassSecurity(bypassSecurityEnabled);
+
         return httpConnection;
     }
 
@@ -278,7 +283,7 @@ public class DefaultRavenFactory extends RavenFactory {
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
         // Enable common frames hiding unless its value is 'false'.
-        stackTraceBinding.setRemoveCommonFramesWithEnclosing(getHideCommonFrames(dsn));
+        stackTraceBinding.setRemoveCommonFramesWithEnclosing(getHideCommonFramesEnabled(dsn));
         stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
@@ -291,7 +296,7 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.addInterfaceBinding(HttpInterface.class, httpBinding);
 
         // Enable compression unless the option is set to false
-        marshaller.setCompression(getCompression(dsn));
+        marshaller.setCompression(getCompressionEnabled(dsn));
 
         return marshaller;
     }
@@ -320,7 +325,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @param dsn Dsn passed in by the user.
      * @return whether or not to wrap the underlying connection in an {@link AsyncConnection}.
      */
-    protected boolean getAsync(Dsn dsn) {
+    protected boolean getAsyncEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION));
     }
 
@@ -340,7 +345,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @param dsn Dsn passed in by the user.
      * @return whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
      */
-    protected boolean getBufferedConnectionGracefulShutdown(Dsn dsn) {
+    protected boolean getBufferedConnectionGracefulShutdownEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
     }
 
@@ -370,7 +375,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @param dsn TODO.
      * @return TODO.
      */
-    protected boolean getAsyncGracefulShutdown(Dsn dsn) {
+    protected boolean getAsyncGracefulShutdownEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_GRACEFUL_SHUTDOWN_OPTION));
     }
 
@@ -411,6 +416,16 @@ public class DefaultRavenFactory extends RavenFactory {
      * @param dsn TODO.
      * @return TODO.
      */
+    protected boolean getBypassSecurityEnabled(Dsn dsn) {
+        return dsn.getProtocolSettings().contains(NAIVE_PROTOCOL);
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO.
+     * @return TODO.
+     */
     protected int getProxyPort(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION), HTTP_PROXY_PORT_DEFAULT);
     }
@@ -431,7 +446,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @param dsn TODO.
      * @return TODO.
      */
-    protected boolean getCompression(Dsn dsn) {
+    protected boolean getCompressionEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION));
     }
 
@@ -441,7 +456,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * @param dsn TODO.
      * @return TODO.
      */
-    protected boolean getHideCommonFrames(Dsn dsn) {
+    protected boolean getHideCommonFramesEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION));
     }
 

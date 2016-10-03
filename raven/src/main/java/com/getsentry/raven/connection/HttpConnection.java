@@ -1,6 +1,5 @@
 package com.getsentry.raven.connection;
 
-import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.marshaller.Marshaller;
@@ -58,7 +57,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Timeout of an HTTP connection to Sentry.
      */
-    private int timeout = DefaultRavenFactory.TIMEOUT_DEFAULT;
+    private int timeout;
     /**
      * Setting allowing to bypass the security system which requires wildcard certificates
      * to be added to the truststore.
@@ -78,7 +77,8 @@ public class HttpConnection extends AbstractConnection {
 
     /**
      * Creates an HTTP connection to a Sentry server.
-     *  @param sentryUrl URL to the Sentry API.
+     *
+     * @param sentryUrl URL to the Sentry API.
      * @param publicKey public key of the current project.
      * @param secretKey private key of the current project.
      * @param proxy address of HTTP proxy or null if using direct connections.

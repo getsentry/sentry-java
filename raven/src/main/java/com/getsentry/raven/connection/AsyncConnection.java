@@ -1,6 +1,5 @@
 package com.getsentry.raven.connection;
 
-import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
@@ -68,20 +67,6 @@ public class AsyncConnection implements Connection {
             addShutdownHook();
         }
         this.shutdownTimeout = shutdownTimeout;
-    }
-
-    /**
-     * Creates a connection which will rely on an executor to send events.
-     * <p>
-     * Will propagate the {@link #close()} operation.
-     *
-     * @param actualConnection connection used to send the events.
-     * @param executorService  executorService used to process events, if null, the executorService will automatically
-     *                         be set to {@code Executors.newSingleThreadExecutor()}
-     * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
-     */
-    public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown) {
-        this(actualConnection, executorService, gracefulShutdown, DefaultRavenFactory.ASYNC_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     /**

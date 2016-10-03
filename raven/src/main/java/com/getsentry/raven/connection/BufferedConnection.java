@@ -1,6 +1,5 @@
 package com.getsentry.raven.connection;
 
-import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
@@ -84,20 +83,6 @@ public class BufferedConnection implements Connection {
 
         Flusher flusher = new BufferedConnection.Flusher();
         executorService.scheduleWithFixedDelay(flusher, flushtime, flushtime, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Construct a BufferedConnection that will store events that failed to send to the provided
-     * {@link Buffer} and attempt to flush them to the underlying connection later.
-     *
-     * @param actualConnection Connection to wrap.
-     * @param buffer Buffer to be used when {@link Connection#send(Event)}s fail.
-     * @param flushtime Time to wait between flush attempts, in milliseconds.
-     * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
-     */
-    public BufferedConnection(Connection actualConnection, Buffer buffer, long flushtime, boolean gracefulShutdown) {
-        this(actualConnection, buffer, flushtime, gracefulShutdown,
-            DefaultRavenFactory.BUFFER_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     @Override
