@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -140,19 +139,31 @@ public class DefaultRavenFactory extends RavenFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
-    
-    private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap(){{
-        put( ASYNC_QUEUE_BLOCK.toUpperCase(), new ThreadPoolExecutor.CallerRunsPolicy());
-        put( ASYNC_QUEUE_DISCARDNEW.toUpperCase(), new ThreadPoolExecutor.DiscardPolicy());
-        put( ASYNC_QUEUE_DISCARDOLD.toUpperCase(), new ThreadPoolExecutor.DiscardOldestPolicy());
-    }};
-    
-    protected RejectedExecutionHandler getRejectedExecutionHandler( Dsn dsn ) {
-        String value = ("" + dsn.getOptions().get(ASYNC_QUEUE_OVERFLOW_OPTION)).toUpperCase();
-        RejectedExecutionHandler rejectedExecutionHandler = REJECT_EXECUTION_HANDLERS.get( value );
-        return (rejectedExecutionHandler == null) 
-                ? REJECT_EXECUTION_HANDLERS.get( ASYNC_QUEUE_DISCARDOLD.toUpperCase() )
-                : rejectedExecutionHandler;
+
+    private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap();
+    static {
+        Map map = REJECT_EXECUTION_HANDLERS;
+        map.put(ASYNC_QUEUE_BLOCK.toUpperCase(), new ThreadPoolExecutor.CallerRunsPolicy());
+        map.put(ASYNC_QUEUE_DISCARDNEW.toUpperCase(), new ThreadPoolExecutor.DiscardPolicy());
+        map.put(ASYNC_QUEUE_DISCARDOLD.toUpperCase(), new ThreadPoolExecutor.DiscardOldestPolicy());
+        map.put(null, new ThreadPoolExecutor.DiscardOldestPolicy());
+    }
+
+    /**
+     * Get handler for tasks that cannot be executed by a {@link ThreadPoolExecutor}.
+     *
+     * @param dsn        Data Source Name of the Sentry server.
+     * @return an {@link RejectedExecutionHandler} to the server.
+     */
+    protected RejectedExecutionHandler getRejectedExecutionHandler(Dsn dsn) {
+        String value = dsn.getOptions().get(ASYNC_QUEUE_OVERFLOW_OPTION);
+        value = value == null
+                ? null
+                : value.toUpperCase();
+        RejectedExecutionHandler reh = REJECT_EXECUTION_HANDLERS.get(value);
+        return (reh == null)
+                ? REJECT_EXECUTION_HANDLERS.get(null)
+                : reh;
     }
 
     @Override
@@ -255,7 +266,7 @@ public class DefaultRavenFactory extends RavenFactory {
         } else {
             queue = new LinkedBlockingDeque<>(QUEUE_SIZE_DEFAULT);
         }
-        
+
         ExecutorService executorService = new ThreadPoolExecutor(
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
                 new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
