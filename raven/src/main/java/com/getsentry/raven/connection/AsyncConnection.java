@@ -20,10 +20,6 @@ import java.util.concurrent.TimeUnit;
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
     /**
-     * Default timeout of the {@link #executorService}, in milliseconds.
-     */
-    private static final long DEFAULT_SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
-    /**
      * Timeout of the {@link #executorService}, in milliseconds.
      */
     private final long shutdownTimeout;
@@ -71,20 +67,6 @@ public class AsyncConnection implements Connection {
             addShutdownHook();
         }
         this.shutdownTimeout = shutdownTimeout;
-    }
-
-    /**
-     * Creates a connection which will rely on an executor to send events.
-     * <p>
-     * Will propagate the {@link #close()} operation.
-     *
-     * @param actualConnection connection used to send the events.
-     * @param executorService  executorService used to process events, if null, the executorService will automatically
-     *                         be set to {@code Executors.newSingleThreadExecutor()}
-     * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
-     */
-    public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown) {
-        this(actualConnection, executorService, gracefulShutdown, DEFAULT_SHUTDOWN_TIMEOUT);
     }
 
     /**

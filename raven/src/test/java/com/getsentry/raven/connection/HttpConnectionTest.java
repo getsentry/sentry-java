@@ -34,6 +34,8 @@ public class HttpConnectionTest {
     @Injectable
     private Marshaller mockMarshaller = null;
     @Injectable
+    private int timeout = 12;
+    @Injectable
     private URL mockUrl = null;
     @Injectable
     private OutputStream mockOutputStream = null;
