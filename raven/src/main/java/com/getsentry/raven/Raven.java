@@ -95,6 +95,8 @@ public class Raven {
             connection.send(event);
         } catch (Exception e) {
             logger.error("An exception occurred while sending the event to Sentry.", e);
+        } finally {
+            context.get().setLastEventId(event.getId());
         }
     }
 
@@ -195,7 +197,13 @@ public class Raven {
     // Static helper methods follow
     // --------------------------------------------------------
 
-    private static Raven getStoredInstance() {
+    /**
+     * Returns the last statically stored Raven instance or throws a {@link NullPointerException}
+     * if one hasn't been constructed and stored yet.
+     *
+     * @return statically stored {@link Raven} instance
+     */
+    public static Raven getStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
                 + " You must construct a Raven instance before using the static Raven methods.");

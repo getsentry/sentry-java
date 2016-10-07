@@ -82,7 +82,8 @@ public class HttpConnection extends AbstractConnection {
 
     /**
      * Creates an HTTP connection to a Sentry server.
-     *  @param sentryUrl URL to the Sentry API.
+     *
+     * @param sentryUrl URL to the Sentry API.
      * @param publicKey public key of the current project.
      * @param secretKey private key of the current project.
      * @param proxy address of HTTP proxy or null if using direct connections.

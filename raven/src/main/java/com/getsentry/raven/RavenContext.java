@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
@@ -41,6 +42,8 @@ public class RavenContext implements AutoCloseable {
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
+
+    private UUID lastEventId;
 
     /**
      * Ring buffer of {@link Breadcrumb} objects.
@@ -82,6 +85,7 @@ public class RavenContext implements AutoCloseable {
      */
     public void clear() {
         breadcrumbs.clear();
+        lastEventId = null;
     }
 
     /**
@@ -122,4 +126,25 @@ public class RavenContext implements AutoCloseable {
         breadcrumbs.add(breadcrumb);
     }
 
+    /**
+     * Store the UUID of the last sent event by this thread, useful for handling user feedback.
+     *
+     * @param id UUID of the last event sent by this thread.
+     */
+    public void setLastEventId(UUID id) {
+        lastEventId = id;
+    }
+
+    /**
+     * Get the UUID of the last event sent by this thread, useful for handling user feedback.
+     *
+     * <b>Returns null</b> if no event has been sent by this thread or if the event has been
+     * cleared. For example the RavenServletRequestListener clears the thread's RavenContext
+     * at the end of each request.
+     *
+     * @return UUID of the last event sent by this thread.
+     */
+    public UUID getLastEventId() {
+        return lastEventId;
+    }
 }
