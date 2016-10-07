@@ -34,16 +34,16 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String NAIVE_PROTOCOL = "naive";
     /**
-     * Option specific to raven-java, allowing to enable/disable the compression of requests to the Sentry Server.
+     * Option for whether to compress requests sent to the Sentry Server.
      */
     public static final String COMPRESSION_OPTION = "raven.compression";
     /**
-     * Option specific to raven-java, allowing to set maximum length of the message body in the requests to the
+     * Option to set the maximum length of the message body in the requests to the
      * Sentry Server.
      */
     public static final String MAX_MESSAGE_LENGTH_OPTION = "raven.maxmessagelength";
     /**
-     * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
+     * Option to set a timeout for requests to the Sentry server, in milliseconds.
      */
     public static final String TIMEOUT_OPTION = "raven.timeout";
     /**
@@ -83,7 +83,7 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final long BUFFER_SHUTDOWN_TIMEOUT_DEFAULT = TimeUnit.SECONDS.toMillis(1);
     /**
-     * Option to send events asynchronously.
+     * Option for whether to send events asynchronously.
      */
     public static final String ASYNC_OPTION = "raven.async";
     /**
@@ -91,15 +91,15 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String ASYNC_GRACEFUL_SHUTDOWN_OPTION = "raven.async.gracefulshutdown";
     /**
-     * Option for the number of threads assigned for the connection.
+     * Option for the number of threads used for the async connection.
      */
     public static final String ASYNC_THREADS_OPTION = "raven.async.threads";
     /**
-     * Option for the priority of threads assigned for the connection.
+     * Option for the priority of threads used for the async connection.
      */
     public static final String ASYNC_PRIORITY_OPTION = "raven.async.priority";
     /**
-     * Option for the maximum size of the queue.
+     * Option for the maximum size of the async send queue.
      */
     public static final String ASYNC_QUEUE_SIZE_OPTION = "raven.async.queuesize";
     /**
@@ -111,7 +111,7 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final long ASYNC_SHUTDOWN_TIMEOUT_DEFAULT = TimeUnit.SECONDS.toMillis(1);
     /**
-     * Option to hide common stackframes with enclosing exceptions.
+     * Option for whether to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
     /**
@@ -320,90 +320,90 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     /**
-     * Returns whether or not to wrap the underlying connection in an {@link AsyncConnection}.
+     * Whether or not to wrap the underlying connection in an {@link AsyncConnection}.
      *
-     * @param dsn Dsn passed in by the user.
-     * @return whether or not to wrap the underlying connection in an {@link AsyncConnection}.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether or not to wrap the underlying connection in an {@link AsyncConnection}.
      */
     protected boolean getAsyncEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION));
     }
 
     /**
-     * Returns maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
+     * Maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
      *
-     * @param dsn Dsn passed in by the user.
-     * @return maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
      */
     protected long getBufferedConnectionShutdownTimeout(Dsn dsn) {
         return Util.parseLong(dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION), BUFFER_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     /**
-     * Returns whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
+     * Whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
      *
-     * @param dsn Dsn passed in by the user.
-     * @return whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
      */
     protected boolean getBufferedConnectionGracefulShutdownEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
     }
 
     /**
-     * TODO.
+     * How long to wait between attempts to flush the disk buffer, in milliseconds.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return ow long to wait between attempts to flush the disk buffer, in milliseconds.
      */
     protected long getBufferFlushtime(Dsn dsn) {
         return Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
     }
 
     /**
-     * TODO.
+     * The graceful shutdown timeout of the async executor, in milliseconds.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return The graceful shutdown timeout of the async executor, in milliseconds.
      */
     protected long getAsyncShutdownTimeout(Dsn dsn) {
         return Util.parseLong(dsn.getOptions().get(ASYNC_SHUTDOWN_TIMEOUT_OPTION), ASYNC_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     /**
-     * TODO.
+     * Whether or not to attempt the graceful shutdown of the {@link AsyncConnection} upon close.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether or not to attempt the graceful shutdown of the {@link AsyncConnection} upon close.
      */
     protected boolean getAsyncGracefulShutdownEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_GRACEFUL_SHUTDOWN_OPTION));
     }
 
     /**
-     * TODO.
+     * Maximum size of the async send queue.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Maximum size of the async send queue.
      */
     protected int getAsyncQueueSize(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(ASYNC_QUEUE_SIZE_OPTION), QUEUE_SIZE_DEFAULT);
     }
 
     /**
-     * TODO.
+     * Priority of threads used for the async connection.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Priority of threads used for the async connection.
      */
     protected int getAsyncPriority(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(ASYNC_PRIORITY_OPTION), Thread.MIN_PRIORITY);
     }
 
     /**
-     * TODO.
+     * The number of threads used for the async connection.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return The number of threads used for the async connection.
      */
     protected int getAsyncThreads(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(ASYNC_THREADS_OPTION),
@@ -411,60 +411,60 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     /**
-     * TODO.
+     * Whether to disable security checks over an SSL connection.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether to disable security checks over an SSL connection.
      */
     protected boolean getBypassSecurityEnabled(Dsn dsn) {
         return dsn.getProtocolSettings().contains(NAIVE_PROTOCOL);
     }
 
     /**
-     * TODO.
+     * HTTP proxy port for Sentry connections.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return HTTP proxy port for Sentry connections.
      */
     protected int getProxyPort(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION), HTTP_PROXY_PORT_DEFAULT);
     }
 
     /**
-     * TODO.
+     * HTTP proxy hostname for Sentry connections.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return HTTP proxy hostname for Sentry connections.
      */
     protected String getProxyHost(Dsn dsn) {
         return dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
     }
 
     /**
-     * TODO.
+     * Whether to compress requests sent to the Sentry Server.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether to compress requests sent to the Sentry Server.
      */
     protected boolean getCompressionEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION));
     }
 
     /**
-     * TODO.
+     * Whether to hide common stackframes with enclosing exceptions.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether to hide common stackframes with enclosing exceptions.
      */
     protected boolean getHideCommonFramesEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION));
     }
 
     /**
-     * TODO.
+     * The maximum length of the message body in the requests to the Sentry Server.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return The maximum length of the message body in the requests to the Sentry Server.
      */
     protected int getMaxMessageLength(Dsn dsn) {
         return Util.parseInteger(
@@ -472,10 +472,10 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     /**
-     * TODO.
+     * Timeout for requests to the Sentry server, in milliseconds.
      *
-     * @param dsn TODO.
-     * @return TODO.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Timeout for requests to the Sentry server, in milliseconds.
      */
     protected int getTimeout(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(TIMEOUT_OPTION), TIMEOUT_DEFAULT);
