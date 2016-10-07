@@ -85,7 +85,7 @@ public class DiskBuffer implements Buffer {
     }
 
     /**
-     * Deletes a buffered {@link Event{ from disk.
+     * Deletes a buffered {@link Event} from disk.
      *
      * @param event Event to delete from the disk.
      */
