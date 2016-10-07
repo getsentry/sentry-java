@@ -19,6 +19,8 @@ import java.net.Proxy;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -103,6 +105,28 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String ASYNC_QUEUE_SIZE_OPTION = "raven.async.queuesize";
     /**
+     * Option for what to do when the async executor queue is full.
+     */
+    public static final String ASYNC_QUEUE_OVERFLOW_OPTION = "raven.async.queue.overflow";
+    /**
+     * Async executor overflow behavior that will discard old events in the queue.
+     */
+    public static final String ASYNC_QUEUE_DISCARDOLD = "discardold";
+    /**
+     * Async executor overflow behavior that will discard the new event that was attempting
+     * to be sent.
+     */
+    public static final String ASYNC_QUEUE_DISCARDNEW = "discardnew";
+    /**
+     * Async executor overflow behavior that will cause a synchronous send to occur on the
+     * current thread.
+     */
+    public static final String ASYNC_QUEUE_SYNC = "sync";
+    /**
+     * Default behavior to use when the async executor queue is full.
+     */
+    public static final String ASYNC_QUEUE_OVERFLOW_DEFAULT = ASYNC_QUEUE_DISCARDOLD;
+    /**
      * Option for the graceful shutdown timeout of the async executor, in milliseconds.
      */
     public static final String ASYNC_SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
@@ -133,6 +157,13 @@ public class DefaultRavenFactory extends RavenFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
+
+    private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap<>();
+    static {
+        REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_SYNC, new ThreadPoolExecutor.CallerRunsPolicy());
+        REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_DISCARDNEW, new ThreadPoolExecutor.DiscardPolicy());
+        REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_DISCARDOLD, new ThreadPoolExecutor.DiscardOldestPolicy());
+    }
 
     @Override
     public Raven createRavenInstance(Dsn dsn) {
@@ -214,7 +245,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
         ExecutorService executorService = new ThreadPoolExecutor(
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
-                new DaemonThreadFactory(priority), new ThreadPoolExecutor.DiscardOldestPolicy());
+                new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
 
         boolean gracefulShutdown = getAsyncGracefulShutdownEnabled(dsn);
 
@@ -327,6 +358,28 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected boolean getAsyncEnabled(Dsn dsn) {
         return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION));
+    }
+
+    /**
+     * Handler for tasks that cannot be immediately queued by a {@link ThreadPoolExecutor}.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Handler for tasks that cannot be immediately queued by a {@link ThreadPoolExecutor}.
+     */
+    protected RejectedExecutionHandler getRejectedExecutionHandler(Dsn dsn) {
+        String overflowName = ASYNC_QUEUE_OVERFLOW_DEFAULT;
+        if (dsn.getOptions().containsKey(ASYNC_QUEUE_OVERFLOW_OPTION)) {
+            overflowName = dsn.getOptions().get(ASYNC_QUEUE_OVERFLOW_OPTION).toLowerCase();
+        }
+
+        RejectedExecutionHandler handler = REJECT_EXECUTION_HANDLERS.get(overflowName);
+        if (handler == null) {
+            String options = Arrays.toString(REJECT_EXECUTION_HANDLERS.keySet().toArray());
+            throw new RuntimeException("RejectedExecutionHandler not found: '" + overflowName
+                + "', valid choices are: " + options);
+        }
+
+        return handler;
     }
 
     /**
