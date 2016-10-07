@@ -19,6 +19,8 @@ import java.net.Proxy;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -103,6 +105,22 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String ASYNC_QUEUE_SIZE_OPTION = "raven.async.queuesize";
     /**
+     * Option for the maximum size of the queue.
+     */
+    public static final String ASYNC_QUEUE_OVERFLOW_OPTION = "raven.async.queue.overflow";
+    /**
+     * Option for the maximum size of the queue.
+     */
+    public static final String ASYNC_QUEUE_DISCARDOLD = "discardold";
+    /**
+     * Option for the maximum size of the queue.
+     */
+    public static final String ASYNC_QUEUE_DISCARDNEW = "discardnew";
+    /**
+     * Option for the maximum size of the queue.
+     */
+    public static final String ASYNC_QUEUE_BLOCK = "block";
+    /**
      * Option for the graceful shutdown timeout of the async executor, in milliseconds.
      */
     public static final String ASYNC_SHUTDOWN_TIMEOUT_OPTION = "raven.async.shutdowntimeout";
@@ -133,6 +151,32 @@ public class DefaultRavenFactory extends RavenFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
+
+    private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap();
+    static {
+        Map map = REJECT_EXECUTION_HANDLERS;
+        map.put(ASYNC_QUEUE_BLOCK.toUpperCase(), new ThreadPoolExecutor.CallerRunsPolicy());
+        map.put(ASYNC_QUEUE_DISCARDNEW.toUpperCase(), new ThreadPoolExecutor.DiscardPolicy());
+        map.put(ASYNC_QUEUE_DISCARDOLD.toUpperCase(), new ThreadPoolExecutor.DiscardOldestPolicy());
+        map.put(null, new ThreadPoolExecutor.DiscardOldestPolicy());
+    }
+
+    /**
+     * Get handler for tasks that cannot be executed by a {@link ThreadPoolExecutor}.
+     *
+     * @param dsn        Data Source Name of the Sentry server.
+     * @return an {@link RejectedExecutionHandler} to the server.
+     */
+    protected RejectedExecutionHandler getRejectedExecutionHandler(Dsn dsn) {
+        String value = dsn.getOptions().get(ASYNC_QUEUE_OVERFLOW_OPTION);
+        value = value == null
+                ? null
+                : value.toUpperCase();
+        RejectedExecutionHandler reh = REJECT_EXECUTION_HANDLERS.get(value);
+        return (reh == null)
+                ? REJECT_EXECUTION_HANDLERS.get(null)
+                : reh;
+    }
 
     @Override
     public Raven createRavenInstance(Dsn dsn) {
@@ -214,7 +258,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
         ExecutorService executorService = new ThreadPoolExecutor(
                 maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
-                new DaemonThreadFactory(priority), new ThreadPoolExecutor.DiscardOldestPolicy());
+                new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
 
         boolean gracefulShutdown = getAsyncGracefulShutdownEnabled(dsn);
 
