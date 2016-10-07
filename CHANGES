@@ -4,6 +4,8 @@ Version 7.7.1
 - Add ``raven.maxmessagelength`` DSN option. (thanks vektory79)
 - Add ``Buffer`` interface, used to store events that fail to be sent to the Sentry server.
   Includes a DiskBuffer implementation and related ``raven.buffer.*`` options.
+- Broke out many helper methods inside of ``DefaultRavenFactory`` to allow for easier
+  overrides.
 - Add a way to retrieve the thread's last sent Event ID, if any. Useful for integrating
   with the user feedback feature.
 

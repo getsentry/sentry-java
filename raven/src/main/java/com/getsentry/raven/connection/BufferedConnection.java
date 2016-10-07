@@ -22,10 +22,6 @@ public class BufferedConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(BufferedConnection.class);
 
     /**
-     * Default timeout of the {@link #executorService}, in milliseconds.
-     */
-    private static final long DEFAULT_SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
-    /**
      * Shutdown hook used to stop the buffered connection properly when the JVM quits.
      */
     private final BufferedConnection.ShutDownHook shutDownHook = new BufferedConnection.ShutDownHook();
@@ -87,19 +83,6 @@ public class BufferedConnection implements Connection {
 
         Flusher flusher = new BufferedConnection.Flusher();
         executorService.scheduleWithFixedDelay(flusher, flushtime, flushtime, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Construct a BufferedConnection that will store events that failed to send to the provided
-     * {@link Buffer} and attempt to flush them to the underlying connection later.
-     *
-     * @param actualConnection Connection to wrap.
-     * @param buffer Buffer to be used when {@link Connection#send(Event)}s fail.
-     * @param flushtime Time to wait between flush attempts, in milliseconds.
-     * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
-     */
-    public BufferedConnection(Connection actualConnection, Buffer buffer, long flushtime, boolean gracefulShutdown) {
-        this(actualConnection, buffer, flushtime, gracefulShutdown, DEFAULT_SHUTDOWN_TIMEOUT);
     }
 
     @Override
