@@ -8,6 +8,8 @@ Version 7.7.1
   overrides.
 - Add a way to retrieve the thread's last sent Event ID, if any. Useful for integrating
   with the user feedback feature.
+- Add ``raven.async.queue.overflow`` option for controlling what to do when the async
+  executor queue is full. (thanks barogi)
 
 Version 7.7.0
 -------------
