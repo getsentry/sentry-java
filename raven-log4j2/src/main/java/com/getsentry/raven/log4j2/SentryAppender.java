@@ -98,7 +98,7 @@ public class SentryAppender extends AbstractAppender {
      * Might be empty in which case no mapped tags are set.
      * </p>
      */
-    private Set<String> extraTags = Collections.emptySet();
+    protected Set<String> extraTags = Collections.emptySet();
 
     /**
      * Creates an instance of SentryAppender.
@@ -123,7 +123,7 @@ public class SentryAppender extends AbstractAppender {
         this.raven = raven;
     }
 
-    private SentryAppender(String name, Filter filter) {
+    protected SentryAppender(String name, Filter filter) {
         super(name, filter, null, true);
     }
 
