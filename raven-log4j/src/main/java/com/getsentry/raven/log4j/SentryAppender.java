@@ -14,6 +14,7 @@ import com.getsentry.raven.util.Util;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.spi.ErrorCode;
+import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
@@ -94,6 +95,8 @@ public class SentryAppender extends AppenderSkeleton {
         setServerName(Lookup.lookup("serverName"));
         setTags(Lookup.lookup("tags"));
         setExtraTags(Lookup.lookup("extraTags"));
+
+        this.addFilter(new DropRavenFilter());
     }
 
     /**
@@ -310,5 +313,16 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public boolean requiresLayout() {
         return false;
+    }
+
+    private class DropRavenFilter extends Filter {
+        @Override
+        public int decide(LoggingEvent event) {
+            String loggerName = event.getLoggerName();
+            if (loggerName != null && loggerName.startsWith("com.getsentry.raven")) {
+                return Filter.DENY;
+            }
+            return Filter.NEUTRAL;
+        }
     }
 }

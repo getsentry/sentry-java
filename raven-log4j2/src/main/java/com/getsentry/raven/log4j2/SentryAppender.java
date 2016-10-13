@@ -13,13 +13,16 @@ import com.getsentry.raven.event.interfaces.MessageInterface;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
 import com.getsentry.raven.util.Util;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.filter.AbstractFilter;
 import org.apache.logging.log4j.message.Message;
 
 import java.util.ArrayList;
@@ -111,6 +114,8 @@ public class SentryAppender extends AbstractAppender {
         setServerName(Lookup.lookup("serverName"));
         setTags(Lookup.lookup("tags"));
         setExtraTags(Lookup.lookup("extraTags"));
+
+        this.addFilter(new DropRavenFilter());
     }
 
     /**
@@ -381,6 +386,36 @@ public class SentryAppender extends AbstractAppender {
             error("An exception occurred while closing the Raven connection", e);
         } finally {
             RavenEnvironment.stopManagingThread();
+        }
+    }
+
+    private class DropRavenFilter extends AbstractFilter {
+
+        @Override
+        public Result filter(Logger logger, Level level, Marker marker, String msg, Object... params) {
+            return filter(logger.getName());
+        }
+
+        @Override
+        public Result filter(Logger logger, Level level, Marker marker, Object msg, Throwable t) {
+            return filter(logger.getName());
+        }
+
+        @Override
+        public Result filter(Logger logger, Level level, Marker marker, Message msg, Throwable t) {
+            return filter(logger.getName());
+        }
+
+        @Override
+        public Result filter(LogEvent event) {
+            return filter(event.getLoggerName());
+        }
+
+        private Result filter(String loggerName) {
+            if (loggerName != null && loggerName.startsWith("com.getsentry.raven")) {
+                return Result.DENY;
+            }
+            return Result.NEUTRAL;
         }
     }
 }

@@ -5,6 +5,8 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.core.filter.Filter;
+import ch.qos.logback.core.spi.FilterReply;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenFactory;
 import com.getsentry.raven.config.Lookup;
@@ -105,6 +107,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         setServerName(Lookup.lookup("serverName"));
         setTags(Lookup.lookup("tags"));
         setExtraTags(Lookup.lookup("extraTags"));
+
+        this.addFilter(new DropRavenFilter());
     }
 
     /**
@@ -421,6 +425,17 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             addError("An exception occurred while closing the Raven connection", e);
         } finally {
             RavenEnvironment.stopManagingThread();
+        }
+    }
+
+    private class DropRavenFilter extends Filter<ILoggingEvent> {
+        @Override
+        public FilterReply decide(ILoggingEvent event) {
+            String loggerName = event.getLoggerName();
+            if (loggerName != null && loggerName.startsWith("com.getsentry.raven")) {
+                return FilterReply.DENY;
+            }
+            return FilterReply.NEUTRAL;
         }
     }
 }

@@ -2,6 +2,7 @@ Version 7.7.2
 -------------
 
 - Loosen permission on some Appender/Handler methods to allow for easier overriding. (thanks briprowe)
+- Add Filters to drop all Raven logs before they go to the Sentry server.
 
 Version 7.7.1
 -------------

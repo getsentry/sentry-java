@@ -11,7 +11,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderIT {
-    private static final Logger logger = LoggerFactory.getLogger(SentryAppenderIT.class);
+    /*
+     We filter out loggers that start with `com.getsentry.raven`, so we deliberately
+     use a custom logger name here.
+     */
+    private static final Logger logger = LoggerFactory.getLogger("SentryAppenderIT: logback");
     private SentryStub sentryStub;
 
     @BeforeMethod
