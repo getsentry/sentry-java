@@ -123,6 +123,12 @@ public class SentryAppender extends AbstractAppender {
         this.raven = raven;
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param name The Appender name.
+     * @param filter The Filter to associate with the Appender.
+     */
     protected SentryAppender(String name, Filter filter) {
         super(name, filter, null, true);
     }

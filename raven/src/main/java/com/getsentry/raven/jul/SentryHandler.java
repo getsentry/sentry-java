@@ -87,7 +87,7 @@ public class SentryHandler extends Handler {
      * <p>
      * Might be empty in which case no mapped tags are set.
      */
-    private Set<String> extraTags = Collections.emptySet();
+    protected Set<String> extraTags = Collections.emptySet();
 
     /**
      * Creates an instance of SentryHandler.
@@ -298,7 +298,15 @@ public class SentryHandler extends Handler {
         return eventBuilder.build();
     }
 
-    private String formatMessage(String message, Object[] parameters) {
+    /**
+     * Returns formatted Event message when provided the message template and
+     * parameters.
+     *
+     * @param message Message template body.
+     * @param parameters Array of parameters for the message.
+     * @return Formatted message.
+     */
+    protected String formatMessage(String message, Object[] parameters) {
         String formatted;
         if (printfStyle) {
             formatted = String.format(message, parameters);
