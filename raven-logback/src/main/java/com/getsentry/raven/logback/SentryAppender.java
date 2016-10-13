@@ -269,7 +269,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return eventBuilder.build();
     }
 
-    private Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
+    /**
+     * Creates a sequence of {@link SentryExceptions} given a particular {@link ILoggingEvent}.
+     *
+     * @param iLoggingEvent Information detailing a particular logging event
+     *
+     * @return A {@link Deque} of {@link SentryExceptions} detailing the exception chain
+     */
+    protected Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
         IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
         Deque<SentryException> exceptions = new ArrayDeque<>();
         Set<IThrowableProxy> circularityDetector = new HashSet<>();
@@ -292,7 +299,17 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return exceptions;
     }
 
-    private SentryException createSentryExceptionFrom(IThrowableProxy throwableProxy, StackTraceInterface stackTrace) {
+    /**
+     * Given a {@link IThrowableProxy} and a {@link StackTraceInterface} return
+     * a {@link SentryException} to be reported to Sentry.
+     *
+     * @param throwableProxy Information detailing a Throwable
+     * @param stackTrace The stacktrace associated with the Throwable.
+     *
+     * @return A {@link SentryException} object ready to be sent to Sentry.
+     */
+    protected SentryException createSentryExceptionFrom(IThrowableProxy throwableProxy,
+                                                        StackTraceInterface stackTrace) {
         String exceptionMessage = throwableProxy.getMessage();
         String[] packageNameSimpleName = extractPackageSimpleClassName(throwableProxy.getClassName());
         String exceptionPackageName = packageNameSimpleName[0];
@@ -301,7 +318,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return new SentryException(exceptionMessage, exceptionClassName, exceptionPackageName, stackTrace);
     }
 
-    private String[] extractPackageSimpleClassName(String canonicalClassName) {
+    /**
+     * Given a {@link String} representing a classname, return Strings
+     * representing the package name and the class name individually.
+     *
+     * @param canonicalClassName A dotted-notation string representing a class name (eg. "java.util.Date")
+     *
+     * @return An array of {@link Strings}. The first of which is the package name. The second is the class name.
+     */
+    protected String[] extractPackageSimpleClassName(String canonicalClassName) {
         String[] packageNameSimpleName = new String[2];
         try {
             Class<?> exceptionClass = Class.forName(canonicalClassName);
@@ -322,7 +347,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return packageNameSimpleName;
     }
 
-    private StackTraceElement[] toStackTraceElements(IThrowableProxy throwableProxy) {
+    /**
+     * Given a {@link IThrowableProxy} return an array of {@link StackTraceElement}s
+     * associated with the underlying {@link Throwable}.
+     *
+     * @param throwableProxy Information detailing a Throwable.
+     *
+     * @return The {@link StackTraceElement}s associated w/the underlying {@link Throwable}
+     */
+    protected StackTraceElement[] toStackTraceElements(IThrowableProxy throwableProxy) {
         StackTraceElementProxy[] stackTraceElementProxies = throwableProxy.getStackTraceElementProxyArray();
         StackTraceElement[] stackTraceElements = new StackTraceElement[stackTraceElementProxies.length];
 
