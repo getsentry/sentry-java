@@ -17,6 +17,7 @@ public class SentryHandlerIT {
      use a custom logger name here.
      */
     private static final Logger logger = Logger.getLogger("SentryHandlerIT: jul");
+    private static final Logger ravenLogger = Logger.getLogger(SentryHandlerIT.class.getName());
     private SentryStub sentryStub;
 
     @BeforeMethod
@@ -42,5 +43,12 @@ public class SentryHandlerIT {
         logger.log(Level.SEVERE, "This is an exception",
                 new UnsupportedOperationException("Test", new UnsupportedOperationException()));
         assertThat(sentryStub.getEventCount(), is(1));
+    }
+
+    @Test
+    public void testNoRavenLogging() throws Exception {
+        assertThat(sentryStub.getEventCount(), is(0));
+        ravenLogger.log(Level.SEVERE, "This is a test");
+        assertThat(sentryStub.getEventCount(), is(0));
     }
 }

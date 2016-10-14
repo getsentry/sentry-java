@@ -16,6 +16,7 @@ public class SentryAppenderIT {
      use a custom logger name here.
      */
     private static final Logger logger = LogManager.getLogger("SentryAppenderIT: log4j2");
+    private static final Logger ravenLogger = LogManager.getLogger(SentryAppenderIT.class);
     private SentryStub sentryStub;
 
     @BeforeMethod
@@ -41,5 +42,12 @@ public class SentryAppenderIT {
         logger.error("This is an exception",
                 new UnsupportedOperationException("Test", new UnsupportedOperationException()));
         assertThat(sentryStub.getEventCount(), is(1));
+    }
+
+    @Test
+    public void testNoRavenLogging() throws Exception {
+        assertThat(sentryStub.getEventCount(), is(0));
+        ravenLogger.error("This is a test");
+        assertThat(sentryStub.getEventCount(), is(0));
     }
 }
