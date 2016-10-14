@@ -108,14 +108,6 @@ public class SentryAppender extends AbstractAppender {
      */
     public SentryAppender() {
         this(APPENDER_NAME, null);
-        setRavenFactory(Lookup.lookup("ravenFactory"));
-        setRelease(Lookup.lookup("release"));
-        setEnvironment(Lookup.lookup("environment"));
-        setServerName(Lookup.lookup("serverName"));
-        setTags(Lookup.lookup("tags"));
-        setExtraTags(Lookup.lookup("extraTags"));
-
-        this.addFilter(new DropRavenFilter());
     }
 
     /**
@@ -136,6 +128,13 @@ public class SentryAppender extends AbstractAppender {
      */
     protected SentryAppender(String name, Filter filter) {
         super(name, filter, null, true);
+        setRavenFactory(Lookup.lookup("ravenFactory"));
+        setRelease(Lookup.lookup("release"));
+        setEnvironment(Lookup.lookup("environment"));
+        setServerName(Lookup.lookup("serverName"));
+        setTags(Lookup.lookup("tags"));
+        setExtraTags(Lookup.lookup("extraTags"));
+        this.addFilter(new DropRavenFilter());
     }
 
     /**
