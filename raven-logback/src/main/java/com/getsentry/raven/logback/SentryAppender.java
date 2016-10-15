@@ -274,11 +274,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Creates a sequence of {@link SentryExceptions} given a particular {@link ILoggingEvent}.
+     * Creates a sequence of {@link SentryException}s given a particular {@link ILoggingEvent}.
      *
      * @param iLoggingEvent Information detailing a particular logging event
      *
-     * @return A {@link Deque} of {@link SentryExceptions} detailing the exception chain
+     * @return A {@link Deque} of {@link SentryException}s detailing the exception chain
      */
     protected Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
         IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
@@ -328,7 +328,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      *
      * @param canonicalClassName A dotted-notation string representing a class name (eg. "java.util.Date")
      *
-     * @return An array of {@link Strings}. The first of which is the package name. The second is the class name.
+     * @return An array of {@link String}s. The first of which is the package name. The second is the class name.
      */
     protected String[] extractPackageSimpleClassName(String canonicalClassName) {
         String[] packageNameSimpleName = new String[2];
