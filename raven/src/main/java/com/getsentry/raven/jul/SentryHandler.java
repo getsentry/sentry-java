@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.ErrorManager;
+import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -101,6 +102,7 @@ public class SentryHandler extends Handler {
         setExtraTags(Lookup.lookup("extraTags"));
 
         retrieveProperties();
+        this.setFilter(new DropRavenFilter());
     }
 
     /**
@@ -370,4 +372,11 @@ public class SentryHandler extends Handler {
         this.extraTags = Util.parseExtraTags(extraTags);
     }
 
+    private class DropRavenFilter implements Filter {
+        @Override
+        public boolean isLoggable(LogRecord record) {
+            String loggerName = record.getLoggerName();
+            return loggerName == null || !loggerName.startsWith("com.getsentry.raven");
+        }
+    }
 }

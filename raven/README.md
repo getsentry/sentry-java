@@ -32,7 +32,7 @@ Relies on:
 Add the `SentryHandler` to the `logging.properties` file:
 
 ```properties
-.level=WARN
+.level=WARNING
 handlers=com.getsentry.raven.jul.SentryHandler
 ```
 
@@ -82,7 +82,7 @@ itself. This is less flexible because it's harder to change when you run
 your application in different environments.
 
 ```properties
-.level=WARN
+.level=WARNING
 handlers=com.getsentry.raven.jul.SentryHandler
 com.getsentry.raven.jul.SentryHandler.dsn=https://host:port/1?options
 # Optional, provide tags

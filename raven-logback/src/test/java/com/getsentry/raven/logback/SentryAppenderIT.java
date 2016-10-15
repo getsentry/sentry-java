@@ -11,7 +11,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderIT {
-    private static final Logger logger = LoggerFactory.getLogger(SentryAppenderIT.class);
+    /*
+     We filter out loggers that start with `com.getsentry.raven`, so we deliberately
+     use a custom logger name here.
+     */
+    private static final Logger logger = LoggerFactory.getLogger("SentryAppenderIT: logback");
+    private static final Logger ravenLogger = LoggerFactory.getLogger(SentryAppenderIT.class);
     private SentryStub sentryStub;
 
     @BeforeMethod
@@ -38,5 +43,12 @@ public class SentryAppenderIT {
         logger.error("This is an exception",
                 new UnsupportedOperationException("Test", new UnsupportedOperationException()));
         assertThat(sentryStub.getEventCount(), is(1));
+    }
+
+    @Test
+    public void testNoRavenLogging() throws Exception {
+        assertThat(sentryStub.getEventCount(), is(0));
+        ravenLogger.error("This is a test");
+        assertThat(sentryStub.getEventCount(), is(0));
     }
 }
