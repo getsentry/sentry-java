@@ -1,8 +1,9 @@
-Version 7.7.2
+Version 7.8.0
 -------------
 
-- Loosen permission on some Appender/Handler methods to allow for easier overriding. (thanks briprowe)
+- Add Android support under the ``raven-android`` subproject.
 - Add Filters to drop all Raven logs before they go to the Sentry server.
+- Loosen permission on some Appender/Handler methods to allow for easier overriding. (thanks briprowe)
 
 Version 7.7.1
 -------------
