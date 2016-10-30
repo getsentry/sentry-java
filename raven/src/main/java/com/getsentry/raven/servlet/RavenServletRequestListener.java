@@ -28,7 +28,10 @@ public class RavenServletRequestListener implements ServletRequestListener {
         THREAD_REQUEST.remove();
 
         try {
-            Raven.getStoredInstance().getContext().clear();
+            Raven raven = Raven.getStoredInstance();
+            if (raven != null) {
+                raven.getContext().clear();
+            }
         } catch (Exception e) {
             logger.error("Error clearing RavenContext state.", e);
         }

@@ -198,17 +198,20 @@ public class Raven {
     // --------------------------------------------------------
 
     /**
-     * Returns the last statically stored Raven instance or throws a {@link NullPointerException}
-     * if one hasn't been constructed and stored yet.
+     * Returns the last statically stored Raven instance or null if one has
+     * never been stored.
      *
      * @return statically stored {@link Raven} instance
      */
     public static Raven getStoredInstance() {
+        return stored;
+    }
+
+    private static void verifyStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
                 + " You must construct a Raven instance before using the static Raven methods.");
         }
-        return stored;
     }
 
     /**
@@ -217,6 +220,7 @@ public class Raven {
      * @param event Event to send to the Sentry server
      */
     public static void capture(Event event) {
+        verifyStoredInstance();
         getStoredInstance().sendEvent(event);
     }
 
@@ -228,6 +232,7 @@ public class Raven {
      * @param throwable exception to send to Sentry.
      */
     public static void capture(Throwable throwable) {
+        verifyStoredInstance();
         getStoredInstance().sendException(throwable);
     }
 
@@ -239,6 +244,7 @@ public class Raven {
      * @param message message to send to Sentry.
      */
     public static void capture(String message) {
+        verifyStoredInstance();
         getStoredInstance().sendMessage(message);
     }
 
@@ -248,8 +254,8 @@ public class Raven {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public static void capture(EventBuilder eventBuilder) {
-        getStoredInstance();
-        stored.sendEvent(eventBuilder);
+        verifyStoredInstance();
+        getStoredInstance().sendEvent(eventBuilder);
     }
 
 }
