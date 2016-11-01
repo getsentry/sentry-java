@@ -49,7 +49,7 @@ To use it with maven, add the following repository:
 ```
 
 ## Android
-Raven works on Android, please see the [Android README](https://github.com/getsentry/raven-java/blob/raven-android-start/raven-android/README.md).
+Raven also works on Android. For integration details, see the [raven-android README](https://github.com/getsentry/raven-java/blob/master/raven-android/README.md).
 
 ## HTTP Request Context
 If the runtime environment utilizes Servlets, events that are created during
