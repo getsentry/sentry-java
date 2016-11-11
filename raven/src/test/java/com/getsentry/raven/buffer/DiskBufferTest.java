@@ -1,5 +1,8 @@
 package com.getsentry.raven.buffer;
 
+import com.beust.jcommander.internal.Lists;
+import com.getsentry.raven.event.Breadcrumb;
+import com.getsentry.raven.event.BreadcrumbBuilder;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import org.testng.annotations.AfterMethod;
@@ -9,6 +12,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -32,7 +36,15 @@ public class DiskBufferTest extends BufferTest {
 
     @Test
     public void testAddAndDiscard() throws IOException {
-        Event event1 = new EventBuilder().build();
+        Breadcrumb breadcrumb = new BreadcrumbBuilder()
+                .setLevel("INFO")
+                .setCategory("CATEGORY")
+                .setMessage("MESSAGE")
+                .build();
+        List<Breadcrumb> breadcrumbs = Lists.newArrayList();
+        breadcrumbs.add(breadcrumb);
+
+        Event event1 = new EventBuilder().withBreadcrumbs(breadcrumbs).build();
         buffer.add(event1);
         // 1 event is buffered
         assertThat(eventCount(buffer.getEvents()), equalTo(1));
