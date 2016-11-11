@@ -1,6 +1,5 @@
 package com.getsentry.raven.buffer;
 
-import com.beust.jcommander.internal.Lists;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.BreadcrumbBuilder;
 import com.getsentry.raven.event.Event;
@@ -8,6 +7,7 @@ import com.getsentry.raven.event.EventBuilder;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.collections.Lists;
 
 import java.io.File;
 import java.io.IOException;
