@@ -1,5 +1,6 @@
 package com.getsentry.raven.event;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
 
@@ -8,7 +9,7 @@ import java.util.Map;
  * of breadcrumbs that help users re-create the path of actions that occurred
  * which lead to the Event happening.
  */
-public class Breadcrumb {
+public class Breadcrumb implements Serializable {
 
     /**
      * (Optional) Type of the breadcrumb.
