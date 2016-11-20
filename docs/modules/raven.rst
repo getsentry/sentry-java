@@ -39,7 +39,7 @@ following configuration (``logging.properties``) gets you started:
 
 .. sourcecode:: ini
 
-    .level=WARN
+    .level=WARNING
     handlers=com.getsentry.raven.jul.SentryHandler
     com.getsentry.raven.jul.SentryHandler.dsn=___DSN___
     com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
