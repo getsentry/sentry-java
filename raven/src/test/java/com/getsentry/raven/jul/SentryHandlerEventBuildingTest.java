@@ -60,7 +60,6 @@ public class SentryHandlerEventBuildingTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryHandler.THREAD_ID, (int) threadId));
             assertThat(event.getTimestamp(), is(date));
-            assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM + "+jul"));
         }};
         assertNoErrorsInErrorManager();
     }

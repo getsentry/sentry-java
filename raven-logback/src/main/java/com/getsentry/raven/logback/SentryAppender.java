@@ -213,7 +213,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withPlatform(EventBuilder.DEFAULT_PLATFORM + "+logback")
                 .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .withMessage(iLoggingEvent.getFormattedMessage())
                 .withLogger(iLoggingEvent.getLoggerName())

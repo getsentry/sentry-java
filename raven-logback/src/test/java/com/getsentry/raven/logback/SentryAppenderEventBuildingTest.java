@@ -79,7 +79,6 @@ public class SentryAppenderEventBuildingTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
-            assertThat(event.getPlatform(), is(EventBuilder.DEFAULT_PLATFORM + "+logback"));
         }};
         assertNoErrorsInStatusManager();
     }
