@@ -344,5 +344,10 @@ public class MyRavenFactory extends DefaultRavenFactory {
 }
 ```
 
-See the README for the logger integration you use to find out how to
-make use of your own RavenFactory.
+You'll need to add a `ServiceLoader` provider file to your project at
+`src/main/resources/META-INF/services/com.getsentry.raven.RavenFactory` that contains
+the name of your class so that it will be considered as a candidate `RavenFactory`. For an example, see
+[how we configure the DefaultRavenFactory itself](https://github.com/getsentry/raven-java/blob/master/raven/src/main/resources/META-INF/services/com.getsentry.raven.RavenFactory).
+
+Finally, see the `README` for the logger integration you use to find out how to
+configure it to use your custom `RavenFactory`.
