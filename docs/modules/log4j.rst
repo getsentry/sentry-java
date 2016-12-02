@@ -19,7 +19,7 @@ If you want to use Maven you can install Raven-Log4j as dependency:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-log4j</artifactId>
-        <version>7.8.0</version>
+        <version>7.8.1</version>
     </dependency>
 
 If you manually want to manage your dependencies:

@@ -19,18 +19,18 @@ If you want to use Maven you can install Raven-Log4j2 as dependency:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-log4j2</artifactId>
-        <version>7.8.0</version>
+        <version>7.8.1</version>
     </dependency>
 
 If you manually want to manage your dependencies:
 
 - :doc:`raven dependencies <raven>`
 - `log4j-api-2.1.jar
-  <https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7.8.0%7Cjar>`_
+  <https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7.8.1%7Cjar>`_
 - `log4j-core-2.0.jar
-  <https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7.8.0%7Cjar>`_
+  <https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7.8.1%7Cjar>`_
 - `log4j-slf4j-impl-2.1.jar
-  <http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7.8.0%7Cjar>`_
+  <http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7.8.1%7Cjar>`_
   is recommended as the implementation of slf4j (instead of slf4j-jdk14).
 
 Usage

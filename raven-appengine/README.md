@@ -15,12 +15,12 @@ __This module is not useful outside of Google App Engine.__
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-appengine</artifactId>
-    <version>7.8.0</version>
+    <version>7.8.1</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-appengine%7C7.8.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-appengine%7C7.8.1%7Cjar).
 
 ### Manual dependency management
 Relies on:

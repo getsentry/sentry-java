@@ -4,10 +4,10 @@
 
 ### Gradle (Android Studio)
 
-In your `app/build.gradle` add: `compile 'com.getsentry.raven:raven-android:7.8.0'`
+In your `app/build.gradle` add: `compile 'com.getsentry.raven:raven-android:7.8.1'`
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C7.8.0%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C7.8.1%7Cjar).
 
 ## Usage
 
