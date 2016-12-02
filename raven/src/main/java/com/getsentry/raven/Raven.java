@@ -96,7 +96,7 @@ public class Raven {
         } catch (Exception e) {
             logger.error("An exception occurred while sending the event to Sentry.", e);
         } finally {
-            context.get().setLastEventId(event.getId());
+            getContext().setLastEventId(event.getId());
         }
     }
 
