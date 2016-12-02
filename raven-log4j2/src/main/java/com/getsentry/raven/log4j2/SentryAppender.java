@@ -271,6 +271,7 @@ public class SentryAppender extends AbstractAppender {
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
+                .withPlatform(EventBuilder.DEFAULT_PLATFORM + "+log4j2")
                 .withTimestamp(new Date(event.getTimeMillis()))
                 .withMessage(eventMessage.getFormattedMessage())
                 .withLogger(event.getLoggerName())

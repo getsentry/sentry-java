@@ -229,6 +229,7 @@ public class SentryHandler extends Handler {
      */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
+                .withPlatform(EventBuilder.DEFAULT_PLATFORM + "+jul")
                 .withLevel(getLevel(record.getLevel()))
                 .withTimestamp(new Date(record.getMillis()))
                 .withLogger(record.getLoggerName());
