@@ -13,10 +13,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.equalTo;
 
+@Test(singleThreaded = true)
 public class RavenContextTest {
 
     @Test
     public void testActivateDeactivate() {
+        for (RavenContext context : RavenContext.getActiveContexts()) {
+            context.deactivate();
+        }
+
         RavenContext context = new RavenContext();
 
         assertThat(RavenContext.getActiveContexts(), emptyCollectionOf(RavenContext.class));
