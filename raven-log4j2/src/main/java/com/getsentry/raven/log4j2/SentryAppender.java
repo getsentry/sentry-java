@@ -234,8 +234,10 @@ public class SentryAppender extends AbstractAppender {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null)
-                initRaven();
+            synchronized (this) {
+                if (raven == null)
+                    initRaven();
+            }
 
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);
