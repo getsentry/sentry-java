@@ -49,7 +49,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -172,7 +172,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         RavenEnvironment.startManagingThread();
         try {
             if (raven == null) {
-                initRaven();
+                synchronized (this) {
+                    if (raven == null) {
+                        initRaven();
+                    }
+                }
             }
 
             if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel)) {

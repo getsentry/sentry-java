@@ -58,7 +58,7 @@ public class SentryAppender extends AbstractAppender {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -234,8 +234,13 @@ public class SentryAppender extends AbstractAppender {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null)
-                initRaven();
+            if (raven == null) {
+                synchronized (this) {
+                    if (raven == null) {
+                        initRaven();
+                    }
+                }
+            }
 
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);

@@ -41,7 +41,7 @@ public class SentryAppender extends AppenderSkeleton {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -144,8 +144,14 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public void activateOptions() {
         super.activateOptions();
-        if (raven == null)
-            initRaven();
+
+        if (raven == null) {
+            synchronized (this) {
+                if (raven == null) {
+                    initRaven();
+                }
+            }
+        }
     }
 
     /**
