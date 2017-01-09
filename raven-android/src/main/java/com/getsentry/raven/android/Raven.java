@@ -38,6 +38,16 @@ public final class Raven {
      * @param ctx Android application ctx
      */
     public static void init(Context ctx) {
+        init(ctx, new AndroidRavenFactory(ctx));
+    }
+
+    /**
+     * Initialize Raven using a DSN set in the AndroidManifest.
+     *
+     * @param ctx Android application ctx
+     * @param ravenFactory the RavenFactory to be used to generate the Raven instance
+     */
+    public static void init(Context ctx, AndroidRavenFactory ravenFactory) {
         ctx = ctx.getApplicationContext();
         String dsn = "";
 
@@ -56,7 +66,7 @@ public final class Raven {
                 + "the constructor or AndroidManifest.");
         }
 
-        init(ctx, new Dsn(dsn));
+        init(ctx, dsn, ravenFactory);
     }
 
     /**
@@ -66,7 +76,18 @@ public final class Raven {
      * @param dsn Sentry DSN string
      */
     public static void init(Context ctx, String dsn) {
-        init(ctx, new Dsn(dsn));
+        init(ctx, new Dsn(dsn), new AndroidRavenFactory(ctx));
+    }
+
+    /**
+     * Initialize Raven using a string DSN.
+     *
+     * @param ctx Android application ctx
+     * @param dsn Sentry DSN string
+     * @param ravenFactory the RavenFactory to be used to generate the Raven instance
+     */
+    public static void init(Context ctx, String dsn, AndroidRavenFactory ravenFactory) {
+        init(ctx, new Dsn(dsn), ravenFactory);
     }
 
     /**
@@ -77,6 +98,18 @@ public final class Raven {
      * @param dsn Sentry DSN object
      */
     public static void init(Context ctx, Dsn dsn) {
+        init(ctx, dsn, new AndroidRavenFactory(ctx));
+    }
+
+    /**
+     * Initialize Raven using a DSN object. This is the 'main' initializer that other methods
+     * eventually call.
+     *
+     * @param ctx Android application ctx
+     * @param dsn Sentry DSN object
+     * @param ravenFactory the RavenFactory to be used to generate the Raven instance
+     */
+    public static void init(Context ctx, Dsn dsn, AndroidRavenFactory ravenFactory) {
         if (raven != null) {
             Log.e(TAG, "Initializing Raven multiple times.");
             // cleanup existing connections
@@ -104,7 +137,7 @@ public final class Raven {
                 + DefaultRavenFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
 
-        RavenFactory.registerFactory(new AndroidRavenFactory(ctx));
+        RavenFactory.registerFactory(ravenFactory);
         raven = RavenFactory.ravenInstance(dsn);
 
         setupUncaughtExceptionHandler();
