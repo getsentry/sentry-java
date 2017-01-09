@@ -137,6 +137,7 @@ public class AsyncConnection implements Connection {
             }
             logger.info("Shutdown finished.");
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.error("Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
             logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
