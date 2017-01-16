@@ -289,7 +289,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
         }
 
-        Map<String, String> mdcProperties = new HashMap<>(iLoggingEvent.getMDCPropertyMap());
+        Map<String, String> mdcProperties = iLoggingEvent.getMDCPropertyMap();
 
         if (userMdcKeys.size() > 0) {
             boolean hasUserData = false;
@@ -306,15 +306,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                         mdcProperties.get(ipMdcKey),
                         mdcProperties.get(emailMdcKey)));
             }
-            for (String entry : userMdcKeys) {
-                mdcProperties.remove(entry);
-            }
         }
 
         for (Map.Entry<String, String> mdcEntry : mdcProperties.entrySet()) {
             if (extraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
-            } else {
+            } else if(!userMdcKeys.contains(mdcEntry.getKey())) {
                 eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
