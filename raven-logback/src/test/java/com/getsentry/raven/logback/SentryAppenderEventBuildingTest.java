@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
+import com.getsentry.raven.event.interfaces.*;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -12,10 +13,6 @@ import mockit.Verifications;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
-import com.getsentry.raven.event.interfaces.ExceptionInterface;
-import com.getsentry.raven.event.interfaces.MessageInterface;
-import com.getsentry.raven.event.interfaces.SentryException;
-import com.getsentry.raven.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
 import org.slf4j.MarkerFactory;
 import org.testng.annotations.BeforeMethod;
@@ -37,6 +34,11 @@ public class SentryAppenderEventBuildingTest {
     private String mockExtraTag = "60f42409-c029-447d-816a-fb2722913c93";
     private String mockMinLevel = "ALL";
 
+    private String mockUsernameMdcKey = "Raven-User-Username";
+    private String mockEmailMdcKey = "Raven-User-Email";
+    private String mockIpAddressMdcKey = "Raven-User-Ip";
+    private String mockUserIdMdcKey = "Raven-User-UserID";
+
     @BeforeMethod
     public void setUp() throws Exception {
         new MockUpStatusPrinter();
@@ -44,6 +46,10 @@ public class SentryAppenderEventBuildingTest {
         sentryAppender.setContext(mockContext);
         sentryAppender.setExtraTags(mockExtraTag);
         sentryAppender.setMinLevel(mockMinLevel);
+        sentryAppender.setUsernameMdcKey(mockUsernameMdcKey);
+        sentryAppender.setEmailMdcKey(mockEmailMdcKey);
+        sentryAppender.setIpMdcKey(mockIpAddressMdcKey);
+        sentryAppender.setUserIdMdcKey(mockUserIdMdcKey);
 
         new NonStrictExpectations() {{
             final BasicStatusManager statusManager = new BasicStatusManager();
@@ -319,4 +325,96 @@ public class SentryAppenderEventBuildingTest {
         }};
         assertNoErrorsInStatusManager();
     }
+
+    @Test
+    public void testUserDataAdded() throws Exception {
+        Map<String, String> mdcPropertyMap = new HashMap<>();
+        final String username = "83ba19f6-d132-4b71-80c0-ac772eb9a0f0";
+        final String email = "862be6ea-f24d-48a1-a48b-5c5d66be6044";
+        final String ipAddress = "12534b59-395d-4c71-a7ec-5b69d4bb194e";
+        final String userId = "2bcc9c2b-d23e-4ba2-9128-97b7effa6758";
+        mdcPropertyMap.put(mockUsernameMdcKey, username);
+        mdcPropertyMap.put(mockEmailMdcKey, email);
+        mdcPropertyMap.put(mockIpAddressMdcKey, ipAddress);
+        mdcPropertyMap.put(mockUserIdMdcKey, userId);
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
+                null, 0).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            UserInterface userInterface = (UserInterface) event.getSentryInterfaces()
+                    .get(UserInterface.USER_INTERFACE);
+            assertThat(userInterface.getUsername(), is(username));
+            assertThat(userInterface.getEmail(), is(email));
+            assertThat(userInterface.getId(), is(userId));
+            assertThat(userInterface.getIpAddress(), is(ipAddress));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testUserDataAddedWithOneProperty() throws Exception {
+        Map<String, String> mdcPropertyMap = new HashMap<>();
+        final String username = "a4d8b277-bb89-4742-bed5-62847728be8f";
+        mdcPropertyMap.put(mockUsernameMdcKey, username);
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
+                null, 0).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            UserInterface userInterface = (UserInterface) event.getSentryInterfaces()
+                    .get(UserInterface.USER_INTERFACE);
+            assertThat(userInterface.getUsername(), is(username));
+            assertThat(userInterface.getIpAddress(), isEmptyOrNullString());
+            assertThat(userInterface.getEmail(), isEmptyOrNullString());
+            assertThat(userInterface.getId(), isEmptyOrNullString());
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testUserDataNotAddedWithNoProperties() throws Exception {
+        Map<String, String> mdcPropertyMap = new HashMap<>();
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
+                null, 0).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getSentryInterfaces(), not(hasKey(UserInterface.USER_INTERFACE)));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testUserDataNotInExtraInfo() throws Exception {
+        Map<String, String> mdcPropertyMap = new HashMap<>();
+        final String username = "83ba19f6-d132-4b71-80c0-ac772eb9a0f0";
+        final String email = "862be6ea-f24d-48a1-a48b-5c5d66be6044";
+        final String ipAddress = "12534b59-395d-4c71-a7ec-5b69d4bb194e";
+        final String userId = "2bcc9c2b-d23e-4ba2-9128-97b7effa6758";
+        mdcPropertyMap.put(mockUsernameMdcKey, username);
+        mdcPropertyMap.put(mockEmailMdcKey, email);
+        mdcPropertyMap.put(mockIpAddressMdcKey, ipAddress);
+        mdcPropertyMap.put(mockUserIdMdcKey, userId);
+
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
+                null, 0).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            assertThat(event.getExtra(), not(hasKey(mockUsernameMdcKey)));
+            assertThat(event.getExtra(), not(hasKey(mockEmailMdcKey)));
+            assertThat(event.getExtra(), not(hasKey(mockIpAddressMdcKey)));
+            assertThat(event.getExtra(), not(hasKey(mockUserIdMdcKey)));
+        }};
+        assertNoErrorsInStatusManager();
+    }
+
 }
