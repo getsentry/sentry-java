@@ -377,6 +377,25 @@ public class SentryAppenderEventBuildingTest {
     }
 
     @Test
+    public void testUserDataAddedWithNullKey() throws Exception {
+        Map<String, String> mdcPropertyMap = new HashMap<>();
+        final String username = "a4d8b277-bb89-4742-bed5-62847728be8f";
+        mdcPropertyMap.put(mockUsernameMdcKey, username);
+        sentryAppender.setIpMdcKey(null);
+        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
+                null, 0).getMockInstance());
+
+        new Verifications() {{
+            Event event;
+            mockRaven.sendEvent(event = withCapture());
+            UserInterface userInterface = (UserInterface) event.getSentryInterfaces()
+                    .get(UserInterface.USER_INTERFACE);
+            assertThat(userInterface.getUsername(), is(username));
+            assertThat(userInterface.getIpAddress(), isEmptyOrNullString());
+        }};
+        assertNoErrorsInStatusManager();
+    }
+    @Test
     public void testUserDataNotAddedWithNoProperties() throws Exception {
         Map<String, String> mdcPropertyMap = new HashMap<>();
 
