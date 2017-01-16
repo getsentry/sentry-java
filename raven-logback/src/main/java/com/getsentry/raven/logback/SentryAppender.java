@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +118,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     protected String userIdMdcKey;
 
     /**
-     * Set of user information MDC keys (Used for filtering User information from ExtraInfo).
+     * Set of user information MDC keys.
+     * Used for filtering User information from ExtraInfo and checking if any user info exists in the MDC.
      */
     protected Set<String> userMdcKeys = new HashSet<>();
 
@@ -311,7 +311,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         for (Map.Entry<String, String> mdcEntry : mdcProperties.entrySet()) {
             if (extraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
-            } else if(!userMdcKeys.contains(mdcEntry.getKey())) {
+            } else if (!userMdcKeys.contains(mdcEntry.getKey())) {
                 eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
@@ -424,7 +424,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Adds key to set of User MDC information keys for so it can be filtered from ExtraInfo.
+     * Adds key to set of User MDC information keys.
      *
      * @param key the key to be added - will be skipped if null
      *
