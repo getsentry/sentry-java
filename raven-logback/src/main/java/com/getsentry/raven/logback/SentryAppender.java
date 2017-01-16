@@ -15,10 +15,23 @@ import com.getsentry.raven.dsn.InvalidDsnException;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
-import com.getsentry.raven.event.interfaces.*;
+import com.getsentry.raven.event.interfaces.ExceptionInterface;
+import com.getsentry.raven.event.interfaces.MessageInterface;
+import com.getsentry.raven.event.interfaces.SentryException;
+import com.getsentry.raven.event.interfaces.StackTraceInterface;
+import com.getsentry.raven.event.interfaces.UserInterface;
 import com.getsentry.raven.util.Util;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Appender for logback in charge of sending the logged events to a Sentry server.
