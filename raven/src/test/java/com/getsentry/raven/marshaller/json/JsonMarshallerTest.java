@@ -140,6 +140,22 @@ public class JsonMarshallerTest {
     }
 
     @Test
+    public void testEventPlaftormWrittenProperly(@Injectable("sdkName") final String mockSdkName,
+                                                 @Injectable("sdkVersion") final String mockSdkVersion) throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getSdkName();
+            result = mockSdkName;
+            mockEvent.getSdkVersion();
+            result = mockSdkVersion;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/jsonmarshallertest/testSdk.json")));
+    }
+
+    @Test
     public void testEventCulpritWrittenProperly(@Injectable("culprit") final String mockCulprit) throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
