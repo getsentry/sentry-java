@@ -344,10 +344,10 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, outputStream);
 
         assertThat(new String(outputStream.toByteArray(), "UTF-8"), is(""
-                + "eJyFT8sKAjEQ+5c5V+iexH6H92WoYy1OH0zbRVj23"
-                + "y1qe3XIJWGSkB1oo1hXfwMD+s+BgkCloCMwsTErqL"
-                + "4LFUPu7uVy1ie9dFy1Nh90A/d8Hu+cnCMZLDPWe5I"
-                + "wuG2cxdeZja6A2Q8FhWQjWSOGWSzEhGVSipuXFEOf"
-                + "MqVXFfz67YPss7Rf0fEGRZpNqQ=="));
+                + "eJyFj8EKwyAMht8l5w7saczn2L1Imzlp1JLYMih994V1ym6T/+AX/z+JO"
+                + "+CGqQxhAgvmz4EOIoo4j2DTStRBCVooLi6a7m9XczG96m6M/UgDpP2p2i"
+                + "l7j1xpIVcemWPlcaWFQ6ko0wx2h+RiG7chS8jpxEPHOy/q0Zsg6+Pwa2Y"
+                + "kdNIQ0xY4p6i/baVXYXfmxyeOs6zfXY43jPBZ0g=="
+        ));
     }
 }

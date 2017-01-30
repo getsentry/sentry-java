@@ -18,5 +18,9 @@
             "string"
         ]
     },
-    "checksum": null
+    "checksum": null,
+    "sdk": {
+        "name": null,
+        "version": null
+    }
 }

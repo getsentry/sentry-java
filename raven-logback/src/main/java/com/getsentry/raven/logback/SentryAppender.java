@@ -213,11 +213,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
-                .withMessage(iLoggingEvent.getFormattedMessage())
-                .withLogger(iLoggingEvent.getLoggerName())
-                .withLevel(formatLevel(iLoggingEvent.getLevel()))
-                .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
+            .withSdkName(RavenEnvironment.SDK_NAME + "-Logback")
+            .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
+            .withMessage(iLoggingEvent.getFormattedMessage())
+            .withLogger(iLoggingEvent.getLoggerName())
+            .withLevel(formatLevel(iLoggingEvent.getLevel()))
+            .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
 
         if (!Util.isNullOrEmpty(serverName)) {

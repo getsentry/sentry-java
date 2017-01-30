@@ -54,6 +54,10 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String CULPRIT = "culprit";
     /**
+     * An object representing the SDK name and version.
+     */
+    public static final String SDK = "sdk";
+    /**
      * A map or list of tags for this event.
      */
     public static final String TAGS = "tags";
@@ -165,6 +169,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(LOGGER, event.getLogger());
         generator.writeStringField(PLATFORM, event.getPlatform());
         generator.writeStringField(CULPRIT, event.getCulprit());
+        writeSdk(generator, event.getSdkName(), event.getSdkVersion());
         writeTags(generator, event.getTags());
         writeBreadcumbs(generator, event.getBreadcrumbs());
         generator.writeStringField(SERVER_NAME, event.getServerName());
@@ -251,6 +256,13 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeString(value.toString());
             }
         }
+    }
+
+    private void writeSdk(JsonGenerator generator, String sdkName, String sdkVersion) throws IOException {
+        generator.writeObjectFieldStart(SDK);
+        generator.writeStringField("name", sdkName);
+        generator.writeStringField("version", sdkVersion);
+        generator.writeEndObject();
     }
 
     private void writeTags(JsonGenerator generator, Map<String, String> tags) throws IOException {

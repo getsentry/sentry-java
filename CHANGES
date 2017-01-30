@@ -3,6 +3,7 @@ Version 7.8.1
 
 - Make Breadcrumbs serializable.
 - Don't log errors in RavenServletRequestListener if Raven hasn't been initialized.
+- Add ``sdk`` field to payload, identify subprojects in SDK name.
 
 Version 7.8.0
 -------------

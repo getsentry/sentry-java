@@ -11,5 +11,9 @@
     "release": null,
     "environment": null,
     "extra": {},
-    "checksum": "1234567890abcdef"
+    "checksum": "1234567890abcdef",
+    "sdk": {
+        "name": null,
+        "version": null
+    }
 }

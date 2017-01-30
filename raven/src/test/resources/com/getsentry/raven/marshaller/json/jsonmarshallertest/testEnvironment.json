@@ -11,5 +11,9 @@
   "release": null,
   "environment": "environment",
   "extra": {},
-  "checksum": null
+  "checksum": null,
+  "sdk": {
+    "name": null,
+    "version": null
+  }
 }

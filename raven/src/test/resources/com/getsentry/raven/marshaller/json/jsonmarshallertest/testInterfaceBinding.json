@@ -12,5 +12,9 @@
     "environment": null,
     "extra": {},
     "checksum": null,
-    "interfaceKey": null
+    "interfaceKey": null,
+    "sdk": {
+        "name": null,
+        "version": null
+    }
 }
