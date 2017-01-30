@@ -260,7 +260,7 @@
                 <plugin>
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-maven-plugin</artifactId>
-                    <version>9.4.1.v20170120</version>
+                    <version>9.2.21.v20170120</version>
                     <configuration>
                         <scanIntervalSeconds>10</scanIntervalSeconds>
                         <stopKey>foo</stopKey>
