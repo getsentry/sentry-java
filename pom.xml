@@ -363,6 +363,13 @@
                         <configLocation>src/checkstyle/checkstyle.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>7.5</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>checkstyle</id>
