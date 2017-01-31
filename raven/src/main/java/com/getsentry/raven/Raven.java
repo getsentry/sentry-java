@@ -10,7 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,24 +35,25 @@ public class Raven {
      * The underlying {@link Connection} to use for sending events to Sentry.
      */
     private volatile Connection connection;
+
+    private static Map<Raven, Raven> instances = Collections.synchronizedMap(new IdentityHashMap<Raven, Raven>());
+
     /**
      * Set of {@link EventBuilderHelper}s. Note that we wrap a {@link ConcurrentHashMap} because there
      * isn't a concurrent set in the standard library.
      */
     private final Set<EventBuilderHelper> builderHelpers =
-        Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
+            Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
     private final ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
         @Override
         protected RavenContext initialValue() {
-            RavenContext ctx = new RavenContext();
-            ctx.activate();
-            return ctx;
+            return new RavenContext();
         }
     };
 
     /**
      * Constructs a Raven instance.
-     *
+     * <p>
      * Note that the most recently constructed instance is stored statically so it can be used with
      * the static helper methods.
      *
@@ -58,11 +63,12 @@ public class Raven {
     @Deprecated
     public Raven() {
         stored = this;
+        instances.put(this, this);
     }
 
     /**
      * Constructs a Raven instance using the provided connection.
-     *
+     * <p>
      * Note that the most recently constructed instance is stored statically so it can be used with
      * the static helper methods.
      *
@@ -71,6 +77,7 @@ public class Raven {
     public Raven(Connection connection) {
         this.connection = connection;
         stored = this;
+        instances.put(this, this);
     }
 
     /**
@@ -120,7 +127,7 @@ public class Raven {
      */
     public void sendMessage(String message) {
         EventBuilder eventBuilder = new EventBuilder().withMessage(message)
-            .withLevel(Event.Level.INFO);
+                .withLevel(Event.Level.INFO);
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
         sendEvent(event);
@@ -135,8 +142,8 @@ public class Raven {
      */
     public void sendException(Throwable throwable) {
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
-            .withLevel(Event.Level.ERROR)
-            .withSentryInterface(new ExceptionInterface(throwable));
+                .withLevel(Event.Level.ERROR)
+                .withSentryInterface(new ExceptionInterface(throwable));
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
         sendEvent(event);
@@ -170,6 +177,7 @@ public class Raven {
      * Closes the connection for the Raven instance.
      */
     public void closeConnection() {
+        instances.remove(this);
         try {
             connection.close();
         } catch (IOException e) {
@@ -210,7 +218,7 @@ public class Raven {
     private static void verifyStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
-                + " You must construct a Raven instance before using the static Raven methods.");
+                    + " You must construct a Raven instance before using the static Raven methods.");
         }
     }
 
@@ -256,6 +264,26 @@ public class Raven {
     public static void capture(EventBuilder eventBuilder) {
         verifyStoredInstance();
         getStoredInstance().sendEvent(eventBuilder);
+    }
+
+    /**
+     * Returns any currently active {@link Raven} instances (Active instances are instances on which close has not been called).
+     * @return List of Raven instances
+     */
+    public static List<Raven> getInstances() {
+        return new ArrayList<>(instances.keySet());
+    }
+
+    /**
+     * Returns any active {@link RavenContext}s.
+     * @return List or RavenContext instances
+     */
+    public static List<RavenContext> getContexts() {
+        List<RavenContext> contexts = new ArrayList<>();
+        for (Raven instance : getInstances()) {
+            contexts.add(instance.getContext());
+        }
+        return contexts;
     }
 
 }

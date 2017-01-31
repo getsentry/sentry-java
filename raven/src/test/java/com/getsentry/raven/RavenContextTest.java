@@ -15,28 +15,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 @Test(singleThreaded = true)
 public class RavenContextTest {
-
-    @Test
-    public void testActivateDeactivate() {
-        for (RavenContext context : RavenContext.getActiveContexts()) {
-            context.deactivate();
-        }
-
-        RavenContext context = new RavenContext();
-
-        assertThat(RavenContext.getActiveContexts(), emptyCollectionOf(RavenContext.class));
-
-        context.activate();
-
-        List<RavenContext> match = new ArrayList<>(1);
-        match.add(context);
-        assertThat(RavenContext.getActiveContexts(), equalTo(match));
-
-        context.deactivate();
-
-        assertThat(RavenContext.getActiveContexts(), emptyCollectionOf(RavenContext.class));
-    }
-
+    
     @Test
     public void testBreadcrumbs() {
         RavenContext context = new RavenContext();

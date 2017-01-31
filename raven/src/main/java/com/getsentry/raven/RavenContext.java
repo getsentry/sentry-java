@@ -15,29 +15,7 @@ import java.util.UUID;
  * {@link Breadcrumb}s) so that data may be collected in different parts
  * of an application and then sent together when an exception occurs.
  */
-public class RavenContext implements AutoCloseable {
-
-    /**
-     * Thread local set of active context objects. Note that an {@link IdentityHashMap}
-     * is used instead of a Set because there is no identity-set in the Java
-     * standard library.
-     *
-     * A set of active contexts is required in order to support running multiple Raven
-     * clients within a single process. In *most* cases this set will contain a single
-     * active context object.
-     *
-     * This must be static and {@link ThreadLocal} so that users can retrieve any active
-     * context objects globally, without passing context objects all the way down their
-     * stacks. See {@link com.getsentry.raven.event.Breadcrumbs} for an example of how this may be used.
-     */
-    private static ThreadLocal<IdentityHashMap<RavenContext, RavenContext>> activeContexts =
-        new ThreadLocal<IdentityHashMap<RavenContext, RavenContext>>() {
-            @Override
-            protected IdentityHashMap<RavenContext, RavenContext> initialValue() {
-                return new IdentityHashMap<>();
-            }
-    };
-
+public class RavenContext {
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
@@ -67,45 +45,11 @@ public class RavenContext implements AutoCloseable {
     }
 
     /**
-     * Add this context to the active contexts for this thread.
-     */
-    public void activate() {
-        activeContexts.get().put(this, this);
-    }
-
-    /**
-     * Remove this context from the active contexts for this thread.
-     */
-    public void deactivate() {
-        activeContexts.get().remove(this);
-    }
-
-    /**
      * Clear state from this context.
      */
     public void clear() {
         breadcrumbs.clear();
         lastEventId = null;
-    }
-
-    /**
-     * Calls deactivate, used by try-with-resources ({@link AutoCloseable}).
-     */
-    @Override
-    public void close() {
-        deactivate();
-    }
-
-    /**
-     * Returns all active contexts for the current thread.
-     *
-     * @return List of active {@link RavenContext} objects.
-     */
-    public static List<RavenContext> getActiveContexts() {
-        Collection<RavenContext> ravenContexts = activeContexts.get().values();
-        List<RavenContext> list = new ArrayList<>(ravenContexts.size());
-        list.addAll(ravenContexts);
-        return list;
     }
 
     /**

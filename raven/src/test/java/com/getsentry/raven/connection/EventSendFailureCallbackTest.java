@@ -15,13 +15,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EventSendFailureCallbackTest {
 
-    @AfterMethod
-    private void afterMethod() {
-        for (RavenContext ctx : RavenContext.getActiveContexts()) {
-            ctx.deactivate();
-        }
-    }
-
     @Test
     public void testSimpleCallback() {
         final AtomicBoolean flag = new AtomicBoolean(false);
