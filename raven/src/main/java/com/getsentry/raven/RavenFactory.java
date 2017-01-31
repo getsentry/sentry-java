@@ -118,7 +118,8 @@ public abstract class RavenFactory {
                     + "for com.getsentry.raven.RavenFactory. "
                     + "See: https://docs.oracle.com/javase/7/docs/api/java/util/ServiceLoader.html", ravenFactoryName);
             } catch (ClassNotFoundException e) {
-                logger.error("The raven factory class name '{}' was specified but the class was not found on your classpath.", ravenFactoryName);
+                logger.error("The raven factory class name '{}' was specified but "
+                    + "the class was not found on your classpath.", ravenFactoryName);
             }
         }
 
