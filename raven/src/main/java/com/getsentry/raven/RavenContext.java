@@ -1,6 +1,7 @@
 package com.getsentry.raven;
 
 import com.getsentry.raven.event.Breadcrumb;
+import com.getsentry.raven.event.User;
 import com.getsentry.raven.util.CircularFifoQueue;
 
 import java.util.ArrayList;
@@ -50,6 +51,9 @@ public class RavenContext implements AutoCloseable {
      */
     private CircularFifoQueue<Breadcrumb> breadcrumbs;
 
+
+    private User user;
+
     /**
      * Create a new (empty) RavenContext object with the default Breadcrumb limit.
      */
@@ -86,6 +90,7 @@ public class RavenContext implements AutoCloseable {
     public void clear() {
         breadcrumbs.clear();
         lastEventId = null;
+        user = null;
     }
 
     /**
@@ -146,5 +151,17 @@ public class RavenContext implements AutoCloseable {
      */
     public UUID getLastEventId() {
         return lastEventId;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void clearUser() {
+        this.user = null;
+    }
+
+    public User getUser() {
+        return user;
     }
 }
