@@ -1,9 +1,13 @@
+Version 7.8.2
+-------------
+
+- Allow use of custom AndroidRavenFactory. (thanks kassim)
+
 Version 7.8.1
 -------------
 
 - Make Breadcrumbs serializable.
 - Don't log errors in RavenServletRequestListener if Raven hasn't been initialized.
-- Allow use of custom AndroidRavenFactory. (thanks kassim)
 
 Version 7.8.0
 -------------
