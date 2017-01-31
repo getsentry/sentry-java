@@ -132,7 +132,7 @@ public class Raven {
 
     /**
      * Sends a message to the Sentry server.
-     *
+     * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
      *
      * @param message message to send to Sentry.
@@ -147,7 +147,7 @@ public class Raven {
 
     /**
      * Sends an exception (or throwable) to the Sentry server.
-     *
+     * <p>
      * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
      * @param throwable exception to send to Sentry.
@@ -246,7 +246,7 @@ public class Raven {
 
     /**
      * Sends an exception (or throwable) to the Sentry server using the statically stored Raven instance.
-     *
+     * <p>
      * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
      * @param throwable exception to send to Sentry.
@@ -258,7 +258,7 @@ public class Raven {
 
     /**
      * Sends a message to the Sentry server using the statically stored Raven instance.
-     *
+     * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
      *
      * @param message message to send to Sentry.
