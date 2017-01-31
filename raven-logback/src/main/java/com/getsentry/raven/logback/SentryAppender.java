@@ -176,7 +176,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             }
 
             Event event = buildEvent(iLoggingEvent);
-            initAndGetRaven().sendEvent(event);
+            getRaven().sendEvent(event);
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Raven", e);
         } finally {
@@ -184,7 +184,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
-    private Raven initAndGetRaven() {
+    private Raven getRaven() {
         if (raven == null) {
             initRaven();
         }
@@ -277,7 +277,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         for (Map.Entry<String, String> tagEntry : tags.entrySet())
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
 
-        initAndGetRaven().runBuilderHelpers(eventBuilder);
+        getRaven().runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
