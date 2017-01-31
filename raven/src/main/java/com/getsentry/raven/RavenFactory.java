@@ -109,6 +109,19 @@ public abstract class RavenFactory {
             }
         }
 
+        if (ravenFactoryName != null && triedFactories.size() < 1) {
+            try {
+                // see if the provided class exists on the classpath at all
+                Class.forName(ravenFactoryName);
+                logger.error(
+                    "The raven factory class '{}' is missing a ServiceLoader provider "
+                    + "for com.getsentry.raven.RavenFactory. "
+                    + "See: https://docs.oracle.com/javase/7/docs/api/java/util/ServiceLoader.html", ravenFactoryName);
+            } catch (ClassNotFoundException e) {
+                logger.error("The raven factory class name '{}' was specified but the class was not found on your classpath.", ravenFactoryName);
+            }
+        }
+
         // Throw an IllegalStateException that attempts to be helpful.
         StringBuilder sb = new StringBuilder();
         sb.append("Couldn't create a raven instance for: '");
