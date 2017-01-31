@@ -109,7 +109,7 @@ public abstract class RavenFactory {
             }
         }
 
-        if (ravenFactoryName != null && triedFactories.size() < 1) {
+        if (ravenFactoryName != null && triedFactories.isEmpty()) {
             try {
                 // see if the provided class exists on the classpath at all
                 Class.forName(ravenFactoryName);
