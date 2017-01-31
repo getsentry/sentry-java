@@ -12,44 +12,44 @@ public class UserBuilder {
     /**
      * Sets the Id for the user.
      *
-     * @param id String
+     * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setId(String id) {
-        this.id = id;
+    public UserBuilder setId(String value) {
+        this.id = value;
         return this;
     }
 
     /**
      * Sets the username for the user.
      *
-     * @param username String
+     * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setUsername(String username) {
-        this.username = username;
+    public UserBuilder setUsername(String value) {
+        this.username = value;
         return this;
     }
 
     /**
      * Sets the ipAddress for the user.
      *
-     * @param ipAddress String
+     * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
+    public UserBuilder setIpAddress(String value) {
+        this.ipAddress = value;
         return this;
     }
 
     /**
      * Sets the email for the user.
      *
-     * @param email String
+     * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setEmail(String email) {
-        this.email = email;
+    public UserBuilder setEmail(String value) {
+        this.email = value;
         return this;
     }
 

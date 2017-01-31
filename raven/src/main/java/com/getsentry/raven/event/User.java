@@ -1,6 +1,5 @@
 package com.getsentry.raven.event;
 
-import com.getsentry.raven.event.interfaces.UserInterface;
 
 /**
  * An object that represents a user. This will usually
@@ -8,8 +7,13 @@ import com.getsentry.raven.event.interfaces.UserInterface;
  */
 public class User {
 
+    private final String id;
+    private final String username;
+    private final String ipAddress;
+    private final String email;
+
     /**
-     * Create an immutable User object
+     * Create an immutable User object.
      *
      * @param id        String (optional)
      * @param username  String (optional)
@@ -22,11 +26,6 @@ public class User {
         this.ipAddress = ipAddress;
         this.email = email;
     }
-
-    private final String id;
-    private final String username;
-    private final String ipAddress;
-    private final String email;
 
     public String getId() {
         return id;

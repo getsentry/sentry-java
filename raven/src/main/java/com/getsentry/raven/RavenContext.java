@@ -1,23 +1,19 @@
 package com.getsentry.raven;
-
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.User;
 import com.getsentry.raven.util.CircularFifoQueue;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
  * {@link Breadcrumb}s) so that data may be collected in different parts
  * of an application and then sent together when an exception occurs.
  */
 public class RavenContext implements AutoCloseable {
-
     /**
      * Thread local set of active context objects. Note that an {@link IdentityHashMap}
      * is used instead of a Set because there is no identity-set in the Java
@@ -38,29 +34,22 @@ public class RavenContext implements AutoCloseable {
                 return new IdentityHashMap<>();
             }
     };
-
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
-
     private UUID lastEventId;
-
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
     private CircularFifoQueue<Breadcrumb> breadcrumbs;
-
-
     private User user;
-
     /**
      * Create a new (empty) RavenContext object with the default Breadcrumb limit.
      */
     public RavenContext() {
         this(DEFAULT_BREADCRUMB_LIMIT);
     }
-
     /**
      * Create a new (empty) RavenContext object with the specified Breadcrumb limit.
      *
@@ -69,21 +58,18 @@ public class RavenContext implements AutoCloseable {
     public RavenContext(int breadcrumbLimit) {
         breadcrumbs = new CircularFifoQueue<>(breadcrumbLimit);
     }
-
     /**
      * Add this context to the active contexts for this thread.
      */
     public void activate() {
         activeContexts.get().put(this, this);
     }
-
     /**
      * Remove this context from the active contexts for this thread.
      */
     public void deactivate() {
         activeContexts.get().remove(this);
     }
-
     /**
      * Clear state from this context.
      */
@@ -92,7 +78,6 @@ public class RavenContext implements AutoCloseable {
         lastEventId = null;
         user = null;
     }
-
     /**
      * Calls deactivate, used by try-with-resources ({@link AutoCloseable}).
      */
@@ -100,7 +85,6 @@ public class RavenContext implements AutoCloseable {
     public void close() {
         deactivate();
     }
-
     /**
      * Returns all active contexts for the current thread.
      *
@@ -112,7 +96,6 @@ public class RavenContext implements AutoCloseable {
         list.addAll(ravenContexts);
         return list;
     }
-
     /**
      * Return {@link Breadcrumb}s attached to this RavenContext.
      *
@@ -121,7 +104,6 @@ public class RavenContext implements AutoCloseable {
     public Iterator<Breadcrumb> getBreadcrumbs() {
         return breadcrumbs.iterator();
     }
-
     /**
      * Record a single {@link Breadcrumb} into this context.
      *
@@ -130,7 +112,6 @@ public class RavenContext implements AutoCloseable {
     public void recordBreadcrumb(Breadcrumb breadcrumb) {
         breadcrumbs.add(breadcrumb);
     }
-
     /**
      * Store the UUID of the last sent event by this thread, useful for handling user feedback.
      *
@@ -139,7 +120,6 @@ public class RavenContext implements AutoCloseable {
     public void setLastEventId(UUID id) {
         lastEventId = id;
     }
-
     /**
      * Get the UUID of the last event sent by this thread, useful for handling user feedback.
      *
@@ -152,15 +132,24 @@ public class RavenContext implements AutoCloseable {
     public UUID getLastEventId() {
         return lastEventId;
     }
-
+    /**
+     * Store the current user in the context.
+     * @param user User
+     */
     public void setUser(User user) {
         this.user = user;
     }
-
+    /**
+     * Clears the current user set on this context.
+     */
     public void clearUser() {
         this.user = null;
     }
 
+    /**
+     * Gets the current user from the context.
+     * @return User
+     */
     public User getUser() {
         return user;
     }

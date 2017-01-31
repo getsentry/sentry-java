@@ -5,7 +5,7 @@ import com.getsentry.raven.RavenContext;
 /**
  * Helpers for dealing with {@link User}.
  */
-public class UserHelper {
+public final class UserHelper {
     /**
      * Private constructor because this is a utility class.
      */
