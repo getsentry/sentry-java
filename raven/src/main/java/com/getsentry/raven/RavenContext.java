@@ -3,11 +3,7 @@ package com.getsentry.raven;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.util.CircularFifoQueue;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.UUID;
 
 /**

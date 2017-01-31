@@ -29,7 +29,7 @@ public class RavenServletRequestListener implements ServletRequestListener {
         THREAD_REQUEST.remove();
 
         try {
-            for(RavenContext context : Raven.getContexts()){
+            for (RavenContext context : Raven.getContexts()) {
                 context.clear();
             }
         } catch (Exception e) {

@@ -1,5 +1,4 @@
 package com.getsentry.raven;
-
 import com.getsentry.raven.connection.Connection;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
@@ -8,7 +7,6 @@ import com.getsentry.raven.event.helper.EventBuilderHelper;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
  * <p>
@@ -32,11 +29,6 @@ public class Raven {
      */
     private static volatile Raven stored = null;
     /**
-     * The underlying {@link Connection} to use for sending events to Sentry.
-     */
-    private volatile Connection connection;
-
-    /**
      * Thread local set of active {@link Raven} objects. Note that an {@link IdentityHashMap}
      * is used instead of a Set because there is no identity-set in the Java
      * standard library.
@@ -48,8 +40,13 @@ public class Raven {
      * instances globally, without passing instances all the way down their
      * stacks. See {@link com.getsentry.raven.event.Breadcrumbs} for an example of how this may be used.
      */
-    private static Map<Raven, Raven> instances = Collections.synchronizedMap(new IdentityHashMap<Raven, Raven>());
-
+    //CHECKSTYLE.OFF: ConstantName
+    private static final Map<Raven, Raven> instances = Collections.synchronizedMap(new IdentityHashMap<Raven, Raven>());
+    //CHECKSTYLE.ON: ConstantName
+    /**
+     * The underlying {@link Connection} to use for sending events to Sentry.
+     */
+    private volatile Connection connection;
     /**
      * Set of {@link EventBuilderHelper}s. Note that we wrap a {@link ConcurrentHashMap} because there
      * isn't a concurrent set in the standard library.
@@ -62,7 +59,6 @@ public class Raven {
             return new RavenContext();
         }
     };
-
     /**
      * Constructs a Raven instance.
      *
@@ -77,7 +73,6 @@ public class Raven {
         stored = this;
         instances.put(this, this);
     }
-
     /**
      * Constructs a Raven instance using the provided connection.
      *
@@ -91,7 +86,6 @@ public class Raven {
         stored = this;
         instances.put(this, this);
     }
-
     /**
      * Runs the {@link EventBuilderHelper} against the {@link EventBuilder} to obtain additional information with a
      * MDC-like system.
@@ -103,7 +97,6 @@ public class Raven {
             builderHelper.helpBuildingEvent(eventBuilder);
         }
     }
-
     /**
      * Sends a built {@link Event} to the Sentry server.
      *
@@ -118,7 +111,6 @@ public class Raven {
             getContext().setLastEventId(event.getId());
         }
     }
-
     /**
      * Builds and sends an {@link Event} to the Sentry server.
      *
@@ -129,7 +121,6 @@ public class Raven {
         Event event = eventBuilder.build();
         sendEvent(event);
     }
-
     /**
      * Sends a message to the Sentry server.
      * <p>
@@ -144,7 +135,6 @@ public class Raven {
         Event event = eventBuilder.build();
         sendEvent(event);
     }
-
     /**
      * Sends an exception (or throwable) to the Sentry server.
      * <p>
@@ -160,7 +150,6 @@ public class Raven {
         Event event = eventBuilder.build();
         sendEvent(event);
     }
-
     /**
      * Removes a builder helper.
      *
@@ -170,7 +159,6 @@ public class Raven {
         logger.debug("Removing '{}' from the list of builder helpers.", builderHelper);
         builderHelpers.remove(builderHelper);
     }
-
     /**
      * Adds a builder helper.
      *
@@ -180,11 +168,9 @@ public class Raven {
         logger.debug("Adding '{}' to the list of builder helpers.", builderHelper);
         builderHelpers.add(builderHelper);
     }
-
     public Set<EventBuilderHelper> getBuilderHelpers() {
         return Collections.unmodifiableSet(builderHelpers);
     }
-
     /**
      * Closes the connection for the Raven instance.
      */
@@ -196,15 +182,12 @@ public class Raven {
             throw new RuntimeException("Couldn't close the Raven connection", e);
         }
     }
-
     public void setConnection(Connection connection) {
         this.connection = connection;
     }
-
     public RavenContext getContext() {
         return context.get();
     }
-
     @Override
     public String toString() {
         return "Raven{"
@@ -212,11 +195,9 @@ public class Raven {
                 + ", connection=" + connection
                 + '}';
     }
-
     // --------------------------------------------------------
     // Static helper methods follow
     // --------------------------------------------------------
-
     /**
      * Returns the last statically stored Raven instance or null if one has
      * never been stored.
@@ -226,14 +207,12 @@ public class Raven {
     public static Raven getStoredInstance() {
         return stored;
     }
-
     private static void verifyStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
                 + " You must construct a Raven instance before using the static Raven methods.");
         }
     }
-
     /**
      * Send an Event using the statically stored Raven instance.
      *
@@ -243,7 +222,6 @@ public class Raven {
         verifyStoredInstance();
         getStoredInstance().sendEvent(event);
     }
-
     /**
      * Sends an exception (or throwable) to the Sentry server using the statically stored Raven instance.
      * <p>
@@ -255,7 +233,6 @@ public class Raven {
         verifyStoredInstance();
         getStoredInstance().sendException(throwable);
     }
-
     /**
      * Sends a message to the Sentry server using the statically stored Raven instance.
      * <p>
@@ -267,7 +244,6 @@ public class Raven {
         verifyStoredInstance();
         getStoredInstance().sendMessage(message);
     }
-
     /**
      * Builds and sends an {@link Event} to the Sentry server using the statically stored Raven instance.
      *
@@ -277,15 +253,16 @@ public class Raven {
         verifyStoredInstance();
         getStoredInstance().sendEvent(eventBuilder);
     }
-
     /**
-     * Returns any currently active {@link Raven} instances (Active instances are instances on which close has not been called).
+     * Returns any currently active {@link Raven} instances.
+     *
+     * Active instances are instances on which close has not been called.
+     *
      * @return List of active Raven instances
      */
     public static List<Raven> getInstances() {
         return new ArrayList<>(instances.keySet());
     }
-
     /**
      * Returns any active {@link RavenContext}s.
      * @return List of active RavenContext instances
@@ -297,5 +274,4 @@ public class Raven {
         }
         return contexts;
     }
-
 }
