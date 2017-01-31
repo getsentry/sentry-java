@@ -196,27 +196,6 @@ with the option `raven.async.priority`:
 
     http://public:private@host:port/1?raven.async.priority=10
 
-### Buffering to disk upon network error
-Raven can be configured to write events to a specified directory on disk
-anytime communication with the Sentry server fails with the `raven.buffer.dir`
-option. If the directory doesn't exist, Raven will attempt to create it
-on startup and may therefore need write permission on the parent directory.
-Raven always requires write permission on the buffer directory itself.
-
-    http://public:private@host:port/1?raven.buffer.dir=raven-events
-
-The maximum number of events that will be stored on disk defaults to 50,
-but can also be configured with the option `raven.buffer.size`:
-
-    http://public:private@host:port/1?raven.buffer.size=100
-
-If a buffer directory is provided, a background thread will periodically
-attempt to re-send the events that are found on disk. By default it will
-attempt to send events every 60 seconds. You can change this with the
-`raven.buffer.flushtime` option (in milliseconds):
-
-    http://public:private@host:port/1?raven.buffer.flushtime=10000
-
 #### Graceful Shutdown (advanced)
 In order to shutdown the buffer flushing thread gracefully, a `ShutdownHook`
 is created. By default, the buffer flushing thread is given 1 second
@@ -238,6 +217,36 @@ To avoid this behaviour, it is possible to disable the graceful shutdown
 by setting the `raven.buffer.gracefulshutdown` option:
 
     http://public:private@host:port/1?raven.buffer.gracefulshutdown=false
+
+### Buffering to disk upon network error
+Raven can be configured to write events to a specified directory on disk
+anytime communication with the Sentry server fails with the `raven.buffer.dir`
+option. If the directory doesn't exist, Raven will attempt to create it
+on startup and may therefore need write permission on the parent directory.
+Raven always requires write permission on the buffer directory itself.
+
+    http://public:private@host:port/1?raven.buffer.dir=raven-events
+
+The maximum number of events that will be stored on disk defaults to 50,
+but can also be configured with the option `raven.buffer.size`:
+
+    http://public:private@host:port/1?raven.buffer.size=100
+
+If a buffer directory is provided, a background thread will periodically
+attempt to re-send the events that are found on disk. By default it will
+attempt to send events every 60 seconds. You can change this with the
+`raven.buffer.flushtime` option (in milliseconds):
+
+    http://public:private@host:port/1?raven.buffer.flushtime=10000
+
+### Event sampling
+Raven can be configured to sample events with the `raven.sample.rate` option:
+
+    http://public:private@host:port/1?raven.sample.rate=0.75
+
+This option takes a number from 0.0 to 1.0, representing the percent of
+events to allow through to server (from 0% to 100%). By default all
+events will be sent to the Sentry server.
 
 ### Inapp classes
 Sentry differentiate `in_app` stack frames (which are directly related to your application)
