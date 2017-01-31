@@ -42,13 +42,13 @@ class RavenUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
     public void uncaughtException(Thread thread, Throwable thrown) {
         Log.d(TAG, "Uncaught exception received.");
 
-        Event event = new EventBuilder().withMessage(thrown.getMessage())
+        EventBuilder eventBuilder = new EventBuilder()
+            .withMessage(thrown.getMessage())
             .withLevel(Event.Level.FATAL)
-            .withSentryInterface(new ExceptionInterface(thrown))
-            .build();
+            .withSentryInterface(new ExceptionInterface(thrown));
 
         try {
-            com.getsentry.raven.Raven.capture(event);
+            com.getsentry.raven.Raven.capture(eventBuilder);
         } catch (Exception e) {
             Log.e(TAG, "Error sending excepting to Sentry.", e);
         }
