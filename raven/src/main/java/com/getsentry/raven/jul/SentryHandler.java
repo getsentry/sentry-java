@@ -193,16 +193,8 @@ public class SentryHandler extends Handler {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null) {
-                synchronized (this) {
-                    if (raven == null) {
-                        initRaven();
-                    }
-                }
-            }
-
             Event event = buildEvent(record);
-            raven.sendEvent(event);
+            initAndGetRaven().sendEvent(event);
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Raven", e, ErrorManager.WRITE_FAILURE);
         } finally {
@@ -210,10 +202,22 @@ public class SentryHandler extends Handler {
         }
     }
 
+    private Raven initAndGetRaven() {
+        if (raven == null) {
+            initRaven();
+        }
+
+        return raven;
+    }
+
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
+        if (raven != null) {
+            return;
+        }
+
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();

@@ -144,20 +144,24 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public void activateOptions() {
         super.activateOptions();
+    }
 
+    private Raven initAndGetRaven() {
         if (raven == null) {
-            synchronized (this) {
-                if (raven == null) {
-                    initRaven();
-                }
-            }
+            initRaven();
         }
+
+        return raven;
     }
 
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
+        if (raven != null) {
+            return;
+        }
+
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
@@ -181,7 +185,7 @@ public class SentryAppender extends AppenderSkeleton {
         RavenEnvironment.startManagingThread();
         try {
             Event event = buildEvent(loggingEvent);
-            raven.sendEvent(event);
+            initAndGetRaven().sendEvent(event);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Raven", e,
                     ErrorCode.WRITE_FAILURE);
