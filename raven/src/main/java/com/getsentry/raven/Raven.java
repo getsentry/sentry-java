@@ -36,6 +36,18 @@ public class Raven {
      */
     private volatile Connection connection;
 
+    /**
+     * Thread local set of active {@link Raven} objects. Note that an {@link IdentityHashMap}
+     * is used instead of a Set because there is no identity-set in the Java
+     * standard library.
+     * <p>
+     * A set of active {@link Raven} instances is required in order to support running multiple Raven
+     * clients within a single process.
+     * <p>
+     * This must be static and {@link ThreadLocal} so that users can retrieve any active
+     * instances globally, without passing instances all the way down their
+     * stacks. See {@link com.getsentry.raven.event.Breadcrumbs} for an example of how this may be used.
+     */
     private static Map<Raven, Raven> instances = Collections.synchronizedMap(new IdentityHashMap<Raven, Raven>());
 
     /**
@@ -43,7 +55,7 @@ public class Raven {
      * isn't a concurrent set in the standard library.
      */
     private final Set<EventBuilderHelper> builderHelpers =
-            Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
+        Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
     private final ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
         @Override
         protected RavenContext initialValue() {
@@ -53,7 +65,7 @@ public class Raven {
 
     /**
      * Constructs a Raven instance.
-     * <p>
+     *
      * Note that the most recently constructed instance is stored statically so it can be used with
      * the static helper methods.
      *
@@ -68,7 +80,7 @@ public class Raven {
 
     /**
      * Constructs a Raven instance using the provided connection.
-     * <p>
+     *
      * Note that the most recently constructed instance is stored statically so it can be used with
      * the static helper methods.
      *
@@ -120,14 +132,14 @@ public class Raven {
 
     /**
      * Sends a message to the Sentry server.
-     * <p>
+     *
      * The message will be logged at the {@link Event.Level#INFO} level.
      *
      * @param message message to send to Sentry.
      */
     public void sendMessage(String message) {
         EventBuilder eventBuilder = new EventBuilder().withMessage(message)
-                .withLevel(Event.Level.INFO);
+            .withLevel(Event.Level.INFO);
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
         sendEvent(event);
@@ -135,15 +147,15 @@ public class Raven {
 
     /**
      * Sends an exception (or throwable) to the Sentry server.
-     * <p>
+     *
      * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
      * @param throwable exception to send to Sentry.
      */
     public void sendException(Throwable throwable) {
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
-                .withLevel(Event.Level.ERROR)
-                .withSentryInterface(new ExceptionInterface(throwable));
+            .withLevel(Event.Level.ERROR)
+            .withSentryInterface(new ExceptionInterface(throwable));
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
         sendEvent(event);
@@ -218,7 +230,7 @@ public class Raven {
     private static void verifyStoredInstance() {
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
-                    + " You must construct a Raven instance before using the static Raven methods.");
+                + " You must construct a Raven instance before using the static Raven methods.");
         }
     }
 
@@ -234,7 +246,7 @@ public class Raven {
 
     /**
      * Sends an exception (or throwable) to the Sentry server using the statically stored Raven instance.
-     * <p>
+     *
      * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
      * @param throwable exception to send to Sentry.
@@ -246,7 +258,7 @@ public class Raven {
 
     /**
      * Sends a message to the Sentry server using the statically stored Raven instance.
-     * <p>
+     *
      * The message will be logged at the {@link Event.Level#INFO} level.
      *
      * @param message message to send to Sentry.
@@ -268,7 +280,7 @@ public class Raven {
 
     /**
      * Returns any currently active {@link Raven} instances (Active instances are instances on which close has not been called).
-     * @return List of Raven instances
+     * @return List of active Raven instances
      */
     public static List<Raven> getInstances() {
         return new ArrayList<>(instances.keySet());
@@ -276,7 +288,7 @@ public class Raven {
 
     /**
      * Returns any active {@link RavenContext}s.
-     * @return List or RavenContext instances
+     * @return List of active RavenContext instances
      */
     public static List<RavenContext> getContexts() {
         List<RavenContext> contexts = new ArrayList<>();
