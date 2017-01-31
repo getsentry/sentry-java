@@ -2,6 +2,7 @@ Version 7.8.2
 -------------
 
 - Fix race condition, ensuring Raven is only initialized once in appenders. (thanks OutOfBrain)
+- Allow use of custom AndroidRavenFactory. (thanks kassim)
 
 Version 7.8.1
 -------------
