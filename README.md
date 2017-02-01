@@ -344,6 +344,8 @@ public class MyRavenFactory extends DefaultRavenFactory {
 }
 ```
 
+TODO: Manual example `RavenFactory.registerFactory(new TestFactory());`
+
 You'll need to add a `ServiceLoader` provider file to your project at
 `src/main/resources/META-INF/services/com.getsentry.raven.RavenFactory` that contains
 the name of your class so that it will be considered as a candidate `RavenFactory`. For an example, see
