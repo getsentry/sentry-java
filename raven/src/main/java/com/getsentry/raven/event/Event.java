@@ -242,13 +242,13 @@ public class Event implements Serializable {
 
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException {
+        throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
         extra = (Map<String, Object>) stream.readObject();
     }
 
     private void writeObject(ObjectOutputStream stream)
-            throws IOException {
+        throws IOException {
         stream.defaultWriteObject();
         stream.writeObject(convertToSerializable(extra));
     }
@@ -291,10 +291,10 @@ public class Event implements Serializable {
     @Override
     public String toString() {
         return "Event{"
-                + "level=" + level
-                + ", message='" + message + '\''
-                + ", logger='" + logger + '\''
-                + '}';
+            + "level=" + level
+            + ", message='" + message + '\''
+            + ", logger='" + logger + '\''
+            + '}';
     }
 
     /**

@@ -180,7 +180,7 @@ public class DefaultRavenFactory extends RavenFactory {
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
             logger.debug("The current environment doesn't provide access to servlets,"
-                         + "or provides an unsupported version.");
+                + "or provides an unsupported version.");
         }
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
         return raven;
@@ -248,8 +248,8 @@ public class DefaultRavenFactory extends RavenFactory {
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
-                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
-                new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
+            maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
+            new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
 
         boolean gracefulShutdown = getAsyncGracefulShutdownEnabled(dsn);
 
@@ -352,12 +352,12 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected Collection<String> getNotInAppFrames() {
         return Arrays.asList("com.sun.",
-                "java.",
-                "javax.",
-                "org.omg.",
-                "sun.",
-                "junit.",
-                "com.intellij.rt.");
+            "java.",
+            "javax.",
+            "org.omg.",
+            "sun.",
+            "junit.",
+            "com.intellij.rt.");
     }
 
     /**

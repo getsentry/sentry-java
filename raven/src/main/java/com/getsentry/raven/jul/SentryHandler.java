@@ -215,7 +215,7 @@ public class SentryHandler extends Handler {
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Raven",
-                    e, ErrorManager.OPEN_FAILURE);
+                e, ErrorManager.OPEN_FAILURE);
         } catch (Exception e) {
             reportError("An exception occurred during the creation of a Raven instance", e, ErrorManager.OPEN_FAILURE);
         }
@@ -229,9 +229,9 @@ public class SentryHandler extends Handler {
      */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withLevel(getLevel(record.getLevel()))
-                .withTimestamp(new Date(record.getMillis()))
-                .withLogger(record.getLoggerName());
+            .withLevel(getLevel(record.getLevel()))
+            .withTimestamp(new Date(record.getMillis()))
+            .withLogger(record.getLoggerName());
 
         String message = record.getMessage();
         if (record.getResourceBundle() != null && record.getResourceBundle().containsKey(record.getMessage())) {
@@ -261,7 +261,7 @@ public class SentryHandler extends Handler {
 
         if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
             StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
-                    record.getSourceMethodName(), null, -1);
+                record.getSourceMethodName(), null, -1);
             eventBuilder.withCulprit(fakeFrame);
         } else {
             eventBuilder.withCulprit(record.getLoggerName());

@@ -56,7 +56,7 @@ public class AsyncConnection implements Connection {
      * @param shutdownTimeout  timeout for graceful shutdown of the executor, in milliseconds.
      */
     public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown,
-        long shutdownTimeout) {
+                           long shutdownTimeout) {
         this.actualConnection = actualConnection;
         if (executorService == null)
             this.executorService = Executors.newSingleThreadExecutor();
@@ -173,10 +173,10 @@ public class AsyncConnection implements Connection {
 
     private final class ShutDownHook extends Thread {
 
-      /**
-       * Whether or not this ShutDownHook instance will do anything when run.
-       */
-      private volatile boolean enabled = true;
+        /**
+         * Whether or not this ShutDownHook instance will do anything when run.
+         */
+        private volatile boolean enabled = true;
 
         @Override
         public void run() {

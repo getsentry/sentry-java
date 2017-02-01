@@ -368,7 +368,8 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>7.5</version>
+                            <!-- TODO: Upgrade if/when we can depend on jdk8+ -->
+                            <version>6.19</version>
                         </dependency>
                     </dependencies>
                     <executions>
