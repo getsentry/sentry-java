@@ -2,28 +2,35 @@ package com.getsentry.raven.connection;
 
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.UUID;
+import java.util.Random;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 
 public class RandomEventSamplerTest {
-    private RandomEventSampler randomEventSampler = new RandomEventSampler(0.5);
+    private Event event = new EventBuilder().build();
+    private Random seededRandom = new Random();
+
+    @BeforeMethod
+    public void setup() {
+        // set our Random to a known seed such that nextInt % 100 == -25
+        seededRandom.setSeed(1);
+    }
 
     @Test
     public void testShouldSend() {
-        UUID lowId = new UUID(0L, 25L);
-        Event lowEvent = new EventBuilder(lowId).build();
-        assertThat(randomEventSampler.shouldSendEvent(lowEvent), is(true));
+        RandomEventSampler randomEventSampler = new RandomEventSampler(0.5, seededRandom);
+        assertThat(randomEventSampler.shouldSendEvent(event), is(true));
     }
 
+    @Test
     public void testShouldNotSend() {
-        UUID highId = new UUID(0L, 75L);
-        Event highEvent = new EventBuilder(highId).build();
-        assertThat(randomEventSampler.shouldSendEvent(highEvent), is(false));
+        RandomEventSampler randomEventSampler = new RandomEventSampler(0.1, seededRandom);
+        assertThat(randomEventSampler.shouldSendEvent(event), is(false));
     }
 
 }
