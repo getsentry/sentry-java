@@ -112,6 +112,7 @@ public abstract class AbstractConnection implements Connection {
                 if (lockdown.get())
                     condition.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 logger.warn("An exception occurred during the lockdown.", e);
             } finally {
                 lock.unlock();
