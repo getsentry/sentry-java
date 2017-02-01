@@ -234,8 +234,11 @@ public class SentryAppender extends AbstractAppender {
 
         RavenEnvironment.startManagingThread();
         try {
+            if (raven == null) {
+                initRaven();
+            }
             Event event = buildEvent(logEvent);
-            getRaven().sendEvent(event);
+            raven.sendEvent(event);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Raven", logEvent, e);
         } finally {
@@ -243,23 +246,10 @@ public class SentryAppender extends AbstractAppender {
         }
     }
 
-    private Raven getRaven() {
-        if (raven == null) {
-            initRaven();
-        }
-
-        return raven;
-    }
-
     /**
      * Initialises the Raven instance.
      */
     protected synchronized void initRaven() {
-        if (raven != null) {
-            return;
-        }
-
-
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
@@ -339,7 +329,7 @@ public class SentryAppender extends AbstractAppender {
         for (Map.Entry<String, String> tagEntry : tags.entrySet())
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
 
-        getRaven().runBuilderHelpers(eventBuilder);
+        raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
