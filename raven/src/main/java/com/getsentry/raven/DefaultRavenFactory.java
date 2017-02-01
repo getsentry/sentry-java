@@ -71,7 +71,7 @@ public class DefaultRavenFactory extends RavenFactory {
     /**
      * Default number of milliseconds between attempts to flush buffered events.
      */
-    public static final int BUFFER_FLUSHTIME_DEFAULT = 60000;
+    public static final long BUFFER_FLUSHTIME_DEFAULT = 60000;
     /**
      * Option to disable the graceful shutdown of the buffer flusher.
      */
@@ -138,6 +138,10 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option for whether to hide common stackframes with enclosing exceptions.
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
+    /**
+     * Option for whether to sample events, allowing from 0.0 to 1.0 (0 to 100%) to be sent to the server.
+     */
+    public static final String SAMPLE_RATE_OPTION = "raven.sample.rate";
     /**
      * Option to set an HTTP proxy hostname for Sentry connections.
      */
@@ -271,8 +275,14 @@ public class DefaultRavenFactory extends RavenFactory {
             proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
         }
 
+        Double sampleRate = getSampleRate(dsn);
+        EventSampler eventSampler = null;
+        if (sampleRate != null) {
+            eventSampler = new RandomEventSampler(sampleRate);
+        }
+
         HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(),
-            dsn.getSecretKey(), proxy);
+            dsn.getSecretKey(), proxy, eventSampler);
 
         Marshaller marshaller = createMarshaller(dsn);
         httpConnection.setMarshaller(marshaller);
@@ -471,6 +481,16 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected boolean getBypassSecurityEnabled(Dsn dsn) {
         return dsn.getProtocolSettings().contains(NAIVE_PROTOCOL);
+    }
+
+    /**
+     * Whether to sample events, and if so how much to allow through to the server (from 0.0 to 1.0).
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return The ratio of events to allow through to server, or null if sampling is disabled.
+     */
+    protected Double getSampleRate(Dsn dsn) {
+        return Util.parseDouble(dsn.getOptions().get(SAMPLE_RATE_OPTION), null);
     }
 
     /**
