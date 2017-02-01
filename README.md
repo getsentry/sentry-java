@@ -353,10 +353,28 @@ public class MyRavenFactory extends DefaultRavenFactory {
 }
 ```
 
+### Registration
+Next, you'll need to make your class known to Raven in one of two ways.
+
+#### Java ServiceLoader provider (recommended)
 You'll need to add a `ServiceLoader` provider file to your project at
 `src/main/resources/META-INF/services/com.getsentry.raven.RavenFactory` that contains
 the name of your class so that it will be considered as a candidate `RavenFactory`. For an example, see
 [how we configure the DefaultRavenFactory itself](https://github.com/getsentry/raven-java/blob/master/raven/src/main/resources/META-INF/services/com.getsentry.raven.RavenFactory).
 
+#### Manual registration
+You can also manually register your `RavenFactory` instance. Note that this should be done
+early in your application lifecycle so that your factory is available the first time
+you attempt to send an event to the Sentry server.
+```java
+class MyApp {
+    public static void main(String[] args) {
+        RavenFactory.registerFactory(new MyRavenFactory());
+        // ... your app code ...
+    }
+}
+```
+
+### Configuration
 Finally, see the `README` for the logger integration you use to find out how to
 configure it to use your custom `RavenFactory`.
