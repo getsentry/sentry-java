@@ -34,11 +34,14 @@ public class RavenContext implements AutoCloseable {
                 return new IdentityHashMap<>();
             }
     };
+
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
+
     private UUID lastEventId;
+
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
@@ -58,18 +61,21 @@ public class RavenContext implements AutoCloseable {
     public RavenContext(int breadcrumbLimit) {
         breadcrumbs = new CircularFifoQueue<>(breadcrumbLimit);
     }
+
     /**
      * Add this context to the active contexts for this thread.
      */
     public void activate() {
         activeContexts.get().put(this, this);
     }
+
     /**
      * Remove this context from the active contexts for this thread.
      */
     public void deactivate() {
         activeContexts.get().remove(this);
     }
+
     /**
      * Clear state from this context.
      */
@@ -78,6 +84,7 @@ public class RavenContext implements AutoCloseable {
         lastEventId = null;
         user = null;
     }
+
     /**
      * Calls deactivate, used by try-with-resources ({@link AutoCloseable}).
      */
@@ -85,6 +92,7 @@ public class RavenContext implements AutoCloseable {
     public void close() {
         deactivate();
     }
+
     /**
      * Returns all active contexts for the current thread.
      *
@@ -96,6 +104,7 @@ public class RavenContext implements AutoCloseable {
         list.addAll(ravenContexts);
         return list;
     }
+
     /**
      * Return {@link Breadcrumb}s attached to this RavenContext.
      *
@@ -104,6 +113,7 @@ public class RavenContext implements AutoCloseable {
     public Iterator<Breadcrumb> getBreadcrumbs() {
         return breadcrumbs.iterator();
     }
+
     /**
      * Record a single {@link Breadcrumb} into this context.
      *
@@ -112,6 +122,7 @@ public class RavenContext implements AutoCloseable {
     public void recordBreadcrumb(Breadcrumb breadcrumb) {
         breadcrumbs.add(breadcrumb);
     }
+
     /**
      * Store the UUID of the last sent event by this thread, useful for handling user feedback.
      *
@@ -120,6 +131,7 @@ public class RavenContext implements AutoCloseable {
     public void setLastEventId(UUID id) {
         lastEventId = id;
     }
+
     /**
      * Get the UUID of the last event sent by this thread, useful for handling user feedback.
      *
