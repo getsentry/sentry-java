@@ -3,15 +3,11 @@ package com.getsentry.raven.event;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.connection.Connection;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
-import com.getsentry.raven.event.interfaces.SentryInterface;
 import com.getsentry.raven.event.interfaces.UserInterface;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
 import org.testng.annotations.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
