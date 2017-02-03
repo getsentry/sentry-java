@@ -19,6 +19,7 @@ import com.getsentry.raven.event.interfaces.ExceptionInterface;
 import com.getsentry.raven.event.interfaces.MessageInterface;
 import com.getsentry.raven.event.interfaces.SentryException;
 import com.getsentry.raven.event.interfaces.StackTraceInterface;
+import com.getsentry.raven.event.interfaces.UserInterface;
 import com.getsentry.raven.util.Util;
 
 import java.util.ArrayDeque;
@@ -98,6 +99,31 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     protected Set<String> extraTags = Collections.emptySet();
 
     /**
+     * MDC key to be used for user username information.
+     */
+    protected String usernameMdcKey;
+
+    /**
+     * MDC key to be used for user email information.
+     */
+    protected String emailMdcKey;
+
+    /**
+     * MDC key to be used for user IP information.
+     */
+    protected String ipMdcKey;
+    /**
+     * MDC key to be used for user ID information.
+     */
+    protected String userIdMdcKey;
+
+    /**
+     * Set of user information MDC keys.
+     * Used for filtering User information from ExtraInfo and checking if any user info exists in the MDC.
+     */
+    protected Set<String> userMdcKeys = new HashSet<>();
+
+    /**
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
@@ -108,8 +134,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         setTags(Lookup.lookup("tags"));
         setExtraTags(Lookup.lookup("extraTags"));
 
+        setUsernameMdcKey(Lookup.lookup("usernameMdcKey"));
+        setEmailMdcKey(Lookup.lookup("emailMdcKey"));
+        setIpMdcKey(Lookup.lookup("ipMdcKey"));
+        setUserIdMdcKey(Lookup.lookup("userIdMdcKey"));
+
         this.addFilter(new DropRavenFilter());
     }
+
 
     /**
      * Creates an instance of SentryAppender.
@@ -232,6 +264,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withEnvironment(environment.trim());
         }
 
+
+
         if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.withSentryInterface(new MessageInterface(
                 iLoggingEvent.getMessage(),
@@ -255,10 +289,29 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
         }
 
-        for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
+        Map<String, String> mdcProperties = iLoggingEvent.getMDCPropertyMap();
+
+        if (userMdcKeys.size() > 0) {
+            boolean hasUserData = false;
+            for (String key : userMdcKeys) {
+                if (mdcProperties.get(key) != null) {
+                    hasUserData = true;
+                    break;
+                }
+            }
+            if (hasUserData) {
+                eventBuilder.withSentryInterface(new UserInterface(
+                        mdcProperties.get(userIdMdcKey),
+                        mdcProperties.get(usernameMdcKey),
+                        mdcProperties.get(ipMdcKey),
+                        mdcProperties.get(emailMdcKey)));
+            }
+        }
+
+        for (Map.Entry<String, String> mdcEntry : mdcProperties.entrySet()) {
             if (extraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
-            } else {
+            } else if (!userMdcKeys.contains(mdcEntry.getKey())) {
                 eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
@@ -370,6 +423,21 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return stackTraceElements;
     }
 
+    /**
+     * Adds key to set of User MDC information keys.
+     *
+     * @param key the key to be added - will be skipped if null
+     *
+     * @return The given key (null if the key was null)
+     */
+    protected String addUserMdcKey(String key) {
+        if (key != null) {
+            userMdcKeys.add(key);
+        }
+        return key;
+    }
+
+
     public void setDsn(String dsn) {
         this.dsn = dsn;
     }
@@ -392,6 +460,22 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     public void setMinLevel(String minLevel) {
         this.minLevel = minLevel != null ? Level.toLevel(minLevel) : null;
+    }
+
+    public void setUsernameMdcKey(String usernameMdcKey) {
+        this.usernameMdcKey = addUserMdcKey(usernameMdcKey);
+    }
+
+    public void setEmailMdcKey(String emailMdcKey) {
+        this.emailMdcKey = addUserMdcKey(emailMdcKey);
+    }
+
+    public void setIpMdcKey(String ipMdcKey) {
+        this.ipMdcKey = addUserMdcKey(ipMdcKey);
+    }
+
+    public void setUserIdMdcKey(String userIdMdcKey) {
+        this.userIdMdcKey = addUserMdcKey(userIdMdcKey);
     }
 
     /**
