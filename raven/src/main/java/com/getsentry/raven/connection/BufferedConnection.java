@@ -81,21 +81,24 @@ public class BufferedConnection implements Connection {
             Runtime.getRuntime().addShutdownHook(shutDownHook);
         }
 
-        Flusher flusher = new BufferedConnection.Flusher();
+        Flusher flusher = new BufferedConnection.Flusher(flushtime);
         executorService.scheduleWithFixedDelay(flusher, flushtime, flushtime, TimeUnit.MILLISECONDS);
+    }
+
+    private void doSend(Event event, boolean addToBuffer) {
+        if (addToBuffer) {
+            // buffer before we attempt to send
+            buffer.add(event);
+        }
+
+        actualConnection.send(event);
+        // success, remove the event from the buffer
+        buffer.discard(event);
     }
 
     @Override
     public void send(Event event) {
-        try {
-            actualConnection.send(event);
-            // success: ensure the even isn't buffered
-            buffer.discard(event);
-        } catch (Exception e) {
-            // failure: buffer the event
-            buffer.add(event);
-            throw e;
-        }
+        doSend(event, true);
     }
 
     @Override
@@ -141,13 +144,18 @@ public class BufferedConnection implements Connection {
     /**
      * Flusher is scheduled to periodically run by the BufferedConnection. It retrieves
      * an Iterator of Events from the underlying {@link Buffer} and attempts to send
-     * one at time, discarding from the buffer on success and re-adding to the buffer
-     * on failure.
+     * one at time, discarding from the buffer on success.
      *
-     * Upon the first failure, Flusher will return and wait to be run again in the futre,
+     * Upon the first failure, Flusher will return and wait to be run again in the future,
      * under the assumption that the network is now/still down.
      */
     private class Flusher implements Runnable {
+        private long minAgeMillis;
+
+        Flusher(long minAgeMillis) {
+            this.minAgeMillis = minAgeMillis;
+        }
+
         @Override
         public void run() {
             logger.trace("Running Flusher");
@@ -158,9 +166,16 @@ public class BufferedConnection implements Connection {
                 while (events.hasNext() && !closed) {
                     Event event = events.next();
 
+                    long now = System.currentTimeMillis();
+                    long eventTime = event.getTimestamp().getTime();
+                    if (now - eventTime < minAgeMillis) {
+                        logger.trace("TODO");
+                        return;
+                    }
+
                     try {
                         logger.trace("Flusher attempting to send Event: " + event.getId());
-                        send(event);
+                        doSend(event, false);
                         logger.trace("Flusher successfully sent Event: " + event.getId());
                     } catch (Exception e) {
                         logger.debug("Flusher failed to send Event: " + event.getId(), e);

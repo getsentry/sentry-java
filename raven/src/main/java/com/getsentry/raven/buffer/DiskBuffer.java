@@ -70,7 +70,13 @@ public class DiskBuffer implements Buffer {
         }
 
         File eventFile = new File(bufferDir.getAbsolutePath(), event.getId().toString() + FILE_SUFFIX);
-        logger.debug("Adding Event to offline storage: " + eventFile.getAbsolutePath());
+        if (eventFile.exists()) {
+            logger.trace("Not adding Event to offline storage because it already exists: "
+                + eventFile.getAbsolutePath());
+            return;
+        } else {
+            logger.debug("Adding Event to offline storage: " + eventFile.getAbsolutePath());
+        }
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(eventFile);
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {

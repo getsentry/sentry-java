@@ -220,8 +220,9 @@ by setting the `raven.buffer.gracefulshutdown` option:
 
 ### Buffering to disk upon network error
 Raven can be configured to write events to a specified directory on disk
-anytime communication with the Sentry server fails with the `raven.buffer.dir`
-option. If the directory doesn't exist, Raven will attempt to create it
+before sending to the Sentry server with the `raven.buffer.dir`
+option. When an event is successfully sent it is deleted from disk. If the
+directory doesn't exist, Raven will attempt to create it
 on startup and may therefore need write permission on the parent directory.
 Raven always requires write permission on the buffer directory itself.
 
