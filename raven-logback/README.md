@@ -14,16 +14,13 @@ for logback to send the logged events to Sentry.
 </dependency>
 ```
 
+### Gradle
+```
+compile 'com.getsentry.raven:raven-logback:7.8.1'
+```
+
 ### Other dependency managers
 Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C7.8.1%7Cjar).
-
-### Manual dependency management
-Relies on:
-
- - [raven dependencies](../raven)
- - [logback-core-1.1.2.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-core%7C1.1.2%7Cjar)
- - [logback-classic-1.1.2.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-classic%7C1.1.2%7Cjar)
- will act as the implementation of slf4j (instead of slf4j-jdk14).
 
 ## Usage
 ### Configuration

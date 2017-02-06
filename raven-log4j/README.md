@@ -14,16 +14,13 @@ for log4j to send the logged events to Sentry.
 </dependency>
 ```
 
+### Gradle
+```
+compile 'com.getsentry.raven:raven-log4j:7.8.1'
+```
+
 ### Other dependency managers
 Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.8.1%7Cjar).
-
-### Manual dependency management
-Relies on:
-
- - [raven dependencies](../raven)
- - [log4j-1.2.17.jar](https://search.maven.org/#artifactdetails%7Clog4j%7Clog4j%7C1.2.17%7Cjar)
- - [slf4j-log4j12-1.7.7.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-log4j12%7C1.7.7%7Cjar)
- is recommended as the implementation of slf4j (instead of slf4j-jdk14).
 
 ## Usage
 ### Configuration
