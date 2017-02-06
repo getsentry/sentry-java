@@ -31,8 +31,20 @@ Add the `SentryAppender` to your `logback.xml` file:
 
 ```xml
 <configuration>
-    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender" />
-    <root level="warn">
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="Console" />
         <appender-ref ref="Sentry"/>
     </root>
 </configuration>
@@ -80,7 +92,18 @@ your application in different environments.
 
 ```xml
 <configuration>
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+
+        <!-- Set Sentry DSN -->
         <dsn>https://host:port/1?options</dsn>
         <!-- Optional, provide release version of your application -->
         <release>1.0.0</release>
@@ -95,7 +118,9 @@ your application in different environments.
         <!-- Optional, provide tag names to be extracted from MDC when using SLF4J -->
         <extraTags>foo,bar,baz</extraTags>
     </appender>
-    <root level="warn">
+
+    <root level="INFO">
+        <appender-ref ref="Console" />
         <appender-ref ref="Sentry"/>
     </root>
 </configuration>
