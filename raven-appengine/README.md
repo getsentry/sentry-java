@@ -19,13 +19,13 @@ __This module is not useful outside of Google App Engine.__
 </dependency>
 ```
 
+### Gradle
+```
+compile 'com.getsentry.raven:raven-appengine:7.8.1'
+```
+
 ### Other dependency managers
 Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-appengine%7C7.8.1%7Cjar).
-
-### Manual dependency management
-Relies on:
-
- - [raven dependencies](../raven)
 
 ## Usage
 
