@@ -35,12 +35,17 @@ Add the `SentryAppender` to your `log4j2.xml` file:
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
     <appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+
         <Raven name="Sentry" />
     </appenders>
 
     <loggers>
-        <root level="all">
-            <appender-ref ref="Sentry"/>
+        <root level="INFO">
+            <appender-ref ref="Console" />
+            <appender-ref ref="Sentry" level="WARN" />
         </root>
     </loggers>
 </configuration>
@@ -90,54 +95,31 @@ your application in different environments.
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
     <appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+
         <Raven name="Sentry">
-            <dsn>
-                https://host:port/1?options
-            </dsn>
-            <!--
-                Optional, provide release version of your application
-            -->
-            <release>
-                1.0.0
-            </release>
-            <!--
-                Optional, provide environment your application is running in
-            -->
-            <environment>
-                production
-            </environment>
-            <!--
-                Optional, override the server name (rather than looking it up dynamically)
-            -->
-            <serverName>
-                server1
-            </serverName>
-            <!--
-                Optional, select the ravenFactory class
-            -->
-            <!--
-            <ravenFactory>
-                com.foo.RavenFactory
-            </ravenFactory>
-            -->
-            <!--
-                Optional, provide tags
-            -->
-            <tags>
-                tag1:value1,tag2:value2
-            </tags>
-            <!--
-                Optional, provide tag names to be extracted from MDC when using SLF4J
-            -->
-            <extraTags>
-                foo,bar,baz
-            </extraTags>
+            <dsn>https://host:port/1?options</dsn>
+            <!-- Optional, provide release version of your application -->
+            <release>1.0.0</release>
+            <!-- Optional, provide environment your application is running in -->
+            <environment>production</environment>
+            <!-- Optional, override the server name (rather than looking it up dynamically) -->
+            <serverName>server1</serverName>
+            <!-- Optional, select the ravenFactory class -->
+            <ravenFactory>com.foo.RavenFactory</ravenFactory>
+            <!-- Optional, provide tags -->
+            <tags>tag1:value1,tag2:value2</tags>
+            <!-- Optional, provide tag names to be extracted from MDC when using SLF4J -->
+            <extraTags>foo,bar,baz</extraTags>
         </Raven>
     </appenders>
 
     <loggers>
-        <root level="all">
-            <appender-ref ref="Sentry"/>
+        <root level="INFO">
+            <appender-ref ref="Console" />
+            <appender-ref ref="Sentry" level="WARN" />
         </root>
     </loggers>
 </configuration>

@@ -32,8 +32,14 @@ Relies on:
 Add the `SentryHandler` to the `logging.properties` file:
 
 ```properties
-.level=WARNING
-handlers=com.getsentry.raven.jul.SentryHandler
+# Enable the Console and Sentry handlers
+handlers=java.util.logging.ConsoleHandler,com.getsentry.raven.jul.SentryHandler
+
+# Set the default log level to INFO
+.level=INFO
+
+# Override the Sentry handler log level to WARNING
+com.getsentry.raven.jul.SentryHandler.level=WARNING
 ```
 
 When starting your application, add the `java.util.logging.config.file` to the
@@ -82,8 +88,16 @@ itself. This is less flexible because it's harder to change when you run
 your application in different environments.
 
 ```properties
-.level=WARNING
-handlers=com.getsentry.raven.jul.SentryHandler
+# Enable the Console and Sentry handlers
+handlers=java.util.logging.ConsoleHandler,com.getsentry.raven.jul.SentryHandler
+
+# Set the default log level to INFO
+.level=INFO
+
+# Override the Sentry handler log level to WARNING
+com.getsentry.raven.jul.SentryHandler.level=WARNING
+
+# Set Sentry DSN
 com.getsentry.raven.jul.SentryHandler.dsn=https://host:port/1?options
 # Optional, provide tags
 com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
