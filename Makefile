@@ -42,7 +42,7 @@ prepareChanges:
 	$(eval DASHES=$(shell python -c 'print("-" * (8 + len("$(DEV_VERSION)")))'))
 # Add new Version section to the top of the CHANGES file
 	@echo Updating CHANGES file
-	echo -e "Version $(DEV_VERSION)\n$(DASHES)\n\n- ???\n" > CHANGES.new && cat CHANGES >> CHANGES.new && mv CHANGES.new CHANGES
+	echo -e "Version $(DEV_VERSION)\n$(DASHES)\n\n-\n" > CHANGES.new && cat CHANGES >> CHANGES.new && mv CHANGES.new CHANGES
 	git add CHANGES
 	git commit -m "Bump CHANGES to $(DEV_VERSION)"
 
