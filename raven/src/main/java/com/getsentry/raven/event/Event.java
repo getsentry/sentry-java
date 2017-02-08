@@ -119,8 +119,9 @@ public class Event implements Serializable {
      * @param id unique identifier of the event.
      */
     Event(UUID id) {
-        if (id == null)
+        if (id == null) {
             throw new IllegalArgumentException("The id can't be null");
+        }
         this.id = id;
     }
 
@@ -290,10 +291,11 @@ public class Event implements Serializable {
     private static HashMap<String, ? super Serializable> convertToSerializable(Map<String, Object> objectMap) {
         HashMap<String, ? super Serializable> serializableMap = new HashMap<>(objectMap.size());
         for (Map.Entry<String, Object> objectEntry : objectMap.entrySet()) {
-            if (objectEntry.getValue() instanceof Serializable)
+            if (objectEntry.getValue() instanceof Serializable) {
                 serializableMap.put(objectEntry.getKey(), (Serializable) objectEntry.getValue());
-            else
+            } else {
                 serializableMap.put(objectEntry.getKey(), objectEntry.getValue().toString());
+            }
         }
         return serializableMap;
     }
@@ -301,8 +303,12 @@ public class Event implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return id.equals(((Event) o).id);
     }

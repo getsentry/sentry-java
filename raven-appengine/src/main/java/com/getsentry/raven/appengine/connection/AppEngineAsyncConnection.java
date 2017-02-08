@@ -72,8 +72,9 @@ public class AppEngineAsyncConnection implements Connection {
      */
     @Override
     public void send(Event event) {
-        if (!closed)
+        if (!closed) {
             queue.add(withPayload(new EventSubmitter(id, event)));
+        }
     }
 
     @Override

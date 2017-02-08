@@ -152,7 +152,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             return Event.Level.INFO;
         } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -263,11 +265,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             }
         }
 
-        if (iLoggingEvent.getMarker() != null)
+        if (iLoggingEvent.getMarker() != null) {
             eventBuilder.withTag(LOGBACK_MARKER, iLoggingEvent.getMarker().getName());
+        }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet())
+        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
+        }
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
@@ -416,11 +420,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     public void stop() {
         RavenEnvironment.startManagingThread();
         try {
-            if (!isStarted())
+            if (!isStarted()) {
                 return;
+            }
             super.stop();
-            if (raven != null)
+            if (raven != null) {
                 raven.closeConnection();
+            }
         } catch (Exception e) {
             addError("An exception occurred while closing the Raven connection", e);
         } finally {

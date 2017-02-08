@@ -602,10 +602,12 @@ public class DefaultRavenFactory extends RavenFactory {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
-            if (!t.isDaemon())
+            if (!t.isDaemon()) {
                 t.setDaemon(true);
-            if (t.getPriority() != priority)
+            }
+            if (t.getPriority() != priority) {
                 t.setPriority(priority);
+            }
             return t;
         }
     }

@@ -237,10 +237,11 @@ public class JsonMarshaller implements Marshaller {
         } else if (value instanceof Map) {
             generator.writeStartObject();
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                if (entry.getKey() == null)
+                if (entry.getKey() == null) {
                     generator.writeFieldName("null");
-                else
+                } else {
                     generator.writeFieldName(entry.getKey().toString());
+                }
                 safelyWriteObject(generator, entry.getValue());
             }
             generator.writeEndObject();
@@ -318,11 +319,13 @@ public class JsonMarshaller implements Marshaller {
      * @return trimmed message (shortened if necessary).
      */
     private String trimMessage(String message) {
-        if (message == null)
+        if (message == null) {
             return null;
-        else if (message.length() > maxMessageLength)
+        } else if (message.length() > maxMessageLength) {
             return message.substring(0, maxMessageLength);
-        else return message;
+        } else {
+            return message;
+        }
     }
 
     /**
@@ -342,8 +345,9 @@ public class JsonMarshaller implements Marshaller {
      * @return log level as a String.
      */
     private String formatLevel(Event.Level level) {
-        if (level == null)
+        if (level == null) {
             return null;
+        }
 
         switch (level) {
             case DEBUG:

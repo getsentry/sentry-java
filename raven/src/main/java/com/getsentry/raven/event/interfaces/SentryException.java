@@ -112,20 +112,28 @@ public final class SentryException implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         SentryException that = (SentryException) o;
 
-        if (!exceptionClassName.equals(that.exceptionClassName)) return false;
-        if (exceptionMessage != null ? !exceptionMessage.equals(that.exceptionMessage) : that.exceptionMessage != null)
+        if (!exceptionClassName.equals(that.exceptionClassName)) {
             return false;
+        }
+        if (exceptionMessage != null ? !exceptionMessage.equals(that.exceptionMessage)
+            : that.exceptionMessage != null) {
+            return false;
+        }
         if (exceptionPackageName != null ? !exceptionPackageName.equals(that.exceptionPackageName)
-            : that.exceptionPackageName != null)
+            : that.exceptionPackageName != null) {
             return false;
-        if (!stackTraceInterface.equals(that.stackTraceInterface)) return false;
+        }
 
-        return true;
+        return stackTraceInterface.equals(that.stackTraceInterface);
     }
 
     @Override

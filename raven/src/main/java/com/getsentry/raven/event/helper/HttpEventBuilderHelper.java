@@ -36,8 +36,9 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         HttpServletRequest servletRequest = RavenServletRequestListener.getServletRequest();
-        if (servletRequest == null)
+        if (servletRequest == null) {
             return;
+        }
 
         addHttpInterface(eventBuilder, servletRequest);
         addUserInterface(eventBuilder, servletRequest);

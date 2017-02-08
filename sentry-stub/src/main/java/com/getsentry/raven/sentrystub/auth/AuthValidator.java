@@ -50,8 +50,9 @@ public class AuthValidator {
                 invalidAuthException);
         validateClient(authParameters.get(SENTRY_CLIENT_PARAMETER), invalidAuthException);
 
-        if (!invalidAuthException.isEmpty())
+        if (!invalidAuthException.isEmpty()) {
             throw invalidAuthException;
+        }
     }
 
     /**
@@ -71,8 +72,9 @@ public class AuthValidator {
 
         validateProject(authParameters.get(PUBLIC_KEY_PARAMETER), projectId, invalidAuthException);
 
-        if (!invalidAuthException.isEmpty())
+        if (!invalidAuthException.isEmpty()) {
             throw invalidAuthException;
+        }
     }
 
     /**
@@ -84,9 +86,10 @@ public class AuthValidator {
      * @param invalidAuthException exception thrown if the auth header is invalid.
      */
     private void validateVersion(String authSentryVersion, InvalidAuthException invalidAuthException) {
-        if (authSentryVersion == null || !SENTRY_PROTOCOL_VERSIONS.contains(authSentryVersion))
+        if (authSentryVersion == null || !SENTRY_PROTOCOL_VERSIONS.contains(authSentryVersion)) {
             invalidAuthException.addDetailedMessage("The version '" + authSentryVersion + "' isn't valid, "
-                    + "only those " + SENTRY_PROTOCOL_VERSIONS + " are supported.");
+                + "only those " + SENTRY_PROTOCOL_VERSIONS + " are supported.");
+        }
     }
 
     /**
@@ -101,18 +104,21 @@ public class AuthValidator {
      */
     private void validateKeys(String publicKey, String secretKey,
                               InvalidAuthException invalidAuthException) {
-        if (publicKey == null)
+        if (publicKey == null) {
             invalidAuthException.addDetailedMessage("No public key provided");
-        else if (!publicKeySecretKey.containsKey(publicKey))
+        } else if (!publicKeySecretKey.containsKey(publicKey)) {
             invalidAuthException.addDetailedMessage("The public key '" + publicKey + "' isn't associated "
-                    + "with a secret key.");
+                + "with a secret key.");
+        }
 
-        if (secretKey == null)
+        if (secretKey == null) {
             invalidAuthException.addDetailedMessage("No secret key provided");
+        }
 
-        if (secretKey != null && publicKey != null && !secretKey.equals(publicKeySecretKey.get(publicKey)))
+        if (secretKey != null && publicKey != null && !secretKey.equals(publicKeySecretKey.get(publicKey))) {
             invalidAuthException.addDetailedMessage("The secret key '" + secretKey + "' "
-                    + "isn't valid for '" + publicKey + "'");
+                + "isn't valid for '" + publicKey + "'");
+        }
     }
 
     /**
@@ -124,12 +130,14 @@ public class AuthValidator {
      * @see #addUser(String, String, String)
      */
     private void validateProject(String publicKey, String projectId, InvalidAuthException invalidAuthException) {
-        if (projectId == null)
+        if (projectId == null) {
             invalidAuthException.addDetailedMessage("No project ID provided");
+        }
 
-        if (projectId != null && publicKey != null && !projectId.equals(publicKeyProjectId.get(publicKey)))
+        if (projectId != null && publicKey != null && !projectId.equals(publicKeyProjectId.get(publicKey))) {
             invalidAuthException.addDetailedMessage("The project '" + projectId + "' "
-                    + "can't be accessed by ' " + publicKey + " '");
+                + "can't be accessed by ' " + publicKey + " '");
+        }
     }
 
     /**
@@ -141,8 +149,9 @@ public class AuthValidator {
      * @param invalidAuthException exception thrown if the auth header is invalid.
      */
     private void validateClient(String client, InvalidAuthException invalidAuthException) {
-        if (client == null)
+        if (client == null) {
             invalidAuthException.addDetailedMessage("The client name is mandatory.");
+        }
     }
 
     public void loadSentryUsers(String resourceName) {

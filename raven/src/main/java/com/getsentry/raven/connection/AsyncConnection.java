@@ -58,10 +58,11 @@ public class AsyncConnection implements Connection {
     public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown,
                            long shutdownTimeout) {
         this.actualConnection = actualConnection;
-        if (executorService == null)
+        if (executorService == null) {
             this.executorService = Executors.newSingleThreadExecutor();
-        else
+        } else {
             this.executorService = executorService;
+        }
         if (gracefulShutdown) {
             this.gracefulShutdown = gracefulShutdown;
             addShutdownHook();
@@ -84,8 +85,9 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void send(Event event) {
-        if (!closed)
+        if (!closed) {
             executorService.execute(new EventSubmitter(event));
+        }
     }
 
     @Override
