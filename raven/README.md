@@ -10,17 +10,17 @@ for `java.util.logging`.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven</artifactId>
-    <version>7.8.1</version>
+    <version>7.8.2</version>
 </dependency>
 ```
 
 ### Gradle
 ```
-compile 'com.getsentry.raven:raven:7.8.1'
+compile 'com.getsentry.raven:raven:7.8.2'
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C7.8.1%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C7.8.2%7Cjar).
 
 ## Usage (`java.util.logging`)
 ### Configuration

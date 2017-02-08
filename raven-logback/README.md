@@ -10,17 +10,17 @@ for logback to send the logged events to Sentry.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-logback</artifactId>
-    <version>7.8.1</version>
+    <version>7.8.2</version>
 </dependency>
 ```
 
 ### Gradle
 ```
-compile 'com.getsentry.raven:raven-logback:7.8.1'
+compile 'com.getsentry.raven:raven-logback:7.8.2'
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C7.8.1%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C7.8.2%7Cjar).
 
 ## Usage
 ### Configuration
