@@ -16,7 +16,7 @@ public final class RavenEnvironment {
     /**
      * Name of this SDK.
      */
-    public static final String SDK_NAME = "Raven-Java";
+    public static final String SDK_NAME = "raven-java";
     /**
      * Version of this SDK.
      */
