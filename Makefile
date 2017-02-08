@@ -25,7 +25,7 @@ prepareDocs:
 	@echo This release: $(RELEASE_VERSION)
 # Fix released version in documentation
 	@echo Fixing documentation versions
-	find . -name '*.md' -or -name '*.rst' -exec sed -i -e 's/$(PREVIOUS_RELEASE)/$(RELEASE_VERSION)/g' {} \;
+	find . \( -name '*.md' -or -name '*.rst' \) -exec sed -i -e 's/$(PREVIOUS_RELEASE)/$(RELEASE_VERSION)/g' {} \;
 # Commit documentation changes
 	@echo Committing documentation version changes
 	git commit -a -m 'Bump docs to $(RELEASE_VERSION)'
