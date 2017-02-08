@@ -271,7 +271,7 @@ public class SentryAppender extends AbstractAppender {
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
-            .withSdkName(RavenEnvironment.SDK_NAME + "-Log4j2")
+            .withSdkName(RavenEnvironment.SDK_NAME + ":log4j2")
             .withTimestamp(new Date(event.getTimeMillis()))
             .withMessage(eventMessage.getFormattedMessage())
             .withLogger(event.getLoggerName())

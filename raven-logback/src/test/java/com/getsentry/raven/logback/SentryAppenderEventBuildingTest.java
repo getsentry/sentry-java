@@ -80,7 +80,7 @@ public class SentryAppenderEventBuildingTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
-            assertThat(event.getSdkName(), is(RavenEnvironment.SDK_NAME + "-Logback"));
+            assertThat(event.getSdkName(), is(RavenEnvironment.SDK_NAME + ":logback"));
         }};
         assertNoErrorsInStatusManager();
     }

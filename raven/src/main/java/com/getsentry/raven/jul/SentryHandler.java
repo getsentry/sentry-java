@@ -230,7 +230,7 @@ public class SentryHandler extends Handler {
      */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
-            .withSdkName(RavenEnvironment.SDK_NAME + "-Jul")
+            .withSdkName(RavenEnvironment.SDK_NAME + ":jul")
             .withLevel(getLevel(record.getLevel()))
             .withTimestamp(new Date(record.getMillis()))
             .withLogger(record.getLoggerName());

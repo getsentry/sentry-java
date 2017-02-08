@@ -30,7 +30,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
-        eventBuilder.withSdkName(RavenEnvironment.SDK_NAME + "-Android");
+        eventBuilder.withSdkName(RavenEnvironment.SDK_NAME + ":android");
         try {
             int versionCode = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionCode;
             eventBuilder.withRelease(Integer.toString(versionCode));
