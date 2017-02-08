@@ -77,12 +77,12 @@ public abstract class RavenFactory {
      * Creates an instance of Raven using the provided DSN and the specified factory.
      *
      * @param dsn              Data Source Name of the Sentry server.
-     * @param ravenFactoryName name of the raven factory to use to generate an instance of Raven.
+     * @param ravenFactoryName name of the RavenFactory to use to generate an instance of Raven.
      * @return an instance of Raven.
      * @throws IllegalStateException when no instance of Raven has been created.
      */
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
-        logger.debug("Attempting to find a working Raven factory");
+        logger.debug("Attempting to find a working RavenFactory");
 
         // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
         // and the last exception thrown.
@@ -97,15 +97,29 @@ public abstract class RavenFactory {
                 continue;
             }
 
-            logger.debug("Attempting to use '{}' as a Raven factory.", ravenFactory);
+            logger.debug("Attempting to use '{}' as a RavenFactory.", ravenFactory);
             triedFactories.add(name);
             try {
                 Raven ravenInstance = ravenFactory.createRavenInstance(dsn);
-                logger.debug("The raven factory '{}' created an instance of Raven.", ravenFactory);
+                logger.debug("The RavenFactory '{}' created an instance of Raven.", ravenFactory);
                 return ravenInstance;
             } catch (RuntimeException e) {
                 lastExc = e;
-                logger.debug("The raven factory '{}' couldn't create an instance of Raven.", ravenFactory, e);
+                logger.debug("The RavenFactory '{}' couldn't create an instance of Raven.", ravenFactory, e);
+            }
+        }
+
+        if (ravenFactoryName != null && triedFactories.isEmpty()) {
+            try {
+                // see if the provided class exists on the classpath at all
+                Class.forName(ravenFactoryName);
+                logger.error(
+                    "The RavenFactory class '{}' was found on your classpath but was not "
+                    + "registered with Raven, see: "
+                    + "https://github.com/getsentry/raven-java/#custom-ravenfactory", ravenFactoryName);
+            } catch (ClassNotFoundException e) {
+                logger.error("The RavenFactory class name '{}' was specified but "
+                    + "the class was not found on your classpath.", ravenFactoryName);
             }
         }
 
