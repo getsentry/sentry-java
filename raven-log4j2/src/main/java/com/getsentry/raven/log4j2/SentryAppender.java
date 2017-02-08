@@ -58,7 +58,7 @@ public class SentryAppender extends AbstractAppender {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -234,9 +234,9 @@ public class SentryAppender extends AbstractAppender {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null)
+            if (raven == null) {
                 initRaven();
-
+            }
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -249,7 +249,7 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
@@ -271,11 +271,12 @@ public class SentryAppender extends AbstractAppender {
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
-                .withTimestamp(new Date(event.getTimeMillis()))
-                .withMessage(eventMessage.getFormattedMessage())
-                .withLogger(event.getLoggerName())
-                .withLevel(formatLevel(event.getLevel()))
-                .withExtra(THREAD_NAME, event.getThreadName());
+            .withSdkName(RavenEnvironment.SDK_NAME + ":log4j2")
+            .withTimestamp(new Date(event.getTimeMillis()))
+            .withMessage(eventMessage.getFormattedMessage())
+            .withLogger(event.getLoggerName())
+            .withLevel(formatLevel(event.getLevel()))
+            .withExtra(THREAD_NAME, event.getThreadName());
 
         if (!Util.isNullOrEmpty(serverName)) {
             eventBuilder.withServerName(serverName.trim());

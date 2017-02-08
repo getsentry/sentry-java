@@ -19,7 +19,7 @@ If you want to use Maven you can install Raven as dependency:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven</artifactId>
-        <version>7.8.1</version>
+        <version>7.8.2</version>
     </dependency>
 
 If you manually want to manage your dependencies:

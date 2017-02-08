@@ -24,6 +24,8 @@ public class Event {
     private String logger;
     @JsonProperty(value = "platform")
     private String platform;
+    @JsonProperty(value = "sdk")
+    private Map<String, String> sdk;
     @JsonProperty(value = "culprit")
     private String culprit;
     @JsonProperty(value = "tags")

@@ -1,5 +1,6 @@
 package com.getsentry.raven.log4j;
 
+import com.getsentry.raven.environment.RavenEnvironment;
 import mockit.*;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.event.Event;
@@ -70,6 +71,7 @@ public class SentryAppenderEventBuildingTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
+            assertThat(event.getSdkName(), is(RavenEnvironment.SDK_NAME + ":log4j"));
         }};
         assertNoErrorsInErrorHandler();
     }

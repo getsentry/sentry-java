@@ -41,7 +41,7 @@ public class SentryAppender extends AppenderSkeleton {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -144,14 +144,16 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public void activateOptions() {
         super.activateOptions();
-        if (raven == null)
+
+        if (raven == null) {
             initRaven();
+        }
     }
 
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
@@ -174,6 +176,9 @@ public class SentryAppender extends AppenderSkeleton {
 
         RavenEnvironment.startManagingThread();
         try {
+            if (raven == null) {
+                initRaven();
+            }
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -192,11 +197,12 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withTimestamp(new Date(loggingEvent.getTimeStamp()))
-                .withMessage(loggingEvent.getRenderedMessage())
-                .withLogger(loggingEvent.getLoggerName())
-                .withLevel(formatLevel(loggingEvent.getLevel()))
-                .withExtra(THREAD_NAME, loggingEvent.getThreadName());
+            .withSdkName(RavenEnvironment.SDK_NAME + ":log4j")
+            .withTimestamp(new Date(loggingEvent.getTimeStamp()))
+            .withMessage(loggingEvent.getRenderedMessage())
+            .withLogger(loggingEvent.getLoggerName())
+            .withLevel(formatLevel(loggingEvent.getLevel()))
+            .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
         if (!Util.isNullOrEmpty(serverName)) {
             eventBuilder.withServerName(serverName.trim());

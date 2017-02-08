@@ -40,7 +40,7 @@ public class SentryHandler extends Handler {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -193,8 +193,9 @@ public class SentryHandler extends Handler {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null)
+            if (raven == null) {
                 initRaven();
+            }
             Event event = buildEvent(record);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -207,7 +208,7 @@ public class SentryHandler extends Handler {
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
@@ -229,6 +230,7 @@ public class SentryHandler extends Handler {
      */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
+            .withSdkName(RavenEnvironment.SDK_NAME + ":jul")
             .withLevel(getLevel(record.getLevel()))
             .withTimestamp(new Date(record.getMillis()))
             .withLogger(record.getLoggerName());

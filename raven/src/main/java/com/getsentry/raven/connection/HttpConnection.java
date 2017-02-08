@@ -138,7 +138,7 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setConnectTimeout(timeout);
-            connection.setRequestProperty(USER_AGENT, RavenEnvironment.NAME);
+            connection.setRequestProperty(USER_AGENT, RavenEnvironment.getRavenName());
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {

@@ -49,7 +49,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -171,14 +171,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null) {
-                initRaven();
-            }
-
             if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel)) {
                 return;
             }
 
+            if (raven == null) {
+                initRaven();
+            }
             Event event = buildEvent(iLoggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -191,7 +190,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
@@ -213,11 +212,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
-                .withMessage(iLoggingEvent.getFormattedMessage())
-                .withLogger(iLoggingEvent.getLoggerName())
-                .withLevel(formatLevel(iLoggingEvent.getLevel()))
-                .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
+            .withSdkName(RavenEnvironment.SDK_NAME + ":logback")
+            .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
+            .withMessage(iLoggingEvent.getFormattedMessage())
+            .withLogger(iLoggingEvent.getLoggerName())
+            .withLevel(formatLevel(iLoggingEvent.getLevel()))
+            .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
 
         if (!Util.isNullOrEmpty(serverName)) {
