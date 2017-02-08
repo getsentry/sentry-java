@@ -230,9 +230,10 @@ public class SentryHandler extends Handler {
      */
     protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withLevel(getLevel(record.getLevel()))
-                .withTimestamp(new Date(record.getMillis()))
-                .withLogger(record.getLoggerName());
+            .withSdkName(RavenEnvironment.SDK_NAME + ":jul")
+            .withLevel(getLevel(record.getLevel()))
+            .withTimestamp(new Date(record.getMillis()))
+            .withLogger(record.getLoggerName());
 
         String message = record.getMessage();
         if (record.getResourceBundle() != null && record.getResourceBundle().containsKey(record.getMessage())) {

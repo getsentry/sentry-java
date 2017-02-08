@@ -64,7 +64,7 @@ public abstract class AbstractConnection implements Connection {
     protected AbstractConnection(String publicKey, String secretKey) {
         eventSendFailureCallbacks = new HashSet<>();
         authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
-                + "sentry_client=" + RavenEnvironment.NAME + ","
+                + "sentry_client=" + RavenEnvironment.getRavenName() + ","
                 + "sentry_key=" + publicKey + ","
                 + "sentry_secret=" + secretKey;
     }

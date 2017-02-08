@@ -197,11 +197,12 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withTimestamp(new Date(loggingEvent.getTimeStamp()))
-                .withMessage(loggingEvent.getRenderedMessage())
-                .withLogger(loggingEvent.getLoggerName())
-                .withLevel(formatLevel(loggingEvent.getLevel()))
-                .withExtra(THREAD_NAME, loggingEvent.getThreadName());
+            .withSdkName(RavenEnvironment.SDK_NAME + ":log4j")
+            .withTimestamp(new Date(loggingEvent.getTimeStamp()))
+            .withMessage(loggingEvent.getRenderedMessage())
+            .withLogger(loggingEvent.getLoggerName())
+            .withLevel(formatLevel(loggingEvent.getLevel()))
+            .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
         if (!Util.isNullOrEmpty(serverName)) {
             eventBuilder.withServerName(serverName.trim());

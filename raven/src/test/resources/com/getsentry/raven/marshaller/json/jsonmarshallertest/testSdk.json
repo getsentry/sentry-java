@@ -9,11 +9,11 @@
   "tags": {},
   "server_name": null,
   "release": null,
-  "environment": "environment",
+  "environment": null,
   "extra": {},
   "checksum": null,
   "sdk": {
-    "name": null,
-    "version": null
+    "name": "sdkName",
+    "version": "sdkVersion"
   }
 }

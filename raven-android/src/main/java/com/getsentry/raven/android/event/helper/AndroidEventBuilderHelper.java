@@ -3,6 +3,7 @@ package com.getsentry.raven.android.event.helper;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
 
@@ -29,6 +30,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
+        eventBuilder.withSdkName(RavenEnvironment.SDK_NAME + ":android");
         try {
             int versionCode = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionCode;
             eventBuilder.withRelease(Integer.toString(versionCode));
