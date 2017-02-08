@@ -122,15 +122,17 @@ public class SentryHandler extends Handler {
      * @return log level used within raven.
      */
     protected static Event.Level getLevel(Level level) {
-        if (level.intValue() >= Level.SEVERE.intValue())
+        if (level.intValue() >= Level.SEVERE.intValue()) {
             return Event.Level.ERROR;
-        else if (level.intValue() >= Level.WARNING.intValue())
+        } else if (level.intValue() >= Level.WARNING.intValue()) {
             return Event.Level.WARNING;
-        else if (level.intValue() >= Level.INFO.intValue())
+        } else if (level.intValue() >= Level.INFO.intValue()) {
             return Event.Level.INFO;
-        else if (level.intValue() >= Level.ALL.intValue())
+        } else if (level.intValue() >= Level.ALL.intValue()) {
             return Event.Level.DEBUG;
-        else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -143,8 +145,9 @@ public class SentryHandler extends Handler {
      */
     protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> formattedParameters = new ArrayList<>(parameters.length);
-        for (Object parameter : parameters)
+        for (Object parameter : parameters) {
             formattedParameters.add((parameter != null) ? parameter.toString() : null);
+        }
         return formattedParameters;
     }
 
@@ -188,8 +191,9 @@ public class SentryHandler extends Handler {
     @Override
     public void publish(LogRecord record) {
         // Do not log the event if the current thread is managed by raven
-        if (!isLoggable(record) || RavenEnvironment.isManagingThread())
+        if (!isLoggable(record) || RavenEnvironment.isManagingThread()) {
             return;
+        }
 
         RavenEnvironment.startManagingThread();
         try {
@@ -210,13 +214,14 @@ public class SentryHandler extends Handler {
      */
     protected synchronized void initRaven() {
         try {
-            if (dsn == null)
+            if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Raven",
-                    e, ErrorManager.OPEN_FAILURE);
+                e, ErrorManager.OPEN_FAILURE);
         } catch (Exception e) {
             reportError("An exception occurred during the creation of a Raven instance", e, ErrorManager.OPEN_FAILURE);
         }
@@ -258,12 +263,13 @@ public class SentryHandler extends Handler {
         eventBuilder.withMessage(topLevelMessage);
 
         Throwable throwable = record.getThrown();
-        if (throwable != null)
+        if (throwable != null) {
             eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
+        }
 
         if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
             StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
-                    record.getSourceMethodName(), null, -1);
+                record.getSourceMethodName(), null, -1);
             eventBuilder.withCulprit(fakeFrame);
         } else {
             eventBuilder.withCulprit(record.getLoggerName());
@@ -328,8 +334,9 @@ public class SentryHandler extends Handler {
     public void close() throws SecurityException {
         RavenEnvironment.startManagingThread();
         try {
-            if (raven != null)
+            if (raven != null) {
                 raven.closeConnection();
+            }
         } catch (Exception e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);
         } finally {

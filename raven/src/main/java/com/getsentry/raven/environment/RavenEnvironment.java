@@ -52,8 +52,9 @@ public final class RavenEnvironment {
      */
     public static void startManagingThread() {
         try {
-            if (isManagingThread())
+            if (isManagingThread()) {
                 logger.warn("Thread already managed by Raven");
+            }
         } finally {
             RAVEN_THREAD.get().incrementAndGet();
         }

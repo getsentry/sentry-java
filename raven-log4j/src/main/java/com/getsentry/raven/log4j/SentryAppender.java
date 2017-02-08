@@ -126,7 +126,9 @@ public class SentryAppender extends AppenderSkeleton {
             return Event.Level.INFO;
         } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -155,8 +157,9 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected synchronized void initRaven() {
         try {
-            if (dsn == null)
+            if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (InvalidDsnException e) {
@@ -171,8 +174,9 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     protected void append(LoggingEvent loggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (RavenEnvironment.isManagingThread())
+        if (RavenEnvironment.isManagingThread()) {
             return;
+        }
 
         RavenEnvironment.startManagingThread();
         try {
@@ -241,8 +245,9 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withCulprit(loggingEvent.getLoggerName());
         }
 
-        if (loggingEvent.getNDC() != null)
+        if (loggingEvent.getNDC() != null) {
             eventBuilder.withExtra(LOG4J_NDC, loggingEvent.getNDC());
+        }
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
@@ -254,8 +259,9 @@ public class SentryAppender extends AppenderSkeleton {
             }
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet())
+        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
+        }
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
@@ -303,11 +309,13 @@ public class SentryAppender extends AppenderSkeleton {
     public void close() {
         RavenEnvironment.startManagingThread();
         try {
-            if (this.closed)
+            if (this.closed) {
                 return;
+            }
             this.closed = true;
-            if (raven != null)
+            if (raven != null) {
                 raven.closeConnection();
+            }
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while closing the Raven connection", e,
                     ErrorCode.CLOSE_FAILURE);

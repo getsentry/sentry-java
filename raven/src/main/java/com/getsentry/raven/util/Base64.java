@@ -241,7 +241,9 @@ public class Base64 {
          *         bad base-64 data has been detected in the input stream.
          */
         public boolean process(byte[] input, int offset, int len, boolean finish) {
-            if (this.state == 6) return false;
+            if (this.state == 6) {
+                return false;
+            }
             int p = offset;
             len += offset;
             // Using local variables makes the decoder about 12%
@@ -281,7 +283,9 @@ public class Base64 {
                         op += 3;
                         p += 4;
                     }
-                    if (p >= len) break;
+                    if (p >= len) {
+                        break;
+                    }
                 }
                 // The fast path isn't available -- either we've read a
                 // partial tuple, or the next four input bytes aren't all
@@ -593,7 +597,9 @@ public class Base64 {
                 output[op++] = alphabet[(v >> 6) & 0x3f];
                 output[op++] = alphabet[v & 0x3f];
                 if (--count == 0) {
-                    if (do_cr) output[op++] = '\r';
+                    if (do_cr) {
+                        output[op++] = '\r';
+                    }
                     output[op++] = '\n';
                     count = LINE_GROUPS;
                 }
@@ -613,7 +619,9 @@ public class Base64 {
                 p += 3;
                 op += 4;
                 if (--count == 0) {
-                    if (do_cr) output[op++] = '\r';
+                    if (do_cr) {
+                        output[op++] = '\r';
+                    }
                     output[op++] = '\n';
                     count = LINE_GROUPS;
                 }
@@ -634,7 +642,9 @@ public class Base64 {
                         output[op++] = '=';
                     }
                     if (do_newline) {
-                        if (do_cr) output[op++] = '\r';
+                        if (do_cr) {
+                            output[op++] = '\r';
+                        }
                         output[op++] = '\n';
                     }
                 } else if (p-tailLen == len-2) {
@@ -649,11 +659,15 @@ public class Base64 {
                         output[op++] = '=';
                     }
                     if (do_newline) {
-                        if (do_cr) output[op++] = '\r';
+                        if (do_cr) {
+                            output[op++] = '\r';
+                        }
                         output[op++] = '\n';
                     }
                 } else if (do_newline && op > 0 && count != LINE_GROUPS) {
-                    if (do_cr) output[op++] = '\r';
+                    if (do_cr) {
+                        output[op++] = '\r';
+                    }
                     output[op++] = '\n';
                 }
                 assert tailLen == 0;

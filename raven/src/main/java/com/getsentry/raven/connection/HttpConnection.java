@@ -162,10 +162,12 @@ public class HttpConnection extends AbstractConnection {
         } catch (IOException e) {
             String errorMessage = null;
             final InputStream errorStream = connection.getErrorStream();
-            if (errorStream != null)
+            if (errorStream != null) {
                 errorMessage = getErrorMessageFromStream(errorStream);
-            if (null == errorMessage || errorMessage.isEmpty())
+            }
+            if (null == errorMessage || errorMessage.isEmpty()) {
                 errorMessage = "An exception occurred while submitting the event to the sentry server.";
+            }
             throw new ConnectionException(errorMessage, e);
         } finally {
             connection.disconnect();

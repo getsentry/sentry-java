@@ -31,12 +31,12 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
      * @param stackTraceElement current frame in the stackTrace.
      */
     private void writeFrame(JsonGenerator generator, StackTraceElement stackTraceElement, boolean commonWithEnclosing)
-            throws IOException {
+        throws IOException {
         generator.writeStartObject();
         generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
         generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getClassName());
         generator.writeBooleanField(IN_APP_PARAMETER, !(removeCommonFramesWithEnclosing && commonWithEnclosing)
-                && isFrameInApp(stackTraceElement));
+            && isFrameInApp(stackTraceElement));
         generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getMethodName());
         generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineNumber());
         generator.writeEndObject();
