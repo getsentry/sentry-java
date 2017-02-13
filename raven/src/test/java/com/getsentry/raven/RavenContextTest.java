@@ -104,9 +104,10 @@ public class RavenContextTest {
             .withUsername("testUser_123").build();
 
         context.setUser(user);
-
         assertThat(context.getUser(), equalTo(user));
 
+        context.clearUser();
+        assertThat(context.getUser(), equalTo(null));
     }
 
 }

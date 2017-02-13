@@ -40,19 +40,28 @@ public class RavenContext implements AutoCloseable {
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
 
+    /**
+     * UUID of the last event sent to the Sentry server, if any.
+     */
     private UUID lastEventId;
 
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
     private CircularFifoQueue<Breadcrumb> breadcrumbs;
+
+    /**
+     * User active in the current context, if any.
+     */
     private User user;
+
     /**
      * Create a new (empty) RavenContext object with the default Breadcrumb limit.
      */
     public RavenContext() {
         this(DEFAULT_BREADCRUMB_LIMIT);
     }
+
     /**
      * Create a new (empty) RavenContext object with the specified Breadcrumb limit.
      *

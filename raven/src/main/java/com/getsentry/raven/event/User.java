@@ -2,8 +2,9 @@ package com.getsentry.raven.event;
 
 
 /**
- * An object that represents a user. This will usually
- * be the user for the current thread if supplied.
+ * An object that represents a user. Typically used to represent
+ * the user in the current context, for whatever a context means
+ * in your application (typically a web request).
  */
 public class User {
 
