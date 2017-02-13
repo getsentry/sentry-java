@@ -120,7 +120,9 @@ public class Base64InputStream extends FilterInputStream {
      * outputStart and outputEnd pointers.
      */
     private void refill() throws IOException {
-        if (eof) return;
+        if (eof) {
+            return;
+        }
         int bytesRead = in.read(inputBuffer);
         boolean success;
         if (bytesRead == -1) {

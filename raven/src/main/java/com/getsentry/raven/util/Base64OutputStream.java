@@ -86,7 +86,9 @@ public class Base64OutputStream extends FilterOutputStream {
         }
     }
     public void write(byte[] b, int off, int len) throws IOException {
-        if (len <= 0) return;
+        if (len <= 0) {
+            return;
+        }
         flushBuffer();
         internalWrite(b, off, len, false);
     }

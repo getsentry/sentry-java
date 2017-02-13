@@ -73,7 +73,7 @@ public final class Util {
      * @param defaultValue default value
      * @return integer representation of provided value or default value.
      */
-    public static int parseInteger(String value, int defaultValue) {
+    public static Integer parseInteger(String value, Integer defaultValue) {
         if (isNullOrEmpty(value)) {
             return defaultValue;
         }
@@ -88,10 +88,25 @@ public final class Util {
      * @param defaultValue default value
      * @return long representation of provided value or default value.
      */
-    public static long parseLong(String value, long defaultValue) {
+    public static Long parseLong(String value, Long defaultValue) {
         if (isNullOrEmpty(value)) {
             return defaultValue;
         }
         return Long.parseLong(value);
+    }
+
+    /**
+     * Parses the provided string value into a double value.
+     * <p>If the string is null or empty this returns the default value.</p>
+     *
+     * @param value        value to parse
+     * @param defaultValue default value
+     * @return double representation of provided value or default value.
+     */
+    public static Double parseDouble(String value, Double defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return Double.parseDouble(value);
     }
 }

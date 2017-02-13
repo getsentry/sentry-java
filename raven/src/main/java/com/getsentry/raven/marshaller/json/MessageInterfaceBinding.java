@@ -45,11 +45,13 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
      * @return trimmed message (shortened if necessary).
      */
     private String trimMessage(String message) {
-        if (message == null)
+        if (message == null) {
             return null;
-        else if (message.length() > maxMessageLength)
+        } else if (message.length() > maxMessageLength) {
             return message.substring(0, maxMessageLength);
-        else return message;
+        } else {
+            return message;
+        }
     }
 
     @Override

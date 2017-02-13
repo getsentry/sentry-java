@@ -118,7 +118,7 @@ public class HttpConnectionTest {
 
 
         new Verifications() {{
-            mockUrlConnection.setRequestProperty("User-Agent", RavenEnvironment.NAME);
+            mockUrlConnection.setRequestProperty("User-Agent", RavenEnvironment.getRavenName());
             mockUrlConnection.setRequestProperty("X-Sentry-Auth", httpConnection.getAuthHeader());
         }};
     }

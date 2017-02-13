@@ -14,10 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class RavenEnvironment {
     /**
-     * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
-     * for each release of this project.
+     * Name of this SDK.
      */
-    public static final String NAME = ResourceBundle.getBundle("raven-build").getString("build.name");
+    public static final String SDK_NAME = "raven-java";
+    /**
+     * Version of this SDK.
+     */
+    public static final String SDK_VERSION = ResourceBundle.getBundle("raven-build").getString("build.name");
     /**
      * Indicates whether the current thread is managed by raven or not.
      */
@@ -49,8 +52,9 @@ public final class RavenEnvironment {
      */
     public static void startManagingThread() {
         try {
-            if (isManagingThread())
+            if (isManagingThread()) {
                 logger.warn("Thread already managed by Raven");
+            }
         } finally {
             RAVEN_THREAD.get().incrementAndGet();
         }
@@ -80,5 +84,14 @@ public final class RavenEnvironment {
      */
     public static boolean isManagingThread() {
         return RAVEN_THREAD.get().get() > 0;
+    }
+
+    /**
+     * Returns sdk name+version string, used for HTTP User Agent, sentry_client, etc.
+     *
+     * @return Raven sdk string
+     */
+    public static String getRavenName() {
+        return SDK_NAME + "/" + SDK_VERSION;
     }
 }

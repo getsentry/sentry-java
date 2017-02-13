@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.Authenticator;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.Arrays;
@@ -71,7 +72,7 @@ public class DefaultRavenFactory extends RavenFactory {
     /**
      * Default number of milliseconds between attempts to flush buffered events.
      */
-    public static final int BUFFER_FLUSHTIME_DEFAULT = 60000;
+    public static final long BUFFER_FLUSHTIME_DEFAULT = 60000;
     /**
      * Option to disable the graceful shutdown of the buffer flusher.
      */
@@ -139,6 +140,10 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
     /**
+     * Option for whether to sample events, allowing from 0.0 to 1.0 (0 to 100%) to be sent to the server.
+     */
+    public static final String SAMPLE_RATE_OPTION = "raven.sample.rate";
+    /**
      * Option to set an HTTP proxy hostname for Sentry connections.
      */
     public static final String HTTP_PROXY_HOST_OPTION = "raven.http.proxy.host";
@@ -146,6 +151,14 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option to set an HTTP proxy port for Sentry connections.
      */
     public static final String HTTP_PROXY_PORT_OPTION = "raven.http.proxy.port";
+    /**
+     * Option to set an HTTP proxy username for Sentry connections.
+     */
+    public static final String HTTP_PROXY_USER_OPTION = "raven.http.proxy.user";
+    /**
+     * Option to set an HTTP proxy password for Sentry connections.
+     */
+    public static final String HTTP_PROXY_PASS_OPTION = "raven.http.proxy.password";
     /**
      * The default async queue size if none is provided.
      */
@@ -176,7 +189,7 @@ public class DefaultRavenFactory extends RavenFactory {
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
             logger.debug("The current environment doesn't provide access to servlets,"
-                         + "or provides an unsupported version.");
+                + "or provides an unsupported version.");
         }
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
         return raven;
@@ -244,8 +257,8 @@ public class DefaultRavenFactory extends RavenFactory {
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
-                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
-                new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
+            maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
+            new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
 
         boolean gracefulShutdown = getAsyncGracefulShutdownEnabled(dsn);
 
@@ -263,16 +276,27 @@ public class DefaultRavenFactory extends RavenFactory {
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
 
         String proxyHost = getProxyHost(dsn);
+        String proxyUser = getProxyUser(dsn);
+        String proxyPass = getProxyPass(dsn);
         int proxyPort = getProxyPort(dsn);
 
         Proxy proxy = null;
         if (proxyHost != null) {
             InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
             proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
+            if (proxyUser != null && proxyPass != null) {
+                Authenticator.setDefault(new ProxyAuthenticator(proxyUser, proxyPass));
+            }
+        }
+
+        Double sampleRate = getSampleRate(dsn);
+        EventSampler eventSampler = null;
+        if (sampleRate != null) {
+            eventSampler = new RandomEventSampler(sampleRate);
         }
 
         HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(),
-            dsn.getSecretKey(), proxy);
+            dsn.getSecretKey(), proxy, eventSampler);
 
         Marshaller marshaller = createMarshaller(dsn);
         httpConnection.setMarshaller(marshaller);
@@ -342,12 +366,12 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected Collection<String> getNotInAppFrames() {
         return Arrays.asList("com.sun.",
-                "java.",
-                "javax.",
-                "org.omg.",
-                "sun.",
-                "junit.",
-                "com.intellij.rt.");
+            "java.",
+            "javax.",
+            "org.omg.",
+            "sun.",
+            "junit.",
+            "com.intellij.rt.");
     }
 
     /**
@@ -474,6 +498,16 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     /**
+     * Whether to sample events, and if so how much to allow through to the server (from 0.0 to 1.0).
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return The ratio of events to allow through to server, or null if sampling is disabled.
+     */
+    protected Double getSampleRate(Dsn dsn) {
+        return Util.parseDouble(dsn.getOptions().get(SAMPLE_RATE_OPTION), null);
+    }
+
+    /**
      * HTTP proxy port for Sentry connections.
      *
      * @param dsn Sentry server DSN which may contain options.
@@ -491,6 +525,26 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected String getProxyHost(Dsn dsn) {
         return dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
+    }
+
+    /**
+     * HTTP proxy username for Sentry connections.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return HTTP proxy username for Sentry connections.
+     */
+    protected String getProxyUser(Dsn dsn) {
+        return dsn.getOptions().get(HTTP_PROXY_USER_OPTION);
+    }
+
+    /**
+     * HTTP proxy password for Sentry connections.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return HTTP proxy password for Sentry connections.
+     */
+    protected String getProxyPass(Dsn dsn) {
+        return dsn.getOptions().get(HTTP_PROXY_PASS_OPTION);
     }
 
     /**
@@ -582,10 +636,12 @@ public class DefaultRavenFactory extends RavenFactory {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
-            if (!t.isDaemon())
+            if (!t.isDaemon()) {
                 t.setDaemon(true);
-            if (t.getPriority() != priority)
+            }
+            if (t.getPriority() != priority) {
                 t.setPriority(priority);
+            }
             return t;
         }
     }

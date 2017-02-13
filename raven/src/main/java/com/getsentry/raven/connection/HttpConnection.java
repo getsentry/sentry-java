@@ -56,6 +56,10 @@ public class HttpConnection extends AbstractConnection {
      */
     private final Proxy proxy;
     /**
+     * Optional instance of an EventSampler to use.
+     */
+    private EventSampler eventSampler;
+    /**
      * Marshaller used to transform and send the {@link Event} over a stream.
      */
     private Marshaller marshaller;
@@ -75,23 +79,27 @@ public class HttpConnection extends AbstractConnection {
      * @param sentryUrl URL to the Sentry API.
      * @param publicKey public key of the current project.
      * @param secretKey private key of the current project.
+     * @deprecated use the more explicit constructor below
      */
+    @Deprecated
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
-        this(sentryUrl, publicKey, secretKey, null);
+        this(sentryUrl, publicKey, secretKey, null, null);
     }
 
-    /**
+     /**
      * Creates an HTTP connection to a Sentry server.
      *
      * @param sentryUrl URL to the Sentry API.
      * @param publicKey public key of the current project.
      * @param secretKey private key of the current project.
      * @param proxy address of HTTP proxy or null if using direct connections.
+     * @param eventSampler EventSampler instance to use, or null to not sample events.
      */
-    public HttpConnection(URL sentryUrl, String publicKey, String secretKey, Proxy proxy) {
+    public HttpConnection(URL sentryUrl, String publicKey, String secretKey, Proxy proxy, EventSampler eventSampler) {
         super(publicKey, secretKey);
         this.sentryUrl = sentryUrl;
         this.proxy = proxy;
+        this.eventSampler = eventSampler;
     }
 
     /**
@@ -130,7 +138,7 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setConnectTimeout(timeout);
-            connection.setRequestProperty(USER_AGENT, RavenEnvironment.NAME);
+            connection.setRequestProperty(USER_AGENT, RavenEnvironment.getRavenName());
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {
@@ -140,6 +148,10 @@ public class HttpConnection extends AbstractConnection {
 
     @Override
     protected void doSend(Event event) throws ConnectionException {
+        if (eventSampler != null && !eventSampler.shouldSendEvent(event)) {
+            return;
+        }
+
         HttpURLConnection connection = getConnection();
         try {
             connection.connect();
@@ -150,10 +162,12 @@ public class HttpConnection extends AbstractConnection {
         } catch (IOException e) {
             String errorMessage = null;
             final InputStream errorStream = connection.getErrorStream();
-            if (errorStream != null)
+            if (errorStream != null) {
                 errorMessage = getErrorMessageFromStream(errorStream);
-            if (null == errorMessage || errorMessage.isEmpty())
+            }
+            if (null == errorMessage || errorMessage.isEmpty()) {
                 errorMessage = "An exception occurred while submitting the event to the sentry server.";
+            }
             throw new ConnectionException(errorMessage, e);
         } finally {
             connection.disconnect();

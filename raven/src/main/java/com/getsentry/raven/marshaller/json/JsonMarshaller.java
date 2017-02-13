@@ -54,6 +54,10 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String CULPRIT = "culprit";
     /**
+     * An object representing the SDK name and version.
+     */
+    public static final String SDK = "sdk";
+    /**
      * A map or list of tags for this event.
      */
     public static final String TAGS = "tags";
@@ -165,6 +169,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(LOGGER, event.getLogger());
         generator.writeStringField(PLATFORM, event.getPlatform());
         generator.writeStringField(CULPRIT, event.getCulprit());
+        writeSdk(generator, event.getSdkName(), event.getSdkVersion());
         writeTags(generator, event.getTags());
         writeBreadcumbs(generator, event.getBreadcrumbs());
         generator.writeStringField(SERVER_NAME, event.getServerName());
@@ -179,7 +184,7 @@ public class JsonMarshaller implements Marshaller {
     }
 
     private void writeInterfaces(JsonGenerator generator, Map<String, SentryInterface> sentryInterfaces)
-            throws IOException {
+        throws IOException {
         for (Map.Entry<String, SentryInterface> interfaceEntry : sentryInterfaces.entrySet()) {
             SentryInterface sentryInterface = interfaceEntry.getValue();
 
@@ -188,7 +193,7 @@ public class JsonMarshaller implements Marshaller {
                 getInterfaceBinding(sentryInterface).writeInterface(generator, interfaceEntry.getValue());
             } else {
                 logger.error("Couldn't parse the content of '{}' provided in {}.",
-                        interfaceEntry.getKey(), sentryInterface);
+                    interfaceEntry.getKey(), sentryInterface);
             }
         }
     }
@@ -232,10 +237,11 @@ public class JsonMarshaller implements Marshaller {
         } else if (value instanceof Map) {
             generator.writeStartObject();
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                if (entry.getKey() == null)
+                if (entry.getKey() == null) {
                     generator.writeFieldName("null");
-                else
+                } else {
                     generator.writeFieldName(entry.getKey().toString());
+                }
                 safelyWriteObject(generator, entry.getValue());
             }
             generator.writeEndObject();
@@ -247,10 +253,17 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeObject(value);
             } catch (IllegalStateException e) {
                 logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
-                        value, value.getClass());
+                    value, value.getClass());
                 generator.writeString(value.toString());
             }
         }
+    }
+
+    private void writeSdk(JsonGenerator generator, String sdkName, String sdkVersion) throws IOException {
+        generator.writeObjectFieldStart(SDK);
+        generator.writeStringField("name", sdkName);
+        generator.writeStringField("version", sdkVersion);
+        generator.writeEndObject();
     }
 
     private void writeTags(JsonGenerator generator, Map<String, String> tags) throws IOException {
@@ -306,11 +319,13 @@ public class JsonMarshaller implements Marshaller {
      * @return trimmed message (shortened if necessary).
      */
     private String trimMessage(String message) {
-        if (message == null)
+        if (message == null) {
             return null;
-        else if (message.length() > maxMessageLength)
+        } else if (message.length() > maxMessageLength) {
             return message.substring(0, maxMessageLength);
-        else return message;
+        } else {
+            return message;
+        }
     }
 
     /**
@@ -330,8 +345,9 @@ public class JsonMarshaller implements Marshaller {
      * @return log level as a String.
      */
     private String formatLevel(Event.Level level) {
-        if (level == null)
+        if (level == null) {
             return null;
+        }
 
         switch (level) {
             case DEBUG:
@@ -346,7 +362,7 @@ public class JsonMarshaller implements Marshaller {
                 return "error";
             default:
                 logger.error("The level '{}' isn't supported, this should NEVER happen, contact Raven developers",
-                        level.name());
+                    level.name());
                 return null;
         }
     }
