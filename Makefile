@@ -1,14 +1,19 @@
-.PHONY: checkstyle test install clean prepare prepareDocs prepareMvn prepareChanges perform
+.PHONY: checkstyle compile test install clean prepare prepareDocs prepareMvn prepareChanges perform verify
 
 MVN=mvn -e
 
 all: checkstyle test install
 
+compile:
+	$(MVN) compile
+
 checkstyle:
 	$(MVN) checkstyle:check
 
-test:
+verify:
 	$(MVN) verify
+
+test: verify
 
 install:
 	$(MVN) install -Dcheckstyle.skip=true -DskipTests
