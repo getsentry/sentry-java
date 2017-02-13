@@ -1,7 +1,7 @@
 Version 7.8.3
 -------------
 
--
+- Add User to RavenContext and ContextBuilderHelper. (thanks mpecan)
 
 Version 7.8.2
 -------------
