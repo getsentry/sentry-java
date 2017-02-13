@@ -12,9 +12,6 @@ import org.testng.annotations.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-/**
- * Created by matjaz on 2/1/17.
- */
 public class UserTest {
     @Tested
     private Raven raven = null;
@@ -24,19 +21,18 @@ public class UserTest {
 
     @Test
     public void testUserPropagation() {
-        final User user = new UserBuilder()
-                .setEmail("test@example.com")
-                .setId("1234")
-                .setIpAddress("192.168.0.1")
-                .setUsername("testUser_123").build();
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
-        raven.getContext();
-        UserHelper.set(user);
+
+        final User user = new UserBuilder()
+            .withEmail("test@example.com")
+            .withId("1234")
+            .withIpAddress("192.168.0.1")
+            .withUsername("testUser_123").build();
+        raven.getContext().setUser(user);
 
         raven.sendEvent(new EventBuilder()
-                .withMessage("Some random message")
-                .withLevel(Event.Level.INFO));
-
+            .withMessage("Some random message")
+            .withLevel(Event.Level.INFO));
 
         new Verifications() {{
             Event event;
@@ -48,6 +44,5 @@ public class UserTest {
             assertThat(userInterface.getUsername(), equalTo(user.getUsername()));
         }};
     }
-
 
 }

@@ -35,9 +35,10 @@ public class ContextBuilderHelper implements EventBuilderHelper {
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         List<Breadcrumb> breadcrumbs = new ArrayList<>();
         RavenContext context = raven.getContext();
-        Iterator<Breadcrumb> iter = context.getBreadcrumbs();
-        while (iter.hasNext()) {
-            breadcrumbs.add(iter.next());
+
+        Iterator<Breadcrumb> breadcrumbIterator = context.getBreadcrumbs();
+        while (breadcrumbIterator.hasNext()) {
+            breadcrumbs.add(breadcrumbIterator.next());
         }
         eventBuilder.withBreadcrumbs(breadcrumbs);
 

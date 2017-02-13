@@ -33,7 +33,7 @@ public class RavenContext implements AutoCloseable {
             protected IdentityHashMap<RavenContext, RavenContext> initialValue() {
                 return new IdentityHashMap<>();
             }
-    };
+        };
 
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
@@ -144,23 +144,27 @@ public class RavenContext implements AutoCloseable {
     public UUID getLastEventId() {
         return lastEventId;
     }
+
     /**
      * Store the current user in the context.
-     * @param user User
+     *
+     * @param user User to store in context.
      */
     public void setUser(User user) {
         this.user = user;
     }
+
     /**
      * Clears the current user set on this context.
      */
     public void clearUser() {
-        this.user = null;
+        setUser(null);
     }
 
     /**
      * Gets the current user from the context.
-     * @return User
+     *
+     * @return User currently stored in context.
      */
     public User getUser() {
         return user;

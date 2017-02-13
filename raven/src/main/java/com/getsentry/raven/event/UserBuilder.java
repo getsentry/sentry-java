@@ -15,7 +15,7 @@ public class UserBuilder {
      * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setId(String value) {
+    public UserBuilder withId(String value) {
         this.id = value;
         return this;
     }
@@ -26,7 +26,7 @@ public class UserBuilder {
      * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setUsername(String value) {
+    public UserBuilder withUsername(String value) {
         this.username = value;
         return this;
     }
@@ -37,7 +37,7 @@ public class UserBuilder {
      * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setIpAddress(String value) {
+    public UserBuilder withIpAddress(String value) {
         this.ipAddress = value;
         return this;
     }
@@ -48,7 +48,7 @@ public class UserBuilder {
      * @param value String
      * @return current instance of UserBuilder
      */
-    public UserBuilder setEmail(String value) {
+    public UserBuilder withEmail(String value) {
         this.email = value;
         return this;
     }
