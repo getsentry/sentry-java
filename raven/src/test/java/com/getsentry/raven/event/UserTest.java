@@ -24,10 +24,10 @@ public class UserTest {
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
 
         final User user = new UserBuilder()
-            .withEmail("test@example.com")
-            .withId("1234")
-            .withIpAddress("192.168.0.1")
-            .withUsername("testUser_123").build();
+            .setEmail("test@example.com")
+            .setId("1234")
+            .setIpAddress("192.168.0.1")
+            .setUsername("testUser_123").build();
         raven.getContext().setUser(user);
 
         raven.sendEvent(new EventBuilder()
