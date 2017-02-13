@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.Authenticator;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.Arrays;
@@ -151,6 +152,14 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String HTTP_PROXY_PORT_OPTION = "raven.http.proxy.port";
     /**
+     * Option to set an HTTP proxy username for Sentry connections.
+     */
+    public static final String HTTP_PROXY_USER_OPTION = "raven.http.proxy.user";
+    /**
+     * Option to set an HTTP proxy password for Sentry connections.
+     */
+    public static final String HTTP_PROXY_PASS_OPTION = "raven.http.proxy.password";
+    /**
      * The default async queue size if none is provided.
      */
     public static final int QUEUE_SIZE_DEFAULT = 50;
@@ -267,12 +276,17 @@ public class DefaultRavenFactory extends RavenFactory {
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
 
         String proxyHost = getProxyHost(dsn);
+        String proxyUser = getProxyUser(dsn);
+        String proxyPass = getProxyPass(dsn);
         int proxyPort = getProxyPort(dsn);
 
         Proxy proxy = null;
         if (proxyHost != null) {
             InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
             proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
+            if (proxyUser != null && proxyPass != null) {
+                Authenticator.setDefault(new ProxyAuthenticator(proxyUser, proxyPass));
+            }
         }
 
         Double sampleRate = getSampleRate(dsn);
@@ -511,6 +525,26 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected String getProxyHost(Dsn dsn) {
         return dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
+    }
+
+    /**
+     * HTTP proxy username for Sentry connections.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return HTTP proxy username for Sentry connections.
+     */
+    protected String getProxyUser(Dsn dsn) {
+        return dsn.getOptions().get(HTTP_PROXY_USER_OPTION);
+    }
+
+    /**
+     * HTTP proxy password for Sentry connections.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return HTTP proxy password for Sentry connections.
+     */
+    protected String getProxyPass(Dsn dsn) {
+        return dsn.getOptions().get(HTTP_PROXY_PASS_OPTION);
     }
 
     /**
