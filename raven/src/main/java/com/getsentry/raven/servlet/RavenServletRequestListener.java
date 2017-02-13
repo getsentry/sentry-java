@@ -1,6 +1,7 @@
 package com.getsentry.raven.servlet;
 
 import com.getsentry.raven.Raven;
+import com.getsentry.raven.RavenContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +29,8 @@ public class RavenServletRequestListener implements ServletRequestListener {
         THREAD_REQUEST.remove();
 
         try {
-            Raven raven = Raven.getStoredInstance();
-            if (raven != null) {
-                raven.getContext().clear();
+            for (RavenContext context : Raven.getContexts()) {
+                context.clear();
             }
         } catch (Exception e) {
             logger.error("Error clearing RavenContext state.", e);

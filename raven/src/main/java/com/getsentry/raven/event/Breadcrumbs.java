@@ -1,5 +1,6 @@
 package com.getsentry.raven.event;
 
+import com.getsentry.raven.Raven;
 import com.getsentry.raven.RavenContext;
 
 /**
@@ -20,7 +21,7 @@ public final class Breadcrumbs {
      * @param breadcrumb Breadcrumb to record
      */
     public static void record(Breadcrumb breadcrumb) {
-        for (RavenContext context : RavenContext.getActiveContexts()) {
+        for (RavenContext context : Raven.getContexts()) {
             context.recordBreadcrumb(breadcrumb);
         }
     }
