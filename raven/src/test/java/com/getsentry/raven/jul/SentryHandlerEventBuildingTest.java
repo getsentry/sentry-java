@@ -1,5 +1,6 @@
 package com.getsentry.raven.jul;
 
+import com.getsentry.raven.environment.RavenEnvironment;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
@@ -60,6 +61,7 @@ public class SentryHandlerEventBuildingTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryHandler.THREAD_ID, (int) threadId));
             assertThat(event.getTimestamp(), is(date));
+            assertThat(event.getSdkName(), is(RavenEnvironment.SDK_NAME + ":jul"));
         }};
         assertNoErrorsInErrorManager();
     }

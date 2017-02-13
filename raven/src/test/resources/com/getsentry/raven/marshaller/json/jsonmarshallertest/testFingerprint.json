@@ -15,5 +15,9 @@
         "fingerprint1",
         "fingerprint2"
     ],
-    "checksum": null
+    "checksum": null,
+    "sdk": {
+        "name": null,
+        "version": null
+    }
 }

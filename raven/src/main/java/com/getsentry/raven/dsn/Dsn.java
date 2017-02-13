@@ -54,8 +54,9 @@ public class Dsn {
      * @throws InvalidDsnException the given DSN is not valid.
      */
     public Dsn(URI dsn) throws InvalidDsnException {
-        if (dsn == null)
+        if (dsn == null) {
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
+        }
 
         options = new HashMap<>();
         protocolSettings = new HashSet<>();
@@ -100,8 +101,9 @@ public class Dsn {
      */
     private void extractPathInfo(URI dsnUri) {
         String uriPath = dsnUri.getPath();
-        if (uriPath == null)
+        if (uriPath == null) {
             return;
+        }
         int projectIdStart = uriPath.lastIndexOf("/") + 1;
         path = uriPath.substring(0, projectIdStart);
         projectId = uriPath.substring(projectIdStart);
@@ -124,8 +126,9 @@ public class Dsn {
      */
     private void extractProtocolInfo(URI dsnUri) {
         String scheme = dsnUri.getScheme();
-        if (scheme == null)
+        if (scheme == null) {
             return;
+        }
         String[] schemeDetails = scheme.split("\\+");
         protocolSettings.addAll(Arrays.asList(schemeDetails).subList(0, schemeDetails.length - 1));
         protocol = schemeDetails[schemeDetails.length - 1];
@@ -138,12 +141,14 @@ public class Dsn {
      */
     private void extractUserKeys(URI dsnUri) {
         String userInfo = dsnUri.getUserInfo();
-        if (userInfo == null)
+        if (userInfo == null) {
             return;
+        }
         String[] userDetails = userInfo.split(":");
         publicKey = userDetails[0];
-        if (userDetails.length > 1)
+        if (userDetails.length > 1) {
             secretKey = userDetails[1];
+        }
     }
 
     /**
@@ -153,8 +158,9 @@ public class Dsn {
      */
     private void extractOptions(URI dsnUri) {
         String query = dsnUri.getQuery();
-        if (query == null || query.isEmpty())
+        if (query == null || query.isEmpty()) {
             return;
+        }
         for (String optionPair : query.split("&")) {
             try {
                 String[] pairDetails = optionPair.split("=");
@@ -183,17 +189,22 @@ public class Dsn {
      */
     private void validate() {
         List<String> missingElements = new LinkedList<>();
-        if (host == null)
+        if (host == null) {
             missingElements.add("host");
-        if (publicKey == null)
+        }
+        if (publicKey == null) {
             missingElements.add("public key");
-        if (secretKey == null)
+        }
+        if (secretKey == null) {
             missingElements.add("secret key");
-        if (projectId == null || projectId.isEmpty())
+        }
+        if (projectId == null || projectId.isEmpty()) {
             missingElements.add("project ID");
+        }
 
-        if (!missingElements.isEmpty())
+        if (!missingElements.isEmpty()) {
             throw new InvalidDsnException("Invalid DSN, the following properties aren't set '" + missingElements + "'");
+        }
     }
 
     public String getSecretKey() {
@@ -243,20 +254,42 @@ public class Dsn {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Dsn dsn = (Dsn) o;
 
-        if (port != dsn.port) return false;
-        if (!host.equals(dsn.host)) return false;
-        if (!options.equals(dsn.options)) return false;
-        if (!path.equals(dsn.path)) return false;
-        if (!projectId.equals(dsn.projectId)) return false;
-        if (protocol != null ? !protocol.equals(dsn.protocol) : dsn.protocol != null) return false;
-        if (!protocolSettings.equals(dsn.protocolSettings)) return false;
-        if (!publicKey.equals(dsn.publicKey)) return false;
-        if (!secretKey.equals(dsn.secretKey)) return false;
+        if (port != dsn.port) {
+            return false;
+        }
+        if (!host.equals(dsn.host)) {
+            return false;
+        }
+        if (!options.equals(dsn.options)) {
+            return false;
+        }
+        if (!path.equals(dsn.path)) {
+            return false;
+        }
+        if (!projectId.equals(dsn.projectId)) {
+            return false;
+        }
+        if (protocol != null ? !protocol.equals(dsn.protocol) : dsn.protocol != null) {
+            return false;
+        }
+        if (!protocolSettings.equals(dsn.protocolSettings)) {
+            return false;
+        }
+        if (!publicKey.equals(dsn.publicKey)) {
+            return false;
+        }
+        if (!secretKey.equals(dsn.secretKey)) {
+            return false;
+        }
 
         return true;
     }

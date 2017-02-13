@@ -26,8 +26,9 @@ public class SentryAuthenticationFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        if (!validateAuth(req, resp))
+        if (!validateAuth(req, resp)) {
             return;
+        }
 
         chain.doFilter(request, response);
     }

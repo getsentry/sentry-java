@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>7.8.2-SNAPSHOT</version>
+        <version>7.8.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven-appengine</artifactId>
@@ -14,8 +14,7 @@
     <description>Raven module allowing to use GoogleApp Engine and its task queueing system.</description>
 
     <properties>
-        <appengine-api.version>1.9.34</appengine-api.version>
-        <logback.version>1.1.7</logback.version>
+        <appengine-api.version>1.9.49</appengine-api.version>
     </properties>
 
     <dependencies>
@@ -33,12 +32,6 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.jmockit</groupId>
             <artifactId>jmockit</artifactId>

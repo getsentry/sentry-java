@@ -41,7 +41,7 @@ public class SentryAppender extends AppenderSkeleton {
      *
      * @see #initRaven()
      */
-    protected Raven raven;
+    protected volatile Raven raven;
     /**
      * DSN property of the appender.
      * <p>
@@ -126,7 +126,9 @@ public class SentryAppender extends AppenderSkeleton {
             return Event.Level.INFO;
         } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -144,17 +146,20 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     public void activateOptions() {
         super.activateOptions();
-        if (raven == null)
+
+        if (raven == null) {
             initRaven();
+        }
     }
 
     /**
      * Initialises the Raven instance.
      */
-    protected void initRaven() {
+    protected synchronized void initRaven() {
         try {
-            if (dsn == null)
+            if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (InvalidDsnException e) {
@@ -169,11 +174,15 @@ public class SentryAppender extends AppenderSkeleton {
     @Override
     protected void append(LoggingEvent loggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (RavenEnvironment.isManagingThread())
+        if (RavenEnvironment.isManagingThread()) {
             return;
+        }
 
         RavenEnvironment.startManagingThread();
         try {
+            if (raven == null) {
+                initRaven();
+            }
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -192,11 +201,12 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-                .withTimestamp(new Date(loggingEvent.getTimeStamp()))
-                .withMessage(loggingEvent.getRenderedMessage())
-                .withLogger(loggingEvent.getLoggerName())
-                .withLevel(formatLevel(loggingEvent.getLevel()))
-                .withExtra(THREAD_NAME, loggingEvent.getThreadName());
+            .withSdkName(RavenEnvironment.SDK_NAME + ":log4j")
+            .withTimestamp(new Date(loggingEvent.getTimeStamp()))
+            .withMessage(loggingEvent.getRenderedMessage())
+            .withLogger(loggingEvent.getLoggerName())
+            .withLevel(formatLevel(loggingEvent.getLevel()))
+            .withExtra(THREAD_NAME, loggingEvent.getThreadName());
 
         if (!Util.isNullOrEmpty(serverName)) {
             eventBuilder.withServerName(serverName.trim());
@@ -235,8 +245,9 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withCulprit(loggingEvent.getLoggerName());
         }
 
-        if (loggingEvent.getNDC() != null)
+        if (loggingEvent.getNDC() != null) {
             eventBuilder.withExtra(LOG4J_NDC, loggingEvent.getNDC());
+        }
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
@@ -248,8 +259,9 @@ public class SentryAppender extends AppenderSkeleton {
             }
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet())
+        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
+        }
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
@@ -297,11 +309,13 @@ public class SentryAppender extends AppenderSkeleton {
     public void close() {
         RavenEnvironment.startManagingThread();
         try {
-            if (this.closed)
+            if (this.closed) {
                 return;
+            }
             this.closed = true;
-            if (raven != null)
+            if (raven != null) {
                 raven.closeConnection();
+            }
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while closing the Raven connection", e,
                     ErrorCode.CLOSE_FAILURE);

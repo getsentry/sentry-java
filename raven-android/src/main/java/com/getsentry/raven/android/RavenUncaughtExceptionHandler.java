@@ -1,6 +1,9 @@
 package com.getsentry.raven.android;
 
 import android.util.Log;
+import com.getsentry.raven.event.Event;
+import com.getsentry.raven.event.EventBuilder;
+import com.getsentry.raven.event.interfaces.ExceptionInterface;
 
 /**
  * Sends any uncaught exception to Sentry, then passes the exception on to the pre-existing
@@ -39,8 +42,13 @@ class RavenUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
     public void uncaughtException(Thread thread, Throwable thrown) {
         Log.d(TAG, "Uncaught exception received.");
 
+        EventBuilder eventBuilder = new EventBuilder()
+            .withMessage(thrown.getMessage())
+            .withLevel(Event.Level.FATAL)
+            .withSentryInterface(new ExceptionInterface(thrown));
+
         try {
-            com.getsentry.raven.Raven.capture(thrown);
+            com.getsentry.raven.Raven.capture(eventBuilder);
         } catch (Exception e) {
             Log.e(TAG, "Error sending excepting to Sentry.", e);
         }

@@ -10,47 +10,53 @@ for log4j to send the logged events to Sentry.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-log4j</artifactId>
-    <version>7.8.1</version>
+    <version>7.8.2</version>
 </dependency>
 ```
 
+### Gradle
+```
+compile 'com.getsentry.raven:raven-log4j:7.8.2'
+```
+
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.8.1%7Cjar).
-
-### Manual dependency management
-Relies on:
-
- - [raven dependencies](../raven)
- - [log4j-1.2.17.jar](https://search.maven.org/#artifactdetails%7Clog4j%7Clog4j%7C1.2.17%7Cjar)
- - [slf4j-log4j12-1.7.7.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-log4j12%7C1.7.7%7Cjar)
- is recommended as the implementation of slf4j (instead of slf4j-jdk14).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.8.2%7Cjar).
 
 ## Usage
 ### Configuration
 Add the `SentryAppender` to the `log4j.properties` file:
 
 ```properties
-log4j.rootLogger=WARN, SentryAppender
-log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
+# Enable the Console and Sentry appenders
+log4j.rootLogger=INFO, Console, Sentry
+
+# Configure the Console appender
+log4j.appender.Console=org.apache.log4j.ConsoleAppender
+log4j.appender.Console.layout=org.apache.log4j.PatternLayout
+log4j.appender.Console.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%t] %-5p: %m%n
+
+# Configure the Sentry appender, overriding the logging threshold to the WARN level
+log4j.appender.Sentry=com.getsentry.raven.log4j.SentryAppender
+log4j.appender.Sentry.threshold=WARN
 ```
 
-Alternatively in the `log4j.xml` file set:
+Alternatively in the `log4j.xml` file add:
 
 ```
-  <appender name="sentry" class="com.getsentry.raven.log4j.SentryAppender">
-    <filter class="org.apache.log4j.varia.LevelRangeFilter">
-      <param name="levelMin" value="WARN"/>
-    </filter>
+  <appender name="Sentry" class="com.getsentry.raven.log4j.SentryAppender">
+      <!-- Override the Sentry handler log level to WARN -->
+      <filter class="org.apache.log4j.varia.LevelRangeFilter">
+          <param name="levelMin" value="WARN"/>
+      </filter>
   </appender>
 ```
 
-You'll also need to associate the `sentry` appender with your root logger, like so:
+You'll also need to associate the `Sentry` appender with your root logger, like so:
 
 ```
-  <root>
-    <priority value="info" />
-    <appender-ref ref="my-other-appender" />
-    <appender-ref ref="sentry" />
+  <root level="INFO>
+      <!-- <appender-ref ref="OtherAppender" /> -->
+      <appender-ref ref="Sentry" />
   </root>
 ```
 
@@ -88,25 +94,34 @@ Configuration parameters follow:
 | `SENTRY_TAGS` | `sentry.tags` | `tag1:value1,tag2:value2` | Optional, provide tags |
 | `SENTRY_EXTRA_TAGS` | `sentry.extratags` | `foo,bar,baz` | Optional, provide tag names to be extracted from MDC when using SLF4J |
 
-#### Configuration via `log4j.properties`
+#### Configuration via `log4j.properties` (or `log4j.xml`)
 
-You can also configure everything statically within the `log4j.properties` file
-itself. This is less flexible because it's harder to change when you run
+You can also configure everything statically within the `log4j.properties` (or `log4j.xml`)
+file itself. This is less flexible because it's harder to change when you run
 your application in different environments.
 
 ```properties
-log4j.rootLogger=WARN, SentryAppender
-log4j.appender.SentryAppender=com.getsentry.raven.log4j.SentryAppender
+# Enable the Console and Sentry appenders
+log4j.rootLogger=INFO, Console, Sentry
+
+# Configure the Console appender
+log4j.appender.Console=org.apache.log4j.ConsoleAppender
+
+# Configure the Sentry appender, overriding the logging threshold to the WARN level
+log4j.appender.Sentry=com.getsentry.raven.log4j.SentryAppender
+log4j.appender.Sentry.threshold=WARN
+
+# Set Sentry DSN
 log4j.appender.SentryAppender.dsn=https://host:port/1?options
-// Optional, provide release version of your application
+# Optional, provide release version of your application
 log4j.appender.SentryAppender.release=1.0.0
-// Optional, provide environment your application is running in
+# Optional, provide environment your application is running in
 log4j.appender.SentryAppender.environment=production
-// Optional, override the server name (rather than looking it up dynamically)
+# Optional, override the server name (rather than looking it up dynamically)
 log4j.appender.SentryAppender.serverName=server1
 # Optional, select the ravenFactory class
-#log4j.appender.SentryAppender.ravenFactory=com.foo.RavenFactory
-// Optional, provide tags
+log4j.appender.SentryAppender.ravenFactory=com.foo.RavenFactory
+# Optional, provide tags
 log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
 # Optional, provide tag names to be extracted from MDC when using SLF4J
 log4j.appender.SentryAppender.extraTags=foo,bar,baz

@@ -13,5 +13,9 @@
     "extra": {
         "key": null
     },
-    "checksum": null
+    "checksum": null,
+    "sdk": {
+        "name": null,
+        "version": null
+    }
 }

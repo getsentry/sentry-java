@@ -64,7 +64,7 @@ public abstract class AbstractConnection implements Connection {
     protected AbstractConnection(String publicKey, String secretKey) {
         eventSendFailureCallbacks = new HashSet<>();
         authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
-                + "sentry_client=" + RavenEnvironment.NAME + ","
+                + "sentry_client=" + RavenEnvironment.getRavenName() + ","
                 + "sentry_key=" + publicKey + ","
                 + "sentry_secret=" + secretKey;
     }
@@ -109,9 +109,11 @@ public abstract class AbstractConnection implements Connection {
         while (lockdown.get()) {
             lock.lock();
             try {
-                if (lockdown.get())
+                if (lockdown.get()) {
                     condition.await();
+                }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 logger.warn("An exception occurred during the lockdown.", e);
             } finally {
                 lock.unlock();
@@ -123,16 +125,18 @@ public abstract class AbstractConnection implements Connection {
      * Initiates a lockdown for {@link #waitingTime}ms and resume the paused threads once the lockdown ends.
      */
     private void lockDown() {
-        if (!lockdown.compareAndSet(false, true))
+        if (!lockdown.compareAndSet(false, true)) {
             return;
+        }
 
         try {
             logger.warn("Lockdown started for {}ms.", waitingTime);
             Thread.sleep(waitingTime);
 
             // Double the wait until the maximum is reached
-            if (waitingTime < maxWaitingTime)
+            if (waitingTime < maxWaitingTime) {
                 waitingTime <<= 1;
+            }
         } catch (Exception e) {
             logger.warn("An exception occurred during the lockdown.", e);
         } finally {

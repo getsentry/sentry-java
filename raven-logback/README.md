@@ -10,20 +10,17 @@ for logback to send the logged events to Sentry.
 <dependency>
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-logback</artifactId>
-    <version>7.8.1</version>
+    <version>7.8.2</version>
 </dependency>
 ```
 
+### Gradle
+```
+compile 'com.getsentry.raven:raven-logback:7.8.2'
+```
+
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C7.8.1%7Cjar).
-
-### Manual dependency management
-Relies on:
-
- - [raven dependencies](../raven)
- - [logback-core-1.1.2.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-core%7C1.1.2%7Cjar)
- - [logback-classic-1.1.2.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-classic%7C1.1.2%7Cjar)
- will act as the implementation of slf4j (instead of slf4j-jdk14).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C7.8.2%7Cjar).
 
 ## Usage
 ### Configuration
@@ -31,8 +28,20 @@ Add the `SentryAppender` to your `logback.xml` file:
 
 ```xml
 <configuration>
-    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender" />
-    <root level="warn">
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="Console" />
         <appender-ref ref="Sentry"/>
     </root>
 </configuration>
@@ -80,7 +89,18 @@ your application in different environments.
 
 ```xml
 <configuration>
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+
+        <!-- Set Sentry DSN -->
         <dsn>https://host:port/1?options</dsn>
         <!-- Optional, provide release version of your application -->
         <release>1.0.0</release>
@@ -95,7 +115,9 @@ your application in different environments.
         <!-- Optional, provide tag names to be extracted from MDC when using SLF4J -->
         <extraTags>foo,bar,baz</extraTags>
     </appender>
-    <root level="warn">
+
+    <root level="INFO">
+        <appender-ref ref="Console" />
         <appender-ref ref="Sentry"/>
     </root>
 </configuration>

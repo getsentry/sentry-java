@@ -188,7 +188,7 @@ public class Raven {
     @Override
     public String toString() {
         return "Raven{"
-                + "name=" + RavenEnvironment.NAME
+                + "name=" + RavenEnvironment.getRavenName()
                 + ", connection=" + connection
                 + '}';
     }

@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
+import com.getsentry.raven.environment.RavenEnvironment;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -79,6 +80,7 @@ public class SentryAppenderEventBuildingTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
+            assertThat(event.getSdkName(), is(RavenEnvironment.SDK_NAME + ":logback"));
         }};
         assertNoErrorsInStatusManager();
     }

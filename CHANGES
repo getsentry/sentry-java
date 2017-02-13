@@ -1,3 +1,16 @@
+Version 7.8.3
+-------------
+
+- Add User to RavenContext and ContextBuilderHelper. (thanks mpecan)
+
+Version 7.8.2
+-------------
+
+- Fix race condition, ensuring Raven initialization is synchronized in appenders. (thanks OutOfBrain)
+- Allow use of custom AndroidRavenFactory. (thanks kassim)
+- Add ``sdk`` field to payload, identify subprojects in SDK name.
+- Add ``raven.sample.rate`` DSN option to optionally reduce the number of events sent to the server.
+
 Version 7.8.1
 -------------
 

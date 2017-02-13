@@ -52,13 +52,15 @@ public class HttpInterface implements SentryInterface {
         this.requestUrl = request.getRequestURL().toString();
         this.method = request.getMethod();
         this.parameters = new HashMap<>();
-        for (Map.Entry<String, String[]> parameterMapEntry : request.getParameterMap().entrySet())
+        for (Map.Entry<String, String[]> parameterMapEntry : request.getParameterMap().entrySet()) {
             this.parameters.put(parameterMapEntry.getKey(), Arrays.asList(parameterMapEntry.getValue()));
+        }
         this.queryString = request.getQueryString();
         if (request.getCookies() != null) {
             this.cookies = new HashMap<>();
-            for (Cookie cookie : request.getCookies())
+            for (Cookie cookie : request.getCookies()) {
                 this.cookies.put(cookie.getName(), cookie.getValue());
+            }
         } else {
             this.cookies = Collections.emptyMap();
         }
@@ -74,8 +76,9 @@ public class HttpInterface implements SentryInterface {
         this.authType = request.getAuthType();
         this.remoteUser = request.getRemoteUser();
         this.headers = new HashMap<>();
-        for (String headerName : Collections.list(request.getHeaderNames()))
+        for (String headerName : Collections.list(request.getHeaderNames())) {
             this.headers.put(headerName, Collections.list(request.getHeaders(headerName)));
+        }
     }
 
     @Override
@@ -163,28 +166,66 @@ public class HttpInterface implements SentryInterface {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         HttpInterface that = (HttpInterface) o;
 
-        if (asyncStarted != that.asyncStarted) return false;
-        if (localPort != that.localPort) return false;
-        if (secure != that.secure) return false;
-        if (serverPort != that.serverPort) return false;
-        if (authType != null ? !authType.equals(that.authType) : that.authType != null) return false;
-        if (!cookies.equals(that.cookies)) return false;
-        if (!headers.equals(that.headers)) return false;
-        if (localAddr != null ? !localAddr.equals(that.localAddr) : that.localAddr != null) return false;
-        if (localName != null ? !localName.equals(that.localName) : that.localName != null) return false;
-        if (method != null ? !method.equals(that.method) : that.method != null) return false;
-        if (!parameters.equals(that.parameters)) return false;
-        if (protocol != null ? !protocol.equals(that.protocol) : that.protocol != null) return false;
-        if (queryString != null ? !queryString.equals(that.queryString) : that.queryString != null) return false;
-        if (remoteAddr != null ? !remoteAddr.equals(that.remoteAddr) : that.remoteAddr != null) return false;
-        if (remoteUser != null ? !remoteUser.equals(that.remoteUser) : that.remoteUser != null) return false;
-        if (!requestUrl.equals(that.requestUrl)) return false;
-        if (serverName != null ? !serverName.equals(that.serverName) : that.serverName != null) return false;
+        if (asyncStarted != that.asyncStarted) {
+            return false;
+        }
+        if (localPort != that.localPort) {
+            return false;
+        }
+        if (secure != that.secure) {
+            return false;
+        }
+        if (serverPort != that.serverPort) {
+            return false;
+        }
+        if (authType != null ? !authType.equals(that.authType) : that.authType != null) {
+            return false;
+        }
+        if (!cookies.equals(that.cookies)) {
+            return false;
+        }
+        if (!headers.equals(that.headers)) {
+            return false;
+        }
+        if (localAddr != null ? !localAddr.equals(that.localAddr) : that.localAddr != null) {
+            return false;
+        }
+        if (localName != null ? !localName.equals(that.localName) : that.localName != null) {
+            return false;
+        }
+        if (method != null ? !method.equals(that.method) : that.method != null) {
+            return false;
+        }
+        if (!parameters.equals(that.parameters)) {
+            return false;
+        }
+        if (protocol != null ? !protocol.equals(that.protocol) : that.protocol != null) {
+            return false;
+        }
+        if (queryString != null ? !queryString.equals(that.queryString) : that.queryString != null) {
+            return false;
+        }
+        if (remoteAddr != null ? !remoteAddr.equals(that.remoteAddr) : that.remoteAddr != null) {
+            return false;
+        }
+        if (remoteUser != null ? !remoteUser.equals(that.remoteUser) : that.remoteUser != null) {
+            return false;
+        }
+        if (!requestUrl.equals(that.requestUrl)) {
+            return false;
+        }
+        if (serverName != null ? !serverName.equals(that.serverName) : that.serverName != null) {
+            return false;
+        }
 
         return true;
     }

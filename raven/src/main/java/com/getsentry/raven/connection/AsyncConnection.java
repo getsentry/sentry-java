@@ -56,12 +56,13 @@ public class AsyncConnection implements Connection {
      * @param shutdownTimeout  timeout for graceful shutdown of the executor, in milliseconds.
      */
     public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown,
-        long shutdownTimeout) {
+                           long shutdownTimeout) {
         this.actualConnection = actualConnection;
-        if (executorService == null)
+        if (executorService == null) {
             this.executorService = Executors.newSingleThreadExecutor();
-        else
+        } else {
             this.executorService = executorService;
+        }
         if (gracefulShutdown) {
             this.gracefulShutdown = gracefulShutdown;
             addShutdownHook();
@@ -84,8 +85,9 @@ public class AsyncConnection implements Connection {
      */
     @Override
     public void send(Event event) {
-        if (!closed)
+        if (!closed) {
             executorService.execute(new EventSubmitter(event));
+        }
     }
 
     @Override
@@ -137,6 +139,7 @@ public class AsyncConnection implements Connection {
             }
             logger.info("Shutdown finished.");
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.error("Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
             logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
@@ -172,10 +175,10 @@ public class AsyncConnection implements Connection {
 
     private final class ShutDownHook extends Thread {
 
-      /**
-       * Whether or not this ShutDownHook instance will do anything when run.
-       */
-      private volatile boolean enabled = true;
+        /**
+         * Whether or not this ShutDownHook instance will do anything when run.
+         */
+        private volatile boolean enabled = true;
 
         @Override
         public void run() {

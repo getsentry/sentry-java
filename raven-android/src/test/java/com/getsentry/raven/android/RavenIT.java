@@ -16,8 +16,9 @@ public class RavenIT extends AndroidTest {
         Assert.assertEquals(sentryStub.getEventCount(), 0);
 
         RavenITActivity activity = Robolectric.setupActivity(RavenITActivity.class);
-        activity.sendEvent();
+        Assert.assertEquals(activity.getCustomFactoryUsed(), true);
 
+        activity.sendEvent();
         waitUntilTrue(1000, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
