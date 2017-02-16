@@ -24,6 +24,7 @@ so manually with the main project raven.
 
    installation
    config
+   usage
    modules/index
 
 Resources:

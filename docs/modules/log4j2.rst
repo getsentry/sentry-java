@@ -1,18 +1,18 @@
-Log4j 2
-=======
+Log4j 2.x
+=========
 
-Raven-Java provides `Log4j 2 <https://logging.apache.org/log4j/2.x/>`_
-support for Raven. It provides an `Appender
+The ``raven-log4j2`` library provides `Log4j 2.x <https://logging.apache.org/log4j/2.x/>`_
+support for Raven via an `Appender
 <https://logging.apache.org/log4j/2.x/log4j-core/apidocs/org/apache/logging/log4j/core/Appender.html>`_
-for Log4j 2 to send the logged events to Sentry.
+that sends logged exceptions to Sentry.
 
-The project can be found on github: `raven-java/raven-log4j2
-<https://github.com/getsentry/raven-java/tree/master/raven-log4j2>`_
+The source can be found `on Github
+<https://github.com/getsentry/raven-java/tree/master/raven-log4j2>`_.
 
 Installation
 ------------
 
-If you want to use Maven you can install Raven-Log4j2 as dependency:
+Using Maven:
 
 .. sourcecode:: xml
 
@@ -22,72 +22,157 @@ If you want to use Maven you can install Raven-Log4j2 as dependency:
         <version>7.8.2</version>
     </dependency>
 
-If you manually want to manage your dependencies:
+Using Gradle:
 
-- :doc:`raven dependencies <raven>`
-- `log4j-api-2.1.jar
-  <https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-api%7.8.2%7Cjar>`_
-- `log4j-core-2.0.jar
-  <https://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-core%7.8.2%7Cjar>`_
-- `log4j-slf4j-impl-2.1.jar
-  <http://search.maven.org/#artifactdetails%7Corg.apache.logging.log4j%7Clog4j-slf4j-impl%7.8.2%7Cjar>`_
-  is recommended as the implementation of slf4j (instead of slf4j-jdk14).
+.. sourcecode:: groovy
+
+    compile 'com.getsentry.raven:raven-log4j2:7.8.2'
+
+Using SBT:
+
+.. sourcecode:: scala
+
+    libraryDependencies += "com.getsentry.raven" % "raven-log4j2" % "7.8.2"
+
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j2%7C7.8.2%7Cjar>`_.
 
 Usage
 -----
 
-The following configuration (``log4j2.xml``) gets you started for
-logging with log4j2 and Sentry:
+The following example configures a ``ConsoleAppender`` that logs to standard out
+at the ``INFO`` level and a ``SentryAppender`` that logs to the Sentry server at
+the ``WARN`` level. The ``ConsoleAppender`` is only provided as an example of
+a non-Sentry appender that is set to a different logging threshold, like one you
+may already have in your project.
 
-.. sourcecode:: java
-
-    <?xml version="1.0" encoding="UTF-8"?>
-    <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
-      <appenders>
-        <Raven name="Sentry">
-          <dsn>
-            ___DSN___?options
-          </dsn>
-          <tags>
-            tag1:value1,tag2:value2
-          </tags>
-          <!--
-            Optional, allows to select the ravenFactory
-          -->
-          <!--
-          <ravenFactory>
-            com.getsentry.raven.DefaultRavenFactory
-          </ravenFactory>
-          -->
-        </Raven>
-      </appenders>
-
-      <loggers>
-        <root level="all">
-          <appender-ref ref="Sentry"/>
-        </root>
-      </loggers>
-    </configuration>
-
-It's possible to add extra details to events captured by the Log4j 2
-module thanks to the `marker system
-<https://logging.apache.org/log4j/2.x/manual/markers.html>`_ which will
-add a tag log4j2-Marker.  Both the MDC and the NDC systems provided by
-Log4j 2 are usable, allowing to attach extras information to the event.
-
-Mapped Tags
------------
-
-By default all MDC parameters are sent under the Additional Data Tab. By
-specify the ``extraTags`` parameter in your configuration file. You can
-specify MDC keys to send as tags instead of including them in Additional
-Data. This allows them to be filtered within Sentry.
+Example configuration using the ``log4j2.xml`` format:
 
 .. sourcecode:: xml
 
-    <extraTags>
-      Environment,OS
-    </extraTags>
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
+        <appenders>
+            <Console name="Console" target="SYSTEM_OUT">
+                <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+            </Console>
+
+            <Raven name="Sentry" />
+        </appenders>
+
+        <loggers>
+            <root level="INFO">
+                <appender-ref ref="Console" />
+                <!-- Note that the Sentry logging threshold is overridden to the WARN level -->
+                <appender-ref ref="Sentry" level="WARN" />
+            </root>
+        </loggers>
+    </configuration>
+
+Next, **you'll need to configure your DSN** (client key) and optionally other values such as
+``environment`` and ``release``. See below for the two ways you can do this.
+
+Configuration via runtime environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the most flexible method for configuring the ``SentryAppender``,
+because it can be easily changed based on the environment you run your
+application in.
+
+The following can be set as System Environment variables:
+
+.. sourcecode:: shell
+
+    SENTRY_EXAMPLE=xxx java -jar app.jar
+
+Or as Java System Properties:
+
+.. sourcecode:: shell
+
+    java -Dsentry.example=xxx -jar app.jar
+
+Configuration parameters follow:
+
+======================= ======================= =============================== ===========
+Environment variable    Java System Property    Example value                   Description
+======================= ======================= =============================== ===========
+``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Raven will no-op
+``SENTRY_RELEASE``      ``sentry.release``      ``1.0.0``                       Optional, provide release version of your application
+``SENTRY_ENVIRONMENT``  ``sentry.environment``  ``production``                  Optional, provide environment your application is running in
+``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
+``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
+``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
+``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
+======================= ======================= =============================== ===========
+
+Configuration via static file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also configure everything statically within the ``log4j2.xml``
+file itself. This is less flexible and not recommended because it's more difficult to change
+the values when you run your application in different environments.
+
+Example configuration in the ``log4j.properties`` file:
+
+.. sourcecode:: xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
+        <appenders>
+            <Console name="Console" target="SYSTEM_OUT">
+                <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+            </Console>
+
+            <Raven name="Sentry">
+                <!-- Set Sentry DSN -->
+                <dsn>https://host:port/1?options</dsn>
+
+                <!-- Optional, provide release version of your application -->
+                <release>1.0.0</release>
+
+                <!-- Optional, provide environment your application is running in -->
+                <environment>production</environment>
+
+                <!-- Optional, override the server name (rather than looking it up dynamically) -->
+                <serverName>server1</serverName>
+
+                <!-- Optional, select the ravenFactory class -->
+                <ravenFactory>com.foo.RavenFactory</ravenFactory>
+
+                <!-- Optional, provide tags -->
+                <tags>tag1:value1,tag2:value2</tags>
+
+                <!-- Optional, provide tag names to be extracted from MDC -->
+                <extraTags>foo,bar,baz</extraTags>
+            </Raven>
+        </appenders>
+
+        <loggers>
+            <root level="INFO">
+                <appender-ref ref="Console" />
+                <!-- Note that the Sentry logging threshold is overridden to the WARN level -->
+                <appender-ref ref="Sentry" level="WARN" />
+            </root>
+        </loggers>
+    </configuration>
+
+Additional data
+---------------
+
+It's possible to add extra data to events thanks to `the marker system
+<https://logging.apache.org/log4j/2.x/manual/markers.html>`_
+provided by Log4j 2.x.
+
+Mapped Tags
+~~~~~~~~~~~
+
+By default all MDC parameters are stored under the "Additional Data" tab in Sentry. By
+specifying the ``extraTags`` parameter in your configuration file you can
+choose which MDC keys to send as tags instead, which allows them to be used as
+filters within the Sentry UI.
+
+.. sourcecode:: xml
+
+    <extraTags>Environment,OS</extraTags>
 
 .. sourcecode:: java
 
@@ -96,12 +181,12 @@ Data. This allows them to be filtered within Sentry.
         MDC.put("Environment", "Development");
         MDC.put("OS", "Linux");
 
-        // This adds a message with extras and MDC keys declared in extraTags as tags to Sentry
-        logger.info("This is a test");
+        // This sends an event where the Environment and OS MDC values are set as tags
+        logger.error("This is a test");
     }
 
-Practical Example
------------------
+In practice
+-----------
 
 .. sourcecode:: java
 
@@ -115,13 +200,13 @@ Practical Example
         private static final Marker MARKER = MarkerManager.getMarker("myMarker");
 
         void logSimpleMessage() {
-            // This adds a simple message to the logs
-            logger.info("This is a test");
+            // This sends a simple event to Sentry
+            logger.error("This is a test");
         }
 
         void logWithTag() {
-            // This adds a message with a tag to the logs named 'log4j2-Marker'
-            logger.info(MARKER, "This is a test");
+            // This sends an event with a tag named 'log4j2-Marker' to Sentry
+            logger.error(MARKER, "This is a test");
         }
 
         void logWithExtras() {
@@ -129,20 +214,20 @@ Practical Example
             ThreadContext.put("extra_key", "extra_value");
             // NDC extras are sent under 'log4j2-NDC'
             ThreadContext.push("Extra_details");
-            // This adds a message with extras to the logs
-            logger.info("This is a test");
+            // This sends an event with extra data to Sentry
+            logger.error("This is a test");
         }
 
         void logException() {
             try {
                 unsafeMethod();
             } catch (Exception e) {
-                // This adds an exception to the logs
+                // This sends an exception event to Sentry
                 logger.error("Exception caught", e);
             }
         }
 
         void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call that");
+            throw new UnsupportedOperationException("You shouldn't call this!");
         }
     }

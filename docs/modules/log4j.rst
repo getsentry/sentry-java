@@ -1,13 +1,13 @@
-Log4j
-=====
+Log4j 1.x
+=========
 
-The ``raven-log4j`` library provides `log4j <https://logging.apache.org/log4j/1.2/>`_
+The ``raven-log4j`` library provides `Log4j 1.x <https://logging.apache.org/log4j/1.2/>`_
 support for Raven via an `Appender
 <https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/Appender.html>`_
 that sends logged exceptions to Sentry.
 
-The project can be found on Github: `raven-java/raven-log4j
-<https://github.com/getsentry/raven-java/tree/master/raven-log4j>`_
+The source can be found `on Github
+<https://github.com/getsentry/raven-java/tree/master/raven-log4j>`_.
 
 Installation
 ------------
@@ -36,20 +36,20 @@ Using SBT:
 
 For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.8.2%7Cjar>`_.
 
-
 Usage
 -----
 
-The following examples configure a ``ConsolerAppender`` that logs to standard out
+The following examples configure a ``ConsoleAppender`` that logs to standard out
 at the ``INFO`` level and a ``SentryAppender`` that logs to the Sentry server at
-the ``WARN`` level.
+the ``WARN`` level. The ``ConsoleAppender`` is only provided as an example of
+a non-Sentry appender that is set to a different logging threshold, like one you
+may already have in your project.
 
 Example configuration using the ``log4j.properties`` format:
 
 .. sourcecode:: ini
 
-    # Enable the Console and Sentry appenders, Console is provided as an example
-    # of a non-Raven logger that is set to a different logging threshold
+    # Enable the Console and Sentry appenders
     log4j.rootLogger=INFO, Console, Sentry
 
     # Configure the Console appender
@@ -74,7 +74,7 @@ Alternatively, using  the ``log4j.xml`` format:
     	<appender name="Console" class="org.apache.log4j.ConsoleAppender">
     	    <layout class="org.apache.log4j.PatternLayout">
     		<param name="ConversionPattern"
-    		  value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+    		       value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n" />
     	    </layout>
     	</appender>
 
@@ -94,14 +94,13 @@ Alternatively, using  the ``log4j.xml`` format:
         </root>
     </log4j:configuration>
 
-Next, you'll need to configure your DSN (client key) and optionally other values such as
+Next, **you'll need to configure your DSN** (client key) and optionally other values such as
 ``environment`` and ``release``. See below for the two ways you can do this.
-
 
 Configuration via runtime environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is the most flexible method to configure the ``SentryAppender``,
+This is the most flexible method for configuring the ``SentryAppender``,
 because it can be easily changed based on the environment you run your
 application in.
 
@@ -119,7 +118,6 @@ Or as Java System Properties:
 
 Configuration parameters follow:
 
-
 ======================= ======================= =============================== ===========
 Environment variable    Java System Property    Example value                   Description
 ======================= ======================= =============================== ===========
@@ -129,7 +127,7 @@ Environment variable    Java System Property    Example value                   
 ``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
 ``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
 ``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
-``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC when using SLF4J
+``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================= ======================= =============================== ===========
 
 Configuration via static file
@@ -143,7 +141,7 @@ Example configuration in the ``log4j.properties`` file:
 
 .. sourcecode:: ini
 
-    # Set Sentry DSN
+    # Set the Sentry DSN
     log4j.appender.SentryAppender.dsn=https://host:port/1?options
 
     # Optional, provide release version of your application
@@ -161,7 +159,7 @@ Example configuration in the ``log4j.properties`` file:
     # Optional, provide tags
     log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
 
-    # Optional, provide tag names to be extracted from MDC when using SLF4J
+    # Optional, provide tag names to be extracted from MDC
     log4j.appender.SentryAppender.extraTags=foo,bar,baz
 
 Additional data
@@ -171,7 +169,30 @@ It's possible to add extra data to events thanks to `the MDC
 <https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/MDC.html>`_
 and `the NDC
 <https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/NDC.html>`_
-systems provided by Log4j.
+systems provided by Log4j 1.x.
+
+Mapped Tags
+~~~~~~~~~~~
+
+By default all MDC parameters are stored under the "Additional Data" tab in Sentry. By
+specifying the ``extraTags`` parameter in your configuration file you can
+choose which MDC keys to send as tags instead, which allows them to be used as
+filters within the Sentry UI.
+
+.. sourcecode:: ini
+
+    log4j.appender.SentryAppender.extraTags=Environment,OS
+
+.. sourcecode:: java
+
+    void logWithExtras() {
+        // MDC extras
+        MDC.put("Environment", "Development");
+        MDC.put("OS", "Linux");
+
+        // This sends an event where the Environment and OS MDC values are set as tags
+        logger.error("This is a test");
+    }
 
 In practice
 -----------
@@ -186,7 +207,7 @@ In practice
         private static final Logger logger = Logger.getLogger(MyClass.class);
 
         void logSimpleMessage() {
-            // This adds a simple message to the logs
+            // This sends a simple event to Sentry
             logger.error("This is a test");
         }
 
@@ -195,7 +216,7 @@ In practice
             MDC.put("extra_key", "extra_value");
             // NDC extras are sent under 'log4J-NDC'
             NDC.push("Extra_details");
-            // This adds a message with extras to the logs
+            // This sends an event with extra data to Sentry
             logger.error("This is a test");
         }
 
@@ -203,33 +224,14 @@ In practice
             try {
                 unsafeMethod();
             } catch (Exception e) {
-                // This adds an exception to the logs
+                // This sends an exception event to Sentry
                 logger.error("Exception caught", e);
             }
         }
 
         void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call that");
+            throw new UnsupportedOperationException("You shouldn't call this!");
         }
-    }
-
-Mapped Tags
------------
-
-By default all MDC parameters are stored under the "Additional Data" tab in Sentry. By
-specifying the ``extraTags`` parameter in your configuration file you can
-choose which MDC keys to send as tags instead of including them as "Additional
-Data." This allows them to be used as filters within the Sentry UI.
-
-.. sourcecode:: java
-§
-    void logWithExtras() {
-        // MDC extras
-        MDC.put("Environment", "Development");
-        MDC.put("OS", "Linux");
-
-        // This adds a message with extras and MDC keys declared in extraTags as tags to Sentry
-        logger.error("This is a test");
     }
 
 Asynchronous Logging

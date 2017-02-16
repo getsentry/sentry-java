@@ -1,47 +1,22 @@
 Installation
 ============
 
-When using Sentry with Java the strongly recommended way is to use one of
-the supported logging framework integrations rather than the raw
-"raven-java" clients.
+It is recommended that you use one of the supported logging framework integrations
+rather than the raw ``raven-java`` client.
 
 - `java.util.logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/index.html>`_
-  support is provided by the main project "raven-java"
-- `log4j <https://logging.apache.org/log4j/1.2/>`_ support is provided in raven-log4j
-- `log4j2 <https://logging.apache.org/log4j/2.x/>`_ can be used with raven-log4j2
-- `logback <http://logback.qos.ch/>`_ support is provided in raven-logback
+  support is provided by ``raven-java``
+- `log4j 1.x <https://logging.apache.org/log4j/1.2/>`_ support is provided by ``raven-log4j``
+- `log4j 2.x <https://logging.apache.org/log4j/2.x/>`_ support is provided by ``raven-log4j2``
+- `logback <http://logback.qos.ch/>`_ support is provided by ``raven-logback``
 
-Support for Google App Engine is provided in raven-appengine.
+Support for Google App Engine is provided in ``raven-appengine``.
 
-Github
+Source
 ------
 
-ALl modules are available on the `raven-java github project
-<https://github.com/getsentry/raven-java/>`_.   This includes raven-java
-itself as well as all the logging integrations.
-
-Snapshot Versions
------------------
-
-While the stable versions of raven are available on the central Maven
-Repository, newer (but less stable) versions (AKA snapshots) are available
-in Sonatype's snapshot repository.
-
-To use it with maven, add the following repository:
-
-.. sourcecode:: xml
-
-    <repository>
-        <id>sonatype-nexus-snapshots</id>
-        <name>Sonatype Nexus Snapshots</name>
-        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        <releases>
-            <enabled>false</enabled>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository>
+The source for ``raven-java`` can be found `on Github
+<https://github.com/getsentry/raven-java/>`_.
 
 Android
 -------
