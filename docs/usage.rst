@@ -1,7 +1,15 @@
-Usage
-=====
+Manual Usage
+============
 
 TODO: Note to prefer modules.
+
+Installation
+------------
+
+TODO: Raw install
+
+Capture an Error
+----------------
 
 It is possible to use the client manually rather than using a logging
 framework in order to send messages to Sentry. It is not recommended to
@@ -101,39 +109,39 @@ For more complex messages, it will be necessary to build an ``Event`` with the
         }
     }
 
+Static access
+-------------
 
-### Static access
-
-The most recently constructed `Raven` instance is stored statically so it may
+The most recently constructed ``Raven`` instance is stored statically so it may
 be used easily from anywhere in your application.
 
-```java
-import com.getsentry.raven.Raven;
-import com.getsentry.raven.RavenFactory;
+.. sourcecode:: java
 
-public class MyClass {
-    public static void main(String... args) {
-        // Create a Raven instance
-        RavenFactory.ravenInstance();
+    import com.getsentry.raven.Raven;
+    import com.getsentry.raven.RavenFactory;
+
+    public class MyClass {
+        public static void main(String... args) {
+            // Create a Raven instance
+            RavenFactory.ravenInstance();
+        }
+
+        public somewhereElse() {
+            // Use the Raven instance statically. Note that we are
+            // using the Class (and a static method) here
+            Raven.capture("Error message");
+
+            // Or pass it a throwable
+            Raven.capture(new Exception("Error message"));
+
+            // Or build an event yourself
+            EventBuilder eventBuilder = new EventBuilder()
+                            .withMessage("Exception caught")
+                            .withLevel(Event.Level.ERROR);
+            Raven.capture(eventBuilder.build());
+        }
+
     }
 
-    public somewhereElse() {
-        // Use the Raven instance statically. Note that we are
-        // using the Class (and a static method) here
-        Raven.capture("Error message");
-
-        // Or pass it a throwable
-        Raven.capture(new Exception("Error message"));
-
-        // Or build an event yourself
-        EventBuilder eventBuilder = new EventBuilder()
-                        .withMessage("Exception caught")
-                        .withLevel(Event.Level.ERROR);
-        Raven.capture(eventBuilder.build());
-    }
-
-}
-```
-
-Note that a Raven instance *must* be created before you can use the `Raven.capture`
-method, otherwise a `NullPointerException` (with an explanation) will be thrown.
+Note that a Raven instance *must* be created before you can use the ``Raven.capture``
+method, otherwise a ``NullPointerException`` (with an explanation) will be thrown.

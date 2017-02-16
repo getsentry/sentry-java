@@ -1,8 +1,7 @@
 java.util.logging
 =================
 
-The ``raven`` library contains the core code for communicating
-with the Sentry server, and also provides a `java.util.logging Handler
+The ``raven`` library provides a `java.util.logging Handler
 <http://docs.oracle.com/javase/7/docs/api/java/util/logging/Handler.html>`_
 that sends logged exceptions to Sentry.
 
