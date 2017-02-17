@@ -1,6 +1,6 @@
 .. sentry:edition:: self
 
-    Raven-Java
+    Raven Java
     ==========
 
 .. sentry:edition:: on-premise, hosted
@@ -10,23 +10,23 @@
     Java
     ====
 
-Raven is the Java client for Sentry. Raven relies on the most popular
-logging libraries to capture and convert logs before sending details to a
-Sentry instance.
-
-While it's strongly recommended to use one of the supported logging
-frameworks to capture and send messages to Sentry, a it is possible to do
-so manually with the main project raven.
+Raven for Java (``raven-java``) is the official Java client for Sentry. At its core it provides
+a raw client for sending events to Sentry, but it is highly recommended that you
+use one of the included library or framework integrations listed below if at all possible.
 
 .. toctree::
-   :maxdepth: 2
-   :titlesonly:
+    :maxdepth: 2
+    :titlesonly:
 
-   installation
-   config
-   modules/index
+    config
+    usage
+    modules/index
 
 Resources:
 
+* `Documentation <https://docs.sentry.io/clients/java/>`_
 * `Bug Tracker <http://github.com/getsentry/raven-java/issues>`_
-* `Github Project <http://github.com/getsentry/raven-java>`_
+* `Code <http://github.com/getsentry/raven-java>`_
+* `Mailing List <https://groups.google.com/group/getsentry>`_
+* `IRC <irc://irc.freenode.net/sentry>`_  (irc.freenode.net, #sentry)
+* `Travis CI <http://travis-ci.org/getsentry/raven-java>`_
