@@ -1,7 +1,13 @@
 Configuration
 =============
 
-Most of Raven's configuration happens by setting options in your DSN, as seen below.
+**Note:** Raven's library and framework integration documentation explains how to to do
+basic Raven configuration for each of the supported integrations. The configuration
+below is typically for more advanced use cases and can be used in combination any of the other
+integrations *once you set Raven up with the integration*. Please check the integration
+documentation before you attempt to do any advanced configuration.
+
+Most of Raven's advanced configuration happens by setting options in your DSN, as seen below.
 
 Connection and protocol
 -----------------------

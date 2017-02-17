@@ -1,20 +1,42 @@
 Manual Usage
 ============
 
-TODO: Note to prefer modules.
+**Note:** The following page provides examples on how to configure and use
+Raven directly. It is **highly recommended** that you use one of the provided
+integrations instead if possible.
 
 Installation
 ------------
 
-TODO: Raw install
+Using Maven:
+
+.. sourcecode:: xml
+
+    <dependency>
+        <groupId>com.getsentry.raven</groupId>
+        <artifactId>raven</artifactId>
+        <version>7.8.2</version>
+    </dependency>
+
+Using Gradle:
+
+.. sourcecode:: groovy
+
+    compile 'com.getsentry.raven:raven:7.8.2'
+
+Using SBT:
+
+.. sourcecode:: scala
+
+    libraryDependencies += "com.getsentry.raven" % "raven" % "7.8.2"
+
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C7.8.2%7Cjar>`_.
 
 Capture an Error
 ----------------
 
-It is possible to use the client manually rather than using a logging
-framework in order to send messages to Sentry. It is not recommended to
-use this solution as the API is more verbose and requires the developer to
-specify the value of each field sent to Sentry:
+To report an event manually you need to construct a ``Raven`` instance and use one
+of the send methods it provides.
 
 .. sourcecode:: java
 
@@ -29,12 +51,17 @@ specify the value of each field sent to Sentry:
             String dsn = args[0];
             raven = RavenFactory.ravenInstance(dsn);
 
-            // It is also possible to use the DSN detection system like this
+            // Or, if you don't provide a DSN,
+            raven = RavenFactory.ravenInstance();
+
+            // It is also possible to use the DSN detection system, which
+            // will check the environment variable "SENTRY_DSN" and the Java
+            // System Property "sentry.dsn".
             raven = RavenFactory.ravenInstance();
         }
 
         void logSimpleMessage() {
-            // This adds a simple message to the logs
+            // This sends a simple event to Sentry
             raven.sendMessage("This is a test");
         }
 
@@ -42,17 +69,20 @@ specify the value of each field sent to Sentry:
             try {
                 unsafeMethod();
             } catch (Exception e) {
-                // This adds an exception to the logs
+                // This sends an exception event to Sentry
                 raven.sendException(e);
             }
         }
 
         void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call that");
+            throw new UnsupportedOperationException("You shouldn't call this!");
         }
     }
 
-For more complex messages, it will be necessary to build an ``Event`` with the
+Building more complex events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For more complex messages, you'll need to build an ``Event`` with the
 ``EventBuilder`` class:
 
 .. sourcecode:: java
@@ -72,45 +102,45 @@ For more complex messages, it will be necessary to build an ``Event`` with the
             String dsn = args[0];
             raven = RavenFactory.ravenInstance(dsn);
 
-            // It is also possible to use the DSN detection system like this
+            // It is also possible to use the DSN detection system, which
+            // will check the environment variable "SENTRY_DSN" and the Java
+            // System Property "sentry.dsn".
             raven = RavenFactory.ravenInstance();
 
-            // Advanced: To specify the ravenFactory used
+            // Advanced: specify the ravenFactory used
             raven = RavenFactory.ravenInstance(new Dsn(dsn), "com.getsentry.raven.DefaultRavenFactory");
         }
 
         void logSimpleMessage() {
-            // This adds a simple message to the logs
+            // This sends an event to Sentry
             EventBuilder eventBuilder = new EventBuilder()
                             .withMessage("This is a test")
                             .withLevel(Event.Level.INFO)
                             .withLogger(MyClass.class.getName());
-            raven.runBuilderHelpers(eventBuilder); // Optional
-            raven.sendEvent(eventBuilder.build());
+            raven.sendEvent(eventBuilder);
         }
 
         void logException() {
             try {
                 unsafeMethod();
             } catch (Exception e) {
-                // This adds an exception to the logs
+                // This sends an exception event to Sentry
                 EventBuilder eventBuilder = new EventBuilder()
                                 .withMessage("Exception caught")
                                 .withLevel(Event.Level.ERROR)
                                 .withLogger(MyClass.class.getName())
                                 .withSentryInterface(new ExceptionInterface(e));
-                raven.runBuilderHelpers(eventBuilder); // Optional
-                raven.sendEvent(eventBuilder.build());
+                raven.sendEvent(eventBuilder);
             }
         }
 
         void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call that");
+            throw new UnsupportedOperationException("You shouldn't call this!");
         }
     }
 
-Static access
--------------
+Static access to Raven
+----------------------
 
 The most recently constructed ``Raven`` instance is stored statically so it may
 be used easily from anywhere in your application.

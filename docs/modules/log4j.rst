@@ -88,7 +88,7 @@ Alternatively, using  the ``log4j.xml`` format:
 
         <!-- Enable the Console and Sentry appenders, Console is provided as an example
              of a non-Raven logger that is set to a different logging threshold -->
-        <root level="INFO>
+        <root level="INFO">
             <appender-ref ref="Console" />
             <appender-ref ref="Sentry" />
         </root>
