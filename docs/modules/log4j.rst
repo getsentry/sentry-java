@@ -141,26 +141,92 @@ Example configuration in the ``log4j.properties`` file:
 
 .. sourcecode:: ini
 
+    # Enable the Console and Sentry appenders
+    log4j.rootLogger=INFO, Console, Sentry
+
+    # Configure the Console appender
+    log4j.appender.Console=org.apache.log4j.ConsoleAppender
+    log4j.appender.Console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.Console.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%t] %-5p: %m%n
+
+    # Configure the Sentry appender, overriding the logging threshold to the WARN level
+    log4j.appender.Sentry=com.getsentry.raven.log4j.SentryAppender
+    log4j.appender.Sentry.threshold=WARN
+
     # Set the Sentry DSN
-    log4j.appender.SentryAppender.dsn=https://host:port/1?options
+    log4j.appender.Sentry.dsn=https://host:port/1?options
 
     # Optional, provide release version of your application
-    log4j.appender.SentryAppender.release=1.0.0
+    log4j.appender.Sentry.release=1.0.0
 
     # Optional, provide environment your application is running in
-    log4j.appender.SentryAppender.environment=production
+    log4j.appender.Sentry.environment=production
 
     # Optional, override the server name (rather than looking it up dynamically)
-    log4j.appender.SentryAppender.serverName=server1
+    log4j.appender.Sentry.serverName=server1
 
     # Optional, select the ravenFactory class
-    log4j.appender.SentryAppender.ravenFactory=com.foo.RavenFactory
+    log4j.appender.Sentry.ravenFactory=com.foo.RavenFactory
 
     # Optional, provide tags
-    log4j.appender.SentryAppender.tags=tag1:value1,tag2:value2
+    log4j.appender.Sentry.tags=tag1:value1,tag2:value2
 
     # Optional, provide tag names to be extracted from MDC
-    log4j.appender.SentryAppender.extraTags=foo,bar,baz
+    log4j.appender.Sentry.extraTags=foo,bar,baz
+
+Alternatively, using  the ``log4j.xml`` format:
+
+.. sourcecode:: xml
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+    <log4j:configuration debug="true"
+    	xmlns:log4j='http://jakarta.apache.org/log4j/'>
+
+        <!-- Configure the Console appender -->
+    	<appender name="Console" class="org.apache.log4j.ConsoleAppender">
+    	    <layout class="org.apache.log4j.PatternLayout">
+    		<param name="ConversionPattern"
+    		       value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+    	    </layout>
+    	</appender>
+
+        <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
+        <appender name="Sentry" class="com.getsentry.raven.log4j.SentryAppender">
+            <!-- Override the Sentry handler log level to WARN -->
+            <filter class="org.apache.log4j.varia.LevelRangeFilter">
+                <param name="levelMin" value="WARN"/>
+            </filter>
+
+            <!-- Set Sentry DSN -->
+            <param name="dsn" value="https://host:port/1?options" />
+
+            <!-- Optional, provide release version of your application -->
+            <param name="release" value="1.0.0" />
+
+            <!-- Optional, provide environment your application is running in -->
+            <param name="environment" value="production" />
+
+            <!-- Optional, override the server name (rather than looking it up dynamically) -->
+            <param name="serverName" value="server1" />
+
+            <!-- Optional, select the ravenFactory class -->
+            <param name="ravenFactory" value="com.foo.RavenFactory" />
+
+            <!-- Optional, provide tags -->
+            <param name="tags" value="tag1:value1,tag2:value2" />
+
+            <!-- Optional, provide tag names to be extracted from MDC -->
+            <param name="extraTags" value="foo,bar,baz" />
+        </appender>
+
+        <!-- Enable the Console and Sentry appenders, Console is provided as an example
+             of a non-Raven logger that is set to a different logging threshold -->
+        <root level="INFO">
+            <appender-ref ref="Console" />
+            <appender-ref ref="Sentry" />
+        </root>
+    </log4j:configuration>
 
 Additional data
 ---------------
