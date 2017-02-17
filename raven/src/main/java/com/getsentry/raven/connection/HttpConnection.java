@@ -154,15 +154,11 @@ public class HttpConnection extends AbstractConnection {
 
         HttpURLConnection connection = getConnection();
         try {
-            throw new IOException("This is a fake IOException.");
-
-            /*
             connection.connect();
             OutputStream outputStream = connection.getOutputStream();
             marshaller.marshall(event, outputStream);
             outputStream.close();
             connection.getInputStream().close();
-             */
         } catch (IOException e) {
             String errorMessage = null;
             final InputStream errorStream = connection.getErrorStream();
@@ -174,7 +170,7 @@ public class HttpConnection extends AbstractConnection {
             }
             throw new ConnectionException(errorMessage, e);
         } finally {
-            // connection.disconnect();
+            connection.disconnect();
         }
     }
 
