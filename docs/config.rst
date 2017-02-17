@@ -9,7 +9,7 @@ documentation before you attempt to do any advanced configuration.
 
 Most of Raven's advanced configuration happens by setting options in your DSN, as seen below.
 
-Connection and protocol
+Connection and Protocol
 -----------------------
 
 It is possible to send events to Sentry over different protocols, depending
@@ -99,7 +99,7 @@ DSN:
 Some options do not require a value, just being declared signifies that the
 option is enabled.
 
-Async connection
+Async Connection
 ~~~~~~~~~~~~~~~~
 
 In order to avoid performance issues due to a large amount of logs being
@@ -112,7 +112,7 @@ To disable the async mode, add ``raven.async=false`` to the DSN:
 
     http://public:private@host:port/1?raven.async=false
 
-Graceful Shutdown (advanced)
+Graceful Shutdown (Advanced)
 ````````````````````````````
 
 In order to shutdown the asynchronous connection gracefully, a ``ShutdownHook``
@@ -143,7 +143,7 @@ The option to do so is ``raven.async.gracefulshutdown``:
 
     http://public:private@host:port/1?raven.async.gracefulshutdown=false
 
-Queue size (advanced)
+Queue Size (Advanced)
 `````````````````````
 
 The default queue used to store unprocessed events is limited to 50
@@ -165,7 +165,7 @@ The special value ``-1`` can be used to enable an unlimited queue. Beware
 that network connectivity or Sentry server issues could mean your process
 will run out of memory.
 
-Threads count (advanced)
+Threads Count (Advanced)
 ````````````````````````
 
 By default the thread pool used by the async connection contains one thread per
@@ -178,7 +178,7 @@ only one thread) with the option ``raven.async.threads``:
 
     http://public:private@host:port/1?raven.async.threads=1
 
-Threads priority (advanced)
+Threads Priority (Advanced)
 ```````````````````````````
 
 In most cases sending logs to Sentry isn't as important as an application
@@ -192,7 +192,7 @@ with the option ``raven.async.priority``:
 
     http://public:private@host:port/1?raven.async.priority=10
 
-Graceful Shutdown (advanced)
+Graceful Shutdown (Advanced)
 ````````````````````````````
 
 In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
@@ -220,7 +220,7 @@ by setting the ``raven.buffer.gracefulshutdown`` option:
 
     http://public:private@host:port/1?raven.buffer.gracefulshutdown=false
 
-Buffering events to disk
+Buffering Events to Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Raven can be configured to write events to a specified directory on disk
@@ -249,7 +249,7 @@ attempt to send events every 60 seconds. You can change this with the
 
     http://public:private@host:port/1?raven.buffer.flushtime=10000
 
-Event sampling
+Event Sampling
 ~~~~~~~~~~~~~~
 
 Raven can be configured to sample events with the ``raven.sample.rate`` option:
@@ -262,7 +262,7 @@ This option takes a number from 0.0 to 1.0, representing the percent of
 events to allow through to server (from 0% to 100%). By default all
 events will be sent to the Sentry server.
 
-Inapp classes
+Inapp Classes
 ~~~~~~~~~~~~~
 
 Sentry differentiate ``in_app`` stack frames (which are directly related to your application)
@@ -270,7 +270,7 @@ and the "not ``in_app``" ones.
 This difference is visible in the Sentry web interface where only the ``in_app``
 frames are displayed by default.
 
-Same frame as enclosing exception
+Same Frame as Enclosing Exception
 `````````````````````````````````
 
 Raven can use the ``in_app`` system to hide frames in the context of chained exceptions.
@@ -302,7 +302,7 @@ To enable a similar behaviour from Raven use the ``raven.stacktrace.hidecommon``
 
     http://public:private@host:port/1?raven.stacktrace.hidecommon
 
-Hide frames based on the class name
+Hide Frames Based on the Class Name
 ```````````````````````````````````
 
 Raven can also mark some frames as ``in_app`` based on the name of the class.
@@ -340,7 +340,7 @@ It's possible to manually enable/disable the compression with the option
 
     http://public:private@host:port/1?raven.compression=false
 
-Max message size
+Max Message Size
 ~~~~~~~~~~~~~~~~
 
 By default only the first 1000 characters of a message will be sent to
@@ -350,7 +350,7 @@ the server. This can be changed with the ``raven.maxmessagelength`` option.
 
     http://public:private@host:port/1?raven.maxmessagelength=1500
 
-Timeout (advanced)
+Timeout (Advanced)
 ~~~~~~~~~~~~~~~~~~
 
 A timeout is set to avoid blocking Raven threads because establishing a
@@ -400,7 +400,7 @@ Next, you'll need to register your class with Raven in one of two ways.
 Registration
 ~~~~~~~~~~~~
 
-Java ServiceLoader provider (recommended)
+Java ServiceLoader Provider (Recommended)
 `````````````````````````````````````````
 
 You'll need to add a ``ServiceLoader`` provider file to your project at
@@ -408,7 +408,7 @@ You'll need to add a ``ServiceLoader`` provider file to your project at
 the name of your class so that it will be considered as a candidate ``RavenFactory``. For an example, see
 `how we configure the DefaultRavenFactory itself <https://github.com/getsentry/raven-java/blob/master/raven/src/main/resources/META-INF/services/com.getsentry.raven.RavenFactory>`_.
 
-Manual registration
+Manual Registration
 ```````````````````
 
 You can also manually register your ``RavenFactory`` instance. Note that this should be done
