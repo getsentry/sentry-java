@@ -411,8 +411,9 @@ the name of your class so that it will be considered as a candidate ``RavenFacto
 Manual Registration
 ```````````````````
 
-You can also manually register your ``RavenFactory`` instance. Note that this should be done
-early in your application lifecycle so that your factory is available the first time
+You can also manually register your ``RavenFactory`` instance. If you are using
+an integration that builds its own Raven client, such as a logging integration, this should
+be done early in your application lifecycle so that your factory is available the first time
 you attempt to send an event to the Sentry server.
 
 .. sourcecode:: java
