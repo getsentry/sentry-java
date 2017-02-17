@@ -79,7 +79,7 @@ of the send methods it provides.
         }
     }
 
-Building more complex events
+Building More Complex Events
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For more complex messages, you'll need to build an ``Event`` with the
@@ -139,7 +139,7 @@ For more complex messages, you'll need to build an ``Event`` with the
         }
     }
 
-Static access to Raven
+Static Access to Raven
 ----------------------
 
 The most recently constructed ``Raven`` instance is stored statically so it may

@@ -97,7 +97,7 @@ Alternatively, using  the ``log4j.xml`` format:
 Next, **you'll need to configure your DSN** (client key) and optionally other values such as
 ``environment`` and ``release``. See below for the two ways you can do this.
 
-Configuration via runtime environment
+Configuration via Runtime Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is the most flexible method for configuring the ``SentryAppender``,
@@ -130,7 +130,7 @@ Environment variable    Java System Property    Example value                   
 ``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================= ======================= =============================== ===========
 
-Configuration via static file
+Configuration via Static File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also configure everything statically within the ``log4j.properties`` or ``log4j.xml``
@@ -228,7 +228,7 @@ Alternatively, using  the ``log4j.xml`` format:
         </root>
     </log4j:configuration>
 
-Additional data
+Additional Data
 ---------------
 
 It's possible to add extra data to events thanks to `the MDC
@@ -260,7 +260,7 @@ filters within the Sentry UI.
         logger.error("This is a test");
     }
 
-In practice
+In Practice
 -----------
 
 .. sourcecode:: java

@@ -66,7 +66,7 @@ its value::
 Next, **you'll need to configure your DSN** (client key) and optionally other values such as
 ``environment`` and ``release``. See below for the two ways you can do this.
 
-Configuration via runtime environment
+Configuration via Runtime Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is the most flexible method for configuring the ``SentryHandler``,
@@ -99,7 +99,7 @@ Environment variable    Java System Property    Example value                   
 ``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================= ======================= =============================== ===========
 
-Configuration via static file
+Configuration via Static File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also configure everything statically within the ``logging.properties``
@@ -140,7 +140,7 @@ Example configuration in the ``logging.properties`` file:
     # Optional, provide tag names to be extracted from MDC
     com.getsentry.raven.jul.SentryHandler.extraTags=foo,bar,baz
 
-In practice
+In Practice
 -----------
 
 .. sourcecode:: java
