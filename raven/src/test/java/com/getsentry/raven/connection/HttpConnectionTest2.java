@@ -21,7 +21,7 @@ public class HttpConnectionTest2 extends BaseTest2 {
     }
 
     @Test
-    public void test() throws URISyntaxException {
+    public void testBackoffAfter429() throws URISyntaxException {
         wireMockRule
             .stubFor(post(urlEqualTo(STORE_URL))
             .willReturn(aResponse().withStatus(429)));
