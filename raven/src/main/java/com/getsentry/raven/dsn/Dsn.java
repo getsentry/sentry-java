@@ -244,9 +244,9 @@ public class Dsn {
     }
 
     /**
-     * Creates the URI of the sentry server.
+     * Creates the URI of the Sentry server.
      *
-     * @return the URI of the sentry server.
+     * @return the URI of the Sentry server.
      */
     public URI getUri() {
         return uri;

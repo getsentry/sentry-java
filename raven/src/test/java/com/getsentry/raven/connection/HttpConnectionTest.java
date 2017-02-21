@@ -116,7 +116,6 @@ public class HttpConnectionTest {
     public void testAuthHeaderSent(@Injectable final Event mockEvent) throws Exception {
         httpConnection.send(mockEvent);
 
-
         new Verifications() {{
             mockUrlConnection.setRequestProperty("User-Agent", RavenEnvironment.getRavenName());
             mockUrlConnection.setRequestProperty("X-Sentry-Auth", httpConnection.getAuthHeader());
