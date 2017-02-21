@@ -15,5 +15,9 @@
             "null": "value"
         }
     },
-    "checksum": null
+    "checksum": null,
+    "sdk": {
+        "name": null,
+        "version": null
+    }
 }

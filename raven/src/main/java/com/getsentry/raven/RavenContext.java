@@ -1,22 +1,19 @@
 package com.getsentry.raven;
-
 import com.getsentry.raven.event.Breadcrumb;
+import com.getsentry.raven.event.User;
 import com.getsentry.raven.util.CircularFifoQueue;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
  * {@link Breadcrumb}s) so that data may be collected in different parts
  * of an application and then sent together when an exception occurs.
  */
 public class RavenContext implements AutoCloseable {
-
     /**
      * Thread local set of active context objects. Note that an {@link IdentityHashMap}
      * is used instead of a Set because there is no identity-set in the Java
@@ -36,19 +33,27 @@ public class RavenContext implements AutoCloseable {
             protected IdentityHashMap<RavenContext, RavenContext> initialValue() {
                 return new IdentityHashMap<>();
             }
-    };
+        };
 
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
 
+    /**
+     * UUID of the last event sent to the Sentry server, if any.
+     */
     private UUID lastEventId;
 
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
     private CircularFifoQueue<Breadcrumb> breadcrumbs;
+
+    /**
+     * User active in the current context, if any.
+     */
+    private User user;
 
     /**
      * Create a new (empty) RavenContext object with the default Breadcrumb limit.
@@ -86,6 +91,7 @@ public class RavenContext implements AutoCloseable {
     public void clear() {
         breadcrumbs.clear();
         lastEventId = null;
+        user = null;
     }
 
     /**
@@ -146,5 +152,30 @@ public class RavenContext implements AutoCloseable {
      */
     public UUID getLastEventId() {
         return lastEventId;
+    }
+
+    /**
+     * Store the current user in the context.
+     *
+     * @param user User to store in context.
+     */
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    /**
+     * Clears the current user set on this context.
+     */
+    public void clearUser() {
+        setUser(null);
+    }
+
+    /**
+     * Gets the current user from the context.
+     *
+     * @return User currently stored in context.
+     */
+    public User getUser() {
+        return user;
     }
 }

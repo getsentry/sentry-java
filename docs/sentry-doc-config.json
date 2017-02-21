@@ -4,6 +4,15 @@
     "java": {
       "name": "Java",
       "type": "language",
+      "doc_link": "",
+      "wizard": [
+        "usage#installation",
+        "usage#capture-an-error"
+      ]
+    },
+    "java.logging": {
+      "name": "java.util.logging",
+      "type": "framework",
       "doc_link": "modules/raven/",
       "wizard": [
         "modules/raven#installation",
@@ -11,7 +20,7 @@
       ]
     },
     "java.log4j": {
-      "name": "Log4j",
+      "name": "Log4j 1.x",
       "type": "framework",
       "doc_link": "modules/log4j/",
       "wizard": [
@@ -20,7 +29,7 @@
       ]
     },
     "java.log4j2": {
-      "name": "Log4j 2",
+      "name": "Log4j 2.x",
       "type": "framework",
       "doc_link": "modules/log4j2/",
       "wizard": [
@@ -38,12 +47,21 @@
       ]
     },
     "java.appengine": {
-      "name": "App Engine",
+      "name": "Google App Engine",
       "type": "framework",
       "doc_link": "modules/appengine/",
       "wizard": [
         "modules/appengine#installation",
         "modules/appengine#usage"
+      ]
+    },
+    "java.android": {
+      "name": "Android",
+      "type": "framework",
+      "doc_link": "modules/android/",
+      "wizard": [
+        "modules/android#installation",
+        "modules/android#usage"
       ]
     }
   }

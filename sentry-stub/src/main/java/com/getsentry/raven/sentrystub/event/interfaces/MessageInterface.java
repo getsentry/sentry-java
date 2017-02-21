@@ -9,4 +9,6 @@ public class MessageInterface {
     private String message;
     @JsonProperty(value = "params")
     private List<String> params;
+    @JsonProperty(value = "formatted")
+    private String formatted;
 }

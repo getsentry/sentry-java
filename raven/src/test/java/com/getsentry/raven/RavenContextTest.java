@@ -2,7 +2,8 @@ package com.getsentry.raven;
 
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.BreadcrumbBuilder;
-import org.hamcrest.Matchers;
+import com.getsentry.raven.event.User;
+import com.getsentry.raven.event.UserBuilder;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -89,6 +90,23 @@ public class RavenContextTest {
 
         assertThat(breadcrumbs, equalTo(breadcrumbMatch));
 
+    }
+
+    @Test
+    public void testUser() {
+        RavenContext context = new RavenContext();
+
+        User user = new UserBuilder()
+            .setEmail("test@example.com")
+            .setId("1234")
+            .setIpAddress("192.168.0.1")
+            .setUsername("testUser_123").build();
+
+        context.setUser(user);
+        assertThat(context.getUser(), equalTo(user));
+
+        context.clearUser();
+        assertThat(context.getUser(), equalTo(null));
     }
 
 }

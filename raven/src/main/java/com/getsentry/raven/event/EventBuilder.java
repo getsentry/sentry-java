@@ -1,5 +1,6 @@
 package com.getsentry.raven.event;
 
+import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.interfaces.SentryInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,16 +79,27 @@ public class EventBuilder {
      */
     private static void autoSetMissingValues(Event event) {
         // Ensure that a timestamp is set (to now at least!)
-        if (event.getTimestamp() == null)
+        if (event.getTimestamp() == null) {
             event.setTimestamp(new Date());
+        }
 
         // Ensure that a platform is set
-        if (event.getPlatform() == null)
+        if (event.getPlatform() == null) {
             event.setPlatform(DEFAULT_PLATFORM);
+        }
+
+        // Ensure that an SDK is set
+        if (event.getSdkName() == null) {
+            event.setSdkName(RavenEnvironment.SDK_NAME);
+        }
+        if (event.getSdkVersion() == null) {
+            event.setSdkVersion(RavenEnvironment.SDK_VERSION);
+        }
 
         // Ensure that a hostname is set
-        if (event.getServerName() == null)
+        if (event.getServerName() == null) {
             event.setServerName(HOSTNAME_CACHE.getHostname());
+        }
     }
 
     /**
@@ -183,6 +195,28 @@ public class EventBuilder {
      */
     public EventBuilder withPlatform(String platform) {
         event.setPlatform(platform);
+        return this;
+    }
+
+    /**
+     * Sets the SDK name in the event.
+     *
+     * @param sdkName name of the SDK that created the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withSdkName(String sdkName) {
+        event.setSdkName(sdkName);
+        return this;
+    }
+
+    /**
+     * Sets the SDK version in the event.
+     *
+     * @param sdkVersion version of the SDK that created the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withSdkVersion(String sdkVersion) {
+        event.setSdkVersion(sdkVersion);
         return this;
     }
 
@@ -341,8 +375,9 @@ public class EventBuilder {
      * @return the current {@code EventBuilder} for chained calls.
      */
     public EventBuilder withSentryInterface(SentryInterface sentryInterface, boolean replace) {
-        if (replace || !event.getSentryInterfaces().containsKey(sentryInterface.getInterfaceName()))
+        if (replace || !event.getSentryInterfaces().containsKey(sentryInterface.getInterfaceName())) {
             event.getSentryInterfaces().put(sentryInterface.getInterfaceName(), sentryInterface);
+        }
         return this;
     }
 
@@ -354,8 +389,9 @@ public class EventBuilder {
      * @return an immutable event.
      */
     public synchronized Event build() {
-        if (alreadyBuilt)
+        if (alreadyBuilt) {
             throw new IllegalStateException("A message can't be built twice");
+        }
 
         autoSetMissingValues(event);
         makeImmutable(event);

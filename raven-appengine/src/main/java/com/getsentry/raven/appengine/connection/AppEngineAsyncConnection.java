@@ -18,10 +18,10 @@ import static com.google.appengine.api.taskqueue.DeferredTaskContext.setDoNotRet
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload;
 
 /**
- * Asynchronous usage of a connection withing Google App Engine.
+ * Asynchronous connections that can be used within Google App Engine.
  * <p>
- * Instead of synchronously sending each event to a connection, use a the task queue system to establish the connection
- * and submit the event.
+ * Instead of synchronously sending each event, use a the App Engine queue system to establish the connection
+ * and send the event.
  * <p>
  * Google App Engine serialises the tasks before queuing them, to keep a link between the task and the
  * {@link AppEngineAsyncConnection} associated, a register of the instances of {@code AppEngineAsyncConnection} is
@@ -72,8 +72,9 @@ public class AppEngineAsyncConnection implements Connection {
      */
     @Override
     public void send(Event event) {
-        if (!closed)
+        if (!closed) {
             queue.add(withPayload(new EventSubmitter(id, event)));
+        }
     }
 
     @Override

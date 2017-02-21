@@ -10,7 +10,7 @@
 
     <groupId>com.getsentry.raven</groupId>
     <artifactId>raven-all</artifactId>
-    <version>7.8.2-SNAPSHOT</version>
+    <version>7.8.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Raven-Java</name>
@@ -364,6 +364,14 @@
                         <configLocation>src/checkstyle/checkstyle.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <!-- 6.19 is the last release that works on JDK7 -->
+                            <version>6.19</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>checkstyle</id>
