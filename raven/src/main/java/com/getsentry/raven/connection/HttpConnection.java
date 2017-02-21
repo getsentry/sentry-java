@@ -240,14 +240,16 @@ public class HttpConnection extends AbstractConnection {
         }
 
         Integer retryAfterMs = null;
-        // CHECKSTYLE.OFF: EmptyCatchBlock
-        try {
-            String retryAfterHeader = connection.getHeaderField("Retry-After");
-            retryAfterMs = Integer.parseInt(retryAfterHeader) * 1000;
-        } catch (Exception e) {
-            // noop, use default retry
+        String retryAfterHeader = connection.getHeaderField("Retry-After");
+        if (retryAfterHeader != null) {
+            // CHECKSTYLE.OFF: EmptyCatchBlock
+            try {
+                retryAfterMs = Integer.parseInt(retryAfterHeader) * 1000;
+            } catch (NumberFormatException e) {
+                // noop, use default retry
+            }
+            // CHECKSTYLE.ON: EmptyCatchBlock
         }
-        // CHECKSTYLE.ON: EmptyCatchBlock
 
         if (retryAfterMs != null) {
             backoffDurationMs = retryAfterMs;
