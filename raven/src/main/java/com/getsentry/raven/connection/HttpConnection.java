@@ -219,6 +219,7 @@ public class HttpConnection extends AbstractConnection {
         backoffStart = null;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private synchronized void setBackoffState(HttpURLConnection connection) {
         // If we are already in a backoff state, don't change anything
         if (shouldBackoff()) {
@@ -231,11 +232,9 @@ public class HttpConnection extends AbstractConnection {
             // 400 - project_id doesn't exist or some other fatal
             // 401 - invalid/revoked dsn
             // 429 - too many requests
-            // CHECKSTYLE.OFF: MagicNumber
             if (!(responseCode == 400 || responseCode == 401 || responseCode == 429)) {
                 return;
             }
-            // CHECKSTYLE.OFF: MagicNumber
         } catch (IOException e) {
             // didn't even get to the status code, backoff because this is connection related
         }
