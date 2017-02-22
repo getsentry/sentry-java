@@ -82,7 +82,7 @@ Alternatively, using  the ``log4j.xml`` format:
         <appender name="Sentry" class="com.getsentry.raven.log4j.SentryAppender">
             <!-- Override the Sentry handler log level to WARN -->
             <filter class="org.apache.log4j.varia.LevelRangeFilter">
-                <param name="levelMin" value="WARN"/>
+                <param name="levelMin" value="WARN" />
             </filter>
         </appender>
 
@@ -195,7 +195,7 @@ Alternatively, using  the ``log4j.xml`` format:
         <appender name="Sentry" class="com.getsentry.raven.log4j.SentryAppender">
             <!-- Override the Sentry handler log level to WARN -->
             <filter class="org.apache.log4j.varia.LevelRangeFilter">
-                <param name="levelMin" value="WARN"/>
+                <param name="levelMin" value="WARN" />
             </filter>
 
             <!-- Set Sentry DSN -->

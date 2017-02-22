@@ -79,7 +79,6 @@
         <module>raven-log4j</module>
         <module>raven-logback</module>
         <module>raven-log4j2</module>
-        <module>sentry-stub</module>
     </modules>
 
     <scm>
@@ -123,6 +122,8 @@
         <jmockit.version>1.14</jmockit.version>
         <testng.version>6.9.10</testng.version>
         <hamcrest.version>1.3</hamcrest.version>
+        <junit.version>4.12</junit.version>
+        <wiremock.version>2.5.1</wiremock.version>
     </properties>
 
     <dependencyManagement>
@@ -183,6 +184,16 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
                 <version>${hamcrest.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>${wiremock.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -258,39 +269,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-maven-plugin</artifactId>
-                    <version>9.2.21.v20170120</version>
-                    <configuration>
-                        <scanIntervalSeconds>10</scanIntervalSeconds>
-                        <stopKey>foo</stopKey>
-                        <stopWait>10</stopWait>
-                        <stopPort>9999</stopPort>
-                        <war>${project.build.directory}/webapps/sentry-stub.war</war>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>start-sentry-stub</id>
-                            <phase>pre-integration-test</phase>
-                            <goals>
-                                <goal>deploy-war</goal>
-                            </goals>
-                            <configuration>
-                                <scanIntervalSeconds>0</scanIntervalSeconds>
-                                <daemon>true</daemon>
-                                <skip>${skipTests}</skip>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>stop-sentry-stub</id>
-                            <phase>post-integration-test</phase>
-                            <goals>
-                                <goal>stop</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.19.1</version>
@@ -326,35 +304,7 @@
                                 <failOnWarning>true</failOnWarning>
                             </configuration>
                         </execution>
-                        <execution>
-                            <id>copy-war-for-integration-tests</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>copy</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>${project.groupId}</groupId>
-                                        <artifactId>sentry-stub</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                </artifactItems>
-                                <overWriteSnapshots>true</overWriteSnapshots>
-                                <stripVersion>true</stripVersion>
-                                <outputDirectory>${project.build.directory}/webapps</outputDirectory>
-                            </configuration>
-                        </execution>
                     </executions>
-                    <dependencies>
-                        <dependency>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>sentry-stub</artifactId>
-                            <version>${project.version}</version>
-                            <type>war</type>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -432,7 +382,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.10.4</version>
                 <configuration>
-                    <excludePackageNames>com.getsentry.raven.util.base64*:com.getsentry.raven.sentrystub.util.base64</excludePackageNames>
+                    <excludePackageNames>com.getsentry.raven.util.base64*</excludePackageNames>
                 </configuration>
             </plugin>
             <plugin>
@@ -520,8 +470,7 @@
         <profile>
             <id>pitest</id>
             <properties>
-                <jmockit.version>1.8</jmockit.version>
-                <junit.version>4.11</junit.version>
+                <junit.version>${junit.version}</junit.version>
             </properties>
             <dependencies>
                 <dependency>
