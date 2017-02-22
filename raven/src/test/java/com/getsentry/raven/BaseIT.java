@@ -53,7 +53,9 @@ public class BaseIT extends BaseTest {
 
         for (ServeEvent serveEvent : wireMockRule.getAllServeEvents()) {
             UnmarshalledEvent event = unmarshaller.unmarshal(new ByteArrayInputStream(serveEvent.getRequest().getBody()));
-            events.add(event);
+            if (event != null) {
+                events.add(event);
+            }
         }
 
         return events;
