@@ -13,7 +13,7 @@ public class SentryAppenderIT extends BaseIT {
      We filter out loggers that start with `com.getsentry.raven`, so we deliberately
      use a custom logger name here.
      */
-    private static final Logger logger = LogManager.getLogger("SentryAppenderIT: log4j2");
+    private static final Logger logger = LogManager.getLogger("log4j2.SentryAppenderIT");
     private static final Logger ravenLogger = LogManager.getLogger(SentryAppenderIT.class);
 
     @Before

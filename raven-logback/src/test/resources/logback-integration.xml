@@ -15,10 +15,15 @@
     </appender>
 
     <!-- Wiremock can throw WARN logs on shutdown which would trigger Raven to send more events -->
-    <logger name="wiremock.org.eclipse.jetty.util.thread.QueuedThreadPool" level="OFF" />
+    <!--<logger name="wiremock.org.eclipse.jetty.util.thread.QueuedThreadPool" level="OFF" />-->
+    <!--<logger name="wiremock.org.eclipse.jetty.util.log.JettyAwareLogger" level="OFF" />-->
+    <!--<logger name="wiremock.org.eclipse.jetty.server.handler" level="OFF" />-->
 
-    <root level="all">
-        <appender-ref ref="Console" />
+    <logger name="logback.SentryAppenderIT" level="INFO">
         <appender-ref ref="Sentry" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="Console" />
     </root>
 </configuration>
