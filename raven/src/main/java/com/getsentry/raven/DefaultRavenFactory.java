@@ -219,17 +219,24 @@ public class DefaultRavenFactory extends RavenFactory {
         }
 
         Buffer eventBuffer = getBuffer(dsn);
+        BufferedConnection bufferedConnection = null;
         if (eventBuffer != null) {
             long flushtime = getBufferFlushtime(dsn);
             boolean gracefulShutdown = getBufferedConnectionGracefulShutdownEnabled(dsn);
             Long shutdownTimeout = getBufferedConnectionShutdownTimeout(dsn);
-            connection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
+            bufferedConnection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
                 shutdownTimeout);
+            connection = bufferedConnection;
         }
 
         // Enable async unless its value is 'false'.
         if (getAsyncEnabled(dsn)) {
             connection = createAsyncConnection(dsn, connection);
+        }
+
+        // If buffering is enabled, wrap connection with synchronous disk buffering "connection"
+        if (bufferedConnection != null) {
+            connection = bufferedConnection.wrapConnectionWithBufferWriter(connection);
         }
 
         return connection;

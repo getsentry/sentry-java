@@ -24,7 +24,7 @@ public class BufferedConnectionTest extends BaseTest {
     private List<Event> sentEvents;
     private Buffer mockBuffer;
     private Connection mockConnection;
-    private BufferedConnection bufferedConnection;
+    private Connection bufferedConnection;
     private volatile boolean connectionUp;
 
     @BeforeMethod
@@ -73,7 +73,8 @@ public class BufferedConnectionTest extends BaseTest {
 
         int flushtime = 10;
         int shutdownTimeout = 0;
-        bufferedConnection = new BufferedConnection(mockConnection, mockBuffer, flushtime, false, shutdownTimeout);
+        BufferedConnection innerBufferedConnection = new BufferedConnection(mockConnection, mockBuffer, flushtime, false, shutdownTimeout);
+        this.bufferedConnection = innerBufferedConnection.wrapConnectionWithBufferWriter(innerBufferedConnection);
     }
 
     @AfterMethod

@@ -85,20 +85,11 @@ public class BufferedConnection implements Connection {
         executorService.scheduleWithFixedDelay(flusher, flushtime, flushtime, TimeUnit.MILLISECONDS);
     }
 
-    private void doSend(Event event, boolean addToBuffer) {
-        if (addToBuffer) {
-            // buffer before we attempt to send
-            buffer.add(event);
-        }
-
+    @Override
+    public void send(Event event) {
         actualConnection.send(event);
         // success, remove the event from the buffer
         buffer.discard(event);
-    }
-
-    @Override
-    public void send(Event event) {
-        doSend(event, true);
     }
 
     @Override
@@ -142,6 +133,42 @@ public class BufferedConnection implements Connection {
     }
 
     /**
+     * Wrap a connection so that {@link Event}s are buffered before being passed on to
+     * the underlying connection.
+     *
+     * This is important to ensure buffering happens synchronously with {@link Event} creation,
+     * before they are passed on to the (optional) asynchronous connection so that Events will
+     * be stored even if the application is about to exit due to a crash.
+     *
+     * @param connectionToWrap {@link Connection} to wrap with buffering logic.
+     * @return Connection that will write {@link Event}s to a buffer before passing along to
+     *         a wrapped {@link Connection}.
+     */
+    public Connection wrapConnectionWithBufferWriter(final Connection connectionToWrap) {
+        return new Connection() {
+            final Connection wrappedConnection = connectionToWrap;
+
+            @Override
+            public void send(Event event) throws ConnectionException {
+                // buffer before we attempt to send
+                buffer.add(event);
+
+                wrappedConnection.send(event);
+            }
+
+            @Override
+            public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+                wrappedConnection.addEventSendFailureCallback(eventSendFailureCallback);
+            }
+
+            @Override
+            public void close() throws IOException {
+                wrappedConnection.close();
+            }
+        };
+    }
+
+    /**
      * Flusher is scheduled to periodically run by the BufferedConnection. It retrieves
      * an Iterator of Events from the underlying {@link Buffer} and attempts to send
      * one at time, discarding from the buffer on success.
@@ -175,7 +202,7 @@ public class BufferedConnection implements Connection {
 
                     try {
                         logger.trace("Flusher attempting to send Event: " + event.getId());
-                        doSend(event, false);
+                        send(event);
                         logger.trace("Flusher successfully sent Event: " + event.getId());
                     } catch (Exception e) {
                         logger.debug("Flusher failed to send Event: " + event.getId(), e);
