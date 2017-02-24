@@ -17,7 +17,7 @@ public class SentryAppenderIT extends BaseIT {
 
     @Before
     public void setup() {
-        wireMockRule.stubFor(post(urlEqualTo(PROJECT1_STORE_URL)).willReturn(aResponse().withStatus(200)));
+        stub200ForProject1Store();
     }
 
     @Test

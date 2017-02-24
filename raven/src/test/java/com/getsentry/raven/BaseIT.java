@@ -4,6 +4,8 @@ import com.getsentry.raven.connection.HttpConnection;
 import com.getsentry.raven.unmarshaller.JsonUnmarshaller;
 import com.getsentry.raven.unmarshaller.event.UnmarshalledEvent;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.matching.RegexPattern;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import org.junit.Rule;
 
@@ -23,9 +25,18 @@ public class BaseIT extends BaseTest {
 
     public static final String PROJECT1_ID = "1";
     public static final String PROJECT1_STORE_URL = "/api/" + PROJECT1_ID + "/store/";
+    public static final String AUTH_HEADER = "X-Sentry-Auth";
+    public static final StringValuePattern AUTH_HEADER_PATTERN = new RegexPattern("Sentry sentry_version=6,sentry_client=raven-java/[\\w\\-\\.]+,sentry_key=8292bf61d620417282e68a72ae03154a,sentry_secret=e3908e05ad874b24b7a168992bfa3577");
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().port(8080));
+
+    public void stub200ForProject1Store() {
+        wireMockRule.stubFor(
+            post(urlEqualTo(PROJECT1_STORE_URL))
+                .withHeader(AUTH_HEADER, AUTH_HEADER_PATTERN)
+                .willReturn(aResponse().withStatus(200)));
+    }
 
     public String getDsn(String projectId) {
         return "http://public:private@localhost:" + wireMockRule.port() + "/" + projectId;
