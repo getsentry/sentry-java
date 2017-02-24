@@ -88,6 +88,7 @@ public class BufferedConnection implements Connection {
     @Override
     public void send(Event event) {
         actualConnection.send(event);
+
         // success, remove the event from the buffer
         buffer.discard(event);
     }
@@ -195,8 +196,9 @@ public class BufferedConnection implements Connection {
 
                     long now = System.currentTimeMillis();
                     long eventTime = event.getTimestamp().getTime();
-                    if (now - eventTime < minAgeMillis) {
-                        logger.trace("TODO");
+                    long age = now - eventTime;
+                    if (age < minAgeMillis) {
+                        logger.trace("Ignoring buffered event because it only " + age + "ms old.");
                         return;
                     }
 
