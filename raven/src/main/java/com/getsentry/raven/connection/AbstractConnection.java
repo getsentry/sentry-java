@@ -153,7 +153,7 @@ public abstract class AbstractConnection implements Connection {
     }
 
     /**
-     * Sends an event to the sentry server.
+     * Sends an event to the Sentry server.
      *
      * @param event captured event to add in Sentry.
      * @throws ConnectionException whenever a temporary exception due to the connection happened.

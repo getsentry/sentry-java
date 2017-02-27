@@ -72,6 +72,14 @@ public class HttpConnection extends AbstractConnection {
      * to be added to the truststore.
      */
     private boolean bypassSecurity = false;
+    /**
+     * System timestamp (in milliseconds) when backoff started, or null if not currently backing off.
+     */
+    private volatile Long backoffStart = null;
+    /**
+     * Number of milliseconds after backoffStart to backoff for, or 0 if not currently backing off.
+     */
+    private volatile int backoffDurationMs = 0;
 
     /**
      * Creates an HTTP connection to a Sentry server.
@@ -142,13 +150,18 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {
-            throw new IllegalStateException("Couldn't set up a connection to the sentry server.", e);
+            throw new IllegalStateException("Couldn't set up a connection to the Sentry server.", e);
         }
     }
 
     @Override
     protected void doSend(Event event) throws ConnectionException {
         if (eventSampler != null && !eventSampler.shouldSendEvent(event)) {
+            return;
+        }
+
+        if (shouldBackoff()) {
+            logger.debug("Dropped an error due to backoff: {}", event.getId());
             return;
         }
 
@@ -159,14 +172,17 @@ public class HttpConnection extends AbstractConnection {
             marshaller.marshall(event, outputStream);
             outputStream.close();
             connection.getInputStream().close();
+            resetBackoffState();
         } catch (IOException e) {
+            setBackoffState(connection);
+
             String errorMessage = null;
             final InputStream errorStream = connection.getErrorStream();
             if (errorStream != null) {
                 errorMessage = getErrorMessageFromStream(errorStream);
             }
             if (null == errorMessage || errorMessage.isEmpty()) {
-                errorMessage = "An exception occurred while submitting the event to the sentry server.";
+                errorMessage = "An exception occurred while submitting the event to the Sentry server.";
             }
             throw new ConnectionException(errorMessage, e);
         } finally {
@@ -192,6 +208,58 @@ public class HttpConnection extends AbstractConnection {
             logger.error("Exception while reading the error message from the connection.", e2);
         }
         return sb.toString();
+    }
+
+    private synchronized boolean shouldBackoff() {
+        return backoffStart != null && (System.currentTimeMillis() - backoffStart) < backoffDurationMs;
+    }
+
+    private synchronized void resetBackoffState() {
+        backoffDurationMs = 0;
+        backoffStart = null;
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private synchronized void setBackoffState(HttpURLConnection connection) {
+        // If we are already in a backoff state, don't change anything
+        if (shouldBackoff()) {
+            return;
+        }
+
+        try {
+            int responseCode = connection.getResponseCode();
+
+            // 400 - project_id doesn't exist or some other fatal
+            // 401 - invalid/revoked dsn
+            // 429 - too many requests
+            if (!(responseCode == 400 || responseCode == 401 || responseCode == 429)) {
+                return;
+            }
+        } catch (IOException e) {
+            // didn't even get to the status code, backoff because this is connection related
+        }
+
+        Integer retryAfterMs = null;
+        String retryAfterHeader = connection.getHeaderField("Retry-After");
+        if (retryAfterHeader != null) {
+            // CHECKSTYLE.OFF: EmptyCatchBlock
+            try {
+                retryAfterMs = Integer.parseInt(retryAfterHeader) * 1000;
+            } catch (NumberFormatException e) {
+                // noop, use default retry
+            }
+            // CHECKSTYLE.ON: EmptyCatchBlock
+        }
+
+        if (retryAfterMs != null) {
+            backoffDurationMs = retryAfterMs;
+        } else if (backoffDurationMs != 0) {
+            backoffDurationMs = backoffDurationMs * 2;
+        } else {
+            backoffDurationMs = 1000;
+        }
+
+        backoffStart = System.currentTimeMillis();
     }
 
     public void setTimeout(int timeout) {
