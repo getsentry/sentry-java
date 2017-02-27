@@ -1,4 +1,4 @@
-package com.getsentry.raven.sentrystub.event.interfaces;
+package com.getsentry.raven.unmarshaller.event.interfaces;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

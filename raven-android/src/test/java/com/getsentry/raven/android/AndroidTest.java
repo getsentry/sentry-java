@@ -1,24 +1,21 @@
 package com.getsentry.raven.android;
 
-import com.getsentry.raven.BaseTest;
-import com.getsentry.raven.stub.SentryStub;
+import com.getsentry.raven.BaseIT;
 import org.junit.After;
 import org.junit.Before;
 
-public class AndroidTest extends BaseTest {
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
-    protected SentryStub sentryStub;
+public class AndroidTest extends BaseIT {
 
     @Before
-    public void setUp() throws Exception {
-        sentryStub = new SentryStub();
-        sentryStub.removeEvents();
+    public void setup() {
+        stub200ForProject1Store();
     }
 
     @After
     public void tearDown() throws Exception {
         Raven.clearStoredRaven();
-        sentryStub.removeEvents();
     }
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.getsentry.raven.sentrystub.util;
+package com.getsentry.raven.unmarshaller;
 
 import java.io.FilterInputStream;
 import java.io.IOException;

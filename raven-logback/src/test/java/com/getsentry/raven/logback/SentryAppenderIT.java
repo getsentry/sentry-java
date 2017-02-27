@@ -1,54 +1,57 @@
 package com.getsentry.raven.logback;
 
-import com.getsentry.raven.stub.SentryStub;
+import com.getsentry.raven.BaseIT;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
-public class SentryAppenderIT {
+public class SentryAppenderIT extends BaseIT {
     /*
      We filter out loggers that start with `com.getsentry.raven`, so we deliberately
      use a custom logger name here.
      */
-    private static final Logger logger = LoggerFactory.getLogger("SentryAppenderIT: logback");
+    private static final Logger logger = LoggerFactory.getLogger("logback.SentryAppenderIT");
     private static final Logger ravenLogger = LoggerFactory.getLogger(SentryAppenderIT.class);
-    private SentryStub sentryStub;
 
-    @BeforeMethod
-    public void setUp() throws Exception {
-        sentryStub = new SentryStub();
-        sentryStub.removeEvents();
-    }
-
-    @AfterMethod
-    public void tearDown() throws Exception {
-        sentryStub.removeEvents();
+    @Before
+    public void setup() {
+        stub200ForProject1Store();
     }
 
     @Test
-    public void testWarnLog() throws Exception {
-        assertThat(sentryStub.getEventCount(), is(0));
-        logger.warn("This is a test");
-        assertThat(sentryStub.getEventCount(), is(1));
+    public void testErrorLog() throws Exception {
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
+        logger.error("This is a test");
+
+        verifyProject1PostRequestCount(1);
+        verifyStoredEventCount(1);
     }
 
     @Test
     public void testChainedExceptions() throws Exception {
-        assertThat(sentryStub.getEventCount(), is(0));
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
         logger.error("This is an exception",
                 new UnsupportedOperationException("Test", new UnsupportedOperationException()));
-        assertThat(sentryStub.getEventCount(), is(1));
+
+        verifyProject1PostRequestCount(1);
+        verifyStoredEventCount(1);
     }
 
     @Test
     public void testNoRavenLogging() throws Exception {
-        assertThat(sentryStub.getEventCount(), is(0));
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
         ravenLogger.error("This is a test");
-        assertThat(sentryStub.getEventCount(), is(0));
+
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
     }
 }

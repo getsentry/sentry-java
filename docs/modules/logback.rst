@@ -68,7 +68,7 @@ Example configuration using the ``logback.xml`` format:
              of a non-Raven logger that is set to a different logging threshold -->
         <root level="INFO">
             <appender-ref ref="Console" />
-            <appender-ref ref="Sentry"/>
+            <appender-ref ref="Sentry" />
         </root>
     </configuration>
 
@@ -159,7 +159,7 @@ Example configuration in the ``logback.xml`` file:
              of a non-Raven logger that is set to a different logging threshold -->
         <root level="INFO">
             <appender-ref ref="Console" />
-            <appender-ref ref="Sentry"/>
+            <appender-ref ref="Sentry" />
         </root>
     </configuration>
 
