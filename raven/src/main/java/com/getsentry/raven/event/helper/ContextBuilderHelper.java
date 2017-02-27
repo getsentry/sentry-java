@@ -40,7 +40,10 @@ public class ContextBuilderHelper implements EventBuilderHelper {
         while (breadcrumbIterator.hasNext()) {
             breadcrumbs.add(breadcrumbIterator.next());
         }
-        eventBuilder.withBreadcrumbs(breadcrumbs);
+
+        if (!breadcrumbs.isEmpty()) {
+            eventBuilder.withBreadcrumbs(breadcrumbs);
+        }
 
         if (context.getUser() != null) {
             eventBuilder.withSentryInterface(fromUser(context.getUser()));
