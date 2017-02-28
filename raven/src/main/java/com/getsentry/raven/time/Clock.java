@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * Clock interface, used to inject a Clock dependency so time can be adjusted in tests.
  */
-interface Clock {
+public interface Clock {
 
     /**
      * Returns the Clock's time in milliseconds.
