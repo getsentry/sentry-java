@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractConnection implements Connection {
     /**
-     * Current sentry protocol version.
+     * Current Sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "6";
     /**
@@ -80,7 +80,7 @@ public abstract class AbstractConnection implements Connection {
     }
 
     /**
-     * Creates an authentication header for the sentry protocol.
+     * Creates an authentication header for the Sentry protocol.
      *
      * @return an authentication header as a String.
      */
