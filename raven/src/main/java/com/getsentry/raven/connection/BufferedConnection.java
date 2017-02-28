@@ -15,7 +15,19 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Connection wrapper that sends Events to an Buffer when send fails.
+ * Connection wrapper that handles storing and deleting {@link Event}s from a {@link Buffer}.
+ *
+ * This exists as a {@link Connection} implementation because the existing API (and the Java 7
+ * standard library) has no simple way of knowing whether an asynchronous request succeeded
+ * or failed. The {@link #wrapConnectionWithBufferWriter} method is used to wrap an existing
+ * Connection in a small anonymous Connection implementation that will always synchronously
+ * write the sent Event to a Buffer and then pass it to the underlying Connection (often an
+ * AsyncConnection in practice). Then, an instance of the {@link BufferedConnection} is used
+ * to wrap the "real" Connection ("under" the AsyncConnection) so that it remove Events from
+ * the Buffer if and only if the underlying {@link #send(Event)} call doesn't throw an exception.
+ *
+ * Note: In the future, if we are able to migrate to Java 8 at a minimum, we would probably make use
+ * of CompletableFutures, though that would require changing the existing API regardless.
  */
 public class BufferedConnection implements Connection {
 
@@ -81,21 +93,16 @@ public class BufferedConnection implements Connection {
             Runtime.getRuntime().addShutdownHook(shutDownHook);
         }
 
-        Flusher flusher = new BufferedConnection.Flusher();
+        Flusher flusher = new BufferedConnection.Flusher(flushtime);
         executorService.scheduleWithFixedDelay(flusher, flushtime, flushtime, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void send(Event event) {
-        try {
-            actualConnection.send(event);
-            // success: ensure the even isn't buffered
-            buffer.discard(event);
-        } catch (Exception e) {
-            // failure: buffer the event
-            buffer.add(event);
-            throw e;
-        }
+        actualConnection.send(event);
+
+        // success, remove the event from the buffer
+        buffer.discard(event);
     }
 
     @Override
@@ -139,15 +146,60 @@ public class BufferedConnection implements Connection {
     }
 
     /**
+     * Wrap a connection so that {@link Event}s are buffered before being passed on to
+     * the underlying connection.
+     *
+     * This is important to ensure buffering happens synchronously with {@link Event} creation,
+     * before they are passed on to the (optional) asynchronous connection so that Events will
+     * be stored even if the application is about to exit due to a crash.
+     *
+     * @param connectionToWrap {@link Connection} to wrap with buffering logic.
+     * @return Connection that will write {@link Event}s to a buffer before passing along to
+     *         a wrapped {@link Connection}.
+     */
+    public Connection wrapConnectionWithBufferWriter(final Connection connectionToWrap) {
+        return new Connection() {
+            final Connection wrappedConnection = connectionToWrap;
+
+            @Override
+            public void send(Event event) throws ConnectionException {
+                try {
+                    // buffer before we attempt to send
+                    buffer.add(event);
+                } catch (Exception e) {
+                    logger.error("Exception occurred while attempting to add Event to buffer: ", e);
+                }
+
+                wrappedConnection.send(event);
+            }
+
+            @Override
+            public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+                wrappedConnection.addEventSendFailureCallback(eventSendFailureCallback);
+            }
+
+            @Override
+            public void close() throws IOException {
+                wrappedConnection.close();
+            }
+        };
+    }
+
+    /**
      * Flusher is scheduled to periodically run by the BufferedConnection. It retrieves
      * an Iterator of Events from the underlying {@link Buffer} and attempts to send
-     * one at time, discarding from the buffer on success and re-adding to the buffer
-     * on failure.
+     * one at time, discarding from the buffer on success.
      *
-     * Upon the first failure, Flusher will return and wait to be run again in the futre,
+     * Upon the first failure, Flusher will return and wait to be run again in the future,
      * under the assumption that the network is now/still down.
      */
     private class Flusher implements Runnable {
+        private long minAgeMillis;
+
+        Flusher(long minAgeMillis) {
+            this.minAgeMillis = minAgeMillis;
+        }
+
         @Override
         public void run() {
             logger.trace("Running Flusher");
@@ -157,6 +209,21 @@ public class BufferedConnection implements Connection {
                 Iterator<Event> events = buffer.getEvents();
                 while (events.hasNext() && !closed) {
                     Event event = events.next();
+
+                    /*
+                     Skip events that have been in the buffer for less than minAgeMillis
+                     milliseconds. We need to do this because events are added to the
+                     buffer before they are passed on to the underlying "real" connection,
+                     which means the Flusher might run and see them before we even attempt
+                     to send them for the first time.
+                     */
+                    long now = System.currentTimeMillis();
+                    long eventTime = event.getTimestamp().getTime();
+                    long age = now - eventTime;
+                    if (age < minAgeMillis) {
+                        logger.trace("Ignoring buffered event because it only " + age + "ms old.");
+                        return;
+                    }
 
                     try {
                         logger.trace("Flusher attempting to send Event: " + event.getId());
