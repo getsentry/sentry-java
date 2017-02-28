@@ -15,7 +15,19 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Connection wrapper that sends Events to an Buffer when send fails.
+ * Connection wrapper that handles storing and deleting {@link Event}s from a {@link Buffer}.
+ *
+ * This exists as a {@link Connection} implementation because the existing API (and the Java 7
+ * standard library) has no simple way of knowing whether an asynchronous request succeeded
+ * or failed. The {@link #wrapConnectionWithBufferWriter} method is used to wrap an existing
+ * Connection in a small anonymous Connection implementation that will always synchronously
+ * write the sent Event to a Buffer and then pass it to the underlying Connection (often an
+ * AsynConnection in practive). Then, an instance of the {@link BufferedConnection} is used
+ * to wrap the "real" Connection ("under" the AsyncConnection) so that it remove Events from
+ * the Buffer if and only if the underlying {@link #send(Event)} call doesn't throw an exception.
+ *
+ * Note: In the future, if we are able to migrate to Java 8 at a minimum, we would probably make use
+ * of CompletableFutures, though that would require changing the existing API regardless.
  */
 public class BufferedConnection implements Connection {
 
@@ -151,8 +163,12 @@ public class BufferedConnection implements Connection {
 
             @Override
             public void send(Event event) throws ConnectionException {
-                // buffer before we attempt to send
-                buffer.add(event);
+                try {
+                    // buffer before we attempt to send
+                    buffer.add(event);
+                } catch (Exception e) {
+                    logger.error("Exception occurred while attempting to add Event to buffer: ", e);
+                }
 
                 wrappedConnection.send(event);
             }
