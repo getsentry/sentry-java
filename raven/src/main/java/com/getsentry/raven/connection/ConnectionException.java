@@ -9,7 +9,7 @@ public class ConnectionException extends RuntimeException {
     /**
      * Recommended duration to initiate a lockdown for, in milliseconds.
      */
-    private Long recommendedLockdownWaitTime = null;
+    private Long recommendedLockdownTime = null;
 
     //CHECKSTYLE.OFF: JavadocMethod
     public ConnectionException() {
@@ -24,17 +24,17 @@ public class ConnectionException extends RuntimeException {
         super(message, cause);
     }
 
-    public ConnectionException(String message, Throwable cause, Long recommendedLockdownWaitTime) {
+    public ConnectionException(String message, Throwable cause, Long recommendedLockdownTime) {
         super(message, cause);
-        this.recommendedLockdownWaitTime = recommendedLockdownWaitTime;
+        this.recommendedLockdownTime = recommendedLockdownTime;
     }
 
     public ConnectionException(Throwable cause) {
         super(cause);
     }
 
-    public Long getRecommendedLockdownWaitTime() {
-        return recommendedLockdownWaitTime;
+    public Long getRecommendedLockdownTime() {
+        return recommendedLockdownTime;
     }
     //CHECKSTYLE.ON: JavadocMethod
 }

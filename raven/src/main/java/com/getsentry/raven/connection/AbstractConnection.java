@@ -27,11 +27,11 @@ public abstract class AbstractConnection implements Connection {
     /**
      * Default maximum duration for a lockdown.
      */
-    public static final long DEFAULT_MAX_WAITING_TIME = TimeUnit.MINUTES.toMillis(5);
+    public static final long DEFAULT_MAX_LOCKDOWN_TIME = TimeUnit.MINUTES.toMillis(5);
     /**
      * Default base duration for a lockdown.
      */
-    public static final long DEFAULT_BASE_WAITING_TIME = TimeUnit.MILLISECONDS.toMillis(10);
+    public static final long DEFAULT_BASE_LOCKDOWN_TIME = TimeUnit.SECONDS.toMillis(1);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
     /**
      * Value of the X-Sentry-Auth header.
@@ -40,21 +40,21 @@ public abstract class AbstractConnection implements Connection {
     /**
      * Clock instance used for time, injectable for testing.
      */
-    private final Clock clock;
+    private final Clock clock = new SystemClock();
     /**
      * Maximum duration for a lockdown, in milliseconds.
      */
-    private long maxLockdownWaitingTime = DEFAULT_MAX_WAITING_TIME;
+    private long maxLockdownTime = DEFAULT_MAX_LOCKDOWN_TIME;
     /**
      * Base duration for a lockdown, in milliseconds.
      * <p>
-     * On each attempt the time is doubled until it reaches {@link #maxLockdownWaitingTime}.
+     * On each attempt the time is doubled until it reaches {@link #maxLockdownTime}.
      */
-    private long baseLockdownWaitingTime = DEFAULT_BASE_WAITING_TIME;
+    private long baseLockdownTime = DEFAULT_BASE_LOCKDOWN_TIME;
     /**
      * Number of milliseconds after lockdownStartTime to lockdown for, or 0 if not currently locked down.
      */
-    private long lockdownWaitingTime = 0;
+    private long lockdownTime = 0;
     /**
      * Timestamp of when the current lockdown started, or null if not currently locked down.
      */
@@ -72,7 +72,6 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
-        this.clock = new SystemClock();
         this.eventSendFailureCallbacks = new HashSet<>();
         this.authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
                 + "sentry_client=" + RavenEnvironment.getRavenName() + ","
@@ -93,8 +92,12 @@ public abstract class AbstractConnection implements Connection {
     public final void send(Event event) throws ConnectionException {
         try {
             if (isLockedDown()) {
-                logger.debug("Dropped an Event due to lockdown: {}", event);
-                return;
+                /*
+                An exception is thrown to signal that this Event was not sent, which may be
+                important in, for example, a BufferedConnection where the Event would be deleted
+                from the Buffer if an exception isn't raised in the call to send.
+                 */
+                throw new LockedDownException("Dropping an Event due to lockdown: " + event);
             }
 
             doSend(event);
@@ -118,11 +121,11 @@ public abstract class AbstractConnection implements Connection {
     }
 
     private synchronized boolean isLockedDown() {
-        return lockdownStartTime != null && (clock.millis() - lockdownStartTime.getTime()) < lockdownWaitingTime;
+        return lockdownStartTime != null && (clock.millis() - lockdownStartTime.getTime()) < lockdownTime;
     }
 
     private synchronized void resetLockdown() {
-        lockdownWaitingTime = 0;
+        lockdownTime = 0;
         lockdownStartTime = null;
     }
 
@@ -132,15 +135,15 @@ public abstract class AbstractConnection implements Connection {
             return;
         }
 
-        if (connectionException.getRecommendedLockdownWaitTime() != null) {
-            lockdownWaitingTime = connectionException.getRecommendedLockdownWaitTime();
-        } else if (lockdownWaitingTime != 0) {
-            lockdownWaitingTime = lockdownWaitingTime * 2;
+        if (connectionException.getRecommendedLockdownTime() != null) {
+            lockdownTime = connectionException.getRecommendedLockdownTime();
+        } else if (lockdownTime != 0) {
+            lockdownTime = lockdownTime * 2;
         } else {
-            lockdownWaitingTime = baseLockdownWaitingTime;
+            lockdownTime = baseLockdownTime;
         }
 
-        lockdownWaitingTime = Math.min(maxLockdownWaitingTime, lockdownWaitingTime);
+        lockdownTime = Math.min(maxLockdownTime, lockdownTime);
         lockdownStartTime = clock.date();
     }
 
@@ -153,11 +156,11 @@ public abstract class AbstractConnection implements Connection {
     protected abstract void doSend(Event event) throws ConnectionException;
 
     public void setMaxWaitingTime(long maxWaitingTime) {
-        this.maxLockdownWaitingTime = maxWaitingTime;
+        this.maxLockdownTime = maxWaitingTime;
     }
 
     public void setBaseWaitingTime(long baseWaitingTime) {
-        this.baseLockdownWaitingTime = baseWaitingTime;
+        this.baseLockdownTime = baseWaitingTime;
     }
 
     /**

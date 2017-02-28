@@ -153,7 +153,7 @@ public class HttpConnectionTest {
             httpConnection.doSend(mockEvent);
             fail();
         } catch (ConnectionException e) {
-            assertThat(e.getRecommendedLockdownWaitTime(), is(12345L * 1000L));
+            assertThat(e.getRecommendedLockdownTime(), is(12345L * 1000L));
         }
     }
 

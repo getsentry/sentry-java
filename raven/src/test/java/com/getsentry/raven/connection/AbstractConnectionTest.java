@@ -15,6 +15,7 @@ import static mockit.Deencapsulation.getField;
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.testng.AssertJUnit.fail;
 
 public class AbstractConnectionTest {
     private static final Date FIXED_DATE = new Date(1483228800L);
@@ -63,10 +64,18 @@ public class AbstractConnectionTest {
 
         Date lockdownStartTime = getField(abstractConnection, "lockdownStartTime");
         assertThat(lockdownStartTime, is(FIXED_DATE));
+
+        // Send while in lockdown throws LockedDownException
+        try {
+            abstractConnection.send(mockEvent);
+            fail();
+        } catch (LockedDownException e) {
+            // ignore
+        }
     }
 
     @Test
-    public void testLockDownDoublesTheWaitingTime(@Injectable final Event mockEvent) throws Exception {
+    public void testLockDownDoublesTheTime(@Injectable final Event mockEvent) throws Exception {
         setField(abstractConnection, "clock", mockClock);
 
         new NonStrictExpectations() {{
@@ -81,11 +90,11 @@ public class AbstractConnectionTest {
         }
 
         // Check for default lockdown time
-        long lockdownWaitingTimeAfter = getField(abstractConnection, "lockdownWaitingTime");
-        assertThat(lockdownWaitingTimeAfter, is(AbstractConnection.DEFAULT_BASE_WAITING_TIME));
+        long lockdownTimeAfter = getField(abstractConnection, "lockdownTime");
+        assertThat(lockdownTimeAfter, is(AbstractConnection.DEFAULT_BASE_LOCKDOWN_TIME));
 
-        // Roll forward 10ms, allowing the lockdown to retried
-        ((FixedClock) mockClock).tick(10, TimeUnit.MILLISECONDS);
+        // Roll forward by the base lockdown time, allowing the lockdown to retried
+        ((FixedClock) mockClock).tick(AbstractConnection.DEFAULT_BASE_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
 
         // Send a second event, doubling the lockdown
         try {
@@ -95,13 +104,13 @@ public class AbstractConnectionTest {
         }
 
         // Check for doubled lockdown time
-        long lockdownWaitingTimeAfter2 = getField(abstractConnection, "lockdownWaitingTime");
-        assertThat(lockdownWaitingTimeAfter2, is(AbstractConnection.DEFAULT_BASE_WAITING_TIME * 2));
+        long lockdownTimeAfter2 = getField(abstractConnection, "lockdownTime");
+        assertThat(lockdownTimeAfter2, is(AbstractConnection.DEFAULT_BASE_LOCKDOWN_TIME * 2));
     }
 
     @Test
     public void testLockDownDoesntDoubleItAtMax(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lockdownWaitingTime", AbstractConnection.DEFAULT_MAX_WAITING_TIME);
+        setField(abstractConnection, "lockdownTime", AbstractConnection.DEFAULT_MAX_LOCKDOWN_TIME);
         setField(abstractConnection, "lockdownStartTime", mockClock.date());
         setField(abstractConnection, "clock", mockClock);
 
@@ -116,8 +125,8 @@ public class AbstractConnectionTest {
             // ignore
         }
 
-        long lockdownWaitingTimeAfter = getField(abstractConnection, "lockdownWaitingTime");
-        assertThat(lockdownWaitingTimeAfter, is(AbstractConnection.DEFAULT_MAX_WAITING_TIME));
+        long lockdownTimeAfter = getField(abstractConnection, "lockdownTime");
+        assertThat(lockdownTimeAfter, is(AbstractConnection.DEFAULT_MAX_LOCKDOWN_TIME));
     }
 
     @Test
@@ -165,7 +174,7 @@ public class AbstractConnectionTest {
             // ignore
         }
 
-        long lockdownWaitingTimeAfter = getField(abstractConnection, "lockdownWaitingTime");
-        assertThat(lockdownWaitingTimeAfter, is(recommendedLockdownWaitTime));
+        long lockdownTimeAfter = getField(abstractConnection, "lockdownTime");
+        assertThat(lockdownTimeAfter, is(recommendedLockdownWaitTime));
     }
 }

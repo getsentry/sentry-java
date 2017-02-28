@@ -175,7 +175,7 @@ public class HttpConnection extends AbstractConnection {
                 // CHECKSTYLE.OFF: EmptyCatchBlock
                 try {
                     // CHECKSTYLE.OFF: MagicNumber
-                    retryAfterMs = Long.parseLong(retryAfterHeader) * 1000; // seconds -> milliseconds
+                    retryAfterMs = Long.parseLong(retryAfterHeader) * 1000L; // seconds -> milliseconds
                     // CHECKSTYLE.ON: MagicNumber
                 } catch (NumberFormatException nfe) {
                     // noop, use default retry
