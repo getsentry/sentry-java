@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * or failed. The {@link #wrapConnectionWithBufferWriter} method is used to wrap an existing
  * Connection in a small anonymous Connection implementation that will always synchronously
  * write the sent Event to a Buffer and then pass it to the underlying Connection (often an
- * AsynConnection in practive). Then, an instance of the {@link BufferedConnection} is used
+ * AsyncConnection in practice). Then, an instance of the {@link BufferedConnection} is used
  * to wrap the "real" Connection ("under" the AsyncConnection) so that it remove Events from
  * the Buffer if and only if the underlying {@link #send(Event)} call doesn't throw an exception.
  *
@@ -210,6 +210,13 @@ public class BufferedConnection implements Connection {
                 while (events.hasNext() && !closed) {
                     Event event = events.next();
 
+                    /*
+                     Skip events that have been in the buffer for less than minAgeMillis
+                     milliseconds. We need to do this because events are added to the
+                     buffer before they are passed on to the underlying "real" connection,
+                     which means the Flusher might run and see them before we even attempt
+                     to send them for the first time.
+                     */
                     long now = System.currentTimeMillis();
                     long eventTime = event.getTimestamp().getTime();
                     long age = now - eventTime;
