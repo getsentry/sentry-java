@@ -1,15 +1,15 @@
-package com.getsentry.raven.sentrystub.event;
+package com.getsentry.raven.unmarshaller.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.getsentry.raven.sentrystub.event.interfaces.ExceptionInterface;
-import com.getsentry.raven.sentrystub.event.interfaces.MessageInterface;
-import com.getsentry.raven.sentrystub.event.interfaces.StackTraceInterface;
+import com.getsentry.raven.unmarshaller.event.interfaces.ExceptionInterface;
+import com.getsentry.raven.unmarshaller.event.interfaces.MessageInterface;
+import com.getsentry.raven.unmarshaller.event.interfaces.StackTraceInterface;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class Event {
+public class UnmarshalledEvent {
     @JsonProperty(value = "event_id", required = true)
     private String eventId;
     @JsonProperty(value = "checksum")

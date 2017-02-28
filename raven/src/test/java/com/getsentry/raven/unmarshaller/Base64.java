@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.getsentry.raven.sentrystub.util;
+package com.getsentry.raven.unmarshaller;
 
 import java.io.UnsupportedEncodingException;
 
@@ -287,73 +287,73 @@ public class Base64 {
                 // machine implementation.
                 int d = alphabet[input[p++] & 0xff];
                 switch (state) {
-                case 0:
-                    if (d >= 0) {
-                        value = d;
-                        ++state;
-                    } else if (d != SKIP) {
-                        this.state = 6;
-                        return false;
-                    }
-                    break;
-                case 1:
-                    if (d >= 0) {
-                        value = (value << 6) | d;
-                        ++state;
-                    } else if (d != SKIP) {
-                        this.state = 6;
-                        return false;
-                    }
-                    break;
-                case 2:
-                    if (d >= 0) {
-                        value = (value << 6) | d;
-                        ++state;
-                    } else if (d == EQUALS) {
-                        // Emit the last (partial) output tuple;
-                        // expect exactly one more padding character.
-                        output[op++] = (byte) (value >> 4);
-                        state = 4;
-                    } else if (d != SKIP) {
-                        this.state = 6;
-                        return false;
-                    }
-                    break;
-                case 3:
-                    if (d >= 0) {
-                        // Emit the output triple and return to state 0.
-                        value = (value << 6) | d;
-                        output[op+2] = (byte) value;
-                        output[op+1] = (byte) (value >> 8);
-                        output[op] = (byte) (value >> 16);
-                        op += 3;
-                        state = 0;
-                    } else if (d == EQUALS) {
-                        // Emit the last (partial) output tuple;
-                        // expect no further data or padding characters.
-                        output[op+1] = (byte) (value >> 2);
-                        output[op] = (byte) (value >> 10);
-                        op += 2;
-                        state = 5;
-                    } else if (d != SKIP) {
-                        this.state = 6;
-                        return false;
-                    }
-                    break;
-                case 4:
-                    if (d == EQUALS) {
-                        ++state;
-                    } else if (d != SKIP) {
-                        this.state = 6;
-                        return false;
-                    }
-                    break;
-                case 5:
-                    if (d != SKIP) {
-                        this.state = 6;
-                        return false;
-                    }
-                    break;
+                    case 0:
+                        if (d >= 0) {
+                            value = d;
+                            ++state;
+                        } else if (d != SKIP) {
+                            this.state = 6;
+                            return false;
+                        }
+                        break;
+                    case 1:
+                        if (d >= 0) {
+                            value = (value << 6) | d;
+                            ++state;
+                        } else if (d != SKIP) {
+                            this.state = 6;
+                            return false;
+                        }
+                        break;
+                    case 2:
+                        if (d >= 0) {
+                            value = (value << 6) | d;
+                            ++state;
+                        } else if (d == EQUALS) {
+                            // Emit the last (partial) output tuple;
+                            // expect exactly one more padding character.
+                            output[op++] = (byte) (value >> 4);
+                            state = 4;
+                        } else if (d != SKIP) {
+                            this.state = 6;
+                            return false;
+                        }
+                        break;
+                    case 3:
+                        if (d >= 0) {
+                            // Emit the output triple and return to state 0.
+                            value = (value << 6) | d;
+                            output[op+2] = (byte) value;
+                            output[op+1] = (byte) (value >> 8);
+                            output[op] = (byte) (value >> 16);
+                            op += 3;
+                            state = 0;
+                        } else if (d == EQUALS) {
+                            // Emit the last (partial) output tuple;
+                            // expect no further data or padding characters.
+                            output[op+1] = (byte) (value >> 2);
+                            output[op] = (byte) (value >> 10);
+                            op += 2;
+                            state = 5;
+                        } else if (d != SKIP) {
+                            this.state = 6;
+                            return false;
+                        }
+                        break;
+                    case 4:
+                        if (d == EQUALS) {
+                            ++state;
+                        } else if (d != SKIP) {
+                            this.state = 6;
+                            return false;
+                        }
+                        break;
+                    case 5:
+                        if (d != SKIP) {
+                            this.state = 6;
+                            return false;
+                        }
+                        break;
                 }
             }
             if (!finish) {
@@ -367,33 +367,33 @@ public class Base64 {
             // Done reading input.  Now figure out where we are left in
             // the state machine and finish up.
             switch (state) {
-            case 0:
-                // Output length is a multiple of three.  Fine.
-                break;
-            case 1:
-                // Read one extra input byte, which isn't enough to
-                // make another output byte.  Illegal.
-                this.state = 6;
-                return false;
-            case 2:
-                // Read two extra input bytes, enough to emit 1 more
-                // output byte.  Fine.
-                output[op++] = (byte) (value >> 4);
-                break;
-            case 3:
-                // Read three extra input bytes, enough to emit 2 more
-                // output bytes.  Fine.
-                output[op++] = (byte) (value >> 10);
-                output[op++] = (byte) (value >> 2);
-                break;
-            case 4:
-                // Read one padding '=' when we expected 2.  Illegal.
-                this.state = 6;
-                return false;
-            case 5:
-                // Read all the padding '='s we expected and no more.
-                // Fine.
-                break;
+                case 0:
+                    // Output length is a multiple of three.  Fine.
+                    break;
+                case 1:
+                    // Read one extra input byte, which isn't enough to
+                    // make another output byte.  Illegal.
+                    this.state = 6;
+                    return false;
+                case 2:
+                    // Read two extra input bytes, enough to emit 1 more
+                    // output byte.  Fine.
+                    output[op++] = (byte) (value >> 4);
+                    break;
+                case 3:
+                    // Read three extra input bytes, enough to emit 2 more
+                    // output bytes.  Fine.
+                    output[op++] = (byte) (value >> 10);
+                    output[op++] = (byte) (value >> 2);
+                    break;
+                case 4:
+                    // Read one padding '=' when we expected 2.  Illegal.
+                    this.state = 6;
+                    return false;
+                case 5:
+                    // Read all the padding '='s we expected and no more.
+                    // Fine.
+                    break;
             }
             this.state = state;
             this.op = op;
@@ -483,9 +483,9 @@ public class Base64 {
             }
         } else {
             switch (len % 3) {
-            case 0: break;
-            case 1: output_len += 2; break;
-            case 2: output_len += 3; break;
+                case 0: break;
+                case 1: output_len += 2; break;
+                case 2: output_len += 3; break;
             }
         }
         // Account for the newlines, if any.
@@ -562,28 +562,28 @@ public class Base64 {
             // with any input bytes available now and see if we can empty
             // the tail.
             switch (tailLen) {
-            case 0:
-                // There was no tail.
-                break;
-            case 1:
-                if (p+2 <= len) {
-                    // A 1-byte tail with at least 2 bytes of
-                    // input available now.
-                    v = ((tail[0] & 0xff) << 16) |
-                        ((input[p++] & 0xff) << 8) |
-                        (input[p++] & 0xff);
-                    tailLen = 0;
-                };
-                break;
-            case 2:
-                if (p+1 <= len) {
-                    // A 2-byte tail with at least 1 byte of input.
-                    v = ((tail[0] & 0xff) << 16) |
-                        ((tail[1] & 0xff) << 8) |
-                        (input[p++] & 0xff);
-                    tailLen = 0;
-                }
-                break;
+                case 0:
+                    // There was no tail.
+                    break;
+                case 1:
+                    if (p+2 <= len) {
+                        // A 1-byte tail with at least 2 bytes of
+                        // input available now.
+                        v = ((tail[0] & 0xff) << 16) |
+                            ((input[p++] & 0xff) << 8) |
+                            (input[p++] & 0xff);
+                        tailLen = 0;
+                    };
+                    break;
+                case 2:
+                    if (p+1 <= len) {
+                        // A 2-byte tail with at least 1 byte of input.
+                        v = ((tail[0] & 0xff) << 16) |
+                            ((tail[1] & 0xff) << 8) |
+                            (input[p++] & 0xff);
+                        tailLen = 0;
+                    }
+                    break;
             }
             if (v != -1) {
                 output[op++] = alphabet[(v >> 18) & 0x3f];

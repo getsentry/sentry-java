@@ -13,7 +13,8 @@ public class RavenIT extends AndroidTest {
 
     @Test
     public void test() throws Exception {
-        Assert.assertEquals(sentryStub.getEventCount(), 0);
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
 
         RavenITActivity activity = Robolectric.setupActivity(RavenITActivity.class);
         Assert.assertEquals(activity.getCustomFactoryUsed(), true);
@@ -22,11 +23,12 @@ public class RavenIT extends AndroidTest {
         waitUntilTrue(1000, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return sentryStub.getEventCount() == 1;
+                return getStoredEvents().size() == 1;
             }
         });
 
-        Assert.assertEquals(sentryStub.getEventCount(), 1);
+        verifyProject1PostRequestCount(1);
+        verifyStoredEventCount(1);
     }
 
 }

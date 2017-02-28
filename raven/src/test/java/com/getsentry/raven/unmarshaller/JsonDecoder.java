@@ -1,9 +1,7 @@
-package com.getsentry.raven.sentrystub.unmarshaller;
+package com.getsentry.raven.unmarshaller;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.getsentry.raven.sentrystub.util.Base64;
-import com.getsentry.raven.sentrystub.util.Base64InputStream;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -49,7 +47,7 @@ public class JsonDecoder {
                 originalStream.reset();
                 if (!isJson(new InflaterInputStream(new Base64InputStream(originalStream, Base64.NO_WRAP)))) {
                     throw new IllegalArgumentException("The given Stream is neither JSON, Base64'd JSON "
-                            + "nor Base64'd deflated JSON.");
+                        + "nor Base64'd deflated JSON.");
                 }
             }
         }

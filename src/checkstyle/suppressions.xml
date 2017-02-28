@@ -4,7 +4,6 @@
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
 <suppressions>
-    <suppress files="com/getsentry/raven/sentrystub/.*" checks=".*"/>
     <suppress files="com/getsentry/raven/util/Base64.*" checks=".*"/>
     <suppress files="com/getsentry/raven/util/CircularFifoQueue\.java" checks=".*"/>
 </suppressions>
