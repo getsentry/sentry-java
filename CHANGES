@@ -2,6 +2,8 @@ Version 7.8.3
 -------------
 
 - Add User to RavenContext and ContextBuilderHelper. (thanks mpecan)
+- Drop Events when the connection is locked down, users must enable buffering to attempt to resend later.
+- Respect the Sentry server's ``Retry-After`` header.
 
 Version 7.8.2
 -------------
