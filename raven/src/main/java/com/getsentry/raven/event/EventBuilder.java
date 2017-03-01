@@ -285,7 +285,7 @@ public class EventBuilder {
      * @param contexts map of map of contexts
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder withContexts(Map<String, Map<String, String>> contexts) {
+    public EventBuilder withContexts(Map<String, Map<String, Object>> contexts) {
         event.setContexts(contexts);
         return this;
     }

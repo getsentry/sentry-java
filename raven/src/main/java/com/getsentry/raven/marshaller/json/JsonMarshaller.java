@@ -317,16 +317,16 @@ public class JsonMarshaller implements Marshaller {
         generator.writeEndObject();
     }
 
-    private void writeContexts(JsonGenerator generator, Map<String, Map<String, String>> contexts) throws IOException {
+    private void writeContexts(JsonGenerator generator, Map<String, Map<String, Object>> contexts) throws IOException {
         if (contexts.isEmpty()) {
             return;
         }
 
         generator.writeObjectFieldStart(CONTEXTS);
-        for (Map.Entry<String, Map<String, String>> contextEntry : contexts.entrySet()) {
+        for (Map.Entry<String, Map<String, Object>> contextEntry : contexts.entrySet()) {
             generator.writeObjectFieldStart(contextEntry.getKey());
-            for (Map.Entry<String, String> innerContextEntry : contextEntry.getValue().entrySet()) {
-                generator.writeStringField(innerContextEntry.getKey(), innerContextEntry.getValue());
+            for (Map.Entry<String, Object> innerContextEntry : contextEntry.getValue().entrySet()) {
+                generator.writeObjectField(innerContextEntry.getKey(), innerContextEntry.getValue());
             }
             generator.writeEndObject();
         }
