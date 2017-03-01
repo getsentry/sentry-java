@@ -66,6 +66,10 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String BREADCRUMBS = "breadcrumbs";
     /**
+     * Map of map of contexts for this event.
+     */
+    public static final String CONTEXTS = "contexts";
+    /**
      * Identifies the host client from which the event was recorded.
      */
     public static final String SERVER_NAME = "server_name";
@@ -172,6 +176,7 @@ public class JsonMarshaller implements Marshaller {
         writeSdk(generator, event.getSdkName(), event.getSdkVersion());
         writeTags(generator, event.getTags());
         writeBreadcumbs(generator, event.getBreadcrumbs());
+        writeContexts(generator, event.getContexts());
         generator.writeStringField(SERVER_NAME, event.getServerName());
         generator.writeStringField(RELEASE, event.getRelease());
         generator.writeStringField(ENVIRONMENT, event.getEnvironment());
@@ -276,7 +281,7 @@ public class JsonMarshaller implements Marshaller {
 
     @SuppressWarnings("checkstyle:magicnumber")
     private void writeBreadcumbs(JsonGenerator generator, List<Breadcrumb> breadcrumbs) throws IOException {
-        if (breadcrumbs.size() < 1) {
+        if (breadcrumbs.isEmpty()) {
             return;
         }
 
@@ -299,7 +304,7 @@ public class JsonMarshaller implements Marshaller {
             if (breadcrumb.getCategory() != null) {
                 generator.writeStringField("category", breadcrumb.getCategory());
             }
-            if (breadcrumb.getData() != null && breadcrumb.getData().size() > 0) {
+            if (breadcrumb.getData() != null && !breadcrumb.getData().isEmpty()) {
                 generator.writeObjectFieldStart("data");
                 for (Map.Entry<String, String> entry : breadcrumb.getData().entrySet()) {
                     generator.writeStringField(entry.getKey(), entry.getValue());
@@ -309,6 +314,22 @@ public class JsonMarshaller implements Marshaller {
             generator.writeEndObject();
         }
         generator.writeEndArray();
+        generator.writeEndObject();
+    }
+
+    private void writeContexts(JsonGenerator generator, Map<String, Map<String, String>> contexts) throws IOException {
+        if (contexts.isEmpty()) {
+            return;
+        }
+
+        generator.writeObjectFieldStart(CONTEXTS);
+        for (Map.Entry<String, Map<String, String>> contextEntry : contexts.entrySet()) {
+            generator.writeObjectFieldStart(contextEntry.getKey());
+            for (Map.Entry<String, String> innerContextEntry : contextEntry.getValue().entrySet()) {
+                generator.writeStringField(innerContextEntry.getKey(), innerContextEntry.getValue());
+            }
+            generator.writeEndObject();
+        }
         generator.writeEndObject();
     }
 
