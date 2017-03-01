@@ -266,14 +266,18 @@ public class JsonMarshallerTest {
     public void testEventContextsWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
 
-        final HashMap<String, Map<String, String>> contexts = new HashMap<>();
-        HashMap<String, String> context1 = new HashMap<>();
+        final HashMap<String, Map<String, Object>> contexts = new HashMap<>();
+        HashMap<String, Object> context1 = new HashMap<>();
         context1.put("context1key1", "context1value1");
-        context1.put("context1key2", "context1value2");
+        context1.put("context1key2", 12);
+        context1.put("context1key3", 1.3);
+        context1.put("context1key4", true);
 
-        HashMap<String, String> context2 = new HashMap<>();
+        HashMap<String, Object> context2 = new HashMap<>();
         context2.put("context2key1", "context2value1");
-        context2.put("context2key2", "context2value2");
+        context2.put("context2key2", 22);
+        context2.put("context2key3", 2.3);
+        context2.put("context2key4", false);
 
         contexts.put("context1", context1);
         contexts.put("context2", context2);
