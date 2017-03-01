@@ -7,11 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -113,6 +109,9 @@ public class EventBuilder {
 
         // Make the breadcrumbs unmodifiable
         event.setBreadcrumbs(Collections.unmodifiableList(event.getBreadcrumbs()));
+
+        // Make the contexts unmodifiable
+        event.setContexts(Collections.unmodifiableMap(event.getContexts()));
 
         // Make the extra properties unmodifiable (everything in it is still mutable though)
         event.setExtra(Collections.unmodifiableMap(event.getExtra()));
@@ -277,6 +276,17 @@ public class EventBuilder {
      */
     public EventBuilder withBreadcrumbs(List<Breadcrumb> breadcrumbs) {
         event.setBreadcrumbs(breadcrumbs);
+        return this;
+    }
+
+    /**
+     * Adds a map of map of context objects to the event.
+     *
+     * @param contexts map of map of contexts
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withContexts(Map<String, Map<String, String>> contexts) {
+        event.setContexts(contexts);
         return this;
     }
 

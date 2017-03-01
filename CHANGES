@@ -2,6 +2,7 @@ Version 7.8.3
 -------------
 
 - Add User to RavenContext and ContextBuilderHelper. (thanks mpecan)
+- Add ``contexts`` field support to Events.
 
 Version 7.8.2
 -------------

@@ -1,4 +1,5 @@
 package com.getsentry.raven;
+
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.User;
 import com.getsentry.raven.util.CircularFifoQueue;
@@ -8,6 +9,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+
 /**
  * RavenContext is used to hold {@link ThreadLocal} context data (such as
  * {@link Breadcrumb}s) so that data may be collected in different parts
