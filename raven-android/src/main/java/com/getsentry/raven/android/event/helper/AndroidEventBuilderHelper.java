@@ -68,49 +68,50 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     private Map<String, Map<String, Object>> getContexts() {
         Map<String, Map<String, Object>> contexts = new HashMap<>();
         Map<String, Object> deviceMap = new HashMap<>();
-        Map<String, Object> osMap = new HashMap<>();
-        contexts.put("os", osMap);
+        Map<String, Object> osMap     = new HashMap<>();
+        contexts.put("os",     osMap);
         contexts.put("device", deviceMap);
 
-        deviceMap.put("family", "Android");
-        deviceMap.put("manufacturer", Build.MANUFACTURER);
-        deviceMap.put("brand", Build.BRAND);
-        deviceMap.put("model", Build.MODEL);
-        deviceMap.put("model_id", Build.ID);
-        deviceMap.put("battery_level", getBatteryLevel(ctx));
-        deviceMap.put("orientation", getOrientation(ctx));
-        deviceMap.put("simulator", IS_EMULATOR);
-        deviceMap.put("arch", Build.CPU_ABI);
-        deviceMap.put("storage_size", getTotalInternalStorage());
-        deviceMap.put("free_storage", getUnusedInternalStorage());
+        // Device
+        deviceMap.put("family",                "Android");
+        deviceMap.put("manufacturer",          Build.MANUFACTURER);
+        deviceMap.put("brand",                 Build.BRAND);
+        deviceMap.put("model",                 Build.MODEL);
+        deviceMap.put("model_id",              Build.ID);
+        deviceMap.put("battery_level",         getBatteryLevel(ctx));
+        deviceMap.put("orientation",           getOrientation(ctx));
+        deviceMap.put("simulator",             IS_EMULATOR);
+        deviceMap.put("arch",                  Build.CPU_ABI);
+        deviceMap.put("storage_size",          getTotalInternalStorage());
+        deviceMap.put("free_storage",          getUnusedInternalStorage());
         deviceMap.put("external_storage_size", getTotalExternalStorage());
         deviceMap.put("external_free_storage", getUnusedExternalStorage());
-        deviceMap.put("charging", isCharging(ctx));
-        deviceMap.put("time", stringifyDate(new Date()));
-        deviceMap.put("online", Util.isConnected(ctx));
+        deviceMap.put("charging",              isCharging(ctx));
+        deviceMap.put("time",                  stringifyDate(new Date()));
+        deviceMap.put("online",                Util.isConnected(ctx));
 
         DisplayMetrics displayMetrics = getDisplayMetrics(ctx);
         if (displayMetrics != null) {
-            deviceMap.put("screen_density", displayMetrics.density);
-            deviceMap.put("screen_dpi", displayMetrics.densityDpi);
-
-            int largestSide = Math.max(displayMetrics.widthPixels, displayMetrics.heightPixels);
-            int smallestSide = Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels);
+            int largestSide   = Math.max(displayMetrics.widthPixels, displayMetrics.heightPixels);
+            int smallestSide  = Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels);
             String resolution = Integer.toString(largestSide) + "x" + Integer.toString(smallestSide);
             deviceMap.put("screen_resolution", resolution);
+            deviceMap.put("screen_density",    displayMetrics.density);
+            deviceMap.put("screen_dpi",        displayMetrics.densityDpi);
         }
 
         ActivityManager.MemoryInfo memInfo = getMemInfo(ctx);
         // deviceMap.put("usable_memory", ""); // Android doesn't seem to provide this as its own value, but iOS does?
         deviceMap.put("free_memory", memInfo.availMem);
         deviceMap.put("memory_size", memInfo.totalMem);
-        deviceMap.put("low_memory", memInfo.lowMemory);
+        deviceMap.put("low_memory",  memInfo.lowMemory);
 
-        osMap.put("name", "Android");
-        osMap.put("version", Build.VERSION.RELEASE);
-        osMap.put("build", Build.DISPLAY);
+        // Operating System
+        osMap.put("name",           "Android");
+        osMap.put("version",        Build.VERSION.RELEASE);
+        osMap.put("build",          Build.DISPLAY);
         osMap.put("kernel_version", KERNEL_VERSION);
-        osMap.put("rooted", isRooted());
+        osMap.put("rooted",         isRooted());
 
         return contexts;
     }
