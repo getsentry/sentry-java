@@ -4,6 +4,7 @@ import com.getsentry.raven.time.Clock;
 import com.getsentry.raven.time.FixedClock;
 import mockit.*;
 import com.getsentry.raven.event.Event;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Date;
@@ -25,8 +26,14 @@ public class AbstractConnectionTest {
     private final String secretKey = "56a9d05e-9032-4fdd-8f67-867d526422f9";
     @Tested
     private AbstractConnection abstractConnection = null;
-    @Injectable
-    private final Clock mockClock = new FixedClock(FIXED_DATE);
+    private FixedClock clock = new FixedClock(FIXED_DATE);
+    private LockdownManager lockdownManager = new LockdownManager(clock);
+
+    @BeforeMethod
+    public void setup() {
+        clock = new FixedClock(FIXED_DATE);
+        lockdownManager = new LockdownManager(clock);
+    }
 
     @Test
     public void testAuthHeader() throws Exception {
@@ -49,7 +56,7 @@ public class AbstractConnectionTest {
 
     @Test
     public void testExceptionOnSendStartLockDown(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "clock", mockClock);
+        setField(abstractConnection, "lockdownManager", lockdownManager);
 
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
@@ -62,7 +69,7 @@ public class AbstractConnectionTest {
             // ignore
         }
 
-        Date lockdownStartTime = getField(abstractConnection, "lockdownStartTime");
+        Date lockdownStartTime = getField(lockdownManager, "lockdownStartTime");
         assertThat(lockdownStartTime, is(FIXED_DATE));
 
         // Send while in lockdown throws LockedDownException
@@ -76,7 +83,7 @@ public class AbstractConnectionTest {
 
     @Test
     public void testLockDownDoublesTheTime(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "clock", mockClock);
+        setField(abstractConnection, "lockdownManager", lockdownManager);
 
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
@@ -90,11 +97,11 @@ public class AbstractConnectionTest {
         }
 
         // Check for default lockdown time
-        long lockdownTimeAfter = getField(abstractConnection, "lockdownTime");
-        assertThat(lockdownTimeAfter, is(AbstractConnection.DEFAULT_BASE_LOCKDOWN_TIME));
+        long lockdownTimeAfter = getField(lockdownManager, "lockdownTime");
+        assertThat(lockdownTimeAfter, is(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME));
 
         // Roll forward by the base lockdown time, allowing the lockdown to retried
-        ((FixedClock) mockClock).tick(AbstractConnection.DEFAULT_BASE_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
+        clock.tick(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
 
         // Send a second event, doubling the lockdown
         try {
@@ -104,15 +111,15 @@ public class AbstractConnectionTest {
         }
 
         // Check for doubled lockdown time
-        long lockdownTimeAfter2 = getField(abstractConnection, "lockdownTime");
-        assertThat(lockdownTimeAfter2, is(AbstractConnection.DEFAULT_BASE_LOCKDOWN_TIME * 2));
+        long lockdownTimeAfter2 = getField(lockdownManager, "lockdownTime");
+        assertThat(lockdownTimeAfter2, is(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME * 2));
     }
 
     @Test
     public void testLockDownDoesntDoubleItAtMax(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lockdownTime", AbstractConnection.DEFAULT_MAX_LOCKDOWN_TIME);
-        setField(abstractConnection, "lockdownStartTime", mockClock.date());
-        setField(abstractConnection, "clock", mockClock);
+        setField(abstractConnection, "lockdownManager", lockdownManager);
+        setField(lockdownManager, "lockdownTime", LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME);
+        setField(lockdownManager, "lockdownStartTime", clock.date());
 
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
@@ -125,8 +132,8 @@ public class AbstractConnectionTest {
             // ignore
         }
 
-        long lockdownTimeAfter = getField(abstractConnection, "lockdownTime");
-        assertThat(lockdownTimeAfter, is(AbstractConnection.DEFAULT_MAX_LOCKDOWN_TIME));
+        long lockdownTimeAfter = getField(lockdownManager, "lockdownTime");
+        assertThat(lockdownTimeAfter, is(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME));
     }
 
     @Test
@@ -160,7 +167,7 @@ public class AbstractConnectionTest {
 
     @Test
     public void testRecommendedLockdownRespected(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "clock", mockClock);
+        setField(abstractConnection, "lockdownManager", lockdownManager);
 
         final long recommendedLockdownWaitTime = 12345L;
         new NonStrictExpectations() {{
@@ -174,7 +181,7 @@ public class AbstractConnectionTest {
             // ignore
         }
 
-        long lockdownTimeAfter = getField(abstractConnection, "lockdownTime");
+        long lockdownTimeAfter = getField(lockdownManager, "lockdownTime");
         assertThat(lockdownTimeAfter, is(recommendedLockdownWaitTime));
     }
 }

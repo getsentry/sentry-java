@@ -28,8 +28,8 @@ import static org.hamcrest.core.Is.is;
 
 public class BufferedConnectionTest extends BaseTest {
     private static final Date FIXED_DATE = new Date(1483228800L);
-    @Injectable
-    private final Clock mockClock = new FixedClock(FIXED_DATE);
+    private FixedClock clock = new FixedClock(FIXED_DATE);
+    private LockdownManager lockdownManager = new LockdownManager(clock);
 
     private Set<Event> bufferedEvents;
     private List<Event> sentEvents;
@@ -65,7 +65,8 @@ public class BufferedConnectionTest extends BaseTest {
             }
         };
 
-        setField(mockConnection, "clock", mockClock);
+        clock = new FixedClock(FIXED_DATE);
+        lockdownManager = new LockdownManager(clock);
 
         mockBuffer = new Buffer() {
             @Override
@@ -97,6 +98,8 @@ public class BufferedConnectionTest extends BaseTest {
 
     @Test
     public void test() throws Exception {
+        setField(mockConnection, "lockdownManager", lockdownManager);
+
         Event event = new EventBuilder().build();
         connectionUp = false;
         try {
@@ -117,7 +120,7 @@ public class BufferedConnectionTest extends BaseTest {
         assertThat(bufferedEvents.size(), equalTo(2));
 
         // End the lockdown
-        ((FixedClock) mockClock).tick(AbstractConnection.DEFAULT_MAX_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
+        clock.tick(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
 
         connectionUp = true;
         waitUntilTrue(1000, new Callable<Boolean>() {

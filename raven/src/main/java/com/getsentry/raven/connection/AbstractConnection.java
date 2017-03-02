@@ -2,15 +2,11 @@ package com.getsentry.raven.connection;
 
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
-import com.getsentry.raven.time.Clock;
-import com.getsentry.raven.time.SystemClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Abstract connection to a Sentry server.
@@ -24,46 +20,17 @@ public abstract class AbstractConnection implements Connection {
      * Current Sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "6";
-    /**
-     * Default maximum duration for a lockdown.
-     */
-    public static final long DEFAULT_MAX_LOCKDOWN_TIME = TimeUnit.MINUTES.toMillis(5);
-    /**
-     * Default base duration for a lockdown.
-     */
-    public static final long DEFAULT_BASE_LOCKDOWN_TIME = TimeUnit.SECONDS.toMillis(1);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
     /**
      * Value of the X-Sentry-Auth header.
      */
     private final String authHeader;
     /**
-     * Clock instance used for time, injectable for testing.
-     */
-    private final Clock clock = new SystemClock();
-    /**
-     * Maximum duration for a lockdown, in milliseconds.
-     */
-    private long maxLockdownTime = DEFAULT_MAX_LOCKDOWN_TIME;
-    /**
-     * Base duration for a lockdown, in milliseconds.
-     * <p>
-     * On each attempt the time is doubled until it reaches {@link #maxLockdownTime}.
-     */
-    private long baseLockdownTime = DEFAULT_BASE_LOCKDOWN_TIME;
-    /**
-     * Number of milliseconds after lockdownStartTime to lockdown for, or 0 if not currently locked down.
-     */
-    private long lockdownTime = 0;
-    /**
-     * Timestamp of when the current lockdown started, or null if not currently locked down.
-     */
-    private Date lockdownStartTime = null;
-    /**
      * Set of callbacks that will be called when an exception occurs while attempting to
      * send events to the Sentry server.
      */
     private Set<EventSendFailureCallback> eventSendFailureCallbacks;
+    private LockdownManager lockdownManager;
 
     /**
      * Creates a connection based on the public and secret keys.
@@ -72,11 +39,12 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
+        this.lockdownManager = new LockdownManager();
         this.eventSendFailureCallbacks = new HashSet<>();
         this.authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
-                + "sentry_client=" + RavenEnvironment.getRavenName() + ","
-                + "sentry_key=" + publicKey + ","
-                + "sentry_secret=" + secretKey;
+            + "sentry_client=" + RavenEnvironment.getRavenName() + ","
+            + "sentry_key=" + publicKey + ","
+            + "sentry_secret=" + secretKey;
     }
 
     /**
@@ -91,7 +59,7 @@ public abstract class AbstractConnection implements Connection {
     @Override
     public final void send(Event event) throws ConnectionException {
         try {
-            if (isLockedDown()) {
+            if (lockdownManager.isLockedDown()) {
                 /*
                 An exception is thrown to signal that this Event was not sent, which may be
                 important in, for example, a BufferedConnection where the Event would be deleted
@@ -102,7 +70,7 @@ public abstract class AbstractConnection implements Connection {
 
             doSend(event);
 
-            resetLockdown();
+            lockdownManager.resetLockdown();
         } catch (ConnectionException e) {
             for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
                 try {
@@ -114,37 +82,10 @@ public abstract class AbstractConnection implements Connection {
             }
 
             logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
-            setLockdownState(e);
+            lockdownManager.setLockdownState(e);
 
             throw e;
         }
-    }
-
-    private synchronized boolean isLockedDown() {
-        return lockdownStartTime != null && (clock.millis() - lockdownStartTime.getTime()) < lockdownTime;
-    }
-
-    private synchronized void resetLockdown() {
-        lockdownTime = 0;
-        lockdownStartTime = null;
-    }
-
-    private synchronized void setLockdownState(ConnectionException connectionException) {
-        // If we are already in a lockdown state, don't change anything
-        if (isLockedDown()) {
-            return;
-        }
-
-        if (connectionException.getRecommendedLockdownTime() != null) {
-            lockdownTime = connectionException.getRecommendedLockdownTime();
-        } else if (lockdownTime != 0) {
-            lockdownTime = lockdownTime * 2;
-        } else {
-            lockdownTime = baseLockdownTime;
-        }
-
-        lockdownTime = Math.min(maxLockdownTime, lockdownTime);
-        lockdownStartTime = clock.date();
     }
 
     /**
@@ -155,12 +96,26 @@ public abstract class AbstractConnection implements Connection {
      */
     protected abstract void doSend(Event event) throws ConnectionException;
 
+    /**
+     * Set the maximum waiting time for a lockdown, in milliseconds.
+     *
+     * @param maxWaitingTime maximum waiting time for a lockdown, in milliseconds.
+     * @deprecated slated for removal
+     */
+    @Deprecated
     public void setMaxWaitingTime(long maxWaitingTime) {
-        this.maxLockdownTime = maxWaitingTime;
+        lockdownManager.setMaxLockdownTime(maxWaitingTime);
     }
 
+    /**
+     * Set the base waiting time for a lockdown, in milliseconds.
+     *
+     * @param baseWaitingTime base waiting time for a lockdown, in milliseconds.
+     * @deprecated slated for removal
+     */
+    @Deprecated
     public void setBaseWaitingTime(long baseWaitingTime) {
-        this.baseLockdownTime = baseWaitingTime;
+        lockdownManager.setBaseLockdownTime(baseWaitingTime);
     }
 
     /**
