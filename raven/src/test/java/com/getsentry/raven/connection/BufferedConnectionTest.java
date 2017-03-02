@@ -4,9 +4,7 @@ import com.getsentry.raven.BaseTest;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
-import com.getsentry.raven.time.Clock;
 import com.getsentry.raven.time.FixedClock;
-import mockit.Injectable;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -28,8 +26,8 @@ import static org.hamcrest.core.Is.is;
 
 public class BufferedConnectionTest extends BaseTest {
     private static final Date FIXED_DATE = new Date(1483228800L);
-    private FixedClock clock = new FixedClock(FIXED_DATE);
-    private LockdownManager lockdownManager = new LockdownManager(clock);
+    private FixedClock fixedClock = new FixedClock(FIXED_DATE);
+    private LockdownManager lockdownManager = new LockdownManager(fixedClock);
 
     private Set<Event> bufferedEvents;
     private List<Event> sentEvents;
@@ -65,8 +63,8 @@ public class BufferedConnectionTest extends BaseTest {
             }
         };
 
-        clock = new FixedClock(FIXED_DATE);
-        lockdownManager = new LockdownManager(clock);
+        fixedClock = new FixedClock(FIXED_DATE);
+        lockdownManager = new LockdownManager(fixedClock);
 
         mockBuffer = new Buffer() {
             @Override
@@ -120,7 +118,7 @@ public class BufferedConnectionTest extends BaseTest {
         assertThat(bufferedEvents.size(), equalTo(2));
 
         // End the lockdown
-        clock.tick(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
+        fixedClock.tick(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
 
         connectionUp = true;
         waitUntilTrue(1000, new Callable<Boolean>() {

@@ -1,6 +1,5 @@
 package com.getsentry.raven.connection;
 
-import com.getsentry.raven.time.Clock;
 import com.getsentry.raven.time.FixedClock;
 import mockit.*;
 import com.getsentry.raven.event.Event;
@@ -26,13 +25,13 @@ public class AbstractConnectionTest {
     private final String secretKey = "56a9d05e-9032-4fdd-8f67-867d526422f9";
     @Tested
     private AbstractConnection abstractConnection = null;
-    private FixedClock clock = new FixedClock(FIXED_DATE);
-    private LockdownManager lockdownManager = new LockdownManager(clock);
+    private FixedClock fixedClock = new FixedClock(FIXED_DATE);
+    private LockdownManager lockdownManager = new LockdownManager(fixedClock);
 
     @BeforeMethod
     public void setup() {
-        clock = new FixedClock(FIXED_DATE);
-        lockdownManager = new LockdownManager(clock);
+        fixedClock = new FixedClock(FIXED_DATE);
+        lockdownManager = new LockdownManager(fixedClock);
     }
 
     @Test
@@ -101,7 +100,7 @@ public class AbstractConnectionTest {
         assertThat(lockdownTimeAfter, is(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME));
 
         // Roll forward by the base lockdown time, allowing the lockdown to retried
-        clock.tick(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
+        fixedClock.tick(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
 
         // Send a second event, doubling the lockdown
         try {
@@ -119,7 +118,7 @@ public class AbstractConnectionTest {
     public void testLockDownDoesntDoubleItAtMax(@Injectable final Event mockEvent) throws Exception {
         setField(abstractConnection, "lockdownManager", lockdownManager);
         setField(lockdownManager, "lockdownTime", LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME);
-        setField(lockdownManager, "lockdownStartTime", clock.date());
+        setField(lockdownManager, "lockdownStartTime", fixedClock.date());
 
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
