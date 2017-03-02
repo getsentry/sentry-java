@@ -77,7 +77,7 @@ public final class Util {
     /**
      * Check whether the application is running in an emulator. http://stackoverflow.com/a/21505193
      *
-     * @return true if the application is running in an emulator, false otherwise.
+     * @return true if the application is running in an emulator, false otherwise
      */
     public static boolean isEmulator() {
         return Build.FINGERPRINT.startsWith("generic")
@@ -145,15 +145,17 @@ public final class Util {
         }
 
         // CHECKSTYLE.OFF: MagicNumber
-        return ((float) level / (float) scale) * 100.0f;
+        float percentMultiplier = 100.0f;
         // CHECKSTYLE.ON: MagicNumber
+
+        return ((float) level / (float) scale) * percentMultiplier;
     }
 
     /**
      * Checks whether or not the device is currently plugged in and charging, or null if unknown.
      *
      * @param ctx Android application context
-     * @return whether or not the device is currently plugged in and charging, or null if unknown.
+     * @return whether or not the device is currently plugged in and charging, or null if unknown
      */
     public static Boolean isCharging(Context ctx) {
         Intent intent = ctx.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
@@ -168,7 +170,7 @@ public final class Util {
     /**
      * Get the device's current kernel version, as a string (from uname -a).
      *
-     * @return the device's current kernel version, as a string (from uname -a).
+     * @return the device's current kernel version, as a string (from uname -a)
      */
     public static String getKernelVersion() {
         String errorMsg = "Exception while attempting to read kernel information";
@@ -242,7 +244,7 @@ public final class Util {
     /**
      * Get the unused amount of internal storage, in bytes.
      *
-     * @return the unused amount of internal storage, in bytes.
+     * @return the unused amount of internal storage, in bytes
      */
     public static long getUnusedInternalStorage() {
         File path = Environment.getDataDirectory();
@@ -255,7 +257,7 @@ public final class Util {
     /**
      * Get the total amount of internal storage, in bytes.
      *
-     * @return the total amount of internal storage, in bytes.
+     * @return the total amount of internal storage, in bytes
      */
     public static long getTotalInternalStorage() {
         File path = Environment.getDataDirectory();
