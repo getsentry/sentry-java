@@ -171,29 +171,27 @@ public final class Util {
      * @return the device's current kernel version, as a string (from uname -a).
      */
     public static String getKernelVersion() {
+        String errorMsg = "Exception while attempting to read kernel information";
         BufferedReader br = null;
         try {
             Process p = Runtime.getRuntime().exec("uname -a");
-            InputStream is = null;
             if (p.waitFor() == 0) {
-                is = p.getInputStream();
-            } else {
-                is = p.getErrorStream();
+                br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                return br.readLine();
             }
-            br = new BufferedReader(new InputStreamReader(is));
-            return br.readLine();
         } catch (Exception e) {
-            Log.e(TAG, "Exception while attempting to read kernel information", e);
-            return null;
+            Log.e(TAG, errorMsg, e);
         } finally {
             if (br != null) {
                 try {
                     br.close();
                 } catch (IOException ioe) {
-                    Log.e(TAG, "Exception while attempting to read kernel information", ioe);
+                    Log.e(TAG, errorMsg, ioe);
                 }
             }
         }
+
+        return null;
     }
 
     /**
