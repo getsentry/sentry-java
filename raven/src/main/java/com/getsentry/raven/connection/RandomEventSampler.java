@@ -44,7 +44,7 @@ public class RandomEventSampler implements EventSampler {
      */
     @Override
     public boolean shouldSendEvent(Event event) {
-        double randomFloat = random.nextDouble();
-        return sampleRate > Math.abs(randomFloat);
+        double randomDouble = random.nextDouble();
+        return sampleRate > Math.abs(randomDouble);
     }
 }
