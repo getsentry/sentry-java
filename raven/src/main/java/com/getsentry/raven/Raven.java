@@ -1,6 +1,7 @@
 package com.getsentry.raven;
 
 import com.getsentry.raven.connection.Connection;
+import com.getsentry.raven.connection.LockedDownException;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
@@ -23,6 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Raven {
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
+    // CHECKSTYLE.OFF: ConstantName
+    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class + ".lockdown");
+    // CHECKSTYLE.ON: ConstantName
     /**
      * The most recently constructed Raven instance, used by static helper methods like {@link Raven#capture(Event)}.
      */
@@ -93,6 +97,8 @@ public class Raven {
     public void sendEvent(Event event) {
         try {
             connection.send(event);
+        } catch (LockedDownException e) {
+            lockdownLogger.warn("The connection to Sentry is currently locked down.", e);
         } catch (Exception e) {
             logger.error("An exception occurred while sending the event to Sentry.", e);
         } finally {
