@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
+import static org.testng.Assert.fail;
 
 public class HttpConnectionTest {
     @Injectable
@@ -134,6 +135,26 @@ public class HttpConnectionTest {
         }};
 
         httpConnection.doSend(mockEvent);
+    }
+
+    @Test
+    public void testRetryAfterHeader(@Injectable final Event mockEvent) throws Exception {
+        final String httpErrorMessage = "93e3ddb1-c4f3-46c3-9900-529de83678b7";
+        new NonStrictExpectations() {{
+            mockUrlConnection.getOutputStream();
+            result = new IOException();
+            mockUrlConnection.getErrorStream();
+            result = new ByteArrayInputStream(httpErrorMessage.getBytes());
+            mockUrlConnection.getHeaderField("Retry-After");
+            result = "12345";
+        }};
+
+        try {
+            httpConnection.doSend(mockEvent);
+            fail();
+        } catch (ConnectionException e) {
+            assertThat(e.getRecommendedLockdownTime(), is(12345L * 1000L));
+        }
     }
 
     @Test
