@@ -70,7 +70,7 @@ public class LockdownManager {
     /**
      * Reset the lockdown state, disabling lockdown and setting the backoff time to zero.
      */
-    public synchronized void resetLockdown() {
+    public synchronized void resetState() {
         lockdownTime = 0;
         lockdownStartTime = null;
     }
@@ -82,7 +82,7 @@ public class LockdownManager {
      * @param connectionException ConnectionException to check for a recommended
      *                            lockdown time, may be null
      */
-    public synchronized void setLockdownState(ConnectionException connectionException) {
+    public synchronized void setState(ConnectionException connectionException) {
         // If we are already in a lockdown state, don't change anything
         if (isLockedDown()) {
             return;

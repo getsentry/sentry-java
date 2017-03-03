@@ -70,7 +70,7 @@ public abstract class AbstractConnection implements Connection {
 
             doSend(event);
 
-            lockdownManager.resetLockdown();
+            lockdownManager.resetState();
         } catch (ConnectionException e) {
             for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
                 try {
@@ -82,7 +82,7 @@ public abstract class AbstractConnection implements Connection {
             }
 
             logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
-            lockdownManager.setLockdownState(e);
+            lockdownManager.setState(e);
 
             throw e;
         }
