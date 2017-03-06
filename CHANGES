@@ -1,14 +1,13 @@
 Version 7.8.4
 -------------
 
--
+- Add ``contexts`` field support to Events.
+- Automatically collect device information in ``contexts`` field on Android.
 
 Version 7.8.3
 -------------
 
 - Add User to RavenContext and ContextBuilderHelper. (thanks mpecan)
-- Add ``contexts`` field support to Events.
-- Automatically collect device information in ``contexts`` field on Android.
 - Drop Events when the connection is locked down, users must enable buffering to attempt to resend later.
 - Respect the Sentry server's ``Retry-After`` header.
 
