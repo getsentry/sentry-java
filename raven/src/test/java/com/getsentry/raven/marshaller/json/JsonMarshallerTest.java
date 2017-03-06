@@ -12,12 +12,7 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static com.getsentry.raven.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -265,6 +260,36 @@ public class JsonMarshallerTest {
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
         assertThat(jsonOutputStreamParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/jsonmarshallertest/testBreadcrumbs.json")));
+    }
+
+    @Test
+    public void testEventContextsWrittenProperly() throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+
+        final HashMap<String, Map<String, Object>> contexts = new HashMap<>();
+        HashMap<String, Object> context1 = new HashMap<>();
+        context1.put("context1key1", "context1value1");
+        context1.put("context1key2", 12);
+        context1.put("context1key3", 1.3);
+        context1.put("context1key4", true);
+
+        HashMap<String, Object> context2 = new HashMap<>();
+        context2.put("context2key1", "context2value1");
+        context2.put("context2key2", 22);
+        context2.put("context2key3", 2.3);
+        context2.put("context2key4", false);
+
+        contexts.put("context1", context1);
+        contexts.put("context2", context2);
+
+        new NonStrictExpectations() {{
+            mockEvent.getContexts();
+            result = contexts;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/jsonmarshallertest/testContexts.json")));
     }
 
     @Test

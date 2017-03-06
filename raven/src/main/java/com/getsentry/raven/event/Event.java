@@ -77,6 +77,10 @@ public class Event implements Serializable {
      */
     private List<Breadcrumb> breadcrumbs = new ArrayList<>();
     /**
+     * Map of map of context objects related to the event.
+     */
+    private Map<String, Map<String, Object>> contexts = new HashMap<>();
+    /**
      * Identifies the version of the application.
      */
     private String release;
@@ -199,6 +203,14 @@ public class Event implements Serializable {
 
     void setBreadcrumbs(List<Breadcrumb> breadcrumbs) {
         this.breadcrumbs = breadcrumbs;
+    }
+
+    public Map<String, Map<String, Object>> getContexts() {
+        return contexts;
+    }
+
+    public void setContexts(Map<String, Map<String, Object>> contexts) {
+        this.contexts = contexts;
     }
 
     public Map<String, String> getTags() {

@@ -1,7 +1,7 @@
 Version 7.8.4
 -------------
 
--
+- Add ``contexts`` field support to Events.
 
 Version 7.8.3
 -------------
