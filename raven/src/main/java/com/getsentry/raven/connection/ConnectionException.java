@@ -6,8 +6,14 @@ package com.getsentry.raven.connection;
  * This allows connections to know when to back off for a while.
  */
 public class ConnectionException extends RuntimeException {
+    /**
+     * Recommended duration to initiate a lockdown for, in milliseconds.
+     */
+    private Long recommendedLockdownTime = null;
+
     //CHECKSTYLE.OFF: JavadocMethod
     public ConnectionException() {
+
     }
 
     public ConnectionException(String message) {
@@ -18,8 +24,17 @@ public class ConnectionException extends RuntimeException {
         super(message, cause);
     }
 
+    public ConnectionException(String message, Throwable cause, Long recommendedLockdownTime) {
+        super(message, cause);
+        this.recommendedLockdownTime = recommendedLockdownTime;
+    }
+
     public ConnectionException(Throwable cause) {
         super(cause);
+    }
+
+    public Long getRecommendedLockdownTime() {
+        return recommendedLockdownTime;
     }
     //CHECKSTYLE.ON: JavadocMethod
 }

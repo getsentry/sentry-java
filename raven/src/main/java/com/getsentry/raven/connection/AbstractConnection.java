@@ -7,11 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Abstract connection to a Sentry server.
@@ -22,38 +17,20 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AbstractConnection implements Connection {
     /**
-     * Current sentry protocol version.
+     * Current Sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "6";
-    /**
-     * Default maximum duration for a lockdown.
-     */
-    public static final long DEFAULT_MAX_WAITING_TIME = TimeUnit.MINUTES.toMillis(5);
-    /**
-     * Default base duration for a lockdown.
-     */
-    public static final long DEFAULT_BASE_WAITING_TIME = TimeUnit.MILLISECONDS.toMillis(10);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
-    private final AtomicBoolean lockdown = new AtomicBoolean();
-    private final Lock lock = new ReentrantLock();
-    private final Condition condition = lock.newCondition();
+    /**
+     * Value of the X-Sentry-Auth header.
+     */
     private final String authHeader;
-    /**
-     * Maximum duration for a lockdown.
-     */
-    private long maxWaitingTime = DEFAULT_MAX_WAITING_TIME;
-    /**
-     * Base duration for a lockdown.
-     * <p>
-     * On each attempt the time is doubled until it reaches {@link #maxWaitingTime}.
-     */
-    private long baseWaitingTime = DEFAULT_BASE_WAITING_TIME;
-    private long waitingTime = baseWaitingTime;
     /**
      * Set of callbacks that will be called when an exception occurs while attempting to
      * send events to the Sentry server.
      */
     private Set<EventSendFailureCallback> eventSendFailureCallbacks;
+    private LockdownManager lockdownManager;
 
     /**
      * Creates a connection based on the public and secret keys.
@@ -62,15 +39,16 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
-        eventSendFailureCallbacks = new HashSet<>();
-        authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
-                + "sentry_client=" + RavenEnvironment.getRavenName() + ","
-                + "sentry_key=" + publicKey + ","
-                + "sentry_secret=" + secretKey;
+        this.lockdownManager = new LockdownManager();
+        this.eventSendFailureCallbacks = new HashSet<>();
+        this.authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
+            + "sentry_client=" + RavenEnvironment.getRavenName() + ","
+            + "sentry_key=" + publicKey + ","
+            + "sentry_secret=" + secretKey;
     }
 
     /**
-     * Creates an authentication header for the sentry protocol.
+     * Creates an authentication header for the Sentry protocol.
      *
      * @return an authentication header as a String.
      */
@@ -81,14 +59,19 @@ public abstract class AbstractConnection implements Connection {
     @Override
     public final void send(Event event) throws ConnectionException {
         try {
-            waitIfLockedDown();
+            if (lockdownManager.isLockedDown()) {
+                /*
+                An exception is thrown to signal that this Event was not sent, which may be
+                important in, for example, a BufferedConnection where the Event would be deleted
+                from the Buffer if an exception isn't raised in the call to send.
+                 */
+                throw new LockedDownException("Dropping an Event due to lockdown: " + event);
+            }
 
             doSend(event);
-            waitingTime = baseWaitingTime;
-        } catch (ConnectionException e) {
-            logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
-            lockDown();
 
+            lockdownManager.resetState();
+        } catch (ConnectionException e) {
             for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
                 try {
                     eventSendFailureCallback.onFailure(event, e);
@@ -98,74 +81,41 @@ public abstract class AbstractConnection implements Connection {
                 }
             }
 
+            logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
+            lockdownManager.setState(e);
+
             throw e;
         }
     }
 
     /**
-     * Pauses the current thread if there is a lockdown.
-     */
-    private void waitIfLockedDown() {
-        while (lockdown.get()) {
-            lock.lock();
-            try {
-                if (lockdown.get()) {
-                    condition.await();
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("An exception occurred during the lockdown.", e);
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
-     * Initiates a lockdown for {@link #waitingTime}ms and resume the paused threads once the lockdown ends.
-     */
-    private void lockDown() {
-        if (!lockdown.compareAndSet(false, true)) {
-            return;
-        }
-
-        try {
-            logger.warn("Lockdown started for {}ms.", waitingTime);
-            Thread.sleep(waitingTime);
-
-            // Double the wait until the maximum is reached
-            if (waitingTime < maxWaitingTime) {
-                waitingTime <<= 1;
-            }
-        } catch (Exception e) {
-            logger.warn("An exception occurred during the lockdown.", e);
-        } finally {
-            lockdown.set(false);
-
-            lock.lock();
-            try {
-                condition.signalAll();
-            } finally {
-                lock.unlock();
-            }
-            logger.warn("Lockdown ended.");
-        }
-    }
-
-    /**
-     * Sends an event to the sentry server.
+     * Sends an event to the Sentry server.
      *
      * @param event captured event to add in Sentry.
      * @throws ConnectionException whenever a temporary exception due to the connection happened.
      */
     protected abstract void doSend(Event event) throws ConnectionException;
 
+    /**
+     * Set the maximum waiting time for a lockdown, in milliseconds.
+     *
+     * @param maxWaitingTime maximum waiting time for a lockdown, in milliseconds.
+     * @deprecated slated for removal
+     */
+    @Deprecated
     public void setMaxWaitingTime(long maxWaitingTime) {
-        this.maxWaitingTime = maxWaitingTime;
+        lockdownManager.setMaxLockdownTime(maxWaitingTime);
     }
 
+    /**
+     * Set the base waiting time for a lockdown, in milliseconds.
+     *
+     * @param baseWaitingTime base waiting time for a lockdown, in milliseconds.
+     * @deprecated slated for removal
+     */
+    @Deprecated
     public void setBaseWaitingTime(long baseWaitingTime) {
-        this.baseWaitingTime = baseWaitingTime;
+        lockdownManager.setBaseLockdownTime(baseWaitingTime);
     }
 
     /**

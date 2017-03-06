@@ -9,9 +9,7 @@ import java.util.Random;
  * sample rate to random bits from the Event's ID.
  */
 public class RandomEventSampler implements EventSampler {
-    private static final int RATE_MULTIPLIER = 100;
-
-    private int sampleRate;
+    private double sampleRate;
     private Random random;
 
     /**
@@ -34,7 +32,7 @@ public class RandomEventSampler implements EventSampler {
      * @param random Random instance to use for sampling, useful for testing.
      */
     public RandomEventSampler(double sampleRate, Random random) {
-        this.sampleRate = (int) (sampleRate * RATE_MULTIPLIER);
+        this.sampleRate = sampleRate;
         this.random = random;
     }
 
@@ -46,6 +44,7 @@ public class RandomEventSampler implements EventSampler {
      */
     @Override
     public boolean shouldSendEvent(Event event) {
-        return Math.abs(random.nextInt()) % RATE_MULTIPLIER < sampleRate;
+        double randomDouble = random.nextDouble();
+        return sampleRate >= Math.abs(randomDouble);
     }
 }
