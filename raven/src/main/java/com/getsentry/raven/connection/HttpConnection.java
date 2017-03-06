@@ -142,7 +142,7 @@ public class HttpConnection extends AbstractConnection {
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
             return connection;
         } catch (IOException e) {
-            throw new IllegalStateException("Couldn't set up a connection to the sentry server.", e);
+            throw new IllegalStateException("Couldn't set up a connection to the Sentry server.", e);
         }
     }
 
@@ -166,9 +166,24 @@ public class HttpConnection extends AbstractConnection {
                 errorMessage = getErrorMessageFromStream(errorStream);
             }
             if (null == errorMessage || errorMessage.isEmpty()) {
-                errorMessage = "An exception occurred while submitting the event to the sentry server.";
+                errorMessage = "An exception occurred while submitting the event to the Sentry server.";
             }
-            throw new ConnectionException(errorMessage, e);
+
+            Long retryAfterMs = null;
+            String retryAfterHeader = connection.getHeaderField("Retry-After");
+            if (retryAfterHeader != null) {
+                // CHECKSTYLE.OFF: EmptyCatchBlock
+                try {
+                    // CHECKSTYLE.OFF: MagicNumber
+                    retryAfterMs = Long.parseLong(retryAfterHeader) * 1000L; // seconds -> milliseconds
+                    // CHECKSTYLE.ON: MagicNumber
+                } catch (NumberFormatException nfe) {
+                    // noop, use default retry
+                }
+                // CHECKSTYLE.ON: EmptyCatchBlock
+            }
+
+            throw new ConnectionException(errorMessage, e, retryAfterMs);
         } finally {
             connection.disconnect();
         }

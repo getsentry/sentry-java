@@ -192,34 +192,6 @@ with the option ``raven.async.priority``:
 
     http://public:private@host:port/1?raven.async.priority=10
 
-Graceful Shutdown (Advanced)
-````````````````````````````
-
-In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
-is created. By default, the buffer flushing thread is given 1 second
-to shutdown gracefully, but this can be adjusted via
-``raven.buffer.shutdowntimeout`` (represented in milliseconds):
-
-::
-
-    http://public:private@host:port/1?raven.buffer.shutdowntimeout=5000
-
-The special value ``-1`` can be used to disable the timeout and wait
-indefinitely for the executor to terminate.
-
-The ``ShutdownHook`` could lead to memory leaks in an environment where
-the life cycle of Raven doesn't match the life cycle of the JVM.
-
-An example would be in a JEE environment where the application using Raven
-could be deployed and undeployed regularly.
-
-To avoid this behaviour, it is possible to disable the graceful shutdown
-by setting the ``raven.buffer.gracefulshutdown`` option:
-
-::
-
-    http://public:private@host:port/1?raven.buffer.gracefulshutdown=false
-
 Buffering Events to Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -248,6 +220,34 @@ attempt to send events every 60 seconds. You can change this with the
 ::
 
     http://public:private@host:port/1?raven.buffer.flushtime=10000
+
+Graceful Shutdown (Advanced)
+````````````````````````````
+
+In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
+is created. By default, the buffer flushing thread is given 1 second
+to shutdown gracefully, but this can be adjusted via
+``raven.buffer.shutdowntimeout`` (represented in milliseconds):
+
+::
+
+    http://public:private@host:port/1?raven.buffer.shutdowntimeout=5000
+
+The special value ``-1`` can be used to disable the timeout and wait
+indefinitely for the executor to terminate.
+
+The ``ShutdownHook`` could lead to memory leaks in an environment where
+the life cycle of Raven doesn't match the life cycle of the JVM.
+
+An example would be in a JEE environment where the application using Raven
+could be deployed and undeployed regularly.
+
+To avoid this behaviour, it is possible to disable the graceful shutdown
+by setting the ``raven.buffer.gracefulshutdown`` option:
+
+::
+
+    http://public:private@host:port/1?raven.buffer.gracefulshutdown=false
 
 Event Sampling
 ~~~~~~~~~~~~~~

@@ -13,24 +13,30 @@ import static org.hamcrest.Matchers.is;
 
 public class RandomEventSamplerTest {
     private Event event = new EventBuilder().build();
-    private Random seededRandom = new Random();
 
-    @BeforeMethod
-    public void setup() {
-        // set our Random to a known seed such that nextInt % 100 == -25
-        seededRandom.setSeed(1);
+    private void testRandomEventSampler(double sampleRate, double fakeRandom, boolean expected) {
+        RandomEventSampler randomEventSampler = new RandomEventSampler(sampleRate, new FakeRandom(fakeRandom));
+        assertThat(randomEventSampler.shouldSendEvent(event), is(expected));
     }
 
     @Test
     public void testShouldSend() {
-        RandomEventSampler randomEventSampler = new RandomEventSampler(0.5, seededRandom);
-        assertThat(randomEventSampler.shouldSendEvent(event), is(true));
+        testRandomEventSampler(0.8, 0.75, true);
+        testRandomEventSampler(1.0, 0.99, true);
+        testRandomEventSampler(0.1, 0.75, false);
+        testRandomEventSampler(0.0, 1.0, false);
     }
 
-    @Test
-    public void testShouldNotSend() {
-        RandomEventSampler randomEventSampler = new RandomEventSampler(0.1, seededRandom);
-        assertThat(randomEventSampler.shouldSendEvent(event), is(false));
-    }
+    private class FakeRandom extends Random {
+        private double fakeRandom;
 
+        FakeRandom(double FakeRandom) {
+            fakeRandom = FakeRandom;
+        }
+
+        @Override
+        public double nextDouble() {
+            return fakeRandom;
+        }
+    }
 }
