@@ -111,7 +111,11 @@ public class EventBuilder {
         event.setBreadcrumbs(Collections.unmodifiableList(event.getBreadcrumbs()));
 
         // Make the contexts unmodifiable
-        event.setContexts(Collections.unmodifiableMap(event.getContexts()));
+        HashMap<String, Map<String, Object>> tempContexts = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> contextEntry : event.getContexts().entrySet()) {
+            tempContexts.put(contextEntry.getKey(), Collections.unmodifiableMap(contextEntry.getValue()));
+        }
+        event.setContexts(Collections.unmodifiableMap(tempContexts));
 
         // Make the extra properties unmodifiable (everything in it is still mutable though)
         event.setExtra(Collections.unmodifiableMap(event.getExtra()));
