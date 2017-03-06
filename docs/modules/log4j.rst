@@ -19,22 +19,22 @@ Using Maven:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-log4j</artifactId>
-        <version>7.8.2</version>
+        <version>7.8.3</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-log4j:7.8.2'
+    compile 'com.getsentry.raven:raven-log4j:7.8.3'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven-log4j" % "7.8.2"
+    libraryDependencies += "com.getsentry.raven" % "raven-log4j" % "7.8.3"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.8.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C7.8.3%7Cjar>`_.
 
 Usage
 -----
