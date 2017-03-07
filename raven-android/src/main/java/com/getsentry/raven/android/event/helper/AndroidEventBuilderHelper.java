@@ -101,10 +101,11 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         }
 
         ActivityManager.MemoryInfo memInfo = getMemInfo(ctx);
-        // deviceMap.put("usable_memory", ""); // Android doesn't seem to provide this as its own value, but iOS does?
-        deviceMap.put("free_memory", memInfo.availMem);
-        deviceMap.put("memory_size", memInfo.totalMem);
-        deviceMap.put("low_memory",  memInfo.lowMemory);
+        if (memInfo != null) {
+            deviceMap.put("free_memory", memInfo.availMem);
+            deviceMap.put("memory_size", memInfo.totalMem);
+            deviceMap.put("low_memory",  memInfo.lowMemory);
+        }
 
         // Operating System
         osMap.put("name",           "Android");
