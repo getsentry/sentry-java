@@ -32,6 +32,7 @@ public class HttpInterface implements SentryInterface {
     private final String authType;
     private final String remoteUser;
     private final Map<String, Collection<String>> headers;
+    private final String body;
 
     /**
      * This constructor is for compatibility reasons and should not be used.
@@ -49,6 +50,17 @@ public class HttpInterface implements SentryInterface {
      * @param remoteAddressResolver RemoteAddressResolver
      */
     public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver) {
+        this(request, remoteAddressResolver, null);
+    }
+
+    /**
+     * Creates a an HTTP element for an {@link com.getsentry.raven.event.Event}.
+     *
+     * @param request Captured HTTP request to send to Sentry.
+     * @param remoteAddressResolver RemoteAddressResolver
+     * @param body HTTP request body (optional)
+     */
+    public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver, String body) {
         this.requestUrl = request.getRequestURL().toString();
         this.method = request.getMethod();
         this.parameters = new HashMap<>();
@@ -79,6 +91,7 @@ public class HttpInterface implements SentryInterface {
         for (String headerName : Collections.list(request.getHeaderNames())) {
             this.headers.put(headerName, Collections.list(request.getHeaders(headerName)));
         }
+        this.body = body;
     }
 
     @Override
@@ -148,6 +161,10 @@ public class HttpInterface implements SentryInterface {
 
     public String getRemoteUser() {
         return remoteUser;
+    }
+
+    public String getBody() {
+        return body;
     }
 
     public Map<String, Collection<String>> getHeaders() {
@@ -224,6 +241,9 @@ public class HttpInterface implements SentryInterface {
             return false;
         }
         if (serverName != null ? !serverName.equals(that.serverName) : that.serverName != null) {
+            return false;
+        }
+        if (body != null ? !body.equals(that.body) : that.body != null) {
             return false;
         }
 

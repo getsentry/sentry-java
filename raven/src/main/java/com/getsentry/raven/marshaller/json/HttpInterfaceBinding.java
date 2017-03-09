@@ -2,6 +2,7 @@ package com.getsentry.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.getsentry.raven.event.interfaces.HttpInterface;
+import com.getsentry.raven.util.Util;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -11,9 +12,14 @@ import java.util.Map;
  * Binding system allowing to convert an {@link HttpInterface} into a JSON stream.
  */
 public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
+    /**
+     * Maximum length for the HTTP request body.
+     */
+    public static final int MAX_BODY_LENGTH = 1000;
     private static final String URL = "url";
     private static final String METHOD = "method";
     private static final String DATA = "data";
+    private static final String BODY = "body";
     private static final String QUERY_STRING = "query_string";
     private static final String COOKIES = "cookies";
     private static final String HEADERS = "headers";
@@ -36,7 +42,7 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
         generator.writeStringField(URL, httpInterface.getRequestUrl());
         generator.writeStringField(METHOD, httpInterface.getMethod());
         generator.writeFieldName(DATA);
-        writeData(generator, httpInterface.getParameters());
+        writeData(generator, httpInterface.getParameters(), httpInterface.getBody());
         generator.writeStringField(QUERY_STRING, httpInterface.getQueryString());
         generator.writeFieldName(COOKIES);
         writeCookies(generator, httpInterface.getCookies());
@@ -91,19 +97,26 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
         generator.writeEndObject();
     }
 
-    private void writeData(JsonGenerator generator, Map<String, Collection<String>> parameterMap) throws IOException {
-        if (parameterMap == null) {
+    private void writeData(JsonGenerator generator,
+                           Map<String, Collection<String>> parameterMap,
+                           String body) throws IOException {
+        if (parameterMap == null && body == null) {
             generator.writeNull();
             return;
         }
 
         generator.writeStartObject();
-        for (Map.Entry<String, Collection<String>> parameter : parameterMap.entrySet()) {
-            generator.writeArrayFieldStart(parameter.getKey());
-            for (String parameterValue : parameter.getValue()) {
-                generator.writeString(parameterValue);
+        if (body != null) {
+            generator.writeStringField(BODY, Util.trimString(body, MAX_BODY_LENGTH));
+        }
+        if (parameterMap != null) {
+            for (Map.Entry<String, Collection<String>> parameter : parameterMap.entrySet()) {
+                generator.writeArrayFieldStart(parameter.getKey());
+                for (String parameterValue : parameter.getValue()) {
+                    generator.writeString(parameterValue);
+                }
+                generator.writeEndArray();
             }
-            generator.writeEndArray();
         }
         generator.writeEndObject();
     }
