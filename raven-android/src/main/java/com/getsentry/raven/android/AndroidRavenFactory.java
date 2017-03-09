@@ -48,8 +48,13 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
     @Override
     protected Buffer getBuffer(Dsn dsn) {
         File bufferDir;
-        if (dsn.getOptions().get(BUFFER_DIR_OPTION) != null) {
-            bufferDir = new File(dsn.getOptions().get(BUFFER_DIR_OPTION));
+        String bufferDirOpt = dsn.getOptions().get(BUFFER_DIR_OPTION);
+        if (bufferDirOpt != null) {
+            if (bufferDirOpt.trim().toLowerCase().equals("off")) {
+                return null;
+            }
+
+            bufferDir = new File(bufferDirOpt);
         } else {
             bufferDir = new File(ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
         }
