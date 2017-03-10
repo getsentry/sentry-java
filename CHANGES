@@ -1,7 +1,14 @@
+Version 7.8.5
+-------------
+
+-
+
 Version 7.8.4
 -------------
 
 - Add ``contexts`` field support to Events.
+- Add ``com.getsentry.raven.Raven.lockdown`` logger that can be disabled to ignore warning messages
+  on each attempted Event send when Raven is in lockdown mode.
 
 Version 7.8.3
 -------------

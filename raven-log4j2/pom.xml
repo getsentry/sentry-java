@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>7.8.4-SNAPSHOT</version>
+        <version>7.8.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven-log4j2</artifactId>
@@ -113,10 +113,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
