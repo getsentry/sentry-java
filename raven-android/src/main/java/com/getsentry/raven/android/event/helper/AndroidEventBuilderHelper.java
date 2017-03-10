@@ -42,7 +42,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
         String androidId = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
         if (androidId != null && !androidId.trim().equals("")) {
-            UserInterface userInterface = new UserInterface("android_id:" + androidId, null, null, null);
+            UserInterface userInterface = new UserInterface("android:" + androidId, null, null, null);
             // set user interface but *don't* replace if it's already there
             eventBuilder.withSentryInterface(userInterface, false);
         }
