@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -73,10 +72,10 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         contexts.put("device", deviceMap);
 
         // Device
-        deviceMap.put("family",                "Android");
         deviceMap.put("manufacturer",          Build.MANUFACTURER);
         deviceMap.put("brand",                 Build.BRAND);
         deviceMap.put("model",                 Build.MODEL);
+        deviceMap.put("family",                getFamily());
         deviceMap.put("model_id",              Build.ID);
         deviceMap.put("battery_level",         getBatteryLevel(ctx));
         deviceMap.put("orientation",           getOrientation(ctx));
@@ -117,20 +116,34 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         return contexts;
     }
 
+    private static String getFamily() {
+        try {
+            return Build.MODEL.split(" ")[0];
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting device family.", e);
+            return null;
+        }
+    }
+
     /**
      * Check whether the application is running in an emulator. http://stackoverflow.com/a/21505193
      *
      * @return true if the application is running in an emulator, false otherwise
      */
-    private static boolean isEmulator() {
-        return Build.FINGERPRINT.startsWith("generic")
-            || Build.FINGERPRINT.startsWith("unknown")
-            || Build.MODEL.contains("google_sdk")
-            || Build.MODEL.contains("Emulator")
-            || Build.MODEL.contains("Android SDK built for x86")
-            || Build.MANUFACTURER.contains("Genymotion")
-            || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-            || "google_sdk".equals(Build.PRODUCT);
+    private static Boolean isEmulator() {
+        try {
+            return Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")
+                || Build.MANUFACTURER.contains("Genymotion")
+                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
+                || "google_sdk".equals(Build.PRODUCT);
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking whether application is running in an emulator.", e);
+            return null;
+        }
     }
 
     /**
@@ -140,10 +153,15 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return MemoryInfo object representing the memory state of the application
      */
     private static ActivityManager.MemoryInfo getMemInfo(Context ctx) {
-        ActivityManager actManager = (ActivityManager) ctx.getSystemService(ACTIVITY_SERVICE);
-        ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
-        actManager.getMemoryInfo(memInfo);
-        return memInfo;
+        try {
+            ActivityManager actManager = (ActivityManager) ctx.getSystemService(ACTIVITY_SERVICE);
+            ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+            actManager.getMemoryInfo(memInfo);
+            return memInfo;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting MemoryInfo.", e);
+            return null;
+        }
     }
 
     /**
@@ -153,19 +171,24 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return the device's current screen orientation, or null if unknown
      */
     private static String getOrientation(Context ctx) {
-        String o;
-        switch (ctx.getResources().getConfiguration().orientation) {
-            case android.content.res.Configuration.ORIENTATION_LANDSCAPE:
-                o = "landscape";
-                break;
-            case android.content.res.Configuration.ORIENTATION_PORTRAIT:
-                o = "portrait";
-                break;
-            default:
-                o = null;
-                break;
+        try {
+            String o;
+            switch (ctx.getResources().getConfiguration().orientation) {
+                case android.content.res.Configuration.ORIENTATION_LANDSCAPE:
+                    o = "landscape";
+                    break;
+                case android.content.res.Configuration.ORIENTATION_PORTRAIT:
+                    o = "portrait";
+                    break;
+                default:
+                    o = null;
+                    break;
+            }
+            return o;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting device orientation.", e);
+            return null;
         }
-        return o;
     }
 
     /**
@@ -175,23 +198,28 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return the device's current battery level (as a percentage of total), or null if unknown
      */
     private static Float getBatteryLevel(Context ctx) {
-        Intent intent = ctx.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        if (intent == null) {
+        try {
+            Intent intent = ctx.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            if (intent == null) {
+                return null;
+            }
+
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+            if (level == -1 || scale == -1) {
+                return null;
+            }
+
+            // CHECKSTYLE.OFF: MagicNumber
+            float percentMultiplier = 100.0f;
+            // CHECKSTYLE.ON: MagicNumber
+
+            return ((float) level / (float) scale) * percentMultiplier;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting device battery level.", e);
             return null;
         }
-
-        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-
-        if (level == -1 || scale == -1) {
-            return null;
-        }
-
-        // CHECKSTYLE.OFF: MagicNumber
-        float percentMultiplier = 100.0f;
-        // CHECKSTYLE.ON: MagicNumber
-
-        return ((float) level / (float) scale) * percentMultiplier;
     }
 
     /**
@@ -201,13 +229,18 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return whether or not the device is currently plugged in and charging, or null if unknown
      */
     private static Boolean isCharging(Context ctx) {
-        Intent intent = ctx.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        if (intent == null) {
+        try {
+            Intent intent = ctx.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            if (intent == null) {
+                return null;
+            }
+
+            int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+            return plugged == BatteryManager.BATTERY_PLUGGED_AC || plugged == BatteryManager.BATTERY_PLUGGED_USB;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting device charging state.", e);
             return null;
         }
-
-        int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-        return plugged == BatteryManager.BATTERY_PLUGGED_AC || plugged == BatteryManager.BATTERY_PLUGGED_USB;
     }
 
     /**
@@ -277,12 +310,13 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         } catch (Exception e) {
             Log.e(TAG, "Exception while attempting to detect whether the device is rooted", e);
         }
+
         return false;
     }
 
     private static boolean isExternalStorageMounted() {
-        return Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED) &&
-            !Environment.isExternalStorageEmulated();
+        return Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED)
+            && !Environment.isExternalStorageEmulated();
     }
 
     /**
@@ -290,12 +324,17 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      *
      * @return the unused amount of internal storage, in bytes
      */
-    private static long getUnusedInternalStorage() {
-        File path = Environment.getDataDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long blockSize = stat.getBlockSize();
-        long availableBlocks = stat.getAvailableBlocks();
-        return availableBlocks * blockSize;
+    private static Long getUnusedInternalStorage() {
+        try {
+            File path = Environment.getDataDirectory();
+            StatFs stat = new StatFs(path.getPath());
+            long blockSize = stat.getBlockSize();
+            long availableBlocks = stat.getAvailableBlocks();
+            return availableBlocks * blockSize;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting unused internal storage amount.", e);
+            return null;
+        }
     }
 
     /**
@@ -303,12 +342,17 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      *
      * @return the total amount of internal storage, in bytes
      */
-    private static long getTotalInternalStorage() {
-        File path = Environment.getDataDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long blockSize = stat.getBlockSize();
-        long totalBlocks = stat.getBlockCount();
-        return totalBlocks * blockSize;
+    private static Long getTotalInternalStorage() {
+        try {
+            File path = Environment.getDataDirectory();
+            StatFs stat = new StatFs(path.getPath());
+            long blockSize = stat.getBlockSize();
+            long totalBlocks = stat.getBlockCount();
+            return totalBlocks * blockSize;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting total internal storage amount.", e);
+            return null;
+        }
     }
 
     /**
@@ -319,15 +363,19 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * is mounted
      */
     private static Long getUnusedExternalStorage() {
-        if (isExternalStorageMounted()) {
-            File path = Environment.getExternalStorageDirectory();
-            StatFs stat = new StatFs(path.getPath());
-            long blockSize = stat.getBlockSize();
-            long availableBlocks = stat.getAvailableBlocks();
-            return availableBlocks * blockSize;
-        } else {
-            return null;
+        try {
+            if (isExternalStorageMounted()) {
+                File path = Environment.getExternalStorageDirectory();
+                StatFs stat = new StatFs(path.getPath());
+                long blockSize = stat.getBlockSize();
+                long availableBlocks = stat.getAvailableBlocks();
+                return availableBlocks * blockSize;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting unused external storage amount.", e);
         }
+
+        return null;
     }
 
     /**
@@ -338,15 +386,19 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * is mounted
      */
     private static Long getTotalExternalStorage() {
-        if (isExternalStorageMounted()) {
-            File path = Environment.getExternalStorageDirectory();
-            StatFs stat = new StatFs(path.getPath());
-            long blockSize = stat.getBlockSize();
-            long totalBlocks = stat.getBlockCount();
-            return totalBlocks * blockSize;
-        } else {
-            return null;
+        try {
+            if (isExternalStorageMounted()) {
+                File path = Environment.getExternalStorageDirectory();
+                StatFs stat = new StatFs(path.getPath());
+                long blockSize = stat.getBlockSize();
+                long totalBlocks = stat.getBlockCount();
+                return totalBlocks * blockSize;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting total external storage amount.", e);
         }
+
+        return null;
     }
 
     /**
@@ -356,11 +408,12 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return the DisplayMetrics object for the current application
      */
     private static DisplayMetrics getDisplayMetrics(Context ctx) {
-        Resources resources = ctx.getResources();
-        if (resources == null) {
+        try {
+            return ctx.getResources().getDisplayMetrics();
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting DisplayMetrics.", e);
             return null;
         }
-        return resources.getDisplayMetrics();
     }
 
     /**
