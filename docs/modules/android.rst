@@ -1,6 +1,20 @@
 Android
 =======
 
+Features
+--------
+
+The Raven Android SDK is built on top of the main Java SDK and supports all of the same
+features, `configuration options <https://docs.sentry.io/clients/java/config/>`_, and more.
+
+Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
+(in the application's cache directory) by default. This allows events to be sent at a
+later time if the device does not have connectivity when an event is created. This can
+be disabled by setting the DSN option ``raven.buffer.enabled`` to ``false``.
+
+An ``UncaughtExceptionHandler`` is configured so that crash events will be
+stored to disk and sent the next time the application is run.
+
 Installation
 ------------
 
