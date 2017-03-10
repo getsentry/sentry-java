@@ -2,10 +2,12 @@ package com.getsentry.raven.android.event.helper;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.util.Log;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
+import com.getsentry.raven.event.interfaces.UserInterface;
 
 /**
  * EventBuilderHelper that makes use of Android Context to populate some Event fields.
@@ -36,6 +38,13 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             eventBuilder.withRelease(Integer.toString(versionCode));
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Couldn't find package version: " + e);
+        }
+
+        String androidId = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (androidId != null && !androidId.trim().equals("")) {
+            UserInterface userInterface = new UserInterface("android:" + androidId, null, null, null);
+            // set user interface but *don't* replace if it's already there
+            eventBuilder.withSentryInterface(userInterface, false);
         }
     }
 
