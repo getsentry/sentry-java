@@ -54,6 +54,15 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
     /**
+     * Option to enable or disable Event buffering. A buffering directory is also required.
+     * This setting is mostly useful on Android where a buffering directory is set by default.
+     */
+    public static final String BUFFER_ENABLED_OPTION = "raven.buffer.enabled";
+    /**
+     * Default value for whether buffering is enabled (if a directory is also provided).
+     */
+    public static final boolean BUFFER_ENABLED_DEFAULT = true;
+    /**
      * Option to buffer events to disk when network is down.
      */
     public static final String BUFFER_DIR_OPTION = "raven.buffer.dir";
@@ -218,15 +227,17 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
-        Buffer eventBuffer = getBuffer(dsn);
         BufferedConnection bufferedConnection = null;
-        if (eventBuffer != null) {
-            long flushtime = getBufferFlushtime(dsn);
-            boolean gracefulShutdown = getBufferedConnectionGracefulShutdownEnabled(dsn);
-            Long shutdownTimeout = getBufferedConnectionShutdownTimeout(dsn);
-            bufferedConnection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
-                shutdownTimeout);
-            connection = bufferedConnection;
+        if (getBufferEnabled(dsn)) {
+            Buffer eventBuffer = getBuffer(dsn);
+            if (eventBuffer != null) {
+                long flushtime = getBufferFlushtime(dsn);
+                boolean gracefulShutdown = getBufferedConnectionGracefulShutdownEnabled(dsn);
+                Long shutdownTimeout = getBufferedConnectionShutdownTimeout(dsn);
+                bufferedConnection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
+                    shutdownTimeout);
+                connection = bufferedConnection;
+            }
         }
 
         // Enable async unless its value is 'false'.
@@ -593,6 +604,20 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     protected int getTimeout(Dsn dsn) {
         return Util.parseInteger(dsn.getOptions().get(TIMEOUT_OPTION), TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Whether or not buffering is enabled.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether or not buffering is enabled.
+     */
+    protected boolean getBufferEnabled(Dsn dsn) {
+        String bufferEnabled = dsn.getOptions().get(BUFFER_ENABLED_OPTION);
+        if (bufferEnabled != null) {
+            return Boolean.parseBoolean(bufferEnabled);
+        }
+        return BUFFER_ENABLED_DEFAULT;
     }
 
     /**
