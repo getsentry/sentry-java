@@ -14,8 +14,12 @@ import java.util.Map;
 public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
     /**
      * Maximum length for the HTTP request body.
+     *
+     * See <a href="https://docs.sentry.io/clientdev/data-handling/#variable-size">the SDK reference</a>
+     * for more information.
      */
-    public static final int MAX_BODY_LENGTH = 1000;
+    public static final int MAX_BODY_LENGTH = 2048;
+
     private static final String URL = "url";
     private static final String METHOD = "method";
     private static final String DATA = "data";
