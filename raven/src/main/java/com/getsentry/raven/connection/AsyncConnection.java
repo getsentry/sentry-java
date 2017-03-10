@@ -1,5 +1,6 @@
 package com.getsentry.raven.connection;
 
+import com.getsentry.raven.Raven;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import org.slf4j.Logger;
@@ -19,6 +20,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
+    // CHECKSTYLE.OFF: ConstantName
+    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class + ".lockdown");
+    // CHECKSTYLE.ON: ConstantName
     /**
      * Timeout of the {@link #executorService}, in milliseconds.
      */
@@ -165,6 +169,8 @@ public class AsyncConnection implements Connection {
             try {
                 // The current thread is managed by raven
                 actualConnection.send(event);
+            } catch (LockedDownException e) {
+                lockdownLogger.warn("The connection to Sentry is currently locked down.", e);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
