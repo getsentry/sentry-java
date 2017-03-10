@@ -50,10 +50,6 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
         File bufferDir;
         String bufferDirOpt = dsn.getOptions().get(BUFFER_DIR_OPTION);
         if (bufferDirOpt != null) {
-            if (bufferDirOpt.trim().toLowerCase().equals("off")) {
-                return null;
-            }
-
             bufferDir = new File(bufferDirOpt);
         } else {
             bufferDir = new File(ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
