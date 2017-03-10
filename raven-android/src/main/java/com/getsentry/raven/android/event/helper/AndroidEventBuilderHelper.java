@@ -281,7 +281,8 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     private static boolean isExternalStorageMounted() {
-        return Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
+        return Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED) &&
+            !Environment.isExternalStorageEmulated();
     }
 
     /**
