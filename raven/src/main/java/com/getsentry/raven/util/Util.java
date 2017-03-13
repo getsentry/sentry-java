@@ -121,7 +121,7 @@ public final class Util {
         if (string == null) {
             return null;
         } else if (string.length() > maxMessageLength) {
-            return string.substring(0, maxMessageLength);
+            return string.substring(0, maxMessageLength - 3) + "...";
         } else {
             return string;
         }

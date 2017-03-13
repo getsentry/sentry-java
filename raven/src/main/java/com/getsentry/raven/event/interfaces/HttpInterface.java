@@ -44,7 +44,7 @@ public class HttpInterface implements SentryInterface {
     }
 
     /**
-     * Creates a an HTTP element for an {@link com.getsentry.raven.event.Event}.
+     * Creates an HTTP element for an {@link com.getsentry.raven.event.Event}.
      *
      * @param request Captured HTTP request to send to Sentry.
      * @param remoteAddressResolver RemoteAddressResolver
@@ -54,7 +54,7 @@ public class HttpInterface implements SentryInterface {
     }
 
     /**
-     * Creates a an HTTP element for an {@link com.getsentry.raven.event.Event}.
+     * Creates an HTTP element for an {@link com.getsentry.raven.event.Event}.
      *
      * @param request Captured HTTP request to send to Sentry.
      * @param remoteAddressResolver RemoteAddressResolver
