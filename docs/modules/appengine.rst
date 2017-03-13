@@ -18,22 +18,22 @@ Using Maven:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-appengine</artifactId>
-        <version>7.8.4</version>
+        <version>7.8.5</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-appengine:7.8.4'
+    compile 'com.getsentry.raven:raven-appengine:7.8.5'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven-appengine" % "7.8.4"
+    libraryDependencies += "com.getsentry.raven" % "raven-appengine" % "7.8.5"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-appengine%7C7.8.4%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-appengine%7C7.8.5%7Cjar>`_.
 
 Usage
 -----

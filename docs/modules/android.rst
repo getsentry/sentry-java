@@ -27,9 +27,9 @@ Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-android:7.8.4'
+    compile 'com.getsentry.raven:raven-android:7.8.5'
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C7.8.4%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C7.8.5%7Cjar>`_.
 
 Usage
 -----
