@@ -8,6 +8,7 @@ import com.getsentry.raven.util.Base64OutputStream;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.interfaces.SentryInterface;
 import com.getsentry.raven.marshaller.Marshaller;
+import com.getsentry.raven.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,7 +168,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStartObject();
 
         generator.writeStringField(EVENT_ID, formatId(event.getId()));
-        generator.writeStringField(MESSAGE, trimMessage(event.getMessage()));
+        generator.writeStringField(MESSAGE, Util.trimString(event.getMessage(), maxMessageLength));
         generator.writeStringField(TIMESTAMP, ISO_FORMAT.get().format(event.getTimestamp()));
         generator.writeStringField(LEVEL, formatLevel(event.getLevel()));
         generator.writeStringField(LOGGER, event.getLogger());
@@ -331,22 +332,6 @@ public class JsonMarshaller implements Marshaller {
             generator.writeEndObject();
         }
         generator.writeEndObject();
-    }
-
-    /**
-     * Trims a message, ensuring that the maximum length {@link #maxMessageLength} isn't reached.
-     *
-     * @param message message to format.
-     * @return trimmed message (shortened if necessary).
-     */
-    private String trimMessage(String message) {
-        if (message == null) {
-            return null;
-        } else if (message.length() > maxMessageLength) {
-            return message.substring(0, maxMessageLength);
-        } else {
-            return message;
-        }
     }
 
     /**

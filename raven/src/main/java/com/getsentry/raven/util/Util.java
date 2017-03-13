@@ -109,4 +109,24 @@ public final class Util {
         }
         return Double.parseDouble(value);
     }
+
+    /**
+     * Trims a String, ensuring that the maximum length isn't reached.
+     *
+     * @param string string to trim
+     * @param maxMessageLength maximum length of the string
+     * @return trimmed string
+     */
+    public static String trimString(String string, int maxMessageLength) {
+        if (string == null) {
+            return null;
+        } else if (string.length() > maxMessageLength) {
+            // CHECKSTYLE.OFF: MagicNumber
+            return string.substring(0, maxMessageLength - 3) + "...";
+            // CHECKSTYLE.ON: MagicNumber
+        } else {
+            return string;
+        }
+    }
+
 }

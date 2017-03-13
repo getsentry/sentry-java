@@ -2,6 +2,7 @@ package com.getsentry.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.getsentry.raven.event.interfaces.MessageInterface;
+import com.getsentry.raven.util.Util;
 
 import java.io.IOException;
 
@@ -38,33 +39,18 @@ public class MessageInterfaceBinding implements InterfaceBinding<MessageInterfac
         this.maxMessageLength = maxMessageLength;
     }
 
-    /**
-     * Trims a message, ensuring that the maximum length {@link #maxMessageLength} isn't reached.
-     *
-     * @param message message to format.
-     * @return trimmed message (shortened if necessary).
-     */
-    private String trimMessage(String message) {
-        if (message == null) {
-            return null;
-        } else if (message.length() > maxMessageLength) {
-            return message.substring(0, maxMessageLength);
-        } else {
-            return message;
-        }
-    }
-
     @Override
     public void writeInterface(JsonGenerator generator, MessageInterface messageInterface) throws IOException {
         generator.writeStartObject();
-        generator.writeStringField(MESSAGE_PARAMETER, trimMessage(messageInterface.getMessage()));
+        generator.writeStringField(MESSAGE_PARAMETER, Util.trimString(messageInterface.getMessage(), maxMessageLength));
         generator.writeArrayFieldStart(PARAMS_PARAMETER);
         for (String parameter : messageInterface.getParameters()) {
             generator.writeString(parameter);
         }
         generator.writeEndArray();
         if (messageInterface.getFormatted() != null) {
-            generator.writeStringField(FORMATTED_PARAMETER, trimMessage(messageInterface.getFormatted()));
+            generator.writeStringField(FORMATTED_PARAMETER,
+                Util.trimString(messageInterface.getFormatted(), maxMessageLength));
         }
         generator.writeEndObject();
     }

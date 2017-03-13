@@ -9,12 +9,14 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import com.getsentry.raven.android.Util;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
+import com.getsentry.raven.event.interfaces.UserInterface;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,6 +61,13 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             eventBuilder.withRelease(Integer.toString(versionCode));
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Couldn't find package version: " + e);
+        }
+
+        String androidId = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (androidId != null && !androidId.trim().equals("")) {
+            UserInterface userInterface = new UserInterface("android:" + androidId, null, null, null);
+            // set user interface but *don't* replace if it's already there
+            eventBuilder.withSentryInterface(userInterface, false);
         }
 
         eventBuilder.withContexts(getContexts());

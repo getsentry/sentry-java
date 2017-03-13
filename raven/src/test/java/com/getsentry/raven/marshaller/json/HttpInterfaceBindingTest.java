@@ -55,6 +55,8 @@ public class HttpInterfaceBindingTest {
             result = "5.6.7.8";
             mockMessageInterface.getLocalName();
             result = "local-name";
+            mockMessageInterface.getBody();
+            result = "body";
         }};
 
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockMessageInterface);
