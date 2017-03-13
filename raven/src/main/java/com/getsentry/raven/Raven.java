@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Raven {
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     // CHECKSTYLE.OFF: ConstantName
-    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class + ".lockdown");
+    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
      * The most recently constructed Raven instance, used by static helper methods like {@link Raven#capture(Event)}.
