@@ -1,7 +1,8 @@
 Version 7.8.5
 -------------
 
--
+- Add optional ``body`` field to HttpInterface.
+- Fix name of the lockdown logger.
 
 Version 7.8.4
 -------------
