@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
     // CHECKSTYLE.OFF: ConstantName
-    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class + ".lockdown");
+    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
      * Timeout of the {@link #executorService}, in milliseconds.
