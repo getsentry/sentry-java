@@ -121,7 +121,9 @@ public final class Util {
         if (string == null) {
             return null;
         } else if (string.length() > maxMessageLength) {
+            // CHECKSTYLE.OFF: MagicNumber
             return string.substring(0, maxMessageLength - 3) + "...";
+            // CHECKSTYLE.ON: MagicNumber
         } else {
             return string;
         }
