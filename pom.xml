@@ -116,7 +116,7 @@
         <maven.compiler.target>7</maven.compiler.target>
 
         <!-- dependencies versions -->
-        <slf4j.version>1.7.22</slf4j.version>
+        <slf4j.version>1.7.24</slf4j.version>
         <findbugs.version>3.0.1</findbugs.version>
         <jackson.version>2.7.6</jackson.version>
         <jmockit.version>1.14</jmockit.version>
