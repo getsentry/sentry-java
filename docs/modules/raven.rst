@@ -1,12 +1,12 @@
 java.util.logging
 =================
 
-The ``raven`` library provides a `java.util.logging Handler
+The ``raven-jul`` library provides a `java.util.logging Handler
 <http://docs.oracle.com/javase/7/docs/api/java/util/logging/Handler.html>`_
 that sends logged exceptions to Sentry.
 
-The source for ``raven-java`` can be found `on Github
-<https://github.com/getsentry/raven-java/tree/master/raven>`_.
+The source can be found `on Github
+<https://github.com/getsentry/raven-java/tree/master/raven-jul>`_.
 
 Installation
 ------------
@@ -17,7 +17,7 @@ Using Maven:
 
     <dependency>
         <groupId>com.getsentry.raven</groupId>
-        <artifactId>raven</artifactId>
+        <artifactId>raven-jul</artifactId>
         <version>7.8.5</version>
     </dependency>
 
@@ -25,15 +25,15 @@ Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven:7.8.5'
+    compile 'com.getsentry.raven:raven-jul:7.8.5'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven" % "7.8.5"
+    libraryDependencies += "com.getsentry.raven" % "raven-jul" % "7.8.5"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C7.8.5%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-jul%7C7.8.5%7Cjar>`_.
 
 Usage
 -----
