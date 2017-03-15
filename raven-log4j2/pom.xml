@@ -11,8 +11,8 @@
     <artifactId>raven-log4j2</artifactId>
     <packaging>jar</packaging>
 
-    <name>Raven-Java for log4j2</name>
-    <description>log4j2 appender allowing to send logs to the Raven-Java client.</description>
+    <name>Raven-Java for log4j 2.x</name>
+    <description>log4j 2.x appender that sends logs to a Sentry server.</description>
 
     <properties>
         <log4j2.version>2.8.1</log4j2.version>
