@@ -1,12 +1,11 @@
 package com.getsentry.raven.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles JNDI lookup of a provided key within the Sentry namespace.
@@ -16,7 +15,7 @@ public final class JndiLookup {
      * Lookup prefix for Sentry configuration in JNDI.
      */
     private static final String JNDI_PREFIX = "java:comp/env/sentry/";
-    private static final Logger logger = LoggerFactory.getLogger(JndiLookup.class);
+    private static final Logger logger = Logger.getLogger(JndiLookup.class.getName());
 
     private JndiLookup() {
 
@@ -34,11 +33,11 @@ public final class JndiLookup {
             Context c = new InitialContext();
             value = (String) c.lookup(JNDI_PREFIX + key);
         } catch (NoInitialContextException e) {
-            logger.debug("JNDI not configured for Sentry (NoInitialContextEx)");
+            logger.log(Level.FINE, "JNDI not configured for Sentry (NoInitialContextEx)");
         } catch (NamingException e) {
-            logger.debug("No /sentry/" + key + " in JNDI");
+            logger.log(Level.FINE, "No /sentry/" + key + " in JNDI");
         } catch (RuntimeException e) {
-            logger.warn("Odd RuntimeException while testing for JNDI", e);
+            logger.log(Level.WARNING, "Odd RuntimeException while testing for JNDI", e);
         }
         return value;
     }

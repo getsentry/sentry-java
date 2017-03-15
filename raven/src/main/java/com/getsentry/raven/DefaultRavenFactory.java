@@ -10,8 +10,6 @@ import com.getsentry.raven.event.interfaces.*;
 import com.getsentry.raven.marshaller.Marshaller;
 import com.getsentry.raven.marshaller.json.*;
 import com.getsentry.raven.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -24,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Default implementation of {@link RavenFactory}.
@@ -177,7 +177,7 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final int HTTP_PROXY_PORT_DEFAULT = 80;
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultRavenFactory.class);
+    private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getName());
     private static final String FALSE = Boolean.FALSE.toString();
 
     private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap<>();
@@ -197,7 +197,7 @@ public class DefaultRavenFactory extends RavenFactory {
             Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
-            logger.debug("The current environment doesn't provide access to servlets,"
+            logger.log(Level.FINE, "The current environment doesn't provide access to servlets,"
                 + "or provides an unsupported version.");
         }
         raven.addBuilderHelper(new ContextBuilderHelper(raven));

@@ -9,14 +9,14 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.interfaces.SentryInterface;
 import com.getsentry.raven.marshaller.Marshaller;
 import com.getsentry.raven.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.DeflaterOutputStream;
 
 /**
@@ -114,7 +114,7 @@ public class JsonMarshaller implements Marshaller {
         }
     };
 
-    private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
+    private static final Logger logger = Logger.getLogger(JsonMarshaller.class.getName());
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Map<Class<? extends SentryInterface>, InterfaceBinding<?>> interfaceBindings = new HashMap<>();
     /**
@@ -154,12 +154,12 @@ public class JsonMarshaller implements Marshaller {
         try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
             writeContent(generator, event);
         } catch (IOException e) {
-            logger.error("An exception occurred while serialising the event.", e);
+            logger.log(Level.SEVERE, "An exception occurred while serialising the event.", e);
         } finally {
             try {
                 destination.close();
             } catch (IOException e) {
-                logger.error("An exception occurred while serialising the event.", e);
+                logger.log(Level.SEVERE, "An exception occurred while serialising the event.", e);
             }
         }
     }
@@ -198,8 +198,8 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeFieldName(interfaceEntry.getKey());
                 getInterfaceBinding(sentryInterface).writeInterface(generator, interfaceEntry.getValue());
             } else {
-                logger.error("Couldn't parse the content of '{}' provided in {}.",
-                    interfaceEntry.getKey(), sentryInterface);
+                logger.log(Level.SEVERE, "Couldn't parse the content of '" + interfaceEntry.getKey()
+                        + "' provided in " + sentryInterface + ".");
             }
         }
     }
@@ -258,8 +258,8 @@ public class JsonMarshaller implements Marshaller {
                 /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
                 generator.writeObject(value);
             } catch (IllegalStateException e) {
-                logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
-                    value, value.getClass());
+                logger.log(Level.FINE, "Couldn't marshal '" + value + "' of type '" + value.getClass()
+                    + "', had to be converted into a String");
                 generator.writeString(value.toString());
             }
         }
@@ -367,8 +367,8 @@ public class JsonMarshaller implements Marshaller {
             case ERROR:
                 return "error";
             default:
-                logger.error("The level '{}' isn't supported, this should NEVER happen, contact Raven developers",
-                    level.name());
+                logger.log(Level.SEVERE, "The level '" + level.name()
+                    + "' isn't supported, this should NEVER happen, contact Raven developers");
                 return null;
         }
     }

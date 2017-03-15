@@ -7,13 +7,13 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
@@ -23,9 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * create a sensible instance of Raven.
  */
 public class Raven {
-    private static final Logger logger = LoggerFactory.getLogger(Raven.class);
+    private static final Logger logger = Logger.getLogger(Raven.class.getName());
     // CHECKSTYLE.OFF: ConstantName
-    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class.getName() + ".lockdown");
+    private static final Logger lockdownLogger = Logger.getLogger(Raven.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
      * The most recently constructed Raven instance, used by static helper methods like {@link Raven#capture(Event)}.
@@ -98,9 +98,9 @@ public class Raven {
         try {
             connection.send(event);
         } catch (LockedDownException e) {
-            lockdownLogger.warn("The connection to Sentry is currently locked down.", e);
+            lockdownLogger.log(Level.WARNING, "The connection to Sentry is currently locked down.", e);
         } catch (Exception e) {
-            logger.error("An exception occurred while sending the event to Sentry.", e);
+            logger.log(Level.SEVERE, "An exception occurred while sending the event to Sentry.", e);
         } finally {
             getContext().setLastEventId(event.getId());
         }
@@ -154,7 +154,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.debug("Removing '{}' from the list of builder helpers.", builderHelper);
+        logger.log(Level.FINE, "Removing '" + builderHelper + "' from the list of builder helpers.");
         builderHelpers.remove(builderHelper);
     }
 
@@ -164,7 +164,7 @@ public class Raven {
      * @param builderHelper builder helper to add.
      */
     public void addBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.debug("Adding '{}' to the list of builder helpers.", builderHelper);
+        logger.log(Level.FINE, "Adding '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.add(builderHelper);
     }
 

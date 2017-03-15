@@ -1,14 +1,14 @@
 package com.getsentry.raven.dsn;
 
 import com.getsentry.raven.config.Lookup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Data Source name allowing a direct connection to a Sentry server.
@@ -18,7 +18,7 @@ public class Dsn {
      * Default DSN to use when auto detection fails.
      */
     public static final String DEFAULT_DSN = "noop://user:password@localhost:0/0";
-    private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
+    private static final Logger logger = Logger.getLogger(Dsn.class.getName());
     private String secretKey;
     private String publicKey;
     private String projectId;
@@ -87,7 +87,7 @@ public class Dsn {
         String dsn = Lookup.lookup("dsn");
 
         if (dsn == null) {
-            logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");
+            logger.log(Level.WARNING, "Couldn't find a suitable DSN, defaulting to a Noop one.");
             dsn = DEFAULT_DSN;
         }
 

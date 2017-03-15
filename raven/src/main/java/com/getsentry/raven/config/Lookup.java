@@ -1,14 +1,15 @@
 package com.getsentry.raven.config;
 
 import com.getsentry.raven.dsn.Dsn;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handle lookup of configuration keys by trying JNDI, System Environment, and Java System Properties.
  */
 public final class Lookup {
-    private static final Logger logger = LoggerFactory.getLogger(JndiLookup.class);
+    private static final Logger logger = Logger.getLogger(JndiLookup.class.getName());
 
     private Lookup() {
 
@@ -29,7 +30,7 @@ public final class Lookup {
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             value = JndiLookup.jndiLookup(key);
         } catch (ClassNotFoundException | NoClassDefFoundError e) {
-            logger.debug("JNDI not available", e);
+            logger.log(Level.FINE, "JNDI not available", e);
         }
 
         // Try to obtain from a Java System Property

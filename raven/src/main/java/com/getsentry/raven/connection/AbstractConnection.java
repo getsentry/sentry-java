@@ -2,11 +2,11 @@ package com.getsentry.raven.connection;
 
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstract connection to a Sentry server.
@@ -20,7 +20,7 @@ public abstract class AbstractConnection implements Connection {
      * Current Sentry protocol version.
      */
     public static final String SENTRY_PROTOCOL_VERSION = "6";
-    private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
+    private static final Logger logger = Logger.getLogger(AbstractConnection.class.getName());
     /**
      * Value of the X-Sentry-Auth header.
      */
@@ -76,12 +76,12 @@ public abstract class AbstractConnection implements Connection {
                 try {
                     eventSendFailureCallback.onFailure(event, e);
                 } catch (Exception exc) {
-                    logger.warn("An exception occurred while running an EventSendFailureCallback: "
+                    logger.log(Level.WARNING, "An exception occurred while running an EventSendFailureCallback: "
                         + eventSendFailureCallback.getClass().getName(), exc);
                 }
             }
 
-            logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
+            logger.log(Level.WARNING, "An exception due to the connection occurred, a lockdown will be initiated.", e);
             lockdownManager.setState(e);
 
             throw e;

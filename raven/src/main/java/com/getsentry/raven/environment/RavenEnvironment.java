@@ -1,10 +1,9 @@
 package com.getsentry.raven.environment;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages environment information on Raven.
@@ -30,7 +29,7 @@ public final class RavenEnvironment {
             return new AtomicInteger();
         }
     };
-    private static final Logger logger = LoggerFactory.getLogger(RavenEnvironment.class);
+    private static final Logger logger = Logger.getLogger(RavenEnvironment.class.getName());
 
     private RavenEnvironment() {
     }
@@ -53,7 +52,7 @@ public final class RavenEnvironment {
     public static void startManagingThread() {
         try {
             if (isManagingThread()) {
-                logger.warn("Thread already managed by Raven");
+                logger.log(Level.WARNING, "Thread already managed by Raven");
             }
         } finally {
             RAVEN_THREAD.get().incrementAndGet();
@@ -70,7 +69,7 @@ public final class RavenEnvironment {
             if (!isManagingThread()) {
                 //Start managing the thread only to send the warning
                 startManagingThread();
-                logger.warn("Thread not yet managed by Raven");
+                logger.log(Level.WARNING, "Thread not yet managed by Raven");
             }
         } finally {
             RAVEN_THREAD.get().decrementAndGet();

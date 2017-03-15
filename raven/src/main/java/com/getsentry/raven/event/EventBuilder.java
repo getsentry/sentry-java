@@ -2,8 +2,6 @@ package com.getsentry.raven.event;
 
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.interfaces.SentryInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.nio.charset.Charset;
@@ -11,6 +9,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -621,7 +621,7 @@ public class EventBuilder {
          * Time before the get hostname operation times out (in ms).
          */
         public static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
-        private static final Logger logger = LoggerFactory.getLogger(HostnameCache.class);
+        private static final Logger logger = Logger.getLogger(HostnameCache.class.getName());
         /**
          * Time for which the cache is kept.
          */
@@ -666,13 +666,13 @@ public class EventBuilder {
             FutureTask<String> futureTask = new FutureTask<>(new HostRetriever());
             try {
                 new Thread(futureTask).start();
-                logger.debug("Updating the hostname cache");
+                logger.log(Level.FINE, "Updating the hostname cache");
                 hostname = futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
                 expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             } catch (Exception e) {
                 futureTask.cancel(true);
                 expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
-                logger.warn("Localhost hostname lookup failed, keeping the value '{}'", hostname, e);
+                logger.log(Level.WARNING, "Localhost hostname lookup failed, keeping the value '" + hostname + "'", e);
             }
         }
 
