@@ -51,20 +51,6 @@ public class Raven {
     };
 
     /**
-     * Constructs a Raven instance.
-     *
-     * Note that the most recently constructed instance is stored statically so it can be used with
-     * the static helper methods.
-     *
-     * @deprecated in favor of {@link Raven#Raven(Connection)} because until you call
-     * {@link Raven#setConnection(Connection)} this instance will throw exceptions when used.
-     */
-    @Deprecated
-    public Raven() {
-        stored = this;
-    }
-
-    /**
      * Constructs a Raven instance using the provided connection.
      *
      * Note that the most recently constructed instance is stored statically so it can be used with

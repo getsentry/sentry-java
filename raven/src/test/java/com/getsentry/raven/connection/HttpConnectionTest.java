@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
 
@@ -28,14 +29,16 @@ public class HttpConnectionTest {
     private final String publicKey = "6cc48e8f-380c-44cc-986b-f566247a2af5";
     @Injectable
     private final String secretKey = "e30cca23-3f97-470b-a8c2-e29b33dd25e0";
+    @Injectable
+    private Proxy proxy = null;
+    @Injectable
+    private EventSampler eventSampler = null;
     @Tested
     private HttpConnection httpConnection = null;
     @Injectable
     private HttpsURLConnection mockUrlConnection = null;
     @Injectable
     private Marshaller mockMarshaller = null;
-    @Injectable
-    private int timeout = 12;
     @Injectable
     private URL mockUrl = null;
     @Injectable
@@ -46,7 +49,9 @@ public class HttpConnectionTest {
     @BeforeMethod
     public void setUp() throws Exception {
         new NonStrictExpectations() {{
-            mockUrl.openConnection();
+            eventSampler.shouldSendEvent((Event) any);
+            result = true;
+            mockUrl.openConnection((Proxy) any);
             result = mockUrlConnection;
             mockUrlConnection.getOutputStream();
             result = mockOutputStream;
@@ -116,7 +121,6 @@ public class HttpConnectionTest {
     @Test
     public void testAuthHeaderSent(@Injectable final Event mockEvent) throws Exception {
         httpConnection.send(mockEvent);
-
 
         new Verifications() {{
             mockUrlConnection.setRequestProperty("User-Agent", RavenEnvironment.getRavenName());
