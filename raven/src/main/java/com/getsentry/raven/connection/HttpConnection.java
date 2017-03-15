@@ -3,8 +3,6 @@ package com.getsentry.raven.connection;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.marshaller.Marshaller;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -17,6 +15,8 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Basic connection to a Sentry server, using HTTP and HTTPS.
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class HttpConnection extends AbstractConnection {
     private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
+    private static final Logger logger = Logger.getLogger(HttpConnection.class.getName());
     /**
      * HTTP Header for the user agent.
      */
@@ -204,7 +204,7 @@ public class HttpConnection extends AbstractConnection {
                 first = false;
             }
         } catch (Exception e2) {
-            logger.error("Exception while reading the error message from the connection.", e2);
+            logger.log(Level.SEVERE, "Exception while reading the error message from the connection.", e2);
         }
         return sb.toString();
     }

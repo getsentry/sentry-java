@@ -1,8 +1,6 @@
 package com.getsentry.raven;
 
 import com.getsentry.raven.dsn.Dsn;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Factory in charge of creating {@link Raven} instances.
@@ -20,7 +20,7 @@ public abstract class RavenFactory {
     private static final ServiceLoader<RavenFactory> AUTO_REGISTERED_FACTORIES =
         ServiceLoader.load(RavenFactory.class, RavenFactory.class.getClassLoader());
     private static final Set<RavenFactory> MANUALLY_REGISTERED_FACTORIES = new HashSet<>();
-    private static final Logger logger = LoggerFactory.getLogger(RavenFactory.class);
+    private static final Logger logger = Logger.getLogger(RavenFactory.class.getName());
 
     /**
      * Manually adds a RavenFactory to the system.
@@ -82,7 +82,7 @@ public abstract class RavenFactory {
      * @throws IllegalStateException when no instance of Raven has been created.
      */
     public static Raven ravenInstance(Dsn dsn, String ravenFactoryName) {
-        logger.debug("Attempting to find a working RavenFactory");
+        logger.log(Level.FINE, "Attempting to find a working RavenFactory");
 
         // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
         // and the last exception thrown.
@@ -97,15 +97,16 @@ public abstract class RavenFactory {
                 continue;
             }
 
-            logger.debug("Attempting to use '{}' as a RavenFactory.", ravenFactory);
+            logger.log(Level.FINE, "Attempting to use '" + ravenFactory + "' as a RavenFactory.");
             triedFactories.add(name);
             try {
                 Raven ravenInstance = ravenFactory.createRavenInstance(dsn);
-                logger.debug("The RavenFactory '{}' created an instance of Raven.", ravenFactory);
+                logger.log(Level.FINE, "The RavenFactory '" + ravenFactory + "' created an instance of Raven.");
                 return ravenInstance;
             } catch (RuntimeException e) {
                 lastExc = e;
-                logger.debug("The RavenFactory '{}' couldn't create an instance of Raven.", ravenFactory, e);
+                logger.log(Level.FINE, "The RavenFactory '" + ravenFactory
+                    + "' couldn't create an instance of Raven.", e);
             }
         }
 
@@ -113,13 +114,13 @@ public abstract class RavenFactory {
             try {
                 // see if the provided class exists on the classpath at all
                 Class.forName(ravenFactoryName);
-                logger.error(
-                    "The RavenFactory class '{}' was found on your classpath but was not "
+                logger.log(Level.SEVERE,
+                    "The RavenFactory class '" + ravenFactoryName + "' was found on your classpath but was not "
                     + "registered with Raven, see: "
-                    + "https://github.com/getsentry/raven-java/#custom-ravenfactory", ravenFactoryName);
+                    + "https://github.com/getsentry/raven-java/#custom-ravenfactory");
             } catch (ClassNotFoundException e) {
-                logger.error("The RavenFactory class name '{}' was specified but "
-                    + "the class was not found on your classpath.", ravenFactoryName);
+                logger.log(Level.SEVERE, "The RavenFactory class name '" + ravenFactoryName + "' was specified but "
+                    + "the class was not found on your classpath.");
             }
         }
 

@@ -1,8 +1,6 @@
 package com.getsentry.raven.buffer;
 
 import com.getsentry.raven.event.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,6 +9,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Stores {@link Event} objects to a directory on the filesystem and allows
@@ -23,7 +23,7 @@ public class DiskBuffer implements Buffer {
      */
     public static final String FILE_SUFFIX = ".raven-event";
 
-    private static final Logger logger = LoggerFactory.getLogger(DiskBuffer.class);
+    private static final Logger logger = Logger.getLogger(DiskBuffer.class.getName());
 
     private int maxEvents;
     private final File bufferDir;
@@ -50,7 +50,7 @@ public class DiskBuffer implements Buffer {
             throw new RuntimeException(errMsg, e);
         }
 
-        logger.debug(Integer.toString(getNumStoredEvents())
+        logger.log(Level.FINE, Integer.toString(getNumStoredEvents())
             + " stored events found in dir: "
             + bufferDir.getAbsolutePath());
     }
@@ -64,28 +64,28 @@ public class DiskBuffer implements Buffer {
     @Override
     public void add(Event event) {
         if (getNumStoredEvents() >= maxEvents) {
-            logger.warn("Not adding Event because at least "
+            logger.log(Level.WARNING, "Not adding Event because at least "
                 + Integer.toString(maxEvents) + " events are already stored: " + event.getId());
             return;
         }
 
         File eventFile = new File(bufferDir.getAbsolutePath(), event.getId().toString() + FILE_SUFFIX);
         if (eventFile.exists()) {
-            logger.trace("Not adding Event to offline storage because it already exists: "
+            logger.log(Level.FINEST, "Not adding Event to offline storage because it already exists: "
                 + eventFile.getAbsolutePath());
             return;
         } else {
-            logger.debug("Adding Event to offline storage: " + eventFile.getAbsolutePath());
+            logger.log(Level.FINE, "Adding Event to offline storage: " + eventFile.getAbsolutePath());
         }
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(eventFile);
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             objectOutputStream.writeObject(event);
         } catch (Exception e) {
-            logger.error("Error writing Event to offline storage: " + event.getId(), e);
+            logger.log(Level.SEVERE, "Error writing Event to offline storage: " + event.getId(), e);
         }
 
-        logger.debug(Integer.toString(getNumStoredEvents())
+        logger.log(Level.FINE, Integer.toString(getNumStoredEvents())
             + " stored events are now in dir: "
             + bufferDir.getAbsolutePath());
     }
@@ -99,7 +99,7 @@ public class DiskBuffer implements Buffer {
     public void discard(Event event) {
         File eventFile = new File(bufferDir, event.getId().toString() + FILE_SUFFIX);
         if (eventFile.exists()) {
-            logger.debug("Discarding Event from offline storage: " + eventFile.getAbsolutePath());
+            logger.log(Level.FINE, "Discarding Event from offline storage: " + eventFile.getAbsolutePath());
             eventFile.delete();
         }
     }
@@ -119,7 +119,7 @@ public class DiskBuffer implements Buffer {
             ObjectInputStream ois = new ObjectInputStream(fileInputStream);
             eventObj = ois.readObject();
         } catch (Exception e) {
-            logger.error("Error reading Event file: " + eventFile.getAbsolutePath(), e);
+            logger.log(Level.SEVERE, "Error reading Event file: " + eventFile.getAbsolutePath(), e);
             eventFile.delete();
             return null;
         }
@@ -127,7 +127,7 @@ public class DiskBuffer implements Buffer {
         try {
             return (Event) eventObj;
         } catch (Exception e) {
-            logger.error("Error casting Object to Event: " + eventFile.getAbsolutePath(), e);
+            logger.log(Level.SEVERE, "Error casting Object to Event: " + eventFile.getAbsolutePath(), e);
             eventFile.delete();
             return null;
         }

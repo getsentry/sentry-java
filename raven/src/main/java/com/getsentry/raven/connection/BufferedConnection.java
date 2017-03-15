@@ -3,8 +3,6 @@ package com.getsentry.raven.connection;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -13,6 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Connection wrapper that handles storing and deleting {@link Event}s from a {@link Buffer}.
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class BufferedConnection implements Connection {
 
-    private static final Logger logger = LoggerFactory.getLogger(BufferedConnection.class);
+    private static final Logger logger = Logger.getLogger(BufferedConnection.class.getName());
 
     /**
      * Shutdown hook used to stop the buffered connection properly when the JVM quits.
@@ -127,19 +127,19 @@ public class BufferedConnection implements Connection {
                     if (executorService.awaitTermination(waitBetweenLoggingMs, TimeUnit.MILLISECONDS)) {
                         break;
                     }
-                    logger.info("Still waiting on buffer flusher executor to terminate.");
+                    logger.log(Level.INFO, "Still waiting on buffer flusher executor to terminate.");
                 }
             } else if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
-                logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
+                logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
-                logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+                logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
             }
-            logger.info("Shutdown finished.");
+            logger.log(Level.INFO, "Shutdown finished.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("Graceful shutdown interrupted, forcing the shutdown.");
+            logger.log(Level.SEVERE, "Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
-            logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+            logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
         } finally {
             actualConnection.close();
         }
@@ -167,7 +167,7 @@ public class BufferedConnection implements Connection {
                     // buffer before we attempt to send
                     buffer.add(event);
                 } catch (Exception e) {
-                    logger.error("Exception occurred while attempting to add Event to buffer: ", e);
+                    logger.log(Level.SEVERE, "Exception occurred while attempting to add Event to buffer: ", e);
                 }
 
                 wrappedConnection.send(event);
@@ -202,7 +202,7 @@ public class BufferedConnection implements Connection {
 
         @Override
         public void run() {
-            logger.trace("Running Flusher");
+            logger.log(Level.FINEST, "Running Flusher");
 
             RavenEnvironment.startManagingThread();
             try {
@@ -221,23 +221,23 @@ public class BufferedConnection implements Connection {
                     long eventTime = event.getTimestamp().getTime();
                     long age = now - eventTime;
                     if (age < minAgeMillis) {
-                        logger.trace("Ignoring buffered event because it only " + age + "ms old.");
+                        logger.log(Level.FINEST, "Ignoring buffered event because it only " + age + "ms old.");
                         return;
                     }
 
                     try {
-                        logger.trace("Flusher attempting to send Event: " + event.getId());
+                        logger.log(Level.FINEST, "Flusher attempting to send Event: " + event.getId());
                         send(event);
-                        logger.trace("Flusher successfully sent Event: " + event.getId());
+                        logger.log(Level.FINEST, "Flusher successfully sent Event: " + event.getId());
                     } catch (Exception e) {
-                        logger.debug("Flusher failed to send Event: " + event.getId(), e);
+                        logger.log(Level.FINE, "Flusher failed to send Event: " + event.getId(), e);
 
                         // Connectivity issues, give up until next Flusher run.
-                        logger.trace("Flusher run exiting early.");
+                        logger.log(Level.FINEST, "Flusher run exiting early.");
                         return;
                     }
                 }
-                logger.trace("Flusher run exiting, no more events to send.");
+                logger.log(Level.FINEST, "Flusher run exiting, no more events to send.");
             } finally {
                 RavenEnvironment.stopManagingThread();
             }
@@ -260,10 +260,10 @@ public class BufferedConnection implements Connection {
             RavenEnvironment.startManagingThread();
             try {
                 // The current thread is managed by raven
-                logger.info("Automatic shutdown of the buffered connection");
+                logger.log(Level.INFO, "Automatic shutdown of the buffered connection");
                 BufferedConnection.this.close();
             } catch (Exception e) {
-                logger.error("An exception occurred while closing the connection.", e);
+                logger.log(Level.SEVERE, "An exception occurred while closing the connection.", e);
             } finally {
                 RavenEnvironment.stopManagingThread();
             }

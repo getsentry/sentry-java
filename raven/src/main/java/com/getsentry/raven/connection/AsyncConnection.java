@@ -3,14 +3,14 @@ package com.getsentry.raven.connection;
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Asynchronous usage of a connection.
@@ -19,9 +19,9 @@ import java.util.concurrent.TimeUnit;
  * and submit the event.
  */
 public class AsyncConnection implements Connection {
-    private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
+    private static final Logger logger = Logger.getLogger(AsyncConnection.class.getName());
     // CHECKSTYLE.OFF: ConstantName
-    private static final Logger lockdownLogger = LoggerFactory.getLogger(Raven.class.getName() + ".lockdown");
+    private static final Logger lockdownLogger = Logger.getLogger(Raven.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
      * Timeout of the {@link #executorService}, in milliseconds.
@@ -137,16 +137,16 @@ public class AsyncConnection implements Connection {
                     logger.info("Still waiting on async executor to terminate.");
                 }
             } else if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
-                logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
+                logger.log(Level.WARNING, "Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
-                logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+                logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
             }
             logger.info("Shutdown finished.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("Graceful shutdown interrupted, forcing the shutdown.");
+            logger.log(Level.SEVERE, "Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
-            logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+            logger.log(Level.INFO, tasks.size() + " tasks failed to execute before the shutdown.");
         } finally {
             actualConnection.close();
         }
@@ -170,9 +170,9 @@ public class AsyncConnection implements Connection {
                 // The current thread is managed by raven
                 actualConnection.send(event);
             } catch (LockedDownException e) {
-                lockdownLogger.warn("The connection to Sentry is currently locked down.", e);
+                lockdownLogger.log(Level.WARNING, "The connection to Sentry is currently locked down.", e);
             } catch (Exception e) {
-                logger.error("An exception occurred while sending the event to Sentry.", e);
+                logger.log(Level.SEVERE, "An exception occurred while sending the event to Sentry.", e);
             } finally {
                 RavenEnvironment.stopManagingThread();
             }
@@ -198,7 +198,7 @@ public class AsyncConnection implements Connection {
                 logger.info("Automatic shutdown of the async connection");
                 AsyncConnection.this.doClose();
             } catch (Exception e) {
-                logger.error("An exception occurred while closing the connection.", e);
+                logger.log(Level.SEVERE, "An exception occurred while closing the connection.", e);
             } finally {
                 RavenEnvironment.stopManagingThread();
             }
