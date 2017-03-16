@@ -22,7 +22,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String POST_CONTEXT_PARAMETER = "post_context";
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
-    private Collection<String> notInAppFrames = Collections.emptyList();
+    private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
 
     /**
@@ -35,21 +35,21 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         generator.writeStartObject();
         generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
         generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getClassName());
-        generator.writeBooleanField(IN_APP_PARAMETER, !(removeCommonFramesWithEnclosing && commonWithEnclosing)
-            && isFrameInApp(stackTraceElement));
+        boolean inApp = !(removeCommonFramesWithEnclosing && commonWithEnclosing) && isFrameInApp(stackTraceElement);
+        generator.writeBooleanField(IN_APP_PARAMETER, inApp);
         generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getMethodName());
         generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineNumber());
         generator.writeEndObject();
     }
 
     private boolean isFrameInApp(StackTraceElement stackTraceElement) {
-        //TODO: A set is absolutely not efficient here, a Trie could be a better solution.
-        for (String notInAppFrame : notInAppFrames) {
-            if (stackTraceElement.getClassName().startsWith(notInAppFrame)) {
-                return false;
+        for (String inAppFrame : inAppFrames) {
+            String className = stackTraceElement.getClassName();
+            if (className.startsWith(inAppFrame)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         this.removeCommonFramesWithEnclosing = removeCommonFramesWithEnclosing;
     }
 
-    public void setNotInAppFrames(Collection<String> notInAppFrames) {
-        this.notInAppFrames = notInAppFrames;
+    public void setInAppFrames(Collection<String> inAppFrames) {
+        this.inAppFrames = inAppFrames;
     }
 }

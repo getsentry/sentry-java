@@ -18,10 +18,7 @@ import java.net.InetSocketAddress;
 import java.net.Authenticator;
 import java.net.Proxy;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -144,6 +141,11 @@ public class DefaultRavenFactory extends RavenFactory {
      * Default timeout of the {@link AsyncConnection} executor, in milliseconds.
      */
     public static final long ASYNC_SHUTDOWN_TIMEOUT_DEFAULT = TimeUnit.SECONDS.toMillis(1);
+    /**
+     * Option for which package prefixes are part of the user's application code, as a single
+     * comma separated string.
+     */
+    public static final String IN_APP_FRAMES_OPTION = "raven.stacktrace.packages";
     /**
      * Option for whether to hide common stackframes with enclosing exceptions.
      */
@@ -357,7 +359,7 @@ public class DefaultRavenFactory extends RavenFactory {
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
         // Enable common frames hiding unless its value is 'false'.
         stackTraceBinding.setRemoveCommonFramesWithEnclosing(getHideCommonFramesEnabled(dsn));
-        stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
+        stackTraceBinding.setInAppFrames(getInAppFrames(dsn));
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
         marshaller.addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
@@ -375,21 +377,25 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     /**
-     * Provides a list of package names to consider as "not in-app".
+     * Returns the list of package names to consider "in-app".
      * <p>
-     * Those packages will be used with the {@link StackTraceInterface} to hide frames that aren't a part of
-     * the main application.
+     * Those packages will be used with the {@link StackTraceInterface} to show frames that are a part of
+     * the main application in the Sentry UI by default.
      *
-     * @return the list of "not in-app" packages.
+     * @param dsn Sentry server DSN which may contain options.
+     * @return the list of package names to consider "in-app".
      */
-    protected Collection<String> getNotInAppFrames() {
-        return Arrays.asList("com.sun.",
-            "java.",
-            "javax.",
-            "org.omg.",
-            "sun.",
-            "junit.",
-            "com.intellij.rt.");
+    protected Collection<String> getInAppFrames(Dsn dsn) {
+        if (dsn.getOptions().containsKey(IN_APP_FRAMES_OPTION)) {
+            ArrayList<String> inAppPackages = new ArrayList<>();
+            for (String inAppPackage : dsn.getOptions().get(IN_APP_FRAMES_OPTION).split(",")) {
+                if (!inAppPackage.trim().equals("")) {
+                    inAppPackages.add(inAppPackage);
+                }
+            }
+            return inAppPackages;
+        }
+        return Collections.emptyList();
     }
 
     /**

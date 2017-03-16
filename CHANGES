@@ -1,7 +1,9 @@
-Version 7.8.6
+Version 8.0.0
 -------------
 
--
+- Remove ``DefaultRavenFactory.getNotInAppFrames()`` blacklist in favor of a new whitelist method,
+  ``DefaultRavenFactory.getInAppFrames(Dsn dsn)``.
+- Add ``raven.stacktrace.packages`` DSN option for configuring your application's package prefixes.
 
 Version 7.8.5
 -------------

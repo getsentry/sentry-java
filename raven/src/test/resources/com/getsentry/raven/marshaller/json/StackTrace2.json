@@ -8,7 +8,7 @@
     },
     {
         "module": "",
-        "in_app": true,
+        "in_app": false,
         "function": "",
         "filename": "File.java",
         "lineno": 0
