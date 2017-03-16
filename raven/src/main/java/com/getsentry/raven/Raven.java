@@ -2,6 +2,8 @@ package com.getsentry.raven;
 
 import com.getsentry.raven.connection.Connection;
 import com.getsentry.raven.connection.LockedDownException;
+import com.getsentry.raven.context.Context;
+import com.getsentry.raven.context.ContextManager;
 import com.getsentry.raven.environment.RavenEnvironment;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
@@ -41,15 +43,10 @@ public class Raven {
      */
     private final Set<EventBuilderHelper> builderHelpers =
         Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
-    private final ThreadLocal<RavenContext> context = new ThreadLocal<RavenContext>() {
-        @Override
-        protected RavenContext initialValue() {
-            RavenContext ctx = new RavenContext();
-            ctx.activate();
-            return ctx;
-        }
-    };
-
+    /**
+     * TODO.
+     */
+    private final ContextManager contextManager;
     /**
      * Constructs a Raven instance using the provided connection.
      *
@@ -57,9 +54,11 @@ public class Raven {
      * the static helper methods.
      *
      * @param connection Underlying Connection instance to use for sending events
+     * @param contextManager TODO
      */
-    public Raven(Connection connection) {
+    public Raven(Connection connection, ContextManager contextManager) {
         this.connection = connection;
+        this.contextManager = contextManager;
         stored = this;
     }
 
@@ -169,8 +168,8 @@ public class Raven {
         }
     }
 
-    public RavenContext getContext() {
-        return context.get();
+    public Context getContext() {
+        return contextManager.getContext();
     }
 
     @Override
@@ -178,6 +177,7 @@ public class Raven {
         return "Raven{"
                 + "name=" + RavenEnvironment.getRavenName()
                 + ", connection=" + connection
+                + ", contextManager=" + contextManager
                 + '}';
     }
 

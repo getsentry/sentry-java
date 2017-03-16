@@ -6,6 +6,8 @@ import com.getsentry.raven.*;
 import com.getsentry.raven.android.event.helper.AndroidEventBuilderHelper;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.buffer.DiskBuffer;
+import com.getsentry.raven.context.ContextManager;
+import com.getsentry.raven.context.SingletonContextManager;
 import com.getsentry.raven.dsn.Dsn;
 
 import java.io.File;
@@ -57,6 +59,11 @@ public class AndroidRavenFactory extends DefaultRavenFactory {
 
         Log.d(TAG, "Using buffer dir: " + bufferDir.getAbsolutePath());
         return new DiskBuffer(bufferDir, getBufferSize(dsn));
+    }
+
+    @Override
+    protected ContextManager getContextManager(Dsn dsn) {
+        return new SingletonContextManager();
     }
 
 }

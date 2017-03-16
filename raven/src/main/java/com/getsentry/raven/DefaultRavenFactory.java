@@ -3,6 +3,8 @@ package com.getsentry.raven;
 import com.getsentry.raven.buffer.Buffer;
 import com.getsentry.raven.buffer.DiskBuffer;
 import com.getsentry.raven.connection.*;
+import com.getsentry.raven.context.ContextManager;
+import com.getsentry.raven.context.ThreadLocalContextManager;
 import com.getsentry.raven.dsn.Dsn;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
 import com.getsentry.raven.event.helper.HttpEventBuilderHelper;
@@ -189,7 +191,7 @@ public class DefaultRavenFactory extends RavenFactory {
 
     @Override
     public Raven createRavenInstance(Dsn dsn) {
-        Raven raven = new Raven(createConnection(dsn));
+        Raven raven = new Raven(createConnection(dsn), getContextManager(dsn));
         try {
             // `ServletRequestListener` was added in the Servlet 2.4 API, and
             // is used as part of the `HttpEventBuilderHelper`, see:
@@ -372,6 +374,16 @@ public class DefaultRavenFactory extends RavenFactory {
         marshaller.setCompression(getCompressionEnabled(dsn));
 
         return marshaller;
+    }
+
+    /**
+     * TODO.
+     *
+     * @param dsn TODO
+     * @return TODO
+     */
+    protected ContextManager getContextManager(Dsn dsn) {
+        return new ThreadLocalContextManager();
     }
 
     /**

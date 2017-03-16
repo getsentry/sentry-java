@@ -33,7 +33,7 @@ public class RavenServletRequestListener implements ServletRequestListener {
                 raven.getContext().clear();
             }
         } catch (Exception e) {
-            logger.error("Error clearing RavenContext state.", e);
+            logger.error("Error clearing Context state.", e);
         }
     }
 
