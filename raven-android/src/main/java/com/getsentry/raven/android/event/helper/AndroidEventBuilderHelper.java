@@ -22,8 +22,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -95,7 +93,6 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         deviceMap.put("external_storage_size", getTotalExternalStorage());
         deviceMap.put("external_free_storage", getUnusedExternalStorage());
         deviceMap.put("charging",              isCharging(ctx));
-        deviceMap.put("time",                  stringifyDate(new Date()));
         deviceMap.put("online",                Util.isConnected(ctx));
 
         DisplayMetrics displayMetrics = getDisplayMetrics(ctx);
@@ -125,6 +122,12 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         return contexts;
     }
 
+    /**
+     * Fake the device family by using the first word in the Build.MODEL. Works
+     * well in most cases... "Nexus 6P" -> "Nexus", "Galaxy S7" -> "Galaxy".
+     *
+     * @return family name of the device, as best we can tell
+     */
     private static String getFamily() {
         try {
             return Build.MODEL.split(" ")[0];
@@ -424,17 +427,5 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             return null;
         }
     }
-
-    /**
-     * Formats the given Date object into an ISO8601 String. Note that SimpleDateFormat isn't
-     * thread safe, and so we build one every time.
-     *
-     * @param date Date to format as ISO8601
-     * @return String representing the provided Date in ISO8601 format
-     */
-    private static String stringifyDate(Date date) {
-        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'").format(date);
-    }
-
 
 }
