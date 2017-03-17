@@ -2,6 +2,7 @@ Version 7.8.6
 -------------
 
 - Automatically collect device information in ``contexts`` field on Android.
+- Updated Jackson, slf4j, log4j2 and logback dependencies.
 
 Version 7.8.5
 -------------
