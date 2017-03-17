@@ -313,14 +313,14 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             "/system/xbin/su"
         };
 
-        try {
-            for (String probableRootPath : probableRootPaths) {
+        for (String probableRootPath : probableRootPaths) {
+            try {
                 if (new File(probableRootPath).exists()) {
                     return true;
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "Exception while attempting to detect whether the device is rooted", e);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Exception while attempting to detect whether the device is rooted", e);
         }
 
         return false;
