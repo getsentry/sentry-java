@@ -10,6 +10,8 @@ import android.net.NetworkInfo;
  */
 public final class Util {
 
+    private static final String TAG = Util.class.getName();
+
     /**
      * Hide constructor.
      */
