@@ -118,7 +118,7 @@
         <!-- dependencies versions -->
         <slf4j.version>1.7.24</slf4j.version>
         <findbugs.version>3.0.1</findbugs.version>
-        <jackson.version>2.7.6</jackson.version>
+        <jackson.version>2.8.7</jackson.version>
         <jmockit.version>1.14</jmockit.version>
         <testng.version>6.9.10</testng.version>
         <hamcrest.version>1.3</hamcrest.version>
