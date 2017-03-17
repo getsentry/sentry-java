@@ -43,6 +43,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     private boolean isFrameInApp(StackTraceElement stackTraceElement) {
+        // TODO: A linear search is not efficient here, a Trie could be a better solution.
         for (String inAppFrame : inAppFrames) {
             String className = stackTraceElement.getClassName();
             if (className.startsWith(inAppFrame)) {

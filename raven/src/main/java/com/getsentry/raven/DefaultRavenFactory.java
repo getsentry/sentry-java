@@ -386,16 +386,17 @@ public class DefaultRavenFactory extends RavenFactory {
      * @return the list of package names to consider "in-app".
      */
     protected Collection<String> getInAppFrames(Dsn dsn) {
-        if (dsn.getOptions().containsKey(IN_APP_FRAMES_OPTION)) {
-            ArrayList<String> inAppPackages = new ArrayList<>();
-            for (String inAppPackage : dsn.getOptions().get(IN_APP_FRAMES_OPTION).split(",")) {
-                if (!inAppPackage.trim().equals("")) {
-                    inAppPackages.add(inAppPackage);
-                }
-            }
-            return inAppPackages;
+        if (!dsn.getOptions().containsKey(IN_APP_FRAMES_OPTION)) {
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+
+        ArrayList<String> inAppPackages = new ArrayList<>();
+        for (String inAppPackage : dsn.getOptions().get(IN_APP_FRAMES_OPTION).split(",")) {
+            if (!inAppPackage.trim().equals("")) {
+                inAppPackages.add(inAppPackage);
+            }
+        }
+        return inAppPackages;
     }
 
     /**

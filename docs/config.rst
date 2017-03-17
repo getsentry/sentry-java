@@ -266,7 +266,8 @@ events will be sent to the Sentry server.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sentry differentiates stack frames that are directly related to your application
-("in application") from stack frames that come from other packages. The difference
+("in application") from stack frames that come from other packages such as the
+standard library, frameworks, or other dependencies. The difference
 is visible in the Sentry web interface where only the "in application" frames are
 displayed by default.
 
@@ -276,6 +277,9 @@ You can configure which package prefixes your application uses with the
 ::
 
     http://public:private@host:port/1?raven.stacktrace.packages=com.mycompany,com.other.name
+
+*Changed in version 8.0:* Raven formerly supported a package blacklist but
+now only supports the package whitelist described above.
 
 Same Frame as Enclosing Exception
 `````````````````````````````````
