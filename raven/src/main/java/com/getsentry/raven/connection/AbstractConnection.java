@@ -97,28 +97,6 @@ public abstract class AbstractConnection implements Connection {
     protected abstract void doSend(Event event) throws ConnectionException;
 
     /**
-     * Set the maximum waiting time for a lockdown, in milliseconds.
-     *
-     * @param maxWaitingTime maximum waiting time for a lockdown, in milliseconds.
-     * @deprecated slated for removal
-     */
-    @Deprecated
-    public void setMaxWaitingTime(long maxWaitingTime) {
-        lockdownManager.setMaxLockdownTime(maxWaitingTime);
-    }
-
-    /**
-     * Set the base waiting time for a lockdown, in milliseconds.
-     *
-     * @param baseWaitingTime base waiting time for a lockdown, in milliseconds.
-     * @deprecated slated for removal
-     */
-    @Deprecated
-    public void setBaseWaitingTime(long baseWaitingTime) {
-        lockdownManager.setBaseLockdownTime(baseWaitingTime);
-    }
-
-    /**
      * Add a callback that is called when an exception occurs while attempting to
      * send events to the Sentry server.
      *

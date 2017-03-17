@@ -73,19 +73,6 @@ public class HttpConnection extends AbstractConnection {
      */
     private boolean bypassSecurity = false;
 
-    /**
-     * Creates an HTTP connection to a Sentry server.
-     *
-     * @param sentryUrl URL to the Sentry API.
-     * @param publicKey public key of the current project.
-     * @param secretKey private key of the current project.
-     * @deprecated use the more explicit constructor below
-     */
-    @Deprecated
-    public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
-        this(sentryUrl, publicKey, secretKey, null, null);
-    }
-
      /**
      * Creates an HTTP connection to a Sentry server.
      *
