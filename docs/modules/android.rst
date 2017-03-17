@@ -15,6 +15,11 @@ be disabled by setting the DSN option ``raven.buffer.enabled`` to ``false``.
 An ``UncaughtExceptionHandler`` is configured so that crash events will be
 stored to disk and sent the next time the application is run.
 
+The ``AndroidEventBuilderHelper`` is enabled by default, which will automatically
+enrich events with data about the current state of the device, such as memory usage,
+storage usage, display resolution, connectivity, battery level, model, Android version,
+whether the device is rooted or not, etc.
+
 Installation
 ------------
 
