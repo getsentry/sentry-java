@@ -367,8 +367,7 @@ Implementation
 
         @Override
         public Raven createRavenInstance(Dsn dsn) {
-            Raven raven = new Raven();
-            raven.setConnection(createConnection(dsn));
+            Raven raven = new Raven(createConnection(dsn));
 
             /*
             Create and use the ForwardedAddressResolver, which will use the
