@@ -8,15 +8,11 @@
         <version>7.8.6-SNAPSHOT</version>
     </parent>
 
-    <artifactId>raven-log4j</artifactId>
+    <artifactId>raven-jul</artifactId>
     <packaging>jar</packaging>
 
-    <name>Raven-Java for log4j 1.x</name>
-    <description>log4j 1.x appender  that sends logs to a Sentry server.</description>
-
-    <properties>
-        <log4j.version>1.2.17</log4j.version>
-    </properties>
+    <name>Raven-Java for java.util.logging</name>
+    <description>java.util.logging handler that sends logs to a Sentry server.</description>
 
     <dependencies>
         <dependency>
@@ -24,12 +20,11 @@
             <artifactId>raven</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
 
-        <!-- Tests dependencies -->
+        <!-- Test dependencies -->
         <dependency>
             <groupId>org.jmockit</groupId>
             <artifactId>jmockit</artifactId>
@@ -79,36 +74,18 @@
             <artifactId>jackson-annotations</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <log4j.configuration>log4j-test.properties</log4j.configuration>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <log4j.configuration>log4j-integration.properties</log4j.configuration>
+                        <java.util.logging.config.file>
+                            ${project.build.directory}/test-classes/logging-integration.properties
+                        </java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
