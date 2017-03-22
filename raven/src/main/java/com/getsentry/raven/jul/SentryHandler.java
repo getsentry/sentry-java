@@ -13,13 +13,11 @@ import com.getsentry.raven.event.interfaces.MessageInterface;
 import com.getsentry.raven.util.Util;
 import org.slf4j.MDC;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -53,7 +51,6 @@ public class SentryHandler extends Handler {
      * false.
      */
     protected boolean printfStyle;
-
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
@@ -82,13 +79,16 @@ public class SentryHandler extends Handler {
      * Tags to add to every event.
      */
     protected Map<String, String> tags = Collections.emptyMap();
-
     /**
      * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
      * <p>
      * Might be empty in which case no mapped tags are set.
      */
     protected Set<String> extraTags = Collections.emptySet();
+    /**
+     * Filter that drops messages that originate in Raven code.
+     */
+    private DropRavenFilter dropRavenFilter;
 
     /**
      * Creates an instance of SentryHandler.
@@ -102,7 +102,9 @@ public class SentryHandler extends Handler {
         setExtraTags(Lookup.lookup("extraTags"));
 
         retrieveProperties();
-        this.setFilter(new DropRavenFilter());
+
+        // We avoid using this.setFilter because it isn't supported on AppEngine
+        this.dropRavenFilter = new DropRavenFilter();
     }
 
     /**
@@ -113,6 +115,11 @@ public class SentryHandler extends Handler {
     public SentryHandler(Raven raven) {
         this();
         this.raven = raven;
+    }
+
+    @Override
+    public boolean isLoggable(LogRecord record) {
+        return super.isLoggable(record) && dropRavenFilter.isLoggable(record);
     }
 
     /**
@@ -155,37 +162,79 @@ public class SentryHandler extends Handler {
      * Retrieves the properties of the logger.
      */
     protected void retrieveProperties() {
-        LogManager manager = LogManager.getLogManager();
+        Properties properties = getProperties();
         String className = SentryHandler.class.getName();
-        String dsnProperty = manager.getProperty(className + ".dsn");
+        String dsnProperty = properties.getProperty(className + ".dsn");
         if (dsnProperty != null) {
             setDsn(dsnProperty);
         }
-        String ravenFactoryProperty = manager.getProperty(className + ".ravenFactory");
+        String ravenFactoryProperty = properties.getProperty(className + ".ravenFactory");
         if (ravenFactoryProperty != null) {
             setRavenFactory(ravenFactoryProperty);
         }
-        String releaseProperty = manager.getProperty(className + ".release");
+        String releaseProperty = properties.getProperty(className + ".release");
         if (releaseProperty != null) {
             setRelease(releaseProperty);
         }
-        String environmentProperty = manager.getProperty(className + ".environment");
+        String environmentProperty = properties.getProperty(className + ".environment");
         if (environmentProperty != null) {
             setEnvironment(environmentProperty);
         }
-        String serverNameProperty = manager.getProperty(className + ".serverName");
+        String serverNameProperty = properties.getProperty(className + ".serverName");
         if (serverNameProperty != null) {
             setServerName(serverNameProperty);
         }
-        String tagsProperty = manager.getProperty(className + ".tags");
+        String tagsProperty = properties.getProperty(className + ".tags");
         if (tagsProperty != null) {
             setTags(tagsProperty);
         }
-        String extraTagsProperty = manager.getProperty(className + ".extraTags");
+        String extraTagsProperty = properties.getProperty(className + ".extraTags");
         if (extraTagsProperty != null) {
             setExtraTags(extraTagsProperty);
         }
-        setPrintfStyle(Boolean.valueOf(manager.getProperty(className + ".printfStyle")));
+        setPrintfStyle(Boolean.valueOf(properties.getProperty(className + ".printfStyle")));
+    }
+
+    private Properties getProperties() {
+        try {
+            final LogManager manager = LogManager.getLogManager();
+
+            // Wrap LogManager in Properties
+            return new Properties() {
+                @Override
+                public String getProperty(String key) {
+                    return manager.getProperty(key);
+                }
+
+                @Override
+                public String getProperty(String key, String defaultValue) {
+                    String value = manager.getProperty(key);
+                    if (value == null) {
+                        value = defaultValue;
+                    }
+                    return value;
+                }
+            };
+        } catch (Exception e) {
+            /*
+             LogManager can fail due to permissions (for example, under AppEngine),
+             so we fall back to trying what it does without the permission wrappers.
+             */
+            final Properties properties = new Properties();
+            final String configFilename = System.getProperty("java.util.logging.config.file");
+            if (configFilename != null) {
+                final File config;
+                try {
+                    config = (new File(configFilename)).getCanonicalFile();
+                    try (FileInputStream in = new FileInputStream(config)) {
+                        properties.load(in);
+                    }
+                } catch (IOException ioe) {
+                    // Leave Properties blank.
+                }
+            }
+            return properties;
+        }
     }
 
     @Override
