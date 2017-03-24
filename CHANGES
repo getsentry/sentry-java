@@ -1,7 +1,8 @@
 Version 7.8.7
 -------------
 
--
+- Made some Appender initialization lazy, so that slf4j doesn't need to replay logs and
+  system property or environment variable configuration override hardcoded file configuration.
 
 Version 7.8.6
 -------------
