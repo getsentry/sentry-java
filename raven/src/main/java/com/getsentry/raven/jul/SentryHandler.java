@@ -128,7 +128,7 @@ public class SentryHandler extends Handler {
 
                         String release = Lookup.lookup("release");
                         if (release != null) {
-                            setRelease(null);
+                            setRelease(release);
                         }
 
                         String environment = Lookup.lookup("environment");
@@ -143,7 +143,7 @@ public class SentryHandler extends Handler {
 
                         String tags = Lookup.lookup("tags");
                         if (tags != null) {
-                            Lookup.lookup("tags");
+                            setTags(tags);
                         }
 
                         String extraTags = Lookup.lookup("extraTags");
