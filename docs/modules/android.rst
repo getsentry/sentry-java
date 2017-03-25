@@ -6,6 +6,8 @@ Features
 
 The Raven Android SDK is built on top of the main Java SDK and supports all of the same
 features, `configuration options <https://docs.sentry.io/clients/java/config/>`_, and more.
+Adding the Android SDK to a sample Android application that doesn't use Proguard only
+increased the release ``.apk`` size by approximately 200KB.
 
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
 (in the application's cache directory) by default. This allows events to be sent at a
