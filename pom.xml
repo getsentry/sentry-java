@@ -117,7 +117,6 @@
 
         <!-- dependencies versions -->
         <slf4j.version>1.7.24</slf4j.version>
-        <findbugs.version>3.0.1</findbugs.version>
         <jackson.version>2.8.7</jackson.version>
         <jmockit.version>1.14</jmockit.version>
         <testng.version>6.9.10</testng.version>
@@ -144,11 +143,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>jsr305</artifactId>
-                <version>${findbugs.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

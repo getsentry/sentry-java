@@ -1,6 +1,5 @@
 package com.getsentry.raven.event.interfaces;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +30,7 @@ public class MessageInterface implements SentryInterface {
     public static final String MESSAGE_INTERFACE = "sentry.interfaces.Message";
     private final String message;
     private final List<String> parameters;
-    @Nullable private final String formatted;
+    private final String formatted;
 
     /**
      * Creates a non parametrised message.

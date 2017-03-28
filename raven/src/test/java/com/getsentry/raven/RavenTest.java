@@ -102,19 +102,6 @@ public class RavenTest {
     }
 
     @Test
-    public void testChangeConnection(@Injectable final Connection mockNewConnection) throws Exception {
-        raven.setConnection(mockNewConnection);
-
-        raven.sendEvent(mockEvent);
-
-        new Verifications() {{
-            mockConnection.send((Event) any);
-            times = 0;
-            mockNewConnection.send(mockEvent);
-        }};
-    }
-
-    @Test
     public void testAddRemoveBuilderHelpers(@Injectable final EventBuilderHelper mockBuilderHelper) throws Exception {
         assertThat(raven.getBuilderHelpers(), not(contains(mockBuilderHelper)));
 
