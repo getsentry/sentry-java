@@ -262,20 +262,30 @@ This option takes a number from 0.0 to 1.0, representing the percent of
 events to allow through to server (from 0% to 100%). By default all
 events will be sent to the Sentry server.
 
-Inapp Classes
-~~~~~~~~~~~~~
+"In Application" Stack Frames
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sentry differentiate ``in_app`` stack frames (which are directly related to your application)
-and the "not ``in_app``" ones.
-This difference is visible in the Sentry web interface where only the ``in_app``
-frames are displayed by default.
+Sentry differentiates stack frames that are directly related to your application
+("in application") from stack frames that come from other packages such as the
+standard library, frameworks, or other dependencies. The difference
+is visible in the Sentry web interface where only the "in application" frames are
+displayed by default.
+
+You can configure which package prefixes your application uses with the
+``raven.stacktrace.app.packages`` option, which takes a comma separated list.
+
+::
+
+    http://public:private@host:port/1?raven.stacktrace.app.packages=com.mycompany,com.other.name
+
+*Changed in version 8.0:* Raven formerly supported a package blacklist but
+now only supports the package whitelist described above.
 
 Same Frame as Enclosing Exception
 `````````````````````````````````
 
-Raven can use the ``in_app`` system to hide frames in the context of chained exceptions.
-
-Usually when a StackTrace is printed, the result looks like this:
+Raven can use the "in application" system to hide frames in chained exceptions. Usually when a
+StackTrace is printed, the result looks like this:
 
 ::
 
@@ -296,30 +306,11 @@ Usually when a StackTrace is printed, the result looks like this:
 Some frames are replaced by the ``... N more`` line as they are the same frames
 as in the enclosing exception.
 
-To enable a similar behaviour from Raven use the ``raven.stacktrace.hidecommon`` option.
+To enable a similar behaviour in Raven use the ``raven.stacktrace.hidecommon`` option.
 
 ::
 
     http://public:private@host:port/1?raven.stacktrace.hidecommon
-
-Hide Frames Based on the Class Name
-```````````````````````````````````
-
-Raven can also mark some frames as ``in_app`` based on the name of the class.
-
-This can be used to hide parts of the stacktrace that are irrelevant to the problem
-for example the stack frames in the ``java.util`` package will not help determining
-what the problem was and will just create a longer stacktrace.
-
-Currently this is not configurable and some packages are ignored by default:
-
-- ``com.sun.*``
-- ``java.*``
-- ``javax.*``
-- ``org.omg.*``
-- ``sun.*``
-- ``junit.*``
-- ``com.intellij.rt.*``
 
 Compression
 ~~~~~~~~~~~
