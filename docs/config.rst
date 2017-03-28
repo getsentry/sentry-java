@@ -272,11 +272,11 @@ is visible in the Sentry web interface where only the "in application" frames ar
 displayed by default.
 
 You can configure which package prefixes your application uses with the
-``raven.stacktrace.packages`` option, which takes a comma separated list.
+``raven.stacktrace.app.packages`` option, which takes a comma separated list.
 
 ::
 
-    http://public:private@host:port/1?raven.stacktrace.packages=com.mycompany,com.other.name
+    http://public:private@host:port/1?raven.stacktrace.app.packages=com.mycompany,com.other.name
 
 *Changed in version 8.0:* Raven formerly supported a package blacklist but
 now only supports the package whitelist described above.

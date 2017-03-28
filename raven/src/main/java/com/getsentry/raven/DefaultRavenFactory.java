@@ -145,7 +145,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * Option for which package prefixes are part of the user's application code, as a single
      * comma separated string.
      */
-    public static final String IN_APP_FRAMES_OPTION = "raven.stacktrace.packages";
+    public static final String IN_APP_FRAMES_OPTION = "raven.stacktrace.app.packages";
     /**
      * Option for whether to hide common stackframes with enclosing exceptions.
      */
