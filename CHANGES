@@ -1,8 +1,9 @@
-Version 7.8.7
+Version 8.0.0
 -------------
 
-- Made some Appender initialization lazy, so that slf4j doesn't need to replay logs and
-  system property or environment variable configuration override hardcoded file configuration.
+- Fix so that system properties and environment variables always override hardcoded logger configuration for settings
+  such as release, environment, etc.
+- Fix Raven initialization so that slf4j doesn't emit log replay warning on startup.
 
 Version 7.8.6
 -------------

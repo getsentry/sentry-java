@@ -117,9 +117,14 @@ public class SentryHandler extends Handler {
      */
     @SuppressWarnings("checkstyle:hiddenfield")
     private void lazyInit() {
+        if (raven == null) {
+            initRaven();
+        }
+
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
+
                     try {
                         String ravenFactory = Lookup.lookup("ravenFactory");
                         if (ravenFactory != null) {
@@ -241,9 +246,6 @@ public class SentryHandler extends Handler {
         RavenEnvironment.startManagingThread();
         try {
             lazyInit();
-            if (raven == null) {
-                initRaven();
-            }
             Event event = buildEvent(record);
             raven.sendEvent(event);
         } catch (Exception e) {

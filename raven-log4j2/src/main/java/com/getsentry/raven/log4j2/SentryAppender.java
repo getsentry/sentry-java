@@ -194,6 +194,10 @@ public class SentryAppender extends AbstractAppender {
      */
     @SuppressWarnings("checkstyle:hiddenfield")
     private void lazyInit() {
+        if (raven == null) {
+            initRaven();
+        }
+
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
@@ -289,9 +293,6 @@ public class SentryAppender extends AbstractAppender {
         RavenEnvironment.startManagingThread();
         try {
             lazyInit();
-            if (raven == null) {
-                initRaven();
-            }
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
