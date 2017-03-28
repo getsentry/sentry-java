@@ -6,6 +6,8 @@ Features
 
 The Raven Android SDK is built on top of the main Java SDK and supports all of the same
 features, `configuration options <https://docs.sentry.io/clients/java/config/>`_, and more.
+Adding version ``8.0.0`` of the Android SDK to a sample application that doesn't even use
+Proguard only increased the release ``.apk`` size by approximately 200KB.
 
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
 (in the application's cache directory) by default. This allows events to be sent at a
@@ -15,6 +17,11 @@ be disabled by setting the DSN option ``raven.buffer.enabled`` to ``false``.
 An ``UncaughtExceptionHandler`` is configured so that crash events will be
 stored to disk and sent the next time the application is run.
 
+The ``AndroidEventBuilderHelper`` is enabled by default, which will automatically
+enrich events with data about the current state of the device, such as memory usage,
+storage usage, display resolution, connectivity, battery level, model, Android version,
+whether the device is rooted or not, etc.
+
 Installation
 ------------
 
@@ -22,9 +29,9 @@ Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-android:7.8.5'
+    compile 'com.getsentry.raven:raven-android:7.8.6'
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C7.8.5%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C7.8.6%7Cjar>`_.
 
 Usage
 -----
