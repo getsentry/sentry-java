@@ -1,6 +1,9 @@
 Version 8.0.0
 -------------
 
+- Remove ``DefaultRavenFactory.getNotInAppFrames()`` blacklist in favor of a new whitelist method,
+  ``DefaultRavenFactory.getInAppFrames(Dsn dsn)``.
+- Add ``raven.stacktrace.app.packages`` DSN option for configuring your application's package prefixes.
 - Fix so that system properties and environment variables always override hardcoded logger configuration for settings
   such as release, environment, etc.
 - Fix Raven initialization so that slf4j doesn't emit log replay warning on startup.
