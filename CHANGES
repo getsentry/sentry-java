@@ -1,15 +1,13 @@
 Version 8.0.0
-Version 7.8.7
--------------
-
--
-
-Version 7.8.6
 -------------
 
 - Remove ``DefaultRavenFactory.getNotInAppFrames()`` blacklist in favor of a new whitelist method,
   ``DefaultRavenFactory.getInAppFrames(Dsn dsn)``.
 - Add ``raven.stacktrace.packages`` DSN option for configuring your application's package prefixes.
+
+Version 7.8.6
+-------------
+
 - Automatically collect device information in ``contexts`` field on Android.
 - Updated Jackson, slf4j, log4j2 and logback dependencies.
 
