@@ -36,7 +36,34 @@ For other dependency managers see the `central Maven repository <https://search.
 Usage
 -----
 
-Configure your Sentry DSN (client key) in your ``AndroidManifest.xml``:
+Your application must have permission to access the internet in order to send
+events to the Sentry server. In your ``AndroidManifest.xml``:
+
+.. sourcecode:: xml
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+Then initialize the Raven client in your application's main ``onCreate`` method:
+
+.. sourcecode:: java
+
+    import com.getsentry.raven.android.Raven;
+
+    public class MainActivity extends Activity {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+
+            Context ctx = this.getApplicationContext();
+            // Use the Sentry DSN (client key) from the Project Settings page on Sentry
+            String sentryDsn = "https://publicKey:secretKey@host:port/1?options";
+
+            Raven.init(ctx, sentryDsn);
+        }
+    }
+
+You can also configure your Sentry DSN (client key) in your ``AndroidManifest.xml``:
 
 .. sourcecode:: xml
 
@@ -45,23 +72,6 @@ Configure your Sentry DSN (client key) in your ``AndroidManifest.xml``:
         android:name="com.getsentry.raven.android.DSN"
         android:value="https://publicKey:secretKey@host:port/1?options" />
     </application>
-
-Your application must also have permission to access the internet in order to send
-event to the Sentry server. In your ``AndroidManifest.xml``:
-
-.. sourcecode:: xml
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-Then, in your application's ``onCreate``, initialize the Raven client:
-
-.. sourcecode:: java
-
-    import com.getsentry.raven.android.Raven;
-
-    // "this" should be a reference to your main Activity
-    Raven.init(this.getApplicationContext());
 
 Now you can use ``Raven`` to capture events anywhere in your application:
 
