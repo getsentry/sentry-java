@@ -96,18 +96,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Extras to use as tags.
      */
     protected Set<String> extraTags = Collections.emptySet();
+    /**
+     * Used for lazy initialization of appender state, see {@link #lazyInit()}.
+     */
+    private volatile boolean initialized = false;
 
     /**
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        setRavenFactory(Lookup.lookup("ravenFactory"));
-        setRelease(Lookup.lookup("release"));
-        setEnvironment(Lookup.lookup("environment"));
-        setServerName(Lookup.lookup("serverName"));
-        setTags(Lookup.lookup("tags"));
-        setExtraTags(Lookup.lookup("extraTags"));
-
         this.addFilter(new DropRavenFilter());
     }
 
@@ -119,6 +116,58 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     public SentryAppender(Raven raven) {
         this();
         this.raven = raven;
+    }
+
+    /**
+     * Do some appender initialization *after* instance construction, so that we don't
+     * log in the constructor (which can cause annoying messages) and so that system
+     * properties and environment variables override hardcoded appender configuration.
+     */
+    @SuppressWarnings("checkstyle:hiddenfield")
+    private void lazyInit() {
+        if (raven == null) {
+            initRaven();
+        }
+
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    try {
+                        String ravenFactory = Lookup.lookup("ravenFactory");
+                        if (ravenFactory != null) {
+                            setRavenFactory(ravenFactory);
+                        }
+
+                        String release = Lookup.lookup("release");
+                        if (release != null) {
+                            setRelease(release);
+                        }
+
+                        String environment = Lookup.lookup("environment");
+                        if (environment != null) {
+                            setEnvironment(environment);
+                        }
+
+                        String serverName = Lookup.lookup("serverName");
+                        if (serverName != null) {
+                            setServerName(serverName);
+                        }
+
+                        String tags = Lookup.lookup("tags");
+                        if (tags != null) {
+                            setTags(tags);
+                        }
+
+                        String extraTags = Lookup.lookup("extraTags");
+                        if (extraTags != null) {
+                            setExtraTags(extraTags);
+                        }
+                    } finally {
+                        initialized = true;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -177,9 +226,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 return;
             }
 
-            if (raven == null) {
-                initRaven();
-            }
+            lazyInit();
             Event event = buildEvent(iLoggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
