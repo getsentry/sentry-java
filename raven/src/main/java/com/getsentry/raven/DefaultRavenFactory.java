@@ -198,7 +198,7 @@ public class DefaultRavenFactory extends RavenFactory {
             raven.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
             logger.debug("The current environment doesn't provide access to servlets,"
-                + "or provides an unsupported version.");
+                + " or provides an unsupported version.");
         }
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
         return raven;

@@ -53,7 +53,6 @@ public class SentryHandler extends Handler {
      * false.
      */
     protected boolean printfStyle;
-
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
@@ -82,25 +81,21 @@ public class SentryHandler extends Handler {
      * Tags to add to every event.
      */
     protected Map<String, String> tags = Collections.emptyMap();
-
     /**
      * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
      * <p>
      * Might be empty in which case no mapped tags are set.
      */
     protected Set<String> extraTags = Collections.emptySet();
+    /**
+     * Used for lazy initialization of appender state, see {@link #lazyInit()}.
+     */
+    private volatile boolean initialized = false;
 
     /**
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
-        setRavenFactory(Lookup.lookup("ravenFactory"));
-        setRelease(Lookup.lookup("release"));
-        setEnvironment(Lookup.lookup("environment"));
-        setServerName(Lookup.lookup("serverName"));
-        setTags(Lookup.lookup("tags"));
-        setExtraTags(Lookup.lookup("extraTags"));
-
         retrieveProperties();
         this.setFilter(new DropRavenFilter());
     }
@@ -113,6 +108,59 @@ public class SentryHandler extends Handler {
     public SentryHandler(Raven raven) {
         this();
         this.raven = raven;
+    }
+
+    /**
+     * Do some appender initialization *after* instance construction, so that we don't
+     * log in the constructor (which can cause annoying messages) and so that system
+     * properties and environment variables override hardcoded appender configuration.
+     */
+    @SuppressWarnings("checkstyle:hiddenfield")
+    private void lazyInit() {
+        if (raven == null) {
+            initRaven();
+        }
+
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+
+                    try {
+                        String ravenFactory = Lookup.lookup("ravenFactory");
+                        if (ravenFactory != null) {
+                            setRavenFactory(ravenFactory);
+                        }
+
+                        String release = Lookup.lookup("release");
+                        if (release != null) {
+                            setRelease(release);
+                        }
+
+                        String environment = Lookup.lookup("environment");
+                        if (environment != null) {
+                            setEnvironment(environment);
+                        }
+
+                        String serverName = Lookup.lookup("serverName");
+                        if (serverName != null) {
+                            setServerName(serverName);
+                        }
+
+                        String tags = Lookup.lookup("tags");
+                        if (tags != null) {
+                            setTags(tags);
+                        }
+
+                        String extraTags = Lookup.lookup("extraTags");
+                        if (extraTags != null) {
+                            setExtraTags(extraTags);
+                        }
+                    } finally {
+                        initialized = true;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -197,9 +245,7 @@ public class SentryHandler extends Handler {
 
         RavenEnvironment.startManagingThread();
         try {
-            if (raven == null) {
-                initRaven();
-            }
+            lazyInit();
             Event event = buildEvent(record);
             raven.sendEvent(event);
         } catch (Exception e) {
