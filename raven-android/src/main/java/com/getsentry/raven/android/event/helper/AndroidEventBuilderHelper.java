@@ -75,8 +75,10 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         Map<String, Map<String, Object>> contexts = new HashMap<>();
         Map<String, Object> deviceMap = new HashMap<>();
         Map<String, Object> osMap     = new HashMap<>();
+        Map<String, Object> appMap    = new HashMap<>();
         contexts.put("os",     osMap);
         contexts.put("device", deviceMap);
+        contexts.put("app", appMap);
 
         // Device
         deviceMap.put("manufacturer",          Build.MANUFACTURER);
@@ -118,6 +120,18 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         osMap.put("build",          Build.DISPLAY);
         osMap.put("kernel_version", KERNEL_VERSION);
         osMap.put("rooted",         isRooted());
+
+        // App
+        appMap.put("app_version", "1.0"); // TODO
+        appMap.put("app_name", "SwiftExample"); // TODO
+        appMap.put("device_app_hash", "18482a73f96d2ed3f4ce8d73fa9942744bff3598"); // TODO
+        appMap.put("app_id", "45BA82DF-F3E3-37F7-9D88-12A1AAB719E7"); // TODO
+        appMap.put("app_build", "2"); // TODO
+        appMap.put("app_start_time", "2017-03-29T08:48:11Z"); // TODO
+        appMap.put("app_identifier", "com.rokkincat.SentryExample"); // TODO
+        appMap.put("type", "app"); // TODO
+        appMap.put("build_type", "simulator"); // TODO
+
 
         return contexts;
     }
