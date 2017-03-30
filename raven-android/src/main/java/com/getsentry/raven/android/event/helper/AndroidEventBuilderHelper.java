@@ -4,6 +4,8 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -22,6 +24,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,11 +58,9 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         eventBuilder.withSdkName(RavenEnvironment.SDK_NAME + ":android");
-        try {
-            int versionCode = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionCode;
-            eventBuilder.withRelease(Integer.toString(versionCode));
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Couldn't find package version: " + e);
+        PackageInfo packageInfo = getPackageInfo(ctx);
+        if (packageInfo != null) {
+            eventBuilder.withRelease(packageInfo.versionName);
         }
 
         String androidId = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -122,18 +124,32 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         osMap.put("rooted",         isRooted());
 
         // App
-        appMap.put("app_version", "1.0"); // TODO
-        appMap.put("app_name", "SwiftExample"); // TODO
-        appMap.put("device_app_hash", "18482a73f96d2ed3f4ce8d73fa9942744bff3598"); // TODO
-        appMap.put("app_id", "45BA82DF-F3E3-37F7-9D88-12A1AAB719E7"); // TODO
-        appMap.put("app_build", "2"); // TODO
-        appMap.put("app_start_time", "2017-03-29T08:48:11Z"); // TODO
-        appMap.put("app_identifier", "com.rokkincat.SentryExample"); // TODO
-        appMap.put("type", "app"); // TODO
-        appMap.put("build_type", "simulator"); // TODO
+        PackageInfo packageInfo = getPackageInfo(ctx);
+        if (packageInfo != null) {
+            appMap.put("app_version", packageInfo.versionName);
+            appMap.put("app_build", packageInfo.versionCode);
+            appMap.put("app_identifier", packageInfo.packageName);
+        }
 
+        appMap.put("app_name", getApplicationName(ctx));
+        appMap.put("app_start_time", stringifyDate(new Date()));
 
         return contexts;
+    }
+
+    /**
+     * Return the Application's PackageInfo if possible, or null.
+     *
+     * @param ctx Android application context
+     * @return the Application's PackageInfo if possible, or null
+     */
+    private static PackageInfo getPackageInfo(Context ctx) {
+        try {
+            return ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Error getting package info.", e);
+            return null;
+        }
     }
 
     /**
@@ -440,6 +456,29 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             Log.e(TAG, "Error getting DisplayMetrics.", e);
             return null;
         }
+    }
+
+    /**
+     * Formats the given Date object into an ISO8601 String. Note that SimpleDateFormat isn't
+     * thread safe, and so we build one every time.
+     *
+     * @param date Date to format as ISO8601
+     * @return String representing the provided Date in ISO8601 format
+     */
+    private static String stringifyDate(Date date) {
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'").format(date);
+    }
+
+    /**
+     * Get the human-facing Application name.
+     *
+     * @param ctx Android application context
+     * @return Application name
+     */
+    private static String getApplicationName(Context ctx) {
+        ApplicationInfo applicationInfo = ctx.getApplicationInfo();
+        int stringId = applicationInfo.labelRes;
+        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : ctx.getString(stringId);
     }
 
 }
