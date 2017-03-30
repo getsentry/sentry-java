@@ -2,10 +2,13 @@ package com.getsentry.raven.event;
 
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.connection.Connection;
+import com.getsentry.raven.context.ContextManager;
+import com.getsentry.raven.context.SingletonContextManager;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -19,6 +22,13 @@ public class BreadcrumbTest {
 
     @Injectable
     private Connection mockConnection = null;
+    @Injectable
+    private ContextManager contextManager = new SingletonContextManager();
+
+    @BeforeMethod
+    public void setup() {
+        contextManager.getContext().clear();
+    }
 
     @Test
     public void testBreadcrumbsViaContextRecording() {
