@@ -2,11 +2,14 @@ package com.getsentry.raven.event;
 
 import com.getsentry.raven.Raven;
 import com.getsentry.raven.connection.Connection;
+import com.getsentry.raven.context.ContextManager;
+import com.getsentry.raven.context.SingletonContextManager;
 import com.getsentry.raven.event.helper.ContextBuilderHelper;
 import com.getsentry.raven.event.interfaces.UserInterface;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,9 +18,15 @@ import static org.hamcrest.core.IsEqual.equalTo;
 public class UserTest {
     @Tested
     private Raven raven = null;
-
     @Injectable
     private Connection mockConnection = null;
+    @Injectable
+    private ContextManager contextManager = new SingletonContextManager();
+
+    @BeforeMethod
+    public void setup() {
+        contextManager.getContext().clear();
+    }
 
     @Test
     public void testUserPropagation() {
