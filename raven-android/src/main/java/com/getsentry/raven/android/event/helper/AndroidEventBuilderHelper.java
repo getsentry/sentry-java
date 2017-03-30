@@ -476,9 +476,21 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return Application name
      */
     private static String getApplicationName(Context ctx) {
-        ApplicationInfo applicationInfo = ctx.getApplicationInfo();
-        int stringId = applicationInfo.labelRes;
-        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : ctx.getString(stringId);
+        try {
+            ApplicationInfo applicationInfo = ctx.getApplicationInfo();
+            int stringId = applicationInfo.labelRes;
+            if (stringId == 0) {
+                if (applicationInfo.nonLocalizedLabel != null) {
+                    return applicationInfo.nonLocalizedLabel.toString();
+                }
+            } else {
+                return ctx.getString(stringId);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting application name.", e);
+        }
+
+        return null;
     }
 
 }
