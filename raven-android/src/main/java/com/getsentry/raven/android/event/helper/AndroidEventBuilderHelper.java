@@ -466,7 +466,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
      * @return String representing the provided Date in ISO8601 format
      */
     private static String stringifyDate(Date date) {
-        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'").format(date);
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(date);
     }
 
     /**
