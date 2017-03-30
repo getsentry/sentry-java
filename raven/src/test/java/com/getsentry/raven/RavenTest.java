@@ -1,5 +1,7 @@
 package com.getsentry.raven;
 
+import com.getsentry.raven.context.ContextManager;
+import com.getsentry.raven.context.SingletonContextManager;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -9,6 +11,7 @@ import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
 import com.getsentry.raven.event.interfaces.ExceptionInterface;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -22,9 +25,16 @@ public class RavenTest {
     @Injectable
     private Connection mockConnection = null;
     @Injectable
+    private ContextManager contextManager = new SingletonContextManager();
+    @Injectable
     private Event mockEvent = null;
     @Injectable
     private EventBuilderHelper mockEventBuilderHelper = null;
+
+    @BeforeMethod
+    public void setup() {
+        contextManager.getContext().clear();
+    }
 
     @Test
     public void testSendEvent() throws Exception {

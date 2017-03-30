@@ -1,5 +1,6 @@
 package com.getsentry.raven;
 
+import com.getsentry.raven.context.Context;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.BreadcrumbBuilder;
 import com.getsentry.raven.event.User;
@@ -11,36 +12,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.equalTo;
 
 @Test(singleThreaded = true)
-public class RavenContextTest {
-
-    @Test
-    public void testActivateDeactivate() {
-        for (RavenContext context : RavenContext.getActiveContexts()) {
-            context.deactivate();
-        }
-
-        RavenContext context = new RavenContext();
-
-        assertThat(RavenContext.getActiveContexts(), emptyCollectionOf(RavenContext.class));
-
-        context.activate();
-
-        List<RavenContext> match = new ArrayList<>(1);
-        match.add(context);
-        assertThat(RavenContext.getActiveContexts(), equalTo(match));
-
-        context.deactivate();
-
-        assertThat(RavenContext.getActiveContexts(), emptyCollectionOf(RavenContext.class));
-    }
+public class ContextTest {
 
     @Test
     public void testBreadcrumbs() {
-        RavenContext context = new RavenContext();
+        Context context = new Context();
 
         Breadcrumb breadcrumb = new BreadcrumbBuilder()
             .setLevel("info")
@@ -63,7 +42,7 @@ public class RavenContextTest {
 
     @Test
     public void breadcrumbLimit() {
-        RavenContext context = new RavenContext(1);
+        Context context = new Context(1);
 
         Breadcrumb breadcrumb1 = new BreadcrumbBuilder()
             .setLevel("info")
@@ -94,7 +73,7 @@ public class RavenContextTest {
 
     @Test
     public void testUser() {
-        RavenContext context = new RavenContext();
+        Context context = new Context();
 
         User user = new UserBuilder()
             .setEmail("test@example.com")
