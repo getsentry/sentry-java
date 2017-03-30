@@ -1,7 +1,7 @@
 package com.getsentry.raven.context;
 
 /**
- * TODO.
+ * A {@link ContextManager} that returns a unique {@link Context} instance per thread.
  */
 public class ThreadLocalContextManager implements ContextManager {
     private final ThreadLocal<Context> context = new ThreadLocal<Context>() {
@@ -12,9 +12,10 @@ public class ThreadLocalContextManager implements ContextManager {
     };
 
     /**
-     * TODO.
+     * Returns a unique {@link Context} instance per thread. Useful for
+     * applications that use a single thread to server a user's request.
      *
-     * @return TODO
+     * @return a unique {@link Context} instance per thread.
      */
     public Context getContext() {
         return context.get();

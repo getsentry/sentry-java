@@ -379,10 +379,13 @@ public class DefaultRavenFactory extends RavenFactory {
     }
 
     /**
-     * TODO.
+     * Returns the {@link ContextManager} to use for locating and storing data that is context specific,
+     * such as {@link com.getsentry.raven.event.Breadcrumb}s.
+     * <p>
+     * Defaults to {@link ThreadLocalContextManager}.
      *
-     * @param dsn TODO
-     * @return TODO
+     * @param dsn Sentry server DSN which may contain options.
+     * @return the {@link ContextManager} to use.
      */
     protected ContextManager getContextManager(Dsn dsn) {
         return new ThreadLocalContextManager();

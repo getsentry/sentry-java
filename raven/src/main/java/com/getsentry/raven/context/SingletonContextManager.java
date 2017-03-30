@@ -1,15 +1,17 @@
 package com.getsentry.raven.context;
 
 /**
- * TODO.
+ * {@link ContextManager} that maintains a single {@link Context} instance
+ * across the entire application.
  */
 public class SingletonContextManager implements ContextManager {
     private final Context context = new Context();
 
     /**
-     * TODO.
+     * Returns a singleton {@link Context} instance. Useful for single-user
+     * applications.
      *
-     * @return TODO
+     * @return a singleton {@link Context} instance.
      */
     public Context getContext() {
         return context;

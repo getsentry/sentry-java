@@ -44,7 +44,8 @@ public class Raven {
     private final Set<EventBuilderHelper> builderHelpers =
         Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
     /**
-     * TODO.
+     * The {@link ContextManager} to use for locating and storing data that is context specific,
+     * such as {@link com.getsentry.raven.event.Breadcrumb}s.
      */
     private final ContextManager contextManager;
     /**
@@ -53,8 +54,8 @@ public class Raven {
      * Note that the most recently constructed instance is stored statically so it can be used with
      * the static helper methods.
      *
-     * @param connection Underlying Connection instance to use for sending events
-     * @param contextManager TODO
+     * @param connection Underlying {@link Connection} instance to use for sending events
+     * @param contextManager {@link ContextManager} instance to use for storing contextual data
      */
     public Raven(Connection connection, ContextManager contextManager) {
         this.connection = connection;
