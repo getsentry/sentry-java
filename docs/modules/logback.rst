@@ -211,6 +211,17 @@ In Practice
             logger.error("This is a test");
         }
 
+        void logWithBreadcrumbs() {
+            // Record a breadcrumb that will be sent with the next event(s),
+            // by default the last 100 breadcrumbs are kept.
+            Breadcrumbs.record(
+                new BreadcrumbBuilder().setMessage("User made an action").build()
+            );
+
+            // This sends a simple event to Sentry
+            logger.error("This is a test");
+        }
+
         void logWithTag() {
             // This sends an event with a tag named 'logback-Marker' to Sentry
             logger.info(MARKER, "This is a test");

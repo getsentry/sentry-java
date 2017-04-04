@@ -65,6 +65,17 @@ of the send methods it provides.
             raven.sendMessage("This is a test");
         }
 
+        void logWithBreadcrumbs() {
+            // Record a breadcrumb that will be sent with the next event(s),
+            // by default the last 100 breadcrumbs are kept.
+            Breadcrumbs.record(
+                new BreadcrumbBuilder().setMessage("User made an action").build()
+            );
+
+            // This sends a simple event to Sentry
+            raven.sendMessage("This is a test");
+        }
+
         void logException() {
             try {
                 unsafeMethod();
