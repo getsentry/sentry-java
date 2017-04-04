@@ -14,7 +14,7 @@ public class Breadcrumb implements Serializable {
     /**
      * (Optional) Type of the breadcrumb.
      */
-    private final String type;
+    private final Type type;
     /**
      * Timestamp when the breadcrumb occurred.
      */
@@ -22,7 +22,7 @@ public class Breadcrumb implements Serializable {
     /**
      * Level of the breadcrumb.
      */
-    private final String level;
+    private final Level level;
     /**
      * Message of the breadcrumb.
      */
@@ -37,24 +37,100 @@ public class Breadcrumb implements Serializable {
     private final Map<String, String> data;
 
     /**
+     * Possible choices for the level field.
+     */
+    public enum Level {
+        /**
+         * DEBUG level.
+         */
+        DEBUG("debug"),
+
+        /**
+         * INFO level.
+         */
+        INFO("info"),
+
+        /**
+         * WARNING level.
+         */
+        WARNING("warning"),
+
+        /**
+         * ERROR level.
+         */
+        ERROR("error"),
+
+        /**
+         * CRITICAL level.
+         */
+        CRITICAL("critical");
+
+        private final String value;
+
+        /**
+         * Construct a {@link Level} with the value to serialize with.
+         *
+         * @param value Value to use for serialization.
+         */
+        Level(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+    /**
+     * Possible choices for the type field.
+     */
+    public enum Type {
+        /**
+         * DEFAULT type.
+         */
+        DEFAULT("default"),
+
+        /**
+         * HTTP type.
+         */
+        HTTP("http"),
+
+        /**
+         * NAVIGATION type.
+         */
+        NAVIGATION("navigation");
+
+        private final String value;
+
+        /**
+         * Construct a {@link Type} with the value to serialize with.
+         *
+         * @param value Value to use for serialization.
+         */
+        Type(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    /**
      * Create an immutable {@link Breadcrumb} object.
      *
-     * @param type String
+     * @param type Type
      * @param timestamp Date
-     * @param level String
+     * @param level Level
      * @param message String
      * @param category String
      * @param data Map of String to String
      */
-    Breadcrumb(String type, Date timestamp, String level, String message,
+    Breadcrumb(Type type, Date timestamp, Level level, String message,
         String category, Map<String, String> data) {
 
         if (timestamp == null) {
             timestamp = new Date();
         }
-
-        checkNotNull(level, "level");
-        checkNotNull(category, "category");
 
         if (message == null && (data == null || data.size() < 1)) {
             throw new IllegalArgumentException("one of 'message' or 'data' must be set");
@@ -68,13 +144,7 @@ public class Breadcrumb implements Serializable {
         this.data = data;
     }
 
-    private void checkNotNull(String str, String name) {
-        if (str == null) {
-            throw new IllegalArgumentException("field '" + name + "' is required but got null");
-        }
-    }
-
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
@@ -82,7 +152,7 @@ public class Breadcrumb implements Serializable {
         return timestamp;
     }
 
-    public String getLevel() {
+    public Level getLevel() {
         return level;
     }
 

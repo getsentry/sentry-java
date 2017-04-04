@@ -35,7 +35,7 @@ public class BreadcrumbTest {
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
 
         final Breadcrumb breadcrumb = new BreadcrumbBuilder()
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setMessage("message")
             .setCategory("step")
             .build();
@@ -58,7 +58,7 @@ public class BreadcrumbTest {
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
 
         final Breadcrumb breadcrumb = new BreadcrumbBuilder()
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setMessage("message")
             .setCategory("step")
             .build();
@@ -83,7 +83,7 @@ public class BreadcrumbTest {
         raven.addBuilderHelper(new ContextBuilderHelper(raven));
 
         final Breadcrumb breadcrumb = new BreadcrumbBuilder()
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setMessage("message")
             .setCategory("step")
             .build();
