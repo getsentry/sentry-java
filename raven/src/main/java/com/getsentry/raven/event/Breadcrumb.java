@@ -12,10 +12,6 @@ import java.util.Map;
 public class Breadcrumb implements Serializable {
 
     /**
-     * Default category.
-     */
-    private static final String DEFAULT_CATEGORY = "generic";
-    /**
      * (Optional) Type of the breadcrumb.
      */
     private final Type type;
@@ -47,27 +43,37 @@ public class Breadcrumb implements Serializable {
         /**
          * DEBUG level.
          */
-        DEBUG,
+        DEBUG("debug"),
 
         /**
          * INFO level.
          */
-        INFO,
+        INFO("info"),
 
         /**
          * WARNING level.
          */
-        WARNING,
+        WARNING("warning"),
 
         /**
          * ERROR level.
          */
-        ERROR,
+        ERROR("error"),
 
         /**
          * CRITICAL level.
          */
-        CRITICAL
+        CRITICAL("critical");
+
+        private final String value;
+
+        Level(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
     /**
      * Possible choices for the type field.
@@ -76,17 +82,27 @@ public class Breadcrumb implements Serializable {
         /**
          * DEFAULT type.
          */
-        DEFAULT,
+        DEFAULT("default"),
 
         /**
          * HTTP type.
          */
-        HTTP,
+        HTTP("http"),
 
         /**
          * NAVIGATION type.
          */
-        NAVIGATION
+        NAVIGATION("navigation");
+
+        private final String value;
+
+        Type(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 
     /**
@@ -106,18 +122,6 @@ public class Breadcrumb implements Serializable {
             timestamp = new Date();
         }
 
-        if (category == null) {
-            category = DEFAULT_CATEGORY;
-        }
-
-        if (level == null) {
-            level = Level.INFO;
-        }
-
-        if (type == null) {
-            type = Type.DEFAULT;
-        }
-
         if (message == null && (data == null || data.size() < 1)) {
             throw new IllegalArgumentException("one of 'message' or 'data' must be set");
         }
@@ -128,12 +132,6 @@ public class Breadcrumb implements Serializable {
         this.message = message;
         this.category = category;
         this.data = data;
-    }
-
-    private void checkNotNull(String str, String name) {
-        if (str == null) {
-            throw new IllegalArgumentException("field '" + name + "' is required but got null");
-        }
     }
 
     public Type getType() {
