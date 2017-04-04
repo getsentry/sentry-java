@@ -14,8 +14,8 @@
     "checksum": null,
     "breadcrumbs": {
         "values": [
-            {"timestamp":1463169342,"level":"info","message":"test1","category":"foo","type":"default"},
-            {"timestamp":1463169343,"level":"info","message":"test2","category":"foo","type":"default"}
+            {"timestamp":1463169342,"level":"info","message":"test1","category":"foo"},
+            {"timestamp":1463169343,"level":"info","message":"test2","category":"foo"}
         ]
     },
     "sdk": {

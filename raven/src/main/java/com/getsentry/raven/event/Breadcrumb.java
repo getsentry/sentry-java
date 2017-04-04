@@ -67,6 +67,11 @@ public class Breadcrumb implements Serializable {
 
         private final String value;
 
+        /**
+         * Construct a {@link Level} with the value to serialize with.
+         *
+         * @param value Value to use for serialization.
+         */
         Level(String value) {
             this.value = value;
         }
@@ -96,6 +101,11 @@ public class Breadcrumb implements Serializable {
 
         private final String value;
 
+        /**
+         * Construct a {@link Type} with the value to serialize with.
+         *
+         * @param value Value to use for serialization.
+         */
         Type(String value) {
             this.value = value;
         }
