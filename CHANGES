@@ -7,6 +7,7 @@ Version 8.0.0
 - Fix so that system properties and environment variables always override hardcoded logger configuration for settings
   such as release, environment, etc.
 - Fix Raven initialization so that slf4j doesn't emit log replay warning on startup.
+- Changed ``Breadcrumb`` and `BreadcrumbBuilder`` to use enums for some fields.
 
 Version 7.8.6
 -------------
