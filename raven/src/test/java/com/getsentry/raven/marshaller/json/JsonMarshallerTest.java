@@ -237,13 +237,13 @@ public class JsonMarshallerTest {
 
         Breadcrumb breadcrumb1 = new BreadcrumbBuilder()
             .setTimestamp(new Date(1463169342000L))
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test1")
             .build();
         Breadcrumb breadcrumb2 = new BreadcrumbBuilder()
             .setTimestamp(new Date(1463169343000L))
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test2")
             .build();

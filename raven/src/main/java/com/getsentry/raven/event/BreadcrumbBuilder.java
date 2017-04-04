@@ -8,9 +8,9 @@ import java.util.Map;
  */
 public class BreadcrumbBuilder {
 
-    private String type;
+    private Breadcrumb.Type type;
     private Date timestamp;
-    private String level;
+    private Breadcrumb.Level level;
     private String message;
     private String category;
     private Map<String, String> data;
@@ -18,10 +18,10 @@ public class BreadcrumbBuilder {
     /**
      * Type of the {@link Breadcrumb}.
      *
-     * @param newType String
+     * @param newType {@link Breadcrumb.Type}
      * @return current BreadcrumbBuilder
      */
-    public BreadcrumbBuilder setType(String newType) {
+    public BreadcrumbBuilder setType(Breadcrumb.Type newType) {
         this.type = newType;
         return this;
     }
@@ -40,10 +40,10 @@ public class BreadcrumbBuilder {
     /**
      * Level of the {@link Breadcrumb}.
      *
-     * @param newLevel String
+     * @param newLevel {@link Breadcrumb.Level}
      * @return current BreadcrumbBuilder
      */
-    public BreadcrumbBuilder setLevel(String newLevel) {
+    public BreadcrumbBuilder setLevel(Breadcrumb.Level newLevel) {
         this.level = newLevel;
         return this;
     }

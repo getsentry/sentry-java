@@ -36,11 +36,7 @@ public class DiskBufferTest extends BufferTest {
 
     @Test
     public void testAddAndDiscard() throws IOException {
-        Breadcrumb breadcrumb = new BreadcrumbBuilder()
-                .setLevel("INFO")
-                .setCategory("CATEGORY")
-                .setMessage("MESSAGE")
-                .build();
+        Breadcrumb breadcrumb = new BreadcrumbBuilder().setMessage("MESSAGE").build();
         List<Breadcrumb> breadcrumbs = Lists.newArrayList();
         breadcrumbs.add(breadcrumb);
 

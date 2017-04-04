@@ -22,7 +22,7 @@ public class ContextTest {
         Context context = new Context();
 
         Breadcrumb breadcrumb = new BreadcrumbBuilder()
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test")
             .build();
@@ -45,12 +45,12 @@ public class ContextTest {
         Context context = new Context(1);
 
         Breadcrumb breadcrumb1 = new BreadcrumbBuilder()
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test1")
             .build();
         Breadcrumb breadcrumb2 = new BreadcrumbBuilder()
-            .setLevel("info")
+            .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test2")
             .build();
