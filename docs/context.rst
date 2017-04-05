@@ -8,11 +8,11 @@ or something else that better suits your application's needs.
 
 There is no single definition of context that applies to every application,
 for this reason a specific implementation must be chosen depending on what your
-application does. By default Raven uses a ``ThreadLocalContextManager`` that maintains
-a single ``Context`` instance per thread. This is useful for frameworks that use
-one thread per user request such as those based on synchronous servlet APIs. Raven
-also installs a ``ServletRequestListener`` that will clear the thread's context after
-each servlet request finishes.
+application does and how it is structured. By default Raven uses a
+``ThreadLocalContextManager`` that maintains a single ``Context`` instance per thread.
+This is useful for frameworks that use one thread per user request such as those based
+on synchronous servlet APIs. Raven also installs a ``ServletRequestListener`` that will
+clear the thread's context after each servlet request finishes.
 
 Raven defaults to the ``SingletonContextManager`` on Android, which maintains a single
 context instance for all threads for the lifetime of the application.
@@ -24,7 +24,7 @@ be provided in the future.
 Using Breadcrumbs
 -----------------
 
-Breadcrumbs can be used to describe what was happening in an application leading
+Breadcrumbs can be used to describe actions that occurred in your application leading
 up to an event being sent. For example, whether external API requests were made,
 or whether a user clicked on something in an Android application.
 
