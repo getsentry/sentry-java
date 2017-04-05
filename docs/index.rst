@@ -10,7 +10,7 @@
     Java
     ====
 
-Raven for Java (``raven-java``) is the official Java client for Sentry. At its core it provides
+Raven for Java (``raven-java``) is the official Java SDK for Sentry. At its core it provides
 a raw client for sending events to Sentry, but it is highly recommended that you
 use one of the included library or framework integrations listed below if at all possible.
 
@@ -19,6 +19,7 @@ use one of the included library or framework integrations listed below if at all
     :titlesonly:
 
     config
+    context
     usage
     modules/index
 

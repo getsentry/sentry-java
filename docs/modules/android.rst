@@ -80,6 +80,11 @@ Now you can use ``Raven`` to capture events anywhere in your application:
     // Send a simple event to the Sentry server
     Raven.capture("Error message");
 
+    // Set a breadcrumb that will be sent with the next event(s)
+    Breadcrumbs.record(
+        new BreadcrumbBuilder().setMessage("User made an action").build()
+    );
+
     try {
         something()
     } catch (Exception e) {
