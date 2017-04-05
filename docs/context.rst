@@ -2,11 +2,13 @@ Context & Breadcrumbs
 =====================
 
 The Java SDK implements the idea of a "context" to support attaching additional
-information to a specific user request, such as breadcrumbs.
+information to events, such as breadcrumbs. A context may refer to a single
+request to a web framework, to the entire lifetime of an Android application,
+or something else that better suits your application's needs.
 
-Unlike some other platforms, Java has no single definition of what "context" means.
-For this reason a specific implementation must be chosen depending on what framework
-you are using. By default Raven uses a ``ThreadLocalContextManager`` that maintains
+There is no single definition of context that applies to every application,
+for this reason a specific implementation must be chosen depending on what your
+application does. By default Raven uses a ``ThreadLocalContextManager`` that maintains
 a single ``Context`` instance per thread. This is useful for frameworks that use
 one thread per user request such as those based on synchronous servlet APIs. Raven
 also installs a ``ServletRequestListener`` that will clear the thread's context after
@@ -16,11 +18,15 @@ Raven defaults to the ``SingletonContextManager`` on Android, which maintains a 
 context instance for all threads for the lifetime of the application.
 
 As of version ``8.0.0`` to override the ``ContextManager`` you will need to override
-the ``getContextManager`` method in the ``DefaultRavenFactory``. A simpler API will
+the ``getContextManager`` method in the ``DefaultRavenFactory``. A simpler API will likely
 be provided in the future.
 
 Using Breadcrumbs
 -----------------
+
+Breadcrumbs can be used to describe what was happening in an application leading
+up to an event being sent. For example, whether external API requests were made,
+or whether a user clicked on something in an Android application.
 
 Once a Raven instance has been initialized, either via a logging framework or manually,
 you can begin recording breadcrumbs. By default the last 100 breadcrumbs for a given
