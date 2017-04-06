@@ -196,15 +196,10 @@ public class SentryAppender extends AppenderSkeleton {
         return new StackTraceElement(location.getClassName(), location.getMethodName(), fileName, line);
     }
 
-    @Override
-    public void activateOptions() {
-        super.activateOptions();
-    }
-
     /**
      * Initialises the Raven instance.
      */
-    protected synchronized void initRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();

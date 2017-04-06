@@ -311,7 +311,7 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Initialises the Raven instance.
      */
-    protected synchronized void initRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
