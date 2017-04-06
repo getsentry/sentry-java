@@ -96,8 +96,7 @@ public class SentryHandler extends Handler {
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
-        retrieveProperties();
-        this.setFilter(new DropRavenFilter());
+        this(null);
     }
 
     /**
@@ -106,8 +105,13 @@ public class SentryHandler extends Handler {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryHandler(Raven raven) {
-        this();
-        this.raven = raven;
+        retrieveProperties();
+        this.setFilter(new DropRavenFilter());
+        if (raven == null) {
+            initRaven();
+        } else {
+            this.raven = raven;
+        }
     }
 
     /**
@@ -238,6 +242,11 @@ public class SentryHandler extends Handler {
 
     @Override
     public void publish(LogRecord record) {
+        lazyInit();
+        if (raven == null) {
+            return;
+        }
+
         // Do not log the event if the current thread is managed by raven
         if (!isLoggable(record) || RavenEnvironment.isManagingThread()) {
             return;
@@ -245,7 +254,6 @@ public class SentryHandler extends Handler {
 
         RavenEnvironment.startManagingThread();
         try {
-            lazyInit();
             Event event = buildEvent(record);
             raven.sendEvent(event);
         } catch (Exception e) {
