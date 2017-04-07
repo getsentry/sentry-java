@@ -194,10 +194,6 @@ public class SentryAppender extends AbstractAppender {
      */
     @SuppressWarnings("checkstyle:hiddenfield")
     private void lazyInit() {
-        if (raven == null) {
-            initRaven();
-        }
-
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
@@ -236,6 +232,10 @@ public class SentryAppender extends AbstractAppender {
                     }
                 }
             }
+        }
+
+        if (raven == null) {
+            initRaven();
         }
     }
 

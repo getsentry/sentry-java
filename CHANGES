@@ -1,7 +1,7 @@
 Version 8.0.1
 -------------
 
--
+- Fix setting the ``RavenFactory`` via Java System Properties or environment variables.
 
 Version 8.0.0
 -------------
