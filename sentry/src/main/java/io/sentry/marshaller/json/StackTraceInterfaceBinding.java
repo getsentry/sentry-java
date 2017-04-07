@@ -72,7 +72,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     public void writeInterface(JsonGenerator generator, StackTraceInterface stackTraceInterface) throws IOException {
         generator.writeStartObject();
         generator.writeArrayFieldStart(FRAMES_PARAMETER);
-        if (stackTraceInterface.getStackTrace() == null) {
+        if (stackTraceInterface.getSentryStackTrace().length == 0) {
             StackTraceElement[] stackTrace = stackTraceInterface.getStackTrace();
             int commonWithEnclosing = stackTraceInterface.getFramesCommonWithEnclosing();
             for (int i = stackTrace.length - 1; i >= 0; i--) {
