@@ -1,5 +1,6 @@
 package io.sentry.marshaller.json;
 
+import com.getsentry.raven.event.interfaces.SentryStackTraceElement;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -15,6 +16,19 @@ public class StackTraceInterfaceBindingTest {
     private StackTraceInterfaceBinding interfaceBinding = null;
     @Injectable
     private StackTraceInterface mockStackTraceInterface = null;
+
+    @Test
+    public void testSingleSentryStackFrame() throws Exception {
+        final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
+        final SentryStackTraceElement sentryStackTraceElement = new SentryStackTraceElement("index.js", "throwError", "", 100, 10, "http://localhost","javascript");
+        new NonStrictExpectations() {{
+            mockStackTraceInterface.getSentryStackTrace();
+            result = new SentryStackTraceElement[]{sentryStackTraceElement};
+        }};
+        interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
+
+        assertThat(jsonGeneratorParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/SentryStackTrace.json")));
+    }
 
     @Test
     public void testSingleStackFrame() throws Exception {

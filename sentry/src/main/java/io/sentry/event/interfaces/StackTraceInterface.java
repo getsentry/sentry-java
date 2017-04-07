@@ -11,6 +11,7 @@ public class StackTraceInterface implements SentryInterface {
      */
     public static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
     private final StackTraceElement[] stackTrace;
+    private final SentryStackTraceElement[] sentryStackTrace;
     private final int framesCommonWithEnclosing;
 
     /**
@@ -34,6 +35,7 @@ public class StackTraceInterface implements SentryInterface {
      */
     public StackTraceInterface(StackTraceElement[] stackTrace, StackTraceElement[] enclosingStackTrace) {
         this.stackTrace = Arrays.copyOf(stackTrace, stackTrace.length);
+        this.sentryStackTrace = null;
 
         int m = stackTrace.length - 1;
         int n = enclosingStackTrace.length - 1;
@@ -44,6 +46,17 @@ public class StackTraceInterface implements SentryInterface {
         framesCommonWithEnclosing = stackTrace.length - 1 - m;
     }
 
+    /**
+     * Creates a StackTrace for an {@link com.getsentry.raven.event.Event}.
+     *
+     * @param stackTrace StackTrace to provide to Sentry.
+     */
+    public StackTraceInterface(SentryStackTraceElement[] stackTrace) {
+        this.stackTrace = null;
+        this.framesCommonWithEnclosing = 0;
+        this.sentryStackTrace = stackTrace;
+    }
+
     @Override
     public String getInterfaceName() {
         return STACKTRACE_INTERFACE;
@@ -51,6 +64,10 @@ public class StackTraceInterface implements SentryInterface {
 
     public StackTraceElement[] getStackTrace() {
         return Arrays.copyOf(stackTrace, stackTrace.length);
+    }
+
+    public SentryStackTraceElement[] getSentryStackTrace() {
+        return Arrays.copyOf(sentryStackTrace, sentryStackTrace.length);
     }
 
     public int getFramesCommonWithEnclosing() {

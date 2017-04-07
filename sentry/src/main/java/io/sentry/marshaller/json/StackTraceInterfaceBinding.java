@@ -16,12 +16,14 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String FUNCTION_PARAMETER = "function";
     private static final String MODULE_PARAMETER = "module";
     private static final String LINE_NO_PARAMETER = "lineno";
+    private static final String COL_NO_PARAMETER = "colno";
     private static final String ABSOLUTE_PATH_PARAMETER = "abs_path";
     private static final String CONTEXT_LINE_PARAMETER = "context_line";
     private static final String PRE_CONTEXT_PARAMETER = "pre_context";
     private static final String POST_CONTEXT_PARAMETER = "post_context";
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
+    private static final String PLATFORM_PARAMTER = "platform";
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
 
@@ -42,6 +44,19 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         generator.writeEndObject();
     }
 
+    private void writeFrame(JsonGenerator generator, SentryStackTraceElement stackTraceElement)
+            throws IOException {
+        generator.writeStartObject();
+        generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
+        generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getModule());
+        generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getFunction());
+        generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineno());
+        generator.writeNumberField(COL_NO_PARAMETER, stackTraceElement.getColno());
+        generator.writeStringField(PLATFORM_PARAMTER, stackTraceElement.getPlatform());
+        generator.writeStringField(ABSOLUTE_PATH_PARAMETER, stackTraceElement.getAbsPath());
+        generator.writeEndObject();
+    }
+
     private boolean isFrameInApp(StackTraceElement stackTraceElement) {
         // TODO: A linear search is not efficient here, a Trie could be a better solution.
         for (String inAppFrame : inAppFrames) {
@@ -55,17 +70,20 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
     @Override
     public void writeInterface(JsonGenerator generator, StackTraceInterface stackTraceInterface) throws IOException {
-        StackTraceElement[] stackTrace = stackTraceInterface.getStackTrace();
-
         generator.writeStartObject();
         generator.writeArrayFieldStart(FRAMES_PARAMETER);
-        int commonWithEnclosing = stackTraceInterface.getFramesCommonWithEnclosing();
-
-        // Go through the stackTrace frames from the first call to the last
-        for (int i = stackTrace.length - 1; i >= 0; i--) {
-            writeFrame(generator, stackTrace[i], commonWithEnclosing-- > 0);
+        if (stackTraceInterface.getStackTrace() == null) {
+            StackTraceElement[] stackTrace = stackTraceInterface.getStackTrace();
+            int commonWithEnclosing = stackTraceInterface.getFramesCommonWithEnclosing();
+            for (int i = stackTrace.length - 1; i >= 0; i--) {
+                writeFrame(generator, stackTrace[i], commonWithEnclosing-- > 0);
+            }
+        } else {
+            SentryStackTraceElement[] stackTrace = stackTraceInterface.getSentryStackTrace();
+            for (int i = stackTrace.length - 1; i >= 0; i--) {
+                writeFrame(generator, stackTrace[i]);
+            }
         }
-
         generator.writeEndArray();
         generator.writeEndObject();
     }

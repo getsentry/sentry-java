@@ -31,5 +31,7 @@ public class StackTraceInterface {
         private boolean inApp;
         @JsonProperty(value = "vars")
         private Object vars;
+        @JsonProperty(value = "platform")
+        private Object platform;
     }
 }

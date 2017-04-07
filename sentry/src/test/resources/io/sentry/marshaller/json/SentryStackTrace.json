@@ -1,0 +1,13 @@
+{
+  "frames": [
+    {
+      "filename": "index.js",
+      "module": "",
+      "function": "throwError",
+      "lineno": 100,
+      "colno": 10,
+      "platform": "javascript",
+      "abs_path": "http://localhost"
+    }
+  ]
+}
