@@ -9,11 +9,16 @@ import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.SentryException;
+import io.sentry.event.interfaces.SentryStackTraceElement;
+import io.sentry.event.interfaces.StackTraceInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -129,6 +134,25 @@ public class Sentry {
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
             .withLevel(Event.Level.ERROR)
             .withSentryInterface(new ExceptionInterface(throwable));
+        runBuilderHelpers(eventBuilder);
+        Event event = eventBuilder.build();
+        sendEvent(event);
+    }
+
+    /**
+     * Creates an exception, builds an event and sends it to the Sentry server.
+     *
+     * @param message String
+     * @param level {@link Event.Level}
+     * @param frames {@link SentryStackTraceElement}
+     */
+    public void sendException(String message, Event.Level level, SentryStackTraceElement[] frames) {
+        StackTraceInterface stackTraceInterface = new StackTraceInterface(frames);
+        Deque<SentryException> exceptions = new ArrayDeque<>();
+        exceptions.push(new SentryException(message, "", "", stackTraceInterface));
+        EventBuilder eventBuilder = new EventBuilder().withMessage(message)
+                .withLevel(level)
+                .withSentryInterface(new ExceptionInterface(exceptions));
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
         sendEvent(event);

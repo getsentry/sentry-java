@@ -1,6 +1,6 @@
 package io.sentry.marshaller.json;
 
-import com.getsentry.raven.event.interfaces.SentryStackTraceElement;
+import io.sentry.event.interfaces.SentryStackTraceElement;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;

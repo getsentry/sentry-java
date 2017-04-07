@@ -47,7 +47,7 @@ public class StackTraceInterface implements SentryInterface {
     }
 
     /**
-     * Creates a StackTrace for an {@link com.getsentry.raven.event.Event}.
+     * Creates a StackTrace for an {@link io.sentry.event.Event}.
      *
      * @param stackTrace StackTrace to provide to Sentry.
      */
