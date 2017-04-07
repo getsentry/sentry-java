@@ -19,22 +19,22 @@ Using Maven:
     <dependency>
         <groupId>com.getsentry.raven</groupId>
         <artifactId>raven-logback</artifactId>
-        <version>8.0.0</version>
+        <version>8.0.1</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-logback:8.0.0'
+    compile 'com.getsentry.raven:raven-logback:8.0.1'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven-logback" % "8.0.0"
+    libraryDependencies += "com.getsentry.raven" % "raven-logback" % "8.0.1"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C8.0.0%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C8.0.1%7Cjar>`_.
 
 Usage
 -----
