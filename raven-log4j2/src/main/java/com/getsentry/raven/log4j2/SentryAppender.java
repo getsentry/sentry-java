@@ -200,11 +200,6 @@ public class SentryAppender extends AbstractAppender {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String ravenFactory = Lookup.lookup("ravenFactory");
-                        if (ravenFactory != null) {
-                            setRavenFactory(ravenFactory);
-                        }
-
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
@@ -315,6 +310,11 @@ public class SentryAppender extends AbstractAppender {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String ravenFactory = Lookup.lookup("ravenFactory");
+            if (ravenFactory != null) {
+                setRavenFactory(ravenFactory);
             }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);

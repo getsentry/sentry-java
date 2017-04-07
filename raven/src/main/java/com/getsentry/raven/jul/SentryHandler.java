@@ -124,12 +124,7 @@ public class SentryHandler extends Handler {
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
-
                     try {
-                        String ravenFactory = Lookup.lookup("ravenFactory");
-                        if (ravenFactory != null) {
-                            setRavenFactory(ravenFactory);
-                        }
 
                         String release = Lookup.lookup("release");
                         if (release != null) {
@@ -270,6 +265,11 @@ public class SentryHandler extends Handler {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String ravenFactory = Lookup.lookup("ravenFactory");
+            if (ravenFactory != null) {
+                setRavenFactory(ravenFactory);
             }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
