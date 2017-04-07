@@ -2,6 +2,7 @@ Version 8.0.1
 -------------
 
 - Fix setting the ``RavenFactory`` via Java System Properties or environment variables.
+- Fix message interface errors in log4j2 integration.
 
 Version 8.0.0
 -------------

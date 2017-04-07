@@ -347,7 +347,9 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withEnvironment(environment.trim());
         }
 
-        if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
+        if (eventMessage.getFormat() != null
+            && !eventMessage.getFormat().equals("")
+            && !eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
             eventBuilder.withSentryInterface(new MessageInterface(
                 eventMessage.getFormat(),
                 formatMessageParameters(eventMessage.getParameters()),
