@@ -1,7 +1,7 @@
 Version 8.0.1
 -------------
 
--
+- Fix message interface errors in log4j2 integration.
 
 Version 8.0.0
 -------------
