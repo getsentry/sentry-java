@@ -125,10 +125,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     @SuppressWarnings("checkstyle:hiddenfield")
     private void lazyInit() {
-        if (raven == null) {
-            initRaven();
-        }
-
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
@@ -167,6 +163,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                     }
                 }
             }
+        }
+
+        if (raven == null) {
+            initRaven();
         }
     }
 
