@@ -1,7 +1,7 @@
 Version 8.0.2
 -------------
 
--
+- Add `USER` option to the `Breadcrumb.Type` enum.
 
 Version 8.0.1
 -------------
