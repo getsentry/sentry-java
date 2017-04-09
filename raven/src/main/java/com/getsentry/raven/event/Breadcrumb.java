@@ -97,7 +97,13 @@ public class Breadcrumb implements Serializable {
         /**
          * NAVIGATION type.
          */
-        NAVIGATION("navigation");
+        NAVIGATION("navigation"),
+
+        /**
+         * USER type.
+         */
+        USER("user");
+
 
         private final String value;
 
