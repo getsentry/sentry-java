@@ -42,7 +42,7 @@ context instance will be stored and sent with future events.
 
     public void example() {
         // Record a breadcrumb without having to look up the context instance manually
-        Breadcrumbs.record(
+        Raven.record(
             new BreadcrumbBuilder().setMessage("User did something specific again!").build()
         );
 

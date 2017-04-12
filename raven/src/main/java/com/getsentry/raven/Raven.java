@@ -5,6 +5,7 @@ import com.getsentry.raven.connection.LockedDownException;
 import com.getsentry.raven.context.Context;
 import com.getsentry.raven.context.ContextManager;
 import com.getsentry.raven.environment.RavenEnvironment;
+import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.Event;
 import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
@@ -245,6 +246,25 @@ public class Raven {
     public static void capture(EventBuilder eventBuilder) {
         verifyStoredInstance();
         getStoredInstance().sendEvent(eventBuilder);
+    }
+
+    /**
+     * Record a {@link Breadcrumb}.
+     *
+     * @param breadcrumb Breadcrumb to record
+     */
+    public static void record(Breadcrumb breadcrumb) {
+        getStoredInstance().getContext().recordBreadcrumb(breadcrumb);
+    }
+
+    /**
+     * Clear the statically stored Raven instance.
+     */
+    public static void clearStoredRaven() {
+        if (stored != null) {
+            stored.closeConnection();
+        }
+        stored = null;
     }
 
 }

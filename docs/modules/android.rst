@@ -48,7 +48,7 @@ Then initialize the Raven client in your application's main ``onCreate`` method:
 
 .. sourcecode:: java
 
-    import com.getsentry.raven.android.Raven;
+    import com.getsentry.raven.android.AndroidRaven;
 
     public class MainActivity extends Activity {
         @Override
@@ -59,7 +59,7 @@ Then initialize the Raven client in your application's main ``onCreate`` method:
             // Use the Sentry DSN (client key) from the Project Settings page on Sentry
             String sentryDsn = "https://publicKey:secretKey@host:port/1?options";
 
-            Raven.init(ctx, sentryDsn);
+            AndroidRaven.init(ctx, sentryDsn);
         }
     }
 
@@ -77,11 +77,13 @@ Now you can use ``Raven`` to capture events anywhere in your application:
 
 .. sourcecode:: java
 
+    import com.getsentry.raven.Raven;
+
     // Send a simple event to the Sentry server
     Raven.capture("Error message");
 
-    // Set a breadcrumb that will be sent with the next event(s)
-    Breadcrumbs.record(
+    // Record a breadcrumb that will be sent with the next event(s)
+    Raven.record(
         new BreadcrumbBuilder().setMessage("User made an action").build()
     );
 
