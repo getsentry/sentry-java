@@ -415,6 +415,10 @@ public class EventBuilder {
         return event;
     }
 
+    public Event getEvent() {
+        return event;
+    }
+
     @Override
     public String toString() {
         return "EventBuilder{"

@@ -2,6 +2,7 @@ Version 8.0.2
 -------------
 
 - Add user breadcrumb type. (thanks NLthijs48)
+- Add getter for underlying ``Event`` in ``EventBuilder`` so that helpers can read fields. (thanks anjo-swe)
 
 Version 8.0.1
 -------------
