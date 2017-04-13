@@ -1,6 +1,7 @@
 package com.getsentry.raven.android;
 
 import com.getsentry.raven.BaseIT;
+import com.getsentry.raven.Raven;
 import org.junit.After;
 import org.junit.Before;
 

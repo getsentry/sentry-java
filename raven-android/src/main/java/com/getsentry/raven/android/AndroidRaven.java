@@ -9,26 +9,22 @@ import android.util.Log;
 import com.getsentry.raven.DefaultRavenFactory;
 import com.getsentry.raven.RavenFactory;
 import com.getsentry.raven.dsn.Dsn;
-import com.getsentry.raven.event.Event;
-import com.getsentry.raven.event.EventBuilder;
 
 /**
  * Android specific class to interface with Raven. Supplements the default Java classes
  * with Android specific state and features.
  */
-public final class Raven {
+public final class AndroidRaven {
 
     /**
      * Logger tag.
      */
-    public static final String TAG = Raven.class.getName();
-
-    private static volatile com.getsentry.raven.Raven raven;
+    public static final String TAG = AndroidRaven.class.getName();
 
     /**
      * Hide constructor.
      */
-    private Raven() {
+    private AndroidRaven() {
 
     }
 
@@ -109,12 +105,6 @@ public final class Raven {
      * @param ravenFactory the RavenFactory to be used to generate the Raven instance
      */
     public static void init(Context ctx, Dsn dsn, AndroidRavenFactory ravenFactory) {
-        if (raven != null) {
-            Log.e(TAG, "Initializing Raven multiple times.");
-            // cleanup existing connections
-            raven.closeConnection();
-        }
-
         // Ensure we have the application context
         Context context = ctx.getApplicationContext();
 
@@ -137,7 +127,7 @@ public final class Raven {
         }
 
         RavenFactory.registerFactory(ravenFactory);
-        raven = RavenFactory.ravenInstance(dsn);
+        RavenFactory.ravenInstance(dsn);
 
         setupUncaughtExceptionHandler();
     }
@@ -162,53 +152,6 @@ public final class Raven {
             Thread.setDefaultUncaughtExceptionHandler(
                 new RavenUncaughtExceptionHandler(currentHandler));
         }
-    }
-
-    /**
-     * Send an Event using the statically stored Raven instance.
-     *
-     * @param event Event to send to the Sentry server
-     */
-    public static void capture(Event event) {
-        raven.sendEvent(event);
-    }
-
-    /**
-     * Sends an exception (or throwable) to the Sentry server using the statically stored Raven instance.
-     * <p>
-     * The exception will be logged at the {@link Event.Level#ERROR} level.
-     *
-     * @param throwable exception to send to Sentry.
-     */
-    public static void capture(Throwable throwable) {
-        raven.sendException(throwable);
-    }
-
-    /**
-     * Sends a message to the Sentry server using the statically stored Raven instance.
-     * <p>
-     * The message will be logged at the {@link Event.Level#INFO} level.
-     *
-     * @param message message to send to Sentry.
-     */
-    public static void capture(String message) {
-        raven.sendMessage(message);
-    }
-
-    /**
-     * Builds and sends an {@link Event} to the Sentry server using the statically stored Raven instance.
-     *
-     * @param eventBuilder {@link EventBuilder} to send to Sentry.
-     */
-    public static void capture(EventBuilder eventBuilder) {
-        raven.sendEvent(eventBuilder);
-    }
-
-    /**
-     * Clear statically stored Raven instance. Useful for tests.
-     */
-    public static void clearStoredRaven() {
-        raven = null;
     }
 
 }
