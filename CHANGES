@@ -1,7 +1,8 @@
-Version 8.0.3
+Version 1.0.0
 -------------
 
--
+- Rename from ``raven-java`` to ``sentry-java``.
+- Move from ``com.getsentry.raven`` package to ``io.sentry``.
 
 Version 8.0.2
 -------------

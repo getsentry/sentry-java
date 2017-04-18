@@ -13,10 +13,10 @@
     "java.logging": {
       "name": "java.util.logging",
       "type": "framework",
-      "doc_link": "modules/raven/",
+      "doc_link": "modules/sentry/",
       "wizard": [
-        "modules/raven#installation",
-        "modules/raven#usage"
+        "modules/sentry#installation",
+        "modules/sentry#usage"
       ]
     },
     "java.log4j": {

@@ -1,12 +1,12 @@
 java.util.logging
 =================
 
-The ``raven`` library provides a `java.util.logging Handler
+The ``sentry`` library provides a `java.util.logging Handler
 <http://docs.oracle.com/javase/7/docs/api/java/util/logging/Handler.html>`_
 that sends logged exceptions to Sentry.
 
-The source for ``raven-java`` can be found `on Github
-<https://github.com/getsentry/raven-java/tree/master/raven>`_.
+The source for ``sentry-java`` can be found `on Github
+<https://github.com/getsentry/sentry-java/tree/master/sentry>`_.
 
 Installation
 ------------
@@ -16,24 +16,24 @@ Using Maven:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>com.getsentry.raven</groupId>
-        <artifactId>raven</artifactId>
-        <version>8.0.2</version>
+        <groupId>io.sentry</groupId>
+        <artifactId>sentry</artifactId>
+        <version>1.0.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven:8.0.2'
+    compile 'io.sentry:sentry:1.0.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven" % "8.0.2"
+    libraryDependencies += "io.sentry" % "sentry" % "1.0.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry%7C1.0.0%7Cjar>`_.
 
 Usage
 -----
@@ -49,13 +49,13 @@ Example configuration using the ``logging.properties`` format:
 .. sourcecode:: ini
 
     # Enable the Console and Sentry handlers
-    handlers=java.util.logging.ConsoleHandler,com.getsentry.raven.jul.SentryHandler
+    handlers=java.util.logging.ConsoleHandler,io.sentry.jul.SentryHandler
 
     # Set the default log level to INFO
     .level=INFO
 
     # Override the Sentry handler log level to WARNING
-    com.getsentry.raven.jul.SentryHandler.level=WARNING
+    io.sentry.jul.SentryHandler.level=WARNING
 
 When starting your application, add the ``java.util.logging.config.file`` to
 the system properties, with the full path to the ``logging.properties`` as
@@ -90,11 +90,11 @@ Configuration parameters follow:
 ======================= ======================= =============================== ===========
 Environment variable    Java System Property    Example value                   Description
 ======================= ======================= =============================== ===========
-``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Raven will no-op
+``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Sentry will no-op
 ``SENTRY_RELEASE``      ``sentry.release``      ``1.0.0``                       Optional, provide release version of your application
 ``SENTRY_ENVIRONMENT``  ``sentry.environment``  ``production``                  Optional, provide environment your application is running in
 ``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
+``SENTRY_SENTRYFACTORY`` ``sentry.sentryfactory`` ``com.foo.SentryFactory``        Optional, select the sentryFactory class
 ``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
 ``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================= ======================= =============================== ===========
@@ -111,34 +111,34 @@ Example configuration in the ``logging.properties`` file:
 .. sourcecode:: ini
 
     # Enable the Console and Sentry handlers
-    handlers=java.util.logging.ConsoleHandler, com.getsentry.raven.jul.SentryHandler
+    handlers=java.util.logging.ConsoleHandler, io.sentry.jul.SentryHandler
 
     # Set the default log level to INFO
     .level=INFO
 
     # Override the Sentry handler log level to WARNING
-    com.getsentry.raven.jul.SentryHandler.level=WARNING
+    io.sentry.jul.SentryHandler.level=WARNING
 
     # Set Sentry DSN
-    com.getsentry.raven.jul.SentryHandler.dsn=https://host:port/1?options
+    io.sentry.jul.SentryHandler.dsn=https://host:port/1?options
 
     # Optional, provide tags
-    com.getsentry.raven.jul.SentryHandler.tags=tag1:value1,tag2:value2
+    io.sentry.jul.SentryHandler.tags=tag1:value1,tag2:value2
 
     # Optional, provide release version of your application
-    com.getsentry.raven.jul.SentryHandler.release=1.0.0
+    io.sentry.jul.SentryHandler.release=1.0.0
 
     # Optional, provide environment your application is running in
-    com.getsentry.raven.jul.SentryHandler.environment=production
+    io.sentry.jul.SentryHandler.environment=production
 
     # Optional, override the server name (rather than looking it up dynamically)
-    com.getsentry.raven.jul.SentryHandler.serverName=server1
+    io.sentry.jul.SentryHandler.serverName=server1
 
-    # Optional, select the ravenFactory class
-    com.getsentry.raven.jul.SentryHandler.ravenFactory=com.foo.RavenFactory
+    # Optional, select the sentryFactory class
+    io.sentry.jul.SentryHandler.sentryFactory=com.foo.SentryFactory
 
     # Optional, provide tag names to be extracted from MDC
-    com.getsentry.raven.jul.SentryHandler.extraTags=foo,bar,baz
+    io.sentry.jul.SentryHandler.extraTags=foo,bar,baz
 
 In Practice
 -----------

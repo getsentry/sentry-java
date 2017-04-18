@@ -4,15 +4,15 @@ Android
 Features
 --------
 
-The Raven Android SDK is built on top of the main Java SDK and supports all of the same
+The Sentry Android SDK is built on top of the main Java SDK and supports all of the same
 features, `configuration options <https://docs.sentry.io/clients/java/config/>`_, and more.
-Adding version ``8.0.2`` of the Android SDK to a sample application that doesn't even use
+Adding version ``1.0.0`` of the Android SDK to a sample application that doesn't even use
 Proguard only increased the release ``.apk`` size by approximately 200KB.
 
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
 (in the application's cache directory) by default. This allows events to be sent at a
 later time if the device does not have connectivity when an event is created. This can
-be disabled by setting the DSN option ``raven.buffer.enabled`` to ``false``.
+be disabled by setting the DSN option ``sentry.buffer.enabled`` to ``false``.
 
 An ``UncaughtExceptionHandler`` is configured so that crash events will be
 stored to disk and sent the next time the application is run.
@@ -29,9 +29,9 @@ Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-android:8.0.2'
+    compile 'io.sentry:sentry-android:1.0.0'
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-android%7C1.0.0%7Cjar>`_.
 
 Usage
 -----
@@ -44,11 +44,11 @@ events to the Sentry server. In your ``AndroidManifest.xml``:
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-Then initialize the Raven client in your application's main ``onCreate`` method:
+Then initialize the Sentry client in your application's main ``onCreate`` method:
 
 .. sourcecode:: java
 
-    import com.getsentry.raven.android.Raven;
+    import io.sentry.android.Sentry;
 
     public class MainActivity extends Activity {
         @Override
@@ -59,7 +59,7 @@ Then initialize the Raven client in your application's main ``onCreate`` method:
             // Use the Sentry DSN (client key) from the Project Settings page on Sentry
             String sentryDsn = "https://publicKey:secretKey@host:port/1?options";
 
-            Raven.init(ctx, sentryDsn);
+            Sentry.init(ctx, sentryDsn);
         }
     }
 
@@ -69,16 +69,16 @@ You can also configure your Sentry DSN (client key) in your ``AndroidManifest.xm
 
     <application>
       <meta-data
-        android:name="com.getsentry.raven.android.DSN"
+        android:name="io.sentry.android.DSN"
         android:value="https://publicKey:secretKey@host:port/1?options" />
     </application>
 
-Now you can use ``Raven`` to capture events anywhere in your application:
+Now you can use ``Sentry`` to capture events anywhere in your application:
 
 .. sourcecode:: java
 
     // Send a simple event to the Sentry server
-    Raven.capture("Error message");
+    Sentry.capture("Error message");
 
     // Set a breadcrumb that will be sent with the next event(s)
     Breadcrumbs.record(
@@ -89,11 +89,11 @@ Now you can use ``Raven`` to capture events anywhere in your application:
         something()
     } catch (Exception e) {
         // Send an exception event to the Sentry server
-        Raven.capture(e);
+        Sentry.capture(e);
     }
 
     // Or build an event manually
     EventBuilder eventBuilder = new EventBuilder()
                                   .withMessage("Exception caught")
                                   .withLevel(Event.Level.ERROR);
-    Raven.capture(eventBuilder.build());
+    Sentry.capture(eventBuilder.build());

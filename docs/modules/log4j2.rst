@@ -1,13 +1,13 @@
 Log4j 2.x
 =========
 
-The ``raven-log4j2`` library provides `Log4j 2.x <https://logging.apache.org/log4j/2.x/>`_
-support for Raven via an `Appender
+The ``sentry-log4j2`` library provides `Log4j 2.x <https://logging.apache.org/log4j/2.x/>`_
+support for Sentry via an `Appender
 <https://logging.apache.org/log4j/2.x/log4j-core/apidocs/org/apache/logging/log4j/core/Appender.html>`_
 that sends logged exceptions to Sentry.
 
 The source can be found `on Github
-<https://github.com/getsentry/raven-java/tree/master/raven-log4j2>`_.
+<https://github.com/getsentry/sentry-java/tree/master/sentry-log4j2>`_.
 
 Installation
 ------------
@@ -17,24 +17,24 @@ Using Maven:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>com.getsentry.raven</groupId>
-        <artifactId>raven-log4j2</artifactId>
-        <version>8.0.2</version>
+        <groupId>io.sentry</groupId>
+        <artifactId>sentry-log4j2</artifactId>
+        <version>1.0.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-log4j2:8.0.2'
+    compile 'io.sentry:sentry-log4j2:1.0.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven-log4j2" % "8.0.2"
+    libraryDependencies += "io.sentry" % "sentry-log4j2" % "1.0.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j2%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-log4j2%7C1.0.0%7Cjar>`_.
 
 Usage
 -----
@@ -50,13 +50,13 @@ Example configuration using the ``log4j2.xml`` format:
 .. sourcecode:: xml
 
     <?xml version="1.0" encoding="UTF-8"?>
-    <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
+    <configuration status="warn" packages="org.apache.logging.log4j.core,io.sentry.log4j2">
         <appenders>
             <Console name="Console" target="SYSTEM_OUT">
                 <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
             </Console>
 
-            <Raven name="Sentry" />
+            <Sentry name="Sentry" />
         </appenders>
 
         <loggers>
@@ -95,11 +95,11 @@ Configuration parameters follow:
 ======================= ======================= =============================== ===========
 Environment variable    Java System Property    Example value                   Description
 ======================= ======================= =============================== ===========
-``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Raven will no-op
+``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Sentry will no-op
 ``SENTRY_RELEASE``      ``sentry.release``      ``1.0.0``                       Optional, provide release version of your application
 ``SENTRY_ENVIRONMENT``  ``sentry.environment``  ``production``                  Optional, provide environment your application is running in
 ``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
+``SENTRY_SENTRYFACTORY`` ``sentry.sentryfactory`` ``com.foo.SentryFactory``        Optional, select the sentryFactory class
 ``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
 ``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================= ======================= =============================== ===========
@@ -116,13 +116,13 @@ Example configuration in the ``log4j.properties`` file:
 .. sourcecode:: xml
 
     <?xml version="1.0" encoding="UTF-8"?>
-    <configuration status="warn" packages="org.apache.logging.log4j.core,com.getsentry.raven.log4j2">
+    <configuration status="warn" packages="org.apache.logging.log4j.core,io.sentry.log4j2">
         <appenders>
             <Console name="Console" target="SYSTEM_OUT">
                 <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
             </Console>
 
-            <Raven name="Sentry">
+            <Sentry name="Sentry">
                 <!-- Set Sentry DSN -->
                 <dsn>https://host:port/1?options</dsn>
 
@@ -135,15 +135,15 @@ Example configuration in the ``log4j.properties`` file:
                 <!-- Optional, override the server name (rather than looking it up dynamically) -->
                 <serverName>server1</serverName>
 
-                <!-- Optional, select the ravenFactory class -->
-                <ravenFactory>com.foo.RavenFactory</ravenFactory>
+                <!-- Optional, select the sentryFactory class -->
+                <sentryFactory>com.foo.SentryFactory</sentryFactory>
 
                 <!-- Optional, provide tags -->
                 <tags>tag1:value1,tag2:value2</tags>
 
                 <!-- Optional, provide tag names to be extracted from MDC -->
                 <extraTags>foo,bar,baz</extraTags>
-            </Raven>
+            </Sentry>
         </appenders>
 
         <loggers>

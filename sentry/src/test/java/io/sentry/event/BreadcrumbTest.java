@@ -1,0 +1,106 @@
+package io.sentry.event;
+
+import io.sentry.Sentry;
+import io.sentry.connection.Connection;
+import io.sentry.context.ContextManager;
+import io.sentry.context.SingletonContextManager;
+import io.sentry.event.helper.ContextBuilderHelper;
+import mockit.Injectable;
+import mockit.Tested;
+import mockit.Verifications;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.util.ArrayList;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+
+public class BreadcrumbTest {
+    @Tested
+    private Sentry sentry = null;
+
+    @Injectable
+    private Connection mockConnection = null;
+    @Injectable
+    private ContextManager contextManager = new SingletonContextManager();
+
+    @BeforeMethod
+    public void setup() {
+        contextManager.getContext().clear();
+    }
+
+    @Test
+    public void testBreadcrumbsViaContextRecording() {
+        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+
+        final Breadcrumb breadcrumb = new BreadcrumbBuilder()
+            .setLevel(Breadcrumb.Level.INFO)
+            .setMessage("message")
+            .setCategory("step")
+            .build();
+
+        sentry.getContext().recordBreadcrumb(breadcrumb);
+
+        sentry.sendEvent(new EventBuilder()
+            .withMessage("Some random message")
+            .withLevel(Event.Level.INFO));
+
+        new Verifications() {{
+            Event event;
+            mockConnection.send(event = withCapture());
+            assertThat(event.getBreadcrumbs().size(), equalTo(1));
+        }};
+    }
+
+    @Test
+    public void testBreadcrumbsViaEventBuilder() {
+        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+
+        final Breadcrumb breadcrumb = new BreadcrumbBuilder()
+            .setLevel(Breadcrumb.Level.INFO)
+            .setMessage("message")
+            .setCategory("step")
+            .build();
+
+        ArrayList<Breadcrumb> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add(breadcrumb);
+
+        sentry.sendEvent(new EventBuilder()
+            .withBreadcrumbs(breadcrumbs)
+            .withMessage("Some random message")
+            .withLevel(Event.Level.INFO));
+
+        new Verifications() {{
+            Event event;
+            mockConnection.send(event = withCapture());
+            assertThat(event.getBreadcrumbs().size(), equalTo(1));
+        }};
+    }
+
+    @Test
+    public void testBreadcrumbsViaEvent() {
+        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+
+        final Breadcrumb breadcrumb = new BreadcrumbBuilder()
+            .setLevel(Breadcrumb.Level.INFO)
+            .setMessage("message")
+            .setCategory("step")
+            .build();
+
+        ArrayList<Breadcrumb> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add(breadcrumb);
+
+        sentry.sendEvent(new EventBuilder()
+            .withBreadcrumbs(breadcrumbs)
+            .withMessage("Some random message")
+            .withLevel(Event.Level.INFO)
+            .build());
+
+        new Verifications() {{
+            Event event;
+            mockConnection.send(event = withCapture());
+            assertThat(event.getBreadcrumbs().size(), equalTo(1));
+        }};
+    }
+}
