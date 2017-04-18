@@ -1,7 +1,7 @@
 package io.sentry.connection;
 
+import io.sentry.SentryClient;
 import mockit.*;
-import io.sentry.Sentry;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
 import org.testng.annotations.BeforeMethod;
@@ -60,7 +60,7 @@ public class AsyncConnectionTest {
 
     @Test
     public void verifyShutdownHookSetManagedBySentryAndCloseConnection(
-            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Sentry mockSentry)
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) SentryClient mockSentryClient)
             throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();
@@ -86,7 +86,7 @@ public class AsyncConnectionTest {
 
     @Test
     public void ensureFailingShutdownHookStopsBeingManaged(
-            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Sentry mockSentry)
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) SentryClient mockSentryClient)
             throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();

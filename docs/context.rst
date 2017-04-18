@@ -41,14 +41,14 @@ context instance will be stored and sent with future events.
 
     public void example() {
         // Record a breadcrumb without having to look up the context instance manually
-        Breadcrumbs.record(
+        Sentry.record(
             new BreadcrumbBuilder().setMessage("User did something specific again!").build()
         );
 
         // ... or retrieve and manipulate the context instance manually
 
         // Retrieve the stored Sentry instance
-        Sentry sentry = Sentry.getStoredInstance();
+        Sentry sentry = getStoredClient();
 
         // Get the current context instance
         Context context = sentry.getContext();

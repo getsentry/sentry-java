@@ -1,7 +1,7 @@
 package io.sentry.log4j2;
 
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.dsn.InvalidDsnException;
@@ -54,11 +54,11 @@ public class SentryAppender extends AbstractAppender {
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
     /**
-     * Current instance of {@link Sentry}.
+     * Current instance of {@link SentryClient}.
      *
      * @see #initSentry()
      */
-    protected volatile Sentry sentry;
+    protected volatile SentryClient sentryClient;
     /**
      * DSN property of the appender.
      * <p>
@@ -66,7 +66,7 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String dsn;
     /**
-     * Name of the {@link SentryFactory} being used.
+     * Name of the {@link SentryClientFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
@@ -117,11 +117,11 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Creates an instance of SentryAppender.
      *
-     * @param sentry instance of Sentry to use with this appender.
+     * @param sentryClient instance of Sentry to use with this appender.
      */
-    public SentryAppender(Sentry sentry) {
+    public SentryAppender(SentryClient sentryClient) {
         this();
-        this.sentry = sentry;
+        this.sentryClient = sentryClient;
     }
 
     /**
@@ -140,7 +140,7 @@ public class SentryAppender extends AbstractAppender {
      *
      * @param name         The name of the Appender.
      * @param dsn          Data Source Name to access the Sentry server.
-     * @param sentryFactory Name of the factory to use to build the {@link Sentry} instance.
+     * @param sentryFactory Name of the factory to use to build the {@link SentryClient} instance.
      * @param release      Release to be sent to Sentry.
      * @param environment  Environment to be sent to Sentry.
      * @param serverName   serverName to be sent to Sentry.
@@ -234,7 +234,7 @@ public class SentryAppender extends AbstractAppender {
             }
         }
 
-        if (sentry == null) {
+        if (sentryClient == null) {
             initSentry();
         }
     }
@@ -279,7 +279,7 @@ public class SentryAppender extends AbstractAppender {
      * {@inheritDoc}
      * <p>
      * The sentry instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Sentry}.<br>
+     * being generated during the instantiation of {@link SentryClient}.<br>
      *
      * @param logEvent The LogEvent.
      */
@@ -294,7 +294,7 @@ public class SentryAppender extends AbstractAppender {
         try {
             lazyInit();
             Event event = buildEvent(logEvent);
-            sentry.sendEvent(event);
+            sentryClient.sendEvent(event);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Sentry", logEvent, e);
         } finally {
@@ -311,7 +311,7 @@ public class SentryAppender extends AbstractAppender {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentry = SentryFactory.sentryInstance(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryInstance(new Dsn(dsn), sentryFactory);
         } catch (InvalidDsnException e) {
             error("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
@@ -392,7 +392,7 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentry.runBuilderHelpers(eventBuilder);
+        sentryClient.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
@@ -443,8 +443,8 @@ public class SentryAppender extends AbstractAppender {
                 return;
             }
             super.stop();
-            if (sentry != null) {
-                sentry.closeConnection();
+            if (sentryClient != null) {
+                sentryClient.closeConnection();
             }
         } catch (Exception e) {
             error("An exception occurred while closing the Sentry connection", e);

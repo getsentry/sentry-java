@@ -25,11 +25,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Default implementation of {@link SentryFactory}.
+ * Default implementation of {@link SentryClientFactory}.
  * <p>
  * In most cases this is the implementation to use or extend for additional features.
  */
-public class DefaultSentryFactory extends SentryFactory {
+public class DefaultSentryClientFactory extends SentryClientFactory {
     //TODO: Add support for tags set by default
     /**
      * Protocol setting to disable security checks over an SSL connection.
@@ -181,7 +181,7 @@ public class DefaultSentryFactory extends SentryFactory {
      */
     public static final int HTTP_PROXY_PORT_DEFAULT = 80;
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultSentryFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultSentryClientFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
 
     private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap<>();
@@ -192,20 +192,20 @@ public class DefaultSentryFactory extends SentryFactory {
     }
 
     @Override
-    public Sentry createSentryInstance(Dsn dsn) {
-        Sentry sentry = new Sentry(createConnection(dsn), getContextManager(dsn));
+    public SentryClient createSentryInstance(Dsn dsn) {
+        SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
         try {
             // `ServletRequestListener` was added in the Servlet 2.4 API, and
             // is used as part of the `HttpEventBuilderHelper`, see:
             // https://tomcat.apache.org/tomcat-5.5-doc/servletapi/
             Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
-            sentry.addBuilderHelper(new HttpEventBuilderHelper());
+            sentryClient.addBuilderHelper(new HttpEventBuilderHelper());
         } catch (ClassNotFoundException e) {
             logger.debug("The current environment doesn't provide access to servlets,"
                 + " or provides an unsupported version.");
         }
-        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
-        return sentry;
+        sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
+        return sentryClient;
     }
 
     /**

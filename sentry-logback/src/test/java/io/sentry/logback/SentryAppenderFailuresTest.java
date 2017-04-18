@@ -4,9 +4,9 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
+import io.sentry.SentryClient;
 import mockit.*;
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClientFactory;
 import io.sentry.dsn.Dsn;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
@@ -18,12 +18,12 @@ import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderFailuresTest {
     @Injectable
-    private Sentry mockSentry = null;
+    private SentryClient mockSentryClient = null;
     @Injectable
     private Context mockContext = null;
     @SuppressWarnings("unused")
     @Mocked("sentryInstance")
-    private SentryFactory mockSentryFactory;
+    private SentryClientFactory mockSentryClientFactory;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -41,11 +41,11 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testSentryFailureDoesNotPropagate() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockSentry);
+        final SentryAppender sentryAppender = new SentryAppender(mockSentryClient);
         sentryAppender.setContext(mockContext);
         sentryAppender.setMinLevel("ALL");
         new NonStrictExpectations() {{
-            mockSentry.sendEvent((Event) any);
+            mockSentryClient.sendEvent((Event) any);
             result = new UnsupportedOperationException();
         }};
         sentryAppender.start();
@@ -53,7 +53,7 @@ public class SentryAppenderFailuresTest {
         sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null).getMockInstance());
 
         new Verifications() {{
-            mockSentry.sendEvent((Event) any);
+            mockSentryClient.sendEvent((Event) any);
         }};
         assertThat(mockContext.getStatusManager().getCount(), is(1));
     }
@@ -65,7 +65,7 @@ public class SentryAppenderFailuresTest {
         sentryAppender.setContext(mockContext);
         sentryAppender.setDsn(dsnUri);
         new Expectations() {{
-            SentryFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
+            SentryClientFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
             result = new UnsupportedOperationException();
         }};
         sentryAppender.start();
@@ -79,14 +79,14 @@ public class SentryAppenderFailuresTest {
     public void testAppendFailIfCurrentThreadSpawnedBySentry() throws Exception {
         SentryEnvironment.startManagingThread();
         try {
-            final SentryAppender sentryAppender = new SentryAppender(mockSentry);
+            final SentryAppender sentryAppender = new SentryAppender(mockSentryClient);
             sentryAppender.setContext(mockContext);
             sentryAppender.start();
 
             sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null).getMockInstance());
 
             new Verifications() {{
-                mockSentry.sendEvent((Event) any);
+                mockSentryClient.sendEvent((Event) any);
                 times = 0;
             }};
             assertThat(mockContext.getStatusManager().getCount(), is(0));

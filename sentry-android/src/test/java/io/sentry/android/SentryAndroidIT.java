@@ -9,7 +9,7 @@ import org.robolectric.RobolectricTestRunner;
 import java.util.concurrent.Callable;
 
 @RunWith(RobolectricTestRunner.class)
-public class SentryIT extends AndroidTest {
+public class SentryAndroidIT extends AndroidTest {
 
     @Test
     public void test() throws Exception {

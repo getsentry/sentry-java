@@ -1,6 +1,6 @@
 package io.sentry.event;
 
-import io.sentry.Sentry;
+import io.sentry.SentryClient;
 import io.sentry.connection.Connection;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
@@ -17,7 +17,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 
 public class UserTest {
     @Tested
-    private Sentry sentry = null;
+    private SentryClient sentryClient = null;
     @Injectable
     private Connection mockConnection = null;
     @Injectable
@@ -30,16 +30,16 @@ public class UserTest {
 
     @Test
     public void testUserPropagation() {
-        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+        sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
 
         final User user = new UserBuilder()
             .setEmail("test@example.com")
             .setId("1234")
             .setIpAddress("192.168.0.1")
             .setUsername("testUser_123").build();
-        sentry.getContext().setUser(user);
+        sentryClient.getContext().setUser(user);
 
-        sentry.sendEvent(new EventBuilder()
+        sentryClient.sendEvent(new EventBuilder()
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO));
 

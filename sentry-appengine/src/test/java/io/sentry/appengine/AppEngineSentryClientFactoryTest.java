@@ -1,7 +1,7 @@
 package io.sentry.appengine;
 
 import mockit.*;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClientFactory;
 import io.sentry.appengine.connection.AppEngineAsyncConnection;
 import io.sentry.connection.Connection;
 import io.sentry.dsn.Dsn;
@@ -15,9 +15,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-public class AppEngineSentryFactoryTest {
+public class AppEngineSentryClientFactoryTest {
     @Tested
-    private AppEngineSentryFactory appEngineSentryFactory;
+    private AppEngineSentryClientFactory appEngineSentryFactory;
     @Injectable
     private Connection mockConnection;
     @Injectable
@@ -25,9 +25,9 @@ public class AppEngineSentryFactoryTest {
 
     @Test
     public void checkServiceLoaderProvidesFactory() throws Exception {
-        ServiceLoader<SentryFactory> sentryFactories = ServiceLoader.load(SentryFactory.class);
+        ServiceLoader<SentryClientFactory> sentryFactories = ServiceLoader.load(SentryClientFactory.class);
 
-        assertThat(sentryFactories, Matchers.<SentryFactory>hasItem(instanceOf(AppEngineSentryFactory.class)));
+        assertThat(sentryFactories, Matchers.<SentryClientFactory>hasItem(instanceOf(AppEngineSentryClientFactory.class)));
     }
 
     @Test
@@ -48,7 +48,7 @@ public class AppEngineSentryFactoryTest {
         appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
 
         new Verifications() {{
-            String connectionId = AppEngineSentryFactory.class.getCanonicalName() + dnsString;
+            String connectionId = AppEngineSentryClientFactory.class.getCanonicalName() + dnsString;
             new AppEngineAsyncConnection(connectionId, mockConnection);
         }};
     }
@@ -58,7 +58,7 @@ public class AppEngineSentryFactoryTest {
             @Injectable("543afd41-379d-41cb-8c99-8ce73e83a0cc") final String connectionId) throws Exception {
         new NonStrictExpectations() {{
             mockDsn.getOptions();
-            result = Collections.singletonMap(AppEngineSentryFactory.CONNECTION_IDENTIFIER, connectionId);
+            result = Collections.singletonMap(AppEngineSentryClientFactory.CONNECTION_IDENTIFIER, connectionId);
         }};
 
         appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
@@ -85,7 +85,7 @@ public class AppEngineSentryFactoryTest {
             @Injectable("queueName") final String mockQueueName) throws Exception {
         new NonStrictExpectations() {{
             mockDsn.getOptions();
-            result = Collections.singletonMap(AppEngineSentryFactory.QUEUE_NAME, mockQueueName);
+            result = Collections.singletonMap(AppEngineSentryClientFactory.QUEUE_NAME, mockQueueName);
         }};
 
         appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);

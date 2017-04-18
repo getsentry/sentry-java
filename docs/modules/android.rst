@@ -81,7 +81,7 @@ Now you can use ``Sentry`` to capture events anywhere in your application:
     Sentry.capture("Error message");
 
     // Set a breadcrumb that will be sent with the next event(s)
-    Breadcrumbs.record(
+    Sentry.record(
         new BreadcrumbBuilder().setMessage("User made an action").build()
     );
 

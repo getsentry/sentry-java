@@ -1,7 +1,7 @@
 package io.sentry.jul;
 
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.dsn.InvalidDsnException;
@@ -36,11 +36,11 @@ public class SentryHandler extends Handler {
      */
     public static final String THREAD_ID = "Sentry-ThreadId";
     /**
-     * Current instance of {@link Sentry}.
+     * Current instance of {@link SentryClient}.
      *
      * @see #initSentry()
      */
-    protected volatile Sentry sentry;
+    protected volatile SentryClient sentryClient;
     /**
      * DSN property of the appender.
      * <p>
@@ -54,7 +54,7 @@ public class SentryHandler extends Handler {
      */
     protected boolean printfStyle;
     /**
-     * Name of the {@link SentryFactory} being used.
+     * Name of the {@link SentryClientFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
@@ -110,11 +110,11 @@ public class SentryHandler extends Handler {
     /**
      * Creates an instance of SentryHandler.
      *
-     * @param sentry instance of Sentry to use with this appender.
+     * @param sentryClient instance of Sentry to use with this appender.
      */
-    public SentryHandler(Sentry sentry) {
+    public SentryHandler(SentryClient sentryClient) {
         this();
-        this.sentry = sentry;
+        this.sentryClient = sentryClient;
     }
 
     /**
@@ -165,7 +165,7 @@ public class SentryHandler extends Handler {
             }
         }
 
-        if (sentry == null) {
+        if (sentryClient == null) {
             initSentry();
         }
     }
@@ -254,7 +254,7 @@ public class SentryHandler extends Handler {
         try {
             lazyInit();
             Event event = buildEvent(record);
-            sentry.sendEvent(event);
+            sentryClient.sendEvent(event);
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Sentry", e, ErrorManager.WRITE_FAILURE);
         } finally {
@@ -271,7 +271,7 @@ public class SentryHandler extends Handler {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentry = SentryFactory.sentryInstance(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryInstance(new Dsn(dsn), sentryFactory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Sentry",
                 e, ErrorManager.OPEN_FAILURE);
@@ -360,7 +360,7 @@ public class SentryHandler extends Handler {
             eventBuilder.withServerName(serverName.trim());
         }
 
-        sentry.runBuilderHelpers(eventBuilder);
+        sentryClient.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
@@ -390,8 +390,8 @@ public class SentryHandler extends Handler {
     public void close() throws SecurityException {
         SentryEnvironment.startManagingThread();
         try {
-            if (sentry != null) {
-                sentry.closeConnection();
+            if (sentryClient != null) {
+                sentryClient.closeConnection();
             }
         } catch (Exception e) {
             reportError("An exception occurred while closing the Sentry connection", e, ErrorManager.CLOSE_FAILURE);

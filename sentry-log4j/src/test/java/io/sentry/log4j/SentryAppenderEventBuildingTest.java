@@ -1,9 +1,9 @@
 package io.sentry.log4j;
 
+import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import mockit.*;
-import io.sentry.Sentry;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -32,14 +32,14 @@ public class SentryAppenderEventBuildingTest {
     private SentryAppender sentryAppender = null;
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
-    private Sentry mockSentry = null;
+    private SentryClient mockSentryClient = null;
     @Injectable
     private Logger mockLogger = null;
     private String mockExtraTag = "a8e0ad33-3c11-4899-b8c7-c99926c6d7b8";
 
     @BeforeMethod
     public void setUp() throws Exception {
-        sentryAppender = new SentryAppender(mockSentry);
+        sentryAppender = new SentryAppender(mockSentryClient);
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.setExtraTags(mockExtraTag);
@@ -66,8 +66,8 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.runBuilderHelpers((EventBuilder) any);
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.runBuilderHelpers((EventBuilder) any);
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getMessage(), is(message));
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
@@ -94,7 +94,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getLevel(), is(expectedLevel));
         }};
         assertNoErrorsInErrorHandler();
@@ -108,7 +108,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             SentryException sentryException = exceptionInterface.getExceptions().getFirst();
@@ -129,7 +129,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
         }};
         assertNoErrorsInErrorHandler();
@@ -144,7 +144,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.LOG4J_NDC, ndcEntries));
         }};
         assertNoErrorsInErrorHandler();
@@ -173,7 +173,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
                     .get(StackTraceInterface.STACKTRACE_INTERFACE);
             assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
@@ -206,7 +206,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is("a.b(c:42)"));
         }};
         assertNoErrorsInErrorHandler();
@@ -224,7 +224,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getCulprit(), is(loggerName));
         }};
         assertNoErrorsInErrorHandler();
@@ -240,7 +240,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getTags().entrySet(), hasSize(1));
             assertThat(event.getTags(), hasEntry(mockExtraTag, "ac84f38a-3889-41ed-9519-201402688abb"));
             assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
@@ -261,7 +261,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getTags().entrySet(), hasSize(1));
             assertThat(event.getTags(), hasEntry(mockExtraTag, "3c8981b4-01ad-47ec-8a3a-77a0bbcb42e2"));
             assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
@@ -278,7 +278,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getRelease(), is(release));
         }};
         assertNoErrorsInErrorHandler();
@@ -293,7 +293,7 @@ public class SentryAppenderEventBuildingTest {
 
         new Verifications() {{
             Event event;
-            mockSentry.sendEvent(event = withCapture());
+            mockSentryClient.sendEvent(event = withCapture());
             assertThat(event.getEnvironment(), is(environment));
         }};
         assertNoErrorsInErrorHandler();

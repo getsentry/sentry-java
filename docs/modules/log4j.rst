@@ -280,7 +280,7 @@ In Practice
         void logWithBreadcrumbs() {
             // Record a breadcrumb that will be sent with the next event(s),
             // by default the last 100 breadcrumbs are kept.
-            Breadcrumbs.record(
+            Sentry.record(
                 new BreadcrumbBuilder().setMessage("User made an action").build()
             );
 

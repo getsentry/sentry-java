@@ -4,8 +4,8 @@ import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
 import mockit.*;
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.dsn.Dsn;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -15,12 +15,12 @@ import static org.hamcrest.Matchers.is;
 
 public class SentryAppenderCloseTest {
     @Injectable
-    private Sentry mockSentry = null;
+    private SentryClient mockSentryClient = null;
     @Injectable
     private Context mockContext = null;
     @SuppressWarnings("unused")
     @Mocked("sentryInstance")
-    private SentryFactory mockSentryFactory = null;
+    private SentryClientFactory mockSentryClientFactory = null;
     @SuppressWarnings("unused")
     @Mocked("dsnLookup")
     private Dsn mockDsn = null;
@@ -45,14 +45,14 @@ public class SentryAppenderCloseTest {
 
     @Test
     public void testConnectionClosedWhenAppenderStopped() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockSentry);
+        final SentryAppender sentryAppender = new SentryAppender(mockSentryClient);
         sentryAppender.setContext(mockContext);
         sentryAppender.start();
 
         sentryAppender.stop();
 
         new Verifications() {{
-            mockSentry.closeConnection();
+            mockSentryClient.closeConnection();
         }};
         assertNoErrorsInStatusManager();
     }
@@ -65,8 +65,8 @@ public class SentryAppenderCloseTest {
         new Expectations() {{
             Dsn.dsnLookup();
             result = dsnUri;
-            SentryFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
-            result = mockSentry;
+            SentryClientFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
+            result = mockSentryClient;
         }};
         sentryAppender.start();
         sentryAppender.append(null);
@@ -74,7 +74,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.stop();
 
         new Verifications() {{
-            mockSentry.closeConnection();
+            mockSentryClient.closeConnection();
         }};
         //One error, because of the null event.
         assertThat(mockContext.getStatusManager().getCount(), is(1));
@@ -86,7 +86,7 @@ public class SentryAppenderCloseTest {
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
         new NonStrictExpectations() {{
-            SentryFactory.sentryInstance((Dsn) any, anyString);
+            SentryClientFactory.sentryInstance((Dsn) any, anyString);
             result = new UnsupportedOperationException();
         }};
         sentryAppender.start();
@@ -111,7 +111,7 @@ public class SentryAppenderCloseTest {
 
     @Test
     public void testStopDoNotFailWhenMultipleCalls() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockSentry);
+        final SentryAppender sentryAppender = new SentryAppender(mockSentryClient);
         sentryAppender.setContext(mockContext);
         sentryAppender.start();
 
@@ -119,7 +119,7 @@ public class SentryAppenderCloseTest {
         sentryAppender.stop();
 
         new Verifications() {{
-            mockSentry.closeConnection();
+            mockSentryClient.closeConnection();
             times = 1;
         }};
         assertNoErrorsInStatusManager();

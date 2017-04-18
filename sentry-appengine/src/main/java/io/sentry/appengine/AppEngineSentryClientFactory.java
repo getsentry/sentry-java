@@ -1,8 +1,8 @@
 package io.sentry.appengine;
 
 import com.google.appengine.api.utils.SystemProperty;
-import io.sentry.DefaultSentryFactory;
-import io.sentry.Sentry;
+import io.sentry.DefaultSentryClientFactory;
+import io.sentry.SentryClient;
 import io.sentry.appengine.connection.AppEngineAsyncConnection;
 import io.sentry.appengine.event.helper.AppEngineEventBuilderHelper;
 import io.sentry.connection.Connection;
@@ -11,7 +11,7 @@ import io.sentry.dsn.Dsn;
 /**
  * SentryFactory dedicated to create async connections within Google App Engine.
  */
-public class AppEngineSentryFactory extends DefaultSentryFactory {
+public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
     /**
      * Option for the queue name used in Google App Engine of threads assigned for the connection.
      */
@@ -30,10 +30,10 @@ public class AppEngineSentryFactory extends DefaultSentryFactory {
     public static final String CONNECTION_IDENTIFIER = "sentry.async.gae.connectionid";
 
     @Override
-    public Sentry createSentryInstance(Dsn dsn) {
-        Sentry sentryInstance = super.createSentryInstance(dsn);
-        sentryInstance.addBuilderHelper(new AppEngineEventBuilderHelper());
-        return sentryInstance;
+    public SentryClient createSentryInstance(Dsn dsn) {
+        SentryClient sentryClientInstance = super.createSentryInstance(dsn);
+        sentryClientInstance.addBuilderHelper(new AppEngineEventBuilderHelper());
+        return sentryClientInstance;
     }
 
     /**
@@ -50,7 +50,7 @@ public class AppEngineSentryFactory extends DefaultSentryFactory {
         if (dsn.getOptions().containsKey(CONNECTION_IDENTIFIER)) {
             connectionIdentifier = dsn.getOptions().get(CONNECTION_IDENTIFIER);
         } else {
-            connectionIdentifier = AppEngineSentryFactory.class.getCanonicalName() + dsn + SystemProperty.version.get();
+            connectionIdentifier = AppEngineSentryClientFactory.class.getCanonicalName() + dsn + SystemProperty.version.get();
         }
 
         AppEngineAsyncConnection asyncConnection = new AppEngineAsyncConnection(connectionIdentifier, connection);
