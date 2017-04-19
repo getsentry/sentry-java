@@ -7,8 +7,6 @@ import org.junit.Test;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-
 public class SentryHandlerIT extends BaseIT {
     /*
      We filter out loggers that start with `io.sentry`, so we deliberately

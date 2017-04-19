@@ -11,7 +11,6 @@ import io.sentry.SentryFactory;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.SentryStackTraceElement;
 
 /**
  * Android specific class to interface with Sentry. Supplements the default Java classes
@@ -183,17 +182,6 @@ public final class Sentry {
      */
     public static void capture(Throwable throwable) {
         sentry.sendException(throwable);
-    }
-
-    /**
-     * Sends an "exception" (message, level, frames) to the Sentry server using the statically stored Raven instance.
-     *
-     * @param message String
-     * @param level {@link Event.Level}
-     * @param frames {@link SentryStackTraceElement}
-     */
-    public static void capture(String message, Event.Level level, SentryStackTraceElement[] frames) {
-        sentry.sendException(message, level, frames);
     }
 
     /**
