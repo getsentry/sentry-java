@@ -1,7 +1,7 @@
 .. sentry:edition:: self
 
     Sentry Java
-    ==========
+    ===========
 
 .. sentry:edition:: on-premise, hosted
 
