@@ -33,7 +33,7 @@ public class EventSendFailureCallbackTest {
             }
         };
 
-        String dsn = "https://foo:bar@localhost:1234/1?sentry.async=false";
+        String dsn = "https://foo:bar@localhost:1234/1?async=false";
         Sentry sentry = factory.createSentryInstance(new Dsn(dsn));
         sentry.sendMessage("Message that will fail because DSN points to garbage.");
 
@@ -58,7 +58,7 @@ public class EventSendFailureCallbackTest {
             }
         };
 
-        String dsn = "https://foo:bar@localhost:1234/1?sentry.async=false";
+        String dsn = "https://foo:bar@localhost:1234/1?async=false";
         Sentry sentry = factory.createSentryInstance(new Dsn(dsn));
         sentry.sendMessage("Message that will fail because DSN points to garbage.");
     }

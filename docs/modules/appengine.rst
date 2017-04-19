@@ -51,7 +51,7 @@ Queue Name
 By default, the default task queue will be used, but it's possible to
 specify which one will be used with the ``sentry.async.gae.queuename`` option::
 
-    http://public:private@host:port/1?sentry.async.gae.queuename=MyQueueName
+    http://public:private@host:port/1?async.gae.queuename=MyQueueName
 
 Connection Name
 ---------------
@@ -63,4 +63,4 @@ each connection based on an identifier either automatically generated or
 user defined. To manually set the connection identifier (only used
 internally) use the option ``sentry.async.gae.connectionid``::
 
-    http://public:private@host:port/1?sentry.async.gae.connectionid=MyConnection
+    http://public:private@host:port/1?async.gae.connectionid=MyConnection

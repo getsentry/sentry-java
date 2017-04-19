@@ -38,16 +38,16 @@ public class DefaultSentryFactory extends SentryFactory {
     /**
      * Option for whether to compress requests sent to the Sentry Server.
      */
-    public static final String COMPRESSION_OPTION = "sentry.compression";
+    public static final String COMPRESSION_OPTION = "compression";
     /**
      * Option to set the maximum length of the message body in the requests to the
      * Sentry Server.
      */
-    public static final String MAX_MESSAGE_LENGTH_OPTION = "sentry.maxmessagelength";
+    public static final String MAX_MESSAGE_LENGTH_OPTION = "maxmessagelength";
     /**
      * Option to set a timeout for requests to the Sentry server, in milliseconds.
      */
-    public static final String TIMEOUT_OPTION = "sentry.timeout";
+    public static final String TIMEOUT_OPTION = "timeout";
     /**
      * Default timeout of an HTTP connection to Sentry.
      */
@@ -56,7 +56,7 @@ public class DefaultSentryFactory extends SentryFactory {
      * Option to enable or disable Event buffering. A buffering directory is also required.
      * This setting is mostly useful on Android where a buffering directory is set by default.
      */
-    public static final String BUFFER_ENABLED_OPTION = "sentry.buffer.enabled";
+    public static final String BUFFER_ENABLED_OPTION = "buffer.enabled";
     /**
      * Default value for whether buffering is enabled (if a directory is also provided).
      */
@@ -64,11 +64,11 @@ public class DefaultSentryFactory extends SentryFactory {
     /**
      * Option to buffer events to disk when network is down.
      */
-    public static final String BUFFER_DIR_OPTION = "sentry.buffer.dir";
+    public static final String BUFFER_DIR_OPTION = "buffer.dir";
     /**
      * Option for maximum number of events to cache offline when network is down.
      */
-    public static final String BUFFER_SIZE_OPTION = "sentry.buffer.size";
+    public static final String BUFFER_SIZE_OPTION = "buffer.size";
     /**
      * Default number of events to cache offline when network is down.
      */
@@ -76,7 +76,7 @@ public class DefaultSentryFactory extends SentryFactory {
     /**
      * Option for how long to wait between attempts to flush the disk buffer, in milliseconds.
      */
-    public static final String BUFFER_FLUSHTIME_OPTION = "sentry.buffer.flushtime";
+    public static final String BUFFER_FLUSHTIME_OPTION = "buffer.flushtime";
     /**
      * Default number of milliseconds between attempts to flush buffered events.
      */
@@ -84,11 +84,11 @@ public class DefaultSentryFactory extends SentryFactory {
     /**
      * Option to disable the graceful shutdown of the buffer flusher.
      */
-    public static final String BUFFER_GRACEFUL_SHUTDOWN_OPTION = "sentry.buffer.gracefulshutdown";
+    public static final String BUFFER_GRACEFUL_SHUTDOWN_OPTION = "buffer.gracefulshutdown";
     /**
      * Option for the graceful shutdown timeout of the buffer flushing executor, in milliseconds.
      */
-    public static final String BUFFER_SHUTDOWN_TIMEOUT_OPTION = "sentry.buffer.shutdowntimeout";
+    public static final String BUFFER_SHUTDOWN_TIMEOUT_OPTION = "buffer.shutdowntimeout";
     /**
      * Default timeout of the {@link BufferedConnection} shutdown, in milliseconds.
      */
@@ -96,27 +96,27 @@ public class DefaultSentryFactory extends SentryFactory {
     /**
      * Option for whether to send events asynchronously.
      */
-    public static final String ASYNC_OPTION = "sentry.async";
+    public static final String ASYNC_OPTION = "async";
     /**
      * Option to disable the graceful shutdown of the async connection.
      */
-    public static final String ASYNC_GRACEFUL_SHUTDOWN_OPTION = "sentry.async.gracefulshutdown";
+    public static final String ASYNC_GRACEFUL_SHUTDOWN_OPTION = "async.gracefulshutdown";
     /**
      * Option for the number of threads used for the async connection.
      */
-    public static final String ASYNC_THREADS_OPTION = "sentry.async.threads";
+    public static final String ASYNC_THREADS_OPTION = "async.threads";
     /**
      * Option for the priority of threads used for the async connection.
      */
-    public static final String ASYNC_PRIORITY_OPTION = "sentry.async.priority";
+    public static final String ASYNC_PRIORITY_OPTION = "async.priority";
     /**
      * Option for the maximum size of the async send queue.
      */
-    public static final String ASYNC_QUEUE_SIZE_OPTION = "sentry.async.queuesize";
+    public static final String ASYNC_QUEUE_SIZE_OPTION = "async.queuesize";
     /**
      * Option for what to do when the async executor queue is full.
      */
-    public static final String ASYNC_QUEUE_OVERFLOW_OPTION = "sentry.async.queue.overflow";
+    public static final String ASYNC_QUEUE_OVERFLOW_OPTION = "async.queue.overflow";
     /**
      * Async executor overflow behavior that will discard old events in the queue.
      */
@@ -138,7 +138,7 @@ public class DefaultSentryFactory extends SentryFactory {
     /**
      * Option for the graceful shutdown timeout of the async executor, in milliseconds.
      */
-    public static final String ASYNC_SHUTDOWN_TIMEOUT_OPTION = "sentry.async.shutdowntimeout";
+    public static final String ASYNC_SHUTDOWN_TIMEOUT_OPTION = "async.shutdowntimeout";
     /**
      * Default timeout of the {@link AsyncConnection} executor, in milliseconds.
      */
@@ -147,31 +147,31 @@ public class DefaultSentryFactory extends SentryFactory {
      * Option for which package prefixes are part of the user's application code, as a single
      * comma separated string.
      */
-    public static final String IN_APP_FRAMES_OPTION = "sentry.stacktrace.app.packages";
+    public static final String IN_APP_FRAMES_OPTION = "stacktrace.app.packages";
     /**
      * Option for whether to hide common stackframes with enclosing exceptions.
      */
-    public static final String HIDE_COMMON_FRAMES_OPTION = "sentry.stacktrace.hidecommon";
+    public static final String HIDE_COMMON_FRAMES_OPTION = "stacktrace.hidecommon";
     /**
      * Option for whether to sample events, allowing from 0.0 to 1.0 (0 to 100%) to be sent to the server.
      */
-    public static final String SAMPLE_RATE_OPTION = "sentry.sample.rate";
+    public static final String SAMPLE_RATE_OPTION = "sample.rate";
     /**
      * Option to set an HTTP proxy hostname for Sentry connections.
      */
-    public static final String HTTP_PROXY_HOST_OPTION = "sentry.http.proxy.host";
+    public static final String HTTP_PROXY_HOST_OPTION = "http.proxy.host";
     /**
      * Option to set an HTTP proxy port for Sentry connections.
      */
-    public static final String HTTP_PROXY_PORT_OPTION = "sentry.http.proxy.port";
+    public static final String HTTP_PROXY_PORT_OPTION = "http.proxy.port";
     /**
      * Option to set an HTTP proxy username for Sentry connections.
      */
-    public static final String HTTP_PROXY_USER_OPTION = "sentry.http.proxy.user";
+    public static final String HTTP_PROXY_USER_OPTION = "http.proxy.user";
     /**
      * Option to set an HTTP proxy password for Sentry connections.
      */
-    public static final String HTTP_PROXY_PASS_OPTION = "sentry.http.proxy.password";
+    public static final String HTTP_PROXY_PASS_OPTION = "http.proxy.password";
     /**
      * The default async queue size if none is provided.
      */

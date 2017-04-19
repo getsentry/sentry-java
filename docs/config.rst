@@ -84,7 +84,7 @@ useful inside shared application containers),
 
 ::
 
-    http://public:private@host:port/1?sentry.http.proxy.host=proxy.example.com&sentry.http.proxy.port=8080
+    http://public:private@host:port/1?http.proxy.host=proxy.example.com&sentry.http.proxy.port=8080
 
 Options
 -------
@@ -110,7 +110,7 @@ To disable the async mode, add ``sentry.async=false`` to the DSN:
 
 ::
 
-    http://public:private@host:port/1?sentry.async=false
+    http://public:private@host:port/1?async=false
 
 Graceful Shutdown (Advanced)
 ````````````````````````````
@@ -122,7 +122,7 @@ to shutdown gracefully, but this can be adjusted via
 
 ::
 
-    http://public:private@host:port/1?sentry.async.shutdowntimeout=5000
+    http://public:private@host:port/1?async.shutdowntimeout=5000
 
 The special value ``-1`` can be used to disable the timeout and wait
 indefinitely for the executor to terminate.
@@ -141,7 +141,7 @@ The option to do so is ``sentry.async.gracefulshutdown``:
 
 ::
 
-    http://public:private@host:port/1?sentry.async.gracefulshutdown=false
+    http://public:private@host:port/1?async.gracefulshutdown=false
 
 Queue Size (Advanced)
 `````````````````````
@@ -156,7 +156,7 @@ It is possible to set a maximum with the option ``sentry.async.queuesize``:
 
 ::
 
-    http://public:private@host:port/1?sentry.async.queuesize=100
+    http://public:private@host:port/1?async.queuesize=100
 
 This means that if the connection to the Sentry server is down, only the 100
 most recent events will be stored and processed as soon as the server is back up.
@@ -176,7 +176,7 @@ only one thread) with the option ``sentry.async.threads``:
 
 ::
 
-    http://public:private@host:port/1?sentry.async.threads=1
+    http://public:private@host:port/1?async.threads=1
 
 Threads Priority (Advanced)
 ```````````````````````````
@@ -190,7 +190,7 @@ with the option ``sentry.async.priority``:
 
 ::
 
-    http://public:private@host:port/1?sentry.async.priority=10
+    http://public:private@host:port/1?async.priority=10
 
 Buffering Events to Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -203,14 +203,14 @@ Sentry always requires write permission on the buffer directory itself.
 
 ::
 
-    http://public:private@host:port/1?sentry.buffer.dir=sentry-events
+    http://public:private@host:port/1?buffer.dir=sentry-events
 
 The maximum number of events that will be stored on disk defaults to 50,
 but can also be configured with the option ``sentry.buffer.size``:
 
 ::
 
-    http://public:private@host:port/1?sentry.buffer.size=100
+    http://public:private@host:port/1?buffer.size=100
 
 If a buffer directory is provided, a background thread will periodically
 attempt to re-send the events that are found on disk. By default it will
@@ -219,7 +219,7 @@ attempt to send events every 60 seconds. You can change this with the
 
 ::
 
-    http://public:private@host:port/1?sentry.buffer.flushtime=10000
+    http://public:private@host:port/1?buffer.flushtime=10000
 
 Graceful Shutdown (Advanced)
 ````````````````````````````
@@ -231,7 +231,7 @@ to shutdown gracefully, but this can be adjusted via
 
 ::
 
-    http://public:private@host:port/1?sentry.buffer.shutdowntimeout=5000
+    http://public:private@host:port/1?buffer.shutdowntimeout=5000
 
 The special value ``-1`` can be used to disable the timeout and wait
 indefinitely for the executor to terminate.
@@ -247,7 +247,7 @@ by setting the ``sentry.buffer.gracefulshutdown`` option:
 
 ::
 
-    http://public:private@host:port/1?sentry.buffer.gracefulshutdown=false
+    http://public:private@host:port/1?buffer.gracefulshutdown=false
 
 Event Sampling
 ~~~~~~~~~~~~~~
@@ -256,7 +256,7 @@ Sentry can be configured to sample events with the ``sentry.sample.rate`` option
 
 ::
 
-    http://public:private@host:port/1?sentry.sample.rate=0.75
+    http://public:private@host:port/1?sample.rate=0.75
 
 This option takes a number from 0.0 to 1.0, representing the percent of
 events to allow through to server (from 0% to 100%). By default all
@@ -276,7 +276,7 @@ You can configure which package prefixes your application uses with the
 
 ::
 
-    http://public:private@host:port/1?sentry.stacktrace.app.packages=com.mycompany,com.other.name
+    http://public:private@host:port/1?stacktrace.app.packages=com.mycompany,com.other.name
 
 Same Frame as Enclosing Exception
 `````````````````````````````````
@@ -307,7 +307,7 @@ To enable a similar behaviour in Sentry use the ``sentry.stacktrace.hidecommon``
 
 ::
 
-    http://public:private@host:port/1?sentry.stacktrace.hidecommon
+    http://public:private@host:port/1?stacktrace.hidecommon
 
 Compression
 ~~~~~~~~~~~
@@ -326,7 +326,7 @@ It's possible to manually enable/disable the compression with the option
 
 ::
 
-    http://public:private@host:port/1?sentry.compression=false
+    http://public:private@host:port/1?compression=false
 
 Max Message Size
 ~~~~~~~~~~~~~~~~
@@ -336,7 +336,7 @@ the server. This can be changed with the ``sentry.maxmessagelength`` option.
 
 ::
 
-    http://public:private@host:port/1?sentry.maxmessagelength=1500
+    http://public:private@host:port/1?maxmessagelength=1500
 
 Timeout (Advanced)
 ~~~~~~~~~~~~~~~~~~
@@ -349,7 +349,7 @@ It's possible to manually set the timeout length with ``sentry.timeout``
 
 ::
 
-    http://public:private@host:port/1?sentry.timeout=10000
+    http://public:private@host:port/1?timeout=10000
 
 Custom SentryFactory
 --------------------
