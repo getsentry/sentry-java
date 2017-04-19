@@ -27,7 +27,7 @@ public class StackTraceInterfaceBindingTest {
         }};
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
 
-        assertThat(jsonGeneratorParser.value(), is(jsonResource("/com/getsentry/raven/marshaller/json/SentryStackTrace.json")));
+        assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/SentryStackTrace.json")));
     }
 
     @Test
