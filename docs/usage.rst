@@ -151,7 +151,7 @@ For more complex messages, you'll need to build an ``Event`` with the
     }
 
 Static Access to Sentry
-----------------------
+-----------------------
 
 The most recently constructed ``Sentry`` instance is stored statically so it may
 be used easily from anywhere in your application.
