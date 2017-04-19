@@ -9,16 +9,11 @@ import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.SentryStackTraceElement;
-import io.sentry.event.interfaces.StackTraceInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 

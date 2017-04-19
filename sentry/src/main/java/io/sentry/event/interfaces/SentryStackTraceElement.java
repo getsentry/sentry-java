@@ -1,7 +1,9 @@
 package io.sentry.event.interfaces;
 
+/**
+ * Richer StackTraceElement class.
+ */
 public class SentryStackTraceElement {
-
     private final String fileName;
     private final String function;
     private final String module;
@@ -10,7 +12,19 @@ public class SentryStackTraceElement {
     private final String absPath;
     private final String platform;
 
-    public SentryStackTraceElement(String fileName, String function, String module, int lineno, int colno, String absPath, String platform) {
+    /**
+     * Construct a SentryStackTraceElement.
+     *
+     * @param fileName Filename.
+     * @param function Function name.
+     * @param module Module name.
+     * @param lineno Line number.
+     * @param colno Column number.
+     * @param absPath Absolute path.
+     * @param platform Platform name.
+     */
+    public SentryStackTraceElement(String fileName, String function, String module, int lineno,
+                                   int colno, String absPath, String platform) {
         this.fileName = fileName;
         this.function = function;
         this.module = module;
