@@ -1,0 +1,57 @@
+package io.sentry.event;
+
+import io.sentry.Sentry;
+import io.sentry.connection.Connection;
+import io.sentry.context.ContextManager;
+import io.sentry.context.SingletonContextManager;
+import io.sentry.event.helper.ContextBuilderHelper;
+import io.sentry.event.interfaces.UserInterface;
+import mockit.Injectable;
+import mockit.Tested;
+import mockit.Verifications;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+
+public class UserTest {
+    @Tested
+    private Sentry sentry = null;
+    @Injectable
+    private Connection mockConnection = null;
+    @Injectable
+    private ContextManager contextManager = new SingletonContextManager();
+
+    @BeforeMethod
+    public void setup() {
+        contextManager.getContext().clear();
+    }
+
+    @Test
+    public void testUserPropagation() {
+        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+
+        final User user = new UserBuilder()
+            .setEmail("test@example.com")
+            .setId("1234")
+            .setIpAddress("192.168.0.1")
+            .setUsername("testUser_123").build();
+        sentry.getContext().setUser(user);
+
+        sentry.sendEvent(new EventBuilder()
+            .withMessage("Some random message")
+            .withLevel(Event.Level.INFO));
+
+        new Verifications() {{
+            Event event;
+            mockConnection.send(event = withCapture());
+            UserInterface userInterface = (UserInterface) event.getSentryInterfaces().get(UserInterface.USER_INTERFACE);
+            assertThat(userInterface.getId(), equalTo(user.getId()));
+            assertThat(userInterface.getEmail(), equalTo(user.getEmail()));
+            assertThat(userInterface.getIpAddress(), equalTo(user.getIpAddress()));
+            assertThat(userInterface.getUsername(), equalTo(user.getUsername()));
+        }};
+    }
+
+}

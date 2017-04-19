@@ -8,18 +8,17 @@ or something else that better suits your application's needs.
 
 There is no single definition of context that applies to every application,
 for this reason a specific implementation must be chosen depending on what your
-application does and how it is structured. By default Raven uses a
+application does and how it is structured. By default Sentry uses a
 ``ThreadLocalContextManager`` that maintains a single ``Context`` instance per thread.
 This is useful for frameworks that use one thread per user request such as those based
-on synchronous servlet APIs. Raven also installs a ``ServletRequestListener`` that will
+on synchronous servlet APIs. Sentry also installs a ``ServletRequestListener`` that will
 clear the thread's context after each servlet request finishes.
 
-Raven defaults to the ``SingletonContextManager`` on Android, which maintains a single
+Sentry defaults to the ``SingletonContextManager`` on Android, which maintains a single
 context instance for all threads for the lifetime of the application.
 
-As of version ``8.0.2`` to override the ``ContextManager`` you will need to override
-the ``getContextManager`` method in the ``DefaultRavenFactory``. A simpler API will likely
-be provided in the future.
+To override the ``ContextManager`` you will need to override the ``getContextManager``
+method in the ``DefaultSentryFactory``. A simpler API will likely be provided in the future.
 
 Using Breadcrumbs
 -----------------
@@ -28,17 +27,17 @@ Breadcrumbs can be used to describe actions that occurred in your application le
 up to an event being sent. For example, whether external API requests were made,
 or whether a user clicked on something in an Android application.
 
-Once a Raven instance has been initialized, either via a logging framework or manually,
+Once a Sentry instance has been initialized, either via a logging framework or manually,
 you can begin recording breadcrumbs. By default the last 100 breadcrumbs for a given
 context instance will be stored and sent with future events.
 
 .. sourcecode:: java
 
-    import com.getsentry.raven.Raven;
-    import com.getsentry.raven.context.Context;
-    import com.getsentry.raven.event.BreadcrumbBuilder;
-    import com.getsentry.raven.event.Breadcrumbs;
-    import com.getsentry.raven.event.UserBuilder;
+    import io.sentry.Sentry;
+    import io.sentry.context.Context;
+    import io.sentry.event.BreadcrumbBuilder;
+    import io.sentry.event.Breadcrumbs;
+    import io.sentry.event.UserBuilder;
 
     public void example() {
         // Record a breadcrumb without having to look up the context instance manually
@@ -48,11 +47,11 @@ context instance will be stored and sent with future events.
 
         // ... or retrieve and manipulate the context instance manually
 
-        // Retrieve the stored Raven instance
-        Raven raven = Raven.getStoredInstance();
+        // Retrieve the stored Sentry instance
+        Sentry sentry = Sentry.getStoredInstance();
 
         // Get the current context instance
-        Context context = raven.getContext();
+        Context context = sentry.getContext();
 
         // Set the current User in the context
         context.setUser(

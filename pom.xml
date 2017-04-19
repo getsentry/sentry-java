@@ -8,12 +8,12 @@
         <version>7</version>
     </parent>
 
-    <groupId>com.getsentry.raven</groupId>
-    <artifactId>raven-all</artifactId>
-    <version>8.0.3-SNAPSHOT</version>
+    <groupId>io.sentry</groupId>
+    <artifactId>sentry-all</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Raven-Java</name>
+    <name>Sentry-Java</name>
     <description>Sentry client and appenders for diverse logging frameworks.</description>
     <url>https://github.com/${github.repo}</url>
     <inceptionYear>2012</inceptionYear>
@@ -73,12 +73,12 @@
     </prerequisites>
 
     <modules>
-        <module>raven</module>
-        <module>raven-android</module>
-        <module>raven-appengine</module>
-        <module>raven-log4j</module>
-        <module>raven-logback</module>
-        <module>raven-log4j2</module>
+        <module>sentry</module>
+        <module>sentry-android</module>
+        <module>sentry-appengine</module>
+        <module>sentry-log4j</module>
+        <module>sentry-logback</module>
+        <module>sentry-log4j2</module>
     </modules>
 
     <scm>
@@ -108,7 +108,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <github.repo>getsentry/raven-java</github.repo>
+        <github.repo>getsentry/sentry-java</github.repo>
         <github.global.server>github</github.global.server>
 
         <!-- maven-compiler-plugin config -->
@@ -129,12 +129,12 @@
         <dependencies>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>raven</artifactId>
+                <artifactId>sentry</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>raven</artifactId>
+                <artifactId>sentry</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
             </dependency>
@@ -376,7 +376,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.10.4</version>
                 <configuration>
-                    <excludePackageNames>com.getsentry.raven.util.base64*</excludePackageNames>
+                    <excludePackageNames>io.sentry.util.base64*</excludePackageNames>
                 </configuration>
             </plugin>
             <plugin>

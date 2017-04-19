@@ -2,7 +2,7 @@ Manual Usage
 ============
 
 **Note:** The following page provides examples on how to configure and use
-Raven directly. It is **highly recommended** that you use one of the provided
+Sentry directly. It is **highly recommended** that you use one of the provided
 integrations instead if possible.
 
 Installation
@@ -13,56 +13,56 @@ Using Maven:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>com.getsentry.raven</groupId>
-        <artifactId>raven</artifactId>
-        <version>8.0.2</version>
+        <groupId>io.sentry</groupId>
+        <artifactId>sentry</artifactId>
+        <version>1.0.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven:8.0.2'
+    compile 'io.sentry:sentry:1.0.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven" % "8.0.2"
+    libraryDependencies += "io.sentry" % "sentry" % "1.0.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry%7C1.0.0%7Cjar>`_.
 
 Capture an Error
 ----------------
 
-To report an event manually you need to construct a ``Raven`` instance and use one
+To report an event manually you need to construct a ``Sentry`` instance and use one
 of the send methods it provides.
 
 .. sourcecode:: java
 
-    import com.getsentry.raven.Raven;
-    import com.getsentry.raven.RavenFactory;
+    import io.sentry.Sentry;
+    import io.sentry.SentryFactory;
 
     public class MyClass {
-        private static Raven raven;
+        private static Sentry sentry;
 
         public static void main(String... args) {
             // Creation of the client with a specific DSN
             String dsn = args[0];
-            raven = RavenFactory.ravenInstance(dsn);
+            sentry = SentryFactory.sentryInstance(dsn);
 
             // Or, if you don't provide a DSN,
-            raven = RavenFactory.ravenInstance();
+            sentry = SentryFactory.sentryInstance();
 
             // It is also possible to use the DSN detection system, which
             // will check the environment variable "SENTRY_DSN" and the Java
             // System Property "sentry.dsn".
-            raven = RavenFactory.ravenInstance();
+            sentry = SentryFactory.sentryInstance();
         }
 
         void logSimpleMessage() {
             // This sends a simple event to Sentry
-            raven.sendMessage("This is a test");
+            sentry.sendMessage("This is a test");
         }
 
         void logWithBreadcrumbs() {
@@ -73,7 +73,7 @@ of the send methods it provides.
             );
 
             // This sends a simple event to Sentry
-            raven.sendMessage("This is a test");
+            sentry.sendMessage("This is a test");
         }
 
         void logException() {
@@ -81,7 +81,7 @@ of the send methods it provides.
                 unsafeMethod();
             } catch (Exception e) {
                 // This sends an exception event to Sentry
-                raven.sendException(e);
+                sentry.sendException(e);
             }
         }
 
@@ -98,28 +98,28 @@ For more complex messages, you'll need to build an ``Event`` with the
 
 .. sourcecode:: java
 
-    import com.getsentry.raven.Raven;
-    import com.getsentry.raven.RavenFactory;
-    import com.getsentry.raven.event.Event;
-    import com.getsentry.raven.event.EventBuilder;
-    import com.getsentry.raven.event.interfaces.ExceptionInterface;
-    import com.getsentry.raven.event.interfaces.MessageInterface;
+    import io.sentry.Sentry;
+    import io.sentry.SentryFactory;
+    import io.sentry.event.Event;
+    import io.sentry.event.EventBuilder;
+    import io.sentry.event.interfaces.ExceptionInterface;
+    import io.sentry.event.interfaces.MessageInterface;
 
     public class MyClass {
-        private static Raven raven;
+        private static Sentry sentry;
 
         public static void main(String... args) {
             // Creation of the client with a specific DSN
             String dsn = args[0];
-            raven = RavenFactory.ravenInstance(dsn);
+            sentry = SentryFactory.sentryInstance(dsn);
 
             // It is also possible to use the DSN detection system, which
             // will check the environment variable "SENTRY_DSN" and the Java
             // System Property "sentry.dsn".
-            raven = RavenFactory.ravenInstance();
+            sentry = SentryFactory.sentryInstance();
 
-            // Advanced: specify the ravenFactory used
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), "com.getsentry.raven.DefaultRavenFactory");
+            // Advanced: specify the sentryFactory used
+            sentry = SentryFactory.sentryInstance(new Dsn(dsn), "io.sentry.DefaultSentryFactory");
         }
 
         void logSimpleMessage() {
@@ -128,7 +128,7 @@ For more complex messages, you'll need to build an ``Event`` with the
                             .withMessage("This is a test")
                             .withLevel(Event.Level.INFO)
                             .withLogger(MyClass.class.getName());
-            raven.sendEvent(eventBuilder);
+            sentry.sendEvent(eventBuilder);
         }
 
         void logException() {
@@ -141,7 +141,7 @@ For more complex messages, you'll need to build an ``Event`` with the
                                 .withLevel(Event.Level.ERROR)
                                 .withLogger(MyClass.class.getName())
                                 .withSentryInterface(new ExceptionInterface(e));
-                raven.sendEvent(eventBuilder);
+                sentry.sendEvent(eventBuilder);
             }
         }
 
@@ -150,39 +150,39 @@ For more complex messages, you'll need to build an ``Event`` with the
         }
     }
 
-Static Access to Raven
-----------------------
+Static Access to Sentry
+-----------------------
 
-The most recently constructed ``Raven`` instance is stored statically so it may
+The most recently constructed ``Sentry`` instance is stored statically so it may
 be used easily from anywhere in your application.
 
 .. sourcecode:: java
 
-    import com.getsentry.raven.Raven;
-    import com.getsentry.raven.RavenFactory;
+    import io.sentry.Sentry;
+    import io.sentry.SentryFactory;
 
     public class MyClass {
         public static void main(String... args) {
-            // Create a Raven instance
-            RavenFactory.ravenInstance();
+            // Create a Sentry instance
+            SentryFactory.sentryInstance();
         }
 
         public somewhereElse() {
-            // Use the Raven instance statically. Note that we are
+            // Use the Sentry instance statically. Note that we are
             // using the Class (and a static method) here
-            Raven.capture("Error message");
+            Sentry.capture("Error message");
 
             // Or pass it a throwable
-            Raven.capture(new Exception("Error message"));
+            Sentry.capture(new Exception("Error message"));
 
             // Or build an event yourself
             EventBuilder eventBuilder = new EventBuilder()
                             .withMessage("Exception caught")
                             .withLevel(Event.Level.ERROR);
-            Raven.capture(eventBuilder.build());
+            Sentry.capture(eventBuilder.build());
         }
 
     }
 
-Note that a Raven instance *must* be created before you can use the ``Raven.capture``
+Note that a Sentry instance *must* be created before you can use the ``Sentry.capture``
 method, otherwise a ``NullPointerException`` (with an explanation) will be thrown.

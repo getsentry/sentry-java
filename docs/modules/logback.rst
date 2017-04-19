@@ -1,13 +1,13 @@
 Logback
 =======
 
-The ``raven-logback`` library provides `Logback <http://logback.qos.ch/>`_
-support for Raven via an `Appender
+The ``sentry-logback`` library provides `Logback <http://logback.qos.ch/>`_
+support for Sentry via an `Appender
 <http://logback.qos.ch/apidocs/ch/qos/logback/core/Appender.html>`_
 that sends logged exceptions to Sentry.
 
 The source can be found `on Github
-<https://github.com/getsentry/raven-java/tree/master/raven-logback>`_.
+<https://github.com/getsentry/sentry-java/tree/master/sentry-logback>`_.
 
 Installation
 ------------
@@ -17,24 +17,24 @@ Using Maven:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>com.getsentry.raven</groupId>
-        <artifactId>raven-logback</artifactId>
-        <version>8.0.2</version>
+        <groupId>io.sentry</groupId>
+        <artifactId>sentry-logback</artifactId>
+        <version>1.0.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-logback:8.0.2'
+    compile 'io.sentry:sentry-logback:1.0.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven-logback" % "8.0.2"
+    libraryDependencies += "io.sentry" % "sentry-logback" % "1.0.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-logback%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-logback%7C1.0.0%7Cjar>`_.
 
 Usage
 -----
@@ -58,14 +58,14 @@ Example configuration using the ``logback.xml`` format:
         </appender>
 
         <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
-        <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <appender name="Sentry" class="io.sentry.logback.SentryAppender">
             <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
                 <level>WARN</level>
             </filter>
         </appender>
 
         <!-- Enable the Console and Sentry appenders, Console is provided as an example
-             of a non-Raven logger that is set to a different logging threshold -->
+             of a non-Sentry logger that is set to a different logging threshold -->
         <root level="INFO">
             <appender-ref ref="Console" />
             <appender-ref ref="Sentry" />
@@ -96,17 +96,17 @@ Or as Java System Properties:
 
 Configuration parameters follow:
 
-======================= ======================= =============================== ===========
-Environment variable    Java System Property    Example value                   Description
-======================= ======================= =============================== ===========
-``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Raven will no-op
-``SENTRY_RELEASE``      ``sentry.release``      ``1.0.0``                       Optional, provide release version of your application
-``SENTRY_ENVIRONMENT``  ``sentry.environment``  ``production``                  Optional, provide environment your application is running in
-``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
-``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
-``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
-======================= ======================= =============================== ===========
+======================== ======================== =============================== ===========
+Environment variable     Java System Property     Example value                   Description
+======================== ======================== =============================== ===========
+``SENTRY_DSN``           ``sentry.dsn``           ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Sentry will no-op
+``SENTRY_RELEASE``       ``sentry.release``       ``1.0.0``                       Optional, provide release version of your application
+``SENTRY_ENVIRONMENT``   ``sentry.environment``   ``production``                  Optional, provide environment your application is running in
+``SENTRY_SERVERNAME``    ``sentry.servername``    ``server1``                     Optional, override the server name (rather than looking it up dynamically)
+``SENTRY_SENTRYFACTORY`` ``sentry.sentryfactory`` ``com.foo.SentryFactory``       Optional, select the sentryFactory class
+``SENTRY_TAGS``          ``sentry.tags``          ``tag1:value1,tag2:value2``     Optional, provide tags
+``SENTRY_EXTRA_TAGS``    ``sentry.extratags``     ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
+======================== ======================== =============================== ===========
 
 Configuration via Static File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -128,7 +128,7 @@ Example configuration in the ``logback.xml`` file:
         </appender>
 
         <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
-        <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <appender name="Sentry" class="io.sentry.logback.SentryAppender">
             <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
                 <level>WARN</level>
             </filter>
@@ -145,8 +145,8 @@ Example configuration in the ``logback.xml`` file:
             <!-- Optional, override the server name (rather than looking it up dynamically) -->
             <serverName>server1</serverName>
 
-            <!-- Optional, select the ravenFactory class -->
-            <ravenFactory>com.foo.RavenFactory</ravenFactory>
+            <!-- Optional, select the sentryFactory class -->
+            <sentryFactory>com.foo.SentryFactory</sentryFactory>
 
             <!-- Optional, provide tags -->
             <tags>tag1:value1,tag2:value2</tags>
@@ -156,7 +156,7 @@ Example configuration in the ``logback.xml`` file:
         </appender>
 
         <!-- Enable the Console and Sentry appenders, Console is provided as an example
-             of a non-Raven logger that is set to a different logging threshold -->
+             of a non-Sentry logger that is set to a different logging threshold -->
         <root level="INFO">
             <appender-ref ref="Console" />
             <appender-ref ref="Sentry" />

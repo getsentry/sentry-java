@@ -1,13 +1,13 @@
 Log4j 1.x
 =========
 
-The ``raven-log4j`` library provides `Log4j 1.x <https://logging.apache.org/log4j/1.2/>`_
-support for Raven via an `Appender
+The ``sentry-log4j`` library provides `Log4j 1.x <https://logging.apache.org/log4j/1.2/>`_
+support for Sentry via an `Appender
 <https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/Appender.html>`_
 that sends logged exceptions to Sentry.
 
 The source can be found `on Github
-<https://github.com/getsentry/raven-java/tree/master/raven-log4j>`_.
+<https://github.com/getsentry/sentry-java/tree/master/sentry-log4j>`_.
 
 Installation
 ------------
@@ -17,24 +17,24 @@ Using Maven:
 .. sourcecode:: xml
 
     <dependency>
-        <groupId>com.getsentry.raven</groupId>
-        <artifactId>raven-log4j</artifactId>
-        <version>8.0.2</version>
+        <groupId>io.sentry</groupId>
+        <artifactId>sentry-log4j</artifactId>
+        <version>1.0.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-log4j:8.0.2'
+    compile 'io.sentry:sentry-log4j:1.0.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "com.getsentry.raven" % "raven-log4j" % "8.0.2"
+    libraryDependencies += "io.sentry" % "sentry-log4j" % "1.0.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-log4j%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-log4j%7C1.0.0%7Cjar>`_.
 
 Usage
 -----
@@ -58,7 +58,7 @@ Example configuration using the ``log4j.properties`` format:
     log4j.appender.Console.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%t] %-5p: %m%n
 
     # Configure the Sentry appender, overriding the logging threshold to the WARN level
-    log4j.appender.Sentry=com.getsentry.raven.log4j.SentryAppender
+    log4j.appender.Sentry=io.sentry.log4j.SentryAppender
     log4j.appender.Sentry.threshold=WARN
 
 Alternatively, using  the ``log4j.xml`` format:
@@ -79,7 +79,7 @@ Alternatively, using  the ``log4j.xml`` format:
     	</appender>
 
         <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
-        <appender name="Sentry" class="com.getsentry.raven.log4j.SentryAppender">
+        <appender name="Sentry" class="io.sentry.log4j.SentryAppender">
             <!-- Override the Sentry handler log level to WARN -->
             <filter class="org.apache.log4j.varia.LevelRangeFilter">
                 <param name="levelMin" value="WARN" />
@@ -87,7 +87,7 @@ Alternatively, using  the ``log4j.xml`` format:
         </appender>
 
         <!-- Enable the Console and Sentry appenders, Console is provided as an example
-             of a non-Raven logger that is set to a different logging threshold -->
+             of a non-Sentry logger that is set to a different logging threshold -->
         <root level="INFO">
             <appender-ref ref="Console" />
             <appender-ref ref="Sentry" />
@@ -118,17 +118,17 @@ Or as Java System Properties:
 
 Configuration parameters follow:
 
-======================= ======================= =============================== ===========
-Environment variable    Java System Property    Example value                   Description
-======================= ======================= =============================== ===========
-``SENTRY_DSN``          ``sentry.dsn``          ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Raven will no-op
-``SENTRY_RELEASE``      ``sentry.release``      ``1.0.0``                       Optional, provide release version of your application
-``SENTRY_ENVIRONMENT``  ``sentry.environment``  ``production``                  Optional, provide environment your application is running in
-``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
-``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
-``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
-======================= ======================= =============================== ===========
+======================== ======================== =============================== ===========
+Environment variable     Java System Property     Example value                   Description
+======================== ======================== =============================== ===========
+``SENTRY_DSN``           ``sentry.dsn``           ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Sentry will no-op
+``SENTRY_RELEASE``       ``sentry.release``       ``1.0.0``                       Optional, provide release version of your application
+``SENTRY_ENVIRONMENT``   ``sentry.environment``   ``production``                  Optional, provide environment your application is running in
+``SENTRY_SERVERNAME``    ``sentry.servername``    ``server1``                     Optional, override the server name (rather than looking it up dynamically)
+``SENTRY_SENTRYFACTORY`` ``sentry.sentryfactory`` ``com.foo.SentryFactory``       Optional, select the sentryFactory class
+``SENTRY_TAGS``          ``sentry.tags``          ``tag1:value1,tag2:value2``     Optional, provide tags
+``SENTRY_EXTRA_TAGS``    ``sentry.extratags``     ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
+======================== ======================== =============================== ===========
 
 Configuration via Static File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,7 +150,7 @@ Example configuration in the ``log4j.properties`` file:
     log4j.appender.Console.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%t] %-5p: %m%n
 
     # Configure the Sentry appender, overriding the logging threshold to the WARN level
-    log4j.appender.Sentry=com.getsentry.raven.log4j.SentryAppender
+    log4j.appender.Sentry=io.sentry.log4j.SentryAppender
     log4j.appender.Sentry.threshold=WARN
 
     # Set the Sentry DSN
@@ -165,8 +165,8 @@ Example configuration in the ``log4j.properties`` file:
     # Optional, override the server name (rather than looking it up dynamically)
     log4j.appender.Sentry.serverName=server1
 
-    # Optional, select the ravenFactory class
-    log4j.appender.Sentry.ravenFactory=com.foo.RavenFactory
+    # Optional, select the sentryFactory class
+    log4j.appender.Sentry.sentryFactory=com.foo.SentryFactory
 
     # Optional, provide tags
     log4j.appender.Sentry.tags=tag1:value1,tag2:value2
@@ -192,7 +192,7 @@ Alternatively, using  the ``log4j.xml`` format:
     	</appender>
 
         <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
-        <appender name="Sentry" class="com.getsentry.raven.log4j.SentryAppender">
+        <appender name="Sentry" class="io.sentry.log4j.SentryAppender">
             <!-- Override the Sentry handler log level to WARN -->
             <filter class="org.apache.log4j.varia.LevelRangeFilter">
                 <param name="levelMin" value="WARN" />
@@ -210,8 +210,8 @@ Alternatively, using  the ``log4j.xml`` format:
             <!-- Optional, override the server name (rather than looking it up dynamically) -->
             <param name="serverName" value="server1" />
 
-            <!-- Optional, select the ravenFactory class -->
-            <param name="ravenFactory" value="com.foo.RavenFactory" />
+            <!-- Optional, select the sentryFactory class -->
+            <param name="sentryFactory" value="com.foo.SentryFactory" />
 
             <!-- Optional, provide tags -->
             <param name="tags" value="tag1:value1,tag2:value2" />
@@ -221,7 +221,7 @@ Alternatively, using  the ``log4j.xml`` format:
         </appender>
 
         <!-- Enable the Console and Sentry appenders, Console is provided as an example
-             of a non-Raven logger that is set to a different logging threshold -->
+             of a non-Sentry logger that is set to a different logging threshold -->
         <root level="INFO">
             <appender-ref ref="Console" />
             <appender-ref ref="Sentry" />
@@ -314,6 +314,6 @@ In Practice
 Asynchronous Logging
 --------------------
 
-Raven uses asynchronous communication by default, and so it is unnecessary
+Sentry uses asynchronous communication by default, and so it is unnecessary
 to use an `AsyncAppender
 <https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/AsyncAppender.html>`_.

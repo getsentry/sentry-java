@@ -1,7 +1,7 @@
 .. sentry:edition:: self
 
-    Raven Java
-    ==========
+    Sentry Java
+    ===========
 
 .. sentry:edition:: on-premise, hosted
 
@@ -10,7 +10,7 @@
     Java
     ====
 
-Raven for Java (``raven-java``) is the official Java SDK for Sentry. At its core it provides
+Sentry for Java (``sentry-java``) is the official Java SDK for Sentry. At its core it provides
 a raw client for sending events to Sentry, but it is highly recommended that you
 use one of the included library or framework integrations listed below if at all possible.
 
@@ -26,8 +26,8 @@ use one of the included library or framework integrations listed below if at all
 Resources:
 
 * `Documentation <https://docs.sentry.io/clients/java/>`_
-* `Bug Tracker <http://github.com/getsentry/raven-java/issues>`_
-* `Code <http://github.com/getsentry/raven-java>`_
+* `Bug Tracker <http://github.com/getsentry/sentry-java/issues>`_
+* `Code <http://github.com/getsentry/sentry-java>`_
 * `Mailing List <https://groups.google.com/group/getsentry>`_
 * `IRC <irc://irc.freenode.net/sentry>`_  (irc.freenode.net, #sentry)
-* `Travis CI <http://travis-ci.org/getsentry/raven-java>`_
+* `Travis CI <http://travis-ci.org/getsentry/sentry-java>`_
