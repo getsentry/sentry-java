@@ -169,6 +169,17 @@ public class EventBuilder {
     }
 
     /**
+     * Sets application distribution version in the event.
+     *
+     * @param dist application distribution version in the event.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withDist(String dist) {
+        event.setDist(dist);
+        return this;
+    }
+
+    /**
      * Sets application environment in the event.
      *
      * @param environment application environment in the event.
