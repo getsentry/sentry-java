@@ -219,6 +219,22 @@ public class JsonMarshallerTest {
     }
 
     @Test
+    public void testEventDistWrittenProperly(@Injectable("release") final String mockRelease,
+                                             @Injectable("dist") final String mockDist) throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getRelease();
+            result = mockRelease;
+            mockEvent.getDist();
+            result = mockDist;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testDist.json")));
+    }
+
+    @Test
     public void testEventEnvironmentWrittenProperly(@Injectable("environment") final String mockEnvironment) throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
