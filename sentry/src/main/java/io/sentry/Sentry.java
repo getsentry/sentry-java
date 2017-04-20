@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
+import io.sentry.event.User;
 
 /**
  * Sentry provides easy access to a statically stored {@link SentryClient} instance.
@@ -94,6 +95,24 @@ public final class Sentry {
     public static void record(Breadcrumb breadcrumb) {
         verifyStoredClient();
         getStoredClient().getContext().recordBreadcrumb(breadcrumb);
+    }
+
+    /**
+     * Set the {@link User} in the current context.
+     *
+     * @param user User to store.
+     */
+    public static void setUser(User user) {
+        verifyStoredClient();
+        getStoredClient().getContext().setUser(user);
+    }
+
+    /**
+     * Clears the current context.
+     */
+    public static void clearContext() {
+        verifyStoredClient();
+        getStoredClient().getContext().clear();
     }
 
 
