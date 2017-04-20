@@ -9,6 +9,7 @@
     "tags": {},
     "server_name": null,
     "release": "release",
+    "dist": null,
     "environment": null,
     "extra": {},
     "checksum": null,

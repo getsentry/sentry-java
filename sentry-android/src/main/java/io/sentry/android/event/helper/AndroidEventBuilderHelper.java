@@ -60,7 +60,8 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         eventBuilder.withSdkName(SentryEnvironment.SDK_NAME + ":android");
         PackageInfo packageInfo = getPackageInfo(ctx);
         if (packageInfo != null) {
-            eventBuilder.withRelease(packageInfo.versionName);
+            eventBuilder.withRelease(packageInfo.packageName + "-" + packageInfo.versionName);
+            eventBuilder.withDist(Integer.toString(packageInfo.versionCode));
         }
 
         String androidId = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);

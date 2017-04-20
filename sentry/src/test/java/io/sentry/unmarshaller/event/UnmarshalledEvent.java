@@ -35,6 +35,8 @@ public class UnmarshalledEvent {
     private String serverName;
     @JsonProperty(value = "release")
     private String release;
+    @JsonProperty(value = "dist")
+    private String dist;
     @JsonProperty(value = "environment")
     private String environment;
     @JsonProperty(value = "modules")
