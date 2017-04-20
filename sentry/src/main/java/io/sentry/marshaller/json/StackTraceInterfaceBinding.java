@@ -33,35 +33,36 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
      *
      * @param stackTraceElement current frame in the stackTrace.
      */
-    private void writeFrame(JsonGenerator generator, StackTraceElement stackTraceElement, boolean commonWithEnclosing)
-        throws IOException {
-        generator.writeStartObject();
-        generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
-        generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getClassName());
-        boolean inApp = !(removeCommonFramesWithEnclosing && commonWithEnclosing) && isFrameInApp(stackTraceElement);
-        generator.writeBooleanField(IN_APP_PARAMETER, inApp);
-        generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getMethodName());
-        generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineNumber());
-        generator.writeEndObject();
-    }
-
-    private void writeFrame(JsonGenerator generator, SentryStackTraceElement stackTraceElement)
-            throws IOException {
+    private void writeFrame(JsonGenerator generator, SentryStackTraceElement stackTraceElement,
+                            boolean commonWithEnclosing) throws IOException {
         generator.writeStartObject();
         generator.writeStringField(FILENAME_PARAMETER, stackTraceElement.getFileName());
         generator.writeStringField(MODULE_PARAMETER, stackTraceElement.getModule());
+        boolean inApp = !(removeCommonFramesWithEnclosing && commonWithEnclosing) && isFrameInApp(stackTraceElement);
+        generator.writeBooleanField(IN_APP_PARAMETER, inApp);
         generator.writeStringField(FUNCTION_PARAMETER, stackTraceElement.getFunction());
         generator.writeNumberField(LINE_NO_PARAMETER, stackTraceElement.getLineno());
-        generator.writeNumberField(COL_NO_PARAMETER, stackTraceElement.getColno());
-        generator.writeStringField(PLATFORM_PARAMTER, stackTraceElement.getPlatform());
-        generator.writeStringField(ABSOLUTE_PATH_PARAMETER, stackTraceElement.getAbsPath());
+
+        // Non-standard fields.
+        if (stackTraceElement.getColno() != null) {
+            generator.writeNumberField(COL_NO_PARAMETER, stackTraceElement.getColno());
+        }
+
+        if (stackTraceElement.getPlatform() != null) {
+            generator.writeStringField(PLATFORM_PARAMTER, stackTraceElement.getPlatform());
+        }
+
+        if (stackTraceElement.getAbsPath() != null) {
+            generator.writeStringField(ABSOLUTE_PATH_PARAMETER, stackTraceElement.getAbsPath());
+        }
+
         generator.writeEndObject();
     }
 
-    private boolean isFrameInApp(StackTraceElement stackTraceElement) {
+    private boolean isFrameInApp(SentryStackTraceElement stackTraceElement) {
         // TODO: A linear search is not efficient here, a Trie could be a better solution.
         for (String inAppFrame : inAppFrames) {
-            String className = stackTraceElement.getClassName();
+            String className = stackTraceElement.getModule();
             if (className.startsWith(inAppFrame)) {
                 return true;
             }
@@ -73,17 +74,10 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     public void writeInterface(JsonGenerator generator, StackTraceInterface stackTraceInterface) throws IOException {
         generator.writeStartObject();
         generator.writeArrayFieldStart(FRAMES_PARAMETER);
-        if (stackTraceInterface.getSentryStackTrace().length == 0) {
-            StackTraceElement[] stackTrace = stackTraceInterface.getStackTrace();
-            int commonWithEnclosing = stackTraceInterface.getFramesCommonWithEnclosing();
-            for (int i = stackTrace.length - 1; i >= 0; i--) {
-                writeFrame(generator, stackTrace[i], commonWithEnclosing-- > 0);
-            }
-        } else {
-            SentryStackTraceElement[] stackTrace = stackTraceInterface.getSentryStackTrace();
-            for (int i = stackTrace.length - 1; i >= 0; i--) {
-                writeFrame(generator, stackTrace[i]);
-            }
+        SentryStackTraceElement[] sentryStackTrace = stackTraceInterface.getStackTrace();
+        int commonWithEnclosing = stackTraceInterface.getFramesCommonWithEnclosing();
+        for (int i = sentryStackTrace.length - 1; i >= 0; i--) {
+            writeFrame(generator, sentryStackTrace[i], commonWithEnclosing-- > 0);
         }
         generator.writeEndArray();
         generator.writeEndObject();

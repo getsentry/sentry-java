@@ -185,7 +185,7 @@ public final class Sentry {
     }
 
     /**
-     * Sends a message to the Sentry server using the statically stored Raven instance.
+     * Sends a message to the Sentry server using the statically stored Sentry instance.
      * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
      *

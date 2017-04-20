@@ -7,7 +7,8 @@
       "lineno": 100,
       "colno": 10,
       "platform": "javascript",
-      "abs_path": "http://localhost"
+      "abs_path": "http://localhost",
+      "in_app": false
     }
   ]
 }

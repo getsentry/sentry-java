@@ -1,16 +1,13 @@
 package io.sentry.jul;
 
 import io.sentry.environment.SentryEnvironment;
+import io.sentry.event.interfaces.*;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
 import io.sentry.Sentry;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.MessageInterface;
-import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.SentryInterface;
 import org.hamcrest.Matchers;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -103,7 +100,8 @@ public class SentryHandlerEventBuildingTest {
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             final SentryException sentryException = exceptionInterface.getExceptions().getFirst();
             assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
-            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+                is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace())));
         }};
         assertNoErrorsInErrorManager();
     }
