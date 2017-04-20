@@ -79,6 +79,10 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String RELEASE = "release";
     /**
+     * Identifies the the distribution of the application.
+     */
+    public static final String DIST = "dist";
+    /**
      * Identifies the environment the application is running in.
      */
     public static final String ENVIRONMENT = "environment";
@@ -180,6 +184,7 @@ public class JsonMarshaller implements Marshaller {
         writeContexts(generator, event.getContexts());
         generator.writeStringField(SERVER_NAME, event.getServerName());
         generator.writeStringField(RELEASE, event.getRelease());
+        generator.writeStringField(DIST, event.getDist());
         generator.writeStringField(ENVIRONMENT, event.getEnvironment());
         writeExtras(generator, event.getExtra());
         writeCollection(generator, FINGERPRINT, event.getFingerprint());
