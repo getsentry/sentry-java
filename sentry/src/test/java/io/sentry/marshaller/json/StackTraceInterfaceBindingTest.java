@@ -1,5 +1,6 @@
 package io.sentry.marshaller.json;
 
+import io.sentry.event.interfaces.SentryStackTraceElement;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -17,15 +18,31 @@ public class StackTraceInterfaceBindingTest {
     private StackTraceInterface mockStackTraceInterface = null;
 
     @Test
+    public void testSingleSentryStackFrame() throws Exception {
+        final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
+        final SentryStackTraceElement sentryStackTraceElement = new SentryStackTraceElement(
+            "", "throwError", "index.js", 100, 10,
+            "http://localhost","javascript");
+        new NonStrictExpectations() {{
+            mockStackTraceInterface.getStackTrace();
+            result = new SentryStackTraceElement[]{sentryStackTraceElement};
+        }};
+        interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
+
+        assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/SentryStackTrace.json")));
+    }
+
+    @Test
     public void testSingleStackFrame() throws Exception {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
         final String methodName = "0cce55c9-478f-4386-8ede-4b6f000da3e6";
         final String className = "31b26f01-9b97-442b-9f36-8a317f94ad76";
         final int lineNumber = 1;
-        final StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, "File.java", lineNumber);
+        final SentryStackTraceElement stackTraceElement = new SentryStackTraceElement(className, methodName,
+            "File.java", lineNumber, null, null, null);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
-            result = new StackTraceElement[]{stackTraceElement};
+            result = new SentryStackTraceElement[]{stackTraceElement};
         }};
 
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
@@ -36,10 +53,11 @@ public class StackTraceInterfaceBindingTest {
     @Test
     public void testFramesCommonWithEnclosing() throws Exception {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
-        final StackTraceElement stackTraceElement = new StackTraceElement("", "", "File.java", 0);
+        final SentryStackTraceElement stackTraceElement = new SentryStackTraceElement("", "",
+            "File.java", 0, null, null, null);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
-            result = new StackTraceElement[]{stackTraceElement, stackTraceElement};
+            result = new SentryStackTraceElement[]{stackTraceElement, stackTraceElement};
             mockStackTraceInterface.getFramesCommonWithEnclosing();
             result = 1;
         }};
@@ -53,10 +71,11 @@ public class StackTraceInterfaceBindingTest {
     @Test
     public void testFramesCommonWithEnclosingDisabled() throws Exception {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
-        final StackTraceElement stackTraceElement = new StackTraceElement("", "", "File.java", 0);
+        final SentryStackTraceElement stackTraceElement = new SentryStackTraceElement("", "",
+            "File.java", 0, null, null, null);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
-            result = new StackTraceElement[]{stackTraceElement, stackTraceElement};
+            result = new SentryStackTraceElement[]{stackTraceElement, stackTraceElement};
             mockStackTraceInterface.getFramesCommonWithEnclosing();
             result = 1;
         }};

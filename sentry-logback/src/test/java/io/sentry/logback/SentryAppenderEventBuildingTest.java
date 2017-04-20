@@ -6,6 +6,7 @@ import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
 import io.sentry.environment.SentryEnvironment;
+import io.sentry.event.interfaces.*;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -13,10 +14,6 @@ import mockit.Verifications;
 import io.sentry.Sentry;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.MessageInterface;
-import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.StackTraceInterface;
 import org.hamcrest.Matchers;
 import org.slf4j.MarkerFactory;
 import org.testng.annotations.BeforeMethod;
@@ -121,7 +118,8 @@ public class SentryAppenderEventBuildingTest {
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             SentryException sentryException = exceptionInterface.getExceptions().getFirst();
             assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
-            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+                is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace())));
         }};
         assertNoErrorsInStatusManager();
     }
@@ -235,7 +233,7 @@ public class SentryAppenderEventBuildingTest {
             mockSentry.sendEvent(event = withCapture());
             StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
                     .get(StackTraceInterface.STACKTRACE_INTERFACE);
-            assertThat(stackTraceInterface.getStackTrace(), is(location));
+            assertThat(stackTraceInterface.getStackTrace(), is(SentryStackTraceElement.fromStackTraceElements(location)));
         }};
         assertNoErrorsInStatusManager();
     }

@@ -10,7 +10,7 @@ public class StackTraceInterface implements SentryInterface {
      * Name of the Sentry interface allowing to send a StackTrace.
      */
     public static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
-    private final StackTraceElement[] stackTrace;
+    private final SentryStackTraceElement[] stackTrace;
     private final int framesCommonWithEnclosing;
 
     /**
@@ -33,7 +33,7 @@ public class StackTraceInterface implements SentryInterface {
      *                            are in common.
      */
     public StackTraceInterface(StackTraceElement[] stackTrace, StackTraceElement[] enclosingStackTrace) {
-        this.stackTrace = Arrays.copyOf(stackTrace, stackTrace.length);
+        this.stackTrace = SentryStackTraceElement.fromStackTraceElements(stackTrace);
 
         int m = stackTrace.length - 1;
         int n = enclosingStackTrace.length - 1;
@@ -44,12 +44,22 @@ public class StackTraceInterface implements SentryInterface {
         framesCommonWithEnclosing = stackTrace.length - 1 - m;
     }
 
+    /**
+     * Creates a StackTrace for an {@link io.sentry.event.Event}.
+     *
+     * @param stackTrace StackTrace to provide to Sentry.
+     */
+    public StackTraceInterface(SentryStackTraceElement[] stackTrace) {
+        this.stackTrace = Arrays.copyOf(stackTrace, stackTrace.length);;
+        this.framesCommonWithEnclosing = 0;
+    }
+
     @Override
     public String getInterfaceName() {
         return STACKTRACE_INTERFACE;
     }
 
-    public StackTraceElement[] getStackTrace() {
+    public SentryStackTraceElement[] getStackTrace() {
         return Arrays.copyOf(stackTrace, stackTrace.length);
     }
 

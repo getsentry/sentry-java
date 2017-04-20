@@ -1,6 +1,7 @@
 package io.sentry.log4j;
 
 import io.sentry.environment.SentryEnvironment;
+import io.sentry.event.interfaces.SentryStackTraceElement;
 import mockit.*;
 import io.sentry.Sentry;
 import io.sentry.event.Event;
@@ -112,7 +113,8 @@ public class SentryAppenderEventBuildingTest {
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             SentryException sentryException = exceptionInterface.getExceptions().getFirst();
             assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
-            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+                is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace())));
         }};
         assertNoErrorsInErrorHandler();
     }
@@ -176,7 +178,7 @@ public class SentryAppenderEventBuildingTest {
                     .get(StackTraceInterface.STACKTRACE_INTERFACE);
             assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
             assertThat(stackTraceInterface.getStackTrace()[0],
-                    is(new StackTraceElement(className, methodName, fileName, line)));
+                    is(new SentryStackTraceElement(className, methodName, fileName, line, null, null, null)));
         }};
         assertNoErrorsInErrorHandler();
     }

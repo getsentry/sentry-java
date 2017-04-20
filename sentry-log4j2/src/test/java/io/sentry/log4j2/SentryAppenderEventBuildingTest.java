@@ -1,16 +1,13 @@
 package io.sentry.log4j2;
 
 import io.sentry.environment.SentryEnvironment;
+import io.sentry.event.interfaces.*;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
 import io.sentry.Sentry;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.MessageInterface;
-import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.MarkerManager;
 import org.apache.logging.log4j.ThreadContext;
@@ -107,7 +104,8 @@ public class SentryAppenderEventBuildingTest {
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             SentryException sentryException = exceptionInterface.getExceptions().getFirst();
             assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
-            assertThat(sentryException.getStackTraceInterface().getStackTrace(), is(exception.getStackTrace()));
+            assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+                is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace())));
         }};
         assertNoErrorsInErrorHandler();
     }
@@ -198,7 +196,7 @@ public class SentryAppenderEventBuildingTest {
             StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
                     .get(StackTraceInterface.STACKTRACE_INTERFACE);
             assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
-            assertThat(stackTraceInterface.getStackTrace()[0], is(location));
+            assertThat(stackTraceInterface.getStackTrace()[0], is(SentryStackTraceElement.fromStackTraceElement(location)));
         }};
         assertNoErrorsInErrorHandler();
     }
