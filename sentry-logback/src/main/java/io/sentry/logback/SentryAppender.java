@@ -206,13 +206,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The sentry instance is started in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link SentryClient}.<br>
-     * More on <a href="http://www.slf4j.org/codes.html#substituteLogger">www.slf4j.org/codes.html#substituteLogger</a>
-     */
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
@@ -237,7 +230,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -249,7 +242,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } catch (InvalidDsnException e) {
             addError("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
-            addError("An exception occurred during the creation of a Sentry instance", e);
+            addError("An exception occurred during the creation of a SentryClient instance", e);
         }
     }
 

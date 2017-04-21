@@ -28,7 +28,7 @@ Breadcrumbs can be used to describe actions that occurred in your application le
 up to an event being sent. For example, whether external API requests were made,
 or whether a user clicked on something in an Android application.
 
-Once a Sentry instance has been initialized, either via a logging framework or manually,
+Once a ``SentryClient`` instance has been initialized, either via a logging framework or manually,
 you can begin recording breadcrumbs. By default the last 100 breadcrumbs for a given
 context instance will be stored and sent with future events.
 
@@ -48,7 +48,7 @@ context instance will be stored and sent with future events.
 
         // ... or retrieve and manipulate the context instance manually
 
-        // Retrieve the stored Sentry instance
+        // Retrieve the stored SentryClient instance
         SentryClient sentryClient = getStoredClient();
 
         // Get the current context instance

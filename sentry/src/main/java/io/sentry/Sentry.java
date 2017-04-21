@@ -10,7 +10,7 @@ import io.sentry.event.User;
  */
 public final class Sentry {
     /**
-     * The most recently constructed Sentry instance, used by static helper
+     * The most recently constructed {@link SentryClient} instance, used by static helper
      * methods like {@link Sentry#capture(Event)}.
      */
     private static volatile SentryClient storedClient = null;
@@ -23,7 +23,7 @@ public final class Sentry {
     }
 
     /**
-     * Returns the last statically stored Sentry instance or null if one has
+     * Returns the last statically stored {@link SentryClient} instance or null if one has
      * never been stored.
      *
      * @return statically stored {@link SentryClient} instance
@@ -38,13 +38,13 @@ public final class Sentry {
 
     private static void verifyStoredClient() {
         if (storedClient == null) {
-            throw new NullPointerException("No stored Sentry instance is available to use."
-                + " You must construct a Sentry instance before using the static Sentry methods.");
+            throw new NullPointerException("No stored SentryClient instance is available to use."
+                + " You must construct a SentryClient instance before using the static Sentry methods.");
         }
     }
 
     /**
-     * Send an Event using the statically stored Sentry instance.
+     * Send an Event using the statically stored {@link SentryClient} instance.
      *
      * @param event Event to send to the Sentry server
      */
@@ -54,7 +54,8 @@ public final class Sentry {
     }
 
     /**
-     * Sends an exception (or throwable) to the Sentry server using the statically stored Sentry instance.
+     * Sends an exception (or throwable) to the Sentry server using the statically stored
+     * {@link SentryClient} instance.
      * <p>
      * The exception will be logged at the {@link Event.Level#ERROR} level.
      *
@@ -66,7 +67,7 @@ public final class Sentry {
     }
 
     /**
-     * Sends a message to the Sentry server using the statically stored Sentry instance.
+     * Sends a message to the Sentry server using the statically stored {@link SentryClient} instance.
      * <p>
      * The message will be logged at the {@link Event.Level#INFO} level.
      *
@@ -78,7 +79,8 @@ public final class Sentry {
     }
 
     /**
-     * Builds and sends an {@link Event} to the Sentry server using the statically stored Sentry instance.
+     * Builds and sends an {@link Event} to the Sentry server using the statically stored
+     * {@link SentryClient} instance.
      *
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */

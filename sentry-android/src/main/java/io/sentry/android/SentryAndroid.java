@@ -43,7 +43,7 @@ public final class SentryAndroid {
      * Initialize Sentry using a DSN set in the AndroidManifest.
      *
      * @param ctx Android application ctx
-     * @param sentryFactory the SentryFactory to be used to generate the Sentry instance
+     * @param sentryFactory the SentryFactory to be used to generate the {@link SentryClient} instance
      * @return SentryClient
      */
     public static SentryClient init(Context ctx, AndroidSentryClientFactory sentryFactory) {
@@ -108,7 +108,7 @@ public final class SentryAndroid {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN object
-     * @param sentryFactory the SentryFactory to be used to generate the Sentry instance
+     * @param sentryFactory the SentryFactory to be used to generate the {@link SentryClient} instance
      * @return SentryClient
      */
     public static SentryClient init(Context ctx, Dsn dsn, AndroidSentryClientFactory sentryFactory) {

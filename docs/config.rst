@@ -135,7 +135,7 @@ could be deployed and undeployed regularly.
 
 To avoid this behaviour, it is possible to disable the graceful shutdown.
 This might lead to some log entries being lost if the log application
-doesn't shut down the Sentry instance nicely.
+doesn't shut down the ``SentryClient`` instance nicely.
 
 The option to do so is ``sentry.async.gracefulshutdown``:
 

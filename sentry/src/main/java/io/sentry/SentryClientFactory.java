@@ -125,7 +125,7 @@ public abstract class SentryClientFactory {
 
         // Throw an IllegalStateException that attempts to be helpful.
         StringBuilder sb = new StringBuilder();
-        sb.append("Couldn't create a sentry instance for: '");
+        sb.append("Couldn't create a SentryClient instance for: '");
         sb.append(dsn);
         sb.append('\'');
         if (sentryFactoryName != null) {

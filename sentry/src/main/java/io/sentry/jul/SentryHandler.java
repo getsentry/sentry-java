@@ -263,7 +263,7 @@ public class SentryHandler extends Handler {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -276,7 +276,8 @@ public class SentryHandler extends Handler {
             reportError("An exception occurred during the retrieval of the DSN for Sentry",
                 e, ErrorManager.OPEN_FAILURE);
         } catch (Exception e) {
-            reportError("An exception occurred during the creation of a Sentry instance", e, ErrorManager.OPEN_FAILURE);
+            reportError("An exception occurred during the creation of a SentryClient instance",
+                e, ErrorManager.OPEN_FAILURE);
         }
     }
 

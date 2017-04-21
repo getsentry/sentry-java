@@ -275,14 +275,6 @@ public class SentryAppender extends AbstractAppender {
         return stringParameters;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The sentry instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link SentryClient}.<br>
-     *
-     * @param logEvent The LogEvent.
-     */
     @Override
     public void append(LogEvent logEvent) {
         // Do not log the event if the current thread is managed by sentry
@@ -303,7 +295,7 @@ public class SentryAppender extends AbstractAppender {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -315,7 +307,7 @@ public class SentryAppender extends AbstractAppender {
         } catch (InvalidDsnException e) {
             error("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
-            error("An exception occurred during the creation of a Sentry instance", e);
+            error("An exception occurred during the creation of a SentryClient instance", e);
         }
     }
 

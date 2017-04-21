@@ -46,7 +46,7 @@ public class SentryClient {
     private final ContextManager contextManager;
 
     /**
-     * Constructs a Sentry instance using the provided connection.
+     * Constructs a {@link SentryClient} instance using the provided connection.
      *
      * Note that the most recently constructed instance is stored statically so it can be used with
      * the static helper methods.
@@ -157,7 +157,7 @@ public class SentryClient {
     }
 
     /**
-     * Closes the connection for the Sentry instance.
+     * Closes the connection for the {@link SentryClient} instance.
      */
     public void closeConnection() {
         try {

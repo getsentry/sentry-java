@@ -200,7 +200,7 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -213,8 +213,8 @@ public class SentryAppender extends AppenderSkeleton {
             getErrorHandler().error("An exception occurred during the retrieval of the DSN for Sentry", e,
                     ErrorCode.ADDRESS_PARSE_FAILURE);
         } catch (Exception e) {
-            getErrorHandler().error("An exception occurred during the creation of a Sentry instance", e,
-                    ErrorCode.FILE_OPEN_FAILURE);
+            getErrorHandler().error("An exception occurred during the creation of a "
+                + "SentryClient instance", e, ErrorCode.FILE_OPEN_FAILURE);
         }
     }
 

@@ -160,12 +160,12 @@ be used easily from anywhere in your application.
 
     public class MyClass {
         public static void main(String... args) {
-            // Create a Sentry instance
+            // Create a SentryClient instance
             SentryClientFactory.sentryClient();
         }
 
         public somewhereElse() {
-            // Use the Sentry instance statically. Note that we are
+            // Use the stored SentryClient instance statically. Note that we are
             // using the Class (and a static method) here
             Sentry.capture("Error message");
 
@@ -181,5 +181,5 @@ be used easily from anywhere in your application.
 
     }
 
-Note that a Sentry instance *must* be created before you can use the ``Sentry.capture``
+Note that a SentryClient instance *must* be created before you can use the ``Sentry.capture``
 method, otherwise a ``NullPointerException`` (with an explanation) will be thrown.
