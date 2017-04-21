@@ -13,7 +13,7 @@ import io.sentry.dsn.Dsn;
 import java.io.File;
 
 /**
- * SentryFactory that handles Android-specific construction, like taking advantage
+ * SentryClientFactory that handles Android-specific construction, like taking advantage
  * of the Android Context instance.
  */
 public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
@@ -30,7 +30,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     private Context ctx;
 
     /**
-     * Construct an AndroidSentryFactory using the specified Android Context.
+     * Construct an AndroidSentryClientFactory using the specified Android Context.
      *
      * @param ctx Android Context.
      */

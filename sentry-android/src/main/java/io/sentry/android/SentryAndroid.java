@@ -43,10 +43,10 @@ public final class SentryAndroid {
      * Initialize Sentry using a DSN set in the AndroidManifest.
      *
      * @param ctx Android application ctx
-     * @param sentryFactory the SentryFactory to be used to generate the {@link SentryClient} instance
+     * @param sentryClientFactory the SentryClientFactory to be used to generate the {@link SentryClient} instance
      * @return SentryClient
      */
-    public static SentryClient init(Context ctx, AndroidSentryClientFactory sentryFactory) {
+    public static SentryClient init(Context ctx, AndroidSentryClientFactory sentryClientFactory) {
         ctx = ctx.getApplicationContext();
         String dsn = "";
 
@@ -65,7 +65,7 @@ public final class SentryAndroid {
                 + "the constructor or AndroidManifest.");
         }
 
-        return init(ctx, dsn, sentryFactory);
+        return init(ctx, dsn, sentryClientFactory);
     }
 
     /**
@@ -84,11 +84,11 @@ public final class SentryAndroid {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN string
-     * @param sentryFactory the SentryFactory to be used to generate the SentryClient
+     * @param sentryClientFactory the SentryClientFactory to be used to generate the SentryClient
      * @return SentryClient
      */
-    public static SentryClient init(Context ctx, String dsn, AndroidSentryClientFactory sentryFactory) {
-        return init(ctx, new Dsn(dsn), sentryFactory);
+    public static SentryClient init(Context ctx, String dsn, AndroidSentryClientFactory sentryClientFactory) {
+        return init(ctx, new Dsn(dsn), sentryClientFactory);
     }
 
     /**
@@ -108,10 +108,10 @@ public final class SentryAndroid {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN object
-     * @param sentryFactory the SentryFactory to be used to generate the {@link SentryClient} instance
+     * @param sentryClientFactory the SentryClientFactory to be used to generate the {@link SentryClient} instance
      * @return SentryClient
      */
-    public static SentryClient init(Context ctx, Dsn dsn, AndroidSentryClientFactory sentryFactory) {
+    public static SentryClient init(Context ctx, Dsn dsn, AndroidSentryClientFactory sentryClientFactory) {
         // Ensure we have the application context
         Context context = ctx.getApplicationContext();
 
@@ -133,7 +133,7 @@ public final class SentryAndroid {
                 + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
 
-        SentryClientFactory.registerFactory(sentryFactory);
+        SentryClientFactory.registerFactory(sentryClientFactory);
 
         // SentryClient will store the instance statically on the Sentry utility class.
         SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);

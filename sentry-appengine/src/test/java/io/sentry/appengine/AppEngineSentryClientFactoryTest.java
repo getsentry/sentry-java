@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.is;
 
 public class AppEngineSentryClientFactoryTest {
     @Tested
-    private AppEngineSentryClientFactory appEngineSentryFactory;
+    private AppEngineSentryClientFactory appEngineSentryClientFactory;
     @Injectable
     private Connection mockConnection;
     @Injectable
@@ -31,8 +31,8 @@ public class AppEngineSentryClientFactoryTest {
     }
 
     @Test
-    public void asyncConnectionCreatedByAppEngineSentryFactoryIsForAppEngine() throws Exception {
-        Connection connection = appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
+    public void asyncConnectionCreatedByAppEngineSentryClientFactoryIsForAppEngine() throws Exception {
+        Connection connection = appEngineSentryClientFactory.createAsyncConnection(mockDsn, mockConnection);
 
         assertThat(connection, is(instanceOf(AppEngineAsyncConnection.class)));
     }
@@ -45,7 +45,7 @@ public class AppEngineSentryClientFactoryTest {
             result = dnsString;
         }};
 
-        appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
+        appEngineSentryClientFactory.createAsyncConnection(mockDsn, mockConnection);
 
         new Verifications() {{
             String connectionId = AppEngineSentryClientFactory.class.getCanonicalName() + dnsString;
@@ -61,7 +61,7 @@ public class AppEngineSentryClientFactoryTest {
             result = Collections.singletonMap(AppEngineSentryClientFactory.CONNECTION_IDENTIFIER, connectionId);
         }};
 
-        appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
+        appEngineSentryClientFactory.createAsyncConnection(mockDsn, mockConnection);
 
         new Verifications() {{
             new AppEngineAsyncConnection(connectionId, mockConnection);
@@ -71,7 +71,7 @@ public class AppEngineSentryClientFactoryTest {
     @Test
     public void asyncConnectionWithoutQueueNameKeepsDefaultQueue(
             @Mocked final AppEngineAsyncConnection mockAppEngineAsyncConnection) throws Exception {
-        appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
+        appEngineSentryClientFactory.createAsyncConnection(mockDsn, mockConnection);
 
         new Verifications() {{
             mockAppEngineAsyncConnection.setQueue(anyString);
@@ -88,7 +88,7 @@ public class AppEngineSentryClientFactoryTest {
             result = Collections.singletonMap(AppEngineSentryClientFactory.QUEUE_NAME, mockQueueName);
         }};
 
-        appEngineSentryFactory.createAsyncConnection(mockDsn, mockConnection);
+        appEngineSentryClientFactory.createAsyncConnection(mockDsn, mockConnection);
 
         new Verifications() {{
             mockAppEngineAsyncConnection.setQueue(mockQueueName);

@@ -59,7 +59,7 @@ public class SentryAppenderFailuresTest {
     }
 
     @Test
-    public void testSentryFactoryFailureDoesNotPropagate() throws Exception {
+    public void testSentryClientFactoryFailureDoesNotPropagate() throws Exception {
         final String dsnUri = "proto://private:public@host/1";
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);

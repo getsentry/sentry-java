@@ -61,7 +61,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
-    protected String sentryFactory;
+    protected String sentryClientFactory;
     /**
      * Identifies the version of the application.
      * <p>
@@ -129,9 +129,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryFactory = Lookup.lookup("sentryFactory");
-                        if (sentryFactory != null) {
-                            setSentryFactory(sentryFactory);
+                        String sentryClientFactory = Lookup.lookup("factory");
+                        if (sentryClientFactory != null) {
+                            setFactory(sentryClientFactory);
                         }
 
                         String release = Lookup.lookup("release");
@@ -238,7 +238,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             addError("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
@@ -418,8 +418,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.dsn = dsn;
     }
 
-    public void setSentryFactory(String sentryFactory) {
-        this.sentryFactory = sentryFactory;
+    public void setFactory(String factory) {
+        this.sentryClientFactory = factory;
     }
 
     public void setRelease(String release) {

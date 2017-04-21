@@ -58,7 +58,7 @@ public class SentryHandler extends Handler {
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
-    protected String sentryFactory;
+    protected String sentryClientFactory;
     /**
      * Identifies the version of the application.
      * <p>
@@ -129,9 +129,9 @@ public class SentryHandler extends Handler {
                 if (!initialized) {
 
                     try {
-                        String sentryFactory = Lookup.lookup("sentryFactory");
-                        if (sentryFactory != null) {
-                            setSentryFactory(sentryFactory);
+                        String sentryClientFactory = Lookup.lookup("factory");
+                        if (sentryClientFactory != null) {
+                            setFactory(sentryClientFactory);
                         }
 
                         String release = Lookup.lookup("release");
@@ -216,9 +216,9 @@ public class SentryHandler extends Handler {
         if (dsnProperty != null) {
             setDsn(dsnProperty);
         }
-        String sentryFactoryProperty = manager.getProperty(className + ".sentryFactory");
-        if (sentryFactoryProperty != null) {
-            setSentryFactory(sentryFactoryProperty);
+        String sentryClientFactoryProperty = manager.getProperty(className + ".factory");
+        if (sentryClientFactoryProperty != null) {
+            setFactory(sentryClientFactoryProperty);
         }
         String releaseProperty = manager.getProperty(className + ".release");
         if (releaseProperty != null) {
@@ -271,7 +271,7 @@ public class SentryHandler extends Handler {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Sentry",
                 e, ErrorManager.OPEN_FAILURE);
@@ -409,8 +409,8 @@ public class SentryHandler extends Handler {
         this.printfStyle = printfStyle;
     }
 
-    public void setSentryFactory(String sentryFactory) {
-        this.sentryFactory = sentryFactory;
+    public void setFactory(String factory) {
+        this.sentryClientFactory = factory;
     }
 
     public void setRelease(String release) {

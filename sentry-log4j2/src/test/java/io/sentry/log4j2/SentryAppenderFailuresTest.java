@@ -47,7 +47,7 @@ public class SentryAppenderFailuresTest {
     }
 
     @Test
-    public void testSentryFactoryFailureDoesNotPropagate() throws Exception {
+    public void testSentryClientFactoryFailureDoesNotPropagate() throws Exception {
         new NonStrictExpectations() {{
             SentryClientFactory.sentryClient((Dsn) any, anyString);
             result = new UnsupportedOperationException();

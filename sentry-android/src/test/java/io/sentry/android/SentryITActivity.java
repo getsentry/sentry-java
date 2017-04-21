@@ -13,7 +13,7 @@ public class SentryITActivity extends Activity {
 
     class CustomAndroidSentryClientFactory extends AndroidSentryClientFactory {
         /**
-         * Construct an AndroidSentryFactory using the specified Android Context.
+         * Construct an AndroidSentryClientFactory using the specified Android Context.
          *
          * @param ctx Android Context.
          */

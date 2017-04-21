@@ -9,7 +9,7 @@ import io.sentry.connection.Connection;
 import io.sentry.dsn.Dsn;
 
 /**
- * SentryFactory dedicated to create async connections within Google App Engine.
+ * SentryClientFactory dedicated to create async connections within Google App Engine.
  */
 public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
     /**

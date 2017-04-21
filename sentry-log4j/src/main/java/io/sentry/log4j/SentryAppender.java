@@ -53,7 +53,7 @@ public class SentryAppender extends AppenderSkeleton {
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
-    protected String sentryFactory;
+    protected String sentryClientFactory;
     /**
      * Identifies the version of the application.
      * <p>
@@ -117,9 +117,9 @@ public class SentryAppender extends AppenderSkeleton {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryFactory = Lookup.lookup("sentryFactory");
-                        if (sentryFactory != null) {
-                            setSentryFactory(sentryFactory);
+                        String sentryClientFactory = Lookup.lookup("factory");
+                        if (sentryClientFactory != null) {
+                            setFactory(sentryClientFactory);
                         }
 
                         String release = Lookup.lookup("release");
@@ -208,7 +208,7 @@ public class SentryAppender extends AppenderSkeleton {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             getErrorHandler().error("An exception occurred during the retrieval of the DSN for Sentry", e,
                     ErrorCode.ADDRESS_PARSE_FAILURE);
@@ -312,8 +312,8 @@ public class SentryAppender extends AppenderSkeleton {
         return eventBuilder.build();
     }
 
-    public void setSentryFactory(String sentryFactory) {
-        this.sentryFactory = sentryFactory;
+    public void setFactory(String factory) {
+        this.sentryClientFactory = factory;
     }
 
     public void setDsn(String dsn) {
