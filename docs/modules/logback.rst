@@ -146,7 +146,7 @@ Example configuration in the ``logback.xml`` file:
             <serverName>server1</serverName>
 
             <!-- Optional, select the SentryClientFactory class -->
-            <factory>com.foo.Factory</factory>
+            <factory>com.foo.SentryClientFactory</factory>
 
             <!-- Optional, provide tags -->
             <tags>tag1:value1,tag2:value2</tags>

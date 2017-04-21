@@ -135,7 +135,7 @@ Example configuration in the ``logging.properties`` file:
     io.sentry.jul.SentryHandler.serverName=server1
 
     # Optional, select the SentryClientFactorclass
-    io.sentry.jul.SentryHandler.factory=com.foo.Factory
+    io.sentry.jul.SentryHandler.factory=com.foo.SentryClientFactory
 
     # Optional, provide tag names to be extracted from MDC
     io.sentry.jul.SentryHandler.extraTags=foo,bar,baz

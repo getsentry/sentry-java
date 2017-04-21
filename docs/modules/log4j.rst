@@ -166,7 +166,7 @@ Example configuration in the ``log4j.properties`` file:
     log4j.appender.Sentry.serverName=server1
 
     # Optional, select the SentryClientFactory class
-    log4j.appender.Sentry.factory=com.foo.Factory
+    log4j.appender.Sentry.factory=com.foo.SentryClientFactory
 
     # Optional, provide tags
     log4j.appender.Sentry.tags=tag1:value1,tag2:value2
@@ -211,7 +211,7 @@ Alternatively, using  the ``log4j.xml`` format:
             <param name="serverName" value="server1" />
 
             <!-- Optional, select the SentryClientFactory class -->
-            <param name="factory" value="com.foo.Factory" />
+            <param name="factory" value="com.foo.SentryClientFactory" />
 
             <!-- Optional, provide tags -->
             <param name="tags" value="tag1:value1,tag2:value2" />
