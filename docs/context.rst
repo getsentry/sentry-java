@@ -18,7 +18,8 @@ Sentry defaults to the ``SingletonContextManager`` on Android, which maintains a
 context instance for all threads for the lifetime of the application.
 
 To override the ``ContextManager`` you will need to override the ``getContextManager``
-method in the ``DefaultSentryFactory``. A simpler API will likely be provided in the future.
+method in the ``DefaultSentryClientFactory``. A simpler API will likely be provided in
+the future.
 
 Using Breadcrumbs
 -----------------
@@ -48,10 +49,10 @@ context instance will be stored and sent with future events.
         // ... or retrieve and manipulate the context instance manually
 
         // Retrieve the stored Sentry instance
-        Sentry sentry = getStoredClient();
+        SentryClient sentryClient = getStoredClient();
 
         // Get the current context instance
-        Context context = sentry.getContext();
+        Context context = sentryClient.getContext();
 
         // Set the current User in the context
         context.setUser(

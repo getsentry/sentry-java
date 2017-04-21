@@ -34,7 +34,7 @@ public final class SentryAndroid {
      * @param ctx Android application ctx
      */
     public static void init(Context ctx) {
-        init(ctx, getDefaultSentryFactory(ctx));
+        init(ctx, getDefaultSentryClientFactory(ctx));
     }
 
     /**
@@ -72,7 +72,7 @@ public final class SentryAndroid {
      * @param dsn Sentry DSN string
      */
     public static void init(Context ctx, String dsn) {
-        init(ctx, new Dsn(dsn), getDefaultSentryFactory(ctx));
+        init(ctx, new Dsn(dsn), getDefaultSentryClientFactory(ctx));
     }
 
     /**
@@ -93,7 +93,7 @@ public final class SentryAndroid {
      * @param dsn Sentry DSN object
      */
     public static void init(Context ctx, Dsn dsn) {
-        init(ctx, dsn, getDefaultSentryFactory(ctx));
+        init(ctx, dsn, getDefaultSentryClientFactory(ctx));
     }
 
     /**
@@ -134,7 +134,7 @@ public final class SentryAndroid {
         setupUncaughtExceptionHandler();
     }
 
-    private static AndroidSentryClientFactory getDefaultSentryFactory(Context ctx) {
+    private static AndroidSentryClientFactory getDefaultSentryClientFactory(Context ctx) {
         return new AndroidSentryClientFactory(ctx);
     }
 
