@@ -49,12 +49,12 @@ of the send methods it provides.
         public static void main(String... args) {
             // Creation of the client with a specific DSN
             String dsn = args[0];
-            sentry = SentryClientFactory.sentryInstance(dsn);
+            sentry = SentryClientFactory.sentryClient(dsn);
 
             // It is also possible to use the DSN detection system, which
             // will check the environment variable "SENTRY_DSN" and the Java
             // System Property "sentry.dsn".
-            sentry = SentryClientFactory.sentryInstance();
+            sentry = SentryClientFactory.sentryClient();
         }
 
         void logSimpleMessage() {
@@ -108,15 +108,15 @@ For more complex messages, you'll need to build an ``Event`` with the
         public static void main(String... args) {
             // Creation of the client with a specific DSN
             String dsn = args[0];
-            sentry = SentryClientFactory.sentryInstance(dsn);
+            sentry = SentryClientFactory.sentryClient(dsn);
 
             // It is also possible to use the DSN detection system, which
             // will check the environment variable "SENTRY_DSN" and the Java
             // System Property "sentry.dsn".
-            sentry = SentryClientFactory.sentryInstance();
+            sentry = SentryClientFactory.sentryClient();
 
             // Advanced: specify the sentryClientFactory used
-            sentry = SentryClientFactory.sentryInstance(new Dsn(dsn), "io.sentry.DefaultSentryClientFactory");
+            sentry = SentryClientFactory.sentryClient(new Dsn(dsn), "io.sentry.DefaultSentryClientFactory");
         }
 
         void logSimpleMessage() {
@@ -161,7 +161,7 @@ be used easily from anywhere in your application.
     public class MyClass {
         public static void main(String... args) {
             // Create a Sentry instance
-            SentryClientFactory.sentryInstance();
+            SentryClientFactory.sentryClient();
         }
 
         public somewhereElse() {

@@ -49,8 +49,8 @@ public abstract class SentryClientFactory {
      *
      * @return an instance of Sentry.
      */
-    public static SentryClient sentryInstance() {
-        return sentryInstance(Dsn.dsnLookup());
+    public static SentryClient sentryClient() {
+        return sentryClient(Dsn.dsnLookup());
     }
 
     /**
@@ -59,8 +59,8 @@ public abstract class SentryClientFactory {
      * @param dsn Data Source Name of the Sentry server.
      * @return an instance of Sentry.
      */
-    public static SentryClient sentryInstance(String dsn) {
-        return sentryInstance(new Dsn(dsn));
+    public static SentryClient sentryClient(String dsn) {
+        return sentryClient(new Dsn(dsn));
     }
 
     /**
@@ -69,8 +69,8 @@ public abstract class SentryClientFactory {
      * @param dsn Data Source Name of the Sentry server.
      * @return an instance of Sentry.
      */
-    public static SentryClient sentryInstance(Dsn dsn) {
-        return sentryInstance(dsn, null);
+    public static SentryClient sentryClient(Dsn dsn) {
+        return sentryClient(dsn, null);
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class SentryClientFactory {
      * @return an instance of Sentry.
      * @throws IllegalStateException when no instance of Sentry has been created.
      */
-    public static SentryClient sentryInstance(Dsn dsn, String sentryFactoryName) {
+    public static SentryClient sentryClient(Dsn dsn, String sentryFactoryName) {
         logger.debug("Attempting to find a working SentryFactory");
 
         // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
@@ -100,7 +100,7 @@ public abstract class SentryClientFactory {
             logger.debug("Attempting to use '{}' as a SentryFactory.", sentryClientFactory);
             triedFactories.add(name);
             try {
-                SentryClient sentryClientInstance = sentryClientFactory.createSentryInstance(dsn);
+                SentryClient sentryClientInstance = sentryClientFactory.createSentryClient(dsn);
                 logger.debug("The SentryFactory '{}' created an instance of Sentry.", sentryClientFactory);
                 return sentryClientInstance;
             } catch (RuntimeException e) {
@@ -169,7 +169,7 @@ public abstract class SentryClientFactory {
      * @return an instance of Sentry.
      * @throws RuntimeException when an instance couldn't be created.
      */
-    public abstract SentryClient createSentryInstance(Dsn dsn);
+    public abstract SentryClient createSentryClient(Dsn dsn);
 
     @Override
     public String toString() {

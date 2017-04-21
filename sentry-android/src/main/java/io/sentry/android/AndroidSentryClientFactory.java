@@ -41,10 +41,10 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     }
 
     @Override
-    public SentryClient createSentryInstance(Dsn dsn) {
-        SentryClient sentryClientInstance = super.createSentryInstance(dsn);
-        sentryClientInstance.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
-        return sentryClientInstance;
+    public SentryClient createSentryClient(Dsn dsn) {
+        SentryClient sentryClient = super.createSentryClient(dsn);
+        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+        return sentryClient;
     }
 
     @Override

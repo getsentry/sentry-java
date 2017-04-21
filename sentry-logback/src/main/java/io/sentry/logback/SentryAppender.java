@@ -245,7 +245,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentryClient = SentryClientFactory.sentryInstance(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryFactory);
         } catch (InvalidDsnException e) {
             addError("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {

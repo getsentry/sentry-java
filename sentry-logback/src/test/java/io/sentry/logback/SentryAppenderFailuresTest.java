@@ -22,7 +22,7 @@ public class SentryAppenderFailuresTest {
     @Injectable
     private Context mockContext = null;
     @SuppressWarnings("unused")
-    @Mocked("sentryInstance")
+    @Mocked("sentryClient")
     private SentryClientFactory mockSentryClientFactory;
 
     @BeforeMethod
@@ -65,7 +65,7 @@ public class SentryAppenderFailuresTest {
         sentryAppender.setContext(mockContext);
         sentryAppender.setDsn(dsnUri);
         new Expectations() {{
-            SentryClientFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = new UnsupportedOperationException();
         }};
         sentryAppender.start();

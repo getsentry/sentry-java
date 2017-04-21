@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Sentry client, for sending {@link Event}s to a Sentry server.
  * <p>
  * It is recommended that you create an instance of Sentry through
- * {@link SentryClientFactory#createSentryInstance(io.sentry.dsn.Dsn)}, which will use the best factory available.
+ * {@link SentryClientFactory#createSentryClient(io.sentry.dsn.Dsn)}, which will use the best factory available.
  */
 public class SentryClient {
     private static final Logger logger = LoggerFactory.getLogger(SentryClient.class);

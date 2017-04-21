@@ -24,7 +24,7 @@ public class SentryAppenderFailuresTest {
     @Injectable
     private Logger mockLogger = null;
     @SuppressWarnings("unused")
-    @Mocked("sentryInstance")
+    @Mocked("sentryClient")
     private SentryClientFactory mockSentryClientFactory = null;
 
     @BeforeMethod
@@ -50,7 +50,7 @@ public class SentryAppenderFailuresTest {
     @Test
     public void testSentryFactoryFailureDoesNotPropagate() throws Exception {
         new NonStrictExpectations() {{
-            SentryClientFactory.sentryInstance((Dsn) any, anyString);
+            SentryClientFactory.sentryClient((Dsn) any, anyString);
             result = new UnsupportedOperationException();
         }};
         SentryAppender sentryAppender = new SentryAppender();

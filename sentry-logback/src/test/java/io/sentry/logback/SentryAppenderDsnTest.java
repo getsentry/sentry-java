@@ -21,7 +21,7 @@ public class SentryAppenderDsnTest {
     @Injectable
     private Context mockContext = null;
     @SuppressWarnings("unused")
-    @Mocked("sentryInstance")
+    @Mocked("sentryClient")
     private SentryClientFactory mockSentryClientFactory = null;
     @SuppressWarnings("unused")
     @Mocked("dsnLookup")
@@ -54,7 +54,7 @@ public class SentryAppenderDsnTest {
         new Expectations() {{
             Dsn.dsnLookup();
             result = dsnUri;
-            SentryClientFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = mockSentryClient;
         }};
 
@@ -68,7 +68,7 @@ public class SentryAppenderDsnTest {
         final String dsnUri = "protocol://public:private@host/2";
         sentryAppender.setDsn(dsnUri);
         new Expectations() {{
-            SentryClientFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = mockSentryClient;
         }};
 

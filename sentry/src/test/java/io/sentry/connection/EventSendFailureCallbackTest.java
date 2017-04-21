@@ -34,7 +34,7 @@ public class EventSendFailureCallbackTest {
         };
 
         String dsn = "https://foo:bar@localhost:1234/1?async=false";
-        SentryClient sentryClient = factory.createSentryInstance(new Dsn(dsn));
+        SentryClient sentryClient = factory.createSentryClient(new Dsn(dsn));
         sentryClient.sendMessage("Message that will fail because DSN points to garbage.");
 
         assertThat(flag.get(), is(true));
@@ -59,7 +59,7 @@ public class EventSendFailureCallbackTest {
         };
 
         String dsn = "https://foo:bar@localhost:1234/1?async=false";
-        SentryClient sentryClient = factory.createSentryInstance(new Dsn(dsn));
+        SentryClient sentryClient = factory.createSentryClient(new Dsn(dsn));
         sentryClient.sendMessage("Message that will fail because DSN points to garbage.");
     }
 

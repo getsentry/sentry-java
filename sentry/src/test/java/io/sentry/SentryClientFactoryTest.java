@@ -50,11 +50,11 @@ public class SentryClientFactoryTest {
                     return Collections.singletonList(sentryClientFactory).iterator();
                 }
             };
-            sentryClientFactory.createSentryInstance(mockDsn);
+            sentryClientFactory.createSentryClient(mockDsn);
             result = mockSentryClient;
         }};
 
-        SentryClient sentryClient = SentryClientFactory.sentryInstance(mockDsn);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(mockDsn);
 
         assertThat(sentryClient, is(mockSentryClient));
     }
@@ -64,41 +64,41 @@ public class SentryClientFactoryTest {
                                               @Injectable final Dsn mockDsn) throws Exception {
         SentryClientFactory.registerFactory(sentryClientFactory);
         new NonStrictExpectations() {{
-            sentryClientFactory.createSentryInstance(mockDsn);
+            sentryClientFactory.createSentryClient(mockDsn);
             result = mockSentryClient;
         }};
 
-        SentryClient sentryClient = SentryClientFactory.sentryInstance(mockDsn);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(mockDsn);
 
         assertThat(sentryClient, is(mockSentryClient));
     }
 
     @Test
-    public void testSentryInstanceForFactoryNameSucceedsIfFactoryFound(@Injectable final SentryClient mockSentryClient,
+    public void testSentryClientForFactoryNameSucceedsIfFactoryFound(@Injectable final SentryClient mockSentryClient,
                                                                       @Injectable final Dsn mockDsn) throws Exception {
         String factoryName = sentryClientFactory.getClass().getName();
         SentryClientFactory.registerFactory(sentryClientFactory);
         new NonStrictExpectations() {{
-            sentryClientFactory.createSentryInstance(mockDsn);
+            sentryClientFactory.createSentryClient(mockDsn);
             result = mockSentryClient;
         }};
 
-        SentryClient sentryClient = SentryClientFactory.sentryInstance(mockDsn, factoryName);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(mockDsn, factoryName);
 
         assertThat(sentryClient, is(mockSentryClient));
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void testSentryInstanceForFactoryNameFailsIfNoFactoryFound(@Injectable final SentryClient mockSentryClient,
+    public void testSentryClientForFactoryNameFailsIfNoFactoryFound(@Injectable final SentryClient mockSentryClient,
                                                                      @Injectable final Dsn mockDsn) throws Exception {
         String factoryName = "invalidName";
         SentryClientFactory.registerFactory(sentryClientFactory);
         new NonStrictExpectations() {{
-            sentryClientFactory.createSentryInstance(mockDsn);
+            sentryClientFactory.createSentryClient(mockDsn);
             result = mockSentryClient;
         }};
 
-        SentryClientFactory.sentryInstance(mockDsn, factoryName);
+        SentryClientFactory.sentryClient(mockDsn, factoryName);
     }
 
     @Test
@@ -106,12 +106,12 @@ public class SentryClientFactoryTest {
         SentryClientFactory.registerFactory(sentryClientFactory);
         Exception exception = null;
         new NonStrictExpectations() {{
-            sentryClientFactory.createSentryInstance(mockDsn);
+            sentryClientFactory.createSentryClient(mockDsn);
             result = new RuntimeException();
         }};
 
         try {
-            SentryClientFactory.sentryInstance(mockDsn);
+            SentryClientFactory.sentryClient(mockDsn);
         } catch (IllegalStateException e) {
             exception = e;
         }
@@ -128,11 +128,11 @@ public class SentryClientFactoryTest {
             Dsn.dsnLookup();
             result = dsn;
 
-            sentryClientFactory.createSentryInstance((Dsn) any);
+            sentryClientFactory.createSentryClient((Dsn) any);
             result = mockSentryClient;
         }};
 
-        SentryClient sentryClient = SentryClientFactory.sentryInstance();
+        SentryClient sentryClient = SentryClientFactory.sentryClient();
 
         assertThat(sentryClient, is(mockSentryClient));
         new Verifications() {{
@@ -146,11 +146,11 @@ public class SentryClientFactoryTest {
         final String dsn = "protocol://user:password@host:port/2";
         SentryClientFactory.registerFactory(sentryClientFactory);
         new NonStrictExpectations() {{
-            sentryClientFactory.createSentryInstance((Dsn) any);
+            sentryClientFactory.createSentryClient((Dsn) any);
             result = mockSentryClient;
         }};
 
-        SentryClient sentryClient = SentryClientFactory.sentryInstance(dsn);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
 
         assertThat(sentryClient, is(mockSentryClient));
         new Verifications() {{

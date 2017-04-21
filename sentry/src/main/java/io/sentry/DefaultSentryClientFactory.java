@@ -192,7 +192,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     }
 
     @Override
-    public SentryClient createSentryInstance(Dsn dsn) {
+    public SentryClient createSentryClient(Dsn dsn) {
         SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
         try {
             // `ServletRequestListener` was added in the Servlet 2.4 API, and

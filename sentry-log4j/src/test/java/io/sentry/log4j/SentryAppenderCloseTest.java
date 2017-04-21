@@ -15,7 +15,7 @@ public class SentryAppenderCloseTest {
     @Injectable
     private SentryClient mockSentryClient = null;
     @SuppressWarnings("unused")
-    @Mocked("sentryInstance")
+    @Mocked("sentryClient")
     private SentryClientFactory mockSentryClientFactory = null;
     @SuppressWarnings("unused")
     @Mocked("dsnLookup")
@@ -45,14 +45,14 @@ public class SentryAppenderCloseTest {
     }
 
     @Test
-    public void testClosedIfSentryInstanceNotProvided() throws Exception {
+    public void testClosedIfSentryClientNotProvided() throws Exception {
         final String dsnUri = "protocol://public:private@host/1";
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         new Expectations() {{
             Dsn.dsnLookup();
             result = dsnUri;
-            SentryClientFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = mockSentryClient;
         }};
         sentryAppender.activateOptions();
@@ -71,7 +71,7 @@ public class SentryAppenderCloseTest {
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         new NonStrictExpectations() {{
-            SentryClientFactory.sentryInstance((Dsn) any, anyString);
+            SentryClientFactory.sentryClient((Dsn) any, anyString);
             result = new UnsupportedOperationException();
         }};
         sentryAppender.activateOptions();

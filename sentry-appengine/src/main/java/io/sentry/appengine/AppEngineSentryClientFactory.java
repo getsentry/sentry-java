@@ -30,8 +30,8 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
     public static final String CONNECTION_IDENTIFIER = "sentry.async.gae.connectionid";
 
     @Override
-    public SentryClient createSentryInstance(Dsn dsn) {
-        SentryClient sentryClientInstance = super.createSentryInstance(dsn);
+    public SentryClient createSentryClient(Dsn dsn) {
+        SentryClient sentryClientInstance = super.createSentryClient(dsn);
         sentryClientInstance.addBuilderHelper(new AppEngineEventBuilderHelper());
         return sentryClientInstance;
     }
@@ -50,7 +50,8 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
         if (dsn.getOptions().containsKey(CONNECTION_IDENTIFIER)) {
             connectionIdentifier = dsn.getOptions().get(CONNECTION_IDENTIFIER);
         } else {
-            connectionIdentifier = AppEngineSentryClientFactory.class.getCanonicalName() + dsn + SystemProperty.version.get();
+            connectionIdentifier = AppEngineSentryClientFactory.class.getCanonicalName()
+                + dsn + SystemProperty.version.get();
         }
 
         AppEngineAsyncConnection asyncConnection = new AppEngineAsyncConnection(connectionIdentifier, connection);
