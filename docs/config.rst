@@ -367,7 +367,7 @@ Implementation
     public class MySentryClientFactory extends DefaultSentryClientFactory {
 
         @Override
-        public Sentry createSentryInstance(Dsn dsn) {
+        public SentryClient createSentryInstance(Dsn dsn) {
             SentryClient sentry = new SentryClient(createConnection(dsn));
 
             /*
