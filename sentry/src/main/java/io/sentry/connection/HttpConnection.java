@@ -92,7 +92,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Automatically determines the URL to the HTTP API of Sentry.
      *
-     * @param sentryUri URI of the Sentry instance.
+     * @param sentryUri URI of the Sentry server.
      * @param projectId unique identifier of the current project.
      * @return an URL to the HTTP API of Sentry.
      */

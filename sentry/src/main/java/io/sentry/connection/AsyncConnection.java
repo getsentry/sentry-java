@@ -1,6 +1,6 @@
 package io.sentry.connection;
 
-import io.sentry.Sentry;
+import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class AsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AsyncConnection.class);
     // CHECKSTYLE.OFF: ConstantName
-    private static final Logger lockdownLogger = LoggerFactory.getLogger(Sentry.class.getName() + ".lockdown");
+    private static final Logger lockdownLogger = LoggerFactory.getLogger(SentryClient.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
      * Timeout of the {@link #executorService}, in milliseconds.

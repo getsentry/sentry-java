@@ -1,6 +1,7 @@
 package io.sentry.android;
 
 import android.util.Log;
+import io.sentry.Sentry;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -48,7 +49,7 @@ class SentryUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler 
             .withSentryInterface(new ExceptionInterface(thrown));
 
         try {
-            io.sentry.Sentry.capture(eventBuilder);
+            Sentry.capture(eventBuilder);
         } catch (Exception e) {
             Log.e(TAG, "Error sending excepting to Sentry.", e);
         }

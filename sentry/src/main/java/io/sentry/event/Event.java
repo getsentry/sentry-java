@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Plain Old Java Object describing an event that will be sent to a Sentry instance.
+ * Plain Old Java Object describing an event that will be sent to a Sentry server.
  * <p>
  * For security purposes, an event should be created from an {@link EventBuilder} only, and be completely immutable
  * once it has been fully generated.

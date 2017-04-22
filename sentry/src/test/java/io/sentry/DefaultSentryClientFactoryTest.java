@@ -8,11 +8,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 
-public class DefaultSentryFactoryTest {
+public class DefaultSentryClientFactoryTest {
     @Test
     public void checkServiceLoaderProvidesFactory() throws Exception {
-        ServiceLoader<SentryFactory> sentryFactories = ServiceLoader.load(SentryFactory.class);
+        ServiceLoader<SentryClientFactory> sentryFactories = ServiceLoader.load(SentryClientFactory.class);
 
-        assertThat(sentryFactories, contains(instanceOf(DefaultSentryFactory.class)));
+        assertThat(sentryFactories, contains(instanceOf(DefaultSentryClientFactory.class)));
     }
 }

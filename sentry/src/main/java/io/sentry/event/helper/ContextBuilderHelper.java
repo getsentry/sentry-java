@@ -1,6 +1,6 @@
 package io.sentry.event.helper;
 
-import io.sentry.Sentry;
+import io.sentry.SentryClient;
 import io.sentry.context.Context;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.EventBuilder;
@@ -13,28 +13,28 @@ import java.util.List;
 
 /**
  * {@link EventBuilderHelper} that extracts and sends any data attached to the
- * provided {@link Sentry}'s {@link Context}.
+ * provided {@link SentryClient}'s {@link Context}.
  */
 public class ContextBuilderHelper implements EventBuilderHelper {
 
     /**
      * Sentry object where the Context comes from.
      */
-    private Sentry sentry;
+    private SentryClient sentryClient;
 
     /**
-     * {@link EventBuilderHelper} that extracts context data from the provided {@link Sentry} client.
+     * {@link EventBuilderHelper} that extracts context data from the provided {@link SentryClient} client.
      *
-     * @param sentry Sentry client which holds Context to be used.
+     * @param sentryClient Sentry client which holds Context to be used.
      */
-    public ContextBuilderHelper(Sentry sentry) {
-        this.sentry = sentry;
+    public ContextBuilderHelper(SentryClient sentryClient) {
+        this.sentryClient = sentryClient;
     }
 
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         List<Breadcrumb> breadcrumbs = new ArrayList<>();
-        Context context = sentry.getContext();
+        Context context = sentryClient.getContext();
 
         Iterator<Breadcrumb> breadcrumbIterator = context.getBreadcrumbs();
         while (breadcrumbIterator.hasNext()) {

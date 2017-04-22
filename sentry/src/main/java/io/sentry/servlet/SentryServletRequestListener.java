@@ -1,6 +1,7 @@
 package io.sentry.servlet;
 
 import io.sentry.Sentry;
+import io.sentry.SentryClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +29,9 @@ public class SentryServletRequestListener implements ServletRequestListener {
         THREAD_REQUEST.remove();
 
         try {
-            Sentry sentry = Sentry.getStoredInstance();
-            if (sentry != null) {
-                sentry.getContext().clear();
+            SentryClient sentryClient = Sentry.getStoredClient();
+            if (sentryClient != null) {
+                sentryClient.getContext().clear();
             }
         } catch (Exception e) {
             logger.error("Error clearing Context state.", e);

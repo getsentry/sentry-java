@@ -1,7 +1,7 @@
 package io.sentry.connection;
 
-import io.sentry.DefaultSentryFactory;
-import io.sentry.Sentry;
+import io.sentry.DefaultSentryClientFactory;
+import io.sentry.SentryClient;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.Event;
 import org.testng.annotations.Test;
@@ -17,7 +17,7 @@ public class EventSendFailureCallbackTest {
     public void testSimpleCallback() {
         final AtomicBoolean flag = new AtomicBoolean(false);
 
-        DefaultSentryFactory factory = new DefaultSentryFactory() {
+        DefaultSentryClientFactory factory = new DefaultSentryClientFactory() {
             @Override
             protected Connection createConnection(Dsn dsn) {
                 Connection connection = super.createConnection(dsn);
@@ -34,15 +34,15 @@ public class EventSendFailureCallbackTest {
         };
 
         String dsn = "https://foo:bar@localhost:1234/1?async=false";
-        Sentry sentry = factory.createSentryInstance(new Dsn(dsn));
-        sentry.sendMessage("Message that will fail because DSN points to garbage.");
+        SentryClient sentryClient = factory.createSentryClient(new Dsn(dsn));
+        sentryClient.sendMessage("Message that will fail because DSN points to garbage.");
 
         assertThat(flag.get(), is(true));
     }
 
     @Test
     public void testExceptionInsideCallback() {
-        DefaultSentryFactory factory = new DefaultSentryFactory() {
+        DefaultSentryClientFactory factory = new DefaultSentryClientFactory() {
             @Override
             protected Connection createConnection(Dsn dsn) {
                 Connection connection = super.createConnection(dsn);
@@ -59,8 +59,8 @@ public class EventSendFailureCallbackTest {
         };
 
         String dsn = "https://foo:bar@localhost:1234/1?async=false";
-        Sentry sentry = factory.createSentryInstance(new Dsn(dsn));
-        sentry.sendMessage("Message that will fail because DSN points to garbage.");
+        SentryClient sentryClient = factory.createSentryClient(new Dsn(dsn));
+        sentryClient.sendMessage("Message that will fail because DSN points to garbage.");
     }
 
 }

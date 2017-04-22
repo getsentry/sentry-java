@@ -125,7 +125,7 @@ Environment variable     Java System Property     Example value                 
 ``SENTRY_RELEASE``       ``sentry.release``       ``1.0.0``                       Optional, provide release version of your application
 ``SENTRY_ENVIRONMENT``   ``sentry.environment``   ``production``                  Optional, provide environment your application is running in
 ``SENTRY_SERVERNAME``    ``sentry.servername``    ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_SENTRYFACTORY`` ``sentry.sentryfactory`` ``com.foo.SentryFactory``       Optional, select the sentryFactory class
+``SENTRY_FACTORY``       ``sentry.factory``       ``com.foo.SentryClientFactory`` Optional, select the SentryClientFactory class
 ``SENTRY_TAGS``          ``sentry.tags``          ``tag1:value1,tag2:value2``     Optional, provide tags
 ``SENTRY_EXTRA_TAGS``    ``sentry.extratags``     ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================== ======================== =============================== ===========
@@ -165,8 +165,8 @@ Example configuration in the ``log4j.properties`` file:
     # Optional, override the server name (rather than looking it up dynamically)
     log4j.appender.Sentry.serverName=server1
 
-    # Optional, select the sentryFactory class
-    log4j.appender.Sentry.sentryFactory=com.foo.SentryFactory
+    # Optional, select the SentryClientFactory class
+    log4j.appender.Sentry.factory=com.foo.SentryClientFactory
 
     # Optional, provide tags
     log4j.appender.Sentry.tags=tag1:value1,tag2:value2
@@ -210,8 +210,8 @@ Alternatively, using  the ``log4j.xml`` format:
             <!-- Optional, override the server name (rather than looking it up dynamically) -->
             <param name="serverName" value="server1" />
 
-            <!-- Optional, select the sentryFactory class -->
-            <param name="sentryFactory" value="com.foo.SentryFactory" />
+            <!-- Optional, select the SentryClientFactory class -->
+            <param name="factory" value="com.foo.SentryClientFactory" />
 
             <!-- Optional, provide tags -->
             <param name="tags" value="tag1:value1,tag2:value2" />
@@ -280,7 +280,7 @@ In Practice
         void logWithBreadcrumbs() {
             // Record a breadcrumb that will be sent with the next event(s),
             // by default the last 100 breadcrumbs are kept.
-            Breadcrumbs.record(
+            Sentry.record(
                 new BreadcrumbBuilder().setMessage("User made an action").build()
             );
 

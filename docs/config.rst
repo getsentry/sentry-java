@@ -135,7 +135,7 @@ could be deployed and undeployed regularly.
 
 To avoid this behaviour, it is possible to disable the graceful shutdown.
 This might lead to some log entries being lost if the log application
-doesn't shut down the Sentry instance nicely.
+doesn't shut down the ``SentryClient`` instance nicely.
 
 The option to do so is ``sentry.async.gracefulshutdown``:
 
@@ -351,11 +351,11 @@ It's possible to manually set the timeout length with ``sentry.timeout``
 
     http://public:private@host:port/1?timeout=10000
 
-Custom SentryFactory
---------------------
+Custom SentryClientFactory
+--------------------------
 
 At times, you may require custom functionality that is not included in ``sentry-java``
-already. The most common way to do this is to create your own ``SentryFactory`` instance
+already. The most common way to do this is to create your own ``SentryClientFactory`` instance
 as seen in the example below. Note that you'll also need to register it with Sentry and
 possibly configure your integration to use it, as shown below.
 
@@ -364,11 +364,11 @@ Implementation
 
 .. sourcecode:: java
 
-    public class MySentryFactory extends DefaultSentryFactory {
+    public class MySentryClientFactory extends DefaultSentryClientFactory {
 
         @Override
-        public Sentry createSentryInstance(Dsn dsn) {
-            Sentry sentry = new Sentry(createConnection(dsn));
+        public SentryClient createSentryClient(Dsn dsn) {
+            SentryClient sentry = new SentryClient(createConnection(dsn));
 
             /*
             Create and use the ForwardedAddressResolver, which will use the
@@ -391,14 +391,15 @@ Java ServiceLoader Provider (Recommended)
 `````````````````````````````````````````
 
 You'll need to add a ``ServiceLoader`` provider file to your project at
-``src/main/resources/META-INF/services/io.sentry.SentryFactory`` that contains
-the name of your class so that it will be considered as a candidate ``SentryFactory``. For an example, see
-`how we configure the DefaultSentryFactory itself <https://github.com/getsentry/sentry-java/blob/master/sentry/src/main/resources/META-INF/services/io.sentry.SentryFactory>`_.
+``src/main/resources/META-INF/services/io.sentry.SentryClientFactory`` that contains
+the name of your class so that it will be considered as a candidate ``SentryClientFactory``. For an example, see
+`how we configure the DefaultSentryClientFactory itself
+<https://github.com/getsentry/sentry-java/blob/master/sentry/src/main/resources/META-INF/services/io.sentry.SentryClientFactory>`_.
 
 Manual Registration
 ```````````````````
 
-You can also manually register your ``SentryFactory`` instance. If you are using
+You can also manually register your ``SentryClientFactory`` instance. If you are using
 an integration that builds its own Sentry client, such as a logging integration, this should
 be done early in your application lifecycle so that your factory is available the first time
 you attempt to send an event to the Sentry server.
@@ -407,7 +408,7 @@ you attempt to send an event to the Sentry server.
 
     class MyApp {
         public static void main(String[] args) {
-            SentryFactory.registerFactory(new MySentryFactory());
+            SentryClientFactory.registerFactory(new MySentryClientFactory());
             // ... your app code ...
         }
     }
@@ -416,4 +417,4 @@ Configuration
 ~~~~~~~~~~~~~
 
 Finally, see the documentation for the integration you use to find out how to
-configure it to use your custom ``SentryFactory``.
+configure it to use your custom ``SentryClientFactory``.

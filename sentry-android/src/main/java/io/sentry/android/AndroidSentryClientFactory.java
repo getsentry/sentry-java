@@ -13,15 +13,15 @@ import io.sentry.dsn.Dsn;
 import java.io.File;
 
 /**
- * SentryFactory that handles Android-specific construction, like taking advantage
+ * SentryClientFactory that handles Android-specific construction, like taking advantage
  * of the Android Context instance.
  */
-public class AndroidSentryFactory extends DefaultSentryFactory {
+public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
     /**
      * Logger tag.
      */
-    public static final String TAG = AndroidSentryFactory.class.getName();
+    public static final String TAG = AndroidSentryClientFactory.class.getName();
     /**
      * Default Buffer directory name.
      */
@@ -30,21 +30,21 @@ public class AndroidSentryFactory extends DefaultSentryFactory {
     private Context ctx;
 
     /**
-     * Construct an AndroidSentryFactory using the specified Android Context.
+     * Construct an AndroidSentryClientFactory using the specified Android Context.
      *
      * @param ctx Android Context.
      */
-    public AndroidSentryFactory(Context ctx) {
+    public AndroidSentryClientFactory(Context ctx) {
         this.ctx = ctx;
 
         Log.d(TAG, "Construction of Android Sentry.");
     }
 
     @Override
-    public io.sentry.Sentry createSentryInstance(Dsn dsn) {
-        io.sentry.Sentry sentryInstance = super.createSentryInstance(dsn);
-        sentryInstance.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
-        return sentryInstance;
+    public SentryClient createSentryClient(Dsn dsn) {
+        SentryClient sentryClient = super.createSentryClient(dsn);
+        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+        return sentryClient;
     }
 
     @Override

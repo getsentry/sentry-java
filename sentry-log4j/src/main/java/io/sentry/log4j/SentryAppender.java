@@ -1,7 +1,7 @@
 package io.sentry.log4j;
 
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.dsn.InvalidDsnException;
@@ -37,11 +37,11 @@ public class SentryAppender extends AppenderSkeleton {
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
     /**
-     * Current instance of {@link Sentry}.
+     * Current instance of {@link SentryClient}.
      *
      * @see #initSentry()
      */
-    protected volatile Sentry sentry;
+    protected volatile SentryClient sentryClient;
     /**
      * DSN property of the appender.
      * <p>
@@ -49,11 +49,11 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected String dsn;
     /**
-     * Name of the {@link SentryFactory} being used.
+     * Name of the {@link SentryClientFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
-    protected String sentryFactory;
+    protected String sentryClientFactory;
     /**
      * Identifies the version of the application.
      * <p>
@@ -99,11 +99,11 @@ public class SentryAppender extends AppenderSkeleton {
     /**
      * Creates an instance of SentryAppender.
      *
-     * @param sentry instance of Sentry to use with this appender.
+     * @param sentryClient instance of Sentry to use with this appender.
      */
-    public SentryAppender(Sentry sentry) {
+    public SentryAppender(SentryClient sentryClient) {
         this();
-        this.sentry = sentry;
+        this.sentryClient = sentryClient;
     }
 
     /**
@@ -117,9 +117,9 @@ public class SentryAppender extends AppenderSkeleton {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryFactory = Lookup.lookup("sentryFactory");
-                        if (sentryFactory != null) {
-                            setSentryFactory(sentryFactory);
+                        String sentryClientFactory = Lookup.lookup("factory");
+                        if (sentryClientFactory != null) {
+                            setFactory(sentryClientFactory);
                         }
 
                         String release = Lookup.lookup("release");
@@ -153,7 +153,7 @@ public class SentryAppender extends AppenderSkeleton {
             }
         }
 
-        if (sentry == null) {
+        if (sentryClient == null) {
             initSentry();
         }
     }
@@ -200,7 +200,7 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -208,13 +208,13 @@ public class SentryAppender extends AppenderSkeleton {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentry = SentryFactory.sentryInstance(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             getErrorHandler().error("An exception occurred during the retrieval of the DSN for Sentry", e,
                     ErrorCode.ADDRESS_PARSE_FAILURE);
         } catch (Exception e) {
-            getErrorHandler().error("An exception occurred during the creation of a Sentry instance", e,
-                    ErrorCode.FILE_OPEN_FAILURE);
+            getErrorHandler().error("An exception occurred during the creation of a "
+                + "SentryClient instance", e, ErrorCode.FILE_OPEN_FAILURE);
         }
     }
 
@@ -229,7 +229,7 @@ public class SentryAppender extends AppenderSkeleton {
         try {
             lazyInit();
             Event event = buildEvent(loggingEvent);
-            sentry.sendEvent(event);
+            sentryClient.sendEvent(event);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Sentry", e,
                     ErrorCode.WRITE_FAILURE);
@@ -308,12 +308,12 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentry.runBuilderHelpers(eventBuilder);
+        sentryClient.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
-    public void setSentryFactory(String sentryFactory) {
-        this.sentryFactory = sentryFactory;
+    public void setFactory(String factory) {
+        this.sentryClientFactory = factory;
     }
 
     public void setDsn(String dsn) {
@@ -358,8 +358,8 @@ public class SentryAppender extends AppenderSkeleton {
                 return;
             }
             this.closed = true;
-            if (sentry != null) {
-                sentry.closeConnection();
+            if (sentryClient != null) {
+                sentryClient.closeConnection();
             }
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while closing the Sentry connection", e,

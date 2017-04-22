@@ -7,8 +7,8 @@ import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.dsn.InvalidDsnException;
@@ -45,11 +45,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
     /**
-     * Current instance of {@link Sentry}.
+     * Current instance of {@link SentryClient}.
      *
      * @see #initSentry()
      */
-    protected volatile Sentry sentry;
+    protected volatile SentryClient sentryClient;
     /**
      * DSN property of the appender.
      * <p>
@@ -57,11 +57,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String dsn;
     /**
-     * Name of the {@link SentryFactory} being used.
+     * Name of the {@link SentryClientFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
-    protected String sentryFactory;
+    protected String sentryClientFactory;
     /**
      * Identifies the version of the application.
      * <p>
@@ -111,11 +111,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     /**
      * Creates an instance of SentryAppender.
      *
-     * @param sentry instance of Sentry to use with this appender.
+     * @param sentryClient instance of Sentry to use with this appender.
      */
-    public SentryAppender(Sentry sentry) {
+    public SentryAppender(SentryClient sentryClient) {
         this();
-        this.sentry = sentry;
+        this.sentryClient = sentryClient;
     }
 
     /**
@@ -129,9 +129,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryFactory = Lookup.lookup("sentryFactory");
-                        if (sentryFactory != null) {
-                            setSentryFactory(sentryFactory);
+                        String sentryClientFactory = Lookup.lookup("factory");
+                        if (sentryClientFactory != null) {
+                            setFactory(sentryClientFactory);
                         }
 
                         String release = Lookup.lookup("release");
@@ -165,7 +165,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             }
         }
 
-        if (sentry == null) {
+        if (sentryClient == null) {
             initSentry();
         }
     }
@@ -206,13 +206,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The sentry instance is started in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Sentry}.<br>
-     * More on <a href="http://www.slf4j.org/codes.html#substituteLogger">www.slf4j.org/codes.html#substituteLogger</a>
-     */
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
@@ -228,7 +221,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
             lazyInit();
             Event event = buildEvent(iLoggingEvent);
-            sentry.sendEvent(event);
+            sentryClient.sendEvent(event);
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Sentry", e);
         } finally {
@@ -237,7 +230,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -245,11 +238,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentry = SentryFactory.sentryInstance(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             addError("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
-            addError("An exception occurred during the creation of a Sentry instance", e);
+            addError("An exception occurred during the creation of a SentryClient instance", e);
         }
     }
 
@@ -320,7 +313,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentry.runBuilderHelpers(eventBuilder);
+        sentryClient.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
@@ -425,8 +418,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.dsn = dsn;
     }
 
-    public void setSentryFactory(String sentryFactory) {
-        this.sentryFactory = sentryFactory;
+    public void setFactory(String factory) {
+        this.sentryClientFactory = factory;
     }
 
     public void setRelease(String release) {
@@ -471,8 +464,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 return;
             }
             super.stop();
-            if (sentry != null) {
-                sentry.closeConnection();
+            if (sentryClient != null) {
+                sentryClient.closeConnection();
             }
         } catch (Exception e) {
             addError("An exception occurred while closing the Sentry connection", e);

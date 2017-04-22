@@ -1,7 +1,7 @@
 package io.sentry.log4j2;
 
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.dsn.InvalidDsnException;
@@ -54,11 +54,11 @@ public class SentryAppender extends AbstractAppender {
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
     /**
-     * Current instance of {@link Sentry}.
+     * Current instance of {@link SentryClient}.
      *
      * @see #initSentry()
      */
-    protected volatile Sentry sentry;
+    protected volatile SentryClient sentryClient;
     /**
      * DSN property of the appender.
      * <p>
@@ -66,11 +66,11 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String dsn;
     /**
-     * Name of the {@link SentryFactory} being used.
+     * Name of the {@link SentryClientFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
      */
-    protected String sentryFactory;
+    protected String sentryClientFactory;
     /**
      * Identifies the version of the application.
      * <p>
@@ -117,11 +117,11 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Creates an instance of SentryAppender.
      *
-     * @param sentry instance of Sentry to use with this appender.
+     * @param sentryClient instance of Sentry to use with this appender.
      */
-    public SentryAppender(Sentry sentry) {
+    public SentryAppender(SentryClient sentryClient) {
         this();
-        this.sentry = sentry;
+        this.sentryClient = sentryClient;
     }
 
     /**
@@ -138,22 +138,22 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Create a Sentry Appender.
      *
-     * @param name         The name of the Appender.
-     * @param dsn          Data Source Name to access the Sentry server.
-     * @param sentryFactory Name of the factory to use to build the {@link Sentry} instance.
-     * @param release      Release to be sent to Sentry.
-     * @param environment  Environment to be sent to Sentry.
-     * @param serverName   serverName to be sent to Sentry.
-     * @param tags         Tags to add to each event.
-     * @param extraTags    Tags to search through the Thread Context Map.
-     * @param filter       The filter, if any, to use.
+     * @param name                The name of the Appender.
+     * @param dsn                 Data Source Name to access the Sentry server.
+     * @param sentryClientFactory Name of the factory to use to build the {@link SentryClient} instance.
+     * @param release             Release to be sent to Sentry.
+     * @param environment         Environment to be sent to Sentry.
+     * @param serverName          serverName to be sent to Sentry.
+     * @param tags                Tags to add to each event.
+     * @param extraTags           Tags to search through the Thread Context Map.
+     * @param filter              The filter, if any, to use.
      * @return The SentryAppender.
      */
     @PluginFactory
     @SuppressWarnings("checkstyle:parameternumber")
     public static SentryAppender createAppender(@PluginAttribute("name") final String name,
                                                 @PluginAttribute("dsn") final String dsn,
-                                                @PluginAttribute("sentryFactory") final String sentryFactory,
+                                                @PluginAttribute("factory") final String sentryClientFactory,
                                                 @PluginAttribute("release") final String release,
                                                 @PluginAttribute("environment") final String environment,
                                                 @PluginAttribute("serverName") final String serverName,
@@ -183,7 +183,7 @@ public class SentryAppender extends AbstractAppender {
         if (extraTags != null) {
             sentryAppender.setExtraTags(extraTags);
         }
-        sentryAppender.setSentryFactory(sentryFactory);
+        sentryAppender.setFactory(sentryClientFactory);
         return sentryAppender;
     }
 
@@ -198,9 +198,9 @@ public class SentryAppender extends AbstractAppender {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryFactory = Lookup.lookup("sentryFactory");
-                        if (sentryFactory != null) {
-                            setSentryFactory(sentryFactory);
+                        String sentryClientFactory = Lookup.lookup("factory");
+                        if (sentryClientFactory != null) {
+                            setFactory(sentryClientFactory);
                         }
 
                         String release = Lookup.lookup("release");
@@ -234,7 +234,7 @@ public class SentryAppender extends AbstractAppender {
             }
         }
 
-        if (sentry == null) {
+        if (sentryClient == null) {
             initSentry();
         }
     }
@@ -275,14 +275,6 @@ public class SentryAppender extends AbstractAppender {
         return stringParameters;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The sentry instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Sentry}.<br>
-     *
-     * @param logEvent The LogEvent.
-     */
     @Override
     public void append(LogEvent logEvent) {
         // Do not log the event if the current thread is managed by sentry
@@ -294,7 +286,7 @@ public class SentryAppender extends AbstractAppender {
         try {
             lazyInit();
             Event event = buildEvent(logEvent);
-            sentry.sendEvent(event);
+            sentryClient.sendEvent(event);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Sentry", logEvent, e);
         } finally {
@@ -303,7 +295,7 @@ public class SentryAppender extends AbstractAppender {
     }
 
     /**
-     * Initialises the Sentry instance.
+     * Initialises the {@link SentryClient} instance.
      */
     protected synchronized void initSentry() {
         try {
@@ -311,11 +303,11 @@ public class SentryAppender extends AbstractAppender {
                 dsn = Dsn.dsnLookup();
             }
 
-            sentry = SentryFactory.sentryInstance(new Dsn(dsn), sentryFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             error("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
-            error("An exception occurred during the creation of a Sentry instance", e);
+            error("An exception occurred during the creation of a SentryClient instance", e);
         }
     }
 
@@ -392,7 +384,7 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentry.runBuilderHelpers(eventBuilder);
+        sentryClient.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
     }
 
@@ -400,8 +392,8 @@ public class SentryAppender extends AbstractAppender {
         this.dsn = dsn;
     }
 
-    public void setSentryFactory(String sentryFactory) {
-        this.sentryFactory = sentryFactory;
+    public void setFactory(String factory) {
+        this.sentryClientFactory = factory;
     }
 
     public void setRelease(String release) {
@@ -443,8 +435,8 @@ public class SentryAppender extends AbstractAppender {
                 return;
             }
             super.stop();
-            if (sentry != null) {
-                sentry.closeConnection();
+            if (sentryClient != null) {
+                sentryClient.closeConnection();
             }
         } catch (Exception e) {
             error("An exception occurred while closing the Sentry connection", e);

@@ -6,29 +6,26 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
 import android.util.Log;
-import io.sentry.DefaultSentryFactory;
-import io.sentry.SentryFactory;
+import io.sentry.DefaultSentryClientFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.dsn.Dsn;
-import io.sentry.event.Event;
-import io.sentry.event.EventBuilder;
 
 /**
  * Android specific class to interface with Sentry. Supplements the default Java classes
  * with Android specific state and features.
  */
-public final class Sentry {
+public final class SentryAndroid {
 
     /**
      * Logger tag.
      */
-    public static final String TAG = Sentry.class.getName();
-
-    private static volatile io.sentry.Sentry sentry;
+    public static final String TAG = SentryAndroid.class.getName();
 
     /**
      * Hide constructor.
      */
-    private Sentry() {
+    private SentryAndroid() {
 
     }
 
@@ -36,18 +33,20 @@ public final class Sentry {
      * Initialize Sentry using a DSN set in the AndroidManifest.
      *
      * @param ctx Android application ctx
+     * @return SentryClient
      */
-    public static void init(Context ctx) {
-        init(ctx, getDefaultSentryFactory(ctx));
+    public static SentryClient init(Context ctx) {
+        return init(ctx, getDefaultSentryClientFactory(ctx));
     }
 
     /**
      * Initialize Sentry using a DSN set in the AndroidManifest.
      *
      * @param ctx Android application ctx
-     * @param sentryFactory the SentryFactory to be used to generate the Sentry instance
+     * @param sentryClientFactory the SentryClientFactory to be used to generate the {@link SentryClient} instance
+     * @return SentryClient
      */
-    public static void init(Context ctx, AndroidSentryFactory sentryFactory) {
+    public static SentryClient init(Context ctx, AndroidSentryClientFactory sentryClientFactory) {
         ctx = ctx.getApplicationContext();
         String dsn = "";
 
@@ -66,7 +65,7 @@ public final class Sentry {
                 + "the constructor or AndroidManifest.");
         }
 
-        init(ctx, dsn, sentryFactory);
+        return init(ctx, dsn, sentryClientFactory);
     }
 
     /**
@@ -74,9 +73,10 @@ public final class Sentry {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN string
+     * @return SentryClient
      */
-    public static void init(Context ctx, String dsn) {
-        init(ctx, new Dsn(dsn), getDefaultSentryFactory(ctx));
+    public static SentryClient init(Context ctx, String dsn) {
+        return init(ctx, new Dsn(dsn), getDefaultSentryClientFactory(ctx));
     }
 
     /**
@@ -84,10 +84,11 @@ public final class Sentry {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN string
-     * @param sentryFactory the SentryFactory to be used to generate the Sentry instance
+     * @param sentryClientFactory the SentryClientFactory to be used to generate the SentryClient
+     * @return SentryClient
      */
-    public static void init(Context ctx, String dsn, AndroidSentryFactory sentryFactory) {
-        init(ctx, new Dsn(dsn), sentryFactory);
+    public static SentryClient init(Context ctx, String dsn, AndroidSentryClientFactory sentryClientFactory) {
+        return init(ctx, new Dsn(dsn), sentryClientFactory);
     }
 
     /**
@@ -95,9 +96,10 @@ public final class Sentry {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN object
+     * @return SentryClient
      */
-    public static void init(Context ctx, Dsn dsn) {
-        init(ctx, dsn, getDefaultSentryFactory(ctx));
+    public static SentryClient init(Context ctx, Dsn dsn) {
+        return init(ctx, dsn, getDefaultSentryClientFactory(ctx));
     }
 
     /**
@@ -106,15 +108,10 @@ public final class Sentry {
      *
      * @param ctx Android application ctx
      * @param dsn Sentry DSN object
-     * @param sentryFactory the SentryFactory to be used to generate the Sentry instance
+     * @param sentryClientFactory the SentryClientFactory to be used to generate the {@link SentryClient} instance
+     * @return SentryClient
      */
-    public static void init(Context ctx, Dsn dsn, AndroidSentryFactory sentryFactory) {
-        if (sentry != null) {
-            Log.e(TAG, "Initializing Sentry multiple times.");
-            // cleanup existing connections
-            sentry.closeConnection();
-        }
-
+    public static SentryClient init(Context ctx, Dsn dsn, AndroidSentryClientFactory sentryClientFactory) {
         // Ensure we have the application context
         Context context = ctx.getApplicationContext();
 
@@ -131,19 +128,21 @@ public final class Sentry {
                 + " Sentry Android, but received: " + protocol);
         }
 
-        if ("false".equalsIgnoreCase(dsn.getOptions().get(DefaultSentryFactory.ASYNC_OPTION))) {
+        if ("false".equalsIgnoreCase(dsn.getOptions().get(DefaultSentryClientFactory.ASYNC_OPTION))) {
             throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
-                + DefaultSentryFactory.ASYNC_OPTION + "=false' from your DSN.");
+                + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
 
-        SentryFactory.registerFactory(sentryFactory);
-        sentry = SentryFactory.sentryInstance(dsn);
+        SentryClientFactory.registerFactory(sentryClientFactory);
 
+        // SentryClient will store the instance statically on the Sentry utility class.
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
         setupUncaughtExceptionHandler();
+        return sentryClient;
     }
 
-    private static AndroidSentryFactory getDefaultSentryFactory(Context ctx) {
-        return new AndroidSentryFactory(ctx);
+    private static AndroidSentryClientFactory getDefaultSentryClientFactory(Context ctx) {
+        return new AndroidSentryClientFactory(ctx);
     }
 
     /**
@@ -162,53 +161,6 @@ public final class Sentry {
             Thread.setDefaultUncaughtExceptionHandler(
                 new SentryUncaughtExceptionHandler(currentHandler));
         }
-    }
-
-    /**
-     * Send an Event using the statically stored Sentry instance.
-     *
-     * @param event Event to send to the Sentry server
-     */
-    public static void capture(Event event) {
-        sentry.sendEvent(event);
-    }
-
-    /**
-     * Sends an exception (or throwable) to the Sentry server using the statically stored Sentry instance.
-     * <p>
-     * The exception will be logged at the {@link Event.Level#ERROR} level.
-     *
-     * @param throwable exception to send to Sentry.
-     */
-    public static void capture(Throwable throwable) {
-        sentry.sendException(throwable);
-    }
-
-    /**
-     * Sends a message to the Sentry server using the statically stored Sentry instance.
-     * <p>
-     * The message will be logged at the {@link Event.Level#INFO} level.
-     *
-     * @param message message to send to Sentry.
-     */
-    public static void capture(String message) {
-        sentry.sendMessage(message);
-    }
-
-    /**
-     * Builds and sends an {@link Event} to the Sentry server using the statically stored Sentry instance.
-     *
-     * @param eventBuilder {@link EventBuilder} to send to Sentry.
-     */
-    public static void capture(EventBuilder eventBuilder) {
-        sentry.sendEvent(eventBuilder);
-    }
-
-    /**
-     * Clear statically stored Sentry instance. Useful for tests.
-     */
-    public static void clearStoredSentry() {
-        sentry = null;
     }
 
 }

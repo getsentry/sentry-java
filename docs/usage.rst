@@ -41,23 +41,20 @@ of the send methods it provides.
 .. sourcecode:: java
 
     import io.sentry.Sentry;
-    import io.sentry.SentryFactory;
+    import io.sentry.SentryClientFactory;
 
     public class MyClass {
-        private static Sentry sentry;
+        private static SentryClient sentry;
 
         public static void main(String... args) {
             // Creation of the client with a specific DSN
             String dsn = args[0];
-            sentry = SentryFactory.sentryInstance(dsn);
-
-            // Or, if you don't provide a DSN,
-            sentry = SentryFactory.sentryInstance();
+            sentry = SentryClientFactory.sentryClient(dsn);
 
             // It is also possible to use the DSN detection system, which
             // will check the environment variable "SENTRY_DSN" and the Java
             // System Property "sentry.dsn".
-            sentry = SentryFactory.sentryInstance();
+            sentry = SentryClientFactory.sentryClient();
         }
 
         void logSimpleMessage() {
@@ -68,7 +65,7 @@ of the send methods it provides.
         void logWithBreadcrumbs() {
             // Record a breadcrumb that will be sent with the next event(s),
             // by default the last 100 breadcrumbs are kept.
-            Breadcrumbs.record(
+            Sentry.record(
                 new BreadcrumbBuilder().setMessage("User made an action").build()
             );
 
@@ -99,7 +96,7 @@ For more complex messages, you'll need to build an ``Event`` with the
 .. sourcecode:: java
 
     import io.sentry.Sentry;
-    import io.sentry.SentryFactory;
+    import io.sentry.SentryClientFactory;
     import io.sentry.event.Event;
     import io.sentry.event.EventBuilder;
     import io.sentry.event.interfaces.ExceptionInterface;
@@ -111,15 +108,15 @@ For more complex messages, you'll need to build an ``Event`` with the
         public static void main(String... args) {
             // Creation of the client with a specific DSN
             String dsn = args[0];
-            sentry = SentryFactory.sentryInstance(dsn);
+            sentry = SentryClientFactory.sentryClient(dsn);
 
             // It is also possible to use the DSN detection system, which
             // will check the environment variable "SENTRY_DSN" and the Java
             // System Property "sentry.dsn".
-            sentry = SentryFactory.sentryInstance();
+            sentry = SentryClientFactory.sentryClient();
 
-            // Advanced: specify the sentryFactory used
-            sentry = SentryFactory.sentryInstance(new Dsn(dsn), "io.sentry.DefaultSentryFactory");
+            // Advanced: specify the sentryClientFactory used
+            sentry = SentryClientFactory.sentryClient(new Dsn(dsn), "io.sentry.DefaultSentryClientFactory");
         }
 
         void logSimpleMessage() {
@@ -159,16 +156,16 @@ be used easily from anywhere in your application.
 .. sourcecode:: java
 
     import io.sentry.Sentry;
-    import io.sentry.SentryFactory;
+    import io.sentry.SentryClientFactory;
 
     public class MyClass {
         public static void main(String... args) {
-            // Create a Sentry instance
-            SentryFactory.sentryInstance();
+            // Create a SentryClient instance
+            SentryClientFactory.sentryClient();
         }
 
         public somewhereElse() {
-            // Use the Sentry instance statically. Note that we are
+            // Use the stored SentryClient instance statically. Note that we are
             // using the Class (and a static method) here
             Sentry.capture("Error message");
 
@@ -184,5 +181,5 @@ be used easily from anywhere in your application.
 
     }
 
-Note that a Sentry instance *must* be created before you can use the ``Sentry.capture``
+Note that a SentryClient instance *must* be created before you can use the ``Sentry.capture``
 method, otherwise a ``NullPointerException`` (with an explanation) will be thrown.
