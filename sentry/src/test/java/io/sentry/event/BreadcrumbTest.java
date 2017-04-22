@@ -1,6 +1,6 @@
 package io.sentry.event;
 
-import io.sentry.Sentry;
+import io.sentry.SentryClient;
 import io.sentry.connection.Connection;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
@@ -18,7 +18,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 
 public class BreadcrumbTest {
     @Tested
-    private Sentry sentry = null;
+    private SentryClient sentryClient = null;
 
     @Injectable
     private Connection mockConnection = null;
@@ -32,7 +32,7 @@ public class BreadcrumbTest {
 
     @Test
     public void testBreadcrumbsViaContextRecording() {
-        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+        sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
 
         final Breadcrumb breadcrumb = new BreadcrumbBuilder()
             .setLevel(Breadcrumb.Level.INFO)
@@ -40,9 +40,9 @@ public class BreadcrumbTest {
             .setCategory("step")
             .build();
 
-        sentry.getContext().recordBreadcrumb(breadcrumb);
+        sentryClient.getContext().recordBreadcrumb(breadcrumb);
 
-        sentry.sendEvent(new EventBuilder()
+        sentryClient.sendEvent(new EventBuilder()
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO));
 
@@ -55,7 +55,7 @@ public class BreadcrumbTest {
 
     @Test
     public void testBreadcrumbsViaEventBuilder() {
-        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+        sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
 
         final Breadcrumb breadcrumb = new BreadcrumbBuilder()
             .setLevel(Breadcrumb.Level.INFO)
@@ -66,7 +66,7 @@ public class BreadcrumbTest {
         ArrayList<Breadcrumb> breadcrumbs = new ArrayList<>();
         breadcrumbs.add(breadcrumb);
 
-        sentry.sendEvent(new EventBuilder()
+        sentryClient.sendEvent(new EventBuilder()
             .withBreadcrumbs(breadcrumbs)
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO));
@@ -80,7 +80,7 @@ public class BreadcrumbTest {
 
     @Test
     public void testBreadcrumbsViaEvent() {
-        sentry.addBuilderHelper(new ContextBuilderHelper(sentry));
+        sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
 
         final Breadcrumb breadcrumb = new BreadcrumbBuilder()
             .setLevel(Breadcrumb.Level.INFO)
@@ -91,7 +91,7 @@ public class BreadcrumbTest {
         ArrayList<Breadcrumb> breadcrumbs = new ArrayList<>();
         breadcrumbs.add(breadcrumb);
 
-        sentry.sendEvent(new EventBuilder()
+        sentryClient.sendEvent(new EventBuilder()
             .withBreadcrumbs(breadcrumbs)
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO)

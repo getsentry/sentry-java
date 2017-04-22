@@ -18,7 +18,8 @@ Sentry defaults to the ``SingletonContextManager`` on Android, which maintains a
 context instance for all threads for the lifetime of the application.
 
 To override the ``ContextManager`` you will need to override the ``getContextManager``
-method in the ``DefaultSentryFactory``. A simpler API will likely be provided in the future.
+method in the ``DefaultSentryClientFactory``. A simpler API will likely be provided in
+the future.
 
 Using Breadcrumbs
 -----------------
@@ -27,7 +28,7 @@ Breadcrumbs can be used to describe actions that occurred in your application le
 up to an event being sent. For example, whether external API requests were made,
 or whether a user clicked on something in an Android application.
 
-Once a Sentry instance has been initialized, either via a logging framework or manually,
+Once a ``SentryClient`` instance has been initialized, either via a logging framework or manually,
 you can begin recording breadcrumbs. By default the last 100 breadcrumbs for a given
 context instance will be stored and sent with future events.
 
@@ -41,17 +42,17 @@ context instance will be stored and sent with future events.
 
     public void example() {
         // Record a breadcrumb without having to look up the context instance manually
-        Breadcrumbs.record(
+        Sentry.record(
             new BreadcrumbBuilder().setMessage("User did something specific again!").build()
         );
 
         // ... or retrieve and manipulate the context instance manually
 
-        // Retrieve the stored Sentry instance
-        Sentry sentry = Sentry.getStoredInstance();
+        // Retrieve the stored SentryClient instance
+        SentryClient sentryClient = getStoredClient();
 
         // Get the current context instance
-        Context context = sentry.getContext();
+        Context context = sentryClient.getContext();
 
         // Set the current User in the context
         context.setUser(

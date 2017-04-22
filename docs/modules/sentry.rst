@@ -94,7 +94,7 @@ Environment variable     Java System Property     Example value                 
 ``SENTRY_RELEASE``       ``sentry.release``       ``1.0.0``                       Optional, provide release version of your application
 ``SENTRY_ENVIRONMENT``   ``sentry.environment``   ``production``                  Optional, provide environment your application is running in
 ``SENTRY_SERVERNAME``    ``sentry.servername``    ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_SENTRYFACTORY`` ``sentry.sentryfactory`` ``com.foo.SentryFactory``       Optional, select the sentryFactory class
+``SENTRY_FACTORY``       ``sentry.factory``       ``com.foo.SentryClientFactory`` Optional, select the SentryClientFactory class
 ``SENTRY_TAGS``          ``sentry.tags``          ``tag1:value1,tag2:value2``     Optional, provide tags
 ``SENTRY_EXTRA_TAGS``    ``sentry.extratags``     ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================== ======================== =============================== ===========
@@ -134,8 +134,8 @@ Example configuration in the ``logging.properties`` file:
     # Optional, override the server name (rather than looking it up dynamically)
     io.sentry.jul.SentryHandler.serverName=server1
 
-    # Optional, select the sentryFactory class
-    io.sentry.jul.SentryHandler.sentryFactory=com.foo.SentryFactory
+    # Optional, select the SentryClientFactorclass
+    io.sentry.jul.SentryHandler.factory=com.foo.SentryClientFactory
 
     # Optional, provide tag names to be extracted from MDC
     io.sentry.jul.SentryHandler.extraTags=foo,bar,baz
@@ -159,7 +159,7 @@ In Practice
         void logWithBreadcrumbs() {
             // Record a breadcrumb that will be sent with the next event(s),
             // by default the last 100 breadcrumbs are kept.
-            Breadcrumbs.record(
+            Sentry.record(
                 new BreadcrumbBuilder().setMessage("User made an action").build()
             );
 

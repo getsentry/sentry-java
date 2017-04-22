@@ -38,9 +38,9 @@ For other dependency managers see the `central Maven repository <https://search.
 Usage
 -----
 
-This module provides a new ``SentryFactory`` implementation which replaces the default async
+This module provides a new ``SentryClientFactory`` implementation which replaces the default async
 system with a Google App Engine compatible one. You'll need to configure Sentry to use the
-``io.sentry.appengine.AppEngineSentryFactory`` as its factory.
+``io.sentry.appengine.AppEngineSentryClientFactory`` as its factory.
 
 The queue size and thread options will not be used as they are specific to
 the default Java threading system.

@@ -4,8 +4,8 @@ import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
 import mockit.*;
-import io.sentry.Sentry;
-import io.sentry.SentryFactory;
+import io.sentry.SentryClient;
+import io.sentry.SentryClientFactory;
 import io.sentry.dsn.Dsn;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -17,12 +17,12 @@ public class SentryAppenderDsnTest {
     @Tested
     private SentryAppender sentryAppender = null;
     @Injectable
-    private Sentry mockSentry = null;
+    private SentryClient mockSentryClient = null;
     @Injectable
     private Context mockContext = null;
     @SuppressWarnings("unused")
-    @Mocked("sentryInstance")
-    private SentryFactory mockSentryFactory = null;
+    @Mocked("sentryClient")
+    private SentryClientFactory mockSentryClientFactory = null;
     @SuppressWarnings("unused")
     @Mocked("dsnLookup")
     private Dsn mockDsn = null;
@@ -54,8 +54,8 @@ public class SentryAppenderDsnTest {
         new Expectations() {{
             Dsn.dsnLookup();
             result = dsnUri;
-            SentryFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
-            result = mockSentry;
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
+            result = mockSentryClient;
         }};
 
         sentryAppender.initSentry();
@@ -68,8 +68,8 @@ public class SentryAppenderDsnTest {
         final String dsnUri = "protocol://public:private@host/2";
         sentryAppender.setDsn(dsnUri);
         new Expectations() {{
-            SentryFactory.sentryInstance(withEqual(new Dsn(dsnUri)), anyString);
-            result = mockSentry;
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
+            result = mockSentryClient;
         }};
 
         sentryAppender.initSentry();

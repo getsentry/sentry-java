@@ -1,8 +1,16 @@
 Version 1.0.0
 -------------
 
-- Rename from ``raven-java`` to ``sentry-java``.
 - Move from ``com.getsentry.raven`` package to ``io.sentry``.
+- Rename from ``raven-java`` to ``sentry-java``.
+- Rename the ``Sentry`` class to ``SentryClient``.
+- Rename the ``SentryFactory`` class to ``SentryClientFactory``, and renamed all subclasses
+  to now end in ``ClientFactory``.
+- Remove ``Breadcrumbs`` class.
+- Add new ``Sentry`` class for static client access and usage.
+- Rename ``android.Sentry`` to ``android.AndroidSentry`` to make it unambiguous when used in code.
+- Rename ``sentryFactory`` option to ``factory`` so that the environment variable configuration is
+  now ``SENTRY_FACTORY`` and the Java System Property is ``sentry.factory``.
 - Add ``dist`` field to Event.
 
 Version 8.0.2

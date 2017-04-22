@@ -5,7 +5,7 @@ import ch.qos.logback.core.Context;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
-import io.sentry.Sentry;
+import io.sentry.SentryClient;
 import io.sentry.event.Event;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -18,14 +18,14 @@ public class SentryAppenderEventLevelFilterTest {
     @Tested
     private SentryAppender sentryAppender = null;
     @Injectable
-    private Sentry mockSentry = null;
+    private SentryClient mockSentryClient = null;
     @Injectable
     private Context mockContext = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
         new MockUpStatusPrinter();
-        sentryAppender = new SentryAppender(mockSentry);
+        sentryAppender = new SentryAppender(mockSentryClient);
         sentryAppender.setContext(mockContext);
     }
 
@@ -53,7 +53,7 @@ public class SentryAppenderEventLevelFilterTest {
         sentryAppender.append(new MockUpLoggingEvent(null, null, Level.ERROR, null, null, null).getMockInstance());
 
         new Verifications() {{
-            mockSentry.sendEvent((Event) any);
+            mockSentryClient.sendEvent((Event) any);
             minTimes = expectedEvents;
             maxTimes = expectedEvents;
         }};
@@ -68,7 +68,7 @@ public class SentryAppenderEventLevelFilterTest {
         sentryAppender.append(new MockUpLoggingEvent(null, null, Level.ERROR, null, null, null).getMockInstance());
 
         new Verifications() {{
-            mockSentry.sendEvent((Event) any);
+            mockSentryClient.sendEvent((Event) any);
             minTimes = 5;
             maxTimes = 5;
         }};

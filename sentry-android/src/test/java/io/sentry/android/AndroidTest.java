@@ -1,10 +1,9 @@
 package io.sentry.android;
 
 import io.sentry.BaseIT;
+import io.sentry.Sentry;
 import org.junit.After;
 import org.junit.Before;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 public class AndroidTest extends BaseIT {
 
@@ -15,7 +14,7 @@ public class AndroidTest extends BaseIT {
 
     @After
     public void tearDown() throws Exception {
-        Sentry.clearStoredSentry();
+        Sentry.setStoredClient(null);
     }
 
 }
