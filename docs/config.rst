@@ -312,8 +312,7 @@ To enable a similar behaviour in Sentry use the ``sentry.stacktrace.hidecommon``
 Compression
 ~~~~~~~~~~~
 
-By default the content sent to Sentry is compressed and encoded in base64 before
-being sent.
+By default the content sent to Sentry is compressed before being sent.
 However, compressing and encoding the data adds a small CPU and memory hit which
 might not be useful if the connection to Sentry is fast and reliable.
 

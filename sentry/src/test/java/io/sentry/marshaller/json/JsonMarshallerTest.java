@@ -1,6 +1,8 @@
 package io.sentry.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import mockit.*;
@@ -13,6 +15,9 @@ import org.testng.annotations.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -400,11 +405,24 @@ public class JsonMarshallerTest {
 
         jsonMarshaller.marshall(mockEvent, outputStream);
 
-        assertThat(new String(outputStream.toByteArray(), "UTF-8"), is(""
-            + "eJyFj8EKwzAIht/FcwfpaSzPsXsJrctCTVI0LYPSd5+sS9ht4iGf+f3VHXDDVIYw"
-            + "gQXzJ6CDiCLOI9i0EnVQghaKi4t297eruZhe826M/aQ2kPpTlVP2HrnSQq48MsfK"
-            + "40oLh1JRphnsDsnFNm5DlpDTiYeOd15Uoy9B1s/hV8xI6KThFKRZY9oC5xT18lZ6"
-            + "FXan1/jEcZb1u9fxBs7LXes="
-        ));
+        JsonNode json = deserialize(decompress(outputStream.toByteArray()));
+        assertThat(json, is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testCompression.json")));
+    }
+
+    private String decompress(byte[] compressedData) throws Exception {
+        Inflater inflater = new Inflater();
+        inflater.setInput(compressedData);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
+        byte[] buf = new byte[1024];
+        while (!inflater.finished()) {
+            int count = inflater.inflate(buf);
+            bos.write(buf, 0, count);
+        }
+        bos.close();
+        return new String(bos.toByteArray());
+    }
+
+    private JsonNode deserialize(String jsonString) throws Exception {
+        return new ObjectMapper().readTree(jsonString);
     }
 }

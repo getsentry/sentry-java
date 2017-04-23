@@ -3,8 +3,6 @@ package io.sentry.marshaller.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.Breadcrumb;
-import io.sentry.util.Base64;
-import io.sentry.util.Base64OutputStream;
 import io.sentry.event.Event;
 import io.sentry.event.interfaces.SentryInterface;
 import io.sentry.marshaller.Marshaller;
@@ -22,8 +20,7 @@ import java.util.zip.DeflaterOutputStream;
 /**
  * Event marshaller using JSON to send the data.
  * <p>
- * The content can also be compressed with {@link DeflaterOutputStream} in which case the binary result is encoded
- * in base 64.
+ * The content can also be compressed with {@link DeflaterOutputStream}.
  */
 public class JsonMarshaller implements Marshaller {
     /**
@@ -152,7 +149,7 @@ public class JsonMarshaller implements Marshaller {
         destination = new UncloseableOutputStream(destination);
 
         if (compression) {
-            destination = new DeflaterOutputStream(new Base64OutputStream(destination, Base64.NO_WRAP));
+            destination = new DeflaterOutputStream(destination);
         }
 
         try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {

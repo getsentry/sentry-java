@@ -15,20 +15,19 @@ import java.util.zip.InflaterInputStream;
  * <p>
  * The supported stream formats are:
  * <ul>
- * <li>JSON Stream (nothing to do)
- * <li>Base 64'd JSON streams (base64 decoded)
- * <li>Base 64'd and deflated JSON streams (base64 decoded and inflated)
+ * <li> Raw JSON Stream (nothing to do)
+ * <li> Deflated JSON streams (must be inflated)
  * </ul>
  */
 public class JsonDecoder {
     private static Logger logger = Logger.getLogger(JsonDecoder.class.getCanonicalName());
 
     /**
-     * Attempts to read the content of the stream and determine if it's compressed, encoded or simple JSON.
+     * Attempts to read the content of the stream and determine if it's compressed or raw JSON.
      * <p>
      * This method isn't efficient but it isn't really a problem as this part of the project is not about performances.
      *
-     * @param originalStream origin stream of information that can be compressed or encoded in base64.
+     * @param originalStream origin stream of information that can be compressed.
      * @return a Stream containing pure JSON.
      * @throws IOException if it's impossible to read the content of the Stream.
      */
@@ -40,15 +39,10 @@ public class JsonDecoder {
         originalStream.mark(messageSize);
         InputStream inputStream = originalStream;
         if (!isJson(originalStream)) {
-            inputStream = new Base64InputStream(inputStream, Base64.NO_WRAP);
+            inputStream = new InflaterInputStream(inputStream);
             originalStream.reset();
-            if (!isJson(new Base64InputStream(originalStream, Base64.NO_WRAP))) {
-                inputStream = new InflaterInputStream(inputStream);
-                originalStream.reset();
-                if (!isJson(new InflaterInputStream(new Base64InputStream(originalStream, Base64.NO_WRAP)))) {
-                    throw new IllegalArgumentException("The given Stream is neither JSON, Base64'd JSON "
-                        + "nor Base64'd deflated JSON.");
-                }
+            if (!isJson(new InflaterInputStream(originalStream))) {
+                throw new IllegalArgumentException("The given Stream is neither JSON nor deflated JSON.");
             }
         }
 
