@@ -165,6 +165,19 @@ public class JsonMarshaller implements Marshaller {
         }
     }
 
+    @Override
+    public String getContentType() {
+        return "application/json";
+    }
+
+    @Override
+    public String getContentEncoding() {
+        if (isCompressed()) {
+            return "deflate";
+        }
+        return null;
+    }
+
     private void writeContent(JsonGenerator generator, Event event) throws IOException {
         generator.writeStartObject();
 
@@ -395,5 +408,9 @@ public class JsonMarshaller implements Marshaller {
      */
     public void setCompression(boolean compression) {
         this.compression = compression;
+    }
+
+    public boolean isCompressed() {
+        return compression;
     }
 }

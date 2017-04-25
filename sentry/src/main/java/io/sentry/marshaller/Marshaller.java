@@ -21,6 +21,20 @@ public interface Marshaller {
     void marshall(Event event, OutputStream destination);
 
     /**
+     * Returns the HTTP Content-Type, if applicable, or null.
+     *
+     * @return the HTTP Content-Type, if applicable, or null.
+     */
+    String getContentType();
+
+    /**
+     * Returns the HTTP Content-Encoding, if applicable, or null.
+     *
+     * @return the HTTP Content-Encoding, if applicable, or null.
+     */
+    String getContentEncoding();
+
+    /**
      * OutputStream delegating every call except for {@link #close()} to an other OutputStream.
      */
     final class UncloseableOutputStream extends OutputStream {
