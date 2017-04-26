@@ -208,7 +208,7 @@ public class SentryAppender extends AppenderSkeleton {
                 setFactory(factory);
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), factory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             getErrorHandler().error("An exception occurred during the retrieval of the DSN for Sentry", e,
                     ErrorCode.ADDRESS_PARSE_FAILURE);

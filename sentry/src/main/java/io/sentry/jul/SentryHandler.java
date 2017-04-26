@@ -271,7 +271,7 @@ public class SentryHandler extends Handler {
                 setFactory(factory);
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), factory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Sentry",
                 e, ErrorManager.OPEN_FAILURE);

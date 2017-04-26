@@ -306,7 +306,7 @@ public class SentryAppender extends AbstractAppender {
                 setFactory(factory);
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), factory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
         } catch (InvalidDsnException e) {
             error("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
