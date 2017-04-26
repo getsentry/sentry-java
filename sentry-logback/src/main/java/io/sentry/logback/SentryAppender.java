@@ -164,10 +164,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 }
             }
         }
-
-        if (sentryClient == null) {
-            initSentry();
-        }
     }
 
     /**
@@ -238,12 +234,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 dsn = Dsn.dsnLookup();
             }
 
-            String sentryClientFactory = Lookup.lookup("factory");
-            if (sentryClientFactory != null) {
-                setFactory(sentryClientFactory);
+            String factory = Lookup.lookup("factory");
+            if (factory != null) {
+                setFactory(factory);
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), factory);
         } catch (InvalidDsnException e) {
             addError("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {

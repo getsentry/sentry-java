@@ -163,10 +163,6 @@ public class SentryHandler extends Handler {
                 }
             }
         }
-
-        if (sentryClient == null) {
-            initSentry();
-        }
     }
 
     /**
@@ -270,12 +266,12 @@ public class SentryHandler extends Handler {
                 dsn = Dsn.dsnLookup();
             }
 
-            String sentryClientFactory = Lookup.lookup("factory");
-            if (sentryClientFactory != null) {
-                setFactory(sentryClientFactory);
+            String factory = Lookup.lookup("factory");
+            if (factory != null) {
+                setFactory(factory);
             }
 
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
+            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), factory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Sentry",
                 e, ErrorManager.OPEN_FAILURE);
