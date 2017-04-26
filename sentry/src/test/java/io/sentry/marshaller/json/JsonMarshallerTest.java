@@ -12,10 +12,12 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.zip.DataFormatException;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -410,16 +412,9 @@ public class JsonMarshallerTest {
     }
 
     private String decompress(byte[] compressedData) throws Exception {
-        Inflater inflater = new Inflater();
-        inflater.setInput(compressedData);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
-        byte[] buf = new byte[1024];
-        while (!inflater.finished()) {
-            int count = inflater.inflate(buf);
-            bos.write(buf, 0, count);
-        }
-        bos.close();
-        return new String(bos.toByteArray());
+        GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(compressedData));
+        Scanner s = new Scanner(gzipInputStream).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
     private JsonNode deserialize(String jsonString) throws Exception {

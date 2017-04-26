@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.InflaterInputStream;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Decodes a Stream as a JSON stream.
@@ -16,7 +16,7 @@ import java.util.zip.InflaterInputStream;
  * The supported stream formats are:
  * <ul>
  * <li> Raw JSON Stream (nothing to do)
- * <li> Deflated JSON streams (must be inflated)
+ * <li> Gzipped JSON streams (must be ungzipped)
  * </ul>
  */
 public class JsonDecoder {
@@ -34,15 +34,15 @@ public class JsonDecoder {
     public InputStream decapsulateContent(InputStream originalStream) throws IOException {
         //Hopefully the sent content isn't bigger than 1MB...
         final int messageSize = 1048576;
-        //Make it uncloseable to avoid issues with the InflaterInputStream.
+        //Make it uncloseable to avoid issues with the GZIPInputStream.
         originalStream = new Uncloseable(new BufferedInputStream(originalStream));
         originalStream.mark(messageSize);
         InputStream inputStream = originalStream;
         if (!isJson(originalStream)) {
-            inputStream = new InflaterInputStream(inputStream);
+            inputStream = new GZIPInputStream(inputStream);
             originalStream.reset();
-            if (!isJson(new InflaterInputStream(originalStream))) {
-                throw new IllegalArgumentException("The given Stream is neither JSON nor deflated JSON.");
+            if (!isJson(new GZIPInputStream(originalStream))) {
+                throw new IllegalArgumentException("The given Stream is neither JSON nor gzipped JSON.");
             }
         }
 

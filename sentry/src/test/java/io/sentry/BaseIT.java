@@ -37,7 +37,7 @@ public class BaseIT extends BaseTest {
             post(urlEqualTo(PROJECT1_STORE_URL))
                 .withHeader(AUTH_HEADER, AUTH_HEADER_PATTERN)
                 .withHeader("Content-Type", new EqualToPattern("application/json"))
-                .withHeader("Content-Encoding", new EqualToPattern("deflate"))
+                .withHeader("Content-Encoding", new EqualToPattern("gzip"))
                 .willReturn(aResponse().withStatus(200)));
     }
 

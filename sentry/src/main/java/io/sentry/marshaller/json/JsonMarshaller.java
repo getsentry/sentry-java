@@ -15,12 +15,12 @@ import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Event marshaller using JSON to send the data.
  * <p>
- * The content can also be compressed with {@link DeflaterOutputStream}.
+ * The content can also be compressed with {@link GZIPOutputStream}.
  */
 public class JsonMarshaller implements Marshaller {
     /**
@@ -144,12 +144,12 @@ public class JsonMarshaller implements Marshaller {
     }
 
     @Override
-    public void marshall(Event event, OutputStream destination) {
+    public void marshall(Event event, OutputStream destination) throws IOException {
         // Prevent the stream from being closed automatically
         destination = new UncloseableOutputStream(destination);
 
         if (compression) {
-            destination = new DeflaterOutputStream(destination);
+            destination = new GZIPOutputStream(destination);
         }
 
         try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
@@ -173,7 +173,7 @@ public class JsonMarshaller implements Marshaller {
     @Override
     public String getContentEncoding() {
         if (isCompressed()) {
-            return "deflate";
+            return "gzip";
         }
         return null;
     }
@@ -402,7 +402,7 @@ public class JsonMarshaller implements Marshaller {
     }
 
     /**
-     * Enables the JSON compression with deflate.
+     * Enables the JSON compression with gzip.
      *
      * @param compression state of the compression.
      */
