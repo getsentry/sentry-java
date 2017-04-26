@@ -105,7 +105,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        this.addFilter(new DropSentryFilter());
+        this(null);
     }
 
     /**
@@ -114,8 +114,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param sentryClient instance of Sentry to use with this appender.
      */
     public SentryAppender(SentryClient sentryClient) {
-        this();
-        this.sentryClient = sentryClient;
+        this.addFilter(new DropSentryFilter());
+        if (sentryClient == null) {
+            initSentry();
+        } else {
+            this.sentryClient = sentryClient;
+        }
+
     }
 
     /**
@@ -129,11 +134,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryClientFactory = Lookup.lookup("factory");
-                        if (sentryClientFactory != null) {
-                            setFactory(sentryClientFactory);
-                        }
-
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
@@ -232,10 +232,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     /**
      * Initialises the {@link SentryClient} instance.
      */
-    protected synchronized void initSentry() {
+    protected void initSentry() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String sentryClientFactory = Lookup.lookup("factory");
+            if (sentryClientFactory != null) {
+                setFactory(sentryClientFactory);
             }
 
             sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
