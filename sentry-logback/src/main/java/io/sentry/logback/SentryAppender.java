@@ -63,39 +63,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String sentryClientFactory;
     /**
-     * Identifies the version of the application.
-     * <p>
-     * Might be null in which case the release information will not be sent with the event.
-     */
-    protected String release;
-    /**
-     * Identifies the environment the application is running in.
-     * <p>
-     * Might be null in which case the environment information will not be sent with the event.
-     */
-    protected String environment;
-    /**
-     * Server name to be sent to sentry.
-     * <p>
-     * Might be null in which case the hostname is found via a reverse DNS lookup.
-     */
-    protected String serverName;
-    /**
      * If set, only events with level = minLevel and up will be recorded. (This
      * configuration parameter is deprecated in favor of using Logback
      * Filters.)
      */
     protected Level minLevel;
-    /**
-     * Additional tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no tags are sent.
-     */
-    protected Map<String, String> tags = Collections.emptyMap();
-    /**
-     * Extras to use as tags.
-     */
-    protected Set<String> extraTags = Collections.emptySet();
     /**
      * Used for lazy initialization of appender state, see {@link #lazyInit()}.
      */
@@ -220,8 +192,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             }
 
             lazyInit();
-            Event event = buildEvent(iLoggingEvent);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = buildEvent(iLoggingEvent);
+            sentryClient.sendEvent(eventBuilder);
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Sentry", e);
         } finally {
@@ -252,7 +224,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param iLoggingEvent Log generated.
      * @return Event containing details provided by the logging system.
      */
-    protected Event buildEvent(ILoggingEvent iLoggingEvent) {
+    protected EventBuilder buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":logback")
             .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
@@ -260,19 +232,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             .withLogger(iLoggingEvent.getLoggerName())
             .withLevel(formatLevel(iLoggingEvent.getLevel()))
             .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
-
-
-        if (!Util.isNullOrEmpty(serverName)) {
-            eventBuilder.withServerName(serverName.trim());
-        }
-
-        if (!Util.isNullOrEmpty(release)) {
-            eventBuilder.withRelease(release.trim());
-        }
-
-        if (!Util.isNullOrEmpty(environment)) {
-            eventBuilder.withEnvironment(environment.trim());
-        }
 
         if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.withSentryInterface(new MessageInterface(
@@ -297,6 +256,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
         }
 
+        Set<String> extraTags = sentryClient.getExtraTags();
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
             if (extraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
@@ -309,12 +269,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withTag(LOGBACK_MARKER, iLoggingEvent.getMarker().getName());
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
-        }
-
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     /**
@@ -423,15 +378,19 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     public void setRelease(String release) {
-        this.release = release;
+        sentryClient.setRelease(release);
+    }
+
+    public void setDist(String dist) {
+        sentryClient.setDist(dist);
     }
 
     public void setEnvironment(String environment) {
-        this.environment = environment;
+        sentryClient.setEnvironment(environment);
     }
 
     public void setServerName(String serverName) {
-        this.serverName = serverName;
+        sentryClient.setServerName(serverName);
     }
 
     public void setMinLevel(String minLevel) {
@@ -444,7 +403,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
-        this.tags = Util.parseTags(tags);
+        sentryClient.setTags(Util.parseTags(tags));
     }
 
     /**
@@ -453,7 +412,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
-        this.extraTags = Util.parseExtraTags(extraTags);
+        sentryClient.setExtraTags(Util.parseExtraTags(extraTags));
     }
 
     @Override

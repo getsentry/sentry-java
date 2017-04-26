@@ -72,37 +72,6 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String sentryClientFactory;
     /**
-     * Identifies the version of the application.
-     * <p>
-     * Might be null in which case the release information will not be sent with the event.
-     */
-    protected String release;
-    /**
-     * Identifies the environment the application is running in.
-     * <p>
-     * Might be null in which case the environment information will not be sent with the event.
-     */
-    protected String environment;
-    /**
-     * Server name to be sent to sentry.
-     * <p>
-     * Might be null in which case the hostname is found via a reverse DNS lookup.
-     */
-    protected String serverName;
-    /**
-     * Additional tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no tags are sent.
-     */
-    protected Map<String, String> tags = Collections.emptyMap();
-    /**
-     * Set of tags to look for in the Thread Context Map. These will be added as tags to be sent to Sentry.
-     * <p>
-     * Might be empty in which case no mapped tags are set.
-     * </p>
-     */
-    protected Set<String> extraTags = Collections.emptySet();
-    /**
      * Used for lazy initialization of appender state, see {@link #lazyInit()}.
      */
     private volatile boolean initialized = false;
@@ -142,6 +111,7 @@ public class SentryAppender extends AbstractAppender {
      * @param dsn                 Data Source Name to access the Sentry server.
      * @param sentryClientFactory Name of the factory to use to build the {@link SentryClient} instance.
      * @param release             Release to be sent to Sentry.
+     * @param dist                Dist to be sent to Sentry.
      * @param environment         Environment to be sent to Sentry.
      * @param serverName          serverName to be sent to Sentry.
      * @param tags                Tags to add to each event.
@@ -155,6 +125,7 @@ public class SentryAppender extends AbstractAppender {
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("factory") final String sentryClientFactory,
                                                 @PluginAttribute("release") final String release,
+                                                @PluginAttribute("dist") final String dist,
                                                 @PluginAttribute("environment") final String environment,
                                                 @PluginAttribute("serverName") final String serverName,
                                                 @PluginAttribute("tags") final String tags,
@@ -170,6 +141,9 @@ public class SentryAppender extends AbstractAppender {
 
         if (release != null) {
             sentryAppender.setRelease(release);
+        }
+        if (dist != null) {
+            sentryAppender.setDist(dist);
         }
         if (environment != null) {
             sentryAppender.setEnvironment(environment);
@@ -285,8 +259,8 @@ public class SentryAppender extends AbstractAppender {
         SentryEnvironment.startManagingThread();
         try {
             lazyInit();
-            Event event = buildEvent(logEvent);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = buildEvent(logEvent);
+            sentryClient.sendEvent(eventBuilder);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Sentry", logEvent, e);
         } finally {
@@ -317,7 +291,7 @@ public class SentryAppender extends AbstractAppender {
      * @param event Log generated.
      * @return Event containing details provided by the logging system.
      */
-    protected Event buildEvent(LogEvent event) {
+    protected EventBuilder buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":log4j2")
@@ -326,18 +300,6 @@ public class SentryAppender extends AbstractAppender {
             .withLogger(event.getLoggerName())
             .withLevel(formatLevel(event.getLevel()))
             .withExtra(THREAD_NAME, event.getThreadName());
-
-        if (!Util.isNullOrEmpty(serverName)) {
-            eventBuilder.withServerName(serverName.trim());
-        }
-
-        if (!Util.isNullOrEmpty(release)) {
-            eventBuilder.withRelease(release.trim());
-        }
-
-        if (!Util.isNullOrEmpty(environment)) {
-            eventBuilder.withEnvironment(environment.trim());
-        }
 
         if (eventMessage.getFormat() != null
             && !eventMessage.getFormat().equals("")
@@ -367,6 +329,7 @@ public class SentryAppender extends AbstractAppender {
         }
 
         if (event.getContextMap() != null) {
+            Set<String> extraTags = sentryClient.getExtraTags();
             for (Map.Entry<String, String> contextEntry : event.getContextMap().entrySet()) {
                 if (extraTags.contains(contextEntry.getKey())) {
                     eventBuilder.withTag(contextEntry.getKey(), contextEntry.getValue());
@@ -380,12 +343,7 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withTag(LOG4J_MARKER, event.getMarker().getName());
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
-        }
-
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     public void setDsn(String dsn) {
@@ -397,15 +355,19 @@ public class SentryAppender extends AbstractAppender {
     }
 
     public void setRelease(String release) {
-        this.release = release;
+        sentryClient.setRelease(release);
+    }
+
+    public void setDist(String dist) {
+        sentryClient.setDist(dist);
     }
 
     public void setEnvironment(String environment) {
-        this.environment = environment;
+        sentryClient.setEnvironment(environment);
     }
 
     public void setServerName(String serverName) {
-        this.serverName = serverName;
+        sentryClient.setServerName(serverName);
     }
 
     /**
@@ -414,7 +376,7 @@ public class SentryAppender extends AbstractAppender {
      * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
-        this.tags = Util.parseTags(tags);
+        sentryClient.setTags(Util.parseTags(tags));
     }
 
     /**
@@ -424,7 +386,7 @@ public class SentryAppender extends AbstractAppender {
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
-        this.extraTags = Util.parseExtraTags(extraTags);
+        sentryClient.setExtraTags(Util.parseExtraTags(extraTags));
     }
 
     @Override
