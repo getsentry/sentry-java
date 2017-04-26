@@ -111,7 +111,7 @@ public class SentryAppender extends AbstractAppender {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        this(APPENDER_NAME, null);
+        this(null);
     }
 
     /**
@@ -122,7 +122,12 @@ public class SentryAppender extends AbstractAppender {
     public SentryAppender(SentryClient sentryClient) {
         super(APPENDER_NAME, null, null, true);
         this.addFilter(new DropSentryFilter());
-        this.sentryClient = sentryClient;
+        if (sentryClient != null) {
+            this.sentryClient = sentryClient;
+        } else {
+            initSentry();
+        }
+
     }
 
     /**

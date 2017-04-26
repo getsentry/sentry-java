@@ -115,10 +115,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     public SentryAppender(SentryClient sentryClient) {
         this.addFilter(new DropSentryFilter());
-        if (sentryClient == null) {
-            initSentry();
-        } else {
+        if (sentryClient != null) {
             this.sentryClient = sentryClient;
+        } else {
+            initSentry();
         }
 
     }

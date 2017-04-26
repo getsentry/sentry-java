@@ -115,10 +115,10 @@ public class SentryHandler extends Handler {
         retrieveProperties();
         this.setFilter(new DropSentryFilter());
 
-        if (sentryClient == null) {
-            initSentry();
-        } else {
+        if (sentryClient != null) {
             this.sentryClient = sentryClient;
+        } else {
+            initSentry();
         }
     }
 
