@@ -1,5 +1,6 @@
 package io.sentry;
 
+import com.github.tomakehurst.wiremock.matching.EqualToPattern;
 import io.sentry.connection.HttpConnection;
 import io.sentry.unmarshaller.JsonUnmarshaller;
 import io.sentry.unmarshaller.event.UnmarshalledEvent;
@@ -35,6 +36,8 @@ public class BaseIT extends BaseTest {
         wireMockRule.stubFor(
             post(urlEqualTo(PROJECT1_STORE_URL))
                 .withHeader(AUTH_HEADER, AUTH_HEADER_PATTERN)
+                .withHeader("Content-Type", new EqualToPattern("application/json"))
+                .withHeader("Content-Encoding", new EqualToPattern("gzip"))
                 .willReturn(aResponse().withStatus(200)));
     }
 

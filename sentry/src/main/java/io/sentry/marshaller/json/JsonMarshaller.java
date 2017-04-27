@@ -3,8 +3,6 @@ package io.sentry.marshaller.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.Breadcrumb;
-import io.sentry.util.Base64;
-import io.sentry.util.Base64OutputStream;
 import io.sentry.event.Event;
 import io.sentry.event.interfaces.SentryInterface;
 import io.sentry.marshaller.Marshaller;
@@ -17,13 +15,12 @@ import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Event marshaller using JSON to send the data.
  * <p>
- * The content can also be compressed with {@link DeflaterOutputStream} in which case the binary result is encoded
- * in base 64.
+ * The content can also be compressed with {@link GZIPOutputStream}.
  */
 public class JsonMarshaller implements Marshaller {
     /**
@@ -147,12 +144,12 @@ public class JsonMarshaller implements Marshaller {
     }
 
     @Override
-    public void marshall(Event event, OutputStream destination) {
+    public void marshall(Event event, OutputStream destination) throws IOException {
         // Prevent the stream from being closed automatically
         destination = new UncloseableOutputStream(destination);
 
         if (compression) {
-            destination = new DeflaterOutputStream(new Base64OutputStream(destination, Base64.NO_WRAP));
+            destination = new GZIPOutputStream(destination);
         }
 
         try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
@@ -166,6 +163,19 @@ public class JsonMarshaller implements Marshaller {
                 logger.error("An exception occurred while serialising the event.", e);
             }
         }
+    }
+
+    @Override
+    public String getContentType() {
+        return "application/json";
+    }
+
+    @Override
+    public String getContentEncoding() {
+        if (isCompressed()) {
+            return "gzip";
+        }
+        return null;
     }
 
     private void writeContent(JsonGenerator generator, Event event) throws IOException {
@@ -392,11 +402,15 @@ public class JsonMarshaller implements Marshaller {
     }
 
     /**
-     * Enables the JSON compression with deflate.
+     * Enables the JSON compression with gzip.
      *
      * @param compression state of the compression.
      */
     public void setCompression(boolean compression) {
         this.compression = compression;
+    }
+
+    public boolean isCompressed() {
+        return compression;
     }
 }
