@@ -20,8 +20,8 @@ public interface Connection extends Closeable {
      * Add a callback that is called when an exception occurs while attempting to
      * send events to the Sentry server.
      *
-     * @param eventSendFailureCallback callback instance
+     * @param eventSendCallback callback instance
      */
-    void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback);
+    void addEventSendCallback(EventSendCallback eventSendCallback);
 
 }
