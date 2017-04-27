@@ -13,6 +13,7 @@ Version 1.0.0
   now ``SENTRY_FACTORY`` and the Java System Property is ``sentry.factory``.
 - Add ``dist`` field to Event.
 - Compressed JSON payloads are no longer base64 encoded.
+- Rename ``EventSendFailureCallback`` to ``EventSendCallback``, add ``onSuccess`` callback.
 
 Version 8.0.2
 -------------
