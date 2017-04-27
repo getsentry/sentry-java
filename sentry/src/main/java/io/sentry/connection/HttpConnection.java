@@ -127,6 +127,15 @@ public class HttpConnection extends AbstractConnection {
             connection.setConnectTimeout(timeout);
             connection.setRequestProperty(USER_AGENT, SentryEnvironment.getSentryName());
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
+
+            if (marshaller.getContentType() != null) {
+                connection.setRequestProperty("Content-Type", marshaller.getContentType());
+            }
+
+            if (marshaller.getContentEncoding() != null) {
+                connection.setRequestProperty("Content-Encoding", marshaller.getContentEncoding());
+            }
+
             return connection;
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't set up a connection to the Sentry server.", e);

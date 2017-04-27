@@ -12,6 +12,7 @@ Version 1.0.0
 - Rename ``sentryFactory`` option to ``factory`` so that the environment variable configuration is
   now ``SENTRY_FACTORY`` and the Java System Property is ``sentry.factory``.
 - Add ``dist`` field to Event.
+- Compressed JSON payloads are no longer base64 encoded.
 
 Version 8.0.2
 -------------

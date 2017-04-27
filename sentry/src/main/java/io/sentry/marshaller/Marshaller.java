@@ -15,10 +15,25 @@ public interface Marshaller {
      * The marshaller should not close the given stream, use {@link UncloseableOutputStream} to prevent automatic calls
      * to {@link OutputStream#close()}.
      *
-     * @param event       event to serialise.
-     * @param destination destination stream.
+     * @param event        event to serialise.
+     * @param destination  destination stream.
+     * @throws IOException on write error
      */
-    void marshall(Event event, OutputStream destination);
+    void marshall(Event event, OutputStream destination) throws IOException;
+
+    /**
+     * Returns the HTTP Content-Type, if applicable, or null.
+     *
+     * @return the HTTP Content-Type, if applicable, or null.
+     */
+    String getContentType();
+
+    /**
+     * Returns the HTTP Content-Encoding, if applicable, or null.
+     *
+     * @return the HTTP Content-Encoding, if applicable, or null.
+     */
+    String getContentEncoding();
 
     /**
      * OutputStream delegating every call except for {@link #close()} to an other OutputStream.
