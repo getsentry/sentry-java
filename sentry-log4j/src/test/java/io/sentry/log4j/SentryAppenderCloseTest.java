@@ -47,14 +47,14 @@ public class SentryAppenderCloseTest {
     @Test
     public void testClosedIfSentryClientNotProvided() throws Exception {
         final String dsnUri = "protocol://public:private@host/1";
-        final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         new Expectations() {{
             Dsn.dsnLookup();
             result = dsnUri;
             SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = mockSentryClient;
         }};
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.activateOptions();
 
         sentryAppender.close();
@@ -68,14 +68,18 @@ public class SentryAppenderCloseTest {
     @Test
     public void testCloseDoNotFailIfInitFailed() throws Exception {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
-        final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        new NonStrictExpectations() {{
-            SentryClientFactory.sentryClient((Dsn) any, anyString);
+        final String dsnUri = "protocol://public:private@host/1";
+        new Expectations() {{
+            Dsn.dsnLookup();
+            result = dsnUri;
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = new UnsupportedOperationException();
         }};
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.activateOptions();
 
+        sentryAppender.append(null);
         sentryAppender.close();
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));

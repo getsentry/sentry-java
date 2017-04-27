@@ -99,7 +99,7 @@ public class SentryAppender extends AppenderSkeleton {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        this.addFilter(new DropSentryFilter());
+        this(null);
     }
 
     /**
@@ -108,8 +108,12 @@ public class SentryAppender extends AppenderSkeleton {
      * @param sentryClient instance of Sentry to use with this appender.
      */
     public SentryAppender(SentryClient sentryClient) {
-        this();
-        this.sentryClient = sentryClient;
+        this.addFilter(new DropSentryFilter());
+        if (sentryClient != null) {
+            this.sentryClient = sentryClient;
+        } else {
+            initSentry();
+        }
     }
 
     /**
@@ -123,11 +127,6 @@ public class SentryAppender extends AppenderSkeleton {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String sentryClientFactory = Lookup.lookup("factory");
-                        if (sentryClientFactory != null) {
-                            setFactory(sentryClientFactory);
-                        }
-
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
@@ -162,10 +161,6 @@ public class SentryAppender extends AppenderSkeleton {
                     }
                 }
             }
-        }
-
-        if (sentryClient == null) {
-            initSentry();
         }
     }
 
@@ -213,10 +208,15 @@ public class SentryAppender extends AppenderSkeleton {
     /**
      * Initialises the {@link SentryClient} instance.
      */
-    protected synchronized void initSentry() {
+    protected void initSentry() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String factory = Lookup.lookup("factory");
+            if (factory != null) {
+                setFactory(factory);
             }
 
             sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);

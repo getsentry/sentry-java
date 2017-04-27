@@ -4,11 +4,14 @@ import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Sentry provides easy access to a statically stored {@link SentryClient} instance.
  */
 public final class Sentry {
+    private static final Logger logger = LoggerFactory.getLogger(Sentry.class);
     /**
      * The most recently constructed {@link SentryClient} instance, used by static helper
      * methods like {@link Sentry#capture(Event)}.
@@ -29,6 +32,9 @@ public final class Sentry {
      * @return statically stored {@link SentryClient} instance
      */
     public static SentryClient getStoredClient() {
+        // This trace is important because for some logging frameworks it will cause the appender
+        // to be initialized, which should fill in the stored SentryClient instance.
+        logger.trace("Retrieving stored instance.");
         return storedClient;
     }
 
@@ -37,6 +43,9 @@ public final class Sentry {
     }
 
     private static void verifyStoredClient() {
+        // This trace is important because for some logging frameworks it will cause the appender
+        // to be initialized, which should fill in the stored SentryClient instance.
+        logger.trace("Retrieving stored instance.");
         if (storedClient == null) {
             throw new NullPointerException("No stored SentryClient instance is available to use."
                 + " You must construct a SentryClient instance before using the static Sentry methods.");

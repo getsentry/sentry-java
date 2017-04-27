@@ -60,17 +60,18 @@ public class SentryAppenderCloseTest {
     @Test
     public void testStopIfSentryClientNotProvided() throws Exception {
         final String dsnUri = "protocol://public:private@host/1";
-        final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setContext(mockContext);
         new Expectations() {{
             Dsn.dsnLookup();
             result = dsnUri;
             SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = mockSentryClient;
         }};
+
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setContext(mockContext);
+
         sentryAppender.start();
         sentryAppender.append(null);
-
         sentryAppender.stop();
 
         new Verifications() {{
@@ -83,19 +84,21 @@ public class SentryAppenderCloseTest {
     @Test
     public void testStopDoNotFailIfInitFailed() throws Exception {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
-        final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setContext(mockContext);
-        new NonStrictExpectations() {{
-            SentryClientFactory.sentryClient((Dsn) any, anyString);
+        final String dsnUri = "protocol://public:private@host/1";
+        new Expectations() {{
+            Dsn.dsnLookup();
+            result = dsnUri;
+            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = new UnsupportedOperationException();
         }};
+        final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setContext(mockContext);
+
         sentryAppender.start();
         sentryAppender.append(null);
-
         sentryAppender.stop();
 
-        //Two errors, one because of the exception, one because of the null event.
-        assertThat(mockContext.getStatusManager().getCount(), is(2));
+        assertThat(mockContext.getStatusManager().getCount(), is(1));
     }
 
     @Test

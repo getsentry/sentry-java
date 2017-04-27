@@ -102,8 +102,7 @@ public class SentryHandler extends Handler {
      * Creates an instance of SentryHandler.
      */
     public SentryHandler() {
-        retrieveProperties();
-        this.setFilter(new DropSentryFilter());
+        this(null);
     }
 
     /**
@@ -112,8 +111,14 @@ public class SentryHandler extends Handler {
      * @param sentryClient instance of Sentry to use with this appender.
      */
     public SentryHandler(SentryClient sentryClient) {
-        this();
-        this.sentryClient = sentryClient;
+        retrieveProperties();
+        this.setFilter(new DropSentryFilter());
+
+        if (sentryClient != null) {
+            this.sentryClient = sentryClient;
+        } else {
+            initSentry();
+        }
     }
 
     /**
@@ -126,13 +131,7 @@ public class SentryHandler extends Handler {
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
-
                     try {
-                        String sentryClientFactory = Lookup.lookup("factory");
-                        if (sentryClientFactory != null) {
-                            setFactory(sentryClientFactory);
-                        }
-
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
@@ -167,10 +166,6 @@ public class SentryHandler extends Handler {
                     }
                 }
             }
-        }
-
-        if (sentryClient == null) {
-            initSentry();
         }
     }
 
@@ -273,10 +268,15 @@ public class SentryHandler extends Handler {
     /**
      * Initialises the {@link SentryClient} instance.
      */
-    protected synchronized void initSentry() {
+    protected void initSentry() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String factory = Lookup.lookup("factory");
+            if (factory != null) {
+                setFactory(factory);
             }
 
             sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
