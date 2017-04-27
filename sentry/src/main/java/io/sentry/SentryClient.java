@@ -1,19 +1,21 @@
 package io.sentry;
 
 import io.sentry.connection.Connection;
+import io.sentry.connection.EventSendCallback;
 import io.sentry.connection.LockedDownException;
 import io.sentry.context.Context;
 import io.sentry.context.ContextManager;
-import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,9 +32,39 @@ public class SentryClient {
     // CHECKSTYLE.ON: ConstantName
 
     /**
+     * Identifies the version of the application.
+     * <p>
+     * Might be null in which case the release information will not be sent with the event.
+     */
+    protected volatile String release;
+    /**
+     * Identifies the distribution of the application.
+     * <p>
+     * Might be null in which case the release distribution will not be sent with the event.
+     */
+    protected volatile String dist;
+    /**
+     * Identifies the environment the application is running in.
+     * <p>
+     * Might be null in which case the environment information will not be sent with the event.
+     */
+    protected volatile String environment;
+    /**
+     * Server name to be sent to sentry.
+     * <p>
+     * Might be null in which case the hostname is found via a reverse DNS lookup.
+     */
+    protected volatile String serverName;
+    /**
+     * Additional tags to be sent to sentry.
+     * <p>
+     * Might be empty in which case no tags are sent.
+     */
+    protected final Map<String, String> tags = new ConcurrentHashMap<>();
+    /**
      * The underlying {@link Connection} to use for sending events to Sentry.
      */
-    private volatile Connection connection;
+    private final Connection connection;
     /**
      * Set of {@link EventBuilderHelper}s. Note that we wrap a {@link ConcurrentHashMap} because there
      * isn't a concurrent set in the standard library.
@@ -96,6 +128,25 @@ public class SentryClient {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public void sendEvent(EventBuilder eventBuilder) {
+        if (!Util.isNullOrEmpty(release)) {
+            eventBuilder.withRelease(release.trim());
+            if (!Util.isNullOrEmpty(dist)) {
+                eventBuilder.withDist(dist.trim());
+            }
+        }
+
+        if (!Util.isNullOrEmpty(environment)) {
+            eventBuilder.withEnvironment(environment.trim());
+        }
+
+        if (!Util.isNullOrEmpty(serverName)) {
+            eventBuilder.withServerName(serverName.trim());
+        }
+
+        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
+            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
+        }
+
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
         sendEvent(event);
@@ -111,9 +162,7 @@ public class SentryClient {
     public void sendMessage(String message) {
         EventBuilder eventBuilder = new EventBuilder().withMessage(message)
             .withLevel(Event.Level.INFO);
-        runBuilderHelpers(eventBuilder);
-        Event event = eventBuilder.build();
-        sendEvent(event);
+        sendEvent(eventBuilder);
     }
 
     /**
@@ -127,9 +176,7 @@ public class SentryClient {
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
             .withLevel(Event.Level.ERROR)
             .withSentryInterface(new ExceptionInterface(throwable));
-        runBuilderHelpers(eventBuilder);
-        Event event = eventBuilder.build();
-        sendEvent(event);
+        sendEvent(eventBuilder);
     }
 
     /**
@@ -171,12 +218,83 @@ public class SentryClient {
         return contextManager.getContext();
     }
 
+    public String getRelease() {
+        return release;
+    }
+
+    public String getDist() {
+        return dist;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
+    public Map<String, String> getTags() {
+        return Collections.unmodifiableMap(tags);
+    }
+
+    public void setRelease(String release) {
+        this.release = release;
+    }
+
+    public void setDist(String dist) {
+        this.dist = dist;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
+    /**
+     * Add a tag that will be sent with all future {@link Event}s.
+     *
+     * @param name Tag name
+     * @param value Tag value
+     */
+    public void addTag(String name, String value) {
+        this.tags.put(name, value);
+    }
+
+    /**
+     * Set the tags that will be sent with all future {@link Event}s.
+     *
+     * @param tags Map of tags
+     */
+    public void setTags(Map<String, String> tags) {
+        this.tags.clear();
+        this.tags.putAll(tags);
+    }
+
+    /**
+     * Add a callback that is called when an exception occurs while attempting to
+     * send events to the Sentry server.
+     *
+     * @param eventSendCallback callback instance
+     */
+    void addEventSendCallback(EventSendCallback eventSendCallback) {
+        connection.addEventSendCallback(eventSendCallback);
+    }
+
     @Override
     public String toString() {
-        return "Sentry{"
-                + "name=" + SentryEnvironment.getSentryName()
-                + ", connection=" + connection
-                + ", contextManager=" + contextManager
-                + '}';
+        return "SentryClient{"
+            + "release='" + release + '\''
+            + ", dist='" + dist + '\''
+            + ", environment='" + environment + '\''
+            + ", serverName='" + serverName + '\''
+            + ", tags=" + tags
+            + ", connection=" + connection
+            + ", builderHelpers=" + builderHelpers
+            + ", contextManager=" + contextManager
+            + '}';
     }
 }
