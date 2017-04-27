@@ -15,6 +15,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -155,5 +157,36 @@ public class SentryClientTest {
         }};
 
         sentryClient.closeConnection();
+    }
+
+    @Test
+    public void testFields() throws Exception {
+        sentryClient.addBuilderHelper(mockEventBuilderHelper);
+
+        final String serverName = "serverName";
+        sentryClient.setServerName(serverName);
+        final String environment = "environment";
+        sentryClient.setEnvironment(environment);
+        final String dist = "dist";
+        sentryClient.setDist(dist);
+        final String release = "release";
+        sentryClient.setRelease(release);
+        final Map<String, String> tags = new HashMap<>();
+        tags.put("name", "value");
+        sentryClient.setTags(tags);
+
+        sentryClient.sendMessage("message");
+
+        new Verifications() {{
+            Event event;
+            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
+            mockConnection.send(event = withCapture());
+            assertThat(event.getLevel(), equalTo(Event.Level.INFO));
+            assertThat(event.getServerName(), equalTo(serverName));
+            assertThat(event.getEnvironment(), equalTo(environment));
+            assertThat(event.getDist(), equalTo(dist));
+            assertThat(event.getRelease(), equalTo(release));
+            assertThat(event.getTags(), equalTo(tags));
+        }};
     }
 }
