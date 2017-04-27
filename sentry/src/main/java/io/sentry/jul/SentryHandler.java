@@ -60,41 +60,6 @@ public class SentryHandler extends Handler {
      */
     protected String sentryClientFactory;
     /**
-     * Identifies the version of the application.
-     * <p>
-     * Might be null in which case the release information will not be sent with the event.
-     */
-    protected String release;
-
-    /**
-     * Identifies the distribution of the application.
-     * <p>
-     * Might be null in which case the release distribution will not be sent with the event.
-     */
-    protected String dist;
-    /**
-     * Identifies the environment the application is running in.
-     * <p>
-     * Might be null in which case the environment information will not be sent with the event.
-     */
-    protected String environment;
-    /**
-     * Server name to be sent to sentry.
-     * <p>
-     * Might be null in which case the hostname is found via a reverse DNS lookup.
-     */
-    protected String serverName;
-    /**
-     * Tags to add to every event.
-     */
-    protected Map<String, String> tags = Collections.emptyMap();
-    /**
-     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no mapped tags are set.
-     */
-    protected Set<String> extraTags = Collections.emptySet();
-    /**
      * Used for lazy initialization of appender state, see {@link #lazyInit()}.
      */
     private volatile boolean initialized = false;
@@ -253,8 +218,8 @@ public class SentryHandler extends Handler {
         SentryEnvironment.startManagingThread();
         try {
             lazyInit();
-            Event event = buildEvent(record);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = buildEvent(record);
+            sentryClient.sendEvent(eventBuilder);
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Sentry", e, ErrorManager.WRITE_FAILURE);
         } finally {
@@ -287,7 +252,7 @@ public class SentryHandler extends Handler {
      * @param record Log generated.
      * @return Event containing details provided by the logging system.
      */
-    protected Event buildEvent(LogRecord record) {
+    protected EventBuilder buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":jul")
             .withLevel(getLevel(record.getLevel()))
@@ -331,6 +296,7 @@ public class SentryHandler extends Handler {
 
         Map<String, String> mdc = MDC.getMDCAdapter().getCopyOfContextMap();
         if (mdc != null) {
+            Set<String> extraTags = sentryClient.getExtraTags();
             for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {
                 if (extraTags.contains(mdcEntry.getKey())) {
                     eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
@@ -340,29 +306,9 @@ public class SentryHandler extends Handler {
             }
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
-        }
-
         eventBuilder.withExtra(THREAD_ID, record.getThreadID());
 
-        if (!Util.isNullOrEmpty(release)) {
-            eventBuilder.withRelease(release.trim());
-            if (!Util.isNullOrEmpty(dist)) {
-                eventBuilder.withDist(dist.trim());
-            }
-        }
-
-        if (!Util.isNullOrEmpty(environment)) {
-            eventBuilder.withEnvironment(environment.trim());
-        }
-
-        if (!Util.isNullOrEmpty(serverName)) {
-            eventBuilder.withServerName(serverName.trim());
-        }
-
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     /**
@@ -414,19 +360,19 @@ public class SentryHandler extends Handler {
     }
 
     public void setRelease(String release) {
-        this.release = release;
+        sentryClient.setRelease(release);
     }
 
     public void setDist(String dist) {
-        this.dist = dist;
+        sentryClient.setDist(dist);
     }
 
     public void setEnvironment(String environment) {
-        this.environment = environment;
+        sentryClient.setEnvironment(environment);
     }
 
     public void setServerName(String serverName) {
-        this.serverName = serverName;
+        sentryClient.setServerName(serverName);
     }
 
     /**
@@ -435,11 +381,11 @@ public class SentryHandler extends Handler {
      *                     "tag1:value1,tag2:value2".
      */
     public void setTags(String tags) {
-        this.tags = Util.parseTags(tags);
+        sentryClient.setTags(Util.parseTags(tags));
     }
 
     public void setExtraTags(String extraTags) {
-        this.extraTags = Util.parseExtraTags(extraTags);
+        sentryClient.setExtraTags(Util.parseExtraTags(extraTags));
     }
 
     private class DropSentryFilter implements Filter {

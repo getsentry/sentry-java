@@ -55,36 +55,6 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected String sentryClientFactory;
     /**
-     * Identifies the version of the application.
-     * <p>
-     * Might be null in which case the release information will not be sent with the event.
-     */
-    protected String release;
-    /**
-     * Identifies the environment the application is running in.
-     * <p>
-     * Might be null in which case the environment information will not be sent with the event.
-     */
-    protected String environment;
-    /**
-     * Server name to be sent to sentry.
-     * <p>
-     * Might be null in which case the hostname is found via a reverse DNS lookup.
-     */
-    protected String serverName;
-    /**
-     * Additional tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no tags are sent.
-     */
-    protected Map<String, String> tags = Collections.emptyMap();
-    /**
-     * List of tags to look for in the MDC. These will be added as tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no mapped tags are set.
-     */
-    protected Set<String> extraTags = Collections.emptySet();
-    /**
      * Used for lazy initialization of appender state, see {@link #lazyInit()}.
      */
     private volatile boolean initialized = false;
@@ -228,8 +198,8 @@ public class SentryAppender extends AppenderSkeleton {
         SentryEnvironment.startManagingThread();
         try {
             lazyInit();
-            Event event = buildEvent(loggingEvent);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = buildEvent(loggingEvent);
+            sentryClient.sendEvent(eventBuilder);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Sentry", e,
                     ErrorCode.WRITE_FAILURE);
@@ -244,7 +214,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param loggingEvent Log generated.
      * @return Event containing details provided by the logging system.
      */
-    protected Event buildEvent(LoggingEvent loggingEvent) {
+    protected EventBuilder buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":log4j")
             .withTimestamp(new Date(loggingEvent.getTimeStamp()))
@@ -252,18 +222,6 @@ public class SentryAppender extends AppenderSkeleton {
             .withLogger(loggingEvent.getLoggerName())
             .withLevel(formatLevel(loggingEvent.getLevel()))
             .withExtra(THREAD_NAME, loggingEvent.getThreadName());
-
-        if (!Util.isNullOrEmpty(serverName)) {
-            eventBuilder.withServerName(serverName.trim());
-        }
-
-        if (!Util.isNullOrEmpty(release)) {
-            eventBuilder.withRelease(release.trim());
-        }
-
-        if (!Util.isNullOrEmpty(environment)) {
-            eventBuilder.withEnvironment(environment.trim());
-        }
 
         ThrowableInformation throwableInformation = null;
         try {
@@ -296,6 +254,7 @@ public class SentryAppender extends AppenderSkeleton {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
+        Set<String> extraTags = sentryClient.getExtraTags();
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet()) {
             if (extraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue().toString());
@@ -304,12 +263,7 @@ public class SentryAppender extends AppenderSkeleton {
             }
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
-        }
-
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     public void setFactory(String factory) {
@@ -321,15 +275,19 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     public void setRelease(String release) {
-        this.release = release;
+        sentryClient.setRelease(release);
+    }
+
+    public void setDist(String dist) {
+        sentryClient.setDist(dist);
     }
 
     public void setEnvironment(String environment) {
-        this.environment = environment;
+        sentryClient.setEnvironment(environment);
     }
 
     public void setServerName(String serverName) {
-        this.serverName = serverName;
+        sentryClient.setServerName(serverName);
     }
 
     /**
@@ -338,7 +296,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param tags A String of tags. key/values are separated by colon(:) and tags are separated by commas(,).
      */
     public void setTags(String tags) {
-        this.tags = Util.parseTags(tags);
+        sentryClient.setTags(Util.parseTags(tags));
     }
 
     /**
@@ -347,7 +305,7 @@ public class SentryAppender extends AppenderSkeleton {
      * @param extraTags A String of extraTags. extraTags are separated by commas(,).
      */
     public void setExtraTags(String extraTags) {
-        this.extraTags = Util.parseExtraTags(extraTags);
+        sentryClient.setExtraTags(Util.parseExtraTags(extraTags));
     }
 
     @Override
