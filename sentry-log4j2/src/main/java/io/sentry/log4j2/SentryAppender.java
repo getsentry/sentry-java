@@ -78,6 +78,12 @@ public class SentryAppender extends AbstractAppender {
      */
     protected String release;
     /**
+     * Identifies the distribution of the application.
+     * <p>
+     * Might be null in which case the release distribution will not be sent with the event.
+     */
+    protected String dist;
+    /**
      * Identifies the environment the application is running in.
      * <p>
      * Might be null in which case the environment information will not be sent with the event.
@@ -142,6 +148,7 @@ public class SentryAppender extends AbstractAppender {
      * @param dsn                 Data Source Name to access the Sentry server.
      * @param sentryClientFactory Name of the factory to use to build the {@link SentryClient} instance.
      * @param release             Release to be sent to Sentry.
+     * @param dist                Dist to be sent to Sentry.
      * @param environment         Environment to be sent to Sentry.
      * @param serverName          serverName to be sent to Sentry.
      * @param tags                Tags to add to each event.
@@ -155,6 +162,7 @@ public class SentryAppender extends AbstractAppender {
                                                 @PluginAttribute("dsn") final String dsn,
                                                 @PluginAttribute("factory") final String sentryClientFactory,
                                                 @PluginAttribute("release") final String release,
+                                                @PluginAttribute("dist") final String dist,
                                                 @PluginAttribute("environment") final String environment,
                                                 @PluginAttribute("serverName") final String serverName,
                                                 @PluginAttribute("tags") final String tags,
@@ -170,6 +178,9 @@ public class SentryAppender extends AbstractAppender {
 
         if (release != null) {
             sentryAppender.setRelease(release);
+        }
+        if (dist != null) {
+            sentryAppender.setDist(dist);
         }
         if (environment != null) {
             sentryAppender.setEnvironment(environment);
@@ -206,6 +217,11 @@ public class SentryAppender extends AbstractAppender {
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
+                        }
+
+                        String dist = Lookup.lookup("dist");
+                        if (dist != null) {
+                            setDist(dist);
                         }
 
                         String environment = Lookup.lookup("environment");
@@ -333,6 +349,9 @@ public class SentryAppender extends AbstractAppender {
 
         if (!Util.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
+            if (!Util.isNullOrEmpty(dist)) {
+                eventBuilder.withDist(dist.trim());
+            }
         }
 
         if (!Util.isNullOrEmpty(environment)) {
@@ -398,6 +417,10 @@ public class SentryAppender extends AbstractAppender {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setDist(String dist) {
+        this.dist = dist;
     }
 
     public void setEnvironment(String environment) {

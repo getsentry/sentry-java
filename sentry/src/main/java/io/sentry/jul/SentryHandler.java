@@ -65,7 +65,6 @@ public class SentryHandler extends Handler {
      * Might be null in which case the release information will not be sent with the event.
      */
     protected String release;
-
     /**
      * Identifies the distribution of the application.
      * <p>
@@ -137,6 +136,11 @@ public class SentryHandler extends Handler {
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
+                        }
+
+                        String dist = Lookup.lookup("dist");
+                        if (dist != null) {
+                            setDist(dist);
                         }
 
                         String environment = Lookup.lookup("environment");
@@ -223,6 +227,10 @@ public class SentryHandler extends Handler {
         String releaseProperty = manager.getProperty(className + ".release");
         if (releaseProperty != null) {
             setRelease(releaseProperty);
+        }
+        String distProperty = manager.getProperty(className + ".dist");
+        if (distProperty != null) {
+            setDist(distProperty);
         }
         String environmentProperty = manager.getProperty(className + ".environment");
         if (environmentProperty != null) {

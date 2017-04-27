@@ -69,6 +69,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected String release;
     /**
+     * Identifies the distribution of the application.
+     * <p>
+     * Might be null in which case the release distribution will not be sent with the event.
+     */
+    protected String dist;
+    /**
      * Identifies the environment the application is running in.
      * <p>
      * Might be null in which case the environment information will not be sent with the event.
@@ -137,6 +143,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
+                        }
+
+                        String dist = Lookup.lookup("dist");
+                        if (dist != null) {
+                            setDist(dist);
                         }
 
                         String environment = Lookup.lookup("environment");
@@ -268,6 +279,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         if (!Util.isNullOrEmpty(release)) {
             eventBuilder.withRelease(release.trim());
+            if (!Util.isNullOrEmpty(dist)) {
+                eventBuilder.withDist(dist.trim());
+            }
         }
 
         if (!Util.isNullOrEmpty(environment)) {
@@ -424,6 +438,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     public void setRelease(String release) {
         this.release = release;
+    }
+
+    public void setDist(String dist) {
+        this.dist = dist;
     }
 
     public void setEnvironment(String environment) {
