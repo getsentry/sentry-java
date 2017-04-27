@@ -29,7 +29,7 @@ public abstract class AbstractConnection implements Connection {
      * Set of callbacks that will be called when an exception occurs while attempting to
      * send events to the Sentry server.
      */
-    private Set<EventSendFailureCallback> eventSendFailureCallbacks;
+    private Set<EventSendCallback> eventSendCallbacks;
     private LockdownManager lockdownManager;
 
     /**
@@ -40,7 +40,7 @@ public abstract class AbstractConnection implements Connection {
      */
     protected AbstractConnection(String publicKey, String secretKey) {
         this.lockdownManager = new LockdownManager();
-        this.eventSendFailureCallbacks = new HashSet<>();
+        this.eventSendCallbacks = new HashSet<>();
         this.authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
             + "sentry_client=" + SentryEnvironment.getSentryName() + ","
             + "sentry_key=" + publicKey + ","
@@ -70,14 +70,23 @@ public abstract class AbstractConnection implements Connection {
 
             doSend(event);
 
+            for (EventSendCallback eventSendCallback : eventSendCallbacks) {
+                try {
+                    eventSendCallback.onSuccess(event);
+                } catch (Exception exc) {
+                    logger.warn("An exception occurred while running an EventSendCallback.onSuccess: "
+                        + eventSendCallback.getClass().getName(), exc);
+                }
+            }
+
             lockdownManager.resetState();
         } catch (ConnectionException e) {
-            for (EventSendFailureCallback eventSendFailureCallback : eventSendFailureCallbacks) {
+            for (EventSendCallback eventSendCallback : eventSendCallbacks) {
                 try {
-                    eventSendFailureCallback.onFailure(event, e);
+                    eventSendCallback.onFailure(event, e);
                 } catch (Exception exc) {
-                    logger.warn("An exception occurred while running an EventSendFailureCallback: "
-                        + eventSendFailureCallback.getClass().getName(), exc);
+                    logger.warn("An exception occurred while running an EventSendCallback.onFailure: "
+                        + eventSendCallback.getClass().getName(), exc);
                 }
             }
 
@@ -100,10 +109,10 @@ public abstract class AbstractConnection implements Connection {
      * Add a callback that is called when an exception occurs while attempting to
      * send events to the Sentry server.
      *
-     * @param eventSendFailureCallback callback instance
+     * @param eventSendCallback callback instance
      */
-    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
-        eventSendFailureCallbacks.add(eventSendFailureCallback);
+    public void addEventSendCallback(EventSendCallback eventSendCallback) {
+        eventSendCallbacks.add(eventSendCallback);
     }
 
 }

@@ -1,6 +1,6 @@
 package io.sentry.appengine.connection;
 
-import io.sentry.connection.EventSendFailureCallback;
+import io.sentry.connection.EventSendCallback;
 import com.google.appengine.api.taskqueue.DeferredTask;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
@@ -78,8 +78,8 @@ public class AppEngineAsyncConnection implements Connection {
     }
 
     @Override
-    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
-        actualConnection.addEventSendFailureCallback(eventSendFailureCallback);
+    public void addEventSendCallback(EventSendCallback eventSendCallback) {
+        actualConnection.addEventSendCallback(eventSendCallback);
     }
 
     /**

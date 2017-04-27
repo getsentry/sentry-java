@@ -3,10 +3,10 @@ package io.sentry.connection;
 import io.sentry.event.Event;
 
 /**
- * Callback that is called when an exception occurs while attempting to
+ * Callback that is called upon success or failure while attempting to
  * send events to the Sentry server.
  */
-public interface EventSendFailureCallback {
+public interface EventSendCallback {
 
     /**
      * Called when an exception occurs while attempting to
@@ -17,4 +17,10 @@ public interface EventSendFailureCallback {
      */
     void onFailure(Event event, Exception exception);
 
+    /**
+     * Called when an event is successfully sent to the Sentry server.
+     *
+     * @param event Event that was sent
+     */
+    void onSuccess(Event event);
 }

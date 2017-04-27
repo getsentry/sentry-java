@@ -106,8 +106,8 @@ public class BufferedConnection implements Connection {
     }
 
     @Override
-    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
-        actualConnection.addEventSendFailureCallback(eventSendFailureCallback);
+    public void addEventSendCallback(EventSendCallback eventSendCallback) {
+        actualConnection.addEventSendCallback(eventSendCallback);
     }
 
     @Override
@@ -174,8 +174,8 @@ public class BufferedConnection implements Connection {
             }
 
             @Override
-            public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
-                wrappedConnection.addEventSendFailureCallback(eventSendFailureCallback);
+            public void addEventSendCallback(EventSendCallback eventSendCallback) {
+                wrappedConnection.addEventSendCallback(eventSendCallback);
             }
 
             @Override

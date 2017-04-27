@@ -53,7 +53,7 @@ public class BufferedConnectionTest extends BaseTest {
             }
 
             @Override
-            public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
+            public void addEventSendCallback(EventSendCallback eventSendCallback) {
 
             }
 

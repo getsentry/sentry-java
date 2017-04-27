@@ -136,20 +136,50 @@ public class AbstractConnectionTest {
     }
 
     @Test
-    public void testEventSendFailureCallback(@Injectable final Event mockEvent) throws Exception {
+    public void testEventSendCallbackSuccess(@Injectable final Event mockEvent) throws Exception {
         final AtomicBoolean callbackCalled = new AtomicBoolean(false);
-        EventSendFailureCallback callback = new EventSendFailureCallback() {
+        EventSendCallback callback = new EventSendCallback() {
+
+            @Override
+            public void onFailure(Event event, Exception exception) {
+
+            }
+
+            @Override
+            public void onSuccess(Event event) {
+                callbackCalled.set(true);
+            }
+
+        };
+        HashSet<EventSendCallback> callbacks = new HashSet<>();
+        callbacks.add(callback);
+
+        setField(abstractConnection, "eventSendCallbacks", callbacks);
+        abstractConnection.send(mockEvent);
+
+        assertThat(callbackCalled.get(), is(true));
+    }
+
+    @Test
+    public void testEventSendCallbackFailure(@Injectable final Event mockEvent) throws Exception {
+        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
+        EventSendCallback callback = new EventSendCallback() {
 
             @Override
             public void onFailure(Event event, Exception exception) {
                 callbackCalled.set(true);
             }
 
+            @Override
+            public void onSuccess(Event event) {
+
+            }
+
         };
-        HashSet<EventSendFailureCallback> callbacks = new HashSet<>();
+        HashSet<EventSendCallback> callbacks = new HashSet<>();
         callbacks.add(callback);
 
-        setField(abstractConnection, "eventSendFailureCallbacks", callbacks);
+        setField(abstractConnection, "eventSendCallbacks", callbacks);
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
             result = new ConnectionException();

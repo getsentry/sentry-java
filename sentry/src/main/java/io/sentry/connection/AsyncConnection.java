@@ -95,8 +95,8 @@ public class AsyncConnection implements Connection {
     }
 
     @Override
-    public void addEventSendFailureCallback(EventSendFailureCallback eventSendFailureCallback) {
-        actualConnection.addEventSendFailureCallback(eventSendFailureCallback);
+    public void addEventSendCallback(EventSendCallback eventSendCallback) {
+        actualConnection.addEventSendCallback(eventSendCallback);
     }
 
     /**
