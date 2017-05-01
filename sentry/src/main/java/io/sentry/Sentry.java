@@ -1,9 +1,11 @@
 package io.sentry;
 
+import io.sentry.dsn.Dsn;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.User;
+import io.sentry.util.Util;
 
 /**
  * Sentry provides easy access to a statically stored {@link SentryClient} instance.
@@ -20,6 +22,72 @@ public final class Sentry {
      */
     private Sentry() {
 
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by looking up
+     * a {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     *
+     * @return SentryClient
+     */
+    public static SentryClient init() {
+        return init(null, null);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by looking up
+     * a {@link Dsn} and using the provided {@link SentryClientFactory}.
+     *
+     * @param sentryClientFactory SentryClientFactory to use.
+     * @return SentryClient
+     */
+    public static SentryClient init(SentryClientFactory sentryClientFactory) {
+        return init(null, sentryClientFactory);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return SentryClient
+     */
+    public static SentryClient init(String dsn) {
+        return init(dsn, null);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link Dsn} and {@link SentryClientFactory}.
+     * <p>
+     * Note that the Dsn or SentryClientFactory may be null, at which a best effort attempt
+     * is made to look up or choose the best value(s).
+     *
+     * @param dsn                 Data Source Name of the Sentry server.
+     * @param sentryClientFactory SentryClientFactory to use.
+     * @return SentryClient
+     */
+    public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory) {
+
+        SentryClient sentryClient;
+        if (sentryClientFactory != null) {
+            Dsn realDsn;
+            if (!Util.isNullOrEmpty(dsn)) {
+                realDsn = new Dsn(dsn);
+            } else {
+                // give the factory impl a chance to lookup the DSN
+                realDsn = sentryClientFactory.lookupDsn();
+            }
+
+            // use the factory instance directly
+            sentryClient = sentryClientFactory.createSentryClient(realDsn);
+        } else {
+            // do static factory lookup
+            sentryClient = SentryClientFactory.sentryClient(dsn);
+        }
+
+        setStoredClient(sentryClient);
+        return sentryClient;
     }
 
     /**
@@ -116,6 +184,5 @@ public final class Sentry {
         verifyStoredClient();
         getStoredClient().getContext().clear();
     }
-
 
 }

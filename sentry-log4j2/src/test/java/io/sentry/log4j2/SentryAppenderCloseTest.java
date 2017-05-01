@@ -48,10 +48,9 @@ public class SentryAppenderCloseTest {
     public void testStopIfSentryClientNotProvided() throws Exception {
         final String dsnUri = "protocol://public:private@host/1";
         final SentryAppender sentryAppender = new SentryAppender();
+        sentryAppender.setDsn(dsnUri);
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
         new Expectations() {{
-            Dsn.dsnLookup();
-            result = dsnUri;
             SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
             result = mockSentryClient;
         }};

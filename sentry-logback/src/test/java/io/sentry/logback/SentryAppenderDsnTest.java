@@ -49,21 +49,6 @@ public class SentryAppenderDsnTest {
     }
 
     @Test
-    public void testDsnDetected() throws Exception {
-        final String dsnUri = "protocol://public:private@host/1";
-        new Expectations() {{
-            Dsn.dsnLookup();
-            result = dsnUri;
-            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
-            result = mockSentryClient;
-        }};
-
-        sentryAppender.initSentry();
-
-        assertNoErrorsInStatusManager();
-    }
-
-    @Test
     public void testDsnProvided() throws Exception {
         final String dsnUri = "protocol://public:private@host/2";
         sentryAppender.setDsn(dsnUri);

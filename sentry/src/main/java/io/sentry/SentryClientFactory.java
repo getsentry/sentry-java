@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.dsn.Dsn;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,12 +46,13 @@ public abstract class SentryClientFactory {
     }
 
     /**
-     * Creates an instance of Sentry using the DSN obtain through {@link io.sentry.dsn.Dsn#dsnLookup()}.
+     * Creates an instance of Sentry using the DSN obtained through the
+     * {@link SentryClientFactory#lookupDsn()} method.
      *
      * @return an instance of Sentry.
      */
     public static SentryClient sentryClient() {
-        return sentryClient(Dsn.dsnLookup());
+        return sentryClient((Dsn) null, null);
     }
 
     /**
@@ -60,7 +62,7 @@ public abstract class SentryClientFactory {
      * @return an instance of Sentry.
      */
     public static SentryClient sentryClient(String dsn) {
-        return sentryClient(new Dsn(dsn));
+        return sentryClient(dsn, null);
     }
 
     /**
@@ -76,7 +78,23 @@ public abstract class SentryClientFactory {
     /**
      * Creates an instance of Sentry using the provided DSN and the specified factory.
      *
-     * @param dsn              Data Source Name of the Sentry server.
+     * @param dsn                     Data Source Name of the Sentry server.
+     * @param sentryClientFactoryName name of the SentryClientFactory to use to generate an instance of Sentry.
+     * @return an instance of Sentry.
+     * @throws IllegalStateException when no instance of Sentry has been created.
+     */
+    public static SentryClient sentryClient(String dsn, String sentryClientFactoryName) {
+        if (!Util.isNullOrEmpty(dsn)) {
+            return sentryClient(new Dsn(dsn), sentryClientFactoryName);
+        } else {
+            return sentryClient((Dsn) null, sentryClientFactoryName);
+        }
+    }
+
+    /**
+     * Creates an instance of Sentry using the provided DSN and the specified factory.
+     *
+     * @param dsn                     Data Source Name of the Sentry server.
      * @param sentryClientFactoryName name of the SentryClientFactory to use to generate an instance of Sentry.
      * @return an instance of Sentry.
      * @throws IllegalStateException when no instance of Sentry has been created.
@@ -100,7 +118,12 @@ public abstract class SentryClientFactory {
             logger.debug("Attempting to use '{}' as a SentryClientFactory.", sentryClientFactory);
             triedFactories.add(name);
             try {
-                SentryClient sentryClientInstance = sentryClientFactory.createSentryClient(dsn);
+                // ensure each iteration checks its own lookupDsn method if needed
+                Dsn factoryDsn = dsn;
+                if (factoryDsn == null) {
+                    factoryDsn = sentryClientFactory.lookupDsn();
+                }
+                SentryClient sentryClientInstance = sentryClientFactory.createSentryClient(factoryDsn);
                 logger.debug("The SentryClientFactory '{}' created an instance of Sentry.", sentryClientFactory);
                 return sentryClientInstance;
             } catch (RuntimeException e) {
@@ -116,8 +139,9 @@ public abstract class SentryClientFactory {
                 Class.forName(sentryClientFactoryName);
                 logger.error(
                     "The SentryClientFactory class '{}' was found on your classpath but was not "
-                    + "registered with Sentry, see: "
-                    + "https://github.com/getsentry/sentry-java/#custom-sentryClientFactory", sentryClientFactoryName);
+                        + "registered with Sentry, see: "
+                        + "https://docs.sentry.io/clients/java/config/#custom-sentryfactory",
+                    sentryClientFactoryName);
             } catch (ClassNotFoundException e) {
                 logger.error("The SentryClientFactory class name '{}' was specified but "
                     + "the class was not found on your classpath.", sentryClientFactoryName);
@@ -164,6 +188,13 @@ public abstract class SentryClientFactory {
     }
 
     /**
+     * Attempt to lookup the DSN in the environment.
+     *
+     * @return Data Source Name of the Sentry server.
+     */
+    public abstract Dsn lookupDsn();
+
+    /**
      * Creates an instance of Sentry given a DSN.
      *
      * @param dsn Data Source Name of the Sentry server.
@@ -175,7 +206,7 @@ public abstract class SentryClientFactory {
     @Override
     public String toString() {
         return "SentryClientFactory{"
-                + "name='" + this.getClass().getName() + '\''
-                + '}';
+            + "name='" + this.getClass().getName() + '\''
+            + '}';
     }
 }

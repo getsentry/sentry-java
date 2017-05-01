@@ -48,18 +48,19 @@ Then initialize the Sentry client in your application's main ``onCreate`` method
 
 .. sourcecode:: java
 
-    import io.sentry.android.Sentry;
+    import io.sentry.Sentry;
+    import io.sentry.android.AndroidSentryClientFactory;
 
     public class MainActivity extends Activity {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
-            Context ctx = this.getApplicationContext();
             // Use the Sentry DSN (client key) from the Project Settings page on Sentry
             String sentryDsn = "https://publicKey:secretKey@host:port/1?options";
+            Context ctx = this.getApplicationContext();
 
-            Sentry.init(ctx, sentryDsn);
+            Sentry.init(sentryDsn, new AndroidSentryClientFactory(ctx));
         }
     }
 
@@ -96,4 +97,4 @@ Now you can use ``Sentry`` to capture events anywhere in your application:
     EventBuilder eventBuilder = new EventBuilder()
                                   .withMessage("Exception caught")
                                   .withLevel(Event.Level.ERROR);
-    Sentry.capture(eventBuilder.build());
+    Sentry.capture(eventBuilder);
