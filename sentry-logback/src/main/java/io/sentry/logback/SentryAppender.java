@@ -55,7 +55,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * <p>
      * Might be null in which case the DSN should be detected automatically.
      */
-    protected String dsn;
+    protected Dsn dsn;
     /**
      * Name of the {@link SentryClientFactory} being used.
      * <p>
@@ -245,11 +245,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     protected synchronized void initSentry() {
         try {
-            if (dsn == null) {
-                dsn = Dsn.dsnLookup();
-            }
-
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
+            sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
         } catch (InvalidDsnException e) {
             addError("An exception occurred during the retrieval of the DSN for Sentry", e);
         } catch (Exception e) {
@@ -429,8 +425,17 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return stackTraceElements;
     }
 
+    /**
+     * Sets the DSN field if the provided string is not null or empty,
+     * otherwise leaves the field null so that a DSN lookup will be
+     * done on client creation.
+     *
+     * @param dsn Dsn as a string
+     */
     public void setDsn(String dsn) {
-        this.dsn = dsn;
+        if (!Util.isNullOrEmpty(dsn)) {
+            this.dsn = new Dsn(dsn);
+        }
     }
 
     public void setFactory(String factory) {

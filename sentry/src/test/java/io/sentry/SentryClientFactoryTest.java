@@ -128,16 +128,15 @@ public class SentryClientFactoryTest {
             Dsn.dsnLookup();
             result = dsn;
 
-            sentryClientFactory.createSentryClient((Dsn) any);
+            sentryClientFactory.lookupDsn();
+            result = mockDsn;
+            sentryClientFactory.createSentryClient(mockDsn);
             result = mockSentryClient;
         }};
 
         SentryClient sentryClient = SentryClientFactory.sentryClient();
 
         assertThat(sentryClient, is(mockSentryClient));
-        new Verifications() {{
-            new Dsn(dsn);
-        }};
     }
 
     @Test

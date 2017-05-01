@@ -47,7 +47,7 @@ public class SentryAppender extends AppenderSkeleton {
      * <p>
      * Might be null in which case the DSN should be detected automatically.
      */
-    protected String dsn;
+    protected Dsn dsn;
     /**
      * Name of the {@link SentryClientFactory} being used.
      * <p>
@@ -215,11 +215,7 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected synchronized void initSentry() {
         try {
-            if (dsn == null) {
-                dsn = Dsn.dsnLookup();
-            }
-
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
+            sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
         } catch (InvalidDsnException e) {
             getErrorHandler().error("An exception occurred during the retrieval of the DSN for Sentry", e,
                     ErrorCode.ADDRESS_PARSE_FAILURE);
@@ -331,8 +327,17 @@ public class SentryAppender extends AppenderSkeleton {
         this.sentryClientFactory = factory;
     }
 
+    /**
+     * Sets the DSN field if the provided string is not null or empty,
+     * otherwise leaves the field null so that a DSN lookup will be
+     * done on client creation.
+     *
+     * @param dsn Dsn as a string
+     */
     public void setDsn(String dsn) {
-        this.dsn = dsn;
+        if (!Util.isNullOrEmpty(dsn)) {
+            this.dsn = new Dsn(dsn);
+        }
     }
 
     public void setRelease(String release) {

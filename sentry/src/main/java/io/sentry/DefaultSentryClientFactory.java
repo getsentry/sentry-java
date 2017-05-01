@@ -217,6 +217,11 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     }
 
     @Override
+    public Dsn lookupDsn() {
+        return new Dsn(Dsn.dsnLookup());
+    }
+
+    @Override
     public SentryClient createSentryClient(Dsn dsn) {
         SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
         try {

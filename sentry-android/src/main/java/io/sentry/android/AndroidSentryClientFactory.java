@@ -1,6 +1,10 @@
 package io.sentry.android;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.text.TextUtils;
 import android.util.Log;
 import io.sentry.*;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
@@ -35,16 +39,57 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * @param ctx Android Context.
      */
     public AndroidSentryClientFactory(Context ctx) {
-        this.ctx = ctx;
-
         Log.d(TAG, "Construction of Android Sentry.");
+
+        this.ctx = ctx.getApplicationContext();
     }
 
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
+        if (!checkPermission(Manifest.permission.INTERNET)) {
+            Log.e(TAG, Manifest.permission.INTERNET + " is required to connect to the Sentry server,"
+                + " please add it to your AndroidManifest.xml");
+        }
+
+        Log.d(TAG, "Sentry init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
+
+        String protocol = dsn.getProtocol();
+        if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
+            throw new IllegalArgumentException("Only 'http' or 'https' connections are supported in"
+                + " Sentry Android, but received: " + protocol);
+        }
+
+        if ("false".equalsIgnoreCase(dsn.getOptions().get(DefaultSentryClientFactory.ASYNC_OPTION))) {
+            throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
+                + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your DSN.");
+        }
+
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+        SentryUncaughtExceptionHandler.setup();
         return sentryClient;
+    }
+
+    @Override
+    public Dsn lookupDsn() {
+        String stringDsn = "";
+
+        // attempt to get DSN from AndroidManifest
+        ApplicationInfo appInfo = null;
+        try {
+            PackageManager packageManager = ctx.getPackageManager();
+            appInfo = packageManager.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
+            stringDsn = appInfo.metaData.getString("io.sentry.android.DSN");
+        } catch (PackageManager.NameNotFoundException e) {
+            // skip
+        }
+
+        if (TextUtils.isEmpty(stringDsn)) {
+            throw new NullPointerException("Sentry DSN is not set, you must provide it to"
+                + "Sentry.init or in your Android manifest file.");
+        }
+
+        return new Dsn(stringDsn);
     }
 
     @Override
@@ -64,6 +109,17 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     @Override
     protected ContextManager getContextManager(Dsn dsn) {
         return new SingletonContextManager();
+    }
+
+    /**
+     * Check whether the application has been granted a certain permission.
+     *
+     * @param permission Permission as a string
+     * @return true if permissions is granted
+     */
+    private boolean checkPermission(String permission) {
+        int res = ctx.checkCallingOrSelfPermission(permission);
+        return (res == PackageManager.PERMISSION_GRANTED);
     }
 
 }
