@@ -37,6 +37,7 @@ public class SentryTest extends BaseTest {
         final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
         Event event = new EventBuilder().withMessage(message).withLevel(Event.Level.ERROR).build();
 
+        Sentry.setStoredClient(sentryClient);
         Sentry.capture(event);
 
         new Verifications() {{
@@ -53,6 +54,7 @@ public class SentryTest extends BaseTest {
         EventBuilder eventBuilder = new EventBuilder().withMessage(message).withLevel(Event.Level.ERROR);
         sentryClient.addBuilderHelper(mockEventBuilderHelper);
 
+        Sentry.setStoredClient(sentryClient);
         Sentry.capture(eventBuilder);
 
         new Verifications() {{
@@ -69,6 +71,7 @@ public class SentryTest extends BaseTest {
         final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
         sentryClient.addBuilderHelper(mockEventBuilderHelper);
 
+        Sentry.setStoredClient(sentryClient);
         Sentry.capture(message);
 
         new Verifications() {{
@@ -86,6 +89,7 @@ public class SentryTest extends BaseTest {
         final Exception exception = new Exception(message);
         sentryClient.addBuilderHelper(mockEventBuilderHelper);
 
+        Sentry.setStoredClient(sentryClient);
         Sentry.capture(exception);
 
         new Verifications() {{

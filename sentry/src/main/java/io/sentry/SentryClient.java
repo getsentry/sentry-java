@@ -94,8 +94,6 @@ public class SentryClient {
     public SentryClient(Connection connection, ContextManager contextManager) {
         this.connection = connection;
         this.contextManager = contextManager;
-
-        Sentry.setStoredClient(this);
     }
 
     /**
