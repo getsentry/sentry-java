@@ -1,5 +1,6 @@
 package io.sentry.log4j;
 
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
@@ -235,8 +236,14 @@ public class SentryAppender extends AppenderSkeleton {
         SentryEnvironment.startManagingThread();
         try {
             lazyInit();
-            Event event = buildEvent(loggingEvent);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = buildEvent(loggingEvent);
+
+            SentryClient storedClient = Sentry.getStoredClient();
+            if (storedClient != null) {
+                storedClient.sendEvent(eventBuilder);
+            } else {
+                sentryClient.sendEvent(eventBuilder);
+            }
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Sentry", e,
                     ErrorCode.WRITE_FAILURE);
@@ -246,12 +253,12 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     /**
-     * Builds an Event based on the logging event.
+     * Builds an EventBuilder based on the logging event.
      *
      * @param loggingEvent Log generated.
-     * @return Event containing details provided by the logging system.
+     * @return EventBuilder containing details provided by the logging system.
      */
-    protected Event buildEvent(LoggingEvent loggingEvent) {
+    protected EventBuilder buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":log4j")
             .withTimestamp(new Date(loggingEvent.getTimeStamp()))
@@ -319,8 +326,7 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     public void setFactory(String factory) {

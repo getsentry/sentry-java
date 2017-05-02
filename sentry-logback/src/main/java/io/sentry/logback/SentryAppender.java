@@ -7,6 +7,7 @@ import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
 import io.sentry.config.Lookup;
@@ -220,24 +221,30 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
-        if (SentryEnvironment.isManagingThread()) {
+        if (isNotLoggable(iLoggingEvent) || SentryEnvironment.isManagingThread()) {
             return;
         }
 
         SentryEnvironment.startManagingThread();
         try {
-            if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel)) {
-                return;
-            }
-
             lazyInit();
-            Event event = buildEvent(iLoggingEvent);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = buildEvent(iLoggingEvent);
+
+            SentryClient storedClient = Sentry.getStoredClient();
+            if (storedClient != null) {
+                storedClient.sendEvent(eventBuilder);
+            } else {
+                sentryClient.sendEvent(eventBuilder);
+            }
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Sentry", e);
         } finally {
             SentryEnvironment.stopManagingThread();
         }
+    }
+
+    private boolean isNotLoggable(ILoggingEvent iLoggingEvent) {
+        return minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel);
     }
 
     /**
@@ -254,12 +261,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Builds an Event based on the logging event.
+     * Builds an EventBuilder based on the logging event.
      *
      * @param iLoggingEvent Log generated.
-     * @return Event containing details provided by the logging system.
+     * @return EventBuilder containing details provided by the logging system.
      */
-    protected Event buildEvent(ILoggingEvent iLoggingEvent) {
+    protected EventBuilder buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":logback")
             .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
@@ -324,8 +331,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     /**
