@@ -68,7 +68,6 @@ public final class Sentry {
      * @return SentryClient
      */
     public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory) {
-
         SentryClient sentryClient;
         if (sentryClientFactory != null) {
             Dsn realDsn;
