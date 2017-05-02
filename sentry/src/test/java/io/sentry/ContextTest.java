@@ -15,8 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 @Test(singleThreaded = true)
-public class ContextTest {
-
+public class ContextTest extends BaseTest {
     @Test
     public void testBreadcrumbs() {
         Context context = new Context();
@@ -87,5 +86,4 @@ public class ContextTest {
         context.clearUser();
         assertThat(context.getUser(), equalTo(null));
     }
-
 }

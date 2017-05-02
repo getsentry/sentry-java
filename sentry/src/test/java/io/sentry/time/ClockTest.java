@@ -1,5 +1,6 @@
 package io.sentry.time;
 
+import io.sentry.BaseTest;
 import org.testng.annotations.Test;
 
 import java.util.Date;
@@ -8,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-public class ClockTest {
+public class ClockTest extends BaseTest {
 
     @Test
     public void testFixedClock() {

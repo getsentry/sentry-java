@@ -1,5 +1,6 @@
 package io.sentry.event.interfaces;
 
+import io.sentry.BaseTest;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
@@ -10,7 +11,7 @@ import java.util.Deque;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class SentryExceptionTest {
+public class SentryExceptionTest extends BaseTest {
     @Injectable
     private Throwable mockThrowable = null;
 

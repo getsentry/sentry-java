@@ -1,5 +1,6 @@
 package io.sentry.connection;
 
+import io.sentry.BaseTest;
 import io.sentry.SentryClient;
 import mockit.*;
 import io.sentry.environment.SentryEnvironment;
@@ -10,7 +11,7 @@ import org.testng.annotations.Test;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class AsyncConnectionTest {
+public class AsyncConnectionTest extends BaseTest {
     @Tested
     private AsyncConnection asyncConnection = null;
     @Injectable

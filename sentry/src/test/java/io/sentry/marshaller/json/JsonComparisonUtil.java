@@ -3,11 +3,12 @@ package io.sentry.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.sentry.BaseTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-public final class JsonComparisonUtil {
+public final class JsonComparisonUtil extends BaseTest {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private JsonComparisonUtil() {

@@ -1,12 +1,13 @@
 package io.sentry.event.interfaces;
 
 
+import io.sentry.BaseTest;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class StackTraceInterfaceTest {
+public class StackTraceInterfaceTest extends BaseTest {
     @Test
     public void testCalculationCommonStackFrames() throws Exception {
         Exception exception = new RuntimeException("exception1");

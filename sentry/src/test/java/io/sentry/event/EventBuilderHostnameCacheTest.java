@@ -1,5 +1,6 @@
 package io.sentry.event;
 
+import io.sentry.BaseTest;
 import mockit.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -13,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @Test(singleThreaded = true)
-public class EventBuilderHostnameCacheTest {
+public class EventBuilderHostnameCacheTest extends BaseTest {
     @Injectable
     private InetAddress mockLocalHost = null;
     @Injectable("serverName")

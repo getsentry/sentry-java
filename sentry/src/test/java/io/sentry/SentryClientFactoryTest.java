@@ -16,7 +16,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class SentryClientFactoryTest {
+public class SentryClientFactoryTest extends BaseTest {
     @Tested
     private SentryClientFactory sentryClientFactory = null;
     @Injectable

@@ -3,6 +3,7 @@ package io.sentry.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.sentry.BaseTest;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import mockit.*;
@@ -25,7 +26,7 @@ import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class JsonMarshallerTest {
+public class JsonMarshallerTest extends BaseTest {
     @Tested
     private JsonMarshaller jsonMarshaller = null;
     @Injectable

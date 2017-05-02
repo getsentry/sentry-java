@@ -1,5 +1,6 @@
 package io.sentry.helper;
 
+import io.sentry.BaseTest;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.helper.BasicRemoteAddressResolver;
 import io.sentry.event.helper.ForwardedAddressResolver;
@@ -12,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class RemoteAddressResolverTest {
+public class RemoteAddressResolverTest extends BaseTest {
 
     @Mocked
     private HttpServletRequest request;
