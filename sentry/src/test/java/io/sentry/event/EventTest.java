@@ -1,5 +1,6 @@
 package io.sentry.event;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import org.hamcrest.Matchers;
@@ -14,7 +15,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 
-public class EventTest {
+public class EventTest extends BaseTest {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void ensureEventIdCantBeNull() throws Exception {
         new Event(null);

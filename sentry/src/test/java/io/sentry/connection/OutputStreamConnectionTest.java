@@ -1,5 +1,6 @@
 package io.sentry.connection;
 
+import io.sentry.BaseTest;
 import mockit.*;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
@@ -20,7 +21,7 @@ import java.net.URL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class OutputStreamConnectionTest {
+public class OutputStreamConnectionTest extends BaseTest {
     @Tested
     private OutputStreamConnection outputStreamConnection = null;
     @Injectable

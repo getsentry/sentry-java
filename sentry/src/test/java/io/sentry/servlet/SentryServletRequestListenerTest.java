@@ -1,5 +1,6 @@
 package io.sentry.servlet;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -15,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-public class SentryServletRequestListenerTest {
+public class SentryServletRequestListenerTest extends BaseTest {
     @Tested
     private SentryServletRequestListener sentryServletRequestListener = null;
     @Injectable

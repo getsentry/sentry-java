@@ -1,5 +1,6 @@
 package io.sentry.connection;
 
+import io.sentry.BaseTest;
 import mockit.*;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
@@ -24,7 +25,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.testng.Assert.fail;
 
-public class HttpConnectionTest {
+public class HttpConnectionTest extends BaseTest {
     @Injectable
     private final String publicKey = "6cc48e8f-380c-44cc-986b-f566247a2af5";
     @Injectable

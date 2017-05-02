@@ -1,5 +1,6 @@
 package io.sentry.event.interfaces;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import org.testng.annotations.BeforeMethod;
@@ -13,7 +14,7 @@ import java.util.Collections;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class HttpInterfaceTest {
+public class HttpInterfaceTest extends BaseTest {
     @Injectable
     private HttpServletRequest mockHttpServletRequest = null;
     @Injectable

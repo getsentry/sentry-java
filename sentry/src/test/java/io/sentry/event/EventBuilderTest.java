@@ -1,5 +1,6 @@
 package io.sentry.event;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import io.sentry.event.interfaces.SentryInterface;
@@ -16,7 +17,7 @@ import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class EventBuilderTest {
+public class EventBuilderTest extends BaseTest {
     @Injectable
     private InetAddress mockLocalHost = null;
 

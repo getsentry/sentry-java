@@ -1,5 +1,6 @@
 package io.sentry.event.interfaces;
 
+import io.sentry.BaseTest;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
@@ -8,7 +9,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class MessageInterfaceTest {
+public class MessageInterfaceTest extends BaseTest {
 
     @Test
     public void testStandaloneMessage() throws Exception {

@@ -1,5 +1,6 @@
 package io.sentry.jul;
 
+import io.sentry.BaseTest;
 import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.*;
@@ -21,7 +22,7 @@ import java.util.logging.LogRecord;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class SentryHandlerEventBuildingTest {
+public class SentryHandlerEventBuildingTest extends BaseTest {
     @Tested
     private SentryHandler sentryHandler = null;
     @Injectable

@@ -1,5 +1,6 @@
 package io.sentry.dsn;
 
+import io.sentry.BaseTest;
 import io.sentry.config.JndiLookup;
 import mockit.Expectations;
 import mockit.Mocked;
@@ -13,7 +14,7 @@ import java.net.URI;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class DsnTest {
+public class DsnTest extends BaseTest {
     @Mocked
     private Context mockContext = null;
 

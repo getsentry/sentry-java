@@ -1,5 +1,6 @@
 package io.sentry.marshaller;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
@@ -7,7 +8,7 @@ import org.testng.annotations.Test;
 
 import java.io.OutputStream;
 
-public class UncloseableOutputStreamTest {
+public class UncloseableOutputStreamTest extends BaseTest {
     @Tested
     private Marshaller.UncloseableOutputStream uncloseableOutputStream = null;
     @Injectable

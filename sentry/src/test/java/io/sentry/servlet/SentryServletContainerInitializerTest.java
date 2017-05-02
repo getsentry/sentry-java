@@ -1,5 +1,6 @@
 package io.sentry.servlet;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
@@ -13,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 
-public class SentryServletContainerInitializerTest {
+public class SentryServletContainerInitializerTest extends BaseTest {
     @Tested
     private SentryServletContainerInitializer sentryServletContainerInitializer = null;
 

@@ -1,5 +1,6 @@
 package io.sentry.event.helper;
 
+import io.sentry.BaseTest;
 import mockit.*;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.HttpInterface;
@@ -11,7 +12,7 @@ import org.testng.annotations.Test;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
-public class HttpEventBuilderHelperTest {
+public class HttpEventBuilderHelperTest extends BaseTest {
     @Tested
     private HttpEventBuilderHelper httpEventBuilderHelper = null;
     @Injectable

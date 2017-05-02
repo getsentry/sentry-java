@@ -1,5 +1,6 @@
 package io.sentry.connection;
 
+import io.sentry.BaseTest;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import org.testng.annotations.BeforeMethod;
@@ -11,7 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 
-public class RandomEventSamplerTest {
+public class RandomEventSamplerTest extends BaseTest {
     private Event event = new EventBuilder().build();
 
     private void testRandomEventSampler(double sampleRate, double fakeRandom, boolean expected) {

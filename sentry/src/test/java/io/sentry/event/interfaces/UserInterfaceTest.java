@@ -1,11 +1,12 @@
 package io.sentry.event.interfaces;
 
+import io.sentry.BaseTest;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class UserInterfaceTest {
+public class UserInterfaceTest extends BaseTest {
     @Test
     public void testListParameters() throws Exception {
         final String id = "a8750a8d-1f67-41d3-a83d-0f04c08a2760";
