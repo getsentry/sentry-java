@@ -14,9 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -60,7 +58,13 @@ public class SentryClient {
      * <p>
      * Might be empty in which case no tags are sent.
      */
-    protected final Map<String, String> tags = new ConcurrentHashMap<>();
+    protected Map<String, String> tags = new HashMap<>();
+    /**
+     * Extras to use as tags, where applicable.
+     * <p>
+     * For example: the SLF4J MDC system.
+     */
+    protected Set<String> extraTags = new HashSet<>();
     /**
      * The underlying {@link Connection} to use for sending events to Sentry.
      */
@@ -146,6 +150,10 @@ public class SentryClient {
         for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
+
+        // Note that extraTags are missing here because they only exist to be used by
+        // other systems (before this method is even called). For example: the logging
+        // integrations check the SLF4J MDC system for extras.
 
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
@@ -238,6 +246,10 @@ public class SentryClient {
         return Collections.unmodifiableMap(tags);
     }
 
+    public Set<String> getExtraTags() {
+        return Collections.unmodifiableSet(extraTags);
+    }
+
     public void setRelease(String release) {
         this.release = release;
     }
@@ -270,8 +282,35 @@ public class SentryClient {
      * @param tags Map of tags
      */
     public void setTags(Map<String, String> tags) {
-        this.tags.clear();
-        this.tags.putAll(tags);
+        if (tags == null) {
+            this.tags = new HashMap<>();
+        } else {
+            this.tags = tags;
+        }
+    }
+
+    /**
+     * Set the extras to use as tags on all future {@link Event}s, where applicable.
+     * For example: the SLF4J MDC system.
+     *
+     * @param extraTags Set of extras
+     */
+    public void setExtraTags(Set<String> extraTags) {
+        if (extraTags == null) {
+            this.extraTags = new HashSet<>();
+        } else {
+            this.extraTags = extraTags;
+        }
+    }
+
+    /**
+     * Add an extra to use as tags on all future {@link Event}s, where applicable.
+     * For example: the SLF4J MDC system.
+     *
+     * @param extraName Extra name
+     */
+    public void addExtraTag(String extraName) {
+        this.extraTags.add(extraName);
     }
 
     /**
