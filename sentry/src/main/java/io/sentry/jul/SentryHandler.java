@@ -260,20 +260,24 @@ public class SentryHandler extends Handler {
 
         SentryEnvironment.startManagingThread();
         try {
-            lazyInit();
+            SentryClient client = getSentryClient();
             EventBuilder eventBuilder = buildEvent(record);
-
-            SentryClient storedClient = Sentry.getStoredClient();
-            if (storedClient != null) {
-                storedClient.sendEvent(eventBuilder);
-            } else {
-                sentryClient.sendEvent(eventBuilder);
-            }
+            client.sendEvent(eventBuilder);
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Sentry", e, ErrorManager.WRITE_FAILURE);
         } finally {
             SentryEnvironment.stopManagingThread();
         }
+    }
+
+    private SentryClient getSentryClient() {
+        SentryClient storedClient = Sentry.getStoredClient();
+        if (storedClient != null) {
+            return storedClient;
+        }
+
+        lazyInit();
+        return sentryClient;
     }
 
     /**

@@ -235,21 +235,25 @@ public class SentryAppender extends AppenderSkeleton {
 
         SentryEnvironment.startManagingThread();
         try {
-            lazyInit();
+            SentryClient client = getSentryClient();
             EventBuilder eventBuilder = buildEvent(loggingEvent);
-
-            SentryClient storedClient = Sentry.getStoredClient();
-            if (storedClient != null) {
-                storedClient.sendEvent(eventBuilder);
-            } else {
-                sentryClient.sendEvent(eventBuilder);
-            }
+            client.sendEvent(eventBuilder);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Sentry", e,
                     ErrorCode.WRITE_FAILURE);
         } finally {
             SentryEnvironment.stopManagingThread();
         }
+    }
+
+    private SentryClient getSentryClient() {
+        SentryClient storedClient = Sentry.getStoredClient();
+        if (storedClient != null) {
+            return storedClient;
+        }
+
+        lazyInit();
+        return sentryClient;
     }
 
     /**

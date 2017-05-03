@@ -301,20 +301,24 @@ public class SentryAppender extends AbstractAppender {
 
         SentryEnvironment.startManagingThread();
         try {
-            lazyInit();
+            SentryClient client = getSentryClient();
             EventBuilder eventBuilder = buildEvent(logEvent);
-
-            SentryClient storedClient = Sentry.getStoredClient();
-            if (storedClient != null) {
-                storedClient.sendEvent(eventBuilder);
-            } else {
-                sentryClient.sendEvent(eventBuilder);
-            }
+            client.sendEvent(eventBuilder);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Sentry", logEvent, e);
         } finally {
             SentryEnvironment.stopManagingThread();
         }
+    }
+
+    private SentryClient getSentryClient() {
+        SentryClient storedClient = Sentry.getStoredClient();
+        if (storedClient != null) {
+            return storedClient;
+        }
+
+        lazyInit();
+        return sentryClient;
     }
 
     /**
