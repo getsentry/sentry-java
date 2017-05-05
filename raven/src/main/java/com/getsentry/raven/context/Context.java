@@ -3,6 +3,8 @@ package com.getsentry.raven.context;
 import com.getsentry.raven.event.Breadcrumb;
 import com.getsentry.raven.event.User;
 import com.getsentry.raven.util.CircularFifoQueue;
+
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -11,7 +13,7 @@ import java.util.UUID;
  * so that data may be collected in different parts of an application and
  * then sent together when an exception occurs.
  */
-public class Context {
+public class Context implements Serializable {
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
