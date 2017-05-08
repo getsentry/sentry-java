@@ -17,7 +17,7 @@ public class Dsn {
     /**
      * Default DSN to use when auto detection fails.
      */
-    public static final String DEFAULT_DSN = "noop://user:password@localhost:0/0";
+    public static final String DEFAULT_DSN = "noop://localhost";
     private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
     private String secretKey;
     private String publicKey;
@@ -192,14 +192,20 @@ public class Dsn {
         if (host == null) {
             missingElements.add("host");
         }
-        if (publicKey == null) {
-            missingElements.add("public key");
-        }
-        if (secretKey == null) {
-            missingElements.add("secret key");
-        }
-        if (projectId == null || projectId.isEmpty()) {
-            missingElements.add("project ID");
+
+        if (protocol != null
+            && !protocol.equalsIgnoreCase("noop")
+            && !protocol.equalsIgnoreCase("out")) {
+
+            if (publicKey == null) {
+                missingElements.add("public key");
+            }
+            if (secretKey == null) {
+                missingElements.add("secret key");
+            }
+            if (projectId == null || projectId.isEmpty()) {
+                missingElements.add("project ID");
+            }
         }
 
         if (!missingElements.isEmpty()) {
