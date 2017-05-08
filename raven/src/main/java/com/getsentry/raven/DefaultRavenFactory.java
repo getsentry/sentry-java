@@ -219,7 +219,7 @@ public class DefaultRavenFactory extends RavenFactory {
         Connection connection;
 
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
-            logger.info("Using an HTTP connection to Sentry.");
+            logger.info("Using an {} connection to Sentry.", protocol.toUpperCase());
             connection = createHttpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("out")) {
             logger.info("Using StdOut to send events.");
