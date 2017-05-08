@@ -3,6 +3,8 @@ package io.sentry.context;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.User;
 import io.sentry.util.CircularFifoQueue;
+
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -11,7 +13,7 @@ import java.util.UUID;
  * so that data may be collected in different parts of an application and
  * then sent together when an exception occurs.
  */
-public class Context {
+public class Context implements Serializable {
     /**
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
