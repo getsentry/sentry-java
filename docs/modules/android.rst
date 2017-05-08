@@ -6,7 +6,7 @@ Features
 
 The Raven Android SDK is built on top of the main Java SDK and supports all of the same
 features, `configuration options <https://docs.sentry.io/clients/java/config/>`_, and more.
-Adding version ``8.0.2`` of the Android SDK to a sample application that doesn't even use
+Adding version ``8.0.3`` of the Android SDK to a sample application that doesn't even use
 Proguard only increased the release ``.apk`` size by approximately 200KB.
 
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
@@ -29,9 +29,9 @@ Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
 .. sourcecode:: groovy
 
-    compile 'com.getsentry.raven:raven-android:8.0.2'
+    compile 'com.getsentry.raven:raven-android:8.0.3'
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C8.0.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Ccom.getsentry.raven%7Craven-android%7C8.0.3%7Cjar>`_.
 
 Usage
 -----

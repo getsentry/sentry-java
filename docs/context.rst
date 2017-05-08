@@ -17,7 +17,7 @@ clear the thread's context after each servlet request finishes.
 Raven defaults to the ``SingletonContextManager`` on Android, which maintains a single
 context instance for all threads for the lifetime of the application.
 
-As of version ``8.0.2`` to override the ``ContextManager`` you will need to override
+As of version ``8.0.3`` to override the ``ContextManager`` you will need to override
 the ``getContextManager`` method in the ``DefaultRavenFactory``. A simpler API will likely
 be provided in the future.
 
