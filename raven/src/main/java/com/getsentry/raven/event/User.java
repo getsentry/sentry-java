@@ -1,12 +1,14 @@
 package com.getsentry.raven.event;
 
 
+import java.io.Serializable;
+
 /**
  * An object that represents a user. Typically used to represent
  * the user in the current context, for whatever a context means
  * in your application (typically a web request).
  */
-public class User {
+public class User implements Serializable {
 
     private final String id;
     private final String username;
