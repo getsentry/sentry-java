@@ -311,8 +311,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
         }
 
+        Set<String> clientExtraTags = sentryClient.getExtraTags();
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
-            if (extraTags.contains(mdcEntry.getKey())) {
+            if (extraTags.contains(mdcEntry.getKey()) || clientExtraTags.contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
             } else {
                 eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());

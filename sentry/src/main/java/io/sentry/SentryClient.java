@@ -14,9 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -60,7 +58,14 @@ public class SentryClient {
      * <p>
      * Might be empty in which case no tags are sent.
      */
-    protected final Map<String, String> tags = new ConcurrentHashMap<>();
+    protected Map<String, String> tags = new HashMap<>();
+    /**
+     * Extras to extract and use as tags, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
+     */
+    protected Set<String> extraTags = new HashSet<>();
     /**
      * The underlying {@link Connection} to use for sending events to Sentry.
      */
@@ -238,6 +243,10 @@ public class SentryClient {
         return Collections.unmodifiableMap(tags);
     }
 
+    public Set<String> getExtraTags() {
+        return Collections.unmodifiableSet(extraTags);
+    }
+
     public void setRelease(String release) {
         this.release = release;
     }
@@ -270,8 +279,39 @@ public class SentryClient {
      * @param tags Map of tags
      */
     public void setTags(Map<String, String> tags) {
-        this.tags.clear();
-        this.tags.putAll(tags);
+        if (tags == null) {
+            this.tags = new HashMap<>();
+        } else {
+            this.tags = tags;
+        }
+    }
+
+    /**
+     * Set the extras to extract and send as tags on all future {@link Event}s, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
+     *
+     * @param extraTags Set of extras
+     */
+    public void setExtraTags(Set<String> extraTags) {
+        if (extraTags == null) {
+            this.extraTags = new HashSet<>();
+        } else {
+            this.extraTags = extraTags;
+        }
+    }
+
+    /**
+     * Add an extra to extract and send as tags on all future {@link Event}s, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
+     *
+     * @param extraName Extra name
+     */
+    public void addExtraTag(String extraName) {
+        this.extraTags.add(extraName);
     }
 
     /**
@@ -292,6 +332,7 @@ public class SentryClient {
             + ", environment='" + environment + '\''
             + ", serverName='" + serverName + '\''
             + ", tags=" + tags
+            + ", extraTags=" + extraTags
             + ", connection=" + connection
             + ", builderHelpers=" + builderHelpers
             + ", contextManager=" + contextManager

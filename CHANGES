@@ -14,7 +14,8 @@ Version 1.0.0
 - Add ``dist`` field to Event.
 - Compressed JSON payloads are no longer base64 encoded.
 - Rename ``EventSendFailureCallback`` to ``EventSendCallback``, add ``onSuccess`` callback.
-- Add way to set release, environment, serverName, tags on ``SentryClient``.
+- Add way to set release, dist, environment, serverName, tags, and extraTags on a ``SentryClient``.
+- Add way to set release, dist, environment, serverName, tags, and extraTags via the DSN.
 
 Version 8.0.2
 -------------

@@ -338,9 +338,10 @@ public class SentryHandler extends Handler {
         }
 
         Map<String, String> mdc = MDC.getMDCAdapter().getCopyOfContextMap();
+        Set<String> clientExtraTags = sentryClient.getExtraTags();
         if (mdc != null) {
             for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {
-                if (extraTags.contains(mdcEntry.getKey())) {
+                if (extraTags.contains(mdcEntry.getKey()) || clientExtraTags.contains(mdcEntry.getKey())) {
                     eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
                 } else {
                     eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());

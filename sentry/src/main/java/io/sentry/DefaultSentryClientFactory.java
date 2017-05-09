@@ -6,6 +6,7 @@ import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
 import io.sentry.dsn.Dsn;
+import io.sentry.event.Event;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.helper.HttpEventBuilderHelper;
 import io.sentry.event.interfaces.*;
@@ -180,6 +181,30 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not.
      */
     public static final int HTTP_PROXY_PORT_DEFAULT = 80;
+    /**
+     * Option to set the version of the application.
+     */
+    public static final String RELEASE_OPTION = "release";
+    /**
+     * Option to set the distribution of the application.
+     */
+    public static final String DIST_OPTION = "dist";
+    /**
+     * Option to set the environment of the application.
+     */
+    public static final String ENVIRONMENT_OPTION = "environment";
+    /**
+     * Option to set the server name.
+     */
+    public static final String SERVERNAME_OPTION = "servername";
+    /**
+     * Option to set additional tags to be sent to Sentry.
+     */
+    public static final String TAGS_OPTION = "tags";
+    /**
+     * Option to set extras to extract and send as tags, where applicable.
+     */
+    public static final String EXTRA_TAGS_OPTION = "extratags";
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentryClientFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
@@ -205,6 +230,51 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                 + " or provides an unsupported version.");
         }
         sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
+        return configureSentryClient(sentryClient, dsn);
+    }
+
+    /**
+     * Configures a {@link SentryClient} instance after it has been constructed.
+     *
+     * @param sentryClient The {@link SentryClient} to configure.
+     * @param dsn Data Source Name of the Sentry server to use.
+     * @return The same {@link SentryClient} instance, after configuration.
+     */
+    protected SentryClient configureSentryClient(SentryClient sentryClient, Dsn dsn) {
+        String release = getRelease(dsn);
+        if (release != null) {
+            sentryClient.setRelease(release);
+        }
+
+        String dist = getDist(dsn);
+        if (dist != null) {
+            sentryClient.setDist(dist);
+        }
+
+        String environment = getEnvironment(dsn);
+        if (environment != null) {
+            sentryClient.setEnvironment(environment);
+        }
+
+        String serverName = getServerName(dsn);
+        if (serverName != null) {
+            sentryClient.setServerName(serverName);
+        }
+
+        Map<String, String> tags = getTags(dsn);
+        if (!tags.isEmpty()) {
+            for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
+                sentryClient.addTag(tagEntry.getKey(), tagEntry.getValue());
+            }
+        }
+
+        Set<String> extraTags = getExtraTags(dsn);
+        if (!extraTags.isEmpty()) {
+            for (String extraTag : extraTags) {
+                sentryClient.addExtraTag(extraTag);
+            }
+        }
+
         return sentryClient;
     }
 
@@ -585,6 +655,73 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected String getProxyPass(Dsn dsn) {
         return dsn.getOptions().get(HTTP_PROXY_PASS_OPTION);
+    }
+
+    /**
+     * Application version to send with {@link io.sentry.event.Event}s that don't already
+     * have a value for the field set.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Application version to send with {@link io.sentry.event.Event}s.
+     */
+    protected String getRelease(Dsn dsn) {
+        return dsn.getOptions().get(RELEASE_OPTION);
+    }
+
+    /**
+     * Application distribution to send with {@link io.sentry.event.Event}s that don't already
+     * have a value for the field set.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Application version to send with {@link io.sentry.event.Event}s.
+     */
+    protected String getDist(Dsn dsn) {
+        return dsn.getOptions().get(DIST_OPTION);
+    }
+
+    /**
+     * Application environmentribution to send with {@link io.sentry.event.Event}s that don't already
+     * have a value for the field set.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Application version to send with {@link io.sentry.event.Event}s.
+     */
+    protected String getEnvironment(Dsn dsn) {
+        return dsn.getOptions().get(ENVIRONMENT_OPTION);
+    }
+
+    /**
+     * Server name to send with {@link io.sentry.event.Event}s that don't already
+     * have a value for the field set.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Server name to send with {@link io.sentry.event.Event}s.
+     */
+    protected String getServerName(Dsn dsn) {
+        return dsn.getOptions().get(SERVERNAME_OPTION);
+    }
+
+    /**
+     * Additional tags to send with {@link io.sentry.event.Event}s.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Additional tags to send with {@link io.sentry.event.Event}s.
+     */
+    protected Map<String, String> getTags(Dsn dsn) {
+        return Util.parseTags(dsn.getOptions().get(TAGS_OPTION));
+    }
+
+    /**
+     * Extras to extract and send as tags on {@link io.sentry.event.Event}s, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #getExtraTags(Dsn)} set will be extracted and set as tags on the {@link Event}.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Extras to use as tags on {@link io.sentry.event.Event}s, where applicable.
+     */
+    protected Set<String> getExtraTags(Dsn dsn) {
+        return Util.parseExtraTags(dsn.getOptions().get(EXTRA_TAGS_OPTION));
     }
 
     /**

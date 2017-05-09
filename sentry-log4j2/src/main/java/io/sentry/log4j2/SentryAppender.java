@@ -385,9 +385,11 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withExtra(LOG4J_NDC, event.getContextStack().asList());
         }
 
+        Set<String> clientExtraTags = sentryClient.getExtraTags();
         if (event.getContextMap() != null) {
             for (Map.Entry<String, String> contextEntry : event.getContextMap().entrySet()) {
-                if (extraTags.contains(contextEntry.getKey())) {
+                if (extraTags.contains(contextEntry.getKey())
+                    || clientExtraTags.contains(contextEntry.getKey())) {
                     eventBuilder.withTag(contextEntry.getKey(), contextEntry.getValue());
                 } else {
                     eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
