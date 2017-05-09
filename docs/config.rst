@@ -84,7 +84,7 @@ useful inside shared application containers),
 
 ::
 
-    http://public:private@host:port/1?http.proxy.host=proxy.example.com&sentry.http.proxy.port=8080
+    http://public:private@host:port/1?http.proxy.host=proxy.example.com&http.proxy.port=8080
 
 Options
 -------
@@ -99,6 +99,75 @@ DSN:
 Some options do not require a value, just being declared signifies that the
 option is enabled.
 
+
+Release
+~~~~~~~
+
+To set the application version that will be sent with each event, use the
+``release`` option:
+
+::
+
+    http://public:private@host:port/1?release=1.0.0
+
+
+Distribution
+````````````
+
+To set the application distribution that will be sent with each event, use the
+``dist`` option:
+
+::
+
+    http://public:private@host:port/1?release=1.0.0&dist=x86
+
+Note that the distribution is only useful (and used) if the ``release`` is also
+set.
+
+Environment
+~~~~~~~~~~~
+
+To set the application environment that will be sent with each event, use the
+``environment`` option:
+
+::
+
+    http://public:private@host:port/1?environment=staging
+
+Server Name
+~~~~~~~~~~~
+
+To set the server name that will be sent with each event, use the
+``servername`` option:
+
+::
+
+    http://public:private@host:port/1?servername=host1
+
+Tags
+~~~~
+
+To set tags that will be sent with each event, use the ``tags`` option with
+comma separated pairs of keys and values that are joined by a colon:
+
+::
+
+    http://public:private@host:port/1?tags=tag1:value1,tag2:value2
+
+Extra Tags
+``````````
+
+To set extras that are extracted and used as additional tags, use the
+``extratags`` option with comma separated key names.
+
+::
+
+    http://public:private@host:port/1?extratags=foo,bar
+
+Note that how these extra tags are used depends on which integration you are
+using. For example: when using a logging integration any SLF4J MDC keys that
+are in the extra tags set will be extracted and set as tags on events.
+
 Async Connection
 ~~~~~~~~~~~~~~~~
 
@@ -106,7 +175,7 @@ In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, an asynchronous connection
 is set up, using a low priority thread pool to submit events to Sentry.
 
-To disable the async mode, add ``sentry.async=false`` to the DSN:
+To disable the async mode, add async=false`` to the DSN:
 
 ::
 
@@ -118,7 +187,7 @@ Graceful Shutdown (Advanced)
 In order to shutdown the asynchronous connection gracefully, a ``ShutdownHook``
 is created. By default, the asynchronous connection is given 1 second
 to shutdown gracefully, but this can be adjusted via
-``sentry.async.shutdowntimeout`` (represented in milliseconds):
+async.shutdowntimeout`` (represented in milliseconds):
 
 ::
 
@@ -137,7 +206,7 @@ To avoid this behaviour, it is possible to disable the graceful shutdown.
 This might lead to some log entries being lost if the log application
 doesn't shut down the ``SentryClient`` instance nicely.
 
-The option to do so is ``sentry.async.gracefulshutdown``:
+The option to do so is async.gracefulshutdown``:
 
 ::
 
@@ -152,7 +221,7 @@ never sent to the Sentry server.
 Depending on the environment (if the memory is sparse) it is important to be
 able to control the size of that queue to avoid memory issues.
 
-It is possible to set a maximum with the option ``sentry.async.queuesize``:
+It is possible to set a maximum with the option async.queuesize``:
 
 ::
 
@@ -172,7 +241,7 @@ By default the thread pool used by the async connection contains one thread per
 processor available to the JVM.
 
 It's possible to manually set the number of threads (for example if you want
-only one thread) with the option ``sentry.async.threads``:
+only one thread) with the option async.threads``:
 
 ::
 
@@ -186,7 +255,7 @@ running smoothly, so the threads have a
 `minimal priority <http://docs.oracle.com/javase/6/docs/api/java/lang/Thread.html#MIN_PRIORITY>`_.
 
 It is possible to customise this value to increase the priority of those threads
-with the option ``sentry.async.priority``:
+with the option async.priority``:
 
 ::
 
@@ -196,7 +265,7 @@ Buffering Events to Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sentry can be configured to write events to a specified directory on disk
-anytime communication with the Sentry server fails with the ``sentry.buffer.dir``
+anytime communication with the Sentry server fails with the buffer.dir``
 option. If the directory doesn't exist, Sentry will attempt to create it
 on startup and may therefore need write permission on the parent directory.
 Sentry always requires write permission on the buffer directory itself.
@@ -206,7 +275,7 @@ Sentry always requires write permission on the buffer directory itself.
     http://public:private@host:port/1?buffer.dir=sentry-events
 
 The maximum number of events that will be stored on disk defaults to 50,
-but can also be configured with the option ``sentry.buffer.size``:
+but can also be configured with the option buffer.size``:
 
 ::
 
@@ -215,7 +284,7 @@ but can also be configured with the option ``sentry.buffer.size``:
 If a buffer directory is provided, a background thread will periodically
 attempt to re-send the events that are found on disk. By default it will
 attempt to send events every 60 seconds. You can change this with the
-``sentry.buffer.flushtime`` option (in milliseconds):
+buffer.flushtime`` option (in milliseconds):
 
 ::
 
@@ -227,7 +296,7 @@ Graceful Shutdown (Advanced)
 In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
 is created. By default, the buffer flushing thread is given 1 second
 to shutdown gracefully, but this can be adjusted via
-``sentry.buffer.shutdowntimeout`` (represented in milliseconds):
+buffer.shutdowntimeout`` (represented in milliseconds):
 
 ::
 
@@ -243,7 +312,7 @@ An example would be in a JEE environment where the application using Sentry
 could be deployed and undeployed regularly.
 
 To avoid this behaviour, it is possible to disable the graceful shutdown
-by setting the ``sentry.buffer.gracefulshutdown`` option:
+by setting the buffer.gracefulshutdown`` option:
 
 ::
 
@@ -252,7 +321,7 @@ by setting the ``sentry.buffer.gracefulshutdown`` option:
 Event Sampling
 ~~~~~~~~~~~~~~
 
-Sentry can be configured to sample events with the ``sentry.sample.rate`` option:
+Sentry can be configured to sample events with the sample.rate`` option:
 
 ::
 
@@ -272,7 +341,7 @@ is visible in the Sentry web interface where only the "in application" frames ar
 displayed by default.
 
 You can configure which package prefixes your application uses with the
-``sentry.stacktrace.app.packages`` option, which takes a comma separated list.
+stacktrace.app.packages`` option, which takes a comma separated list.
 
 ::
 
@@ -303,7 +372,7 @@ StackTrace is printed, the result looks like this:
 Some frames are replaced by the ``... N more`` line as they are the same frames
 as in the enclosing exception.
 
-To enable a similar behaviour in Sentry use the ``sentry.stacktrace.hidecommon`` option.
+To enable a similar behaviour in Sentry use the stacktrace.hidecommon`` option.
 
 ::
 
@@ -321,7 +390,7 @@ limited connection, Sentry hosted on an external network), it can be useful
 to compress the data beforehand or not.
 
 It's possible to manually enable/disable the compression with the option
-``sentry.compression``
+compression``
 
 ::
 
@@ -331,7 +400,7 @@ Max Message Size
 ~~~~~~~~~~~~~~~~
 
 By default only the first 1000 characters of a message will be sent to
-the server. This can be changed with the ``sentry.maxmessagelength`` option.
+the server. This can be changed with the maxmessagelength`` option.
 
 ::
 
@@ -343,7 +412,7 @@ Timeout (Advanced)
 A timeout is set to avoid blocking Sentry threads because establishing a
 connection is taking too long.
 
-It's possible to manually set the timeout length with ``sentry.timeout``
+It's possible to manually set the timeout length with timeout``
 (in milliseconds):
 
 ::

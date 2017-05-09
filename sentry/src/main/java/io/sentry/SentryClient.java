@@ -60,9 +60,10 @@ public class SentryClient {
      */
     protected Map<String, String> tags = new HashMap<>();
     /**
-     * Extras to use as tags, where applicable.
+     * Extras to extract and use as tags, where applicable.
      * <p>
-     * For example: the SLF4J MDC system.
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
      */
     protected Set<String> extraTags = new HashSet<>();
     /**
@@ -150,10 +151,6 @@ public class SentryClient {
         for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
-
-        // Note that extraTags are missing here because they only exist to be used by
-        // other systems (before this method is even called). For example: the logging
-        // integrations check the SLF4J MDC system for extras.
 
         runBuilderHelpers(eventBuilder);
         Event event = eventBuilder.build();
@@ -290,8 +287,10 @@ public class SentryClient {
     }
 
     /**
-     * Set the extras to use as tags on all future {@link Event}s, where applicable.
-     * For example: the SLF4J MDC system.
+     * Set the extras to extract and send as tags on all future {@link Event}s, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
      *
      * @param extraTags Set of extras
      */
@@ -304,8 +303,10 @@ public class SentryClient {
     }
 
     /**
-     * Add an extra to use as tags on all future {@link Event}s, where applicable.
-     * For example: the SLF4J MDC system.
+     * Add an extra to extract and send as tags on all future {@link Event}s, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
      *
      * @param extraName Extra name
      */
@@ -331,6 +332,7 @@ public class SentryClient {
             + ", environment='" + environment + '\''
             + ", serverName='" + serverName + '\''
             + ", tags=" + tags
+            + ", extraTags=" + extraTags
             + ", connection=" + connection
             + ", builderHelpers=" + builderHelpers
             + ", contextManager=" + contextManager

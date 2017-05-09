@@ -6,6 +6,7 @@ import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
 import io.sentry.dsn.Dsn;
+import io.sentry.event.Event;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.helper.HttpEventBuilderHelper;
 import io.sentry.event.interfaces.*;
@@ -201,7 +202,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     public static final String TAGS_OPTION = "tags";
     /**
-     * Option to set extras to use as tags, where applicable (for example: the SLF4J MDC system).
+     * Option to set extras to extract and send as tags, where applicable.
      */
     public static final String EXTRA_TAGS_OPTION = "extratags";
 
@@ -711,8 +712,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     }
 
     /**
-     * Extras to use as tags on {@link io.sentry.event.Event}s, where applicable.
-     * For example: the SLF4J MDC system.
+     * Extras to extract and send as tags on {@link io.sentry.event.Event}s, where applicable.
+     * <p>
+     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
+     * the {@link #getExtraTags(Dsn)} set will be extracted and set as tags on the {@link Event}.
      *
      * @param dsn Sentry server DSN which may contain options.
      * @return Extras to use as tags on {@link io.sentry.event.Event}s, where applicable.
