@@ -1,5 +1,6 @@
 package io.sentry.jul;
 
+import io.sentry.BaseTest;
 import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.*;
@@ -21,7 +22,7 @@ import java.util.logging.LogRecord;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class SentryHandlerEventBuildingTest {
+public class SentryHandlerEventBuildingTest extends BaseTest {
     @Tested
     private SentryHandler sentryHandler = null;
     @Injectable
@@ -47,9 +48,9 @@ public class SentryHandlerEventBuildingTest {
         sentryHandler.publish(newLogRecord(loggerName, Level.INFO, message, arguments, null, null, threadId, date.getTime()));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.runBuilderHelpers((EventBuilder) any);
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             assertThat(event.getMessage(), is(message));
             Map<String, SentryInterface> sentryInterfaces = event.getSentryInterfaces();
             assertThat(sentryInterfaces, hasKey(MessageInterface.MESSAGE_INTERFACE));
@@ -80,8 +81,9 @@ public class SentryHandlerEventBuildingTest {
         sentryHandler.publish(newLogRecord(null, level, null, null, null));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             assertThat(event.getLevel(), is(expectedLevel));
         }};
         assertNoErrorsInErrorManager();
@@ -94,8 +96,9 @@ public class SentryHandlerEventBuildingTest {
         sentryHandler.publish(newLogRecord(null, Level.SEVERE, null, null, exception));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
                     .get(ExceptionInterface.EXCEPTION_INTERFACE);
             final SentryException sentryException = exceptionInterface.getExceptions().getFirst();
@@ -116,8 +119,9 @@ public class SentryHandlerEventBuildingTest {
                 new StackTraceElement[]{stackTraceElement}, 0, 0));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             assertThat(event.getCulprit(), is("a.b"));
         }};
         assertNoErrorsInErrorManager();
@@ -130,8 +134,9 @@ public class SentryHandlerEventBuildingTest {
         sentryHandler.publish(newLogRecord(loggerName, Level.SEVERE, null, null, null));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             assertThat(event.getCulprit(), is(loggerName));
         }};
         assertNoErrorsInErrorManager();
@@ -166,8 +171,9 @@ public class SentryHandlerEventBuildingTest {
         sentryHandler.publish(newLogRecord(null, Level.INFO, null, null, null));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             assertThat(event.getRelease(), is(release));
         }};
         assertNoErrorsInErrorManager();
@@ -181,8 +187,9 @@ public class SentryHandlerEventBuildingTest {
         sentryHandler.publish(newLogRecord(null, Level.INFO, null, null, null));
 
         new Verifications() {{
-            Event event;
-            mockSentryClient.sendEvent(event = withCapture());
+            EventBuilder eventBuilder;
+            mockSentryClient.sendEvent(eventBuilder = withCapture());
+            Event event = eventBuilder.build();
             assertThat(event.getEnvironment(), is(environment));
         }};
         assertNoErrorsInErrorManager();

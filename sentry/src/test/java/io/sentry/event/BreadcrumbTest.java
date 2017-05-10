@@ -1,5 +1,6 @@
 package io.sentry.event;
 
+import io.sentry.BaseTest;
 import io.sentry.SentryClient;
 import io.sentry.connection.Connection;
 import io.sentry.context.ContextManager;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-public class BreadcrumbTest {
+public class BreadcrumbTest extends BaseTest {
     @Tested
     private SentryClient sentryClient = null;
 

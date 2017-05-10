@@ -1,5 +1,6 @@
 package io.sentry.connection;
 
+import io.sentry.BaseTest;
 import io.sentry.time.FixedClock;
 import mockit.*;
 import io.sentry.event.Event;
@@ -17,7 +18,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.testng.AssertJUnit.fail;
 
-public class AbstractConnectionTest {
+public class AbstractConnectionTest extends BaseTest {
     private static final Date FIXED_DATE = new Date(1483228800L);
     @Injectable
     private final String publicKey = "9bcf4a8c-f353-4f25-9dda-76a873fff905";

@@ -1,8 +1,15 @@
 package io.sentry;
 
+import org.testng.annotations.BeforeMethod;
+
 import java.util.concurrent.Callable;
 
 public class BaseTest {
+    @BeforeMethod
+    public void baseTestSetup() {
+        Sentry.setStoredClient(null);
+    }
+
     /**
      * To avoid littering tests with static Thread.sleep calls (because Android code must do async I/O),
      * we use this method to repeatedly test a predicate with a maximum wait time, returning as

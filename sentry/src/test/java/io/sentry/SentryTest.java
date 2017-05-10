@@ -17,7 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 
-public class SentryTest {
+public class SentryTest extends BaseTest {
     @Tested
     private SentryClient sentryClient = null;
     @Injectable

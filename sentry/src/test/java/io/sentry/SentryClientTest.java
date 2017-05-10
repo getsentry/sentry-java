@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class SentryClientTest {
+public class SentryClientTest extends BaseTest {
     @Tested
     private SentryClient sentryClient = null;
     @Injectable

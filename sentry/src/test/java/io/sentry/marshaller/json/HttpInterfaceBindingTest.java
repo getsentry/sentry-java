@@ -1,6 +1,7 @@
 package io.sentry.marshaller.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.sentry.BaseTest;
 import io.sentry.event.interfaces.HttpInterface;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
@@ -16,7 +17,7 @@ import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class HttpInterfaceBindingTest {
+public class HttpInterfaceBindingTest extends BaseTest {
     @Tested
     private HttpInterfaceBinding interfaceBinding = null;
     @Injectable

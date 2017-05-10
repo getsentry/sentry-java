@@ -1,5 +1,6 @@
 package io.sentry.marshaller.json;
 
+import io.sentry.BaseTest;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -13,7 +14,7 @@ import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class MessageInterfaceBindingTest {
+public class MessageInterfaceBindingTest extends BaseTest {
     @Tested
     private MessageInterfaceBinding interfaceBinding = null;
     @Injectable

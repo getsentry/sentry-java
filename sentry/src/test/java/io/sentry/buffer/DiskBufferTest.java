@@ -1,5 +1,6 @@
 package io.sentry.buffer;
 
+import io.sentry.BaseTest;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.Event;
@@ -17,7 +18,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-public class DiskBufferTest extends BufferTest {
+public class DiskBufferTest extends BaseTest {
 
     private static File BUFFER_DIR = new File("./sentry-test-buffer-dir");
     private int maxEvents = 2;
@@ -102,5 +103,20 @@ public class DiskBufferTest extends BufferTest {
             count += 1;
         }
         return count;
+    }
+
+    private void delete(File dir) {
+        if (!dir.exists()) {
+            return;
+        }
+
+        if (dir.isDirectory()) {
+            for (File c : dir.listFiles()) {
+                delete(c);
+            }
+        }
+        if (!dir.delete()) {
+            throw new RuntimeException("Failed to delete dir: " + dir);
+        }
     }
 }

@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-public class DefaultSentryClientFactoryTest {
+public class DefaultSentryClientFactoryTest extends BaseTest {
     @Test
     public void checkServiceLoaderProvidesFactory() throws Exception {
         ServiceLoader<SentryClientFactory> sentryFactories = ServiceLoader.load(SentryClientFactory.class);
