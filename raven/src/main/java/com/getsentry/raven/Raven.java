@@ -193,10 +193,16 @@ public class Raven {
      * @return statically stored {@link Raven} instance
      */
     public static Raven getStoredInstance() {
+        // This trace is important because for some logging frameworks it will cause the appender
+        // to be initialized, which should fill in the stored Raven instance.
+        logger.trace("Retrieving stored instance.");
         return stored;
     }
 
     private static void verifyStoredInstance() {
+        // This trace is important because for some logging frameworks it will cause the appender
+        // to be initialized, which should fill in the stored Raven instance.
+        logger.trace("Verifying stored instance.");
         if (stored == null) {
             throw new NullPointerException("No stored Raven instance is available to use."
                 + " You must construct a Raven instance before using the static Raven methods.");

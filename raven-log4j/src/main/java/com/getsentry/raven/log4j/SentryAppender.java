@@ -93,7 +93,7 @@ public class SentryAppender extends AppenderSkeleton {
      * Creates an instance of SentryAppender.
      */
     public SentryAppender() {
-        this.addFilter(new DropRavenFilter());
+        this(null);
     }
 
     /**
@@ -102,8 +102,12 @@ public class SentryAppender extends AppenderSkeleton {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
-        this();
-        this.raven = raven;
+        this.addFilter(new DropRavenFilter());
+        if (raven == null) {
+            initRaven();
+        } else {
+            this.raven = raven;
+        }
     }
 
     /**
@@ -117,11 +121,6 @@ public class SentryAppender extends AppenderSkeleton {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String ravenFactory = Lookup.lookup("ravenFactory");
-                        if (ravenFactory != null) {
-                            setRavenFactory(ravenFactory);
-                        }
-
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
@@ -192,20 +191,18 @@ public class SentryAppender extends AppenderSkeleton {
         return new StackTraceElement(location.getClassName(), location.getMethodName(), fileName, line);
     }
 
-    @Override
-    public void activateOptions() {
-        super.activateOptions();
-
-        lazyInit();
-    }
-
     /**
      * Initialises the Raven instance.
      */
-    protected synchronized void initRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String ravenFactory = Lookup.lookup("ravenFactory");
+            if (ravenFactory != null) {
+                setRavenFactory(ravenFactory);
             }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
@@ -220,6 +217,11 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     protected void append(LoggingEvent loggingEvent) {
+        lazyInit();
+        if (raven == null) {
+            return;
+        }
+
         // Do not log the event if the current thread is managed by raven
         if (RavenEnvironment.isManagingThread()) {
             return;
@@ -227,7 +229,6 @@ public class SentryAppender extends AppenderSkeleton {
 
         RavenEnvironment.startManagingThread();
         try {
-            lazyInit();
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {

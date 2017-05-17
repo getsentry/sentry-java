@@ -120,7 +120,8 @@ public class SentryAppender extends AbstractAppender {
      * @param raven instance of Raven to use with this appender.
      */
     public SentryAppender(Raven raven) {
-        this();
+        super(APPENDER_NAME, null, null, true);
+        this.addFilter(new DropRavenFilter());
         this.raven = raven;
     }
 
@@ -133,6 +134,7 @@ public class SentryAppender extends AbstractAppender {
     protected SentryAppender(String name, Filter filter) {
         super(name, filter, null, true);
         this.addFilter(new DropRavenFilter());
+        initRaven();
     }
 
     /**
@@ -198,11 +200,6 @@ public class SentryAppender extends AbstractAppender {
             synchronized (this) {
                 if (!initialized) {
                     try {
-                        String ravenFactory = Lookup.lookup("ravenFactory");
-                        if (ravenFactory != null) {
-                            setRavenFactory(ravenFactory);
-                        }
-
                         String release = Lookup.lookup("release");
                         if (release != null) {
                             setRelease(release);
@@ -285,6 +282,11 @@ public class SentryAppender extends AbstractAppender {
      */
     @Override
     public void append(LogEvent logEvent) {
+        lazyInit();
+        if (raven == null) {
+            return;
+        }
+
         // Do not log the event if the current thread is managed by raven
         if (RavenEnvironment.isManagingThread()) {
             return;
@@ -292,7 +294,6 @@ public class SentryAppender extends AbstractAppender {
 
         RavenEnvironment.startManagingThread();
         try {
-            lazyInit();
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -305,10 +306,15 @@ public class SentryAppender extends AbstractAppender {
     /**
      * Initialises the Raven instance.
      */
-    protected synchronized void initRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null) {
                 dsn = Dsn.dsnLookup();
+            }
+
+            String ravenFactory = Lookup.lookup("ravenFactory");
+            if (ravenFactory != null) {
+                setRavenFactory(ravenFactory);
             }
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
