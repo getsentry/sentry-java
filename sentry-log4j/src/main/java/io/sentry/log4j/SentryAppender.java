@@ -239,8 +239,8 @@ public class SentryAppender extends AppenderSkeleton {
         SentryEnvironment.startManagingThread();
         try {
             lazyInit();
-            Event event = buildEvent(loggingEvent);
-            sentryClient.sendEvent(event);
+            EventBuilder eventBuilder = createEventBuilder(loggingEvent);
+            sentryClient.sendEvent(eventBuilder);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred while creating a new event in Sentry", e,
                     ErrorCode.WRITE_FAILURE);
@@ -250,12 +250,12 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     /**
-     * Builds an Event based on the logging event.
+     * Builds an EventBuilder based on the logging event.
      *
      * @param loggingEvent Log generated.
-     * @return Event containing details provided by the logging system.
+     * @return EventBuilder containing details provided by the logging system.
      */
-    protected Event buildEvent(LoggingEvent loggingEvent) {
+    protected EventBuilder createEventBuilder(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":log4j")
             .withTimestamp(new Date(loggingEvent.getTimeStamp()))
@@ -323,8 +323,7 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
         }
 
-        sentryClient.runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     public void setFactory(String factory) {
