@@ -1,5 +1,7 @@
 package io.sentry.log4j;
 
+import io.sentry.BaseTest;
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.event.EventBuilder;
 import mockit.*;
@@ -16,7 +18,7 @@ import org.testng.annotations.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class SentryAppenderFailuresTest {
+public class SentryAppenderFailuresTest extends BaseTest {
     @Tested
     private SentryAppender sentryAppender = null;
     private MockUpErrorHandler mockUpErrorHandler;
@@ -30,7 +32,8 @@ public class SentryAppenderFailuresTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        sentryAppender = new SentryAppender(mockSentryClient);
+        Sentry.setStoredClient(mockSentryClient);
+        sentryAppender = new SentryAppender();
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
         sentryAppender.activateOptions();
@@ -44,21 +47,6 @@ public class SentryAppenderFailuresTest {
         }};
 
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.INFO, null, null));
-
-        assertThat(mockUpErrorHandler.getErrorCount(), is(1));
-    }
-
-    @Test
-    public void testSentryClientFactoryFailureDoesNotPropagate() throws Exception {
-        new NonStrictExpectations() {{
-            SentryClientFactory.sentryClient((Dsn) any, anyString);
-            result = new UnsupportedOperationException();
-        }};
-        SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.setDsn("protocol://public:private@host/1");
-
-        sentryAppender.initSentry();
 
         assertThat(mockUpErrorHandler.getErrorCount(), is(1));
     }

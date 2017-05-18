@@ -1,9 +1,12 @@
 package io.sentry.log4j2;
 
+import io.sentry.BaseTest;
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.*;
 import mockit.Injectable;
+import mockit.NonStrictExpectations;
 import mockit.Tested;
 import mockit.Verifications;
 import io.sentry.event.Event;
@@ -25,20 +28,23 @@ import java.util.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class SentryAppenderEventBuildingTest {
+public class SentryAppenderEventBuildingTest extends BaseTest {
     @Tested
     private SentryAppender sentryAppender = null;
     private MockUpErrorHandler mockUpErrorHandler;
     @Injectable
     private SentryClient mockSentryClient = null;
     private String mockExtraTag = "d421627f-7a25-4d43-8210-140dfe73ff10";
+    private Set<String> extraTags;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        sentryAppender = new SentryAppender(mockSentryClient);
+        Sentry.setStoredClient(mockSentryClient);
+        sentryAppender = new SentryAppender();
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.setExtraTags(mockExtraTag);
+        extraTags = new HashSet<>();
+        extraTags.add(mockExtraTag);
     }
 
     private void assertNoErrorsInErrorHandler() throws Exception {
@@ -244,6 +250,11 @@ public class SentryAppenderEventBuildingTest {
         mdc.put(mockExtraTag, "565940d2-f4a4-42f6-9496-42e3c7c85c43");
         mdc.put("other_property", "395856e8-fa1d-474f-8fa9-c062b4886527");
 
+        new NonStrictExpectations() {{
+            mockSentryClient.getExtraTags();
+            result = extraTags;
+        }};
+
         sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, mdc, null, null, null, 0));
 
         new Verifications() {{
@@ -254,38 +265,6 @@ public class SentryAppenderEventBuildingTest {
             assertThat(event.getTags(), hasEntry(mockExtraTag, "565940d2-f4a4-42f6-9496-42e3c7c85c43"));
             assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "395856e8-fa1d-474f-8fa9-c062b4886527"));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testReleaseAddedToEvent() throws Exception {
-        final String release = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
-        sentryAppender.setRelease(release);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getRelease(), is(release));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testEnvironmentAddedToEvent() throws Exception {
-        final String environment = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
-        sentryAppender.setEnvironment(environment);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.ERROR, new SimpleMessage(""), null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getEnvironment(), is(environment));
         }};
         assertNoErrorsInErrorHandler();
     }

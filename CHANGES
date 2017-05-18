@@ -16,6 +16,7 @@ Version 1.0.0
 - Rename ``EventSendFailureCallback`` to ``EventSendCallback``, add ``onSuccess`` callback.
 - Add way to set release, dist, environment, serverName, tags, and extraTags on a ``SentryClient``.
 - Add way to set release, dist, environment, serverName, tags, and extraTags via the DSN.
+- Logging integrations now use the new ``Sentry`` static API.
 
 Version 8.0.2
 -------------

@@ -1,6 +1,7 @@
 package io.sentry.jul;
 
 import io.sentry.BaseTest;
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.*;
@@ -10,6 +11,7 @@ import mockit.Verifications;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import org.hamcrest.Matchers;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -29,6 +31,11 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
     private ErrorManager errorManager = null;
     @Injectable
     private SentryClient mockSentryClient = null;
+
+    @BeforeMethod
+    public void setup() {
+        Sentry.setStoredClient(mockSentryClient);
+    }
 
     private void assertNoErrorsInErrorManager() throws Exception {
         new Verifications() {{
@@ -162,37 +169,4 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
         }
         return logRecord;
     }
-
-    @Test
-    public void testReleaseAddedToEvent() throws Exception {
-        final String release = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
-        sentryHandler.setRelease(release);
-
-        sentryHandler.publish(newLogRecord(null, Level.INFO, null, null, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getRelease(), is(release));
-        }};
-        assertNoErrorsInErrorManager();
-    }
-
-    @Test
-    public void testEnvironmentAddedToEvent() throws Exception {
-        final String environment = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
-        sentryHandler.setEnvironment(environment);
-
-        sentryHandler.publish(newLogRecord(null, Level.INFO, null, null, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getEnvironment(), is(environment));
-        }};
-        assertNoErrorsInErrorManager();
-    }
-
 }
