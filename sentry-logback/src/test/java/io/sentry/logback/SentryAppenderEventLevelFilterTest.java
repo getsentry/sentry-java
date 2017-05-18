@@ -2,6 +2,8 @@ package io.sentry.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
+import io.sentry.BaseTest;
+import io.sentry.Sentry;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
@@ -14,7 +16,7 @@ import org.testng.annotations.Test;
 /**
  * @author Felipe G Almeida
  */
-public class SentryAppenderEventLevelFilterTest {
+public class SentryAppenderEventLevelFilterTest extends BaseTest {
     @Tested
     private SentryAppender sentryAppender = null;
     @Injectable
@@ -25,7 +27,8 @@ public class SentryAppenderEventLevelFilterTest {
     @BeforeMethod
     public void setUp() throws Exception {
         new MockUpStatusPrinter();
-        sentryAppender = new SentryAppender(mockSentryClient);
+        Sentry.setStoredClient(mockSentryClient);
+        sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
     }
 

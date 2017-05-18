@@ -4,6 +4,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
+import io.sentry.BaseTest;
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import mockit.*;
 import io.sentry.SentryClientFactory;
@@ -16,7 +18,7 @@ import org.testng.annotations.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class SentryAppenderFailuresTest {
+public class SentryAppenderFailuresTest extends BaseTest {
     @Injectable
     private SentryClient mockSentryClient = null;
     @Injectable
@@ -41,7 +43,8 @@ public class SentryAppenderFailuresTest {
 
     @Test
     public void testSentryFailureDoesNotPropagate() throws Exception {
-        final SentryAppender sentryAppender = new SentryAppender(mockSentryClient);
+        Sentry.setStoredClient(mockSentryClient);
+        final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
         sentryAppender.setMinLevel("ALL");
         new NonStrictExpectations() {{
@@ -59,27 +62,11 @@ public class SentryAppenderFailuresTest {
     }
 
     @Test
-    public void testSentryClientFactoryFailureDoesNotPropagate() throws Exception {
-        final String dsnUri = "proto://private:public@host/1";
-        final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setContext(mockContext);
-        sentryAppender.setDsn(dsnUri);
-        new Expectations() {{
-            SentryClientFactory.sentryClient(withEqual(new Dsn(dsnUri)), anyString);
-            result = new UnsupportedOperationException();
-        }};
-        sentryAppender.start();
-
-        sentryAppender.initSentry();
-
-        assertThat(mockContext.getStatusManager().getCount(), is(1));
-    }
-
-    @Test
     public void testAppendFailIfCurrentThreadSpawnedBySentry() throws Exception {
         SentryEnvironment.startManagingThread();
         try {
-            final SentryAppender sentryAppender = new SentryAppender(mockSentryClient);
+            Sentry.setStoredClient(mockSentryClient);
+            final SentryAppender sentryAppender = new SentryAppender();
             sentryAppender.setContext(mockContext);
             sentryAppender.start();
 
