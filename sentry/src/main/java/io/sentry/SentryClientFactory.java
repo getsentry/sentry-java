@@ -102,6 +102,10 @@ public abstract class SentryClientFactory {
     public static SentryClient sentryClient(Dsn dsn, String sentryClientFactoryName) {
         logger.debug("Attempting to find a working SentryClientFactory");
 
+        if (dsn == null) {
+            dsn = new Dsn(Dsn.dsnLookup());
+        }
+
         // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
         // and the last exception thrown.
         ArrayList<String> skippedFactories = new ArrayList<>();
