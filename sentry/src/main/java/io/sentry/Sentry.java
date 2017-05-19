@@ -77,8 +77,7 @@ public final class Sentry {
             if (!Util.isNullOrEmpty(dsn)) {
                 realDsn = new Dsn(dsn);
             } else {
-                // give the factory impl a chance to lookup the DSN
-                realDsn = sentryClientFactory.lookupDsn();
+                realDsn = new Dsn(Dsn.dsnLookup());
             }
 
             // use the factory instance directly

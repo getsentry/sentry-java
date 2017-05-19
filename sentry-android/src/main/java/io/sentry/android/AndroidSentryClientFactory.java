@@ -2,9 +2,7 @@ package io.sentry.android;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.text.TextUtils;
 import android.util.Log;
 import io.sentry.*;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
@@ -68,28 +66,6 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
         SentryUncaughtExceptionHandler.setup();
         return sentryClient;
-    }
-
-    @Override
-    public Dsn lookupDsn() {
-        String stringDsn = "";
-
-        // attempt to get DSN from AndroidManifest
-        ApplicationInfo appInfo = null;
-        try {
-            PackageManager packageManager = ctx.getPackageManager();
-            appInfo = packageManager.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
-            stringDsn = appInfo.metaData.getString("io.sentry.android.DSN");
-        } catch (PackageManager.NameNotFoundException e) {
-            // skip
-        }
-
-        if (TextUtils.isEmpty(stringDsn)) {
-            throw new NullPointerException("Sentry DSN is not set, you must provide it to"
-                + "Sentry.init or in your Android manifest file.");
-        }
-
-        return new Dsn(stringDsn);
     }
 
     @Override

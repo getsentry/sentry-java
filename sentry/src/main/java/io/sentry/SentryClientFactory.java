@@ -47,7 +47,7 @@ public abstract class SentryClientFactory {
 
     /**
      * Creates an instance of Sentry using the DSN obtained through the
-     * {@link SentryClientFactory#lookupDsn()} method.
+     * {@link Dsn#dsnLookup()} method.
      *
      * @return an instance of Sentry.
      */
@@ -118,12 +118,7 @@ public abstract class SentryClientFactory {
             logger.debug("Attempting to use '{}' as a SentryClientFactory.", sentryClientFactory);
             triedFactories.add(name);
             try {
-                // ensure each iteration checks its own lookupDsn method if needed
-                Dsn factoryDsn = dsn;
-                if (factoryDsn == null) {
-                    factoryDsn = sentryClientFactory.lookupDsn();
-                }
-                SentryClient sentryClientInstance = sentryClientFactory.createSentryClient(factoryDsn);
+                SentryClient sentryClientInstance = sentryClientFactory.createSentryClient(dsn);
                 logger.debug("The SentryClientFactory '{}' created an instance of Sentry.", sentryClientFactory);
                 return sentryClientInstance;
             } catch (RuntimeException e) {
@@ -186,13 +181,6 @@ public abstract class SentryClientFactory {
         sb.append("; cause contains exception thrown by the last factory tried.");
         throw new IllegalStateException(sb.toString(), lastExc);
     }
-
-    /**
-     * Attempt to lookup the DSN in the environment.
-     *
-     * @return Data Source Name of the Sentry server.
-     */
-    public abstract Dsn lookupDsn();
 
     /**
      * Creates an instance of Sentry given a DSN.

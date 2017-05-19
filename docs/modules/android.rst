@@ -64,16 +64,6 @@ Then initialize the Sentry client in your application's main ``onCreate`` method
         }
     }
 
-You can also configure your Sentry DSN (client key) in your ``AndroidManifest.xml``:
-
-.. sourcecode:: xml
-
-    <application>
-      <meta-data
-        android:name="io.sentry.android.DSN"
-        android:value="https://publicKey:secretKey@host:port/1?options" />
-    </application>
-
 Now you can use ``Sentry`` to capture events anywhere in your application:
 
 .. sourcecode:: java
