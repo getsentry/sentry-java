@@ -219,6 +219,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
     private final Lookup lookup;
 
+    /**
+     * Construct a {@link DefaultSentryClientFactory}.
+     */
     public DefaultSentryClientFactory() {
         lookup = new Lookup();
     }

@@ -14,14 +14,28 @@ import java.util.Properties;
 public final class Lookup {
     private static final Logger logger = LoggerFactory.getLogger(Lookup.class);
 
+    /**
+     * The default filename of the Sentry configuration file.
+     */
     private static final String DEFAULT_CONFIG_FILE_NAME = "sentry.properties";
-
+    /**
+     * Properties loaded from the Sentry configuration file, or null if no file was
+     * found or it failed to parse.
+     */
     private final Properties configProps;
 
+    /**
+     * Construct a lookup object using the default Sentry configuration file name.
+     */
     public Lookup() {
         this(DEFAULT_CONFIG_FILE_NAME);
     }
 
+    /**
+     * Construct a lookup object using the provided Sentry configuration file name.
+     *
+     * @param configFileName file name of configuration file to load from resources
+     */
     public Lookup(String configFileName) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         InputStream input = classLoader.getResourceAsStream(configFileName);
