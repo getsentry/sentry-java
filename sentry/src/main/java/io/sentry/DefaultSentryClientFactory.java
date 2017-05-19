@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
+import io.sentry.config.Lookup;
 import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
@@ -214,6 +215,12 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_SYNC, new ThreadPoolExecutor.CallerRunsPolicy());
         REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_DISCARDNEW, new ThreadPoolExecutor.DiscardPolicy());
         REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_DISCARDOLD, new ThreadPoolExecutor.DiscardOldestPolicy());
+    }
+
+    private final Lookup lookup;
+
+    public DefaultSentryClientFactory() {
+        lookup = new Lookup();
     }
 
     @Override
@@ -491,7 +498,8 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether or not to wrap the underlying connection in an {@link AsyncConnection}.
      */
     protected boolean getAsyncEnabled(Dsn dsn) {
-        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION));
+        // TODO: all of these options should use Lookup.lookup("foo", dsn)
+        return !FALSE.equalsIgnoreCase(lookup.lookup(ASYNC_OPTION, dsn));
     }
 
     /**

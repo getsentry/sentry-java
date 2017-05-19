@@ -84,7 +84,7 @@ public class Dsn {
      * @return a DSN configuration or null if nothing could be found.
      */
     public static String dsnLookup() {
-        String dsn = Lookup.lookup("dsn");
+        String dsn = new Lookup().lookup("dsn");
 
         if (dsn == null) {
             logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");
