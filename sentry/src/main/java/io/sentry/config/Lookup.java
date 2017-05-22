@@ -4,7 +4,6 @@ import io.sentry.dsn.Dsn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -22,7 +21,7 @@ public final class Lookup {
      * Properties loaded from the Sentry configuration file, or null if no file was
      * found or it failed to parse.
      */
-    private static Properties CONFIG_PROPS;
+    private static Properties configProps;
 
     static {
         try {
@@ -30,8 +29,8 @@ public final class Lookup {
             InputStream input = classLoader.getResourceAsStream(CONFIG_FILE_NAME);
 
             if (input != null) {
-                CONFIG_PROPS = new Properties();
-                CONFIG_PROPS.load(input);
+                configProps = new Properties();
+                configProps.load(input);
             } else {
                 logger.debug("Sentry configuration file '{}' not found.", CONFIG_FILE_NAME);
             }
@@ -111,8 +110,8 @@ public final class Lookup {
         }
 
         // Try to obtain from config file
-        if (value == null && CONFIG_PROPS != null) {
-            value = CONFIG_PROPS.getProperty(key);
+        if (value == null && configProps != null) {
+            value = configProps.getProperty(key);
             if (value != null) {
                 logger.debug("Found {}={} in {}.", key, value, CONFIG_FILE_NAME);
             }
