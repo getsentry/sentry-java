@@ -34,9 +34,9 @@ public final class JndiLookup {
             Context c = new InitialContext();
             value = (String) c.lookup(JNDI_PREFIX + key);
         } catch (NoInitialContextException e) {
-            logger.debug("JNDI not configured for Sentry (NoInitialContextEx)");
+            logger.trace("JNDI not configured for Sentry (NoInitialContextEx)");
         } catch (NamingException e) {
-            logger.debug("No /sentry/" + key + " in JNDI");
+            logger.trace("No /sentry/" + key + " in JNDI");
         } catch (RuntimeException e) {
             logger.warn("Odd RuntimeException while testing for JNDI", e);
         }

@@ -15,42 +15,36 @@ public final class Lookup {
     private static final Logger logger = LoggerFactory.getLogger(Lookup.class);
 
     /**
-     * The default filename of the Sentry configuration file.
+     * The filename of the Sentry configuration file.
      */
-    private static final String DEFAULT_CONFIG_FILE_NAME = "sentry.properties";
+    private static final String CONFIG_FILE_NAME = "sentry.properties";
     /**
      * Properties loaded from the Sentry configuration file, or null if no file was
      * found or it failed to parse.
      */
-    private final Properties configProps;
+    private static Properties CONFIG_PROPS;
 
-    /**
-     * Construct a lookup object using the default Sentry configuration file name.
-     */
-    public Lookup() {
-        this(DEFAULT_CONFIG_FILE_NAME);
+    static {
+        try {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            InputStream input = classLoader.getResourceAsStream(CONFIG_FILE_NAME);
+
+            if (input != null) {
+                CONFIG_PROPS = new Properties();
+                CONFIG_PROPS.load(input);
+            } else {
+                logger.debug("Sentry configuration file '{}' not found.", CONFIG_FILE_NAME);
+            }
+        } catch (Exception e) {
+            logger.error("Error loading Sentry configuration file '{}' file: ", CONFIG_FILE_NAME, e);
+        }
     }
 
     /**
-     * Construct a lookup object using the provided Sentry configuration file name.
-     *
-     * @param configFileName file name of configuration file to load from resources
+     * Hidden constructor for static utility class.
      */
-    public Lookup(String configFileName) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        InputStream input = classLoader.getResourceAsStream(configFileName);
+    private Lookup() {
 
-        if (input != null) {
-            configProps = new Properties();
-            try {
-                configProps.load(input);
-            } catch (IOException e) {
-                logger.error("Error loading Sentry configuration file '{}' file: ", configFileName, e);
-            }
-        } else {
-            configProps = null;
-            logger.debug("Sentry configuration file '{}' not found.", configFileName);
-        }
     }
 
     /**
@@ -59,7 +53,7 @@ public final class Lookup {
      * @param key name of configuration key, e.g. "dsn"
      * @return value of configuration key, if found, otherwise null
      */
-    public String lookup(String key) {
+    public static String lookup(String key) {
         return lookup(key, null);
     }
 
@@ -76,7 +70,7 @@ public final class Lookup {
      * @param dsn an optional DSN to retrieve options from
      * @return value of configuration key, if found, otherwise null
      */
-    public String lookup(String key, Dsn dsn) {
+    public static String lookup(String key, Dsn dsn) {
         String value = null;
 
         // Try to obtain from JNDI
@@ -84,28 +78,44 @@ public final class Lookup {
             // Check that JNDI is available (not available on Android) by loading InitialContext
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             value = JndiLookup.jndiLookup(key);
+            if (value != null) {
+                logger.debug("Found {}={} in JNDI.", key, value);
+            }
+
         } catch (ClassNotFoundException | NoClassDefFoundError e) {
-            logger.debug("JNDI not available", e);
+            logger.trace("JNDI not available", e);
         }
 
         // Try to obtain from a Java System Property
         if (value == null) {
             value = System.getProperty("sentry." + key.toLowerCase());
+            if (value != null) {
+                logger.debug("Found {}={} in Java System Properties.", key, value);
+            }
         }
 
         // Try to obtain from a System Environment Variable
         if (value == null) {
             value = System.getenv("SENTRY_" + key.replace(".", "_").toUpperCase());
+            if (value != null) {
+                logger.debug("Found {}={} in System Environment Variables.", key, value);
+            }
         }
 
         // Try to obtain from the provided DSN, if set
         if (value == null && dsn != null) {
             value = dsn.getOptions().get(key);
+            if (value != null) {
+                logger.debug("Found {}={} in DSN.", key, value);
+            }
         }
 
         // Try to obtain from config file
-        if (value == null && configProps != null) {
-            value = configProps.getProperty(value);
+        if (value == null && CONFIG_PROPS != null) {
+            value = CONFIG_PROPS.getProperty(key);
+            if (value != null) {
+                logger.debug("Found {}={} in {}.", key, value, CONFIG_FILE_NAME);
+            }
         }
 
         if (value != null) {

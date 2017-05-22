@@ -217,15 +217,6 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_DISCARDOLD, new ThreadPoolExecutor.DiscardOldestPolicy());
     }
 
-    private final Lookup lookup;
-
-    /**
-     * Construct a {@link DefaultSentryClientFactory}.
-     */
-    public DefaultSentryClientFactory() {
-        lookup = new Lookup();
-    }
-
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
         SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
@@ -502,7 +493,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected boolean getAsyncEnabled(Dsn dsn) {
         // TODO: all of these options should use Lookup.lookup("foo", dsn)
-        return !FALSE.equalsIgnoreCase(lookup.lookup(ASYNC_OPTION, dsn));
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(ASYNC_OPTION, dsn));
     }
 
     /**
