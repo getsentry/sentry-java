@@ -1,8 +1,11 @@
 package io.sentry;
 
 import io.sentry.connection.Connection;
+import io.sentry.connection.HttpConnection;
+import io.sentry.connection.NoopConnection;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
+import io.sentry.dsn.Dsn;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
@@ -13,9 +16,11 @@ import mockit.Verifications;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.net.URL;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
+import static mockit.Deencapsulation.getField;
+import static org.hamcrest.Matchers.*;
 
 public class SentryTest extends BaseTest {
     @Tested
@@ -100,6 +105,73 @@ public class SentryTest extends BaseTest {
             assertThat(event.getMessage(), equalTo(message));
             assertThat(event.getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
         }};
+    }
+
+    @Test
+    public void testInitNoDsn() throws Exception {
+        SentryClient sentryClient = Sentry.init();
+        Object connection = getField(sentryClient, "connection");
+        assertThat(connection, instanceOf(NoopConnection.class));
+    }
+
+    @Test
+    public void testInitNullDsn() throws Exception {
+        SentryClient sentryClient = Sentry.init((String) null);
+        NoopConnection connection = getField(sentryClient, "connection");
+        assertThat(connection, instanceOf(NoopConnection.class));
+    }
+
+    @Test
+    public void testInitNullFactory() throws Exception {
+        SentryClient sentryClient = Sentry.init((SentryClientFactory) null);
+        NoopConnection connection = getField(sentryClient, "connection");
+        assertThat(connection, instanceOf(NoopConnection.class));
+    }
+
+    @Test
+    public void testInitStringDsn() throws Exception {
+        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false");
+        HttpConnection connection = getField(sentryClient, "connection");
+        assertThat(connection, instanceOf(HttpConnection.class));
+
+        URL sentryUrl = getField(connection, "sentryUrl");
+        assertThat(sentryUrl.getHost(), equalTo("localhost"));
+        assertThat(sentryUrl.getProtocol(), equalTo("http"));
+        assertThat(sentryUrl.getPort(), equalTo(4567));
+        assertThat(sentryUrl.getPath(), equalTo("/api/1/store/"));
+
+        String authHeader = getField(connection, "authHeader");
+        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/test,sentry_key=public,sentry_secret=private"));
+    }
+
+    @Test
+    public void testInitStringDsnAndFactory() throws Exception {
+        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false", new DefaultSentryClientFactory());
+        HttpConnection connection = getField(sentryClient, "connection");
+        assertThat(connection, instanceOf(HttpConnection.class));
+
+        URL sentryUrl = getField(connection, "sentryUrl");
+        assertThat(sentryUrl.getHost(), equalTo("localhost"));
+        assertThat(sentryUrl.getProtocol(), equalTo("http"));
+        assertThat(sentryUrl.getPort(), equalTo(4567));
+        assertThat(sentryUrl.getPath(), equalTo("/api/1/store/"));
+
+        String authHeader = getField(connection, "authHeader");
+        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/test,sentry_key=public,sentry_secret=private"));
+    }
+
+    @Test
+    public void testInitProvidingFactory() throws Exception {
+        final SentryClient specificInstance = new SentryClient(null, null);
+        SentryClientFactory specificInstanceFactory = new SentryClientFactory() {
+            @Override
+            public SentryClient createSentryClient(Dsn dsn) {
+                return specificInstance;
+            }
+        };
+
+        SentryClient sentryClient = Sentry.init(specificInstanceFactory);
+        assertThat(sentryClient, sameInstance(specificInstance));
     }
 
 }

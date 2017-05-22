@@ -17,7 +17,7 @@ public class Dsn {
     /**
      * Default DSN to use when auto detection fails.
      */
-    public static final String DEFAULT_DSN = "noop://localhost";
+    public static final String DEFAULT_DSN = "noop://localhost?async=false";
     private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
     private String secretKey;
     private String publicKey;
