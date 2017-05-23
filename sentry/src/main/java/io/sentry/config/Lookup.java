@@ -35,7 +35,7 @@ public final class Lookup {
                 logger.debug("Sentry configuration file '{}' not found.", CONFIG_FILE_NAME);
             }
         } catch (Exception e) {
-            logger.error("Error loading Sentry configuration file '{}' file: ", CONFIG_FILE_NAME, e);
+            logger.error("Error loading Sentry configuration file '{}': ", CONFIG_FILE_NAME, e);
         }
     }
 
