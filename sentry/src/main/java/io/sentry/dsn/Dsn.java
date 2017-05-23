@@ -80,7 +80,7 @@ public class Dsn {
         String dsn = Lookup.lookup("dsn");
 
         if (dsn == null) {
-            logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");
+            logger.warn("*** Couldn't find a suitable DSN, Sentry operations will do nothing! ***");
             dsn = DEFAULT_DSN;
         }
 
