@@ -1,0 +1,8 @@
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake-build-debug/
+cmake_install.cmake
+sentry_java_agent.cbp
+*.a
+*.dylib
