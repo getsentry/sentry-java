@@ -58,8 +58,7 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
 
     jobjectArray frames;
     jint start_depth = 0;
-    jboolean get_locals = JNI_TRUE;
-    frames = buildStackTraceFrames(jvmti, env, thread, start_depth, get_locals);
+    frames = buildStackTraceFrames(jvmti, env, thread, start_depth);
 
     env->CallStaticVoidMethod(callback_class, callback_method_id, frames);
 

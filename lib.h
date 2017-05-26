@@ -3,6 +3,6 @@
 
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
-                                   jint start_depth, jboolean include_locals);
+                                   jint start_depth);
 
 #endif //SENTRY_JAVA_AGENT_LIB_H

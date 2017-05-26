@@ -113,7 +113,7 @@ static void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     if (table[index].generic_signature) {
         gensig = env->NewStringUTF(table[index].generic_signature);
     } else {
-        gensig = NULL;
+        gensig = nullptr;
     }
 
     if (location >= table[index].start_location
@@ -167,7 +167,7 @@ static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
     return env->NewObject(frame_class, ctor, frame_method, value_ptr, locals, pos, lineno);
 }
 
-static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth, jboolean get_locals,
+static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
                           jmethodID method, jlocation location) {
     jvmtiError jvmti_error;
     jvmtiLocalVariableEntry *local_var_table;
@@ -182,15 +182,9 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
     int i;
     value_ptr = nullptr;
 
-    if (get_locals) {
-        jvmti_error = jvmti->GetLocalVariableTable(method, &num_entries, &local_var_table);
-    } else {
-        // If the information wasn't requested, it's absent; handle as same case
-        jvmti_error = JVMTI_ERROR_ABSENT_INFORMATION;
-    }
-
+    jvmti_error = jvmti->GetLocalVariableTable(method, &num_entries, &local_var_table);
     if (jvmti_error != JVMTI_ERROR_NONE) {
-        locals = NULL;
+        locals = nullptr;
         switch(jvmti_error) {
             // Pass cases
             case JVMTI_ERROR_ABSENT_INFORMATION:
@@ -199,16 +193,16 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
                 // Error cases
             case JVMTI_ERROR_MUST_POSSESS_CAPABILITY:
                 throwException(env, "java/lang/RuntimeException", "access_local_variables capability not enabled.");
-                return NULL;
+                return nullptr;
             case JVMTI_ERROR_INVALID_METHODID:
                 throwException(env, "java/lang/IllegalArgumentException", "Illegal jmethodID.");
-                return NULL;
+                return nullptr;
             case JVMTI_ERROR_NULL_POINTER:
                 throwException(env, "java/lang/NullPointerException", "passed null to GetLocalVariableTable().");
-                return NULL;
+                return nullptr;
             default:
                 throwException(env, "java/lang/RuntimeException", "Unknown JVMTI Error.");
-                return NULL;
+                return nullptr;
         }
     } else {
         local_class = env->FindClass("io/sentry/jvmti/Frame$LocalVariable");
@@ -223,11 +217,9 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
         jvmti->Deallocate((unsigned char *)local_var_table);
     }
 
-    if (get_locals) {
-        jvmti_error = jvmti->GetLocalObject(thread, depth, 0, &value_ptr);
-        if (jvmti_error != JVMTI_ERROR_NONE) {
-            value_ptr = NULL;
-        }
+    jvmti_error = jvmti->GetLocalObject(thread, depth, 0, &value_ptr);
+    if (jvmti_error != JVMTI_ERROR_NONE) {
+        value_ptr = nullptr;
     }
 
     jvmti_error = jvmti->GetLineNumberTable(method, &num_entries, &lineno_table);
@@ -245,7 +237,7 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
 }
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
-                                   jint start_depth, jboolean include_locals) {
+                                   jint start_depth) {
     jint num_frames;
     jvmtiFrameInfo* frames;
     jclass result_class;
@@ -281,7 +273,7 @@ jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     }
 
     for (int i = 0; i < num_frames_returned; i++) {
-        frame = buildFrame(jvmti, env, thread, start_depth + i, include_locals, frames[i].method, frames[i].location);
+        frame = buildFrame(jvmti, env, thread, start_depth + i, frames[i].method, frames[i].location);
         if (frame == nullptr) {
             jvmti->Deallocate((unsigned char *) frames);
             throwException(env, "java/lang/RuntimeException", "Error accessing frame object.");
