@@ -7,6 +7,7 @@ import io.sentry.event.interfaces.StackTraceInterface;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Binding allowing to convert a {@link StackTraceInterface} into a JSON stream.
@@ -54,6 +55,20 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
         if (stackTraceElement.getAbsPath() != null) {
             generator.writeStringField(ABSOLUTE_PATH_PARAMETER, stackTraceElement.getAbsPath());
+        }
+
+        if (stackTraceElement.getVars() != null) {
+            generator.writeObjectFieldStart(VARIABLES_PARAMETER);
+            for (Map.Entry<String, Object> varEntry : stackTraceElement.getVars().entrySet()) {
+                String name = varEntry.getKey();
+                Object value = varEntry.getValue();
+                if (value == null) {
+                    generator.writeNullField(name);
+                } else {
+                    generator.writeObjectField(name, value);
+                }
+            }
+            generator.writeEndObject();
         }
 
         generator.writeEndObject();

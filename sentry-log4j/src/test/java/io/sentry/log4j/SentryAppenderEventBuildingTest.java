@@ -185,7 +185,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
                     .get(StackTraceInterface.STACKTRACE_INTERFACE);
             assertThat(stackTraceInterface.getStackTrace(), arrayWithSize(1));
             assertThat(stackTraceInterface.getStackTrace()[0],
-                    is(new SentryStackTraceElement(className, methodName, fileName, line, null, null, null)));
+                    is(new SentryStackTraceElement(className, methodName, fileName, line, null, null, null, null)));
         }};
         assertNoErrorsInErrorHandler();
     }
