@@ -1,6 +1,5 @@
 // TODO: better error messageds? (void) jvmti->GetErrorName(errnum, &errnum_str);
 // TODO: deal with threads? jrawMonitorID lock; jvmti->RawMonitorEnter(lock); jvmti->RawMonitorExit(lock);
-// TODO: JNI abort doesn't do what I'd expect ... we should exit() or just mark a flag that the agent is disabled?
 // TODO: use *options instead of env for log level?
 
 #include "jvmti.h"
@@ -24,6 +23,7 @@ static const std::string LEVEL_STRINGS[] = {
 };
 
 static Level LOG_LEVEL = WARN;
+static bool INIT_SUCCESS = false;
 
 static void log(Level level, std::string message) {
     if (level >= LOG_LEVEL) {
@@ -35,6 +35,10 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
                                       jmethodID method, jlocation location, jobject exception,
                                       jmethodID catch_method, jlocation catch_location) {
     log(TRACE, "ExceptionCallback called.");
+
+    if (!INIT_SUCCESS) {
+        return;
+    }
 
     char *class_name = (char *) "io/sentry/jvmti/LocalsCache";
     char *method_name = (char *) "setResult";
@@ -123,6 +127,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
         return JNI_ABORT;
     }
 
+    INIT_SUCCESS = true;
     log(TRACE, "OnLoad exit.");
     return JNI_OK;
 }
