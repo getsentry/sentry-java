@@ -1,3 +1,8 @@
+// TODO: better error messageds? (void) jvmti->GetErrorName(errnum, &errnum_str);
+// TODO: deal with threads? jrawMonitorID lock; jvmti->RawMonitorEnter(lock); jvmti->RawMonitorExit(lock);
+// TODO: JNI abort doesn't do what I'd expect ... we should exit() or just mark a flag that the agent is disabled?
+// TODO: use *options instead of env for log level?
+
 #include "jvmti.h"
 #include <iostream>
 #include "lib.h"
@@ -20,19 +25,13 @@ static const std::string LEVEL_STRINGS[] = {
 
 static Level LOG_LEVEL = WARN;
 
-void log(Level level, std::string message) {
+static void log(Level level, std::string message) {
     if (level >= LOG_LEVEL) {
         std::cerr << LEVEL_STRINGS[level] << " [Sentry Agent]: " << message << std::endl;
     }
 }
 
-void JNICALL VMStart(jvmtiEnv *jvmti, JNIEnv *env) {
-    log(TRACE, "VMStart called.");
-    // TODO: do we need to do anything here?
-    log(TRACE, "VMStart exit.");
-}
-
-void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thread,
+static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thread,
                                       jmethodID method, jlocation location, jobject exception,
                                       jmethodID catch_method, jlocation catch_location) {
     log(TRACE, "ExceptionCallback called.");
@@ -68,8 +67,6 @@ void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thread,
 }
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
-    // TODO: JNI abort doesn't do I expect ... exit() or just mark a flag that the agent is disabled?
-    // TODO: use options instead of env
     char *env_log_level = std::getenv("SENTRY_AGENT_LOG_LEVEL");
     if (env_log_level != nullptr) {
         std::string env_log_level_str(env_log_level);
@@ -115,16 +112,9 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     jvmtiEventCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.Exception = &ExceptionCallback;
-    callbacks.VMStart = &VMStart;
     jvmti_error = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     if (jvmti_error != JVMTI_ERROR_NONE) {
         log(ERROR, "Unable to the necessary JVMTI callbacks.");
-        return JNI_ABORT;
-    }
-
-    jvmti_error = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
-    if (jvmti_error != JVMTI_ERROR_NONE) {
-        log(ERROR, "Unable to register the VMStart callback.");
         return JNI_ABORT;
     }
 
@@ -136,10 +126,4 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
     log(TRACE, "OnLoad exit.");
     return JNI_OK;
-}
-
-JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm) {
-    log(TRACE, "Unload called.");
-
-    log(TRACE, "Unload exit.");
 }

@@ -1,13 +1,13 @@
 #include "jvmti.h"
 
-jint throwException(JNIEnv *env, const char *name, const char *message) {
+static jint throwException(JNIEnv *env, const char *name, const char *message) {
     jclass clazz;
     clazz = env->FindClass(name);
     return env->ThrowNew(clazz, message);
 }
 
-jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
-                      jvmtiLocalVariableEntry *table, int index) {
+static jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
+                             jvmtiLocalVariableEntry *table, int index) {
     jobject result;
     jint i_val;
     jfloat f_val;
@@ -96,11 +96,11 @@ jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
     return result;
 }
 
-void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
-                       jint depth, jclass local_class, jmethodID live,
-                       jmethodID dead, jlocation location,
-                       jobjectArray locals, jvmtiLocalVariableEntry *table,
-                       int index) {
+static void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
+                              jint depth, jclass local_class, jmethodID live,
+                              jmethodID dead, jlocation location,
+                              jobjectArray locals, jvmtiLocalVariableEntry *table,
+                              int index) {
     jstring name;
     jstring sig;
     jstring gensig;
@@ -127,8 +127,8 @@ void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     env->SetObjectArrayElement(locals, index, local);
 }
 
-jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
-                        jobject value_ptr, jobjectArray locals, jlong pos, jint lineno) {
+static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
+                               jobject value_ptr, jobjectArray locals, jlong pos, jint lineno) {
     jvmtiError jvmti_error;
     jclass method_class;
     jint modifiers;
@@ -141,36 +141,36 @@ jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
         throwException(env, "java/lang/RuntimeException", "Could not get the declaring class of the method.");
         return nullptr;
     }
-    
+
     jvmti_error = jvmti->GetMethodModifiers(method, &modifiers);
     if (jvmti_error != JVMTI_ERROR_NONE) {
         throwException(env, "java/lang/RuntimeException", "Could not get the modifiers of the method.");
         return nullptr;
     }
-    
+
     frame_method = env->ToReflectedMethod(method_class, method, modifiers & 8);
     if (frame_method == nullptr) {
         return nullptr; // ToReflectedMethod raised an exception
     }
-    
+
     frame_class = env->FindClass("io/sentry/jvmti/Frame");
     if (frame_class == nullptr) {
         return nullptr;
     }
-    
+
     ctor = env->GetMethodID(frame_class, "<init>",
                             "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Lio/sentry/jvmti/Frame$LocalVariable;II)V");
     if (ctor == nullptr) {
         return nullptr;
     }
-    
+
     return env->NewObject(frame_class, ctor, frame_method, value_ptr, locals, pos, lineno);
 }
 
-jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth, jboolean get_locals,
-                   jmethodID method, jlocation location) {
+static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth, jboolean get_locals,
+                          jmethodID method, jlocation location) {
     jvmtiError jvmti_error;
-    jvmtiLocalVariableEntry *table;
+    jvmtiLocalVariableEntry *local_var_table;
     jvmtiLineNumberEntry* lineno_table;
     jint num_entries;
     jobject value_ptr;
@@ -183,7 +183,7 @@ jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth, jbo
     value_ptr = nullptr;
 
     if (get_locals) {
-        jvmti_error = jvmti->GetLocalVariableTable(method, &num_entries, &table);
+        jvmti_error = jvmti->GetLocalVariableTable(method, &num_entries, &local_var_table);
     } else {
         // If the information wasn't requested, it's absent; handle as same case
         jvmti_error = JVMTI_ERROR_ABSENT_INFORMATION;
@@ -213,23 +213,23 @@ jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth, jbo
     } else {
         local_class = env->FindClass("io/sentry/jvmti/Frame$LocalVariable");
         live_ctor = env->GetMethodID(local_class, "<init>",
-                                    "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V");
+                                     "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V");
         dead_ctor = env->GetMethodID(local_class, "<init>",
-                                    "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+                                     "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
         locals = env->NewObjectArray(num_entries, local_class, NULL);
         for (i = 0; i < num_entries; i++) {
-            makeLocalVariable(jvmti, env, thread, depth, local_class, live_ctor, dead_ctor, location, locals, table, i);
+            makeLocalVariable(jvmti, env, thread, depth, local_class, live_ctor, dead_ctor, location, locals, local_var_table, i);
         }
-        jvmti->Deallocate((unsigned char *)table);
+        jvmti->Deallocate((unsigned char *)local_var_table);
     }
-    
+
     if (get_locals) {
         jvmti_error = jvmti->GetLocalObject(thread, depth, 0, &value_ptr);
         if (jvmti_error != JVMTI_ERROR_NONE) {
             value_ptr = NULL;
         }
     }
-    
+
     jvmti_error = jvmti->GetLineNumberTable(method, &num_entries, &lineno_table);
     if (jvmti_error != JVMTI_ERROR_NONE) {
         lineno = -1; // Not retreived
@@ -240,33 +240,33 @@ jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth, jbo
         }
         jvmti->Deallocate((unsigned char *)lineno_table);
     }
-    
+
     return makeFrameObject(jvmti, env, method, value_ptr, locals, location, lineno);
 }
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
                                    jint start_depth, jboolean include_locals) {
-    jclass result_class;
-    jint i;
+    jint num_frames;
     jvmtiFrameInfo* frames;
-    jint count;
+    jclass result_class;
+    jint num_frames_returned;
     jvmtiError jvmti_error;
     jobjectArray result;
     jobject frame;
 
-    jvmti_error = jvmti->GetFrameCount(thread, &i);
+    jvmti_error = jvmti->GetFrameCount(thread, &num_frames);
     if (jvmti_error != JVMTI_ERROR_NONE) {
         throwException(env, "java/lang/RuntimeException", "Could not get the frame count.");
         return nullptr;
     }
 
-    jvmti_error = jvmti->Allocate(i*(int)sizeof(jvmtiFrameInfo), (unsigned char **)&frames);
+    jvmti_error = jvmti->Allocate(num_frames * (int)sizeof(jvmtiFrameInfo), (unsigned char **) &frames);
     if (jvmti_error != JVMTI_ERROR_NONE) {
         throwException(env, "java/lang/RuntimeException", "Could not allocate frame buffer.");
         return nullptr;
     }
 
-    jvmti_error = jvmti->GetStackTrace(thread, start_depth, i, frames, &count);
+    jvmti_error = jvmti->GetStackTrace(thread, start_depth, num_frames, frames, &num_frames_returned);
     if (jvmti_error != JVMTI_ERROR_NONE) {
         jvmti->Deallocate((unsigned char *)frames);
         throwException(env, "java/lang/RuntimeException", "Could not get stack trace.");
@@ -274,22 +274,22 @@ jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     }
 
     result_class = env->FindClass("io/sentry/jvmti/Frame");
-    result = env->NewObjectArray(count, result_class, nullptr);
+    result = env->NewObjectArray(num_frames_returned, result_class, nullptr);
     if (result == nullptr) {
-        jvmti->Deallocate((unsigned char *)frames);
+        jvmti->Deallocate((unsigned char *) frames);
         return nullptr; // OutOfMemory
     }
 
-    for (i = 0; i < count; i++) {
+    for (int i = 0; i < num_frames_returned; i++) {
         frame = buildFrame(jvmti, env, thread, start_depth + i, include_locals, frames[i].method, frames[i].location);
         if (frame == nullptr) {
-            jvmti->Deallocate((unsigned char *)frames);
+            jvmti->Deallocate((unsigned char *) frames);
             throwException(env, "java/lang/RuntimeException", "Error accessing frame object.");
             return nullptr;
         }
         env->SetObjectArrayElement(result, i, frame);
     }
 
-    jvmti->Deallocate((unsigned char *)frames);
+    jvmti->Deallocate((unsigned char *) frames);
     return result;
 }
