@@ -1,35 +1,15 @@
 // TODO: better error messages? (void) jvmti->GetErrorName(errnum, &errnum_str);
 // TODO: deal with threads? jrawMonitorID lock; jvmti->RawMonitorEnter(lock); jvmti->RawMonitorExit(lock);
 // TODO: use *options instead of env for log level?
+// TODO: toString objects so we don't hold a reference?
 
 #include "jvmti.h"
 #include <iostream>
 #include "lib.h"
 
-enum Level {
-    TRACE,
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR
-};
+extern Level LOG_LEVEL;
 
-static const std::string LEVEL_STRINGS[] = {
-        "TRACE",
-        "DEBUG",
-        "INFO",
-        "WARN",
-        "ERROR"
-};
-
-static Level LOG_LEVEL = WARN;
 static bool INIT_SUCCESS = false;
-
-static void log(Level level, std::string message) {
-    if (level >= LOG_LEVEL) {
-        std::cerr << LEVEL_STRINGS[level] << " [Sentry Agent]: " << message << std::endl;
-    }
-}
 
 static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thread,
                                       jmethodID method, jlocation location, jobject exception,
@@ -41,7 +21,7 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
     }
 
     char *class_name = (char *) "io/sentry/jvmti/LocalsCache";
-    char *method_name = (char *) "setResult";
+    char *method_name = (char *) "setCache";
     char *signature = (char *) "([Lio/sentry/jvmti/Frame;)V";
 
     jclass callback_class = nullptr;
@@ -56,7 +36,7 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
 
     callback_method_id = env->GetStaticMethodID(callback_class, method_name, signature);
     if (callback_method_id == nullptr) {
-        log(TRACE, "Unable to locate static setResult method.");
+        log(TRACE, "Unable to locate static setCache method.");
         return;
     }
 

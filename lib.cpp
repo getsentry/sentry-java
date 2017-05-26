@@ -1,4 +1,22 @@
+#include <iostream>
+#include "lib.h"
 #include "jvmti.h"
+
+const std::string LEVEL_STRINGS[] = {
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR"
+};
+
+Level LOG_LEVEL = WARN;
+
+void log(Level level, std::string message) {
+    if (level >= LOG_LEVEL) {
+        std::cerr << LEVEL_STRINGS[level] << " [Sentry Agent]: " << message << std::endl;
+    }
+}
 
 static jint throwException(JNIEnv *env, const char *name, const char *message) {
     jclass clazz;
