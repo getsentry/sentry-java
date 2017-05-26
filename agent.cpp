@@ -1,7 +1,6 @@
 // TODO: better error messages? (void) jvmti->GetErrorName(errnum, &errnum_str);
 // TODO: deal with threads? jrawMonitorID lock; jvmti->RawMonitorEnter(lock); jvmti->RawMonitorExit(lock);
 // TODO: use *options instead of env for log level?
-// TODO: toString objects so we don't hold a reference?
 
 #include "jvmti.h"
 #include <iostream>
