@@ -20,10 +20,7 @@ import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
 import com.getsentry.raven.event.interfaces.UserInterface;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -308,7 +305,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         //     (gcc version 4.6.x-xxx 20120106 (prerelease) (GCC) ) #1 SMP PREEMPT \
         //     Thu Jun 28 11:02:39 PDT 2012
 
-        final String PROC_VERSION_REGEX =
+        String PROC_VERSION_REGEX =
                 "Linux version (\\S+) " + /* group 1: "3.0.31-g6fb96c9" */
                 "\\((\\S+?)\\) " +        /* group 2: "x@y.com" (kernel builder) */
                 "(?:\\(gcc.+? \\)) " +    /* ignore: GCC version information */
@@ -316,18 +313,24 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 "(?:.*?)?" +              /* ignore: optional SMP, PREEMPT, and any CONFIG_FLAGS */
                 "((Sun|Mon|Tue|Wed|Thu|Fri|Sat).+)"; /* group 4: "Thu Jun 28 11:02:39 PDT 2012" */
 
+        int PROC_VERSION_GROUP_1 = 1;
+        int PROC_VERSION_GROUP_2 = 2;
+        int PROC_VERSION_GROUP_3 = 3;
+        int PROC_VERSION_GROUP_4 = 4;
+        int PROC_VERSION_GROUP_COUNT = PROC_VERSION_GROUP_4;
+
         Matcher m = Pattern.compile(PROC_VERSION_REGEX).matcher(rawKernelVersion);
         if (!m.matches()) {
             Log.e(TAG, "Regex did not match on /proc/version: " + rawKernelVersion);
             return "Unavailable";
-        } else if (m.groupCount() < 4) {
+        } else if (m.groupCount() < PROC_VERSION_GROUP_COUNT) {
             Log.e(TAG, "Regex match on /proc/version only returned " + m.groupCount()
                     + " groups");
             return "Unavailable";
         }
-        return m.group(1) + "\n" +                 // 3.0.31-g6fb96c9
-                m.group(2) + " " + m.group(3) + "\n" + // x@y.com #1
-                m.group(4);                            // Thu Jun 28 11:02:39 PDT 2012
+        return m.group(PROC_VERSION_GROUP_1) + "\n" + // 3.0.31-g6fb96c9
+                m.group(PROC_VERSION_GROUP_2) + " " + m.group(PROC_VERSION_GROUP_3) + "\n" + // x@y.com #1
+                m.group(PROC_VERSION_GROUP_2); // Thu Jun 28 11:02:39 PDT 2012
     }
 
     /**

@@ -71,7 +71,7 @@ public final class Util {
      * @throws IOException if the file couldn't be read
      */
     public static String readLine(String filename) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(filename), 256);
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
         try {
             return reader.readLine();
         } finally {
