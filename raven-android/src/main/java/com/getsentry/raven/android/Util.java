@@ -5,6 +5,10 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
 /**
  * Raven Android utility methods.
  */
@@ -58,6 +62,21 @@ public final class Util {
         }
 
         return isConnected(ctx);
+    }
+
+    /**
+     * Reads a line from the specified file.
+     * @param filename the file to read from
+     * @return the first line, if any.
+     * @throws IOException if the file couldn't be read
+     */
+    public static String readLine(String filename) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(filename), 256);
+        try {
+            return reader.readLine();
+        } finally {
+            reader.close();
+        }
     }
 
 }
