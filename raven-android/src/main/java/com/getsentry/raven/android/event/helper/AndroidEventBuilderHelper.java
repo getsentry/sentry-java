@@ -305,7 +305,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         //     (gcc version 4.6.x-xxx 20120106 (prerelease) (GCC) ) #1 SMP PREEMPT \
         //     Thu Jun 28 11:02:39 PDT 2012
 
-        String PROC_VERSION_REGEX =
+        final String procVersionRegex =
                 "Linux version (\\S+) " + /* group 1: "3.0.31-g6fb96c9" */
                 "\\((\\S+?)\\) " +        /* group 2: "x@y.com" (kernel builder) */
                 "(?:\\(gcc.+? \\)) " +    /* ignore: GCC version information */
@@ -313,24 +313,26 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 "(?:.*?)?" +              /* ignore: optional SMP, PREEMPT, and any CONFIG_FLAGS */
                 "((Sun|Mon|Tue|Wed|Thu|Fri|Sat).+)"; /* group 4: "Thu Jun 28 11:02:39 PDT 2012" */
 
-        int PROC_VERSION_GROUP_1 = 1;
-        int PROC_VERSION_GROUP_2 = 2;
-        int PROC_VERSION_GROUP_3 = 3;
-        int PROC_VERSION_GROUP_4 = 4;
-        int PROC_VERSION_GROUP_COUNT = PROC_VERSION_GROUP_4;
+        // CHECKSTYLE.OFF: MagicNumber
+        final int procVersionGroupKernelVersion = 1;
+        final int procVersionGroupBuilderName = 2;
+        final int procVersionGroupBuildNumber = 3;
+        final int procVersionGroupBuildDate = 4;
+        final int procVersionGroupCount = 4;
+        // CHECKSTYLE.ON: MagicNumber
 
-        Matcher m = Pattern.compile(PROC_VERSION_REGEX).matcher(rawKernelVersion);
+        Matcher m = Pattern.compile(procVersionRegex).matcher(rawKernelVersion);
         if (!m.matches()) {
             Log.e(TAG, "Regex did not match on /proc/version: " + rawKernelVersion);
             return "Unavailable";
-        } else if (m.groupCount() < PROC_VERSION_GROUP_COUNT) {
+        } else if (m.groupCount() < procVersionGroupCount) {
             Log.e(TAG, "Regex match on /proc/version only returned " + m.groupCount()
                     + " groups");
             return "Unavailable";
         }
-        return m.group(PROC_VERSION_GROUP_1) + "\n" + // 3.0.31-g6fb96c9
-                m.group(PROC_VERSION_GROUP_2) + " " + m.group(PROC_VERSION_GROUP_3) + "\n" + // x@y.com #1
-                m.group(PROC_VERSION_GROUP_2); // Thu Jun 28 11:02:39 PDT 2012
+        return m.group(procVersionGroupKernelVersion) + "\n" + // 3.0.31-g6fb96c9
+                m.group(procVersionGroupBuilderName) + " " + m.group(procVersionGroupBuildNumber) + "\n" + // x@y.com #1
+                m.group(procVersionGroupBuildDate); // Thu Jun 28 11:02:39 PDT 2012
     }
 
     /**
