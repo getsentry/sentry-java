@@ -33,8 +33,8 @@ Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
 For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-android%7C1.0.0%7Cjar>`_.
 
-Usage
------
+Initialization
+--------------
 
 Your application must have permission to access the internet in order to send
 events to the Sentry server. In your ``AndroidManifest.xml``:
@@ -59,32 +59,85 @@ Then initialize the Sentry client in your application's main ``onCreate`` method
             // Use the Sentry DSN (client key) from the Project Settings page on Sentry
             String sentryDsn = "https://publicKey:secretKey@host:port/1?options";
             Context ctx = this.getApplicationContext();
-
             Sentry.init(sentryDsn, new AndroidSentryClientFactory(ctx));
         }
     }
 
+=======
+You can also configure your Sentry DSN (client key) in your ``AndroidManifest.xml``:
+
+.. sourcecode:: xml
+
+    <application>
+      <meta-data
+        android:name="io.sentry.android.DSN"
+        android:value="https://publicKey:secretKey@host:port/1?options" />
+    </application>
+
+And then you don't need to manually provide the DSN in your code:
+
+.. sourcecode:: java
+
+    import io.sentry.Sentry;
+    import io.sentry.android.AndroidSentryClientFactory;
+
+    public class MainActivity extends Activity {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+
+            Context ctx = this.getApplicationContext();
+            Sentry.init(new AndroidSentryClientFactory(ctx));
+        }
+    }
+
+Usage
+-----
+
+>>>>>>> origin/sentry-1.0
 Now you can use ``Sentry`` to capture events anywhere in your application:
 
 .. sourcecode:: java
 
-    // Send a simple event to the Sentry server
-    Sentry.capture("Error message");
+    import io.sentry.context.Context;
+    import io.sentry.event.BreadcrumbBuilder;
+    import io.sentry.event.UserBuilder;
 
-    // Set a breadcrumb that will be sent with the next event(s)
-    Sentry.record(
-        new BreadcrumbBuilder().setMessage("User made an action").build()
-    );
+    public class MyClass {
+        /**
+         * An example method that throws an exception.
+         */
+        void unsafeMethod() {
+            throw new UnsupportedOperationException("You shouldn't call this!");
+        }
 
-    try {
-        something()
-    } catch (Exception e) {
-        // Send an exception event to the Sentry server
-        Sentry.capture(e);
+        /**
+         * Note that the ``Sentry.init`` method must be called before the static API
+         * is used, otherwise a ``NullPointerException`` will be thrown.
+         */
+        void logWithStaticAPI() {
+            /*
+            Record a breadcrumb in the current context which will be sent
+            with the next event(s). By default the last 100 breadcrumbs are kept.
+            */
+            Sentry.record(new BreadcrumbBuilder().setMessage("User made an action").build());
+
+            // Set the user in the current context.
+            Sentry.setUser(new UserBuilder().setEmail("hello@sentry.io").build());
+
+            /*
+            This sends a simple event to Sentry using the statically stored instance
+            that was created in the ``main`` method.
+            */
+            Sentry.capture("This is a test");
+
+            try {
+                unsafeMethod();
+            } catch (Exception e) {
+                // This sends an exception event to Sentry using the statically stored instance
+                // that was created in the ``main`` method.
+                Sentry.capture(e);
+            }
+        }
     }
 
-    // Or build an event manually
-    EventBuilder eventBuilder = new EventBuilder()
-                                  .withMessage("Exception caught")
-                                  .withLevel(Event.Level.ERROR);
-    Sentry.capture(eventBuilder);

@@ -1,5 +1,6 @@
 package io.sentry.log4j2;
 
+import io.sentry.event.EventBuilder;
 import mockit.Injectable;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
@@ -37,7 +38,7 @@ public class SentryAppenderFailuresTest {
     @Test
     public void testSentryFailureDoesNotPropagate() throws Exception {
         new NonStrictExpectations() {{
-            mockSentryClient.sendEvent((Event) any);
+            mockSentryClient.sendEvent((EventBuilder) any);
             result = new UnsupportedOperationException();
         }};
 
@@ -68,7 +69,7 @@ public class SentryAppenderFailuresTest {
             sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null));
 
             new Verifications() {{
-                mockSentryClient.sendEvent((Event) any);
+                mockSentryClient.sendEvent((EventBuilder) any);
                 times = 0;
             }};
             assertThat(mockUpErrorHandler.getErrorCount(), is(0));

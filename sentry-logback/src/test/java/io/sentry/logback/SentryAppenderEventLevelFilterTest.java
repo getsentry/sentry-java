@@ -2,6 +2,7 @@ package io.sentry.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
+import io.sentry.event.EventBuilder;
 import mockit.Injectable;
 import mockit.Tested;
 import mockit.Verifications;
@@ -53,7 +54,7 @@ public class SentryAppenderEventLevelFilterTest {
         sentryAppender.append(new MockUpLoggingEvent(null, null, Level.ERROR, null, null, null).getMockInstance());
 
         new Verifications() {{
-            mockSentryClient.sendEvent((Event) any);
+            mockSentryClient.sendEvent((EventBuilder) any);
             minTimes = expectedEvents;
             maxTimes = expectedEvents;
         }};
@@ -68,7 +69,7 @@ public class SentryAppenderEventLevelFilterTest {
         sentryAppender.append(new MockUpLoggingEvent(null, null, Level.ERROR, null, null, null).getMockInstance());
 
         new Verifications() {{
-            mockSentryClient.sendEvent((Event) any);
+            mockSentryClient.sendEvent((EventBuilder) any);
             minTimes = 5;
             maxTimes = 5;
         }};
