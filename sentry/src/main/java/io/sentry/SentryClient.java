@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Sentry client, for sending {@link Event}s to a Sentry server.
@@ -71,11 +71,9 @@ public class SentryClient {
      */
     private final Connection connection;
     /**
-     * Set of {@link EventBuilderHelper}s. Note that we wrap a {@link ConcurrentHashMap} because there
-     * isn't a concurrent set in the standard library.
+     * List of {@link EventBuilderHelper}s.
      */
-    private final Set<EventBuilderHelper> builderHelpers =
-        Collections.newSetFromMap(new ConcurrentHashMap<EventBuilderHelper, Boolean>());
+    private final List<EventBuilderHelper> builderHelpers = new CopyOnWriteArrayList<>();
     /**
      * The {@link ContextManager} to use for locating and storing data that is context specific,
      * such as {@link io.sentry.event.Breadcrumb}s.
@@ -204,8 +202,8 @@ public class SentryClient {
         builderHelpers.add(builderHelper);
     }
 
-    public Set<EventBuilderHelper> getBuilderHelpers() {
-        return Collections.unmodifiableSet(builderHelpers);
+    public List<EventBuilderHelper> getBuilderHelpers() {
+        return Collections.unmodifiableList(builderHelpers);
     }
 
     /**
