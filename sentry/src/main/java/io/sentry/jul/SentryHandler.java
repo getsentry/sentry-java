@@ -92,8 +92,8 @@ public class SentryHandler extends Handler {
 
         SentryEnvironment.startManagingThread();
         try {
-            Event event = buildEvent(record);
-            Sentry.capture(event);
+            EventBuilder eventBuilder = createEventBuilder(record);
+            Sentry.capture(eventBuilder);
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Sentry", e, ErrorManager.WRITE_FAILURE);
         } finally {
@@ -102,12 +102,12 @@ public class SentryHandler extends Handler {
     }
 
     /**
-     * Builds an Event based on the log record.
+     * Builds an EventBuilder based on the log record.
      *
      * @param record Log generated.
-     * @return Event containing details provided by the logging system.
+     * @return EventBuilder containing details provided by the logging system.
      */
-    protected Event buildEvent(LogRecord record) {
+    protected EventBuilder createEventBuilder(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":jul")
             .withLevel(getLevel(record.getLevel()))
@@ -162,8 +162,7 @@ public class SentryHandler extends Handler {
 
         eventBuilder.withExtra(THREAD_ID, record.getThreadID());
 
-        Sentry.getStoredClient().runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     /**

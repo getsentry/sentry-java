@@ -129,8 +129,8 @@ public class SentryAppender extends AbstractAppender {
 
         SentryEnvironment.startManagingThread();
         try {
-            Event event = buildEvent(logEvent);
-            Sentry.capture(event);
+            EventBuilder eventBuilder = createEventBuilder(logEvent);
+            Sentry.capture(eventBuilder);
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Sentry", logEvent, e);
         } finally {
@@ -139,12 +139,12 @@ public class SentryAppender extends AbstractAppender {
     }
 
     /**
-     * Builds an Event based on the logging event.
+     * Builds an EventBuilder based on the logging event.
      *
      * @param event Log generated.
-     * @return Event containing details provided by the logging system.
+     * @return EventBuilder containing details provided by the logging system.
      */
-    protected Event buildEvent(LogEvent event) {
+    protected EventBuilder createEventBuilder(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":log4j2")
@@ -195,8 +195,7 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withTag(LOG4J_MARKER, event.getMarker().getName());
         }
 
-        Sentry.getStoredClient().runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     @Override

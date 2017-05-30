@@ -91,7 +91,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
-        if (SentryEnvironment.isManagingThread()) {
+        if (isNotLoggable(iLoggingEvent) || SentryEnvironment.isManagingThread()) {
             return;
         }
 
@@ -101,8 +101,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 return;
             }
 
-            Event event = buildEvent(iLoggingEvent);
-            Sentry.capture(event);
+            EventBuilder eventBuilder = createEventBuilder(iLoggingEvent);
+            Sentry.capture(eventBuilder);
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Sentry", e);
         } finally {
@@ -110,13 +110,17 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
+    private boolean isNotLoggable(ILoggingEvent iLoggingEvent) {
+        return minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel);
+    }
+
     /**
-     * Builds an Event based on the logging event.
+     * Builds an EventBuilder based on the logging event.
      *
      * @param iLoggingEvent Log generated.
-     * @return Event containing details provided by the logging system.
+     * @return EventBuilder containing details provided by the logging system.
      */
-    protected Event buildEvent(ILoggingEvent iLoggingEvent) {
+    protected EventBuilder createEventBuilder(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkName(SentryEnvironment.SDK_NAME + ":logback")
             .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
@@ -160,8 +164,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withTag(LOGBACK_MARKER, iLoggingEvent.getMarker().getName());
         }
 
-        Sentry.getStoredClient().runBuilderHelpers(eventBuilder);
-        return eventBuilder.build();
+        return eventBuilder;
     }
 
     /**

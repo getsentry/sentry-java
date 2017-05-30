@@ -35,55 +35,107 @@ For other dependency managers see the `central Maven repository <https://search.
 Capture an Error
 ----------------
 
-To report an event manually you need to construct a ``Sentry`` instance and use one
-of the send methods it provides.
+To report an event manually you need to initialize a ``SentryClient``. It is recommended
+that you use the static API via the ``Sentry`` class, but you can also construct and manage
+your own ``SentryClient`` instance. An example of each style is shown below:
 
 .. sourcecode:: java
 
-    import io.sentry.Sentry;
-    import io.sentry.SentryClientFactory;
+    import io.sentry.context.Context;
+    import io.sentry.event.BreadcrumbBuilder;
+    import io.sentry.event.UserBuilder;
 
     public class MyClass {
         private static SentryClient sentry;
 
         public static void main(String... args) {
-            // Creation of the client with a specific DSN
+            /*
+            It is recommended that you use the DSN detection system, which
+            will check the environment variable "SENTRY_DSN" and the Java
+            System Property "sentry.dsn". This makes it easier to provide
+            and adjust your DSN without needing to change your code.
+            */
+            Sentry.init();
+
+            // You can also manually provide the DSN to the ``init`` method.
             String dsn = args[0];
-            sentry = SentryClientFactory.sentryClient(dsn);
+            Sentry.init(dsn);
 
-            // It is also possible to use the DSN detection system, which
-            // will check the environment variable "SENTRY_DSN" and the Java
-            // System Property "sentry.dsn".
+            /*
+            It is possible to go around the static ``Sentry`` API, which means
+            you are responsible for making the SentryClient instance available
+            to your code.
+            */
             sentry = SentryClientFactory.sentryClient();
+
+            MyClass myClass = new MyClass();
+            myClass.logWithStaticAPI();
+            myClass.logWithInstanceAPI();
         }
 
-        void logSimpleMessage() {
-            // This sends a simple event to Sentry
-            sentry.sendMessage("This is a test");
+        /**
+         * An example method that throws an exception.
+         */
+        void unsafeMethod() {
+            throw new UnsupportedOperationException("You shouldn't call this!");
         }
 
-        void logWithBreadcrumbs() {
-            // Record a breadcrumb that will be sent with the next event(s),
-            // by default the last 100 breadcrumbs are kept.
-            Sentry.record(
-                new BreadcrumbBuilder().setMessage("User made an action").build()
-            );
+        /**
+         * Examples using the (recommended) static API.
+         *
+         * Note that the ``Sentry.init`` method must be called before the static API
+         * is used, otherwise a ``NullPointerException`` will be thrown.
+         */
+        void logWithStaticAPI() {
+            /*
+            Record a breadcrumb in the current context which will be sent
+            with the next event(s). By default the last 100 breadcrumbs are kept.
+            */
+            Sentry.record(new BreadcrumbBuilder().setMessage("User made an action").build());
 
-            // This sends a simple event to Sentry
-            sentry.sendMessage("This is a test");
-        }
+            // Set the user in the current context.
+            Sentry.setUser(new UserBuilder().setEmail("hello@sentry.io").build());
 
-        void logException() {
+            /*
+            This sends a simple event to Sentry using the statically stored instance
+            that was created in the ``main`` method.
+            */
+            Sentry.capture("This is a test");
+
             try {
                 unsafeMethod();
             } catch (Exception e) {
-                // This sends an exception event to Sentry
-                sentry.sendException(e);
+                // This sends an exception event to Sentry using the statically stored instance
+                // that was created in the ``main`` method.
+                Sentry.capture(e);
             }
         }
 
-        void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call this!");
+        /**
+         * Examples that use the SentryClient instance directly.
+         */
+        void logWithInstanceAPI() {
+            // Retrieve the current context.
+            Context context = sentry.getContext();
+
+            /*
+            Record a breadcrumb in the current context which will be sent
+            with the next event(s). By default the last 100 breadcrumbs are kept.
+            */
+            context.recordBreadcrumb(new BreadcrumbBuilder().setMessage("User made an action").build());
+
+            // Set the user in the current context.
+            context.setUser(new UserBuilder().setEmail("hello@sentry.io").build());
+
+            // This sends a simple event to Sentry.
+            sentry.sendMessage("This is a test");
+
+            try {
+                unsafeMethod();
+            } catch (Exception e) {
+                // This sends an exception event to Sentry.
+                sentry.sendException(e);
+            }
         }
     }
 
@@ -96,90 +148,39 @@ For more complex messages, you'll need to build an ``Event`` with the
 .. sourcecode:: java
 
     import io.sentry.Sentry;
-    import io.sentry.SentryClientFactory;
     import io.sentry.event.Event;
     import io.sentry.event.EventBuilder;
     import io.sentry.event.interfaces.ExceptionInterface;
-    import io.sentry.event.interfaces.MessageInterface;
 
     public class MyClass {
-        private static Sentry sentry;
-
         public static void main(String... args) {
-            // Creation of the client with a specific DSN
-            String dsn = args[0];
-            sentry = SentryClientFactory.sentryClient(dsn);
+            Sentry.init();
+        }
 
-            // It is also possible to use the DSN detection system, which
-            // will check the environment variable "SENTRY_DSN" and the Java
-            // System Property "sentry.dsn".
-            sentry = SentryClientFactory.sentryClient();
-
-            // Advanced: specify the sentryClientFactory used
-            sentry = SentryClientFactory.sentryClient(new Dsn(dsn), "io.sentry.DefaultSentryClientFactory");
+        void unsafeMethod() {
+            throw new UnsupportedOperationException("You shouldn't call this!");
         }
 
         void logSimpleMessage() {
-            // This sends an event to Sentry
+            // This sends an event to Sentry.
             EventBuilder eventBuilder = new EventBuilder()
                             .withMessage("This is a test")
                             .withLevel(Event.Level.INFO)
                             .withLogger(MyClass.class.getName());
-            sentry.sendEvent(eventBuilder);
+            Sentry.capture(eventBuilder);
         }
 
         void logException() {
             try {
                 unsafeMethod();
             } catch (Exception e) {
-                // This sends an exception event to Sentry
+                // This sends an exception event to Sentry.
                 EventBuilder eventBuilder = new EventBuilder()
                                 .withMessage("Exception caught")
                                 .withLevel(Event.Level.ERROR)
                                 .withLogger(MyClass.class.getName())
                                 .withSentryInterface(new ExceptionInterface(e));
-                sentry.sendEvent(eventBuilder);
+                Sentry.capture(eventBuilder);
             }
         }
-
-        void unsafeMethod() {
-            throw new UnsupportedOperationException("You shouldn't call this!");
-        }
-    }
-
-Static Access to Sentry
------------------------
-
-The most recently constructed ``Sentry`` instance is stored statically so it may
-be used easily from anywhere in your application.
-
-.. sourcecode:: java
-
-    import io.sentry.Sentry;
-    import io.sentry.SentryClientFactory;
-
-    public class MyClass {
-        public static void main(String... args) {
-            // Create a SentryClient instance
-            SentryClientFactory.sentryClient();
-        }
-
-        public somewhereElse() {
-            // Use the stored SentryClient instance statically. Note that we are
-            // using the Class (and a static method) here
-            Sentry.capture("Error message");
-
-            // Or pass it a throwable
-            Sentry.capture(new Exception("Error message"));
-
-            // Or build an event yourself
-            EventBuilder eventBuilder = new EventBuilder()
-                            .withMessage("Exception caught")
-                            .withLevel(Event.Level.ERROR);
-            Sentry.capture(eventBuilder.build());
-        }
-
-    }
-
-Note that a SentryClient instance *must* be created before you can use the ``Sentry.capture``
-method, otherwise a ``NullPointerException`` (with an explanation) will be thrown.
+ }
