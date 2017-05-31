@@ -20,7 +20,10 @@ import com.getsentry.raven.event.EventBuilder;
 import com.getsentry.raven.event.helper.EventBuilderHelper;
 import com.getsentry.raven.event.interfaces.UserInterface;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -285,13 +288,28 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     /**
-     * Get the device's current kernel version, as a string (from uname -a).
+     * Reads a line from the specified file.
+     * @param filename the file to read from
+     * @return the first line, if any.
+     * @throws IOException if the file couldn't be read
+     */
+    private static String readLine(String filename) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        try {
+            return reader.readLine();
+        } finally {
+            reader.close();
+        }
+    }
+
+    /**
+     * Get the device's current kernel version, as a string (from /proc/version).
      *
-     * @return the device's current kernel version, as a string (from uname -a)
+     * @return the device's current kernel version, as a string (from /proc/version)
      */
     private static String getKernelVersion() {
         try {
-            return formatKernelVersion(Util.readLine("/proc/version"));
+            return formatKernelVersion(readLine("/proc/version"));
         } catch (Exception e) {
             Log.e(TAG, "Exception while attempting to read kernel information", e);
         }
@@ -324,11 +342,11 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         Matcher m = Pattern.compile(procVersionRegex).matcher(rawKernelVersion);
         if (!m.matches()) {
             Log.e(TAG, "Regex did not match on /proc/version: " + rawKernelVersion);
-            return "Unavailable";
+            return null;
         } else if (m.groupCount() < procVersionGroupCount) {
             Log.e(TAG, "Regex match on /proc/version only returned " + m.groupCount()
                     + " groups");
-            return "Unavailable";
+            return null;
         }
         return m.group(procVersionGroupKernelVersion) + "\n" + // 3.0.31-g6fb96c9
                 m.group(procVersionGroupBuilderName) + " " + m.group(procVersionGroupBuildNumber) + "\n" + // x@y.com #1
