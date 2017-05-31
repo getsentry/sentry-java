@@ -26,8 +26,7 @@ public class SentryITActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SentryAndroid.init(
-            this.getApplicationContext(),
+        Sentry.init(
             "http://8292bf61d620417282e68a72ae03154a:e3908e05ad874b24b7a168992bfa3577@localhost:8080/1",
             new CustomAndroidSentryClientFactory(getApplicationContext()));
     }

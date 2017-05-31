@@ -125,9 +125,6 @@ public class SentryClientFactoryTest extends BaseTest {
         final String dsn = "protocol://user:password@host:port/3";
         SentryClientFactory.registerFactory(sentryClientFactory);
         new NonStrictExpectations() {{
-            Dsn.dsnLookup();
-            result = dsn;
-
             sentryClientFactory.createSentryClient((Dsn) any);
             result = mockSentryClient;
         }};
@@ -135,9 +132,6 @@ public class SentryClientFactoryTest extends BaseTest {
         SentryClient sentryClient = SentryClientFactory.sentryClient();
 
         assertThat(sentryClient, is(mockSentryClient));
-        new Verifications() {{
-            new Dsn(dsn);
-        }};
     }
 
     @Test

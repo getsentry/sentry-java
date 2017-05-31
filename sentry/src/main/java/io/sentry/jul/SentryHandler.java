@@ -46,7 +46,7 @@ public class SentryHandler extends Handler {
      * <p>
      * Might be null in which case the DSN should be detected automatically.
      */
-    protected String dsn;
+    protected Dsn dsn;
     /**
      * If true, <code>String.format()</code> is used to render parameterized log
      * messages instead of <code>MessageFormat.format()</code>; Defaults to
@@ -274,11 +274,7 @@ public class SentryHandler extends Handler {
      */
     protected synchronized void initSentry() {
         try {
-            if (dsn == null) {
-                dsn = Dsn.dsnLookup();
-            }
-
-            sentryClient = SentryClientFactory.sentryClient(new Dsn(dsn), sentryClientFactory);
+            sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
         } catch (InvalidDsnException e) {
             reportError("An exception occurred during the retrieval of the DSN for Sentry",
                 e, ErrorManager.OPEN_FAILURE);
@@ -408,8 +404,17 @@ public class SentryHandler extends Handler {
         }
     }
 
+    /**
+     * Sets the DSN field if the provided string is not null or empty,
+     * otherwise leaves the field null so that a DSN lookup will be
+     * done on client creation.
+     *
+     * @param dsn Dsn as a string
+     */
     public void setDsn(String dsn) {
-        this.dsn = dsn;
+        if (!Util.isNullOrEmpty(dsn)) {
+            this.dsn = new Dsn(dsn);
+        }
     }
 
     public void setPrintfStyle(boolean printfStyle) {

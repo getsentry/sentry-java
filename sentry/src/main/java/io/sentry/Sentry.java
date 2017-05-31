@@ -1,14 +1,19 @@
 package io.sentry;
 
+import io.sentry.dsn.Dsn;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.User;
+import io.sentry.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Sentry provides easy access to a statically stored {@link SentryClient} instance.
  */
 public final class Sentry {
+    private static final Logger logger = LoggerFactory.getLogger(Sentry.class);
     /**
      * The most recently constructed {@link SentryClient} instance, used by static helper
      * methods like {@link Sentry#capture(Event)}.
@@ -23,17 +28,90 @@ public final class Sentry {
     }
 
     /**
+     * Initialize and statically store a {@link SentryClient} by looking up
+     * a {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     *
+     * @return SentryClient
+     */
+    public static SentryClient init() {
+        return init(null, null);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by looking up
+     * a {@link Dsn} and using the provided {@link SentryClientFactory}.
+     *
+     * @param sentryClientFactory SentryClientFactory to use.
+     * @return SentryClient
+     */
+    public static SentryClient init(SentryClientFactory sentryClientFactory) {
+        return init(null, sentryClientFactory);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return SentryClient
+     */
+    public static SentryClient init(String dsn) {
+        return init(dsn, null);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link Dsn} and {@link SentryClientFactory}.
+     * <p>
+     * Note that the Dsn or SentryClientFactory may be null, at which a best effort attempt
+     * is made to look up or choose the best value(s).
+     *
+     * @param dsn                 Data Source Name of the Sentry server.
+     * @param sentryClientFactory SentryClientFactory to use.
+     * @return SentryClient
+     */
+    public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory) {
+        SentryClient sentryClient;
+        if (sentryClientFactory != null) {
+            Dsn realDsn;
+            if (!Util.isNullOrEmpty(dsn)) {
+                realDsn = new Dsn(dsn);
+            } else {
+                realDsn = new Dsn(Dsn.dsnLookup());
+            }
+
+            // use the factory instance directly
+            sentryClient = sentryClientFactory.createSentryClient(realDsn);
+        } else {
+            // do static factory lookup
+            sentryClient = SentryClientFactory.sentryClient(dsn);
+        }
+
+        setStoredClient(sentryClient);
+        return sentryClient;
+    }
+
+    /**
      * Returns the last statically stored {@link SentryClient} instance or null if one has
      * never been stored.
      *
-     * @return statically stored {@link SentryClient} instance
+     * @return statically stored {@link SentryClient} instance.
      */
     public static SentryClient getStoredClient() {
         return storedClient;
     }
 
-    public static void setStoredClient(SentryClient storedClient) {
-        Sentry.storedClient = storedClient;
+    /**
+     * Set the statically stored {@link SentryClient} instance.
+     *
+     * @param client {@link SentryClient} instance to store.
+     */
+    public static void setStoredClient(SentryClient client) {
+        if (storedClient != null) {
+            logger.warn("Overwriting statically stored SentryClient instance {} with {}.",
+                storedClient, client);
+        }
+        storedClient = client;
     }
 
     private static void verifyStoredClient() {
@@ -46,7 +124,7 @@ public final class Sentry {
     /**
      * Send an Event using the statically stored {@link SentryClient} instance.
      *
-     * @param event Event to send to the Sentry server
+     * @param event Event to send to the Sentry server.
      */
     public static void capture(Event event) {
         verifyStoredClient();
@@ -92,7 +170,7 @@ public final class Sentry {
     /**
      * Record a {@link Breadcrumb}.
      *
-     * @param breadcrumb Breadcrumb to record
+     * @param breadcrumb Breadcrumb to record.
      */
     public static void record(Breadcrumb breadcrumb) {
         verifyStoredClient();
@@ -116,6 +194,5 @@ public final class Sentry {
         verifyStoredClient();
         getStoredClient().getContext().clear();
     }
-
 
 }

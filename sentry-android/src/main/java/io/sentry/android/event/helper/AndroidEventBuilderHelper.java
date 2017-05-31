@@ -7,6 +7,8 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -14,7 +16,6 @@ import android.os.StatFs;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import io.sentry.android.Util;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
@@ -98,7 +99,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         deviceMap.put("external_storage_size", getTotalExternalStorage());
         deviceMap.put("external_free_storage", getUnusedExternalStorage());
         deviceMap.put("charging",              isCharging(ctx));
-        deviceMap.put("online",                Util.isConnected(ctx));
+        deviceMap.put("online",                isConnected(ctx));
 
         DisplayMetrics displayMetrics = getDisplayMetrics(ctx);
         if (displayMetrics != null) {
@@ -489,6 +490,19 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         }
 
         return null;
+    }
+
+    /**
+     * Check whether the application has internet access at a point in time.
+     *
+     * @param ctx Android application context
+     * @return true if the application has internet access
+     */
+    private static boolean isConnected(Context ctx) {
+        ConnectivityManager connectivityManager =
+            (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
 }

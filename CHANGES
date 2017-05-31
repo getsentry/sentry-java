@@ -7,8 +7,8 @@ Version 1.0.0
 - Rename the ``SentryFactory`` class to ``SentryClientFactory``, and renamed all subclasses
   to now end in ``ClientFactory``.
 - Remove ``Breadcrumbs`` class.
-- Add new ``Sentry`` class for static client access and usage.
-- Rename ``android.Sentry`` to ``android.AndroidSentry`` to make it unambiguous when used in code.
+- Add new ``Sentry`` class for static client initialization, access and usage.
+- Remove ``android.Sentry`` in favor of using the single static ``Sentry`` class everywhere.
 - Rename ``sentryFactory`` option to ``factory`` so that the environment variable configuration is
   now ``SENTRY_FACTORY`` and the Java System Property is ``sentry.factory``.
 - Add ``dist`` field to Event.
