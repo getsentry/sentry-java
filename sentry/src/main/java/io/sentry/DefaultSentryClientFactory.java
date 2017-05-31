@@ -204,7 +204,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     /**
      * Option to set extras to extract and send as tags, where applicable.
      */
-    public static final String EXTRA_TAGS_OPTION = "extratags";
+    public static final String EXTRATAGS_OPTION = "extratags";
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentryClientFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
@@ -721,7 +721,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Extras to use as tags on {@link io.sentry.event.Event}s, where applicable.
      */
     protected Set<String> getExtraTags(Dsn dsn) {
-        return Util.parseExtraTags(dsn.getOptions().get(EXTRA_TAGS_OPTION));
+        return Util.parseExtraTags(dsn.getOptions().get(EXTRATAGS_OPTION));
     }
 
     /**
