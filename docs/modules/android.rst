@@ -94,7 +94,6 @@ And then you don't need to manually provide the DSN in your code:
 Usage
 -----
 
->>>>>>> origin/sentry-1.0
 Now you can use ``Sentry`` to capture events anywhere in your application:
 
 .. sourcecode:: java
