@@ -1,5 +1,7 @@
 package io.sentry.log4j;
 
+import io.sentry.BaseTest;
+import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.SentryStackTraceElement;
@@ -18,16 +20,13 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class SentryAppenderEventBuildingTest {
+public class SentryAppenderEventBuildingTest extends BaseTest {
     @Tested
     private SentryAppender sentryAppender = null;
     private MockUpErrorHandler mockUpErrorHandler;
@@ -36,13 +35,16 @@ public class SentryAppenderEventBuildingTest {
     @Injectable
     private Logger mockLogger = null;
     private String mockExtraTag = "a8e0ad33-3c11-4899-b8c7-c99926c6d7b8";
+    private Set<String> extraTags;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        sentryAppender = new SentryAppender(mockSentryClient);
+        Sentry.setStoredClient(mockSentryClient);
+        sentryAppender = new SentryAppender();
         mockUpErrorHandler = new MockUpErrorHandler();
         sentryAppender.setErrorHandler(mockUpErrorHandler.getMockInstance());
-        sentryAppender.setExtraTags(mockExtraTag);
+        extraTags = new HashSet<>();
+        extraTags.add(mockExtraTag);
         sentryAppender.activateOptions();
     }
 
@@ -243,6 +245,11 @@ public class SentryAppenderEventBuildingTest {
         properties.put(mockExtraTag, "ac84f38a-3889-41ed-9519-201402688abb");
         properties.put("other_property", "10ebc4f6-a915-46d0-bb60-75bc9bd71371");
 
+        new NonStrictExpectations() {{
+            mockSentryClient.getExtraTags();
+            result = extraTags;
+        }};
+
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null, null, null, null, properties));
 
         new Verifications() {{
@@ -263,6 +270,8 @@ public class SentryAppenderEventBuildingTest {
         new NonStrictExpectations() {{
             extraTagValue.toString();
             result = "3c8981b4-01ad-47ec-8a3a-77a0bbcb42e2";
+            mockSentryClient.getExtraTags();
+            result = extraTags;
         }};
 
         sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null, null, null, null, properties));
@@ -274,38 +283,6 @@ public class SentryAppenderEventBuildingTest {
             assertThat(event.getTags().entrySet(), hasSize(1));
             assertThat(event.getTags(), hasEntry(mockExtraTag, "3c8981b4-01ad-47ec-8a3a-77a0bbcb42e2"));
             assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testReleaseAddedToEvent() throws Exception {
-        final String release = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
-        sentryAppender.setRelease(release);
-
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getRelease(), is(release));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testEnvironmentAddedToEvent() throws Exception {
-        final String environment = "d7b4a6a0-1a0a-4381-a519-e2ccab609003";
-        sentryAppender.setEnvironment(environment);
-
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getEnvironment(), is(environment));
         }};
         assertNoErrorsInErrorHandler();
     }

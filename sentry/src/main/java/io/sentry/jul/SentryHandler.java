@@ -1,31 +1,19 @@
 package io.sentry.jul;
 
-import io.sentry.SentryClient;
-import io.sentry.SentryClientFactory;
-import io.sentry.config.Lookup;
-import io.sentry.dsn.Dsn;
-import io.sentry.dsn.InvalidDsnException;
+import io.sentry.Sentry;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.MessageInterface;
-import io.sentry.util.Util;
 import org.slf4j.MDC;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.ErrorManager;
-import java.util.logging.Filter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.LogRecord;
+import java.util.logging.*;
 
 /**
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
@@ -36,67 +24,11 @@ public class SentryHandler extends Handler {
      */
     public static final String THREAD_ID = "Sentry-ThreadId";
     /**
-     * Current instance of {@link SentryClient}.
-     *
-     * @see #initSentry()
-     */
-    protected volatile SentryClient sentryClient;
-    /**
-     * DSN property of the appender.
-     * <p>
-     * Might be null in which case the DSN should be detected automatically.
-     */
-    protected Dsn dsn;
-    /**
      * If true, <code>String.format()</code> is used to render parameterized log
      * messages instead of <code>MessageFormat.format()</code>; Defaults to
      * false.
      */
     protected boolean printfStyle;
-    /**
-     * Name of the {@link SentryClientFactory} being used.
-     * <p>
-     * Might be null in which case the factory should be defined automatically.
-     */
-    protected String sentryClientFactory;
-    /**
-     * Identifies the version of the application.
-     * <p>
-     * Might be null in which case the release information will not be sent with the event.
-     */
-    protected String release;
-    /**
-     * Identifies the distribution of the application.
-     * <p>
-     * Might be null in which case the release distribution will not be sent with the event.
-     */
-    protected String dist;
-    /**
-     * Identifies the environment the application is running in.
-     * <p>
-     * Might be null in which case the environment information will not be sent with the event.
-     */
-    protected String environment;
-    /**
-     * Server name to be sent to sentry.
-     * <p>
-     * Might be null in which case the hostname is found via a reverse DNS lookup.
-     */
-    protected String serverName;
-    /**
-     * Tags to add to every event.
-     */
-    protected Map<String, String> tags = Collections.emptyMap();
-    /**
-     * Set of tags to look for in the MDC. These will be added as tags to be sent to sentry.
-     * <p>
-     * Might be empty in which case no mapped tags are set.
-     */
-    protected Set<String> extraTags = Collections.emptySet();
-    /**
-     * Used for lazy initialization of appender state, see {@link #lazyInit()}.
-     */
-    private volatile boolean initialized = false;
 
     /**
      * Creates an instance of SentryHandler.
@@ -104,73 +36,6 @@ public class SentryHandler extends Handler {
     public SentryHandler() {
         retrieveProperties();
         this.setFilter(new DropSentryFilter());
-    }
-
-    /**
-     * Creates an instance of SentryHandler.
-     *
-     * @param sentryClient instance of Sentry to use with this appender.
-     */
-    public SentryHandler(SentryClient sentryClient) {
-        this();
-        this.sentryClient = sentryClient;
-    }
-
-    /**
-     * Do some appender initialization *after* instance construction, so that we don't
-     * log in the constructor (which can cause annoying messages) and so that system
-     * properties and environment variables override hardcoded appender configuration.
-     */
-    @SuppressWarnings("checkstyle:hiddenfield")
-    private void lazyInit() {
-        if (!initialized) {
-            synchronized (this) {
-                if (!initialized) {
-                    try {
-                        String sentryClientFactory = Lookup.lookup("factory");
-                        if (sentryClientFactory != null) {
-                            setFactory(sentryClientFactory);
-                        }
-
-                        String release = Lookup.lookup("release");
-                        if (release != null) {
-                            setRelease(release);
-                        }
-
-                        String dist = Lookup.lookup("dist");
-                        if (dist != null) {
-                            setDist(dist);
-                        }
-
-                        String environment = Lookup.lookup("environment");
-                        if (environment != null) {
-                            setEnvironment(environment);
-                        }
-
-                        String serverName = Lookup.lookup("serverName");
-                        if (serverName != null) {
-                            setServerName(serverName);
-                        }
-
-                        String tags = Lookup.lookup("tags");
-                        if (tags != null) {
-                            setTags(tags);
-                        }
-
-                        String extraTags = Lookup.lookup("extraTags");
-                        if (extraTags != null) {
-                            setExtraTags(extraTags);
-                        }
-                    } finally {
-                        initialized = true;
-                    }
-                }
-            }
-        }
-
-        if (sentryClient == null) {
-            initSentry();
-        }
     }
 
     /**
@@ -215,38 +80,6 @@ public class SentryHandler extends Handler {
     protected void retrieveProperties() {
         LogManager manager = LogManager.getLogManager();
         String className = SentryHandler.class.getName();
-        String dsnProperty = manager.getProperty(className + ".dsn");
-        if (dsnProperty != null) {
-            setDsn(dsnProperty);
-        }
-        String sentryClientFactoryProperty = manager.getProperty(className + ".factory");
-        if (sentryClientFactoryProperty != null) {
-            setFactory(sentryClientFactoryProperty);
-        }
-        String releaseProperty = manager.getProperty(className + ".release");
-        if (releaseProperty != null) {
-            setRelease(releaseProperty);
-        }
-        String distProperty = manager.getProperty(className + ".dist");
-        if (distProperty != null) {
-            setDist(distProperty);
-        }
-        String environmentProperty = manager.getProperty(className + ".environment");
-        if (environmentProperty != null) {
-            setEnvironment(environmentProperty);
-        }
-        String serverNameProperty = manager.getProperty(className + ".serverName");
-        if (serverNameProperty != null) {
-            setServerName(serverNameProperty);
-        }
-        String tagsProperty = manager.getProperty(className + ".tags");
-        if (tagsProperty != null) {
-            setTags(tagsProperty);
-        }
-        String extraTagsProperty = manager.getProperty(className + ".extraTags");
-        if (extraTagsProperty != null) {
-            setExtraTags(extraTagsProperty);
-        }
         setPrintfStyle(Boolean.valueOf(manager.getProperty(className + ".printfStyle")));
     }
 
@@ -259,28 +92,12 @@ public class SentryHandler extends Handler {
 
         SentryEnvironment.startManagingThread();
         try {
-            lazyInit();
             EventBuilder eventBuilder = createEventBuilder(record);
-            sentryClient.sendEvent(eventBuilder);
+            Sentry.capture(eventBuilder);
         } catch (Exception e) {
             reportError("An exception occurred while creating a new event in Sentry", e, ErrorManager.WRITE_FAILURE);
         } finally {
             SentryEnvironment.stopManagingThread();
-        }
-    }
-
-    /**
-     * Initialises the {@link SentryClient} instance.
-     */
-    protected synchronized void initSentry() {
-        try {
-            sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
-        } catch (InvalidDsnException e) {
-            reportError("An exception occurred during the retrieval of the DSN for Sentry",
-                e, ErrorManager.OPEN_FAILURE);
-        } catch (Exception e) {
-            reportError("An exception occurred during the creation of a SentryClient instance",
-                e, ErrorManager.OPEN_FAILURE);
         }
     }
 
@@ -333,10 +150,9 @@ public class SentryHandler extends Handler {
         }
 
         Map<String, String> mdc = MDC.getMDCAdapter().getCopyOfContextMap();
-        Set<String> clientExtraTags = sentryClient.getExtraTags();
         if (mdc != null) {
             for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {
-                if (extraTags.contains(mdcEntry.getKey()) || clientExtraTags.contains(mdcEntry.getKey())) {
+                if (Sentry.getStoredClient().getExtraTags().contains(mdcEntry.getKey())) {
                     eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
                 } else {
                     eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
@@ -344,26 +160,7 @@ public class SentryHandler extends Handler {
             }
         }
 
-        for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
-        }
-
         eventBuilder.withExtra(THREAD_ID, record.getThreadID());
-
-        if (!Util.isNullOrEmpty(release)) {
-            eventBuilder.withRelease(release.trim());
-            if (!Util.isNullOrEmpty(dist)) {
-                eventBuilder.withDist(dist.trim());
-            }
-        }
-
-        if (!Util.isNullOrEmpty(environment)) {
-            eventBuilder.withEnvironment(environment.trim());
-        }
-
-        if (!Util.isNullOrEmpty(serverName)) {
-            eventBuilder.withServerName(serverName.trim());
-        }
 
         return eventBuilder;
     }
@@ -394,9 +191,7 @@ public class SentryHandler extends Handler {
     public void close() throws SecurityException {
         SentryEnvironment.startManagingThread();
         try {
-            if (sentryClient != null) {
-                sentryClient.closeConnection();
-            }
+            Sentry.close();
         } catch (Exception e) {
             reportError("An exception occurred while closing the Sentry connection", e, ErrorManager.CLOSE_FAILURE);
         } finally {
@@ -404,54 +199,8 @@ public class SentryHandler extends Handler {
         }
     }
 
-    /**
-     * Sets the DSN field if the provided string is not null or empty,
-     * otherwise leaves the field null so that a DSN lookup will be
-     * done on client creation.
-     *
-     * @param dsn Dsn as a string
-     */
-    public void setDsn(String dsn) {
-        if (!Util.isNullOrEmpty(dsn)) {
-            this.dsn = new Dsn(dsn);
-        }
-    }
-
     public void setPrintfStyle(boolean printfStyle) {
         this.printfStyle = printfStyle;
-    }
-
-    public void setFactory(String factory) {
-        this.sentryClientFactory = factory;
-    }
-
-    public void setRelease(String release) {
-        this.release = release;
-    }
-
-    public void setDist(String dist) {
-        this.dist = dist;
-    }
-
-    public void setEnvironment(String environment) {
-        this.environment = environment;
-    }
-
-    public void setServerName(String serverName) {
-        this.serverName = serverName;
-    }
-
-    /**
-     * Populates the tags map by parsing the given tags property string.
-     * @param tags comma-delimited key-value pairs, e.g.
-     *                     "tag1:value1,tag2:value2".
-     */
-    public void setTags(String tags) {
-        this.tags = Util.parseTags(tags);
-    }
-
-    public void setExtraTags(String extraTags) {
-        this.extraTags = Util.parseExtraTags(extraTags);
     }
 
     private class DropSentryFilter implements Filter {

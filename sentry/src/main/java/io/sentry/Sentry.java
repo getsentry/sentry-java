@@ -9,6 +9,8 @@ import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Sentry provides easy access to a statically stored {@link SentryClient} instance.
  */
@@ -19,6 +21,11 @@ public final class Sentry {
      * methods like {@link Sentry#capture(Event)}.
      */
     private static volatile SentryClient storedClient = null;
+    /**
+     * Tracks whether the {@link #init()} method has already been attempted automatically
+     * by {@link #getStoredClient()}.
+     */
+    private static AtomicBoolean autoInitAttempted = new AtomicBoolean(false);
 
     /**
      * Hide constructor.
@@ -92,12 +99,25 @@ public final class Sentry {
     }
 
     /**
-     * Returns the last statically stored {@link SentryClient} instance or null if one has
-     * never been stored.
+     * Returns the last statically stored {@link SentryClient} instance. If no instance
+     * is already stored, the {@link #init()} method will be called one time in an attempt to
+     * create a {@link SentryClient}.
      *
-     * @return statically stored {@link SentryClient} instance.
+     * @return statically stored {@link SentryClient} instance, or null.
      */
     public static SentryClient getStoredClient() {
+        if (storedClient != null) {
+            return storedClient;
+        }
+
+        synchronized (Sentry.class) {
+            if (storedClient == null && !autoInitAttempted.get()) {
+                // attempt initialization by using configuration found in the environment
+                autoInitAttempted.set(true);
+                init();
+            }
+        }
+
         return storedClient;
     }
 
@@ -114,20 +134,12 @@ public final class Sentry {
         storedClient = client;
     }
 
-    private static void verifyStoredClient() {
-        if (storedClient == null) {
-            throw new NullPointerException("No stored SentryClient instance is available to use."
-                + " You must construct a SentryClient instance before using the static Sentry methods.");
-        }
-    }
-
     /**
      * Send an Event using the statically stored {@link SentryClient} instance.
      *
      * @param event Event to send to the Sentry server.
      */
     public static void capture(Event event) {
-        verifyStoredClient();
         getStoredClient().sendEvent(event);
     }
 
@@ -140,7 +152,6 @@ public final class Sentry {
      * @param throwable exception to send to Sentry.
      */
     public static void capture(Throwable throwable) {
-        verifyStoredClient();
         getStoredClient().sendException(throwable);
     }
 
@@ -152,7 +163,6 @@ public final class Sentry {
      * @param message message to send to Sentry.
      */
     public static void capture(String message) {
-        verifyStoredClient();
         getStoredClient().sendMessage(message);
     }
 
@@ -163,7 +173,6 @@ public final class Sentry {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public static void capture(EventBuilder eventBuilder) {
-        verifyStoredClient();
         getStoredClient().sendEvent(eventBuilder);
     }
 
@@ -173,7 +182,6 @@ public final class Sentry {
      * @param breadcrumb Breadcrumb to record.
      */
     public static void record(Breadcrumb breadcrumb) {
-        verifyStoredClient();
         getStoredClient().getContext().recordBreadcrumb(breadcrumb);
     }
 
@@ -183,7 +191,6 @@ public final class Sentry {
      * @param user User to store.
      */
     public static void setUser(User user) {
-        verifyStoredClient();
         getStoredClient().getContext().setUser(user);
     }
 
@@ -191,8 +198,19 @@ public final class Sentry {
      * Clears the current context.
      */
     public static void clearContext() {
-        verifyStoredClient();
         getStoredClient().getContext().clear();
+    }
+
+    /**
+     * Close the stored {@link SentryClient}'s connections and remove it from static storage.
+     */
+    public static void close() {
+        if (storedClient == null) {
+            return;
+        }
+
+        storedClient.closeConnection();
+        storedClient = null;
     }
 
 }
