@@ -22,8 +22,8 @@ import com.getsentry.raven.event.interfaces.UserInterface;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -286,19 +286,16 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     /**
-     * Get the device's current kernel version, as a string (from uname -a).
+     * Get the device's current kernel version, as a string (from /proc/version).
      *
-     * @return the device's current kernel version, as a string (from uname -a)
+     * @return the device's current kernel version, as a string (from /proc/version)
      */
     private static String getKernelVersion() {
         String errorMsg = "Exception while attempting to read kernel information";
         BufferedReader br = null;
         try {
-            Process p = Runtime.getRuntime().exec("uname -a");
-            if (p.waitFor() == 0) {
-                br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                return br.readLine();
-            }
+            br = new BufferedReader(new FileReader("/proc/version"));
+            return br.readLine();
         } catch (Exception e) {
             Log.e(TAG, errorMsg, e);
         } finally {
