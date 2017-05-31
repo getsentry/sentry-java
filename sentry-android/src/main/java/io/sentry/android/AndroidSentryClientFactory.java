@@ -57,7 +57,8 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                 + " Sentry Android, but received: " + protocol);
         }
 
-        if ("false".equalsIgnoreCase(dsn.getOptions().get(DefaultSentryClientFactory.ASYNC_OPTION))) {
+        String async = dsn.getOptions().get(DefaultSentryClientFactory.ASYNC_OPTION);
+        if (async != null && async.equalsIgnoreCase("false")) {
             throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
                 + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
