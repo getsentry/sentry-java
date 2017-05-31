@@ -8,6 +8,7 @@ import io.sentry.*;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
+import io.sentry.config.Lookup;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
@@ -57,7 +58,8 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                 + " Sentry Android, but received: " + protocol);
         }
 
-        if ("false".equalsIgnoreCase(dsn.getOptions().get(DefaultSentryClientFactory.ASYNC_OPTION))) {
+        String async = Lookup.lookup(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
+        if (async != null && async.equalsIgnoreCase("false")) {
             throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
                 + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
@@ -71,7 +73,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     @Override
     protected Buffer getBuffer(Dsn dsn) {
         File bufferDir;
-        String bufferDirOpt = dsn.getOptions().get(BUFFER_DIR_OPTION);
+        String bufferDirOpt = Lookup.lookup(BUFFER_DIR_OPTION, dsn);
         if (bufferDirOpt != null) {
             bufferDir = new File(bufferDirOpt);
         } else {

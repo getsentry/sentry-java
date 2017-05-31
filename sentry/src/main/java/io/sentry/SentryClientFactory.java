@@ -100,7 +100,11 @@ public abstract class SentryClientFactory {
      * @throws IllegalStateException when no instance of Sentry has been created.
      */
     public static SentryClient sentryClient(Dsn dsn, String sentryClientFactoryName) {
-        logger.debug("Attempting to find a working SentryClientFactory");
+        logger.debug("Attempting to find a working SentryClientFactory.");
+
+        if (dsn == null) {
+            dsn = new Dsn(Dsn.dsnLookup());
+        }
 
         if (dsn == null) {
             dsn = new Dsn(Dsn.dsnLookup());
