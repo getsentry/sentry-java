@@ -31,13 +31,6 @@ public class Dsn {
     private URI uri;
 
     /**
-     * Creates a DSN based on the {@link #dsnLookup()} result.
-     */
-    public Dsn() {
-        this(dsnLookup());
-    }
-
-    /**
      * Creates a DSN based on a String.
      *
      * @param dsn DSN in a string form.
@@ -87,7 +80,7 @@ public class Dsn {
         String dsn = Lookup.lookup("dsn");
 
         if (dsn == null) {
-            logger.warn("Couldn't find a suitable DSN, defaulting to a Noop one.");
+            logger.warn("*** Couldn't find a suitable DSN, Sentry operations will do nothing! ***");
             dsn = DEFAULT_DSN;
         }
 

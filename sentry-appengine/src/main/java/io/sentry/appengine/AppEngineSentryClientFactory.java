@@ -5,6 +5,7 @@ import io.sentry.DefaultSentryClientFactory;
 import io.sentry.SentryClient;
 import io.sentry.appengine.connection.AppEngineAsyncConnection;
 import io.sentry.appengine.event.helper.AppEngineEventBuilderHelper;
+import io.sentry.config.Lookup;
 import io.sentry.connection.Connection;
 import io.sentry.dsn.Dsn;
 
@@ -46,18 +47,17 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
      */
     @Override
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
-        String connectionIdentifier;
-        if (dsn.getOptions().containsKey(CONNECTION_IDENTIFIER)) {
-            connectionIdentifier = dsn.getOptions().get(CONNECTION_IDENTIFIER);
-        } else {
+        String connectionIdentifier = Lookup.lookup(CONNECTION_IDENTIFIER, dsn);
+        if (connectionIdentifier == null) {
             connectionIdentifier = AppEngineSentryClientFactory.class.getCanonicalName()
                 + dsn + SystemProperty.version.get();
         }
 
         AppEngineAsyncConnection asyncConnection = new AppEngineAsyncConnection(connectionIdentifier, connection);
 
-        if (dsn.getOptions().containsKey(QUEUE_NAME)) {
-            asyncConnection.setQueue(dsn.getOptions().get(QUEUE_NAME));
+        String queueName = Lookup.lookup(QUEUE_NAME, dsn);
+        if (queueName != null) {
+            asyncConnection.setQueue(queueName);
         }
 
         return asyncConnection;

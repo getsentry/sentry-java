@@ -17,6 +17,7 @@ Version 1.0.0
 - Add way to set release, dist, environment, serverName, tags, and extraTags on a ``SentryClient``.
 - Add way to set release, dist, environment, serverName, tags, and extraTags via the DSN.
 - Logging integrations now use the new ``Sentry`` static API.
+- Configuration can now be provided by a ``sentry.properties`` file provided in resources.
 
 Version 8.0.2
 -------------

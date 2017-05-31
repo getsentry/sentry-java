@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
+import io.sentry.config.Lookup;
 import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
@@ -471,12 +472,13 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return the list of package names to consider "in-app".
      */
     protected Collection<String> getInAppFrames(Dsn dsn) {
-        if (!dsn.getOptions().containsKey(IN_APP_FRAMES_OPTION)) {
+        String inAppFramesOption = Lookup.lookup(IN_APP_FRAMES_OPTION, dsn);
+        if (Util.isNullOrEmpty(inAppFramesOption)) {
             return Collections.emptyList();
         }
 
         ArrayList<String> inAppPackages = new ArrayList<>();
-        for (String inAppPackage : dsn.getOptions().get(IN_APP_FRAMES_OPTION).split(",")) {
+        for (String inAppPackage : inAppFramesOption.split(",")) {
             if (!inAppPackage.trim().equals("")) {
                 inAppPackages.add(inAppPackage);
             }
@@ -491,7 +493,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether or not to wrap the underlying connection in an {@link AsyncConnection}.
      */
     protected boolean getAsyncEnabled(Dsn dsn) {
-        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION));
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(ASYNC_OPTION, dsn));
     }
 
     /**
@@ -502,8 +504,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected RejectedExecutionHandler getRejectedExecutionHandler(Dsn dsn) {
         String overflowName = ASYNC_QUEUE_OVERFLOW_DEFAULT;
-        if (dsn.getOptions().containsKey(ASYNC_QUEUE_OVERFLOW_OPTION)) {
-            overflowName = dsn.getOptions().get(ASYNC_QUEUE_OVERFLOW_OPTION).toLowerCase();
+        String asyncQueueOverflowOption = Lookup.lookup(ASYNC_QUEUE_OVERFLOW_OPTION, dsn);
+        if (!Util.isNullOrEmpty(asyncQueueOverflowOption)) {
+            overflowName = asyncQueueOverflowOption.toLowerCase();
         }
 
         RejectedExecutionHandler handler = REJECT_EXECUTION_HANDLERS.get(overflowName);
@@ -523,7 +526,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Maximum time to wait for {@link BufferedConnection} shutdown when closed, in milliseconds.
      */
     protected long getBufferedConnectionShutdownTimeout(Dsn dsn) {
-        return Util.parseLong(dsn.getOptions().get(BUFFER_SHUTDOWN_TIMEOUT_OPTION), BUFFER_SHUTDOWN_TIMEOUT_DEFAULT);
+        return Util.parseLong(Lookup.lookup(BUFFER_SHUTDOWN_TIMEOUT_OPTION, dsn), BUFFER_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     /**
@@ -533,7 +536,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether or not to attempt a graceful shutdown of the {@link BufferedConnection} upon close.
      */
     protected boolean getBufferedConnectionGracefulShutdownEnabled(Dsn dsn) {
-        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(BUFFER_GRACEFUL_SHUTDOWN_OPTION));
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(BUFFER_GRACEFUL_SHUTDOWN_OPTION, dsn));
     }
 
     /**
@@ -543,7 +546,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return ow long to wait between attempts to flush the disk buffer, in milliseconds.
      */
     protected long getBufferFlushtime(Dsn dsn) {
-        return Util.parseLong(dsn.getOptions().get(BUFFER_FLUSHTIME_OPTION), BUFFER_FLUSHTIME_DEFAULT);
+        return Util.parseLong(Lookup.lookup(BUFFER_FLUSHTIME_OPTION, dsn), BUFFER_FLUSHTIME_DEFAULT);
     }
 
     /**
@@ -553,7 +556,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return The graceful shutdown timeout of the async executor, in milliseconds.
      */
     protected long getAsyncShutdownTimeout(Dsn dsn) {
-        return Util.parseLong(dsn.getOptions().get(ASYNC_SHUTDOWN_TIMEOUT_OPTION), ASYNC_SHUTDOWN_TIMEOUT_DEFAULT);
+        return Util.parseLong(Lookup.lookup(ASYNC_SHUTDOWN_TIMEOUT_OPTION, dsn), ASYNC_SHUTDOWN_TIMEOUT_DEFAULT);
     }
 
     /**
@@ -563,7 +566,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether or not to attempt the graceful shutdown of the {@link AsyncConnection} upon close.
      */
     protected boolean getAsyncGracefulShutdownEnabled(Dsn dsn) {
-        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_GRACEFUL_SHUTDOWN_OPTION));
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(ASYNC_GRACEFUL_SHUTDOWN_OPTION, dsn));
     }
 
     /**
@@ -573,7 +576,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Maximum size of the async send queue.
      */
     protected int getAsyncQueueSize(Dsn dsn) {
-        return Util.parseInteger(dsn.getOptions().get(ASYNC_QUEUE_SIZE_OPTION), QUEUE_SIZE_DEFAULT);
+        return Util.parseInteger(Lookup.lookup(ASYNC_QUEUE_SIZE_OPTION, dsn), QUEUE_SIZE_DEFAULT);
     }
 
     /**
@@ -583,7 +586,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Priority of threads used for the async connection.
      */
     protected int getAsyncPriority(Dsn dsn) {
-        return Util.parseInteger(dsn.getOptions().get(ASYNC_PRIORITY_OPTION), Thread.MIN_PRIORITY);
+        return Util.parseInteger(Lookup.lookup(ASYNC_PRIORITY_OPTION, dsn), Thread.MIN_PRIORITY);
     }
 
     /**
@@ -593,7 +596,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return The number of threads used for the async connection.
      */
     protected int getAsyncThreads(Dsn dsn) {
-        return Util.parseInteger(dsn.getOptions().get(ASYNC_THREADS_OPTION),
+        return Util.parseInteger(Lookup.lookup(ASYNC_THREADS_OPTION, dsn),
             Runtime.getRuntime().availableProcessors());
     }
 
@@ -614,7 +617,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return The ratio of events to allow through to server, or null if sampling is disabled.
      */
     protected Double getSampleRate(Dsn dsn) {
-        return Util.parseDouble(dsn.getOptions().get(SAMPLE_RATE_OPTION), null);
+        return Util.parseDouble(Lookup.lookup(SAMPLE_RATE_OPTION, dsn), null);
     }
 
     /**
@@ -624,7 +627,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return HTTP proxy port for Sentry connections.
      */
     protected int getProxyPort(Dsn dsn) {
-        return Util.parseInteger(dsn.getOptions().get(HTTP_PROXY_PORT_OPTION), HTTP_PROXY_PORT_DEFAULT);
+        return Util.parseInteger(Lookup.lookup(HTTP_PROXY_PORT_OPTION, dsn), HTTP_PROXY_PORT_DEFAULT);
     }
 
     /**
@@ -634,7 +637,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return HTTP proxy hostname for Sentry connections.
      */
     protected String getProxyHost(Dsn dsn) {
-        return dsn.getOptions().get(HTTP_PROXY_HOST_OPTION);
+        return Lookup.lookup(HTTP_PROXY_HOST_OPTION, dsn);
     }
 
     /**
@@ -644,7 +647,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return HTTP proxy username for Sentry connections.
      */
     protected String getProxyUser(Dsn dsn) {
-        return dsn.getOptions().get(HTTP_PROXY_USER_OPTION);
+        return Lookup.lookup(HTTP_PROXY_USER_OPTION, dsn);
     }
 
     /**
@@ -654,7 +657,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return HTTP proxy password for Sentry connections.
      */
     protected String getProxyPass(Dsn dsn) {
-        return dsn.getOptions().get(HTTP_PROXY_PASS_OPTION);
+        return Lookup.lookup(HTTP_PROXY_PASS_OPTION, dsn);
     }
 
     /**
@@ -665,7 +668,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Application version to send with {@link io.sentry.event.Event}s.
      */
     protected String getRelease(Dsn dsn) {
-        return dsn.getOptions().get(RELEASE_OPTION);
+        return Lookup.lookup(RELEASE_OPTION, dsn);
     }
 
     /**
@@ -676,7 +679,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Application version to send with {@link io.sentry.event.Event}s.
      */
     protected String getDist(Dsn dsn) {
-        return dsn.getOptions().get(DIST_OPTION);
+        return Lookup.lookup(DIST_OPTION, dsn);
     }
 
     /**
@@ -687,7 +690,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Application version to send with {@link io.sentry.event.Event}s.
      */
     protected String getEnvironment(Dsn dsn) {
-        return dsn.getOptions().get(ENVIRONMENT_OPTION);
+        return Lookup.lookup(ENVIRONMENT_OPTION, dsn);
     }
 
     /**
@@ -698,7 +701,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Server name to send with {@link io.sentry.event.Event}s.
      */
     protected String getServerName(Dsn dsn) {
-        return dsn.getOptions().get(SERVERNAME_OPTION);
+        return Lookup.lookup(SERVERNAME_OPTION, dsn);
     }
 
     /**
@@ -708,7 +711,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Additional tags to send with {@link io.sentry.event.Event}s.
      */
     protected Map<String, String> getTags(Dsn dsn) {
-        return Util.parseTags(dsn.getOptions().get(TAGS_OPTION));
+        return Util.parseTags(Lookup.lookup(TAGS_OPTION, dsn));
     }
 
     /**
@@ -721,7 +724,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Extras to use as tags on {@link io.sentry.event.Event}s, where applicable.
      */
     protected Set<String> getExtraTags(Dsn dsn) {
-        return Util.parseExtraTags(dsn.getOptions().get(EXTRATAGS_OPTION));
+        return Util.parseExtraTags(Lookup.lookup(EXTRATAGS_OPTION, dsn));
     }
 
     /**
@@ -731,7 +734,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether to compress requests sent to the Sentry Server.
      */
     protected boolean getCompressionEnabled(Dsn dsn) {
-        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION));
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(COMPRESSION_OPTION, dsn));
     }
 
     /**
@@ -741,7 +744,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether to hide common stackframes with enclosing exceptions.
      */
     protected boolean getHideCommonFramesEnabled(Dsn dsn) {
-        return !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION));
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(HIDE_COMMON_FRAMES_OPTION, dsn));
     }
 
     /**
@@ -752,7 +755,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected int getMaxMessageLength(Dsn dsn) {
         return Util.parseInteger(
-            dsn.getOptions().get(MAX_MESSAGE_LENGTH_OPTION), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
+            Lookup.lookup(MAX_MESSAGE_LENGTH_OPTION, dsn), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
     }
 
     /**
@@ -762,7 +765,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Timeout for requests to the Sentry server, in milliseconds.
      */
     protected int getTimeout(Dsn dsn) {
-        return Util.parseInteger(dsn.getOptions().get(TIMEOUT_OPTION), TIMEOUT_DEFAULT);
+        return Util.parseInteger(Lookup.lookup(TIMEOUT_OPTION, dsn), TIMEOUT_DEFAULT);
     }
 
     /**
@@ -772,7 +775,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Whether or not buffering is enabled.
      */
     protected boolean getBufferEnabled(Dsn dsn) {
-        String bufferEnabled = dsn.getOptions().get(BUFFER_ENABLED_OPTION);
+        String bufferEnabled = Lookup.lookup(BUFFER_ENABLED_OPTION, dsn);
         if (bufferEnabled != null) {
             return Boolean.parseBoolean(bufferEnabled);
         }
@@ -786,7 +789,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return the {@link Buffer} where events are stored when network is down.
      */
     protected Buffer getBuffer(Dsn dsn) {
-        String bufferDir = dsn.getOptions().get(BUFFER_DIR_OPTION);
+        String bufferDir = Lookup.lookup(BUFFER_DIR_OPTION, dsn);
         if (bufferDir != null) {
             return new DiskBuffer(new File(bufferDir), getBufferSize(dsn));
         }
@@ -800,7 +803,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return the maximum number of events to cache offline when network is down.
      */
     protected int getBufferSize(Dsn dsn) {
-        return Util.parseInteger(dsn.getOptions().get(BUFFER_SIZE_OPTION), BUFFER_SIZE_DEFAULT);
+        return Util.parseInteger(Lookup.lookup(BUFFER_SIZE_OPTION, dsn), BUFFER_SIZE_DEFAULT);
     }
 
     /**
