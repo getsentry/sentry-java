@@ -55,6 +55,10 @@ public class EventBuilder {
         this.event = new Event(eventId);
     }
 
+    public Event getEvent() {
+        return event;
+    }
+
     /**
      * Calculates a checksum for a given string.
      *
