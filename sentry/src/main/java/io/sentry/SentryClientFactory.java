@@ -106,6 +106,10 @@ public abstract class SentryClientFactory {
             dsn = new Dsn(Dsn.dsnLookup());
         }
 
+        if (dsn == null) {
+            dsn = new Dsn(Dsn.dsnLookup());
+        }
+
         // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
         // and the last exception thrown.
         ArrayList<String> skippedFactories = new ArrayList<>();
