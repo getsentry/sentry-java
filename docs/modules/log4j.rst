@@ -127,7 +127,7 @@ Environment variable    Java System Property    Example value                   
 ``SENTRY_SERVERNAME``   ``sentry.servername``   ``server1``                     Optional, override the server name (rather than looking it up dynamically)
 ``SENTRY_RAVENFACTORY`` ``sentry.ravenfactory`` ``com.foo.RavenFactory``        Optional, select the ravenFactory class
 ``SENTRY_TAGS``         ``sentry.tags``         ``tag1:value1,tag2:value2``     Optional, provide tags
-``SENTRY_EXTRA_TAGS``   ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
+``SENTRY_EXTRATAGS``    ``sentry.extratags``    ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
 ======================= ======================= =============================== ===========
 
 Configuration via Static File
