@@ -28,8 +28,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 
@@ -288,69 +286,29 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     /**
-     * Reads a line from the specified file.
-     * @param filename the file to read from
-     * @return the first line, if any.
-     * @throws IOException if the file couldn't be read
-     */
-    private static String readLine(String filename) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(filename));
-        try {
-            return reader.readLine();
-        } finally {
-            reader.close();
-        }
-    }
-
-    /**
      * Get the device's current kernel version, as a string (from /proc/version).
      *
      * @return the device's current kernel version, as a string (from /proc/version)
      */
     private static String getKernelVersion() {
+        String errorMsg = "Exception while attempting to read kernel information";
+        BufferedReader br = null;
         try {
-            return formatKernelVersion(readLine("/proc/version"));
+            br = new BufferedReader(new FileReader("/proc/version"));
+            return br.readLine();
         } catch (Exception e) {
-            Log.e(TAG, "Exception while attempting to read kernel information", e);
+            Log.e(TAG, errorMsg, e);
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ioe) {
+                    Log.e(TAG, errorMsg, ioe);
+                }
+            }
         }
 
         return null;
-    }
-
-    private static String formatKernelVersion(String rawKernelVersion) {
-        // Example (see tests for more):
-        // Linux version 3.0.31-g6fb96c9 (android-build@xxx.xxx.xxx.xxx.com) \
-        //     (gcc version 4.6.x-xxx 20120106 (prerelease) (GCC) ) #1 SMP PREEMPT \
-        //     Thu Jun 28 11:02:39 PDT 2012
-
-        final String procVersionRegex =
-                "Linux version (\\S+) " + /* group 1: "3.0.31-g6fb96c9" */
-                "\\((\\S+?)\\) " +        /* group 2: "x@y.com" (kernel builder) */
-                "(?:\\(gcc.+? \\)) " +    /* ignore: GCC version information */
-                "(#\\d+) " +              /* group 3: "#1" */
-                "(?:.*?)?" +              /* ignore: optional SMP, PREEMPT, and any CONFIG_FLAGS */
-                "((Sun|Mon|Tue|Wed|Thu|Fri|Sat).+)"; /* group 4: "Thu Jun 28 11:02:39 PDT 2012" */
-
-        // CHECKSTYLE.OFF: MagicNumber
-        final int procVersionGroupKernelVersion = 1;
-        final int procVersionGroupBuilderName = 2;
-        final int procVersionGroupBuildNumber = 3;
-        final int procVersionGroupBuildDate = 4;
-        final int procVersionGroupCount = 4;
-        // CHECKSTYLE.ON: MagicNumber
-
-        Matcher m = Pattern.compile(procVersionRegex).matcher(rawKernelVersion);
-        if (!m.matches()) {
-            Log.e(TAG, "Regex did not match on /proc/version: " + rawKernelVersion);
-            return null;
-        } else if (m.groupCount() < procVersionGroupCount) {
-            Log.e(TAG, "Regex match on /proc/version only returned " + m.groupCount()
-                    + " groups");
-            return null;
-        }
-        return m.group(procVersionGroupKernelVersion) + "\n" + // 3.0.31-g6fb96c9
-                m.group(procVersionGroupBuilderName) + " " + m.group(procVersionGroupBuildNumber) + "\n" + // x@y.com #1
-                m.group(procVersionGroupBuildDate); // Thu Jun 28 11:02:39 PDT 2012
     }
 
     /**
