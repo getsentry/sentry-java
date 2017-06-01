@@ -129,36 +129,27 @@ static jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint 
 
 static void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
                               jint depth, jclass local_class, jmethodID live_ctor,
-                              jmethodID dead_ctor, jlocation location,
-                              jobjectArray locals, jvmtiLocalVariableEntry *table,
-                              int index) {
+                              jlocation location, jobjectArray locals,
+                              jvmtiLocalVariableEntry *table, int index) {
     jstring name;
-    jstring sig;
-    jstring gensig;
     jobject value;
     jobject local;
 
     name = env->NewStringUTF(table[index].name);
-    sig = env->NewStringUTF(table[index].signature);
-
-    if (table[index].generic_signature) {
-        gensig = env->NewStringUTF(table[index].generic_signature);
-    } else {
-        gensig = nullptr;
-    }
 
     if (location >= table[index].start_location && location <= (table[index].start_location + table[index].length)) {
         value = getLocalValue(jvmti, env, thread, depth, table, index);
-        local = env->NewObject(local_class, live_ctor, name, sig, gensig, value);
+        local = env->NewObject(local_class, live_ctor, name, value);
     } else {
-        local = env->NewObject(local_class, dead_ctor, name, sig, gensig);
+        // dead object, use null
+        local = nullptr;
     }
 
     env->SetObjectArrayElement(locals, index, local);
 }
 
 static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
-                               jobject value_ptr, jobjectArray locals, jlong pos, jint lineno) {
+                               jobjectArray locals) {
     jvmtiError jvmti_error;
     jclass method_class;
     jint modifiers;
@@ -189,12 +180,12 @@ static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
     }
 
     ctor = env->GetMethodID(frame_class, "<init>",
-                            "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Lio/sentry/jvmti/Frame$LocalVariable;II)V");
+                            "(Ljava/lang/reflect/Method;[Lio/sentry/jvmti/Frame$LocalVariable;)V");
     if (ctor == nullptr) {
         return nullptr;
     }
 
-    return env->NewObject(frame_class, ctor, frame_method, value_ptr, locals, pos, lineno);
+    return env->NewObject(frame_class, ctor, frame_method, locals);
 }
 
 static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
@@ -205,10 +196,8 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
     jint num_entries;
     jobject value_ptr;
     jobjectArray locals;
-    jint lineno;
     jclass local_class;
     jmethodID live_ctor;
-    jmethodID dead_ctor;
     int i;
     value_ptr = nullptr;
 
@@ -236,13 +225,10 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
         }
     } else {
         local_class = env->FindClass("io/sentry/jvmti/Frame$LocalVariable");
-        live_ctor = env->GetMethodID(local_class, "<init>",
-                                     "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V");
-        dead_ctor = env->GetMethodID(local_class, "<init>",
-                                     "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+        live_ctor = env->GetMethodID(local_class, "<init>", "(Ljava/lang/String;Ljava/lang/Object;)V");
         locals = env->NewObjectArray(num_entries, local_class, nullptr);
         for (i = 0; i < num_entries; i++) {
-            makeLocalVariable(jvmti, env, thread, depth, local_class, live_ctor, dead_ctor, location, locals, local_var_table, i);
+            makeLocalVariable(jvmti, env, thread, depth, local_class, live_ctor, location, locals, local_var_table, i);
         }
         jvmti->Deallocate((unsigned char *) local_var_table);
     }
@@ -252,24 +238,13 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
         value_ptr = nullptr;
     }
 
-    jvmti_error = jvmti->GetLineNumberTable(method, &num_entries, &lineno_table);
-    if (jvmti_error != JVMTI_ERROR_NONE) {
-        lineno = -1; // Not retreived
-    } else {
-        for (i = 0; i < num_entries; i++) {
-            if (location < lineno_table->start_location) {
-                break;
-            }
-            lineno = lineno_table->line_number;
-        }
-        jvmti->Deallocate((unsigned char *) lineno_table);
-    }
-
-    return makeFrameObject(jvmti, env, method, value_ptr, locals, location, lineno);
+    return makeFrameObject(jvmti, env, method, locals);
 }
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
                                    jint start_depth) {
+    log(TRACE, "buildStackTraceFrames called.");
+
     jint num_frames;
     jvmtiFrameInfo* frames;
     jclass result_class;
@@ -315,5 +290,7 @@ jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     }
 
     jvmti->Deallocate((unsigned char *) frames);
+
+    log(TRACE, "buildStackTraceFrames exit.");
     return result;
 }
