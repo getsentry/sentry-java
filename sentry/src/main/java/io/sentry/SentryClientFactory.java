@@ -1,59 +1,16 @@
 package io.sentry;
 
+import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ServiceLoader;
-import java.util.Set;
-
 /**
  * Factory in charge of creating {@link SentryClient} instances.
- * <p>
- * The factories register themselves through the {@link ServiceLoader} system.
  */
 public abstract class SentryClientFactory {
-    private static final ServiceLoader<SentryClientFactory> AUTO_REGISTERED_FACTORIES =
-        ServiceLoader.load(SentryClientFactory.class, SentryClientFactory.class.getClassLoader());
-    private static final Set<SentryClientFactory> MANUALLY_REGISTERED_FACTORIES = new HashSet<>();
     private static final Logger logger = LoggerFactory.getLogger(SentryClientFactory.class);
-
-    /**
-     * Manually adds a SentryClientFactory to the system.
-     * <p>
-     * Usually SentryFactories are automatically detected with the {@link ServiceLoader} system, but some systems
-     * such as Android do not provide a fully working ServiceLoader.<br>
-     * If the factory isn't detected automatically, it's possible to add it through this method.
-     *
-     * @param sentryClientFactory sentryClientFactory to support.
-     */
-    public static void registerFactory(SentryClientFactory sentryClientFactory) {
-        MANUALLY_REGISTERED_FACTORIES.add(sentryClientFactory);
-    }
-
-    private static Iterable<SentryClientFactory> getRegisteredFactories() {
-        List<SentryClientFactory> sentryFactories = new LinkedList<>();
-        sentryFactories.addAll(MANUALLY_REGISTERED_FACTORIES);
-        for (SentryClientFactory autoRegisteredFactory : AUTO_REGISTERED_FACTORIES) {
-            sentryFactories.add(autoRegisteredFactory);
-        }
-        return sentryFactories;
-    }
-
-    /**
-     * Creates an instance of Sentry using the DSN obtained through the
-     * {@link Dsn#dsnLookup()} method.
-     *
-     * @return an instance of Sentry.
-     */
-    public static SentryClient sentryClient() {
-        return sentryClient((Dsn) null, null);
-    }
 
     /**
      * Creates an instance of Sentry using the provided DSN.
@@ -66,124 +23,46 @@ public abstract class SentryClientFactory {
     }
 
     /**
-     * Creates an instance of Sentry using the provided DSN.
+     * Creates an instance of Sentry using the provided DSN and the specified factory.
      *
      * @param dsn Data Source Name of the Sentry server.
-     * @return an instance of Sentry.
+     * @param sentryClientFactory SentryClientFactory instance to use, or null to do a config lookup.
+     * @return SentryClient instance, or null if one couldn't be constructed.
      */
-    public static SentryClient sentryClient(Dsn dsn) {
-        return sentryClient(dsn, null);
-    }
+    public static SentryClient sentryClient(String dsn, SentryClientFactory sentryClientFactory) {
+        Dsn realDsn = resolveDsn(dsn);
 
-    /**
-     * Creates an instance of Sentry using the provided DSN and the specified factory.
-     *
-     * @param dsn                     Data Source Name of the Sentry server.
-     * @param sentryClientFactoryName name of the SentryClientFactory to use to generate an instance of Sentry.
-     * @return an instance of Sentry.
-     * @throws IllegalStateException when no instance of Sentry has been created.
-     */
-    public static SentryClient sentryClient(String dsn, String sentryClientFactoryName) {
-        if (!Util.isNullOrEmpty(dsn)) {
-            return sentryClient(new Dsn(dsn), sentryClientFactoryName);
-        } else {
-            return sentryClient((Dsn) null, sentryClientFactoryName);
-        }
-    }
-
-    /**
-     * Creates an instance of Sentry using the provided DSN and the specified factory.
-     *
-     * @param dsn                     Data Source Name of the Sentry server.
-     * @param sentryClientFactoryName name of the SentryClientFactory to use to generate an instance of Sentry.
-     * @return an instance of Sentry.
-     * @throws IllegalStateException when no instance of Sentry has been created.
-     */
-    public static SentryClient sentryClient(Dsn dsn, String sentryClientFactoryName) {
-        logger.debug("Attempting to find a working SentryClientFactory.");
-
-        if (dsn == null) {
-            dsn = new Dsn(Dsn.dsnLookup());
-        }
-
-        // Loop through registered factories, keeping track of which classes we skip, which we try to instantiate,
-        // and the last exception thrown.
-        ArrayList<String> skippedFactories = new ArrayList<>();
-        ArrayList<String> triedFactories = new ArrayList<>();
-        RuntimeException lastExc = null;
-
-        for (SentryClientFactory sentryClientFactory : getRegisteredFactories()) {
-            String name = sentryClientFactory.getClass().getName();
-            if (sentryClientFactoryName != null && !sentryClientFactoryName.equals(name)) {
-                skippedFactories.add(name);
-                continue;
-            }
-
-            logger.debug("Attempting to use '{}' as a SentryClientFactory.", sentryClientFactory);
-            triedFactories.add(name);
-            try {
-                SentryClient sentryClientInstance = sentryClientFactory.createSentryClient(dsn);
-                logger.debug("The SentryClientFactory '{}' created an instance of Sentry.", sentryClientFactory);
-                return sentryClientInstance;
-            } catch (RuntimeException e) {
-                lastExc = e;
-                logger.debug("The SentryClientFactory '{}' couldn't create an instance of Sentry.",
-                    sentryClientFactory, e);
-            }
-        }
-
-        if (sentryClientFactoryName != null && triedFactories.isEmpty()) {
-            try {
-                // see if the provided class exists on the classpath at all
-                Class.forName(sentryClientFactoryName);
-                logger.error(
-                    "The SentryClientFactory class '{}' was found on your classpath but was not "
-                        + "registered with Sentry, see: "
-                        + "https://docs.sentry.io/clients/java/config/#custom-sentryfactory",
-                    sentryClientFactoryName);
-            } catch (ClassNotFoundException e) {
-                logger.error("The SentryClientFactory class name '{}' was specified but "
-                    + "the class was not found on your classpath.", sentryClientFactoryName);
-            }
-        }
-
-        // Throw an IllegalStateException that attempts to be helpful.
-        StringBuilder sb = new StringBuilder();
-        sb.append("Couldn't create a SentryClient instance for: '");
-        sb.append(dsn);
-        sb.append('\'');
-        if (sentryClientFactoryName != null) {
-            sb.append("; sentryClientFactoryName: ");
-            sb.append(sentryClientFactoryName);
-
-            if (skippedFactories.isEmpty()) {
-                sb.append("; no skipped factories");
+        // If the caller didn't pass a factory, try to look one up
+        if (sentryClientFactory == null) {
+            String sentryClientFactoryName = Lookup.lookup("factory", realDsn);
+            if (Util.isNullOrEmpty(sentryClientFactoryName)) {
+                // no name specified, use the default factory
+                sentryClientFactory = new DefaultSentryClientFactory();
             } else {
-                sb.append("; skipped factories: ");
-                String delim = "";
-                for (String skippedFactory : skippedFactories) {
-                    sb.append(delim);
-                    sb.append(skippedFactory);
-                    delim = ", ";
+                // attempt to construct the user specified factory class
+                Class<? extends SentryClientFactory> factoryClass = null;
+                try {
+                    factoryClass = (Class<? extends SentryClientFactory>) Class.forName(sentryClientFactoryName);
+                    sentryClientFactory = factoryClass.newInstance();
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    logger.error("Error creating SentryClient using factory class: '"
+                        + sentryClientFactoryName + "'.", e);
+                    return null;
                 }
             }
         }
 
-        if (triedFactories.isEmpty()) {
-            sb.append("; no factories tried!");
-            throw new IllegalStateException(sb.toString());
-        }
+        return sentryClientFactory.createSentryClient(realDsn);
+    }
 
-        sb.append("; tried factories: ");
-        String delim = "";
-        for (String triedFactory : triedFactories) {
-            sb.append(delim);
-            sb.append(triedFactory);
-            delim = ", ";
+    private static Dsn resolveDsn(String dsn) {
+        Dsn realDsn;
+        if (!Util.isNullOrEmpty(dsn)) {
+            realDsn = new Dsn(dsn);
+        } else {
+            realDsn = new Dsn(Dsn.dsnLookup());
         }
-
-        sb.append("; cause contains exception thrown by the last factory tried.");
-        throw new IllegalStateException(sb.toString(), lastExc);
+        return realDsn;
     }
 
     /**

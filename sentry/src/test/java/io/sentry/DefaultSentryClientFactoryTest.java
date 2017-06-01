@@ -11,13 +11,6 @@ import static org.hamcrest.Matchers.is;
 
 public class DefaultSentryClientFactoryTest extends BaseTest {
     @Test
-    public void checkServiceLoaderProvidesFactory() throws Exception {
-        ServiceLoader<SentryClientFactory> sentryFactories = ServiceLoader.load(SentryClientFactory.class);
-
-        assertThat(sentryFactories, contains(instanceOf(DefaultSentryClientFactory.class)));
-    }
-
-    @Test
     public void testFieldsFromDsn() throws Exception {
         String release = "rel";
         String dist = "dis";

@@ -14,141 +14,47 @@ import java.util.ServiceLoader;
 import static mockit.Deencapsulation.setField;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SentryClientFactoryTest extends BaseTest {
-    @Tested
-    private SentryClientFactory sentryClientFactory = null;
-    @Injectable
-    private ServiceLoader<SentryClientFactory> mockServiceLoader = null;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        setField(SentryClientFactory.class, "AUTO_REGISTERED_FACTORIES", mockServiceLoader);
-
-        new NonStrictExpectations() {{
-            mockServiceLoader.iterator();
-            result = Collections.emptyIterator();
-        }};
-    }
-
-    @AfterMethod
-    public void tearDown() throws Exception {
-        // Reset the registered factories
-        setField(SentryClientFactory.class, "MANUALLY_REGISTERED_FACTORIES", new HashSet<>());
-        setField(SentryClientFactory.class, "AUTO_REGISTERED_FACTORIES", ServiceLoader.load(SentryClientFactory.class));
+    @Test
+    public void testSentryClientForFactoryNameSucceedsIfFactoryFound() throws Exception {
+        String dsn = "noop://localhost/1?factory=io.sentry.TestFactory";
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        assertThat(sentryClient.getRelease(), is("312407214120"));
     }
 
     @Test
-    public void testGetFactoriesFromServiceLoader(@Injectable final SentryClient mockSentryClient,
-                                                  @Injectable final Dsn mockDsn) throws Exception {
-        new NonStrictExpectations() {{
-            mockServiceLoader.iterator();
-            result = new Delegate<Iterator<SentryClientFactory>>() {
-                @SuppressWarnings("unused")
-                public Iterator<SentryClientFactory> iterator() {
-                    return Collections.singletonList(sentryClientFactory).iterator();
-                }
-            };
-            sentryClientFactory.createSentryClient(mockDsn);
-            result = mockSentryClient;
-        }};
-
-        SentryClient sentryClient = SentryClientFactory.sentryClient(mockDsn);
-
-        assertThat(sentryClient, is(mockSentryClient));
+    public void testSentryClientForFactoryReturnsNullIfNoFactoryFound() throws Exception {
+        String dsn = "noop://localhost/1?factory=invalid";
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        assertThat(sentryClient, is(nullValue()));
     }
 
     @Test
-    public void testGetFactoriesManuallyAdded(@Injectable final SentryClient mockSentryClient,
-                                              @Injectable final Dsn mockDsn) throws Exception {
-        SentryClientFactory.registerFactory(sentryClientFactory);
-        new NonStrictExpectations() {{
-            sentryClientFactory.createSentryClient(mockDsn);
-            result = mockSentryClient;
-        }};
-
-        SentryClient sentryClient = SentryClientFactory.sentryClient(mockDsn);
-
-        assertThat(sentryClient, is(mockSentryClient));
-    }
-
-    @Test
-    public void testSentryClientForFactoryNameSucceedsIfFactoryFound(@Injectable final SentryClient mockSentryClient,
-                                                                      @Injectable final Dsn mockDsn) throws Exception {
-        String factoryName = sentryClientFactory.getClass().getName();
-        SentryClientFactory.registerFactory(sentryClientFactory);
-        new NonStrictExpectations() {{
-            sentryClientFactory.createSentryClient(mockDsn);
-            result = mockSentryClient;
-        }};
-
-        SentryClient sentryClient = SentryClientFactory.sentryClient(mockDsn, factoryName);
-
-        assertThat(sentryClient, is(mockSentryClient));
-    }
-
-    @Test(expectedExceptions = IllegalStateException.class)
-    public void testSentryClientForFactoryNameFailsIfNoFactoryFound(@Injectable final SentryClient mockSentryClient,
-                                                                     @Injectable final Dsn mockDsn) throws Exception {
-        String factoryName = "invalidName";
-        SentryClientFactory.registerFactory(sentryClientFactory);
-        new NonStrictExpectations() {{
-            sentryClientFactory.createSentryClient(mockDsn);
-            result = mockSentryClient;
-        }};
-
-        SentryClientFactory.sentryClient(mockDsn, factoryName);
-    }
-
-    @Test
-    public void testSentryInstantiationFailureCaught(@Injectable final Dsn mockDsn) throws Exception {
-        SentryClientFactory.registerFactory(sentryClientFactory);
-        Exception exception = null;
-        new NonStrictExpectations() {{
-            sentryClientFactory.createSentryClient(mockDsn);
-            result = new RuntimeException();
-        }};
-
+    public void testAutoDetectDsnIfNotProvided() throws Exception {
+        SentryClient sentryClient;
+        String propName = "sentry.dsn";
+        String previous = System.getProperty(propName);
         try {
-            SentryClientFactory.sentryClient(mockDsn);
-        } catch (IllegalStateException e) {
-            exception = e;
+            System.setProperty(propName, "noop://localhost/1?release=xyz");
+            sentryClient = SentryClientFactory.sentryClient(null);
+        } finally {
+            if (previous == null) {
+                System.clearProperty(propName);
+            } else {
+                System.setProperty(propName, previous);
+            }
         }
 
-        assertThat(exception, notNullValue());
+        assertThat(sentryClient.getRelease(), is("xyz"));
     }
 
     @Test
-    public void testAutoDetectDsnIfNotProvided(@Injectable final SentryClient mockSentryClient,
-                                               @SuppressWarnings("unused") @Mocked final Dsn mockDsn) throws Exception {
-        final String dsn = "protocol://user:password@host:port/3";
-        SentryClientFactory.registerFactory(sentryClientFactory);
-        new NonStrictExpectations() {{
-            sentryClientFactory.createSentryClient((Dsn) any);
-            result = mockSentryClient;
-        }};
-
-        SentryClient sentryClient = SentryClientFactory.sentryClient();
-
-        assertThat(sentryClient, is(mockSentryClient));
-    }
-
-    @Test
-    public void testCreateDsnIfStringProvided(@Injectable final SentryClient mockSentryClient,
-                                              @SuppressWarnings("unused") @Mocked final Dsn mockDsn) throws Exception {
-        final String dsn = "protocol://user:password@host:port/2";
-        SentryClientFactory.registerFactory(sentryClientFactory);
-        new NonStrictExpectations() {{
-            sentryClientFactory.createSentryClient((Dsn) any);
-            result = mockSentryClient;
-        }};
-
+    public void testCreateDsnIfStringProvided() throws Exception {
+        final String dsn = "noop://localhost/1?release=abc";
         SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
-
-        assertThat(sentryClient, is(mockSentryClient));
-        new Verifications() {{
-            new Dsn(dsn);
-        }};
+        assertThat(sentryClient.getRelease(), is("abc"));
     }
 }

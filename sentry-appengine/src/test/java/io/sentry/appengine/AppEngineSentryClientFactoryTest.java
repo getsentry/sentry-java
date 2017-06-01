@@ -1,15 +1,12 @@
 package io.sentry.appengine;
 
 import mockit.*;
-import io.sentry.SentryClientFactory;
 import io.sentry.appengine.connection.AppEngineAsyncConnection;
 import io.sentry.connection.Connection;
 import io.sentry.dsn.Dsn;
-import org.hamcrest.Matchers;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
-import java.util.ServiceLoader;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -22,13 +19,6 @@ public class AppEngineSentryClientFactoryTest {
     private Connection mockConnection;
     @Injectable
     private Dsn mockDsn;
-
-    @Test
-    public void checkServiceLoaderProvidesFactory() throws Exception {
-        ServiceLoader<SentryClientFactory> sentryFactories = ServiceLoader.load(SentryClientFactory.class);
-
-        assertThat(sentryFactories, Matchers.<SentryClientFactory>hasItem(instanceOf(AppEngineSentryClientFactory.class)));
-    }
 
     @Test
     public void asyncConnectionCreatedByAppEngineSentryClientFactoryIsForAppEngine() throws Exception {
