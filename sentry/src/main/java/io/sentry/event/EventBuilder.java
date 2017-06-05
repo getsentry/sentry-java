@@ -36,6 +36,7 @@ public class EventBuilder {
     private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
+    private Set<String> sdkIntegrations = new HashSet<>();
 
     /**
      * Creates a new EventBuilder to prepare a new {@link Event}.
@@ -70,10 +71,8 @@ public class EventBuilder {
 
     /**
      * Sets default values for each field that hasn't been provided manually.
-     *
-     * @param event currently handled event.
      */
-    private static void autoSetMissingValues(Event event) {
+    private void autoSetMissingValues() {
         // Ensure that a timestamp is set (to now at least!)
         if (event.getTimestamp() == null) {
             event.setTimestamp(new Date());
@@ -85,11 +84,9 @@ public class EventBuilder {
         }
 
         // Ensure that an SDK is set
-        if (event.getSdkName() == null) {
-            event.setSdkName(SentryEnvironment.SDK_NAME);
-        }
-        if (event.getSdkVersion() == null) {
-            event.setSdkVersion(SentryEnvironment.SDK_VERSION);
+        if (event.getSdk() == null) {
+            event.setSdk(new Sdk(SentryEnvironment.SDK_NAME, SentryEnvironment.SDK_VERSION,
+                sdkIntegrations));
         }
 
         // Ensure that a hostname is set
@@ -100,10 +97,8 @@ public class EventBuilder {
 
     /**
      * Ensures that every field in the {@code Event} are immutable to avoid confusion later.
-     *
-     * @param event event to make immutable.
      */
-    private static void makeImmutable(Event event) {
+    private void makeImmutable() {
         // Make the tags unmodifiable
         event.setTags(Collections.unmodifiableMap(event.getTags()));
 
@@ -213,24 +208,13 @@ public class EventBuilder {
     }
 
     /**
-     * Sets the SDK name in the event.
+     * Add an integration to the {@link Sdk}.
      *
-     * @param sdkName name of the SDK that created the event.
+     * @param integration Name of the integration used.
      * @return the current {@code EventBuilder} for chained calls.
      */
-    public EventBuilder withSdkName(String sdkName) {
-        event.setSdkName(sdkName);
-        return this;
-    }
-
-    /**
-     * Sets the SDK version in the event.
-     *
-     * @param sdkVersion version of the SDK that created the event.
-     * @return the current {@code EventBuilder} for chained calls.
-     */
-    public EventBuilder withSdkVersion(String sdkVersion) {
-        event.setSdkVersion(sdkVersion);
+    public EventBuilder withSdkIntegration(String integration) {
+        sdkIntegrations.add(integration);
         return this;
     }
 
@@ -418,8 +402,8 @@ public class EventBuilder {
             throw new IllegalStateException("A message can't be built twice");
         }
 
-        autoSetMissingValues(event);
-        makeImmutable(event);
+        autoSetMissingValues();
+        makeImmutable();
 
         // Lock it only when everything has been set, in case of exception it should be possible to try to build again.
         alreadyBuilt = true;

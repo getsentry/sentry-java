@@ -26,7 +26,7 @@ public class UnmarshalledEvent {
     @JsonProperty(value = "platform")
     private String platform;
     @JsonProperty(value = "sdk")
-    private Map<String, String> sdk;
+    private Map<String, Object> sdk;
     @JsonProperty(value = "culprit")
     private String culprit;
     @JsonProperty(value = "tags")

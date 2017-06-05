@@ -69,7 +69,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryAppender.THREAD_NAME, threadName));
             assertThat(event.getTimestamp(), is(date));
-            assertThat(event.getSdkName(), is(SentryEnvironment.SDK_NAME + ":log4j2"));
+            assertThat(event.getSdk().getIntegrations(), contains("log4j2"));
         }};
         assertNoErrorsInErrorHandler();
     }

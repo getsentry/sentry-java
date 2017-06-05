@@ -55,13 +55,10 @@ public class Event implements Serializable {
      */
     private String platform;
     /**
-     * A string representing the name of the SDK used to create the event.
+     * An {@link Sdk} instance representing the version and integrations used to send
+     * the event.
      */
-    private String sdkName;
-    /**
-     * A string representing the version of the SDK used to create the event.
-     */
-    private String sdkVersion;
+    private Sdk sdk;
     /**
      * Function call which was the primary perpetrator of this event.
      */
@@ -177,20 +174,12 @@ public class Event implements Serializable {
         this.platform = platform;
     }
 
-    public String getSdkName() {
-        return sdkName;
+    public Sdk getSdk() {
+        return sdk;
     }
 
-    public void setSdkName(String sdkName) {
-        this.sdkName = sdkName;
-    }
-
-    public String getSdkVersion() {
-        return sdkVersion;
-    }
-
-    public void setSdkVersion(String sdkVersion) {
-        this.sdkVersion = sdkVersion;
+    public void setSdk(Sdk sdk) {
+        this.sdk = sdk;
     }
 
     public String getCulprit() {
