@@ -193,7 +193,8 @@ To set the application distribution that will be sent with each event, use the
 
 ::
 
-    release=1.0.0&dist=x86
+    release=1.0.0
+    dist=x86
 
 Note that the distribution is only useful (and used) if the ``release`` is also
 set.
