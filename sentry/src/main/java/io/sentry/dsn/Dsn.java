@@ -48,7 +48,7 @@ public class Dsn {
      */
     public Dsn(URI dsn) throws InvalidDsnException {
         if (dsn == null) {
-            throw new InvalidDsnException("The sentry DSN must be provided and not be null");
+            throw new InvalidDsnException("DSN constructed with null value!");
         }
 
         options = new HashMap<>();
@@ -80,7 +80,8 @@ public class Dsn {
         String dsn = Lookup.lookup("dsn");
 
         if (dsn == null) {
-            logger.warn("*** Couldn't find a suitable DSN, Sentry operations will do nothing! ***");
+            logger.warn("*** Couldn't find a suitable DSN, Sentry operations will do nothing!"
+                + " See documentation: https://docs.sentry.io/clients/java/ ***");
             dsn = DEFAULT_DSN;
         }
 

@@ -167,6 +167,9 @@ For more complex messages, you'll need to build an ``Event`` with the
                             .withMessage("This is a test")
                             .withLevel(Event.Level.INFO)
                             .withLogger(MyClass.class.getName());
+
+            // Note that the *unbuilt* EventBuilder instance is passed in so that
+            // EventBuilderHelpers are run to add extra information to your event.
             Sentry.capture(eventBuilder);
         }
 
@@ -180,6 +183,9 @@ For more complex messages, you'll need to build an ``Event`` with the
                                 .withLevel(Event.Level.ERROR)
                                 .withLogger(MyClass.class.getName())
                                 .withSentryInterface(new ExceptionInterface(e));
+
+                // Note that the *unbuilt* EventBuilder instance is passed in so that
+                // EventBuilderHelpers are run to add extra information to your event.
                 Sentry.capture(eventBuilder);
             }
         }

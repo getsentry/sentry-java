@@ -12,7 +12,7 @@ Proguard only increased the release ``.apk`` size by approximately 200KB.
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
 (in the application's cache directory) by default. This allows events to be sent at a
 later time if the device does not have connectivity when an event is created. This can
-be disabled by setting the DSN option ``sentry.buffer.enabled`` to ``false``.
+be disabled by setting the DSN option ``buffer.enabled`` to ``false``.
 
 An ``UncaughtExceptionHandler`` is configured so that crash events will be
 stored to disk and sent the next time the application is run.

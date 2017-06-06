@@ -1,13 +1,95 @@
+.. _configuration:
+
 Configuration
 =============
 
 **Note:** Sentry's library and framework integration documentation explains how to to do
-basic Sentry configuration for each of the supported integrations. The configuration
-below is typically for more advanced use cases and can be used in combination any of the other
-integrations *once you set Sentry up with the integration*. Please check the integration
-documentation before you attempt to do any advanced configuration.
+the initial Sentry configuration for each of the supported integrations. The configuration
+below can be used in combination with any of the integrations *once you set Sentry up with
+the integration*. Please check :ref:`the integration documentation <integrations>` before
+you attempt to do any advanced configuration.
 
-Most of Sentry's advanced configuration happens by setting options in your DSN, as seen below.
+Configuration via properties file
+---------------------------------
+
+The ``sentry-java`` SDK can be configured via a ``sentry.properties`` file placed at the root of
+your classpath, which is typically achieved by adding a ``src/main/resources/sentry.properties`` file
+to your project. This file follows the standard `.properties file format <https://en.wikipedia.org/wiki/.properties>`_
+and thus contains one option per line.
+
+Because this file is bundled with your application, the values cannot be changed easily at
+runtime. For this reason, the properties file is useful for setting defaults or options
+that you don't expect to change often. The properties file is the last place checked for
+each option value, so runtime configuration (described below) will override it if available.
+
+Option names in the property file exactly match the examples given below. For example, to enable
+sampling, in your ``sentry.properties`` file:
+
+.. sourcecode:: properties
+
+    sample.rate=0.75
+
+Configuration via the runtime environment
+-----------------------------------------
+
+This is the most flexible method for configuring the Sentry client
+because it can be easily changed based on the environment you run your
+application in.
+
+Two methods are available for runtime configuration, checked in this order: Java System Properties
+and System Environment Variables.
+
+Java System Property option names are exactly like the examples given below except that they are
+prefixed with ``sentry.``. For example, to enable sampling:
+
+.. sourcecode:: shell
+
+    java -Dsentry.sample.rate=0.75 -jar app.jar
+
+System Environment Variable option names require that you replace the ``.`` with ``_``, capitalize
+them, and add a ``SENTRY_`` prefix. For example, to enable sampling:
+
+.. sourcecode:: shell
+
+    SENTRY_SAMPLE_RATE=0.75 java -jar app.jar
+
+Configuration via the DSN
+-------------------------
+
+The SDK can also be configured by setting querystring parameters on the DSN itself. This is a bit
+recursive because your DSN itself is an option that you must set somewhere (and not in the DSN!).
+
+Option names in the DSN exactly match the examples given below. For example, to enable sampling
+if you are setting your DSN via the environment:
+
+.. sourcecode:: shell
+
+    SENTRY_DSN=http://public:private@host:port/1?sample.rate=0.75 java -jar app.jar
+
+DSN (Data Source Name)
+======================
+
+The DSN is the first and most important option to configure because it tells the SDK where
+to send events. You can find a basic DSN in the "Client Keys" section of your "Project Settings"
+in Sentry. It can be configured anywhere except for in the DSN itself.
+
+In your ``sentry.properties``:
+
+.. sourcecode:: properties
+
+    dsn=http://public:private@host:port/1
+
+Via the Java System Properties:
+
+.. sourcecode:: shell
+
+    java -Dsentry.dsn=http://public:private@host:port/1 -jar app.jar
+
+Via a System Environment Variable:
+
+.. sourcecode:: shell
+
+    SENTRY_DSN=http://public:private@host:port/1 java -jar app.jar
 
 Connection and Protocol
 -----------------------
@@ -51,7 +133,7 @@ It is possible to use an unencrypted connection to Sentry via HTTP:
 If not provided, the port will default to ``80``.
 
 Using a Proxy
-~~~~~~~~~~~~~
+-------------
 
 If your application needs to send outbound requests through an HTTP proxy,
 you can configure the proxy information via JVM networking properties or
@@ -79,97 +161,90 @@ See `Java Networking and
 Proxies <http://docs.oracle.com/javase/8/docs/technotes/guides/net/proxies.html>`_
 for more information about the proxy properties.
 
-Alternatively, using the Sentry DSN (only affects the Sentry HTTP client,
+Alternatively, using Sentry options (only affects the Sentry HTTP client,
 useful inside shared application containers),
 
 ::
 
-    http://public:private@host:port/1?http.proxy.host=proxy.example.com&http.proxy.port=8080
+    http.proxy.host=proxy.example.com
+    http.proxy.port=8080
 
 Options
--------
+=======
 
-It is possible to enable some options by adding data to the query string of the
-DSN:
-
-::
-
-    http://public:private@host:port/1?option1=value1&option2&option3=value3
-
-Some options do not require a value, just being declared signifies that the
-option is enabled.
-
+The following options can all be configured as described above: via a ``sentry.properties`` file, via
+Java System Properties, via System Environment variables, or via the DSN.
 
 Release
-~~~~~~~
+-------
 
 To set the application version that will be sent with each event, use the
 ``release`` option:
 
 ::
 
-    http://public:private@host:port/1?release=1.0.0
-
+    release=1.0.0
 
 Distribution
-````````````
+~~~~~~~~~~~~
 
 To set the application distribution that will be sent with each event, use the
 ``dist`` option:
 
 ::
 
-    http://public:private@host:port/1?release=1.0.0&dist=x86
+    release=1.0.0
+    dist=x86
 
 Note that the distribution is only useful (and used) if the ``release`` is also
 set.
 
 Environment
-~~~~~~~~~~~
+-----------
 
 To set the application environment that will be sent with each event, use the
 ``environment`` option:
 
 ::
 
-    http://public:private@host:port/1?environment=staging
+    environment=staging
 
 Server Name
-~~~~~~~~~~~
+-----------
 
 To set the server name that will be sent with each event, use the
 ``servername`` option:
 
 ::
 
-    http://public:private@host:port/1?servername=host1
+    servername=host1
 
 Tags
-~~~~
+----
 
 To set tags that will be sent with each event, use the ``tags`` option with
 comma separated pairs of keys and values that are joined by a colon:
 
 ::
 
-    http://public:private@host:port/1?tags=tag1:value1,tag2:value2
+    tags=tag1:value1,tag2:value2
 
 Extra Tags
-``````````
+----------
 
 To set extras that are extracted and used as additional tags, use the
 ``extratags`` option with comma separated key names.
 
 ::
 
-    http://public:private@host:port/1?extratags=foo,bar
+    extratags=foo,bar
 
 Note that how these extra tags are used depends on which integration you are
 using. For example: when using a logging integration any SLF4J MDC keys that
 are in the extra tags set will be extracted and set as tags on events.
 
 Async Connection
-~~~~~~~~~~~~~~~~
+----------------
 
 In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, an asynchronous connection
@@ -179,10 +254,10 @@ To disable the async mode, add async=false`` to the DSN:
 
 ::
 
-    http://public:private@host:port/1?async=false
+    async=false
 
 Graceful Shutdown (Advanced)
-````````````````````````````
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to shutdown the asynchronous connection gracefully, a ``ShutdownHook``
 is created. By default, the asynchronous connection is given 1 second
@@ -191,7 +266,7 @@ async.shutdowntimeout`` (represented in milliseconds):
 
 ::
 
-    http://public:private@host:port/1?async.shutdowntimeout=5000
+    async.shutdowntimeout=5000
 
 The special value ``-1`` can be used to disable the timeout and wait
 indefinitely for the executor to terminate.
@@ -210,10 +285,10 @@ The option to do so is async.gracefulshutdown``:
 
 ::
 
-    http://public:private@host:port/1?async.gracefulshutdown=false
+    async.gracefulshutdown=false
 
 Queue Size (Advanced)
-`````````````````````
+~~~~~~~~~~~~~~~~~~~~~
 
 The default queue used to store unprocessed events is limited to 50
 items. Additional items added once the queue is full are dropped and
@@ -225,7 +300,7 @@ It is possible to set a maximum with the option async.queuesize``:
 
 ::
 
-    http://public:private@host:port/1?async.queuesize=100
+    async.queuesize=100
 
 This means that if the connection to the Sentry server is down, only the 100
 most recent events will be stored and processed as soon as the server is back up.
@@ -235,7 +310,7 @@ that network connectivity or Sentry server issues could mean your process
 will run out of memory.
 
 Threads Count (Advanced)
-````````````````````````
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default the thread pool used by the async connection contains one thread per
 processor available to the JVM.
@@ -245,10 +320,10 @@ only one thread) with the option async.threads``:
 
 ::
 
-    http://public:private@host:port/1?async.threads=1
+    async.threads=1
 
 Threads Priority (Advanced)
-```````````````````````````
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In most cases sending logs to Sentry isn't as important as an application
 running smoothly, so the threads have a
@@ -259,10 +334,10 @@ with the option async.priority``:
 
 ::
 
-    http://public:private@host:port/1?async.priority=10
+    async.priority=10
 
 Buffering Events to Disk
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Sentry can be configured to write events to a specified directory on disk
 anytime communication with the Sentry server fails with the buffer.dir``
@@ -272,14 +347,14 @@ Sentry always requires write permission on the buffer directory itself.
 
 ::
 
-    http://public:private@host:port/1?buffer.dir=sentry-events
+    buffer.dir=sentry-events
 
 The maximum number of events that will be stored on disk defaults to 50,
 but can also be configured with the option buffer.size``:
 
 ::
 
-    http://public:private@host:port/1?buffer.size=100
+    buffer.size=100
 
 If a buffer directory is provided, a background thread will periodically
 attempt to re-send the events that are found on disk. By default it will
@@ -288,10 +363,10 @@ buffer.flushtime`` option (in milliseconds):
 
 ::
 
-    http://public:private@host:port/1?buffer.flushtime=10000
+    buffer.flushtime=10000
 
 Graceful Shutdown (Advanced)
-````````````````````````````
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
 is created. By default, the buffer flushing thread is given 1 second
@@ -300,7 +375,7 @@ buffer.shutdowntimeout`` (represented in milliseconds):
 
 ::
 
-    http://public:private@host:port/1?buffer.shutdowntimeout=5000
+    buffer.shutdowntimeout=5000
 
 The special value ``-1`` can be used to disable the timeout and wait
 indefinitely for the executor to terminate.
@@ -316,23 +391,23 @@ by setting the buffer.gracefulshutdown`` option:
 
 ::
 
-    http://public:private@host:port/1?buffer.gracefulshutdown=false
+    buffer.gracefulshutdown=false
 
 Event Sampling
-~~~~~~~~~~~~~~
+--------------
 
 Sentry can be configured to sample events with the sample.rate`` option:
 
 ::
 
-    http://public:private@host:port/1?sample.rate=0.75
+    sample.rate=0.75
 
 This option takes a number from 0.0 to 1.0, representing the percent of
 events to allow through to server (from 0% to 100%). By default all
 events will be sent to the Sentry server.
 
 "In Application" Stack Frames
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 Sentry differentiates stack frames that are directly related to your application
 ("in application") from stack frames that come from other packages such as the
@@ -345,10 +420,10 @@ stacktrace.app.packages`` option, which takes a comma separated list.
 
 ::
 
-    http://public:private@host:port/1?stacktrace.app.packages=com.mycompany,com.other.name
+    stacktrace.app.packages=com.mycompany,com.other.name
 
 Same Frame as Enclosing Exception
-`````````````````````````````````
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sentry can use the "in application" system to hide frames in chained exceptions. Usually when a
 StackTrace is printed, the result looks like this:
@@ -376,10 +451,10 @@ To enable a similar behaviour in Sentry use the stacktrace.hidecommon`` option.
 
 ::
 
-    http://public:private@host:port/1?stacktrace.hidecommon
+    stacktrace.hidecommon
 
 Compression
-~~~~~~~~~~~
+-----------
 
 By default the content sent to Sentry is compressed before being sent.
 However, compressing and encoding the data adds a small CPU and memory hit which
@@ -394,20 +469,20 @@ compression``
 
 ::
 
-    http://public:private@host:port/1?compression=false
+    compression=false
 
 Max Message Size
-~~~~~~~~~~~~~~~~
+----------------
 
 By default only the first 1000 characters of a message will be sent to
 the server. This can be changed with the maxmessagelength`` option.
 
 ::
 
-    http://public:private@host:port/1?maxmessagelength=1500
+    maxmessagelength=1500
 
 Timeout (Advanced)
-~~~~~~~~~~~~~~~~~~
+------------------
 
 A timeout is set to avoid blocking Sentry threads because establishing a
 connection is taking too long.
@@ -417,18 +492,17 @@ It's possible to manually set the timeout length with timeout``
 
 ::
 
-    http://public:private@host:port/1?timeout=10000
+    timeout=10000
 
 Custom SentryClientFactory
---------------------------
+==========================
 
 At times, you may require custom functionality that is not included in ``sentry-java``
 already. The most common way to do this is to create your own ``SentryClientFactory`` instance
-as seen in the example below. See the documentation for the integration you use to find out how to
-configure it to use your custom ``SentryClientFactory``.
+as seen in the example below.
 
 Implementation
-~~~~~~~~~~~~~~
+--------------
 
 .. sourcecode:: java
 
@@ -448,3 +522,14 @@ Implementation
         }
     }
 
+Usage
+-----
+
+To use your custom ``SentryClientFactory`` implementation, use the ``factory`` option:
+
+::
+
+    factory=my.company.SentryClientFactory
+
+Your factory class will need to be available on your classpath with a zero argument constructor
+or an error will be thrown.
