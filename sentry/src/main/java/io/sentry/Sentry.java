@@ -195,6 +195,9 @@ public final class Sentry {
 
         storedClient.closeConnection();
         storedClient = null;
+
+        // Allow the client to be auto initialized on the next use.
+        autoInitAttempted.set(false);
     }
 
 }
