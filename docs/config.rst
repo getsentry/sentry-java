@@ -424,8 +424,8 @@ Custom SentryClientFactory
 
 At times, you may require custom functionality that is not included in ``sentry-java``
 already. The most common way to do this is to create your own ``SentryClientFactory`` instance
-as seen in the example below. Note that you'll also need to register it with Sentry and
-possibly configure your integration to use it, as shown below.
+as seen in the example below. See the documentation for the integration you use to find out how to
+configure it to use your custom ``SentryClientFactory``.
 
 Implementation
 ~~~~~~~~~~~~~~
@@ -433,7 +433,6 @@ Implementation
 .. sourcecode:: java
 
     public class MySentryClientFactory extends DefaultSentryClientFactory {
-
         @Override
         public SentryClient createSentryClient(Dsn dsn) {
             SentryClient sentry = new SentryClient(createConnection(dsn));
@@ -447,42 +446,5 @@ Implementation
 
             return sentry;
         }
-
     }
 
-Next, you'll need to register your class with Sentry in one of two ways.
-
-Registration
-~~~~~~~~~~~~
-
-Java ServiceLoader Provider (Recommended)
-`````````````````````````````````````````
-
-You'll need to add a ``ServiceLoader`` provider file to your project at
-``src/main/resources/META-INF/services/io.sentry.SentryClientFactory`` that contains
-the name of your class so that it will be considered as a candidate ``SentryClientFactory``. For an example, see
-`how we configure the DefaultSentryClientFactory itself
-<https://github.com/getsentry/sentry-java/blob/master/sentry/src/main/resources/META-INF/services/io.sentry.SentryClientFactory>`_.
-
-Manual Registration
-```````````````````
-
-You can also manually register your ``SentryClientFactory`` instance. If you are using
-an integration that builds its own Sentry client, such as a logging integration, this should
-be done early in your application lifecycle so that your factory is available the first time
-you attempt to send an event to the Sentry server.
-
-.. sourcecode:: java
-
-    class MyApp {
-        public static void main(String[] args) {
-            SentryClientFactory.registerFactory(new MySentryClientFactory());
-            // ... your app code ...
-        }
-    }
-
-Configuration
-~~~~~~~~~~~~~
-
-Finally, see the documentation for the integration you use to find out how to
-configure it to use your custom ``SentryClientFactory``.

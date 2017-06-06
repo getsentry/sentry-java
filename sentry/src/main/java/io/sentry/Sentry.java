@@ -5,7 +5,6 @@ import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.User;
-import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,22 +77,7 @@ public final class Sentry {
      * @return SentryClient
      */
     public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory) {
-        SentryClient sentryClient;
-        if (sentryClientFactory != null) {
-            Dsn realDsn;
-            if (!Util.isNullOrEmpty(dsn)) {
-                realDsn = new Dsn(dsn);
-            } else {
-                realDsn = new Dsn(Dsn.dsnLookup());
-            }
-
-            // use the factory instance directly
-            sentryClient = sentryClientFactory.createSentryClient(realDsn);
-        } else {
-            // do static factory lookup
-            sentryClient = SentryClientFactory.sentryClient(dsn);
-        }
-
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
         setStoredClient(sentryClient);
         return sentryClient;
     }
