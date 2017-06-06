@@ -109,7 +109,7 @@ public class SentryHandler extends Handler {
      */
     protected EventBuilder createEventBuilder(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
-            .withSdkName(SentryEnvironment.SDK_NAME + ":jul")
+            .withSdkIntegration("java.util.logging")
             .withLevel(getLevel(record.getLevel()))
             .withTimestamp(new Date(record.getMillis()))
             .withLogger(record.getLoggerName());

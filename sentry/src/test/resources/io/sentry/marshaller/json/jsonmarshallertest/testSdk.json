@@ -15,6 +15,7 @@
   "checksum": null,
   "sdk": {
     "name": "sdkName",
-    "version": "sdkVersion"
+    "version": "sdkVersion",
+    "integrations": ["integration2", "integration1"]
   }
 }

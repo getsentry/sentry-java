@@ -54,6 +54,8 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
 
         sentryHandler.publish(newLogRecord(loggerName, Level.INFO, message, arguments, null, null, threadId, date.getTime()));
 
+
+
         new Verifications() {{
             EventBuilder eventBuilder;
             mockSentryClient.sendEvent(eventBuilder = withCapture());
@@ -66,7 +68,9 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
             assertThat(event.getLogger(), is(loggerName));
             assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(SentryHandler.THREAD_ID, (int) threadId));
             assertThat(event.getTimestamp(), is(date));
-            assertThat(event.getSdkName(), is(SentryEnvironment.SDK_NAME + ":jul"));
+            event.getSdk();
+            event.getSdk().getIntegrations();
+            assertThat(event.getSdk().getIntegrations(), contains("java.util.logging"));
         }};
         assertNoErrorsInErrorManager();
     }

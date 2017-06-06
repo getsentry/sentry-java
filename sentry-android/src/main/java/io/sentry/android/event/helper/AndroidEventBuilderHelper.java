@@ -16,7 +16,6 @@ import android.os.StatFs;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.UserInterface;
@@ -58,7 +57,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
-        eventBuilder.withSdkName(SentryEnvironment.SDK_NAME + ":android");
+        eventBuilder.withSdkIntegration("android");
         PackageInfo packageInfo = getPackageInfo(ctx);
         if (packageInfo != null) {
             eventBuilder.withRelease(packageInfo.packageName + "-" + packageInfo.versionName);

@@ -147,7 +147,7 @@ public class SentryAppender extends AbstractAppender {
     protected EventBuilder createEventBuilder(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
-            .withSdkName(SentryEnvironment.SDK_NAME + ":log4j2")
+            .withSdkIntegration("log4j2")
             .withTimestamp(new Date(event.getTimeMillis()))
             .withMessage(eventMessage.getFormattedMessage())
             .withLogger(event.getLoggerName())

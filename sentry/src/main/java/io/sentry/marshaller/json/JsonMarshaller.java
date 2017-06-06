@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
+import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.SentryInterface;
 import io.sentry.marshaller.Marshaller;
 import io.sentry.util.Util;
@@ -188,7 +189,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(LOGGER, event.getLogger());
         generator.writeStringField(PLATFORM, event.getPlatform());
         generator.writeStringField(CULPRIT, event.getCulprit());
-        writeSdk(generator, event.getSdkName(), event.getSdkVersion());
+        writeSdk(generator, event.getSdk());
         writeTags(generator, event.getTags());
         writeBreadcumbs(generator, event.getBreadcrumbs());
         writeContexts(generator, event.getContexts());
@@ -280,10 +281,17 @@ public class JsonMarshaller implements Marshaller {
         }
     }
 
-    private void writeSdk(JsonGenerator generator, String sdkName, String sdkVersion) throws IOException {
+    private void writeSdk(JsonGenerator generator, Sdk sdk) throws IOException {
         generator.writeObjectFieldStart(SDK);
-        generator.writeStringField("name", sdkName);
-        generator.writeStringField("version", sdkVersion);
+        generator.writeStringField("name", sdk.getName());
+        generator.writeStringField("version", sdk.getVersion());
+        if (sdk.getIntegrations() != null && !sdk.getIntegrations().isEmpty()) {
+            generator.writeArrayFieldStart("integrations");
+            for (String integration : sdk.getIntegrations()) {
+                generator.writeString(integration);
+            }
+            generator.writeEndArray();
+        }
         generator.writeEndObject();
     }
 

@@ -99,7 +99,7 @@ public class SentryAppender extends AppenderSkeleton {
      */
     protected EventBuilder createEventBuilder(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
-            .withSdkName(SentryEnvironment.SDK_NAME + ":log4j")
+            .withSdkIntegration("log4j")
             .withTimestamp(new Date(loggingEvent.getTimeStamp()))
             .withMessage(loggingEvent.getRenderedMessage())
             .withLogger(loggingEvent.getLoggerName())

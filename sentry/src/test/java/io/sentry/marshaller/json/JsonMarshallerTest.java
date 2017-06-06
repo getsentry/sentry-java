@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.BaseTest;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
+import io.sentry.event.Sdk;
 import mockit.*;
 import io.sentry.event.Event;
 import io.sentry.event.interfaces.SentryInterface;
@@ -143,14 +144,15 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventPlaftormWrittenProperly(@Injectable("sdkName") final String mockSdkName,
-                                                 @Injectable("sdkVersion") final String mockSdkVersion) throws Exception {
+    public void testEventSdkWrittenProperly() throws Exception {
+        HashSet<String> integrations = new HashSet<>();
+        integrations.add("integration1");
+        integrations.add("integration2");
+        final Sdk sdk = new Sdk("sdkName", "sdkVersion", integrations);
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
         new NonStrictExpectations() {{
-            mockEvent.getSdkName();
-            result = mockSdkName;
-            mockEvent.getSdkVersion();
-            result = mockSdkVersion;
+            mockEvent.getSdk();
+            result = sdk;
         }};
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
