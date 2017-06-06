@@ -45,11 +45,11 @@ the current context.
 
         /**
          * Examples using the (recommended) static API.
-         *
-         * Note that the ``Sentry.init`` method must be called before the static API
-         * is used, otherwise a ``NullPointerException`` will be thrown.
          */
         public void staticAPIExample() {
+            // Manually initialize the static client, you may also pass in a DSN and/or
+            // SentryClientFactory to use. Note that the client will attempt to automatically
+            // initialize on the first use of the static API, so this isn't strictly necessary.
             Sentry.init();
 
             // Set the current user in the context.
@@ -72,6 +72,7 @@ the current context.
          * Examples that use the SentryClient instance directly.
          */
         public void instanceAPIExample() {
+            // Create a SentryClient instance that you manage manually.
             SentryClient sentryClient = SentryClientFactory.sentryClient();
 
             // Get the current context instance.

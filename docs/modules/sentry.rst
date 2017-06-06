@@ -5,8 +5,14 @@ The ``sentry`` library provides a `java.util.logging Handler
 <http://docs.oracle.com/javase/7/docs/api/java/util/logging/Handler.html>`_
 that sends logged exceptions to Sentry.
 
-The source for ``sentry-java`` can be found `on Github
+The source for ``sentry`` can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry>`_.
+
+**Note:** ``raven`` is no longer maintained. It is highly recommended that
+you migrate to ``sentry`` (which this documentation covers). If you are still
+using ``raven`` you can
+`find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/raven.rst>`_.
+\
 
 Installation
 ------------
@@ -64,81 +70,7 @@ its value::
     $ java -Djava.util.logging.config.file=/path/to/app.properties MyClass
 
 Next, **you'll need to configure your DSN** (client key) and optionally other values such as
-``environment`` and ``release``. See below for the two ways you can do this.
-
-Configuration via Runtime Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is the most flexible method for configuring the ``SentryHandler``,
-because it can be easily changed based on the environment you run your
-application in.
-
-The following can be set as System Environment variables:
-
-.. sourcecode:: shell
-
-    SENTRY_EXAMPLE=xxx java -jar app.jar
-
-Or as Java System Properties:
-
-.. sourcecode:: shell
-
-    java -Dsentry.example=xxx -jar app.jar
-
-Configuration parameters follow:
-
-======================== ======================== =============================== ===========
-Environment variable     Java System Property     Example value                   Description
-======================== ======================== =============================== ===========
-``SENTRY_DSN``           ``sentry.dsn``           ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Sentry will no-op
-``SENTRY_RELEASE``       ``sentry.release``       ``1.0.0``                       Optional, provide release version of your application
-``SENTRY_ENVIRONMENT``   ``sentry.environment``   ``production``                  Optional, provide environment your application is running in
-``SENTRY_SERVERNAME``    ``sentry.servername``    ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_FACTORY``       ``sentry.factory``       ``com.foo.SentryClientFactory`` Optional, select the SentryClientFactory class
-``SENTRY_TAGS``          ``sentry.tags``          ``tag1:value1,tag2:value2``     Optional, provide tags
-``SENTRY_EXTRATAGS``     ``sentry.extratags``     ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
-======================== ======================== =============================== ===========
-
-Configuration via Static File
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can also configure everything statically within the ``logging.properties``
-file itself. This is less flexible and not recommended because it's more difficult to change
-the values when you run your application in different environments.
-
-Example configuration in the ``logging.properties`` file:
-
-.. sourcecode:: ini
-
-    # Enable the Console and Sentry handlers
-    handlers=java.util.logging.ConsoleHandler, io.sentry.jul.SentryHandler
-
-    # Set the default log level to INFO
-    .level=INFO
-
-    # Override the Sentry handler log level to WARNING
-    io.sentry.jul.SentryHandler.level=WARNING
-
-    # Set Sentry DSN
-    io.sentry.jul.SentryHandler.dsn=https://host:port/1?options
-
-    # Optional, provide tags
-    io.sentry.jul.SentryHandler.tags=tag1:value1,tag2:value2
-
-    # Optional, provide release version of your application
-    io.sentry.jul.SentryHandler.release=1.0.0
-
-    # Optional, provide environment your application is running in
-    io.sentry.jul.SentryHandler.environment=production
-
-    # Optional, override the server name (rather than looking it up dynamically)
-    io.sentry.jul.SentryHandler.serverName=server1
-
-    # Optional, select the SentryClientFactorclass
-    io.sentry.jul.SentryHandler.factory=com.foo.SentryClientFactory
-
-    # Optional, provide tag names to be extracted from MDC
-    io.sentry.jul.SentryHandler.extraTags=foo,bar,baz
+``environment`` and ``release``. :ref:`See the configuration page <configuration>` for ways you can do this.
 
 In Practice
 -----------

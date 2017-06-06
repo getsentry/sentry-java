@@ -9,6 +9,11 @@ that sends logged exceptions to Sentry.
 The source can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry-logback>`_.
 
+**Note:** ``raven-logback`` is no longer maintained. It is highly recommended that
+you migrate to ``sentry-logback`` (which this documentation covers). If you are still
+using ``raven-logback`` you can
+`find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/logback.rst>`_.
+
 Installation
 ------------
 
@@ -73,95 +78,7 @@ Example configuration using the ``logback.xml`` format:
     </configuration>
 
 Next, **you'll need to configure your DSN** (client key) and optionally other values such as
-``environment`` and ``release``. See below for the two ways you can do this.
-
-Configuration via Runtime Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is the most flexible method for configuring the ``SentryAppender``,
-because it can be easily changed based on the environment you run your
-application in.
-
-The following can be set as System Environment variables:
-
-.. sourcecode:: shell
-
-    SENTRY_EXAMPLE=xxx java -jar app.jar
-
-Or as Java System Properties:
-
-.. sourcecode:: shell
-
-    java -Dsentry.example=xxx -jar app.jar
-
-Configuration parameters follow:
-
-======================== ======================== =============================== ===========
-Environment variable     Java System Property     Example value                   Description
-======================== ======================== =============================== ===========
-``SENTRY_DSN``           ``sentry.dsn``           ``https://host:port/1?options`` Your Sentry DSN (client key), if left blank Sentry will no-op
-``SENTRY_RELEASE``       ``sentry.release``       ``1.0.0``                       Optional, provide release version of your application
-``SENTRY_ENVIRONMENT``   ``sentry.environment``   ``production``                  Optional, provide environment your application is running in
-``SENTRY_SERVERNAME``    ``sentry.servername``    ``server1``                     Optional, override the server name (rather than looking it up dynamically)
-``SENTRY_FACTORY``       ``sentry.factory``       ``com.foo.SentryClientFactory`` Optional, select the SentryClientFactory class
-``SENTRY_TAGS``          ``sentry.tags``          ``tag1:value1,tag2:value2``     Optional, provide tags
-``SENTRY_EXTRATAGS``     ``sentry.extratags``     ``foo,bar,baz``                 Optional, provide tag names to be extracted from MDC
-======================== ======================== =============================== ===========
-
-Configuration via Static File
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can also configure everything statically within the ``logback.xml``
-file itself. This is less flexible and not recommended because it's more difficult to change
-the values when you run your application in different environments.
-
-Example configuration in the ``logback.xml`` file:
-
-.. sourcecode:: xml
-
-    <configuration>
-        <!-- Configure the Console appender -->
-        <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder>
-                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-            </encoder>
-        </appender>
-
-        <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
-        <appender name="Sentry" class="io.sentry.logback.SentryAppender">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>WARN</level>
-            </filter>
-
-            <!-- Set Sentry DSN -->
-            <dsn>https://host:port/1?options</dsn>
-
-            <!-- Optional, provide release version of your application -->
-            <release>1.0.0</release>
-
-            <!-- Optional, provide environment your application is running in -->
-            <environment>production</environment>
-
-            <!-- Optional, override the server name (rather than looking it up dynamically) -->
-            <serverName>server1</serverName>
-
-            <!-- Optional, select the SentryClientFactory class -->
-            <factory>com.foo.SentryClientFactory</factory>
-
-            <!-- Optional, provide tags -->
-            <tags>tag1:value1,tag2:value2</tags>
-
-            <!-- Optional, provide tag names to be extracted from MDC -->
-            <extraTags>foo,bar,baz</extraTags>
-        </appender>
-
-        <!-- Enable the Console and Sentry appenders, Console is provided as an example
-             of a non-Sentry logger that is set to a different logging threshold -->
-        <root level="INFO">
-            <appender-ref ref="Console" />
-            <appender-ref ref="Sentry" />
-        </root>
-    </configuration>
+``environment`` and ``release``. :ref:`See the configuration page <configuration>` for ways you can do this.
 
 Additional Data
 ---------------
@@ -173,13 +90,9 @@ Mapped Tags
 ~~~~~~~~~~~
 
 By default all MDC parameters are stored under the "Additional Data" tab in Sentry. By
-specifying the ``extraTags`` parameter in your configuration file you can
+specifying the ``extratags`` option in your configuration you can
 choose which MDC keys to send as tags instead, which allows them to be used as
 filters within the Sentry UI.
-
-.. sourcecode:: xml
-
-    <extraTags>Environment,OS</extraTags>
 
 .. sourcecode:: java
 
@@ -188,7 +101,7 @@ filters within the Sentry UI.
         MDC.put("Environment", "Development");
         MDC.put("OS", "Linux");
 
-        // This sends an event where the Environment and OS MDC values are set as tags
+        // This sends an event where the Environment and OS MDC values are set as additional data
         logger.error("This is a test");
     }
 
