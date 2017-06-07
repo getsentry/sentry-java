@@ -1,7 +1,7 @@
 .. _configuration:
 
-Configuration
-=============
+Configuration methods
+=====================
 
 **Note:** Sentry's library and framework integration documentation explains how to to do
 the initial Sentry configuration for each of the supported integrations. The configuration
@@ -66,8 +66,8 @@ if you are setting your DSN via the environment:
 
     SENTRY_DSN=http://public:private@host:port/1?sample.rate=0.75 java -jar app.jar
 
-DSN (Data Source Name)
-======================
+Setting the DSN (Data Source Name)
+==================================
 
 The DSN is the first and most important option to configure because it tells the SDK where
 to send events. You can find a basic DSN in the "Client Keys" section of your "Project Settings"
@@ -494,8 +494,8 @@ It's possible to manually set the timeout length with timeout``
 
     timeout=10000
 
-Custom SentryClientFactory
-==========================
+Custom functionality
+====================
 
 At times, you may require custom functionality that is not included in ``sentry-java``
 already. The most common way to do this is to create your own ``SentryClientFactory`` instance
