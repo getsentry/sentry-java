@@ -11,7 +11,7 @@ you don't have to capture and send errors manually.
 
    android
    appengine
-   sentry
+   jul
    log4j
    log4j2
    logback
