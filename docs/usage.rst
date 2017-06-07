@@ -2,8 +2,8 @@ Manual Usage
 ============
 
 **Note:** The following page provides examples on how to configure and use
-Sentry directly. It is **highly recommended** that you use one of the provided
-integrations instead if possible.
+Sentry directly. It is **highly recommended** that you use one of the
+:ref:`provided integrations <integrations>` instead if possible.
 
 Installation
 ------------

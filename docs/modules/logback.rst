@@ -78,7 +78,7 @@ Example configuration using the ``logback.xml`` format:
     </configuration>
 
 Next, **you'll need to configure your DSN** (client key) and optionally other values such as
-``environment`` and ``release``. :ref:`See the configuration page <configuration>` for ways you can do this.
+``environment`` and ``release``.   :ref:`See the configuration page <setting_the_dsn>` for ways you can do this.
 
 Additional Data
 ---------------
