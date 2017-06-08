@@ -41,7 +41,9 @@ In code:
 
 .. sourcecode:: java
 
-     Sentry.init("https://public:private@host:port/1");
+    import io.sentry.Sentry;
+
+    Sentry.init("https://public:private@host:port/1");
 
 .. _configuration_methods:
 
@@ -99,10 +101,12 @@ The DSN itself can also be configured directly in code:
 
 .. sourcecode:: java
 
+    import io.sentry.Sentry;
+
     Sentry.init("https://public:private@host:port/1");
 
 Note that Sentry will not be able to do anything with events until this line is run, so this
-method is configuration is not recommended if you might have errors occur during startup.
+method of configuration is not recommended if you might have errors occur during startup.
 In addition, by passing a hardcoded DSN you are no longer able to override the DSN at runtime
 via Java System Properties or System Environment Variables.
 
