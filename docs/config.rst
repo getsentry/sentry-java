@@ -37,6 +37,12 @@ Via a System Environment Variable:
 
     SENTRY_DSN=https://public:private@host:port/1 java -jar app.jar
 
+In code:
+
+.. sourcecode:: java
+
+     Sentry.init("https://public:private@host:port/1");
+
 .. _configuration_methods:
 
 Configuration methods
@@ -86,6 +92,20 @@ them, and add a ``SENTRY_`` prefix. For example, to enable sampling:
 
     SENTRY_SAMPLE_RATE=0.75 java -jar app.jar
 
+Configuration via code
+~~~~~~~~~~~~~~~~~~~~~~
+
+The DSN itself can also be configured directly in code:
+
+.. sourcecode:: java
+
+    Sentry.init("https://public:private@host:port/1");
+
+Note that Sentry will not be able to do anything with events until this line is run, so this
+method is configuration is not recommended if you might have errors occur during startup.
+In addition, by passing a hardcoded DSN you are no longer able to override the DSN at runtime
+via Java System Properties or System Environment Variables.
+
 Configuration via the DSN
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -98,6 +118,8 @@ if you are setting your DSN via the environment:
 .. sourcecode:: shell
 
     SENTRY_DSN=https://public:private@host:port/1?sample.rate=0.75 java -jar app.jar
+
+You can, of course, pass this DSN in using the other methods described above.
 
 Options
 -------
