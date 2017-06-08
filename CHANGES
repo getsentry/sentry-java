@@ -6,6 +6,9 @@ Version 1.0.1
 Version 1.0.0
 -------------
 
+1.0.0 is a major refactor, please see the official documentation to see how configuration and usage
+has changed: https://docs.sentry.io/clients/java/
+
 - Move from ``com.getsentry.raven`` package to ``io.sentry``.
 - Rename from ``raven-java`` to ``sentry-java``.
 - Rename the ``Sentry`` class to ``SentryClient``.
@@ -23,6 +26,9 @@ Version 1.0.0
 - Add way to set release, dist, environment, serverName, tags, and extraTags via the DSN.
 - Logging integrations now use the new ``Sentry`` static API.
 - Configuration can now be provided by a ``sentry.properties`` file provided in resources.
+
+raven-java changelog (before rename to sentry-java)
+===================================================
 
 Version 8.0.2
 -------------
