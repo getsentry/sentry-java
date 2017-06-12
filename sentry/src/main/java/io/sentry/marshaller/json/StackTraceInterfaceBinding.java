@@ -57,9 +57,9 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
             generator.writeStringField(ABSOLUTE_PATH_PARAMETER, stackTraceElement.getAbsPath());
         }
 
-        if (stackTraceElement.getVars() != null) {
+        if (stackTraceElement.getLocals() != null && !stackTraceElement.getLocals().isEmpty()) {
             generator.writeObjectFieldStart(VARIABLES_PARAMETER);
-            for (Map.Entry<String, Object> varEntry : stackTraceElement.getVars().entrySet()) {
+            for (Map.Entry<String, Object> varEntry : stackTraceElement.getLocals().entrySet()) {
                 String name = varEntry.getKey();
                 Object value = varEntry.getValue();
                 if (value == null) {

@@ -2,6 +2,9 @@ package io.sentry.jvmti;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class representing a single call frame.
@@ -31,8 +34,27 @@ public final class Frame {
         return method;
     }
 
-    public LocalVariable[] getLocals() {
-        return locals;
+    /**
+     * Converts the locals array to a Map of variable-name -> variable-value.
+     *
+     * @return Map of variable-name -> variable-value.
+     */
+    public Map<String, Object> getLocals() {
+        if (locals == null || locals.length == 0) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Object> localsMap = null;
+        for (Frame.LocalVariable localVariable : locals) {
+            if (localVariable != null) {
+                if (localsMap == null) {
+                    localsMap = new HashMap<>();
+                }
+                localsMap.put(localVariable.getName(), localVariable.getValue());
+            }
+        }
+
+        return localsMap;
     }
 
     @Override
