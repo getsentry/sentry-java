@@ -2,9 +2,13 @@ package io.sentry.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.interfaces.DebugMetaInterface;
+import io.sentry.event.interfaces.ExceptionInterface;
 
 import java.io.IOException;
 
+/**
+ * Binding that converts a {@link DebugMetaInterface} to a JSON stream.
+ */
 public class DebugMetaInterfaceBinding implements InterfaceBinding<DebugMetaInterface> {
     private static final String DEBUG_META = "debug_meta";
     private static final String IMAGES = "images";
@@ -22,10 +26,10 @@ public class DebugMetaInterfaceBinding implements InterfaceBinding<DebugMetaInte
 
     private void writeDebugImages(JsonGenerator generator, DebugMetaInterface debugMetaInterface) throws IOException {
         generator.writeArrayFieldStart(IMAGES);
-        for (int i = 0; i < debugMetaInterface.getDebugImages().size(); i++) {
+        for (DebugMetaInterface.DebugImage debugImage : debugMetaInterface.getDebugImages()) {
             generator.writeStartObject();
-            generator.writeStringField(UUID, debugMetaInterface.getDebugImages().get(i).getUuid());
-            generator.writeStringField(TYPE, debugMetaInterface.getDebugImages().get(i).getType());
+            generator.writeStringField(UUID, debugImage.getUuid());
+            generator.writeStringField(TYPE, debugImage.getType());
             generator.writeEndObject();
         }
         generator.writeEndArray();
