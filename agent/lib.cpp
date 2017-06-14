@@ -43,6 +43,9 @@ static jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint 
         case '[': // Array
         case 'L': // Object
             jvmti_error = jvmti->GetLocalObject(thread, depth, table[index].slot, &result);
+            if (jvmti_error != JVMTI_ERROR_NONE || result == nullptr) {
+                return nullptr;
+            }
 
             obj_class = env->GetObjectClass(result);
             to_string_method = env->GetMethodID(obj_class, "toString", "()Ljava/lang/String;");

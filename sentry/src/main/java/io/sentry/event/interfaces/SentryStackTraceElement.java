@@ -3,6 +3,7 @@ package io.sentry.event.interfaces;
 import io.sentry.jvmti.Frame;
 import io.sentry.jvmti.LocalsCache;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 
@@ -85,15 +86,40 @@ public class SentryStackTraceElement {
      */
     public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements) {
         Frame[] localsCache = LocalsCache.getCache();
-        boolean mayHaveLocals = localsCache != null && localsCache.length == stackTraceElements.length;
+
+        /*
+        Verify the localsCache stacktrace length and method classes/names match the stackTraceElements
+        length and method classes/names. This needs to be done in its own loop because the entire stack
+        must be match before we can assume the stored locals are most likely from the stacktrace that
+        is being recorded.
+
+        The reason they might *not* match is that a user can stash an exception in a variable, allow
+        another exception to occur, and then attempt to send the first exception to Sentry. Since we
+        can't cache every exception's locals for all time, we attempt a best-effort where we store the
+        last invocation and do this matching to see if they're most likely from the same call.
+
+        This code is only called run if,
+        1. the JVM is using our agent
+        2. the length of the cached locals matches the length of the stacktrace that is being sent
+         */
+        boolean hasLocals = false;
+        if (localsCache != null && localsCache.length == stackTraceElements.length) {
+            hasLocals = true;
+            for (int i = 0; i < stackTraceElements.length; i++) {
+                StackTraceElement stackTraceElement = stackTraceElements[i];
+                Method method = localsCache[i].getMethod();
+
+                if (!stackTraceElement.getClassName().equals(method.getDeclaringClass().getName())
+                    || !stackTraceElement.getMethodName().equals(method.getName())) {
+                    hasLocals = false;
+                }
+            }
+        }
 
         SentryStackTraceElement[] sentryStackTraceElements = new SentryStackTraceElement[stackTraceElements.length];
         for (int i = 0; i < stackTraceElements.length; i++) {
-            Map<String, Object> locals = null;
-            if (mayHaveLocals) {
-                locals = localsCache[i].getLocals();
-            }
-            sentryStackTraceElements[i] = fromStackTraceElement(stackTraceElements[i], locals);
+            sentryStackTraceElements[i] = fromStackTraceElement(stackTraceElements[i],
+                hasLocals ? localsCache[i].getLocals() : null);
         }
 
         return sentryStackTraceElements;
