@@ -3,7 +3,8 @@ package io.sentry.event.interfaces;
 import io.sentry.BaseTest;
 import org.testng.annotations.Test;
 
-import java.util.Objects;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 public class DebugMetaInterfaceTest extends BaseTest {
     @Test
@@ -14,6 +15,6 @@ public class DebugMetaInterfaceTest extends BaseTest {
         debugInterface.addDebugImage(image1);
         debugInterface.addDebugImage(image2);
 
-        assert Objects.equals(debugInterface.toString(), "DebugMetaInterface{images=[DebugImage{uuid='abcd-efgh', type='proguard'}, DebugImage{uuid='ijkl-mnop', type='proguard'}]}");
+        assertThat(debugInterface.getDebugImages(), contains(image1, image2));
     }
 }
