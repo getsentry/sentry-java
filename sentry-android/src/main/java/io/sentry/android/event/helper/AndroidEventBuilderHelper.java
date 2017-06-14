@@ -9,15 +9,13 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.BatteryManager;
-import android.os.Build;
-import android.os.Environment;
-import android.os.StatFs;
+import android.os.*;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
+import io.sentry.event.interfaces.DebugMetaInterface;
 import io.sentry.event.interfaces.UserInterface;
 
 import java.io.BufferedReader;
@@ -69,6 +67,15 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             UserInterface userInterface = new UserInterface("android:" + androidId, null, null, null);
             // set user interface but *don't* replace if it's already there
             eventBuilder.withSentryInterface(userInterface, false);
+        }
+
+        String[] proGuardsUuids = getProGuardUuids(ctx);
+        if (proGuardsUuids != null && proGuardsUuids.length > 0) {
+            DebugMetaInterface debugMetaInterface = new DebugMetaInterface();
+            for (int i = 0; i < proGuardsUuids.length; i++) {
+                debugMetaInterface.addDebugImage(new DebugMetaInterface.DebugImage(proGuardsUuids[i]));
+            }
+            eventBuilder.withSentryInterface(debugMetaInterface);
         }
 
         eventBuilder.withContexts(getContexts());
@@ -136,6 +143,20 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         appMap.put("app_start_time", stringifyDate(new Date()));
 
         return contexts;
+    }
+
+    private static String[] getProGuardUuids(Context ctx) {
+        try {
+            ApplicationInfo ai = ctx.getPackageManager().getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = ai.metaData;
+            String uuid = bundle.getString("io.sentry.ProguardUuids");
+            return uuid.split("|");
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
+        } catch (NullPointerException e) {
+            Log.e(TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+        }
+        return null;
     }
 
     /**
