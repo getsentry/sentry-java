@@ -17,6 +17,7 @@ import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.DebugMetaInterface;
 import io.sentry.event.interfaces.UserInterface;
+import io.sentry.util.Util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -72,8 +73,8 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         String[] proGuardsUuids = getProGuardUuids(ctx);
         if (proGuardsUuids != null && proGuardsUuids.length > 0) {
             DebugMetaInterface debugMetaInterface = new DebugMetaInterface();
-            for (int i = 0; i < proGuardsUuids.length; i++) {
-                debugMetaInterface.addDebugImage(new DebugMetaInterface.DebugImage(proGuardsUuids[i]));
+            for (String proGuardsUuid : proGuardsUuids) {
+                debugMetaInterface.addDebugImage(new DebugMetaInterface.DebugImage(proGuardsUuid));
             }
             eventBuilder.withSentryInterface(debugMetaInterface);
         }
@@ -147,15 +148,19 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     private static String[] getProGuardUuids(Context ctx) {
         try {
-            PackageManager pm = ctx.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
+            PackageManager pkgManager = ctx.getPackageManager();
+            ApplicationInfo appInfo = pkgManager.getApplicationInfo(
+                ctx.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = appInfo.metaData;
+
             String uuid = bundle.getString("io.sentry.ProguardUuids");
+            if (Util.isNullOrEmpty(uuid)) {
+                return null;
+            }
+
             return uuid.split("\\|");
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
-        } catch (NullPointerException e) {
-            Log.e(TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting Proguard UUIDs.", e);
         }
         return null;
     }
