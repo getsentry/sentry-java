@@ -147,10 +147,11 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     private static String[] getProGuardUuids(Context ctx) {
         try {
-            ApplicationInfo ai = ctx.getPackageManager().getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
+            PackageManager pm = ctx.getPackageManager();
+            ApplicationInfo ai = pm.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
             Bundle bundle = ai.metaData;
             String uuid = bundle.getString("io.sentry.ProguardUuids");
-            return uuid.split("|");
+            return uuid.split("\\|");
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
         } catch (NullPointerException e) {
