@@ -2,33 +2,33 @@ package io.sentry.jvmti;
 
 /**
  * Utility class used by the Sentry Java Agent (https://github.com/getsentry/sentry-java-agent) to
- * store local variable information for the last thrown exception.
+ * store per-frame local variable information for the last thrown exception.
  */
-public final class LocalsCache {
+public final class FrameCache {
     private static ThreadLocal<Frame[]> result = new ThreadLocal<>();
 
     /**
      * Utility class, no public ctor.
      */
-    private LocalsCache() {
+    private FrameCache() {
 
     }
 
     /**
-     * Store the local variable information for the last exception thrown on this thread.
+     * Store the per-frame local variable information for the last exception thrown on this thread.
      *
      * @param frames Array of {@link Frame}s to store
      */
-    public static void setCache(Frame[] frames) {
+    public static void add(Frame[] frames) {
         result.set(frames);
     }
 
     /**
-     * Retrieve the local variable information for the last exception thrown on this thread.
+     * Retrieve the per-frame local variable information for the last exception thrown on this thread.
      *
      * @return Array of {@link Frame}s
      */
-    public static Frame[] getCache() {
+    public static Frame[] get() {
         return result.get();
     }
 }

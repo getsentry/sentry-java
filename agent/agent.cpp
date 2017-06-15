@@ -21,8 +21,8 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
         return;
     }
 
-    char *class_name = (char *) "io/sentry/jvmti/LocalsCache";
-    char *method_name = (char *) "setCache";
+    char *class_name = (char *) "io/sentry/jvmti/FrameCache";
+    char *method_name = (char *) "add";
     char *signature = (char *) "([Lio/sentry/jvmti/Frame;)V";
 
     jclass callback_class = nullptr;

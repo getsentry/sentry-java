@@ -44,12 +44,9 @@ public final class Frame {
             return Collections.emptyMap();
         }
 
-        Map<String, Object> localsMap = null;
+        Map<String, Object> localsMap = new HashMap<>();
         for (Frame.LocalVariable localVariable : locals) {
             if (localVariable != null) {
-                if (localsMap == null) {
-                    localsMap = new HashMap<>();
-                }
                 localsMap.put(localVariable.getName(), localVariable.getValue());
             }
         }
