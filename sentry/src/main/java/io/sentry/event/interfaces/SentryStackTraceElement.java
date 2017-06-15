@@ -98,8 +98,8 @@ public class SentryStackTraceElement {
         can't cache every exception's locals for all time, we attempt a best-effort where we store the
         last invocation and do this matching to see if they're most likely from the same call.
 
-        This code is only called run if,
-        1. the JVM is using our agent
+        This code is only run if:
+        1. the JVM is running our agent (and therefore LocalsCache is not null)
         2. the length of the cached locals matches the length of the stacktrace that is being sent
          */
         boolean hasLocals = false;
