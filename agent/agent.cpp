@@ -23,7 +23,7 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
 
     char *class_name = (char *) "io/sentry/jvmti/FrameCache";
     char *method_name = (char *) "add";
-    char *signature = (char *) "([Lio/sentry/jvmti/Frame;)V";
+    char *signature = (char *) "(Ljava/lang/Throwable;[Lio/sentry/jvmti/Frame;)V";
 
     jclass callback_class = nullptr;
     jmethodID callback_method_id = nullptr;
@@ -31,13 +31,13 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
     callback_class = env->FindClass(class_name);
     if (callback_class == nullptr) {
         env->ExceptionClear();
-        log(TRACE, "Unable to locate callback class.");
+        log(TRACE, "Unable to locate FrameCache class.");
         return;
     }
 
     callback_method_id = env->GetStaticMethodID(callback_class, method_name, signature);
     if (callback_method_id == nullptr) {
-        log(TRACE, "Unable to locate static setCache method.");
+        log(TRACE, "Unable to locate static FrameCache.add method.");
         return;
     }
 
@@ -45,7 +45,7 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
     jint start_depth = 0;
     frames = buildStackTraceFrames(jvmti, env, thread, start_depth);
 
-    env->CallStaticVoidMethod(callback_class, callback_method_id, frames);
+    env->CallStaticVoidMethod(callback_class, callback_method_id, exception, frames);
 
     log(TRACE, "ExceptionCallback exit.");
 }

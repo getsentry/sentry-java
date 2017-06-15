@@ -13,7 +13,7 @@ public final class Frame {
     /**
      * Java method this frame is for.
      */
-    private final Method method;
+    private final Method method; // TODO: remove?
     /**
      * Local variable information for this frame.
      */

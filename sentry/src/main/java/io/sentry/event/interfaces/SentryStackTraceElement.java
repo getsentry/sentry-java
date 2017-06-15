@@ -82,46 +82,15 @@ public class SentryStackTraceElement {
      * Convert an array of {@link StackTraceElement}s to {@link SentryStackTraceElement}s.
      *
      * @param stackTraceElements Array of {@link StackTraceElement}s to convert.
+     * @param cachedFrames
      * @return Array of {@link SentryStackTraceElement}s.
      */
-    public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements) {
-        Frame[] cachedFrames = FrameCache.get();
-
-        /*
-        Verify the length of cachedFrames and method classes/names match the length of stackTraceElements
-        and method classes/names. This needs to be done in its own loop because the entire stack
-        must be match before we can assume the stored locals are most likely from the stacktrace that
-        is being recorded.
-
-        The reason they might *not* match is that a user can stash an exception in a variable, allow
-        another exception to occur, and then attempt to send the first exception to Sentry. Since we
-        can't cache every exception's locals for all time, we attempt a best-effort where we store the
-        last invocation and do this matching to see if they're most likely from the same call.
-
-        This code is only run if:
-        1. the JVM is running our agent (and therefore FrameCache is not null)
-        2. the length of the cached locals matches the length of the stacktrace that is being sent
-         */
-        boolean hasLocals = false;
-        if (cachedFrames != null && cachedFrames.length == stackTraceElements.length) {
-            hasLocals = true;
-            for (int i = 0; i < stackTraceElements.length; i++) {
-                StackTraceElement stackTraceElement = stackTraceElements[i];
-                Method method = cachedFrames[i].getMethod();
-
-                boolean classEquals = stackTraceElement.getClassName().equals(method.getDeclaringClass().getName());
-                boolean methodEquals = stackTraceElement.getMethodName().equals(method.getName());
-                if (!classEquals || !methodEquals) {
-                    hasLocals = false;
-                    break;
-                }
-            }
-        }
-
+    public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements,
+                                                                   Frame[] cachedFrames) {
         SentryStackTraceElement[] sentryStackTraceElements = new SentryStackTraceElement[stackTraceElements.length];
         for (int i = 0; i < stackTraceElements.length; i++) {
             sentryStackTraceElements[i] = fromStackTraceElement(stackTraceElements[i],
-                hasLocals ? cachedFrames[i].getLocals() : null);
+                cachedFrames != null ? cachedFrames[i].getLocals() : null);
         }
 
         return sentryStackTraceElements;

@@ -1,11 +1,20 @@
 package io.sentry.jvmti;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 /**
  * Utility class used by the Sentry Java Agent (https://github.com/getsentry/sentry-java-agent) to
  * store per-frame local variable information for the last thrown exception.
  */
 public final class FrameCache {
-    private static ThreadLocal<Frame[]> result = new ThreadLocal<>();
+    private static ThreadLocal<WeakHashMap<Throwable, Frame[]>> result =
+        new ThreadLocal<WeakHashMap<Throwable, Frame[]>>() {
+            @Override
+            protected WeakHashMap<Throwable, Frame[]> initialValue() {
+                return new WeakHashMap<>();
+            }
+        };
 
     /**
      * Utility class, no public ctor.
@@ -17,18 +26,22 @@ public final class FrameCache {
     /**
      * Store the per-frame local variable information for the last exception thrown on this thread.
      *
+     * @param throwable
      * @param frames Array of {@link Frame}s to store
      */
-    public static void add(Frame[] frames) {
-        result.set(frames);
+    public static void add(Throwable throwable, Frame[] frames) {
+        Map<Throwable, Frame[]> weakMap = result.get();
+        weakMap.put(throwable, frames);
     }
 
     /**
      * Retrieve the per-frame local variable information for the last exception thrown on this thread.
      *
+     * @param throwable
      * @return Array of {@link Frame}s
      */
-    public static Frame[] get() {
-        return result.get();
+    public static Frame[] get(Throwable throwable) {
+        Map<Throwable, Frame[]> weakMap = result.get();
+        return weakMap.get(throwable);
     }
 }
