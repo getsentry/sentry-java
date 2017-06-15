@@ -1,5 +1,7 @@
 package io.sentry.event.interfaces;
 
+import io.sentry.jvmti.Frame;
+
 import java.util.Arrays;
 
 /**
@@ -19,7 +21,7 @@ public class StackTraceInterface implements SentryInterface {
      * @param stackTrace StackTrace to provide to Sentry.
      */
     public StackTraceInterface(StackTraceElement[] stackTrace) {
-        this(stackTrace, new StackTraceElement[0]);
+        this(stackTrace, new StackTraceElement[0], null);
     }
 
     /**
@@ -33,7 +35,24 @@ public class StackTraceInterface implements SentryInterface {
      *                            are in common.
      */
     public StackTraceInterface(StackTraceElement[] stackTrace, StackTraceElement[] enclosingStackTrace) {
-        this.stackTrace = SentryStackTraceElement.fromStackTraceElements(stackTrace);
+        this(stackTrace, enclosingStackTrace, null);
+    }
+
+    /**
+     * Creates a StackTrace for an {@link io.sentry.event.Event}.
+     * <p>
+     * With the help of the enclosing StackTrace, figure out which frames are in common with the parent exception
+     * to potentially hide them later in Sentry.
+     *
+     * @param stackTrace StackTrace to provide to Sentry.
+     * @param enclosingStackTrace StackTrace of the enclosing exception, to determine how many Stack frames
+     *                            are in common.
+     * @param cachedFrames Array of cached {@link Frame}s (from the Sentry agent) if available,
+     *                     or null.
+     */
+    public StackTraceInterface(StackTraceElement[] stackTrace, StackTraceElement[] enclosingStackTrace,
+                               Frame[] cachedFrames) {
+        this.stackTrace = SentryStackTraceElement.fromStackTraceElements(stackTrace, cachedFrames);
 
         int m = stackTrace.length - 1;
         int n = enclosingStackTrace.length - 1;

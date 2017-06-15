@@ -125,7 +125,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
             SentryException sentryException = exceptionInterface.getExceptions().getFirst();
             assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
             assertThat(sentryException.getStackTraceInterface().getStackTrace(),
-                is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace())));
+                is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace(), null)));
         }};
         assertNoErrorsInStatusManager();
     }
@@ -239,7 +239,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
             Event event = eventBuilder.build();
             StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
                     .get(StackTraceInterface.STACKTRACE_INTERFACE);
-            assertThat(stackTraceInterface.getStackTrace(), is(SentryStackTraceElement.fromStackTraceElements(location)));
+            assertThat(stackTraceInterface.getStackTrace(), is(SentryStackTraceElement.fromStackTraceElements(location, null)));
         }};
         assertNoErrorsInStatusManager();
     }
