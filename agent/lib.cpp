@@ -1,6 +1,5 @@
 #include <iostream>
 #include "lib.h"
-#include "jvmti.h"
 
 const std::string LEVEL_STRINGS[] = {
         "TRACE",
@@ -173,7 +172,6 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
                           jmethodID method, jlocation location) {
     jvmtiError jvmti_error;
     jvmtiLocalVariableEntry *local_var_table;
-    jvmtiLineNumberEntry* lineno_table;
     jint num_entries;
     jobject value_ptr;
     jobjectArray locals;

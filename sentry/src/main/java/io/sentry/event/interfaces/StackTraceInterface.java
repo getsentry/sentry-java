@@ -44,10 +44,11 @@ public class StackTraceInterface implements SentryInterface {
      * With the help of the enclosing StackTrace, figure out which frames are in common with the parent exception
      * to potentially hide them later in Sentry.
      *
-     * @param stackTrace          StackTrace to provide to Sentry.
+     * @param stackTrace StackTrace to provide to Sentry.
      * @param enclosingStackTrace StackTrace of the enclosing exception, to determine how many Stack frames
      *                            are in common.
-     * @param cachedFrames
+     * @param cachedFrames Array of cached {@link Frame}s (from the Sentry agent) if available,
+     *                     or null.
      */
     public StackTraceInterface(StackTraceElement[] stackTrace, StackTraceElement[] enclosingStackTrace,
                                Frame[] cachedFrames) {

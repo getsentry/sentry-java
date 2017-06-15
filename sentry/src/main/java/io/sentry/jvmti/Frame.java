@@ -1,6 +1,5 @@
 package io.sentry.jvmti;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;

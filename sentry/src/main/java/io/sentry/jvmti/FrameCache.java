@@ -26,7 +26,7 @@ public final class FrameCache {
     /**
      * Store the per-frame local variable information for the last exception thrown on this thread.
      *
-     * @param throwable
+     * @param throwable Throwable that the provided {@link Frame}s represent.
      * @param frames Array of {@link Frame}s to store
      */
     public static void add(Throwable throwable, Frame[] frames) {
@@ -37,7 +37,7 @@ public final class FrameCache {
     /**
      * Retrieve the per-frame local variable information for the last exception thrown on this thread.
      *
-     * @param throwable
+     * @param throwable Throwable to look up cached {@link Frame}s for.
      * @return Array of {@link Frame}s
      */
     public static Frame[] get(Throwable throwable) {
