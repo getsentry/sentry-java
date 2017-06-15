@@ -109,9 +109,11 @@ public class SentryStackTraceElement {
                 StackTraceElement stackTraceElement = stackTraceElements[i];
                 Method method = localsCache[i].getMethod();
 
-                if (!stackTraceElement.getClassName().equals(method.getDeclaringClass().getName())
-                    || !stackTraceElement.getMethodName().equals(method.getName())) {
+                boolean classEquals = stackTraceElement.getClassName().equals(method.getDeclaringClass().getName());
+                boolean methodEquals = stackTraceElement.getMethodName().equals(method.getName());
+                if (!classEquals || !methodEquals) {
                     hasLocals = false;
+                    break;
                 }
             }
         }
