@@ -1,9 +1,7 @@
 package io.sentry.event.interfaces;
 
 import io.sentry.jvmti.Frame;
-import io.sentry.jvmti.FrameCache;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 

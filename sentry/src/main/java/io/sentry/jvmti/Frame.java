@@ -11,10 +11,6 @@ import java.util.Map;
  */
 public final class Frame {
     /**
-     * Java method this frame is for.
-     */
-    private final Method method; // TODO: remove?
-    /**
      * Local variable information for this frame.
      */
     private final LocalVariable[] locals;
@@ -22,16 +18,10 @@ public final class Frame {
     /**
      * Construct a {@link Frame}.
      *
-     * @param method Java method this frame is for.
      * @param locals Local variable information for this frame.
      */
-    public Frame(Method method, LocalVariable[] locals) {
-        this.method = method;
+    public Frame(LocalVariable[] locals) {
         this.locals = locals;
-    }
-
-    public Method getMethod() {
-        return method;
     }
 
     /**
@@ -57,7 +47,6 @@ public final class Frame {
     @Override
     public String toString() {
         return "Frame{"
-            + "method=" + method
             + ", locals=" + Arrays.toString(locals)
             + '}';
     }

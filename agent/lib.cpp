@@ -151,31 +151,9 @@ static void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     env->SetObjectArrayElement(locals, index, local);
 }
 
-static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
-                               jobjectArray locals) {
-    jvmtiError jvmti_error;
-    jclass method_class;
-    jint modifiers;
-    jobject frame_method;
+static jobject makeFrameObject(JNIEnv *env, jobjectArray locals) {
     jclass frame_class;
     jmethodID ctor;
-
-    jvmti_error = jvmti->GetMethodDeclaringClass(method, &method_class);
-    if (jvmti_error != JVMTI_ERROR_NONE) {
-        throwException(env, "java/lang/RuntimeException", "Could not get the declaring class of the method.");
-        return nullptr;
-    }
-
-    jvmti_error = jvmti->GetMethodModifiers(method, &modifiers);
-    if (jvmti_error != JVMTI_ERROR_NONE) {
-        throwException(env, "java/lang/RuntimeException", "Could not get the modifiers of the method.");
-        return nullptr;
-    }
-
-    frame_method = env->ToReflectedMethod(method_class, method, (jboolean) true);
-    if (frame_method == nullptr) {
-        return nullptr; // ToReflectedMethod raised an exception
-    }
 
     frame_class = env->FindClass("io/sentry/jvmti/Frame");
     if (frame_class == nullptr) {
@@ -183,12 +161,12 @@ static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method,
     }
 
     ctor = env->GetMethodID(frame_class, "<init>",
-                            "(Ljava/lang/reflect/Method;[Lio/sentry/jvmti/Frame$LocalVariable;)V");
+                            "([Lio/sentry/jvmti/Frame$LocalVariable;)V");
     if (ctor == nullptr) {
         return nullptr;
     }
 
-    return env->NewObject(frame_class, ctor, frame_method, locals);
+    return env->NewObject(frame_class, ctor, locals);
 }
 
 static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
@@ -241,7 +219,7 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
         value_ptr = nullptr;
     }
 
-    return makeFrameObject(jvmti, env, method, locals);
+    return makeFrameObject(env, locals);
 }
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
