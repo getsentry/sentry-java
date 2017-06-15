@@ -80,6 +80,16 @@ public class SentryStackTraceElement {
      * Convert an array of {@link StackTraceElement}s to {@link SentryStackTraceElement}s.
      *
      * @param stackTraceElements Array of {@link StackTraceElement}s to convert.
+     * @return Array of {@link SentryStackTraceElement}s.
+     */
+    public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements) {
+        return fromStackTraceElements(stackTraceElements, null);
+    }
+
+    /**
+     * Convert an array of {@link StackTraceElement}s to {@link SentryStackTraceElement}s.
+     *
+     * @param stackTraceElements Array of {@link StackTraceElement}s to convert.
      * @param cachedFrames Array of cached {@link Frame}s (from the Sentry agent) if available,
      *                     or null.
      * @return Array of {@link SentryStackTraceElement}s.

@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Utility class used by the Sentry Java Agent (https://github.com/getsentry/sentry-java-agent) to
- * store per-frame local variable information for the last thrown exception.
+ * Utility class used by the Sentry Java Agent to store per-frame local variable
+ * information for the last thrown exception.
  */
 public final class FrameCache {
     private static ThreadLocal<WeakHashMap<Throwable, Frame[]>> result =
