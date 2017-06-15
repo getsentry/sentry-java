@@ -1,7 +1,7 @@
 Version 1.0.1
 -------------
 
--
+- Add ability to set the culprit from a SentryStackTraceElement.
 
 Version 1.0.0
 -------------
