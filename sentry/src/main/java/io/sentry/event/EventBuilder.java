@@ -2,6 +2,7 @@ package io.sentry.event;
 
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.SentryInterface;
+import io.sentry.event.interfaces.SentryStackTraceElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,27 +220,44 @@ public class EventBuilder {
     }
 
     /**
+     * Sets the culprit in the event based on a {@link SentryStackTraceElement}.
+     *
+     * @param frame stack frame during which the event was captured.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withCulprit(SentryStackTraceElement frame) {
+        return withCulprit(buildCulpritString(frame.getModule(), frame.getFunction(),
+            frame.getFileName(), frame.getLineno()));
+    }
+
+
+    /**
      * Sets the culprit in the event based on a {@link StackTraceElement}.
      *
      * @param frame stack frame during which the event was captured.
      * @return the current {@code EventBuilder} for chained calls.
      */
     public EventBuilder withCulprit(StackTraceElement frame) {
+        return withCulprit(buildCulpritString(frame.getClassName(), frame.getMethodName(),
+            frame.getFileName(), frame.getLineNumber()));
+    }
+
+    private String buildCulpritString(String className, String methodName, String fileName, int lineNumber) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(frame.getClassName())
-                .append(".")
-                .append(frame.getMethodName());
+        sb.append(className)
+            .append(".")
+            .append(methodName);
 
-        if (frame.getFileName() != null && !frame.getFileName().isEmpty()) {
-            sb.append("(").append(frame.getFileName());
-            if (frame.getLineNumber() >= 0) {
-                sb.append(":").append(frame.getLineNumber());
+        if (fileName != null && !fileName.isEmpty()) {
+            sb.append("(").append(fileName);
+            if (lineNumber >= 0) {
+                sb.append(":").append(lineNumber);
             }
             sb.append(")");
         }
 
-        return withCulprit(sb.toString());
+        return sb.toString();
     }
 
     /**
