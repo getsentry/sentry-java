@@ -139,7 +139,7 @@ To set the application version that will be sent with each event, use the
 
 ::
 
-    release=1.1.0
+    release=1.0.0
 
 Distribution
 ````````````
@@ -149,7 +149,7 @@ To set the application distribution that will be sent with each event, use the
 
 ::
 
-    release=1.1.0
+    release=1.0.0
     dist=x86
 
 Note that the distribution is only useful (and used) if the ``release`` is also
