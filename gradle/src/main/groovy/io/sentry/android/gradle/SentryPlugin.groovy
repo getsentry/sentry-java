@@ -39,6 +39,7 @@ class SentryPlugin implements Plugin<Project> {
 
                 }
                 def cliExecutable = sentryProps.getProperty("cli.executable", "sentry-cli")
+                def debugMetaPropPath = "${rootPath}/app/build/intermediates/assets/${variant.dirName}/sentry-debug-meta.properties"
 
                 if (proguardTask != null) {
                     SentryProguardConfigTask proguardConfigTask = project.tasks.create("processSentry${variantName}Proguard", SentryProguardConfigTask)
@@ -52,24 +53,13 @@ class SentryPlugin implements Plugin<Project> {
                         workingDir rootPath
                         environment("SENTRY_PROPERTIES", propertiesFile)
 
-                        def debugMetaProps = new Properties()
-                        debugMetaProps.setProperty("io.sentry.ProguardUuids", "abcd|xyz1")
-
-                        doLast {
-                            // TODO: this can be done in sentry-cli, change this to pass args to it?
-                            // TODO: this probably isn't a safe/stable way to get the intermediate dir?
-                            def assetsDir = "app/build/intermediates/assets/${variant.dirName}"
-                            def out = new FileOutputStream("$assetsDir/sentry-debug-meta.properties")
-                            debugMetaProps.store(out, null)
-                            out.close()
-                        }
-
                         def args = [
                                 cliExecutable,
                                 "upload-proguard",
                                 "--android-manifest",
                                 manifestPath,
-                                "--update-manifest",
+                                "--write-properties",
+                                debugMetaPropPath,
                                 mappingFile
                         ]
 
