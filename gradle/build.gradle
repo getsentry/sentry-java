@@ -1,0 +1,38 @@
+plugins {
+    id 'groovy'
+    id 'com.bmuschko.nexus' version '2.3.1'
+}
+apply plugin: 'maven-publish'
+
+
+repositories {
+    jcenter()
+}
+
+compileGroovy {
+    sourceCompatibility = '1.6'
+    targetCompatibility = '1.6'
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile 'com.android.tools.build:gradle:2.2.0'
+}
+
+publishing {
+    publications {
+        Publication(MavenPublication) {
+            artifact jar
+            groupId 'io.sentry'
+            artifactId 'sentry-android-gradle-plugin'
+            version project.version
+        }
+    }
+
+    repositories {
+        maven {
+            url "$buildDir/repo"
+        }
+    }
+}
