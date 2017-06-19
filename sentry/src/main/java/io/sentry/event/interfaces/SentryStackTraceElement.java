@@ -1,5 +1,8 @@
 package io.sentry.event.interfaces;
 
+import io.sentry.jvmti.Frame;
+
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -13,6 +16,7 @@ public class SentryStackTraceElement {
     private final Integer colno;
     private final String absPath;
     private final String platform;
+    private final Map<String, Object> locals;
 
     /**
      * Construct a SentryStackTraceElement.
@@ -24,9 +28,11 @@ public class SentryStackTraceElement {
      * @param colno Column number.
      * @param absPath Absolute path.
      * @param platform Platform name.
+     * @param locals Local variables.
      */
+    // CHECKSTYLE.OFF: ParameterNumber
     public SentryStackTraceElement(String module, String function, String fileName, int lineno,
-                                   Integer colno, String absPath, String platform) {
+                                   Integer colno, String absPath, String platform, Map<String, Object> locals) {
         this.module = module;
         this.function = function;
         this.fileName = fileName;
@@ -34,7 +40,9 @@ public class SentryStackTraceElement {
         this.colno = colno;
         this.absPath = absPath;
         this.platform = platform;
+        this.locals = locals;
     }
+    // CHECKSTYLE.ON: ParameterNumber
 
     public String getModule() {
         return module;
@@ -64,6 +72,10 @@ public class SentryStackTraceElement {
         return platform;
     }
 
+    public Map<String, Object> getLocals() {
+        return locals;
+    }
+
     /**
      * Convert an array of {@link StackTraceElement}s to {@link SentryStackTraceElement}s.
      *
@@ -71,10 +83,25 @@ public class SentryStackTraceElement {
      * @return Array of {@link SentryStackTraceElement}s.
      */
     public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements) {
+        return fromStackTraceElements(stackTraceElements, null);
+    }
+
+    /**
+     * Convert an array of {@link StackTraceElement}s to {@link SentryStackTraceElement}s.
+     *
+     * @param stackTraceElements Array of {@link StackTraceElement}s to convert.
+     * @param cachedFrames Array of cached {@link Frame}s (from the Sentry agent) if available,
+     *                     or null.
+     * @return Array of {@link SentryStackTraceElement}s.
+     */
+    public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements,
+                                                                   Frame[] cachedFrames) {
         SentryStackTraceElement[] sentryStackTraceElements = new SentryStackTraceElement[stackTraceElements.length];
         for (int i = 0; i < stackTraceElements.length; i++) {
-            sentryStackTraceElements[i] = fromStackTraceElement(stackTraceElements[i]);
+            sentryStackTraceElements[i] = fromStackTraceElement(stackTraceElements[i],
+                cachedFrames != null ? cachedFrames[i].getLocals() : null);
         }
+
         return sentryStackTraceElements;
     }
 
@@ -85,6 +112,11 @@ public class SentryStackTraceElement {
      * @return {@link SentryStackTraceElement}
      */
     public static SentryStackTraceElement fromStackTraceElement(StackTraceElement stackTraceElement) {
+        return fromStackTraceElement(stackTraceElement, null);
+    }
+
+    private static SentryStackTraceElement fromStackTraceElement(StackTraceElement stackTraceElement,
+                                                                 Map<String, Object> locals) {
         return new SentryStackTraceElement(
             stackTraceElement.getClassName(),
             stackTraceElement.getMethodName(),
@@ -92,7 +124,8 @@ public class SentryStackTraceElement {
             stackTraceElement.getLineNumber(),
             null,
             null,
-            null
+            null,
+            locals
         );
     }
 
@@ -111,12 +144,13 @@ public class SentryStackTraceElement {
             && Objects.equals(fileName, that.fileName)
             && Objects.equals(colno, that.colno)
             && Objects.equals(absPath, that.absPath)
-            && Objects.equals(platform, that.platform);
+            && Objects.equals(platform, that.platform)
+            && Objects.equals(locals, that.locals);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(module, function, fileName, lineno, colno, absPath, platform);
+        return Objects.hash(module, function, fileName, lineno, colno, absPath, platform, locals);
     }
 
     @Override
@@ -129,6 +163,7 @@ public class SentryStackTraceElement {
             + ", colno=" + colno
             + ", absPath='" + absPath + '\''
             + ", platform='" + platform + '\''
+            + ", locals='" + locals + '\''
             + '}';
     }
 }

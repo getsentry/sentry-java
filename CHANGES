@@ -1,7 +1,13 @@
-Version 1.0.1
+Version 1.1.1
 -------------
 
 -
+
+Version 1.1.0
+-------------
+
+- Add ability to set the culprit from a SentryStackTraceElement.
+- (alpha) Add agent to collect local variable informatino when an exception occurs.
 
 Version 1.0.0
 -------------

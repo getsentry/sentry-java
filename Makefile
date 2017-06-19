@@ -37,7 +37,8 @@ prepareDocs:
 	@echo This release: $(RELEASE_VERSION)
 # Fix released version in documentation
 	@echo Fixing documentation versions
-	find . \( -name '*.md' -or -name '*.rst' \) -exec $(SED) -i -e 's/$(PREVIOUS_RELEASE)/$(RELEASE_VERSION)/g' {} \;
+	$(eval PREVIOUS_ESCAPED=$(shell echo $(PREVIOUS_RELEASE) | $(SED) -e 's/\./\\\./g'))
+	find . \( -name '*.md' -or -name '*.rst' \) -exec $(SED) -i -e 's/$(PREVIOUS_ESCAPED)/$(RELEASE_VERSION)/g' {} \;
 # Commit documentation changes
 	@echo Committing documentation version changes
 	git commit -a -m 'Bump docs to $(RELEASE_VERSION)'
@@ -57,6 +58,9 @@ prepareChanges:
 	$(ECHO) -e "Version $(DEV_VERSION)\n$(DASHES)\n\n-\n" > CHANGES.new && cat CHANGES >> CHANGES.new && mv CHANGES.new CHANGES
 	git add CHANGES
 	git commit -m "Bump CHANGES to $(DEV_VERSION)"
+
+change-version:
+	$(MVN) release:update-versions
 
 # Prepare is broken into stages because otherwise `make` will run things out of order
 prepare: prepareDocs prepareMvn prepareChanges
