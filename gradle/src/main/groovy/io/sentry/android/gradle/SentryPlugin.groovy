@@ -23,18 +23,22 @@ class SentryPlugin implements Plugin<Project> {
                 def variantOutput = variant.outputs.first()
                 def variantName = variant.name.capitalize()
                 def manifestPath = variantOutput.processManifest.manifestOutputFile
-                def mappingFile = variant.getMappingFile();
+                def mappingFile = variant.getMappingFile()
+
                 def proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${variantName}")
                 if (proguardTask == null) {
                     proguardTask = project.tasks.findByName("proguard${variantName}")
                 }
-                def rootPath = project.rootDir.toPath().toString();
-                def propertiesFile = "$rootPath/sentry.properties";
-                Properties sentryProps = new Properties();
+
+                def rootPath = project.rootDir.toPath().toString()
+                def propertiesFile = "${rootPath}/sentry.properties"
+                Properties sentryProps = new Properties()
                 try {
-                    sentryProps.load(new FileInputStream(propertiesFile));
-                } catch (FileNotFoundException e) {}
-                def cliExecutable = sentryProps.get("cli.executable", "sentry-cli");
+                    sentryProps.load(new FileInputStream(propertiesFile))
+                } catch (FileNotFoundException e) {
+
+                }
+                def cliExecutable = sentryProps.getProperty("cli.executable", "sentry-cli")
 
                 if (proguardTask != null) {
                     SentryProguardConfigTask proguardConfigTask = project.tasks.create("processSentry${variantName}Proguard", SentryProguardConfigTask)
@@ -42,20 +46,20 @@ class SentryPlugin implements Plugin<Project> {
                     proguardConfigTask.applicationVariant = variant
 
                     def manifestTask = project.tasks.create(
-                        name: "processSentry${variantName}Manifest",
-                        type: Exec) {
-                        description "Updates the AndroidManifest to contain references to generated proguard files.";
-                        workingDir rootPath;
+                            name: "processSentry${variantName}Manifest",
+                            type: Exec) {
+                        description "Updates the AndroidManifest to contain references to generated proguard files."
+                        workingDir rootPath
                         environment("SENTRY_PROPERTIES", propertiesFile)
 
                         def args = [
-                            cliExecutable,
-                            "upload-proguard",
-                            "--android-manifest",
-                            manifestPath,
-                            "--update-manifest",
-                            mappingFile
-                        ];
+                                cliExecutable,
+                                "upload-proguard",
+                                "--android-manifest",
+                                manifestPath,
+                                "--update-manifest",
+                                mappingFile
+                        ]
 
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                             commandLine("cmd", "/c", *args)
@@ -68,15 +72,15 @@ class SentryPlugin implements Plugin<Project> {
 
                     manifestTask.doFirst {
                         if (!mappingFile.exists()) {
-                            throw new StopExecutionException();
+                            throw new StopExecutionException() as Throwable
                         }
                     }
 
                     // and run before dex transformation
                     proguardTask.doLast {
-                        manifestTask.execute();
+                        manifestTask.execute()
                     }
-                    manifestTask.dependsOn proguardTask;
+                    manifestTask.dependsOn proguardTask
 
                     if (project.sentry.autoProguardConfig) {
                         variantOutput.packageApplication.dependsOn proguardConfigTask
