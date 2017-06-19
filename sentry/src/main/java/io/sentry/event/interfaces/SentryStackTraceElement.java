@@ -28,6 +28,24 @@ public class SentryStackTraceElement {
      * @param colno Column number.
      * @param absPath Absolute path.
      * @param platform Platform name.
+     */
+    // CHECKSTYLE.OFF: ParameterNumber
+    public SentryStackTraceElement(String module, String function, String fileName, int lineno,
+                                   Integer colno, String absPath, String platform) {
+        this(module, function, fileName, lineno, colno, absPath, platform, null);
+    }
+    // CHECKSTYLE.ON: ParameterNumber
+
+    /**
+     * Construct a SentryStackTraceElement.
+     *
+     * @param module Module (class) name.
+     * @param function Function (method) name.
+     * @param fileName Filename.
+     * @param lineno Line number.
+     * @param colno Column number.
+     * @param absPath Absolute path.
+     * @param platform Platform name.
      * @param locals Local variables.
      */
     // CHECKSTYLE.OFF: ParameterNumber
