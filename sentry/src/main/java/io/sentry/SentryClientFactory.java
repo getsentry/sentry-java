@@ -56,13 +56,16 @@ public abstract class SentryClientFactory {
     }
 
     private static Dsn resolveDsn(String dsn) {
-        Dsn realDsn;
-        if (!Util.isNullOrEmpty(dsn)) {
-            realDsn = new Dsn(dsn);
-        } else {
-            realDsn = new Dsn(Dsn.dsnLookup());
+        try {
+            if (Util.isNullOrEmpty(dsn)) {
+                dsn = Dsn.dsnLookup();
+            }
+
+            return new Dsn(dsn);
+        } catch (Exception e) {
+            logger.error("Error creating valid DSN from: '{}'.", dsn, e);
+            throw e;
         }
-        return realDsn;
     }
 
     /**
