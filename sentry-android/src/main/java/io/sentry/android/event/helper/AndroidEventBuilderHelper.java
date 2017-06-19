@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.*;
@@ -19,14 +20,12 @@ import io.sentry.event.interfaces.DebugMetaInterface;
 import io.sentry.event.interfaces.UserInterface;
 import io.sentry.util.Util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 
@@ -148,15 +147,19 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     private static String[] getProGuardUuids(Context ctx) {
         try {
-            PackageManager pkgManager = ctx.getPackageManager();
-            ApplicationInfo appInfo = pkgManager.getApplicationInfo(
-                ctx.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = appInfo.metaData;
+            AssetManager assets = ctx.getAssets();
+            InputStream is = assets.open("sentry-debug-meta.properties");
+            Properties properties = new Properties();
+            properties.load(is);
+            is.close();
 
-            String uuid = bundle.getString("io.sentry.ProguardUuids");
+            String uuid = properties.getProperty("io.sentry.ProguardUuids");
             if (Util.isNullOrEmpty(uuid)) {
                 return null;
             }
+
+            // TODO: Remove
+            Log.e(TAG, "UUID: " + uuid);
 
             return uuid.split("\\|");
         } catch (Exception e) {
