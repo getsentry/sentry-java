@@ -9,16 +9,15 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.BatteryManager;
-import android.os.Build;
-import android.os.Environment;
-import android.os.StatFs;
+import android.os.*;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
+import io.sentry.event.interfaces.DebugMetaInterface;
 import io.sentry.event.interfaces.UserInterface;
+import io.sentry.util.Util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -69,6 +68,15 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             UserInterface userInterface = new UserInterface("android:" + androidId, null, null, null);
             // set user interface but *don't* replace if it's already there
             eventBuilder.withSentryInterface(userInterface, false);
+        }
+
+        String[] proGuardsUuids = getProGuardUuids(ctx);
+        if (proGuardsUuids != null && proGuardsUuids.length > 0) {
+            DebugMetaInterface debugMetaInterface = new DebugMetaInterface();
+            for (String proGuardsUuid : proGuardsUuids) {
+                debugMetaInterface.addDebugImage(new DebugMetaInterface.DebugImage(proGuardsUuid));
+            }
+            eventBuilder.withSentryInterface(debugMetaInterface);
         }
 
         eventBuilder.withContexts(getContexts());
@@ -136,6 +144,25 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         appMap.put("app_start_time", stringifyDate(new Date()));
 
         return contexts;
+    }
+
+    private static String[] getProGuardUuids(Context ctx) {
+        try {
+            PackageManager pkgManager = ctx.getPackageManager();
+            ApplicationInfo appInfo = pkgManager.getApplicationInfo(
+                ctx.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = appInfo.metaData;
+
+            String uuid = bundle.getString("io.sentry.ProguardUuids");
+            if (Util.isNullOrEmpty(uuid)) {
+                return null;
+            }
+
+            return uuid.split("\\|");
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting Proguard UUIDs.", e);
+        }
+        return null;
     }
 
     /**

@@ -1,6 +1,7 @@
 package io.sentry.event;
 
 import io.sentry.BaseTest;
+import io.sentry.event.interfaces.DebugMetaInterface;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import io.sentry.event.interfaces.SentryInterface;
@@ -481,5 +482,21 @@ public class EventBuilderTest extends BaseTest {
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.build();
         eventBuilder.build();
+    }
+
+    @Test
+    public void builtEventWithDebugMeta() {
+        final EventBuilder eventBuilder = new EventBuilder();
+        DebugMetaInterface.DebugImage image1 = new DebugMetaInterface.DebugImage("abcd-efgh");
+        DebugMetaInterface.DebugImage image2 = new DebugMetaInterface.DebugImage("ijkl-mnop");
+        final DebugMetaInterface debugInterface = new DebugMetaInterface();
+        debugInterface.addDebugImage(image1);
+        debugInterface.addDebugImage(image2);
+
+        eventBuilder.withSentryInterface(debugInterface);
+
+        final Event event = eventBuilder.build();
+
+        assertThat(event.getSentryInterfaces(), hasKey(DebugMetaInterface.DEBUG_META_INTERFACE));
     }
 }
