@@ -24,7 +24,9 @@ class SentryPlugin implements Plugin<Project> {
                 def manifestPath = variantOutput.processManifest.manifestOutputFile
                 def mappingFile = variant.getMappingFile();
                 def proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${variantName}")
-
+                if (proguardTask == null) {
+                    proguardTask = project.tasks.findByName("proguard${variantName}")
+                }
                 def rootPath = project.rootDir.toPath().toString();
                 def propertiesFile = "$rootPath/sentry.properties";
                 Properties sentryProps = new Properties();
