@@ -28,6 +28,10 @@ class SentryPlugin implements Plugin<Project> {
                 if (proguardTask == null) {
                     proguardTask = project.tasks.findByName("proguard${variantName}")
                 }
+                def dexTask = project.tasks.findByName("transformClassesWithDexFor${variantName}")
+                if (dexTask == null) {
+                    dexTask = project.tasks.findByName("dex${variantName}")
+                }
 
                 def rootPath = project.rootDir.toPath().toString()
                 def propertiesFile = "${rootPath}/sentry.properties"
@@ -42,14 +46,14 @@ class SentryPlugin implements Plugin<Project> {
                 def debugMetaPropPath = "${rootPath}/app/build/intermediates/assets/${variant.dirName}/sentry-debug-meta.properties"
 
                 if (proguardTask != null) {
-                    SentryProguardConfigTask proguardConfigTask = project.tasks.create("processSentry${variantName}Proguard", SentryProguardConfigTask)
+                    SentryProguardConfigTask proguardConfigTask = project.tasks.create("addSentryProguardSettingsFor${variantName}", SentryProguardConfigTask)
                     proguardConfigTask.group = GROUP_NAME
                     proguardConfigTask.applicationVariant = variant
 
-                    def manifestTask = project.tasks.create(
-                            name: "processSentry${variantName}Manifest",
+                    def persistIdsTask = project.tasks.create(
+                            name: "persistSentryProguardUuidsFor${variantName}",
                             type: Exec) {
-                        description "Updates the AndroidManifest to contain references to generated proguard files."
+                        description "Write references to proguard UUIDs to the android assets."
                         workingDir rootPath
                         environment("SENTRY_PROPERTIES", propertiesFile)
 
@@ -72,14 +76,20 @@ class SentryPlugin implements Plugin<Project> {
                         enabled true
                     }
 
-                    // and run before dex transformation
-                    proguardTask.doLast {
-                        manifestTask.execute()
+                    // and run before dex transformation.  If we managed to find the dex task
+                    // we set ourselves as dependency, otherwise we just hack outselves into
+                    // the proguard task's doLast.
+                    if (dexTask != null) {
+                        dexTask.dependsOn persistIdsTask
+                    } else {
+                        proguardTask.doLast {
+                            persistIdsTask.execute()
+                        }
                     }
-                    manifestTask.dependsOn proguardTask
+                    persistIdsTask.dependsOn proguardTask
 
                     if (project.sentry.autoProguardConfig) {
-                        variantOutput.packageApplication.dependsOn proguardConfigTask
+                        proguardTask.dependsOn proguardConfigTask
                     }
                 }
             }
