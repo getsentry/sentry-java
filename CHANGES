@@ -3,6 +3,7 @@ Version 1.1.1
 
 - Allow overriding the location of the properties file.
 - Add support for handling and uploading Proguard files to Sentry (for Android applications).
+- Change the ``EventBuilder`` hostname lookup code to only run one thread at a time.
 
 Version 1.1.0
 -------------
