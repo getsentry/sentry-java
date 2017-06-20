@@ -5,7 +5,6 @@ import com.android.build.gradle.api.ApplicationVariant
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Exec
-import org.gradle.api.tasks.StopExecutionException
 import org.apache.tools.ant.taskdefs.condition.Os
 
 class SentryPlugin implements Plugin<Project> {
@@ -71,14 +70,6 @@ class SentryPlugin implements Plugin<Project> {
                         }
 
                         enabled true
-                    }
-
-                    manifestTask.doFirst {
-                        if (mappingFile.exists()) {
-                            throw new StopExecutionException() as Throwable
-                        } else {
-                            logger.warn("No mapping file ${mappingFile}. Did you use -dontobfuscate?")
-                        }
                     }
 
                     // and run before dex transformation
