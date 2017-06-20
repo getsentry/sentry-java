@@ -156,12 +156,10 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             Properties properties = new Properties();
             properties.load(is);
             is.close();
-
             String uuid = properties.getProperty("io.sentry.ProguardUuids");
             if (Util.isNullOrEmpty(uuid)) {
                 return null;
             }
-          
             String[] rv = uuid.split("\\|");
             cachedProGuardUuids = rv;
             return rv;
