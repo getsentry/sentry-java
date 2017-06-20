@@ -41,7 +41,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     private static final Boolean IS_EMULATOR = isEmulator();
     private static final String KERNEL_VERSION = getKernelVersion();
-    private static final String[] PROGUARD_UUIDS = null;
+    private static String[] PROGUARD_UUIDS = null;
 
     private Context ctx;
 
