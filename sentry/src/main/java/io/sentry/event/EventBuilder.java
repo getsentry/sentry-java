@@ -464,7 +464,7 @@ public class EventBuilder {
         /**
          * Current value for hostname (might change over time).
          */
-        private String hostname = DEFAULT_HOSTNAME;
+        private volatile String hostname = DEFAULT_HOSTNAME;
         /**
          * Time at which the cache should expire.
          */
