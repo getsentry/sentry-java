@@ -76,6 +76,8 @@ class SentryPlugin implements Plugin<Project> {
                     manifestTask.doFirst {
                         if (mappingFile.exists()) {
                             throw new StopExecutionException() as Throwable
+                        } else {
+                            logger.warn("No mapping file ${mappingFile}. Did you use -dontobfuscate?")
                         }
                     }
 
