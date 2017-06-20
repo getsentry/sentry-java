@@ -461,7 +461,6 @@ public class EventBuilder {
          * Time for which the cache is kept.
          */
         private final long cacheDuration;
-
         /**
          * Current value for hostname (might change over time).
          */
