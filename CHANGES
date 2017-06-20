@@ -2,7 +2,8 @@ Version 1.1.1
 -------------
 
 - Allow overriding the location of the properties file.
-- Add support for handling and uploading Proguard files to Sentry (for Android applications).
+- Add support for handling and uploading Proguard files to Sentry (for Android applications).'
+- Cleanup thread local context in ``ThreadLocalContextManager`` after each servlet request finishes.
 
 Version 1.1.0
 -------------

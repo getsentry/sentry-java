@@ -17,4 +17,9 @@ public interface ContextManager {
      */
     Context getContext();
 
+    /**
+     * Clear the underlying context data.
+     */
+    void clear();
+
 }

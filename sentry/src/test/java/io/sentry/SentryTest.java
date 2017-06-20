@@ -34,7 +34,7 @@ public class SentryTest extends BaseTest {
 
     @BeforeMethod
     public void setup() {
-        contextManager.getContext().clear();
+        contextManager.clear();
     }
 
     @Test
