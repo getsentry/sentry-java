@@ -41,7 +41,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     private static final Boolean IS_EMULATOR = isEmulator();
     private static final String KERNEL_VERSION = getKernelVersion();
-    private static String[] PROGUARD_UUIDS = null;
+    private static String[] cachedProGuardUuids = null;
 
     private Context ctx;
 
@@ -147,8 +147,8 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     private static String[] getProGuardUuids(Context ctx) {
-        if (PROGUARD_UUIDS != null) {
-            return PROGUARD_UUIDS;
+        if (cachedProGuardUuids != null) {
+            return cachedProGuardUuids;
         }
         try {
             AssetManager assets = ctx.getAssets();
@@ -163,7 +163,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             }
 
             String[] rv = uuid.split("\\|");
-            PROGUARD_UUIDS = rv;
+            cachedProGuardUuids = rv;
             return rv;
         } catch (Exception e) {
             Log.e(TAG, "Error getting Proguard UUIDs.", e);
