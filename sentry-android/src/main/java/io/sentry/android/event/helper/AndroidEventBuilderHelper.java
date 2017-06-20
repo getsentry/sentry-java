@@ -150,23 +150,28 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         if (cachedProGuardUuids != null) {
             return cachedProGuardUuids;
         }
+
+        String[] empty = new String[0];
         try {
             AssetManager assets = ctx.getAssets();
             InputStream is = assets.open("sentry-debug-meta.properties");
             Properties properties = new Properties();
             properties.load(is);
             is.close();
+
             String uuid = properties.getProperty("io.sentry.ProguardUuids");
             if (Util.isNullOrEmpty(uuid)) {
-                return null;
+                return empty;
             }
+
             String[] rv = uuid.split("\\|");
             cachedProGuardUuids = rv;
             return rv;
         } catch (Exception e) {
             Log.e(TAG, "Error getting Proguard UUIDs.", e);
         }
-        return null;
+
+        return empty;
     }
 
     /**

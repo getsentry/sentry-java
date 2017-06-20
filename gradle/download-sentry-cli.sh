@@ -4,6 +4,7 @@ REPO=getsentry/sentry-cli
 VERSION=1.14.0
 PLATFORMS="Darwin-x86_64 Linux-i686 Linux-x86_64 Windows-i686"
 
+rm -f src/main/resources/bin/sentry-cli-*
 for plat in $PLATFORMS; do
   suffix=''
   if [[ $plat == *"Windows"* ]]; then
