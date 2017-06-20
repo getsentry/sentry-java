@@ -36,8 +36,9 @@ class SentryPlugin implements Plugin<Project> {
                 try {
                     sentryProps.load(new FileInputStream(propertiesFile))
                 } catch (FileNotFoundException e) {
-
+                    // it's okay, we can ignore it.
                 }
+
                 def cliExecutable = sentryProps.getProperty("cli.executable", "sentry-cli")
                 def debugMetaPropPath = "${rootPath}/app/build/intermediates/assets/${variant.dirName}/sentry-debug-meta.properties"
 
@@ -73,7 +74,7 @@ class SentryPlugin implements Plugin<Project> {
                     }
 
                     manifestTask.doFirst {
-                        if (!mappingFile.exists()) {
+                        if (mappingFile.exists()) {
                             throw new StopExecutionException() as Throwable
                         }
                     }
