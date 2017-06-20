@@ -9,7 +9,7 @@ public class DebugMetaInterface implements SentryInterface {
     /**
      * Name of the exception interface in Sentry.
      */
-    public static final String DEBUG_META_INTERFACE = "sentry.interfaces.DebugMeta";
+    public static final String DEBUG_META_INTERFACE = "debug_meta";
     private ArrayList<DebugImage> debugImages = new ArrayList<>();
 
     public ArrayList<DebugImage> getDebugImages() {

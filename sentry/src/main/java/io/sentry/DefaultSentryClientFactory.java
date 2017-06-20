@@ -438,6 +438,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         marshaller.addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding(stackTraceBinding));
         marshaller.addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding(maxMessageLength));
         marshaller.addInterfaceBinding(UserInterface.class, new UserInterfaceBinding());
+        marshaller.addInterfaceBinding(DebugMetaInterface.class, new DebugMetaInterfaceBinding());
         HttpInterfaceBinding httpBinding = new HttpInterfaceBinding();
         //TODO: Add a way to clean the HttpRequest
         //httpBinding.
