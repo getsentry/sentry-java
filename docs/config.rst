@@ -15,11 +15,11 @@ Setting the DSN (Data Source Name)
 ----------------------------------
 
 The DSN is the first and most important thing to configure because it tells the SDK where
-to send events. You can find a basic DSN in the "Client Keys" section of your "Project Settings"
+to send events. You can find your project's DSN in the "Client Keys" section of your "Project Settings"
 in Sentry. It can be configured in multiple ways. Explanations of the :ref:`configuration methods are
 detailed below <configuration_methods>`.
 
-In your ``sentry.properties``:
+In a properties file on your filesystem or classpath (defaults to ``sentry.properties``):
 
 .. sourcecode:: properties
 
@@ -53,18 +53,19 @@ Configuration methods
 Configuration via properties file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Java SDK can be configured via a ``sentry.properties`` file placed at the root of
-your classpath, which is typically achieved by adding a ``src/main/resources/sentry.properties`` file
-to your project. This file follows the standard `.properties file format <https://en.wikipedia.org/wiki/.properties>`_
-and thus contains one option per line.
+The Java SDK can be configured via a `.properties file <https://en.wikipedia.org/wiki/.properties>`_
+that is located on the filesystem or on your application's classpath. By default the SDK will look for
+a ``sentry.properties`` file in the current directory or in the root of your classpath. You can override
+the location of the properties file by using either the ``sentry.properties.file`` Java System Property
+or the ``SENTRY_PROPERTIES_FILE`` System Environment Variable.
 
-Because this file is bundled with your application, the values cannot be changed easily at
-runtime. For this reason, the properties file is useful for setting defaults or options
+Because this file is often bundled with your application, the values cannot be changed easily once your
+application has been packaged. For this reason, the properties file is useful for setting defaults or options
 that you don't expect to change often. The properties file is the last place checked for
 each option value, so runtime configuration (described below) will override it if available.
 
 Option names in the property file exactly match the examples given below. For example, to enable
-sampling, in your ``sentry.properties`` file:
+sampling, in your properties file:
 
 .. sourcecode:: properties
 

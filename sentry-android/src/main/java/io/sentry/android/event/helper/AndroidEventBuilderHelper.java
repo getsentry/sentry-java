@@ -161,7 +161,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             if (Util.isNullOrEmpty(uuid)) {
                 return null;
             }
-
+          
             String[] rv = uuid.split("\\|");
             cachedProGuardUuids = rv;
             return rv;

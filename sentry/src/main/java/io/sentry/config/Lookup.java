@@ -4,6 +4,9 @@ import io.sentry.dsn.Dsn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -24,18 +27,18 @@ public final class Lookup {
     private static Properties configProps;
 
     static {
+        String filePath = getConfigFilePath();
         try {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            InputStream input = classLoader.getResourceAsStream(CONFIG_FILE_NAME);
+            InputStream input = getInputStream(filePath);
 
             if (input != null) {
                 configProps = new Properties();
                 configProps.load(input);
             } else {
-                logger.debug("Sentry configuration file '{}' not found.", CONFIG_FILE_NAME);
+                logger.debug("Sentry configuration file not found in filesystem or classpath: '{}'.", filePath);
             }
         } catch (Exception e) {
-            logger.error("Error loading Sentry configuration file '{}': ", CONFIG_FILE_NAME, e);
+            logger.error("Error loading Sentry configuration file '{}': ", filePath, e);
         }
     }
 
@@ -44,6 +47,30 @@ public final class Lookup {
      */
     private Lookup() {
 
+    }
+
+    private static String getConfigFilePath() {
+        String filePath = System.getProperty("sentry.properties.file");
+
+        if (filePath == null) {
+            filePath = System.getenv("SENTRY_PROPERTIES_FILE");
+        }
+
+        if (filePath == null) {
+            filePath = CONFIG_FILE_NAME;
+        }
+
+        return filePath;
+    }
+
+    private static InputStream getInputStream(String filePath) throws FileNotFoundException {
+        File file = new File(filePath);
+        if (file.isFile() && file.canRead()) {
+            return new FileInputStream(file);
+        }
+
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader.getResourceAsStream(filePath);
     }
 
     /**
