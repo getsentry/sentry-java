@@ -1,7 +1,7 @@
 #!/bin/bash
 cd $(dirname "$0")
 REPO=getsentry/sentry-cli
-VERSION=1.13.3
+VERSION=1.14.0
 PLATFORMS="Darwin-x86_64 Linux-i686 Linux-x86_64 Windows-i686"
 
 for plat in $PLATFORMS; do
