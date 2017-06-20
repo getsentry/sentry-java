@@ -2,6 +2,7 @@ package io.sentry.android.gradle
 
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.api.ApplicationVariant
+import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task;
@@ -20,6 +21,7 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static String getSentryCli(Project project) {
+        // if a path is provided explicitly use that first
         def propertiesFile = "${project.rootDir.toPath()}/sentry.properties"
         Properties sentryProps = new Properties()
         try {
@@ -33,6 +35,8 @@ class SentryPlugin implements Plugin<Project> {
             return rv
         }
 
+        // in case there is a version from npm right around the corner use that one.  This
+        // is the case for react-native-sentry for instance
         def exePath = "${project.rootDir.toPath()}/../node_modules/sentry-cli-binary/bin/sentry-cli"
         if ((new File(exePath)).exists()) {
             return exePath;
@@ -40,6 +44,41 @@ class SentryPlugin implements Plugin<Project> {
         if ((new File(exePath + ".exe")).exists()) {
             return exePath + ".exe";
         }
+
+        // next up try a packaged version of sentry-cli
+        def cliSuffix
+        def osName = System.getProperty("os.name").toLowerCase()
+        if (osName.indexOf("mac") >= 0) {
+            cliSuffix = "Darwin-x86_64"
+        } else if (osName.indexOf("linux") >= 0) {
+            cliSuffix = "Linux-" + System.getProperty("os.arch")
+        } else if (osName.indexOf("win") >= 0) {
+            cliSuffix = "Windows-i686.exe"
+        }
+
+        if (cliSuffix != null) {
+            def resPath = "/bin/sentry-cli-${cliSuffix}";
+            def fsPath = SentryPlugin.class.getResource(resPath).getFile()
+
+            // if we are not in a jar, we can use the file directly
+            if ((new File(fsPath)).exists()) {
+                return fsPath;
+            }
+
+            // otherwise we need to unpack into a file
+            def resStream = SentryPlugin.class.getResourceAsStream(resPath)
+            File tempFile = File.createTempFile(".sentry-cli", ".exe")
+            tempFile.deleteOnExit()
+            def out = new FileOutputStream(tempFile);
+            try {
+                IOUtils.copy(resStream, out)
+            } finally {
+                out.close()
+            }
+            tempFile.setExecutable(true)
+            return tempFile.getAbsolutePath()
+        }
+
         return "sentry-cli";
     }
 
@@ -115,6 +154,8 @@ class SentryPlugin implements Plugin<Project> {
                     proguardTask.dependsOn proguardConfigTask
                 }
 
+                def cli = getSentryCli(project)
+
                 // create a task that persists our proguard uuid as android asset
                 def persistIdsTask = project.tasks.create(
                         name: "persistSentryProguardUuidsFor${variant.name.capitalize()}",
@@ -124,7 +165,7 @@ class SentryPlugin implements Plugin<Project> {
                     environment("SENTRY_PROPERTIES", "${project.rootDir.toPath()}/sentry.properties")
 
                     def args = [
-                        getSentryCli(project),
+                        cli,
                         "upload-proguard",
                         "--android-manifest",
                         manifestPath,
