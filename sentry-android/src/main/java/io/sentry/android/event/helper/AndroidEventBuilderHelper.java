@@ -151,7 +151,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             return cachedProGuardUuids;
         }
 
-        String[] empty = new String[0];
+        String[] retVal = new String[0];
         try {
             AssetManager assets = ctx.getAssets();
             InputStream is = assets.open("sentry-debug-meta.properties");
@@ -160,18 +160,15 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             is.close();
 
             String uuid = properties.getProperty("io.sentry.ProguardUuids");
-            if (Util.isNullOrEmpty(uuid)) {
-                return empty;
+            if (!Util.isNullOrEmpty(uuid)) {
+                retVal = uuid.split("\\|");
             }
-
-            String[] rv = uuid.split("\\|");
-            cachedProGuardUuids = rv;
-            return rv;
         } catch (Exception e) {
             Log.e(TAG, "Error getting Proguard UUIDs.", e);
         }
 
-        return empty;
+        cachedProGuardUuids = retVal;
+        return retVal;
     }
 
     /**
