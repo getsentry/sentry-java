@@ -468,7 +468,7 @@ public class EventBuilder {
         /**
          * Time at which the cache should expire.
          */
-        private long expirationTimestamp;
+        private volatile long expirationTimestamp;
         /**
          * Whether a cache update thread is currently running or not.
          */
