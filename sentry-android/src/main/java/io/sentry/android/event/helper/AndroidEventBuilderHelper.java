@@ -41,6 +41,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     private static final Boolean IS_EMULATOR = isEmulator();
     private static final String KERNEL_VERSION = getKernelVersion();
+    private static final String[] PROGUARD_UUIDS = null;
 
     private Context ctx;
 
@@ -146,6 +147,9 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     private static String[] getProGuardUuids(Context ctx) {
+        if (PROGUARD_UUIDS != null) {
+            return PROGUARD_UUIDS;
+        }
         try {
             AssetManager assets = ctx.getAssets();
             InputStream is = assets.open("sentry-debug-meta.properties");
@@ -158,10 +162,9 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 return null;
             }
 
-            // TODO: Remove
-            Log.e(TAG, "UUID: " + uuid);
-
-            return uuid.split("\\|");
+            String[] rv = uuid.split("\\|");
+            PROGUARD_UUIDS = rv;
+            return rv;
         } catch (Exception e) {
             Log.e(TAG, "Error getting Proguard UUIDs.", e);
         }
