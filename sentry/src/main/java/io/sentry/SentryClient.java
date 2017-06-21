@@ -215,6 +215,13 @@ public class SentryClient {
         }
     }
 
+    /**
+     * Clears the {@link ContextManager} data.
+     */
+    public void clearContext() {
+        contextManager.clear();
+    }
+
     public Context getContext() {
         return contextManager.getContext();
     }

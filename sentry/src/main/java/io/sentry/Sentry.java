@@ -182,7 +182,7 @@ public final class Sentry {
      * Clears the current context.
      */
     public static void clearContext() {
-        getStoredClient().getContext().clear();
+        getStoredClient().clearContext();
     }
 
     /**

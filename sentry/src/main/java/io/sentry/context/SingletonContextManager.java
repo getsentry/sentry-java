@@ -16,4 +16,9 @@ public class SingletonContextManager implements ContextManager {
     public Context getContext() {
         return context;
     }
+
+    @Override
+    public void clear() {
+        context.clear();
+    }
 }

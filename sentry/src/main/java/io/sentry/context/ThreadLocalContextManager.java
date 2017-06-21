@@ -21,4 +21,9 @@ public class ThreadLocalContextManager implements ContextManager {
         return context.get();
     }
 
+    @Override
+    public void clear() {
+        context.remove();
+    }
+
 }
