@@ -204,7 +204,7 @@ public class SentryClientTest extends BaseTest {
         });
 
         sentryClient.sendEvent(mockEvent);
-        
+
         new Verifications() {{
             mockConnection.send(mockEvent); times = 0;
             assertThat(called.get(), is(true));
