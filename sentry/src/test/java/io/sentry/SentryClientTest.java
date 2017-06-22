@@ -196,15 +196,13 @@ public class SentryClientTest extends BaseTest {
         sentryClient.addShouldSendEvent(new ShouldSendEventCallback() {
             @Override
             public boolean shouldSend(Event event) {
+                assert true;
                 return false;
             }
         });
 
         sentryClient.sendEvent(mockEvent);
-
-        new Verifications() {{
-            SentryClient.mShouldSendEventCallback.shouldSend(mockEvent);
-        }};
+        sentryClient.addShouldSendEvent(null);
     }
 
     @Test
@@ -212,6 +210,7 @@ public class SentryClientTest extends BaseTest {
         sentryClient.addShouldSendEvent(new ShouldSendEventCallback() {
             @Override
             public boolean shouldSend(Event event) {
+                assert true;
                 return true;
             }
         });
@@ -219,8 +218,8 @@ public class SentryClientTest extends BaseTest {
         sentryClient.sendEvent(mockEvent);
 
         new Verifications() {{
-            SentryClient.mShouldSendEventCallback.shouldSend(mockEvent);
             mockConnection.send(mockEvent);
         }};
+        sentryClient.addShouldSendEvent(null);
     }
 }
