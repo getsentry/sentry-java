@@ -241,6 +241,10 @@ the mapping files and to write the UUIDs into the properties file:
         }
     }
 
+Alternatively you can generate a UUID upfront yourself and then force
+Sentry to honor that UUID after upload.  However this is strongly
+discouraged!
+
 Uploading ProGuard Files
 ````````````````````````
 
