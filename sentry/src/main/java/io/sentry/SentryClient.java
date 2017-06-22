@@ -29,6 +29,10 @@ public class SentryClient {
     // CHECKSTYLE.OFF: ConstantName
     private static final Logger lockdownLogger = LoggerFactory.getLogger(SentryClient.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
+    /**
+     * Internal static callback before send event.
+     */
+    private static ShouldSendEventCallback mShouldSendEventCallback = null;
 
     /**
      * Identifies the version of the application.
@@ -80,11 +84,6 @@ public class SentryClient {
      * such as {@link io.sentry.event.Breadcrumb}s.
      */
     private final ContextManager contextManager;
-
-    /**
-     * Internal static callback before send event
-     */
-    public static ShouldSendEventCallback mShouldSendEventCallback = null;
 
     /**
      * Constructs a {@link SentryClient} instance using the provided connection.
@@ -337,6 +336,11 @@ public class SentryClient {
         connection.addEventSendCallback(eventSendCallback);
     }
 
+    /**
+     * Add a callback that is called before an event is sent.
+     *
+     * @param shouldSendEventCallback callback instance
+     */
     void addShouldSendEvent(ShouldSendEventCallback shouldSendEventCallback) {
         mShouldSendEventCallback = shouldSendEventCallback;
     }
