@@ -30,11 +30,6 @@ public class SentryClient {
     private static final Logger lockdownLogger = LoggerFactory.getLogger(SentryClient.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
-     * Internal static callback before send event.
-     */
-    private static ShouldSendEventCallback mShouldSendEventCallback = null;
-
-    /**
      * Identifies the version of the application.
      * <p>
      * Might be null in which case the release information will not be sent with the event.
@@ -71,6 +66,10 @@ public class SentryClient {
      * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
      */
     protected Set<String> extraTags = new HashSet<>();
+    /**
+     * Set of callbacks that are checked before each {@link Event} is sent to Sentry.
+     */
+    private final Set<ShouldSendEventCallback> shouldSendEventCallbacks = new HashSet<>();
     /**
      * The underlying {@link Connection} to use for sending events to Sentry.
      */
@@ -117,10 +116,13 @@ public class SentryClient {
      * @param event event to send to Sentry.
      */
     public void sendEvent(Event event) {
-        if (null != mShouldSendEventCallback && !mShouldSendEventCallback.shouldSend(event)) {
-            logger.debug("Event will not be sent.");
-            return;
+        for (ShouldSendEventCallback shouldSendEventCallback : shouldSendEventCallbacks) {
+            if (!shouldSendEventCallback.shouldSend(event)) {
+                logger.trace("Not sending Event because of ShouldSendEventCallback: {}", shouldSendEventCallback);
+                return;
+            }
         }
+
         try {
             connection.send(event);
         } catch (LockedDownException e) {
@@ -327,8 +329,7 @@ public class SentryClient {
     }
 
     /**
-     * Add a callback that is called when an exception occurs while attempting to
-     * send events to the Sentry server.
+     * Add a callback that is called after an {@link Event} is sent to Sentry.
      *
      * @param eventSendCallback callback instance
      */
@@ -337,12 +338,12 @@ public class SentryClient {
     }
 
     /**
-     * Add a callback that is called before an event is sent.
+     * Add a callback that is called before an {@link Event} is sent to Sentry.
      *
      * @param shouldSendEventCallback callback instance
      */
-    void addShouldSendEvent(ShouldSendEventCallback shouldSendEventCallback) {
-        mShouldSendEventCallback = shouldSendEventCallback;
+    void addShouldSendEventCallback(ShouldSendEventCallback shouldSendEventCallback) {
+        shouldSendEventCallbacks.add(shouldSendEventCallback);
     }
 
     @Override

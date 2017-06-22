@@ -3,15 +3,15 @@ package io.sentry.event.helper;
 import io.sentry.event.Event;
 
 /**
- * Callback for preventing an event from being sent to sentry.
+ * Callback that decides whether or not an {@link Event} should be sent to Sentry.
  */
 public interface ShouldSendEventCallback {
 
     /**
-     * Called before an event will be sent to the server.
+     * Callback that decides whether or not an {@link Event} should be sent to Sentry.
      *
-     * @param event Event that was sent
-     * @return boolen return false to prevent the event from being sent
+     * @param event {@link Event} that may be sent.
+     * @return true if the {@link Event} should be sent, false otherwise.
      */
     boolean shouldSend(Event event);
 }

@@ -18,6 +18,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -193,24 +194,30 @@ public class SentryClientTest extends BaseTest {
 
     @Test
     public void testShouldNotSendEvent() throws Exception {
-        sentryClient.addShouldSendEvent(new ShouldSendEventCallback() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+        sentryClient.addShouldSendEventCallback(new ShouldSendEventCallback() {
             @Override
             public boolean shouldSend(Event event) {
-                assert true;
+                called.set(true);
                 return false;
             }
         });
 
         sentryClient.sendEvent(mockEvent);
-        sentryClient.addShouldSendEvent(null);
+        
+        new Verifications() {{
+            mockConnection.send(mockEvent); times = 0;
+            assertThat(called.get(), is(true));
+        }};
     }
 
     @Test
     public void testShouldSendEvent() throws Exception {
-        sentryClient.addShouldSendEvent(new ShouldSendEventCallback() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+        sentryClient.addShouldSendEventCallback(new ShouldSendEventCallback() {
             @Override
             public boolean shouldSend(Event event) {
-                assert true;
+                called.set(true);
                 return true;
             }
         });
@@ -219,7 +226,7 @@ public class SentryClientTest extends BaseTest {
 
         new Verifications() {{
             mockConnection.send(mockEvent);
+            assertThat(called.get(), is(true));
         }};
-        sentryClient.addShouldSendEvent(null);
     }
 }
