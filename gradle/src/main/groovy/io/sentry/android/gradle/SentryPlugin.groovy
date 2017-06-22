@@ -174,6 +174,10 @@ class SentryPlugin implements Plugin<Project> {
                         mappingFile
                     ]
 
+                    if (!project.sentry.autoUpload) {
+                        args.push("--no-upload")
+                    }
+
                     if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                         commandLine("cmd", "/c", *args)
                     } else {
