@@ -115,12 +115,12 @@ Now you can use ``Sentry`` to capture events anywhere in your application:
 ProGuard
 --------
 
-If you want to use ProGuard with Sentry Android you will need to upload
-proguard mapping files to Sentry with :doc:`sentry-cli
-</learn/cli/proguard>` or by using our Gradle integration.
+In order to use ProGuard with Sentry you will need to upload
+the proguard mapping files to Sentry by using our Gradle integration
+(recommended) or manually by using :doc:`sentry-cli </learn/cli/proguard>`
 
 Gradle Integration
-``````````````````
+~~~~~~~~~~~~~~~~~~
 
 Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
@@ -138,9 +138,9 @@ And declare a dependency in your toplevel ``build.gradle``:
         }
     }
 
-This will then automatically generate appropriate ProGuard mapping files
-and upload them when you run ``gradlew assembleRelease``.  The credentials
-for the upload step are loaded from the ``sentry.properties`` file in
+The plugin will then automatically generate appropriate ProGuard mapping files
+and upload them when you run ``gradle assembleRelease``.  The credentials
+for the upload step are loaded from a ``sentry.properties`` file in
 your project root.  At the very minimum you will need something like this
 in there::
 
@@ -148,9 +148,9 @@ in there::
     defaults.org=___ORG_NAME___
     auth.token=YOUR_AUTH_TOKEN
 
-The auth token you can find at `sentry.io/api <https://sentry.io/api/>`.
-For more information about the available config keys see
-:doc:`/learn/cli/configuration`.
+You can find your authentication token `on the Sentry API page <https://sentry.io/api/>`_.
+For more information about the available configuration options see
+`/learn/cli/configuration`.
 
 Gradle Configuration
 ````````````````````
@@ -160,24 +160,25 @@ Additionally we expose a few configuration values directly in Gradle:
 .. sourcecode:: groovy
 
     sentry {
-        // disables or enables the automatic configuration of proguard
-        // for sentry.  This injects a default config for proguard so
+        // Disables or enables the automatic configuration of proguard
+        // for Sentry.  This injects a default config for proguard so
         // you don't need to do it manually.
         autoProguardConfig true
 
-        // this enables or disables the automatic upload of mapping files
-        // during the build.  If you do not want to do that you can
-        // disable that here and later use sentry-cli to manually upload
-        // it.
+        // Enables or disables the automatic upload of mapping files
+        // during a build.  If you disable this you'll need to manually
+        // upload the mapping files with sentry-cli when you do a release.
         autoUpload true
     }
 
-Proguard Requirements
-`````````````````````
+Manual Integration
+~~~~~~~~~~~~~~~~~~
 
-If you want to manually configure ProGuard it's not much more complex.
-You just need to follow some minium requirements in your ProGuard rules
-file::
+If you choose not to use the Gradle integration, you may handle the processing
+and upload steps manually. However, it is highly recommended that you use the
+Gradle integration if at all possible.
+
+First, you need to add the following to your ProGuard rules file::
 
     -keepattributes LineNumberTable,SourceFile
     -dontwarn org.slf4j.**
@@ -187,16 +188,16 @@ ProGuard UUIDs
 ``````````````
 
 After ProGuard files are generated you will need to embed the UUIDs of the
-ProGuard mapping file in a file named ``sentry-debug-meta.properties`` in
-the assets folder.  Sentry-Java will look for the UUIDs there to map them
-against the correct mapping.
+ProGuard mapping files in a properties file named ``sentry-debug-meta.properties`` in
+the assets folder.  The Java SDK will look for the UUIDs there to link events to
+the correct mapping files on the server side.
 
 .. admonition:: Note
 
     Sentry calculates UUIDs for proguard files.  For more information
     about how this works see :ref:`proguard-uuids`.
 
-``sentry-cli`` can do that for you::
+``sentry-cli`` can write the ``sentry-debug-meta.properties`` file for you::
 
     sentry-cli upload-proguard \
         --android-manifest app/build/intermediates/manifests/full/release/AndroidManifest.xml \
@@ -204,13 +205,12 @@ against the correct mapping.
         --no-upload \
         app/build/outputs/mapping/release/mapping.txt
 
-Note that this will need to end up in your APK so it needs to run before
+Note that this file needs to be in your APK, so this needs to be run before
 the APK is packaged.  You can do that by creating a gradle task that runs
-before the dex packaging.  However it's *strongly* recommended to use the
-gradle plugin which will do that for you.
+before the dex packaging.
 
 You can for example add a gradle task after the proguard step and before
-the dex one which executes ``sentry-cli`` to just validate and process
+the dex one which executes ``sentry-cli`` to validate and process
 the mapping files and to write the UUIDs into the properties file:
 
 .. sourcecode:: groovy
@@ -223,8 +223,8 @@ the mapping files and to write the UUIDs into the properties file:
             def dexTask = project.tasks.findByName(
                 "transformClassesWithDexFor${variantName}")
             def task = project.tasks.create(
-                name: "processSentryProguardFor${variantName}",
-                type: Exec) {
+                    name: "processSentryProguardFor${variantName}",
+                    type: Exec) {
                 workingDir project.rootDir
                 commandLine *[
                     "sentry-cli",
@@ -248,7 +248,7 @@ discouraged!
 Uploading ProGuard Files
 ````````````````````````
 
-You can then manually upload ProGuard files with ``sentry-cli`` as
+Finally, you need manually upload ProGuard files with ``sentry-cli`` as
 follows::
 
     sentry-cli upload-proguard \
