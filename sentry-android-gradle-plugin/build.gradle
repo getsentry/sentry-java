@@ -36,3 +36,33 @@ publishing {
         }
     }
 }
+
+modifyPom {
+    project {
+        name 'Sentry Android Gradle Plugin'
+        description 'Sentry Android Gradle Plugin'
+        url 'https://github.com/getsentry/sentry-java'
+
+        scm {
+            url 'https://github.com/getsentry/sentry-java'
+            connection 'scm:https://github.com/getsentry/sentry-java.git'
+            developerConnection 'scm:git@github.com:getsentry/sentry-java.git'
+        }
+
+        licenses {
+            license {
+                name 'BSD'
+                url 'https://github.com/getsentry/sentry-java/blob/master/LICENSE'
+                distribution 'repo'
+            }
+        }
+
+        developers {
+            developer {
+                id 'bretthoerner'
+                name 'Brett Hoerner'
+                email 'brett@sentry.io'
+            }
+        }
+    }
+}
