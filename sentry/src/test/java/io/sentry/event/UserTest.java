@@ -13,6 +13,9 @@ import mockit.Verifications;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 
@@ -37,12 +40,19 @@ public class UserTest extends BaseTest {
             .setEmail("test@example.com")
             .setId("1234")
             .setIpAddress("192.168.0.1")
-            .setUsername("testUser_123").build();
+            .setUsername("testUser_123")
+            .withData("foo", "bar")
+            .withData("baz", 2)
+            .build();
         sentryClient.getContext().setUser(user);
 
         sentryClient.sendEvent(new EventBuilder()
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO));
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put("foo", "bar");
+        map.put("baz", 2);
 
         new Verifications() {{
             Event event;
@@ -52,6 +62,7 @@ public class UserTest extends BaseTest {
             assertThat(userInterface.getEmail(), equalTo(user.getEmail()));
             assertThat(userInterface.getIpAddress(), equalTo(user.getIpAddress()));
             assertThat(userInterface.getUsername(), equalTo(user.getUsername()));
+            assertThat(userInterface.getData(), equalTo(map));
         }};
     }
 

@@ -6,6 +6,7 @@ Version 1.1.1
 - Cleanup thread local context in ``ThreadLocalContextManager`` after each servlet request finishes.
 - Change the ``EventBuilder`` hostname lookup code to only run one thread at a time.
 - Add ``ShouldSendEventCallback``, which can be added to each ``SentryClient`` instance.
+- Add ability to set extra data on the ``UserInterface``.
 
 Version 1.1.0
 -------------

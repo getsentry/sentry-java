@@ -56,7 +56,8 @@ public class ContextBuilderHelper implements EventBuilderHelper {
      * @return UserInterface
      */
     private UserInterface fromUser(User user) {
-        return new UserInterface(user.getId(), user.getUsername(), user.getIpAddress(), user.getEmail());
+        return new UserInterface(user.getId(), user.getUsername(), user.getIpAddress(),
+            user.getEmail(), user.getData());
     }
 
 }

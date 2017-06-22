@@ -1,5 +1,8 @@
 package io.sentry.event.interfaces;
 
+import java.util.Map;
+import java.util.Objects;
+
 /**
  * The User interface for Sentry allows to send details about the User currently using the application.
  */
@@ -12,6 +15,7 @@ public class UserInterface implements SentryInterface {
     private final String username;
     private final String ipAddress;
     private final String email;
+    private final Map<String, Object> data;
 
     /**
      * Creates a user.
@@ -19,13 +23,27 @@ public class UserInterface implements SentryInterface {
      * @param id        Id of the user in the system, as a String.
      * @param username  Name of the user.
      * @param ipAddress IP address used to connect to the application.
-     * @param email     user email address.
+     * @param email     User's email address.
+     * @param data      Extra data about the user.
      */
-    public UserInterface(String id, String username, String ipAddress, String email) {
+    public UserInterface(String id, String username, String ipAddress, String email, Map<String, Object> data) {
         this.id = id;
         this.username = username;
         this.ipAddress = ipAddress;
         this.email = email;
+        this.data = data;
+    }
+
+    /**
+     * Creates a user.
+     *
+     * @param id        Id of the user in the system, as a String.
+     * @param username  Name of the user.
+     * @param ipAddress IP address used to connect to the application.
+     * @param email     User's email address.
+     */
+    public UserInterface(String id, String username, String ipAddress, String email) {
+        this(id, username, ipAddress, email, null);
     }
 
     @Override
@@ -49,6 +67,10 @@ public class UserInterface implements SentryInterface {
         return email;
     }
 
+    public Map<String, Object> getData() {
+        return data;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -57,25 +79,27 @@ public class UserInterface implements SentryInterface {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         UserInterface that = (UserInterface) o;
-
-        return !(id != null ? !id.equals(that.id) : that.id != null);
-
+        return Objects.equals(id, that.id)
+            && Objects.equals(username, that.username)
+            && Objects.equals(ipAddress, that.ipAddress)
+            && Objects.equals(email, that.email)
+            && Objects.equals(data, that.data);
     }
 
     @Override
     public int hashCode() {
-        return id != null ? id.hashCode() : 0;
+        return Objects.hash(id, username, ipAddress, email, data);
     }
 
     @Override
     public String toString() {
         return "UserInterface{"
-                + "id='" + id + '\''
-                + ", username='" + username + '\''
-                + ", ipAddress='" + ipAddress + '\''
-                + ", email='" + email + '\''
-                + '}';
+            + "id='" + id + '\''
+            + ", username='" + username + '\''
+            + ", ipAddress='" + ipAddress + '\''
+            + ", email='" + email + '\''
+            + ", data=" + data
+            + '}';
     }
 }
