@@ -8,6 +8,7 @@ import io.sentry.context.ContextManager;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
+import io.sentry.event.helper.ShouldSendEventCallback;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
@@ -81,6 +82,11 @@ public class SentryClient {
     private final ContextManager contextManager;
 
     /**
+     * Internal static callback before send event
+     */
+    public static ShouldSendEventCallback mShouldSendEventCallback = null;
+
+    /**
      * Constructs a {@link SentryClient} instance using the provided connection.
      *
      * Note that the most recently constructed instance is stored statically so it can be used with
@@ -112,6 +118,10 @@ public class SentryClient {
      * @param event event to send to Sentry.
      */
     public void sendEvent(Event event) {
+        if (null != mShouldSendEventCallback && !mShouldSendEventCallback.shouldSend(event)) {
+            logger.debug("Event will not be sent.");
+            return;
+        }
         try {
             connection.send(event);
         } catch (LockedDownException e) {
@@ -325,6 +335,10 @@ public class SentryClient {
      */
     void addEventSendCallback(EventSendCallback eventSendCallback) {
         connection.addEventSendCallback(eventSendCallback);
+    }
+
+    void addShouldSendEvent(ShouldSendEventCallback shouldSendEventCallback) {
+        mShouldSendEventCallback = shouldSendEventCallback;
     }
 
     @Override

@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
+import io.sentry.event.helper.ShouldSendEventCallback;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
@@ -187,6 +188,39 @@ public class SentryClientTest extends BaseTest {
             assertThat(event.getDist(), equalTo(dist));
             assertThat(event.getRelease(), equalTo(release));
             assertThat(event.getTags(), equalTo(tags));
+        }};
+    }
+
+    @Test
+    public void testShouldNotSendEvent() throws Exception {
+        sentryClient.addShouldSendEvent(new ShouldSendEventCallback() {
+            @Override
+            public boolean shouldSend(Event event) {
+                return false;
+            }
+        });
+
+        sentryClient.sendEvent(mockEvent);
+
+        new Verifications() {{
+            SentryClient.mShouldSendEventCallback.shouldSend(mockEvent);
+        }};
+    }
+
+    @Test
+    public void testShouldSendEvent() throws Exception {
+        sentryClient.addShouldSendEvent(new ShouldSendEventCallback() {
+            @Override
+            public boolean shouldSend(Event event) {
+                return true;
+            }
+        });
+
+        sentryClient.sendEvent(mockEvent);
+
+        new Verifications() {{
+            SentryClient.mShouldSendEventCallback.shouldSend(mockEvent);
+            mockConnection.send(mockEvent);
         }};
     }
 }
