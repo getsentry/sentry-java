@@ -50,6 +50,10 @@ In code:
 Configuration methods
 ---------------------
 
+There are multiple ways to configure the Java SDK, but all of them take the same options.
+See below for how to use each configuration method and how the option names might
+differ between them.
+
 Configuration via properties file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -289,8 +293,8 @@ buffer.flushtime`` option (in milliseconds):
 
     buffer.flushtime=10000
 
-Graceful Shutdown (Advanced)
-````````````````````````````
+Graceful Shutdown of Buffering (Advanced)
+`````````````````````````````````````````
 
 In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
 is created. By default, the buffer flushing thread is given 1 second
@@ -330,8 +334,8 @@ To disable the async mode, add async=false`` to your options:
 
     async=false
 
-Graceful Shutdown (Advanced)
-````````````````````````````
+Graceful Shutdown of Async (Advanced)
+`````````````````````````````````````
 
 In order to shutdown the asynchronous connection gracefully, a ``ShutdownHook``
 is created. By default, the asynchronous connection is given 1 second
@@ -361,8 +365,8 @@ The option to do so is async.gracefulshutdown``:
 
     async.gracefulshutdown=false
 
-Queue Size (Advanced)
-`````````````````````
+Async Queue Size (Advanced)
+```````````````````````````
 
 The default queue used to store unprocessed events is limited to 50
 items. Additional items added once the queue is full are dropped and
@@ -383,8 +387,8 @@ The special value ``-1`` can be used to enable an unlimited queue. Beware
 that network connectivity or Sentry server issues could mean your process
 will run out of memory.
 
-Threads Count (Advanced)
-````````````````````````
+Async Threads Count (Advanced)
+``````````````````````````````
 
 By default the thread pool used by the async connection contains one thread per
 processor available to the JVM.
@@ -396,8 +400,8 @@ only one thread) with the option async.threads``:
 
     async.threads=1
 
-Threads Priority (Advanced)
-```````````````````````````
+Async Threads Priority (Advanced)
+`````````````````````````````````
 
 In most cases sending logs to Sentry isn't as important as an application
 running smoothly, so the threads have a

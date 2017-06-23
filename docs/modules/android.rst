@@ -12,7 +12,7 @@ Proguard only increased the release ``.apk`` size by approximately 200KB.
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
 (in the application's cache directory) by default. This allows events to be sent at a
 later time if the device does not have connectivity when an event is created. This can
-be disabled by setting the DSN option ``buffer.enabled`` to ``false``.
+be disabled by :ref:`setting the option <configuration>` ``buffer.enabled`` to ``false``.
 
 An ``UncaughtExceptionHandler`` is configured so that crash events will be
 stored to disk and sent the next time the application is run.
@@ -56,12 +56,20 @@ Then initialize the Sentry client in your application's main ``onCreate`` method
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
+            Context ctx = this.getApplicationContext();
+
             // Use the Sentry DSN (client key) from the Project Settings page on Sentry
             String sentryDsn = "https://publicKey:secretKey@host:port/1?options";
-            Context ctx = this.getApplicationContext();
             Sentry.init(sentryDsn, new AndroidSentryClientFactory(ctx));
+
+            // Alternatively, if you configured your DSN in a `sentry.properties`
+            // file (see the configuration documentation).
+            Sentry.init(new AndroidSentryClientFactory(ctx));
         }
     }
+
+You can optionally configure other values such as ``environment`` and ``release``.
+:ref:`See the configuration page <configuration>` for ways you can do this.
 
 Usage
 -----
