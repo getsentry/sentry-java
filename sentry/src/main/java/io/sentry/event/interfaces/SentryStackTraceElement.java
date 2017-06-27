@@ -2,13 +2,14 @@ package io.sentry.event.interfaces;
 
 import io.sentry.jvmti.Frame;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
 /**
  * Richer StackTraceElement class.
  */
-public class SentryStackTraceElement {
+public class SentryStackTraceElement implements Serializable {
     private final String module;
     private final String function;
     private final String fileName;
