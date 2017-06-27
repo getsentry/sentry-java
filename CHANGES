@@ -1,7 +1,7 @@
 Version 1.2.1
 -------------
 
--
+- Fix ``SentryStackTraceElement`` to implement ``Serializable``.
 
 Version 1.2.0
 -------------
