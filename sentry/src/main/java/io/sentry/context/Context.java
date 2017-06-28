@@ -5,8 +5,7 @@ import io.sentry.event.User;
 import io.sentry.util.CircularFifoQueue;
 
 import java.io.Serializable;
-import java.util.Iterator;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Context is used to hold context data (such as {@link Breadcrumb}s)
@@ -22,7 +21,7 @@ public class Context implements Serializable {
     /**
      * UUID of the last event sent to the Sentry server, if any.
      */
-    private UUID lastEventId;
+    private volatile UUID lastEventId;
 
     /**
      * Ring buffer of {@link Breadcrumb} objects.
@@ -32,7 +31,7 @@ public class Context implements Serializable {
     /**
      * User active in the current context, if any.
      */
-    private User user;
+    private volatile User user;
 
     /**
      * Create a new (empty) Context object with the default Breadcrumb limit.
@@ -53,7 +52,7 @@ public class Context implements Serializable {
     /**
      * Clear state from this context.
      */
-    public void clear() {
+    public synchronized void clear() {
         breadcrumbs.clear();
         lastEventId = null;
         user = null;
@@ -64,8 +63,10 @@ public class Context implements Serializable {
      *
      * @return Iterator of {@link Breadcrumb}s.
      */
-    public Iterator<Breadcrumb> getBreadcrumbs() {
-        return breadcrumbs.iterator();
+    public synchronized Iterator<Breadcrumb> getBreadcrumbs() {
+        List<Breadcrumb> copyList = new ArrayList<>(breadcrumbs.size());
+        copyList.addAll(breadcrumbs);
+        return copyList.iterator();
     }
 
     /**
@@ -73,7 +74,7 @@ public class Context implements Serializable {
      *
      * @param breadcrumb Breadcrumb object to record
      */
-    public void recordBreadcrumb(Breadcrumb breadcrumb) {
+    public synchronized void recordBreadcrumb(Breadcrumb breadcrumb) {
         breadcrumbs.add(breadcrumb);
     }
 
