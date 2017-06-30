@@ -162,7 +162,31 @@ class SentryPlugin implements Plugin<Project> {
                         type: Exec) {
                     description "Write references to proguard UUIDs to the android assets."
                     workingDir project.rootDir
-                    environment("SENTRY_PROPERTIES", "${project.rootDir.toPath()}/sentry.properties")
+
+                    def variantName = variant.buildType.name
+                    def flavorName = variant.flavorName
+                    def propName = "sentry.properties"
+                    def possibleProps = [
+                            "${project.rootDir.toPath()}/app/src/${variantName}/${propName}",
+                            "${project.rootDir.toPath()}/app/src/${variantName}/${flavorName}/${propName}",
+                            "${project.rootDir.toPath()}/app/src/${flavorName}/${variantName}/${propName}",
+                            "${project.rootDir.toPath()}/src/${variantName}/${propName}",
+                            "${project.rootDir.toPath()}/src/${variantName}/${flavorName}/${propName}",
+                            "${project.rootDir.toPath()}/src/${flavorName}/${variantName}/${propName}",
+                            "${project.rootDir.toPath()}/${propName}"
+                    ]
+
+                    def propsFile = null
+                    possibleProps.each {
+                        if (propsFile == null && new File(it).isFile()) {
+                            propsFile = it
+                        }
+                    }
+
+                    if (propsFile != null) {
+                        println("Setting SENTRY_PROPERTIES = " + propsFile)
+                        environment("SENTRY_PROPERTIES", propsFile)
+                    }
 
                     def args = [
                         cli,
