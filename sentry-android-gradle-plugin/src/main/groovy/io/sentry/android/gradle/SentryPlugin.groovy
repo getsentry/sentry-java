@@ -184,7 +184,6 @@ class SentryPlugin implements Plugin<Project> {
                     }
 
                     if (propsFile != null) {
-                        println("Setting SENTRY_PROPERTIES = " + propsFile)
                         environment("SENTRY_PROPERTIES", propsFile)
                     }
 
