@@ -102,7 +102,6 @@ public class Event implements Serializable {
      * by {@link #readObject(ObjectInputStream)} and {@link #writeObject(ObjectOutputStream)}.
      */
     private transient Map<String, Object> extra = new HashMap<>();
-
     /**
      * Event fingerprint, a list of strings used to dictate the deduplicating for this event.
      */

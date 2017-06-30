@@ -176,6 +176,9 @@ public class SentryClientTest extends BaseTest {
         final Map<String, String> tags = new HashMap<>();
         tags.put("name", "value");
         sentryClient.setTags(tags);
+        final Map<String, Object> extras = new HashMap<>();
+        extras.put("name", "value");
+        sentryClient.setExtra(extras);
 
         sentryClient.sendMessage("message");
 
@@ -189,6 +192,7 @@ public class SentryClientTest extends BaseTest {
             assertThat(event.getDist(), equalTo(dist));
             assertThat(event.getRelease(), equalTo(release));
             assertThat(event.getTags(), equalTo(tags));
+            assertThat(event.getExtra(), equalTo(extras));
         }};
     }
 

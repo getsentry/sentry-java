@@ -204,6 +204,18 @@ Note that how these extra tags are used depends on which integration you are
 using. For example: when using a logging integration any SLF4J MDC keys that
 are in the extra tags set will be extracted and set as tags on events.
 
+Extra Data
+~~~~~~~~~~
+
+To set extra data that will be sent with each event (but not as tags), use the
+``extra`` option with comma separated pairs of keys and values that are joined
+by a colon:
+
+::
+
+    extra=key1:value1,key2:value2
+
+
 "In Application" Stack Frames
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
