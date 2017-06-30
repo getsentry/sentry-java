@@ -1,7 +1,7 @@
 Version 1.2.3
 -------------
 
--
+- Add ability to set ``extra`` data via options and on ``SentryClient`` instances.
 
 Version 1.2.2
 -------------
