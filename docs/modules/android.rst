@@ -142,7 +142,7 @@ And declare a dependency in your toplevel ``build.gradle``:
 
     buildscript {
         dependencies {
-            classpath 'io.sentry:sentry-android-gradle-plugin:1.0.0-beta'
+            classpath 'io.sentry:sentry-android-gradle-plugin:1.0.0'
         }
     }
 
