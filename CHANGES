@@ -1,7 +1,7 @@
 Version 1.2.2
 -------------
 
--
+- Make operations on Context threadsafe.
 
 Version 1.2.1
 -------------
