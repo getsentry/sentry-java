@@ -17,21 +17,30 @@ public class Context implements Serializable {
      * The number of {@link Breadcrumb}s to keep in the ring buffer by default.
      */
     private static final int DEFAULT_BREADCRUMB_LIMIT = 100;
-
+    /**
+     * The number of {@link Breadcrumb}s to keep in the ring buffer.
+     */
+    private final int breadcrumbLimit;
     /**
      * UUID of the last event sent to the Sentry server, if any.
      */
     private volatile UUID lastEventId;
-
     /**
      * Ring buffer of {@link Breadcrumb} objects.
      */
-    private CircularFifoQueue<Breadcrumb> breadcrumbs;
-
+    private volatile CircularFifoQueue<Breadcrumb> breadcrumbs;
     /**
      * User active in the current context, if any.
      */
     private volatile User user;
+    /**
+     * Tags to add to any future {@link io.sentry.event.Event}s.
+     */
+    private volatile Map<String, String> tags;
+    /**
+     * Extra data to add to any future {@link io.sentry.event.Event}s.
+     */
+    private volatile Map<String, Object> extra;
 
     /**
      * Create a new (empty) Context object with the default Breadcrumb limit.
@@ -46,16 +55,18 @@ public class Context implements Serializable {
      * @param breadcrumbLimit Number of Breadcrumb objects to retain in ring buffer.
      */
     public Context(int breadcrumbLimit) {
-        breadcrumbs = new CircularFifoQueue<>(breadcrumbLimit);
+        this.breadcrumbLimit = breadcrumbLimit;
     }
 
     /**
      * Clear state from this context.
      */
     public synchronized void clear() {
-        breadcrumbs.clear();
+        breadcrumbs = null;
         lastEventId = null;
         user = null;
+        tags = null;
+        extra = null;
     }
 
     /**
@@ -64,9 +75,67 @@ public class Context implements Serializable {
      * @return Iterator of {@link Breadcrumb}s.
      */
     public synchronized Iterator<Breadcrumb> getBreadcrumbs() {
+        if (breadcrumbs == null || breadcrumbs.isEmpty()) {
+            return Collections.emptyIterator();
+        }
+
         List<Breadcrumb> copyList = new ArrayList<>(breadcrumbs.size());
         copyList.addAll(breadcrumbs);
         return copyList.iterator();
+    }
+
+    /**
+     * Return tags attached to this Context.
+     *
+     * @return tags attached to this Context.
+     */
+    public synchronized Map<String, String> getTags() {
+        if (tags == null || tags.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return Collections.unmodifiableMap(tags);
+    }
+
+    /**
+     * Return extra data attached to this Context.
+     *
+     * @return extra data attached to this Context.
+     */
+    public synchronized Map<String, Object> getExtra() {
+        if (extra == null || extra.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return Collections.unmodifiableMap(extra);
+    }
+
+    /**
+     * Add tag to the current Context.
+     *
+     * @param name tag name
+     * @param value tag value
+     */
+    public synchronized void addTag(String name, String value) {
+        if (tags == null) {
+            tags = new HashMap<>();
+        }
+
+        tags.put(name, value);
+    }
+
+    /**
+     * Add extra data to the current Context.
+     *
+     * @param name extra name
+     * @param value extra value
+     */
+    public synchronized void addExtra(String name, Object value) {
+        if (extra == null) {
+            extra = new HashMap<>();
+        }
+
+        extra.put(name, value);
     }
 
     /**
@@ -75,6 +144,10 @@ public class Context implements Serializable {
      * @param breadcrumb Breadcrumb object to record
      */
     public synchronized void recordBreadcrumb(Breadcrumb breadcrumb) {
+        if (breadcrumbs == null) {
+            breadcrumbs = new CircularFifoQueue<>(breadcrumbLimit);
+        }
+
         breadcrumbs.add(breadcrumb);
     }
 

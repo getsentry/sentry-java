@@ -10,6 +10,7 @@ import io.sentry.event.interfaces.UserInterface;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@link EventBuilderHelper} that extracts and sends any data attached to the
@@ -33,20 +34,34 @@ public class ContextBuilderHelper implements EventBuilderHelper {
 
     @Override
     public void helpBuildingEvent(EventBuilder eventBuilder) {
-        List<Breadcrumb> breadcrumbs = new ArrayList<>();
         Context context = sentryClient.getContext();
 
         Iterator<Breadcrumb> breadcrumbIterator = context.getBreadcrumbs();
-        while (breadcrumbIterator.hasNext()) {
-            breadcrumbs.add(breadcrumbIterator.next());
-        }
-
-        if (!breadcrumbs.isEmpty()) {
+        if (breadcrumbIterator.hasNext()) {
+            List<Breadcrumb> breadcrumbs = new ArrayList<>();
+            while (breadcrumbIterator.hasNext()) {
+                breadcrumbs.add(breadcrumbIterator.next());
+            }
             eventBuilder.withBreadcrumbs(breadcrumbs);
         }
 
+
         if (context.getUser() != null) {
             eventBuilder.withSentryInterface(fromUser(context.getUser()));
+        }
+
+        Map<String, String> tags = context.getTags();
+        if (!tags.isEmpty()) {
+            for (Map.Entry<String, String> entry : tags.entrySet()) {
+                eventBuilder.withTag(entry.getKey(), entry.getValue());
+            }
+        }
+
+        Map<String, Object> extra = context.getExtra();
+        if (!extra.isEmpty()) {
+            for (Map.Entry<String, Object> entry : extra.entrySet()) {
+                eventBuilder.withExtra(entry.getKey(), entry.getValue());
+            }
         }
     }
 
