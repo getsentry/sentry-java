@@ -1,7 +1,7 @@
 Version 1.2.3
 -------------
 
--
+- Deprecate ``extratags`` in favor of the more clear ``mdctags``.
 
 Version 1.2.2
 -------------

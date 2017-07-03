@@ -87,7 +87,7 @@ Mapped Tags
 ~~~~~~~~~~~
 
 By default all MDC parameters are stored under the "Additional Data" tab in Sentry. By
-specifying the ``extratags`` option in your configuration you can
+specifying the ``mdctags`` option in your configuration you can
 choose which MDC keys to send as tags instead, which allows them to be used as
 filters within the Sentry UI.
 

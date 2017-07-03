@@ -3,7 +3,6 @@ package io.sentry.log4j;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import mockit.*;
 import io.sentry.event.Event;
@@ -246,7 +245,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         properties.put("other_property", "10ebc4f6-a915-46d0-bb60-75bc9bd71371");
 
         new NonStrictExpectations() {{
-            mockSentryClient.getExtraTags();
+            mockSentryClient.getMdcTags();
             result = extraTags;
         }};
 
@@ -270,7 +269,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         new NonStrictExpectations() {{
             extraTagValue.toString();
             result = "3c8981b4-01ad-47ec-8a3a-77a0bbcb42e2";
-            mockSentryClient.getExtraTags();
+            mockSentryClient.getMdcTags();
             result = extraTags;
         }};
 

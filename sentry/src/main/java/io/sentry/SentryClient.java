@@ -60,12 +60,9 @@ public class SentryClient {
      */
     protected Map<String, String> tags = new HashMap<>();
     /**
-     * Extras to extract and use as tags, where applicable.
-     * <p>
-     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
-     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
+     * Tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
      */
-    protected Set<String> extraTags = new HashSet<>();
+    protected Set<String> mdcTags = new HashSet<>();
     /**
      * Set of callbacks that are checked before each {@link Event} is sent to Sentry.
      */
@@ -257,8 +254,8 @@ public class SentryClient {
         return Collections.unmodifiableMap(tags);
     }
 
-    public Set<String> getExtraTags() {
-        return Collections.unmodifiableSet(extraTags);
+    public Set<String> getMdcTags() {
+        return Collections.unmodifiableSet(mdcTags);
     }
 
     public void setRelease(String release) {
@@ -301,31 +298,47 @@ public class SentryClient {
     }
 
     /**
-     * Set the extras to extract and send as tags on all future {@link Event}s, where applicable.
-     * <p>
-     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
-     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
+     * Set the tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
      *
-     * @param extraTags Set of extras
+     * @param extraTags Set of tags to extract from the MDC system
+     * @deprecated prefer {@link SentryClient#setMdcTags(Set)}
      */
+    @Deprecated
     public void setExtraTags(Set<String> extraTags) {
-        if (extraTags == null) {
-            this.extraTags = new HashSet<>();
+        setMdcTags(extraTags);
+    }
+
+    /**
+     * Set the tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
+     *
+     * @param mdcTags Set of tags to extract from the MDC system
+     */
+    public void setMdcTags(Set<String> mdcTags) {
+        if (mdcTags == null) {
+            this.mdcTags = new HashSet<>();
         } else {
-            this.extraTags = extraTags;
+            this.mdcTags = mdcTags;
         }
     }
 
     /**
-     * Add an extra to extract and send as tags on all future {@link Event}s, where applicable.
-     * <p>
-     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
-     * the {@link #extraTags} set will be extracted and set as tags on the {@link Event}.
+     * Add a tag to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
      *
-     * @param extraName Extra name
+     * @param extraName Tag name to extract from the MDC system
+     * @deprecated prefer {@link SentryClient#addMdcTag(String)}
      */
+    @Deprecated
     public void addExtraTag(String extraName) {
-        this.extraTags.add(extraName);
+        addMdcTag(extraName);
+    }
+
+    /**
+     * Add a tag to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
+     *
+     * @param tagName Tag name to extract from the MDC system
+     */
+    public void addMdcTag(String tagName) {
+        this.mdcTags.add(tagName);
     }
 
     /**
@@ -354,7 +367,7 @@ public class SentryClient {
             + ", environment='" + environment + '\''
             + ", serverName='" + serverName + '\''
             + ", tags=" + tags
-            + ", extraTags=" + extraTags
+            + ", mdcTags=" + mdcTags
             + ", connection=" + connection
             + ", builderHelpers=" + builderHelpers
             + ", contextManager=" + contextManager

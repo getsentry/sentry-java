@@ -153,7 +153,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
-            if (Sentry.getStoredClient().getExtraTags().contains(mdcEntry.getKey())) {
+            if (Sentry.getStoredClient().getMdcTags().contains(mdcEntry.getKey())) {
                 eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
             } else {
                 eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
