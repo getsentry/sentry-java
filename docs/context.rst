@@ -53,10 +53,12 @@ the current context.
             Sentry.init();
 
             // Set the current user in the context.
-            Sentry.setUser(new UserBuilder().setUsername("user1").build());
+            Sentry.getContext().setUser(
+                new UserBuilder().setUsername("user1").build()
+            );
 
             // Record a breadcrumb without having to look up the context instance manually.
-            Sentry.record(
+            Sentry.getContext().recordBreadcrumb(
                 new BreadcrumbBuilder().setMessage("User did something specific again!").build()
             );
 
