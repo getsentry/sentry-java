@@ -51,7 +51,11 @@ class SentryPlugin implements Plugin<Project> {
         if (osName.indexOf("mac") >= 0) {
             cliSuffix = "Darwin-x86_64"
         } else if (osName.indexOf("linux") >= 0) {
-            cliSuffix = "Linux-" + System.getProperty("os.arch")
+            def arch = System.getProperty("os.arch")
+            if (arch == "amd64") {
+                arch = "x86_64"
+            }
+            cliSuffix = "Linux-" + arch
         } else if (osName.indexOf("win") >= 0) {
             cliSuffix = "Windows-i686.exe"
         }
