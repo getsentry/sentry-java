@@ -190,19 +190,27 @@ comma separated pairs of keys and values that are joined by a colon:
 
     tags=tag1:value1,tag2:value2
 
-Extra Tags
-~~~~~~~~~~
+MDC Tags
+~~~~~~~~
 
-To set extras that are extracted and used as additional tags, use the
-``extratags`` option with comma separated key names.
+To set tag names that are extracted from the SLF4J MDC system, use the
+``mdctags`` option with comma separated key names. Note that this option
+is only useful when are you using one of the logging integrations.
 
 ::
 
-    extratags=foo,bar
+    mdctags=foo,bar
 
-Note that how these extra tags are used depends on which integration you are
-using. For example: when using a logging integration any SLF4J MDC keys that
-are in the extra tags set will be extracted and set as tags on events.
+.. sourcecode:: java
+
+    import org.slf4j.MDC;
+
+    MDC.put("foo", "value1");
+    MDC.put("bar", "value2");
+
+    // This sends an event where the 'foo' and 'bar' MDC values are set as additional tags
+    logger.error("This is a test");
+
 
 Extra Data
 ~~~~~~~~~~

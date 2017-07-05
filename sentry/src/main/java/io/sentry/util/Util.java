@@ -69,14 +69,27 @@ public final class Util {
      *
      * @param extraTagsString comma-delimited tags
      * @return Set of Strings representing extra tags
+     * @deprecated prefer {@link Util#parseMdcTags(String)}
      */
+    @Deprecated
     public static Set<String> parseExtraTags(String extraTagsString) {
-        if (isNullOrEmpty(extraTagsString)) {
+        return parseMdcTags(extraTagsString);
+    }
+
+    /**
+     * Parses the provided Strings into a Set of Strings.
+     *
+     * @param mdcTagsString comma-delimited tags
+     * @return Set of Strings representing mdc tags
+     */
+    public static Set<String> parseMdcTags(String mdcTagsString) {
+        if (isNullOrEmpty(mdcTagsString)) {
             return Collections.emptySet();
         }
 
-        return new HashSet<>(Arrays.asList(extraTagsString.split(",")));
+        return new HashSet<>(Arrays.asList(mdcTagsString.split(",")));
     }
+
 
     /**
      * Parses the provided string value into an integer value.

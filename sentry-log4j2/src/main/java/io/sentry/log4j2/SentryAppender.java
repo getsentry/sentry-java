@@ -183,7 +183,7 @@ public class SentryAppender extends AbstractAppender {
 
         if (event.getContextMap() != null) {
             for (Map.Entry<String, String> contextEntry : event.getContextMap().entrySet()) {
-                if (Sentry.getStoredClient().getExtraTags().contains(contextEntry.getKey())) {
+                if (Sentry.getStoredClient().getMdcTags().contains(contextEntry.getKey())) {
                     eventBuilder.withTag(contextEntry.getKey(), contextEntry.getValue());
                 } else {
                     eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
