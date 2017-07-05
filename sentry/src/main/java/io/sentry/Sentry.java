@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.context.Context;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
@@ -106,6 +107,22 @@ public final class Sentry {
     }
 
     /**
+     * Returns the {@link Context} on the statically stored {@link SentryClient}.
+     *
+     * @return the {@link Context} on the statically stored {@link SentryClient}.
+     */
+    public static Context getContext() {
+        return getStoredClient().getContext();
+    }
+
+    /**
+     * Clears the current context.
+     */
+    public static void clearContext() {
+        getStoredClient().clearContext();
+    }
+
+    /**
      * Set the statically stored {@link SentryClient} instance.
      *
      * @param client {@link SentryClient} instance to store.
@@ -164,7 +181,9 @@ public final class Sentry {
      * Record a {@link Breadcrumb}.
      *
      * @param breadcrumb Breadcrumb to record.
+     * @deprecated use {@link Sentry#getContext()} and then {@link Context#recordBreadcrumb(Breadcrumb)}.
      */
+    @Deprecated
     public static void record(Breadcrumb breadcrumb) {
         getStoredClient().getContext().recordBreadcrumb(breadcrumb);
     }
@@ -173,16 +192,11 @@ public final class Sentry {
      * Set the {@link User} in the current context.
      *
      * @param user User to store.
+     * @deprecated use {@link Sentry#getContext()} and then {@link Context#setUser(User)}.
      */
+    @Deprecated
     public static void setUser(User user) {
         getStoredClient().getContext().setUser(user);
-    }
-
-    /**
-     * Clears the current context.
-     */
-    public static void clearContext() {
-        getStoredClient().clearContext();
     }
 
     /**
