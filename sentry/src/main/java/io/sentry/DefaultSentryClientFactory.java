@@ -752,6 +752,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         String val = Lookup.lookup(MDCTAGS_OPTION, dsn);
         if (Util.isNullOrEmpty(val)) {
             val = Lookup.lookup(EXTRATAGS_OPTION, dsn);
+            if (!Util.isNullOrEmpty(val)) {
+                logger.warn("The '" + EXTRATAGS_OPTION + "' option is deprecated, please use"
+                    + " the '" + MDCTAGS_OPTION + "' option instead.");
+            }
         }
 
         return Util.parseMdcTags(val);
