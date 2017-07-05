@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * In most cases this is the implementation to use or extend for additional features.
  */
 public class DefaultSentryClientFactory extends SentryClientFactory {
-    //TODO: Add support for tags set by default
     /**
      * Protocol setting to disable security checks over an SSL connection.
      */
@@ -206,6 +205,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * Option to set extras to extract and send as tags, where applicable.
      */
     public static final String EXTRATAGS_OPTION = "extratags";
+    /**
+     * Option to set extra data to be sent to Sentry.
+     */
+    public static final String EXTRA_OPTION = "extra";
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentryClientFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
@@ -273,6 +276,13 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         if (!extraTags.isEmpty()) {
             for (String extraTag : extraTags) {
                 sentryClient.addExtraTag(extraTag);
+            }
+        }
+
+        Map<String, String> extra = getExtra(dsn);
+        if (!extra.isEmpty()) {
+            for (Map.Entry<String, String> extraEntry : extra.entrySet()) {
+                sentryClient.addExtra(extraEntry.getKey(), extraEntry.getValue());
             }
         }
 
@@ -726,6 +736,16 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected Set<String> getExtraTags(Dsn dsn) {
         return Util.parseExtraTags(Lookup.lookup(EXTRATAGS_OPTION, dsn));
+    }
+
+    /**
+     * Extra data to send with {@link io.sentry.event.Event}s.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Extra data to send with {@link io.sentry.event.Event}s.
+     */
+    protected Map<String, String> getExtra(Dsn dsn) {
+        return Util.parseExtra(Lookup.lookup(EXTRA_OPTION, dsn));
     }
 
     /**
