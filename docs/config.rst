@@ -212,6 +212,18 @@ is only useful when are you using one of the logging integrations.
     logger.error("This is a test");
 
 
+Extra Data
+~~~~~~~~~~
+
+To set extra data that will be sent with each event (but not as tags), use the
+``extra`` option with comma separated pairs of keys and values that are joined
+by a colon:
+
+::
+
+    extra=key1:value1,key2:value2
+
+
 "In Application" Stack Frames
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

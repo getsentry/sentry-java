@@ -56,13 +56,19 @@ public class SentryClient {
     /**
      * Additional tags to be sent to sentry.
      * <p>
-     * Might be empty in which case no tags are sent.
+     * Might be empty in which case no tags are added to the events.
      */
     protected Map<String, String> tags = new HashMap<>();
     /**
      * Tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
      */
     protected Set<String> mdcTags = new HashSet<>();
+    /**
+     * Extra data to be sent to sentry.
+     * <p>
+     * Might be empty in which case no extra data is added to the events.
+     */
+    protected Map<String, Object> extra = new HashMap<>();
     /**
      * Set of callbacks that are checked before each {@link Event} is sent to Sentry.
      */
@@ -154,6 +160,10 @@ public class SentryClient {
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
             eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
+        }
+
+        for (Map.Entry<String, Object> extraEntry : extra.entrySet()) {
+            eventBuilder.withExtra(extraEntry.getKey(), extraEntry.getValue());
         }
 
         runBuilderHelpers(eventBuilder);
@@ -258,6 +268,10 @@ public class SentryClient {
         return Collections.unmodifiableSet(mdcTags);
     }
 
+    public Map<String, Object> getExtra() {
+        return extra;
+    }
+
     public void setRelease(String release) {
         this.release = release;
     }
@@ -342,6 +356,29 @@ public class SentryClient {
     }
 
     /**
+     * Add to the extra data that will be sent with all future {@link Event}s.
+     *
+     * @param name Data name
+     * @param value Data value
+     */
+    public void addExtra(String name, Object value) {
+        this.extra.put(name, value);
+    }
+
+    /**
+     * Set the extra data that will be sent with all future {@link Event}s.
+     *
+     * @param extra Map of extra data
+     */
+    public void setExtra(Map<String, Object> extra) {
+        if (extra == null) {
+            this.extra = new HashMap<>();
+        } else {
+            this.extra = extra;
+        }
+    }
+
+    /**
      * Add a callback that is called after an {@link Event} is sent to Sentry.
      *
      * @param eventSendCallback callback instance
@@ -368,6 +405,7 @@ public class SentryClient {
             + ", serverName='" + serverName + '\''
             + ", tags=" + tags
             + ", mdcTags=" + mdcTags
+            + ", extra=" + extra
             + ", connection=" + connection
             + ", builderHelpers=" + builderHelpers
             + ", contextManager=" + contextManager

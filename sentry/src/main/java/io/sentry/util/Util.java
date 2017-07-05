@@ -27,23 +27,17 @@ public final class Util {
         return string == null || string.length() == 0; // string.isEmpty() in Java 6
     }
 
-    /**
-     * Parses the provided tags string into a Map of String -&gt; String.
-     *
-     * @param tagsString comma-delimited key-value pairs, e.g. "tag1:value1,tag2:value2".
-     * @return Map of tags e.g. (tag1 -&gt; value1, tag2 -&gt; value2)
-     */
-    public static Map<String, String> parseTags(String tagsString) {
-        if (isNullOrEmpty(tagsString)) {
+    private static Map<String, String> parseCsv(String inputString, String typeName) {
+        if (isNullOrEmpty(inputString)) {
             return Collections.emptyMap();
         }
 
-        String[] entries = tagsString.split(",");
-        Map<String, String> map = new LinkedHashMap<String, String>();
+        String[] entries = inputString.split(",");
+        Map<String, String> map = new LinkedHashMap<>();
         for (String entry : entries) {
             String[] split = entry.split(":");
             if (split.length != 2) {
-                throw new IllegalArgumentException("Invalid tags entry: " + entry);
+                throw new IllegalArgumentException("Invalid " + typeName + " entry: " + entry);
             }
             map.put(split[0], split[1]);
         }
@@ -51,7 +45,27 @@ public final class Util {
     }
 
     /**
-     * Parses the provided Strings into a Set of Strings.
+     * Parses the provided tags string into a Map of String -&gt; String.
+     *
+     * @param tagsString comma-delimited key-value pairs, e.g. "tag1:value1,tag2:value2".
+     * @return Map of tags e.g. (tag1 -&gt; value1, tag2 -&gt; value2)
+     */
+    public static Map<String, String> parseTags(String tagsString) {
+        return parseCsv(tagsString, "tags");
+    }
+
+    /**
+     * Parses the provided extras string into a Map of String -&gt; String.
+     *
+     * @param extrasString comma-delimited key-value pairs, e.g. "extra1:value1,extra2:value2".
+     * @return Map of extras e.g. (extra1 -&gt; value1, extra2 -&gt; value2)
+     */
+    public static Map<String, String> parseExtra(String extrasString) {
+        return parseCsv(extrasString, "extras");
+    }
+
+    /**
+     * Parses the provided extraTags string into a Set of Strings.
      *
      * @param extraTagsString comma-delimited tags
      * @return Set of Strings representing extra tags
