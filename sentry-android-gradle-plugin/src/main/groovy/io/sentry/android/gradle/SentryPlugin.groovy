@@ -5,7 +5,7 @@ import com.android.build.gradle.api.ApplicationVariant
 import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task;
+import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -30,7 +30,7 @@ class SentryPlugin implements Plugin<Project> {
             // it's okay, we can ignore it.
         }
 
-        def rv = sentryProps.getProperty("cli.executable");
+        def rv = sentryProps.getProperty("cli.executable")
         if (rv != null) {
             return rv
         }
@@ -39,10 +39,10 @@ class SentryPlugin implements Plugin<Project> {
         // is the case for react-native-sentry for instance
         def exePath = "${project.rootDir.toPath()}/../node_modules/sentry-cli-binary/bin/sentry-cli"
         if ((new File(exePath)).exists()) {
-            return exePath;
+            return exePath
         }
         if ((new File(exePath + ".exe")).exists()) {
-            return exePath + ".exe";
+            return exePath + ".exe"
         }
 
         // next up try a packaged version of sentry-cli
@@ -61,19 +61,19 @@ class SentryPlugin implements Plugin<Project> {
         }
 
         if (cliSuffix != null) {
-            def resPath = "/bin/sentry-cli-${cliSuffix}";
+            def resPath = "/bin/sentry-cli-${cliSuffix}"
             def fsPath = SentryPlugin.class.getResource(resPath).getFile()
 
             // if we are not in a jar, we can use the file directly
             if ((new File(fsPath)).exists()) {
-                return fsPath;
+                return fsPath
             }
 
             // otherwise we need to unpack into a file
             def resStream = SentryPlugin.class.getResourceAsStream(resPath)
             File tempFile = File.createTempFile(".sentry-cli", ".exe")
             tempFile.deleteOnExit()
-            def out = new FileOutputStream(tempFile);
+            def out = new FileOutputStream(tempFile)
             try {
                 IOUtils.copy(resStream, out)
             } finally {
@@ -83,7 +83,7 @@ class SentryPlugin implements Plugin<Project> {
             return tempFile.getAbsolutePath()
         }
 
-        return "sentry-cli";
+        return "sentry-cli"
     }
 
     /**
@@ -139,13 +139,22 @@ class SentryPlugin implements Plugin<Project> {
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 def variantOutput = variant.outputs.first()
-                def manifestPath = variantOutput.processManifest.manifestOutputFile
+
+                def manifestPath
+                try {
+                    // Android Gradle Plugin < 3.0.0
+                    manifestPath = variantOutput.processManifest.manifestOutputFile
+                } catch (Exception ignored) {
+                    // Android Gradle Plugin >= 3.0.0
+                    manifestPath = new File(variantOutput.processManifest.manifestOutputDirectory, "AndroidManifest.xml")
+                }
+
                 def mappingFile = variant.getMappingFile()
                 def proguardTask = getProguardTask(project, variant)
                 def dexTask = getDexTask(project, variant)
 
                 if (proguardTask == null) {
-                    return;
+                    return
                 }
 
                 // create a task to configure proguard automatically unless the user disabled it.
