@@ -135,7 +135,7 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.withExtra(LOG4J_NDC, loggingEvent.getNDC());
         }
 
-        Set<String> extraTags = Sentry.getStoredClient().getExtraTags();
+        Set<String> extraTags = Sentry.getStoredClient().getMdcTags();
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) loggingEvent.getProperties();
         for (Map.Entry<String, Object> mdcEntry : properties.entrySet()) {

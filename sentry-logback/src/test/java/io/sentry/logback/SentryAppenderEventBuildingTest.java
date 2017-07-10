@@ -8,7 +8,6 @@ import ch.qos.logback.core.status.OnConsoleStatusListener;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.*;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
@@ -283,7 +282,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         mdcPropertyMap.put("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196");
 
         new NonStrictExpectations() {{
-            mockSentryClient.getExtraTags();
+            mockSentryClient.getMdcTags();
             result = extraTags;
         }};
 

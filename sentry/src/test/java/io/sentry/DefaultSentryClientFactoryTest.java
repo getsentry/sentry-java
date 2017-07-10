@@ -6,7 +6,6 @@ import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class DefaultSentryClientFactoryTest extends BaseTest {
@@ -18,10 +17,11 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         String serverName = "serv";
         String tags = "foo:bar,qux:baz";
         String extraTags = "aaa,bbb";
+        String extras = "red:blue,green:yellow";
 
         String dsn = String.format("https://user:pass@example.com/1?" +
-            "release=%s&dist=%s&environment=%s&servername=%s&tags=%s&extratags=%s",
-            release, dist, environment, serverName, tags, extraTags);
+            "release=%s&dist=%s&environment=%s&servername=%s&tags=%s&extratags=%s&extra=%s",
+            release, dist, environment, serverName, tags, extraTags, extras);
         SentryClient sentryClient = DefaultSentryClientFactory.sentryClient(dsn);
 
         assertThat(sentryClient.getRelease(), is(release));
@@ -37,7 +37,13 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         Set<String> extraTagsSet = new HashSet<>();
         extraTagsSet.add("aaa");
         extraTagsSet.add("bbb");
-        assertThat(sentryClient.getExtraTags(), is(extraTagsSet));
+        assertThat(sentryClient.getMdcTags(), is(extraTagsSet));
+
+        Map<String, Object> extrasMap = new HashMap<>();
+        extrasMap.put("red", "blue");
+        extrasMap.put("green", "yellow");
+        assertThat(sentryClient.getExtra(), is(extrasMap));
+
 
     }
 }

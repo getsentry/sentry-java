@@ -7,7 +7,6 @@ import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
 import io.sentry.dsn.Dsn;
-import io.sentry.event.Event;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.helper.HttpEventBuilderHelper;
 import io.sentry.event.interfaces.*;
@@ -32,7 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * In most cases this is the implementation to use or extend for additional features.
  */
 public class DefaultSentryClientFactory extends SentryClientFactory {
-    //TODO: Add support for tags set by default
     /**
      * Protocol setting to disable security checks over an SSL connection.
      */
@@ -203,9 +201,19 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     public static final String TAGS_OPTION = "tags";
     /**
-     * Option to set extras to extract and send as tags, where applicable.
+     * Option to set tags that are extracted from the MDC system, where applicable.
+     * @deprecated prefer {@link DefaultSentryClientFactory#MDCTAGS_OPTION}
      */
+    @Deprecated
     public static final String EXTRATAGS_OPTION = "extratags";
+    /**
+     * Option to set tags that are extracted from the MDC system, where applicable.
+     */
+    public static final String MDCTAGS_OPTION = "mdctags";
+    /**
+     * Option to set extra data to be sent to Sentry.
+     */
+    public static final String EXTRA_OPTION = "extra";
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentryClientFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
@@ -269,10 +277,17 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             }
         }
 
-        Set<String> extraTags = getExtraTags(dsn);
-        if (!extraTags.isEmpty()) {
-            for (String extraTag : extraTags) {
-                sentryClient.addExtraTag(extraTag);
+        Set<String> mdcTags = getMdcTags(dsn);
+        if (!mdcTags.isEmpty()) {
+            for (String mdcTag : mdcTags) {
+                sentryClient.addMdcTag(mdcTag);
+            }
+        }
+
+        Map<String, String> extra = getExtra(dsn);
+        if (!extra.isEmpty()) {
+            for (Map.Entry<String, String> extraEntry : extra.entrySet()) {
+                sentryClient.addExtra(extraEntry.getKey(), extraEntry.getValue());
             }
         }
 
@@ -716,16 +731,44 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     }
 
     /**
-     * Extras to extract and send as tags on {@link io.sentry.event.Event}s, where applicable.
-     * <p>
-     * For example: when using a logging integration any {@link org.slf4j.MDC} keys that are in
-     * the {@link #getExtraTags(Dsn)} set will be extracted and set as tags on the {@link Event}.
+     * Tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
      *
      * @param dsn Sentry server DSN which may contain options.
-     * @return Extras to use as tags on {@link io.sentry.event.Event}s, where applicable.
+     * @return Tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
+     * @deprecated prefer {@link DefaultSentryClientFactory#getMdcTags(Dsn)}
      */
+    @Deprecated
     protected Set<String> getExtraTags(Dsn dsn) {
-        return Util.parseExtraTags(Lookup.lookup(EXTRATAGS_OPTION, dsn));
+        return getMdcTags(dsn);
+    }
+
+    /**
+     * Tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Tags to extract from the MDC system and set on {@link io.sentry.event.Event}s, where applicable.
+     */
+    protected Set<String> getMdcTags(Dsn dsn) {
+        String val = Lookup.lookup(MDCTAGS_OPTION, dsn);
+        if (Util.isNullOrEmpty(val)) {
+            val = Lookup.lookup(EXTRATAGS_OPTION, dsn);
+            if (!Util.isNullOrEmpty(val)) {
+                logger.warn("The '" + EXTRATAGS_OPTION + "' option is deprecated, please use"
+                    + " the '" + MDCTAGS_OPTION + "' option instead.");
+            }
+        }
+
+        return Util.parseMdcTags(val);
+    }
+
+    /**
+     * Extra data to send with {@link io.sentry.event.Event}s.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Extra data to send with {@link io.sentry.event.Event}s.
+     */
+    protected Map<String, String> getExtra(Dsn dsn) {
+        return Util.parseExtra(Lookup.lookup(EXTRA_OPTION, dsn));
     }
 
     /**

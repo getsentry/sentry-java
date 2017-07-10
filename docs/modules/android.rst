@@ -99,10 +99,14 @@ Now you can use ``Sentry`` to capture events anywhere in your application:
             Record a breadcrumb in the current context which will be sent
             with the next event(s). By default the last 100 breadcrumbs are kept.
             */
-            Sentry.record(new BreadcrumbBuilder().setMessage("User made an action").build());
+            Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("User made an action").build()
+            );
 
             // Set the user in the current context.
-            Sentry.setUser(new UserBuilder().setEmail("hello@sentry.io").build());
+            Sentry.getContext().setUser(
+                new UserBuilder().setEmail("hello@sentry.io").build()
+            );
 
             /*
             This sends a simple event to Sentry using the statically stored instance
@@ -142,7 +146,7 @@ And declare a dependency in your toplevel ``build.gradle``:
 
     buildscript {
         dependencies {
-            classpath 'io.sentry:sentry-android-gradle-plugin:1.0.0'
+            classpath 'io.sentry:sentry-android-gradle-plugin:1.0.2'
         }
     }
 
