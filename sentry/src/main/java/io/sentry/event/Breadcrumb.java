@@ -3,6 +3,7 @@ package io.sentry.event;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An object that represents a single breadcrumb. Events may include a list
@@ -172,6 +173,28 @@ public class Breadcrumb implements Serializable {
 
     public Map<String, String> getData() {
         return data;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Breadcrumb that = (Breadcrumb) o;
+        return type == that.type
+            && Objects.equals(timestamp, that.timestamp)
+            && level == that.level
+            && Objects.equals(message, that.message)
+            && Objects.equals(category, that.category)
+            && Objects.equals(data, that.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, timestamp, level, message, category, data);
     }
 
 }
