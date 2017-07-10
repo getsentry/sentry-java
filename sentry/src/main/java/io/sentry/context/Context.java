@@ -72,16 +72,16 @@ public class Context implements Serializable {
     /**
      * Return {@link Breadcrumb}s attached to this Context.
      *
-     * @return Iterator of {@link Breadcrumb}s.
+     * @return List of {@link Breadcrumb}s.
      */
-    public synchronized Iterator<Breadcrumb> getBreadcrumbs() {
+    public synchronized List<Breadcrumb> getBreadcrumbs() {
         if (breadcrumbs == null || breadcrumbs.isEmpty()) {
-            return Collections.emptyIterator();
+            return Collections.emptyList();
         }
 
         List<Breadcrumb> copyList = new ArrayList<>(breadcrumbs.size());
         copyList.addAll(breadcrumbs);
-        return copyList.iterator();
+        return copyList;
     }
 
     /**

@@ -30,13 +30,7 @@ public class ContextTest extends BaseTest {
         List<Breadcrumb> breadcrumbMatch = new ArrayList<>();
         breadcrumbMatch.add(breadcrumb);
 
-        List<Breadcrumb> breadcrumbs = new ArrayList<>();
-        Iterator<Breadcrumb> iter = context.getBreadcrumbs();
-        while (iter.hasNext()) {
-            breadcrumbs.add(iter.next());
-        }
-
-        assertThat(breadcrumbs, equalTo(breadcrumbMatch));
+        assertThat(context.getBreadcrumbs(), equalTo(breadcrumbMatch));
     }
 
     @Test
@@ -60,13 +54,7 @@ public class ContextTest extends BaseTest {
         List<Breadcrumb> breadcrumbMatch = new ArrayList<>();
         breadcrumbMatch.add(breadcrumb2);
 
-        List<Breadcrumb> breadcrumbs = new ArrayList<>();
-        Iterator<Breadcrumb> iter = context.getBreadcrumbs();
-        while (iter.hasNext()) {
-            breadcrumbs.add(iter.next());
-        }
-
-        assertThat(breadcrumbs, equalTo(breadcrumbMatch));
+        assertThat(context.getBreadcrumbs(), equalTo(breadcrumbMatch));
 
     }
 

@@ -7,8 +7,6 @@ import io.sentry.event.EventBuilder;
 import io.sentry.event.User;
 import io.sentry.event.interfaces.UserInterface;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -36,15 +34,10 @@ public class ContextBuilderHelper implements EventBuilderHelper {
     public void helpBuildingEvent(EventBuilder eventBuilder) {
         Context context = sentryClient.getContext();
 
-        Iterator<Breadcrumb> breadcrumbIterator = context.getBreadcrumbs();
-        if (breadcrumbIterator.hasNext()) {
-            List<Breadcrumb> breadcrumbs = new ArrayList<>();
-            while (breadcrumbIterator.hasNext()) {
-                breadcrumbs.add(breadcrumbIterator.next());
-            }
+        List<Breadcrumb> breadcrumbs = context.getBreadcrumbs();
+        if (!breadcrumbs.isEmpty()) {
             eventBuilder.withBreadcrumbs(breadcrumbs);
         }
-
 
         if (context.getUser() != null) {
             eventBuilder.withSentryInterface(fromUser(context.getUser()));
