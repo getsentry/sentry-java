@@ -3,9 +3,10 @@ Manual Usage
 
 **Note:** The following page provides examples on how to configure and use
 Sentry directly. It is **highly recommended** that you use one of the
-:ref:`provided integrations <integrations>` if possible. You can use Sentry's
-static API, as shown below, in addition to an integration in order to do things
-like record breadcrumbs or set the current user.
+:ref:`provided integrations <integrations>` if possible. Once the integration
+is configured you can *also* use Sentry's static API, as shown below,
+in order to do things like record breadcrumbs, set the current user, or manually
+send events.
 
 Installation
 ------------
