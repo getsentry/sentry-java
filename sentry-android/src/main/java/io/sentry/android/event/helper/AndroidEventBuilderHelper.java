@@ -163,6 +163,8 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             if (!Util.isNullOrEmpty(uuid)) {
                 retVal = uuid.split("\\|");
             }
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "Proguard UUIDs file not found.");
         } catch (Exception e) {
             Log.e(TAG, "Error getting Proguard UUIDs.", e);
         }

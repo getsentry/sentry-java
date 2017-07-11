@@ -153,8 +153,9 @@ And declare a dependency in your toplevel ``build.gradle``:
 The plugin will then automatically generate appropriate ProGuard mapping files
 and upload them when you run ``gradle assembleRelease``.  The credentials
 for the upload step are loaded from a ``sentry.properties`` file in
-your project root.  At the very minimum you will need something like this
-in there::
+your project root *or* via environment variables, for more information
+`see the sentry-cli documentation <https://docs.sentry.io/learn/cli/configuration/#configuration-values>`_.
+At the very minimum you will need something like this::
 
     defaults.project=___PROJECT_NAME___
     defaults.org=___ORG_NAME___
