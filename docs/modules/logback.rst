@@ -4,12 +4,15 @@ Logback
 The ``sentry-logback`` library provides `Logback <http://logback.qos.ch/>`_
 support for Sentry via an `Appender
 <http://logback.qos.ch/apidocs/ch/qos/logback/core/Appender.html>`_
-that sends logged exceptions to Sentry.
+that sends logged exceptions to Sentry. Once this integration is configured
+you can *also* use Sentry's static API, :ref:`as shown on the usage page <usage_example>`,
+in order to do things like record breadcrumbs, set the current user, or manually send
+events.
 
 The source can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry-logback>`_.
 
-**Note:** ``raven-logback`` is no longer maintained. It is highly recommended that
+**Note:** The old ``raven-logback`` library is no longer maintained. It is highly recommended that
 you migrate to ``sentry-logback`` (which this documentation covers). If you are still
 using ``raven-logback`` you can
 `find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/logback.rst>`_.

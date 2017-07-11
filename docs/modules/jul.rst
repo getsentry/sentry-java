@@ -3,12 +3,15 @@ java.util.logging
 
 The ``sentry`` library provides a `java.util.logging Handler
 <http://docs.oracle.com/javase/7/docs/api/java/util/logging/Handler.html>`_
-that sends logged exceptions to Sentry.
+that sends logged exceptions to Sentry. Once this integration is configured
+you can *also* use Sentry's static API, :ref:`as shown on the usage page <usage_example>`,
+in order to do things like record breadcrumbs, set the current user, or manually send
+events.
 
 The source for ``sentry`` can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry>`_.
 
-**Note:** ``raven`` is no longer maintained. It is highly recommended that
+**Note:** The old ``raven`` library is no longer maintained. It is highly recommended that
 you migrate to ``sentry`` (which this documentation covers). If you are still
 using ``raven`` you can
 `find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/raven.rst>`_.

@@ -35,6 +35,8 @@ For other dependency managers see the `central Maven repository <https://search.
 Capture an Error
 ----------------
 
+.. _usage_example:
+
 To report an event manually you need to initialize a ``SentryClient``. It is recommended
 that you use the static API via the ``Sentry`` class, but you can also construct and manage
 your own ``SentryClient`` instance. An example of each style is shown below:
