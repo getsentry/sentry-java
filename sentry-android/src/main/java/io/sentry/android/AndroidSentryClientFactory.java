@@ -53,15 +53,18 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         Log.d(TAG, "Sentry init with ctx='" + ctx.toString() + "' and dsn='" + dsn + "'");
 
         String protocol = dsn.getProtocol();
-        if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
+        if (protocol.equalsIgnoreCase("noop")) {
+            Log.w(TAG, "*** Couldn't find a suitable DSN, Sentry operations will do nothing!"
+                + " See documentation: https://docs.sentry.io/clients/java/modules/android/ ***");
+        } else if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
+            String async = Lookup.lookup(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
+            if (async != null && async.equalsIgnoreCase("false")) {
+                throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
+                    + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your options.");
+            }
+
             throw new IllegalArgumentException("Only 'http' or 'https' connections are supported in"
                 + " Sentry Android, but received: " + protocol);
-        }
-
-        String async = Lookup.lookup(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
-        if (async != null && async.equalsIgnoreCase("false")) {
-            throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
-                + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your DSN.");
         }
 
         SentryClient sentryClient = super.createSentryClient(dsn);
