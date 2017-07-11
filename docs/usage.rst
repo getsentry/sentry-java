@@ -196,3 +196,37 @@ For more complex messages, you'll need to build an ``Event`` with the
             }
         }
  }
+
+Automatically Enhancing Events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also implement an ``EventBuilderHelper`` that is able to automatically
+enhance outgoing events.
+
+.. sourcecode:: java
+
+    import io.sentry.Sentry;
+    import io.sentry.SentryClient;
+    import io.sentry.event.EventBuilder;
+    import io.sentry.event.helper.EventBuilderHelper;
+
+    public class MyClass {
+        public void myMethod() {
+            SentryClient client = Sentry.getStoredClient();
+
+            EventBuilderHelper myEventBuilderHelper = new EventBuilderHelper() {
+                @Override
+                public void helpBuildingEvent(EventBuilder eventBuilder) {
+                    eventBuilder.withMessage("Overwritten by myEventBuilderHelper!");
+                }
+            };
+
+            // Add an ``EventBuilderHelper`` to the current client instance. Note that
+            // this helper will process *all* future events.
+            client.addBuilderHelper(myEventBuilderHelper);
+
+            // Send an event to Sentry. During construction of the event the message
+            // body will be overwritten by ``myEventBuilderHelper``.
+            Sentry.capture("Hello, world!");
+        }
+    }
