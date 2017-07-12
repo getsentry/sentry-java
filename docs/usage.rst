@@ -3,7 +3,10 @@ Manual Usage
 
 **Note:** The following page provides examples on how to configure and use
 Sentry directly. It is **highly recommended** that you use one of the
-:ref:`provided integrations <integrations>` instead if possible.
+:ref:`provided integrations <integrations>` if possible. Once the integration
+is configured you can *also* use Sentry's static API, as shown below,
+in order to do things like record breadcrumbs, set the current user, or manually
+send events.
 
 Installation
 ------------
@@ -53,9 +56,11 @@ your own ``SentryClient`` instance. An example of each style is shown below:
         public static void main(String... args) {
             /*
             It is recommended that you use the DSN detection system, which
-            will check the environment variable "SENTRY_DSN" and the Java
-            System Property "sentry.dsn". This makes it easier to provide
-            and adjust your DSN without needing to change your code.
+            will check the environment variable "SENTRY_DSN", the Java
+            System Property "sentry.dsn", or the "sentry.properties" file
+            in your classpath. This makes it easier to provide and adjust
+            your DSN without needing to change your code. See the configuration
+            page for more information.
             */
             Sentry.init();
 
@@ -84,15 +89,12 @@ your own ``SentryClient`` instance. An example of each style is shown below:
 
         /**
          * Examples using the (recommended) static API.
-         *
-         * Note that the ``Sentry.init`` method must be called before the static API
-         * is used, otherwise a ``NullPointerException`` will be thrown.
          */
         void logWithStaticAPI() {
-            /*
-            Record a breadcrumb in the current context which will be sent
-            with the next event(s). By default the last 100 breadcrumbs are kept.
-            */
+            // Note that all fields set on the context are optional. Context data is copied onto
+            // all future events in the current context (until the context is cleared).
+
+            // Record a breadcrumb in the current context. By default the last 100 breadcrumbs are kept.
             Sentry.getContext().recordBreadcrumb(
                 new BreadcrumbBuilder().setMessage("User made an action").build()
             );
@@ -101,6 +103,12 @@ your own ``SentryClient`` instance. An example of each style is shown below:
             Sentry.getContext().setUser(
                 new UserBuilder().setEmail("hello@sentry.io").build()
             );
+
+            // Add extra data to future events in this context.
+            Sentry.getContext().addExtra("extra", "thing");
+
+            // Add an additional tag to future events in this context.
+            Sentry.getContext().addTag("tagName", "tagValue");
 
             /*
             This sends a simple event to Sentry using the statically stored instance
@@ -124,10 +132,7 @@ your own ``SentryClient`` instance. An example of each style is shown below:
             // Retrieve the current context.
             Context context = sentry.getContext();
 
-            /*
-            Record a breadcrumb in the current context which will be sent
-            with the next event(s). By default the last 100 breadcrumbs are kept.
-            */
+            // Record a breadcrumb in the current context. By default the last 100 breadcrumbs are kept.
             context.recordBreadcrumb(new BreadcrumbBuilder().setMessage("User made an action").build());
 
             // Set the user in the current context.

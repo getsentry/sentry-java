@@ -13,6 +13,15 @@ public abstract class SentryClientFactory {
     private static final Logger logger = LoggerFactory.getLogger(SentryClientFactory.class);
 
     /**
+     * Creates an instance of Sentry by discovering the DSN.
+     *
+     * @return an instance of Sentry.
+     */
+    public static SentryClient sentryClient() {
+        return sentryClient(null, null);
+    }
+
+    /**
      * Creates an instance of Sentry using the provided DSN.
      *
      * @param dsn Data Source Name of the Sentry server.

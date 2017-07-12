@@ -52,15 +52,24 @@ the current context.
             // initialize on the first use of the static API, so this isn't strictly necessary.
             Sentry.init();
 
+            // Note that all fields set on the context are optional. Context data is copied onto
+            // all future events in the current context (until the context is cleared).
+
             // Set the current user in the context.
             Sentry.getContext().setUser(
                 new UserBuilder().setUsername("user1").build()
             );
 
-            // Record a breadcrumb without having to look up the context instance manually.
+            // Record a breadcrumb in the context.
             Sentry.getContext().recordBreadcrumb(
                 new BreadcrumbBuilder().setMessage("User did something specific again!").build()
             );
+
+            // Add extra data to future events in this context.
+            Sentry.getContext().addExtra("extra", "thing");
+
+            // Add an additional tag to future events in this context.
+            Sentry.getContext().addTag("tagName", "tagValue");
 
             // Send an event with the context data attached.
             Sentry.capture("New event message");
@@ -80,6 +89,9 @@ the current context.
             // Get the current context instance.
             Context context = sentryClient.getContext();
 
+            // Note that all fields set on the context are optional. Context data is copied onto
+            // all future events in the current context (until the context is cleared).
+
             // Set the current user in the context.
             context.setUser(
                 new UserBuilder().setUsername("user1").build()
@@ -89,6 +101,12 @@ the current context.
             context.recordBreadcrumb(
                 new BreadcrumbBuilder().setMessage("User did something specific!").build()
             );
+
+            // Add extra data to future events in this context.
+            context.addExtra("extra", "thing");
+
+            // Add an additional tag to future events in this context.
+            context.addTag("tagName", "tagValue");
 
             // Send an event with the context data attached.
             sentryClient.sendMessage("New event message");

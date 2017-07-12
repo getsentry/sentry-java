@@ -3,6 +3,7 @@ Version 1.2.3
 
 - Deprecate ``extratags`` in favor of the more clear ``mdctags``.
 - Add ability to set ``extra`` data via options and on ``SentryClient`` instances.
+- Add ability to set ``extra`` data and ``tags`` in the current context.
 
 Version 1.2.2
 -------------
