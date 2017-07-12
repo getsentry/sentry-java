@@ -13,8 +13,9 @@ The source can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry-log4j2>`_.
 
 **Note:** The old ``raven-log4j2`` library is no longer maintained. It is highly recommended that
-you migrate to ``sentry-log4j2`` (which this documentation covers). If you are still
-using ``raven-log4j2`` you can
+you `migrate <https://docs.sentry.io/clients/java/migration/>`_ to ``sentry-log4j2`` (which this
+documentation covers). `Check out the migration guide <https://docs.sentry.io/clients/java/migration/>`_
+for more information. If you are still using ``raven-log4j2`` you can
 `find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/log4j2.rst>`_.
 
 Installation

@@ -12,10 +12,10 @@ The source for ``sentry`` can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry>`_.
 
 **Note:** The old ``raven`` library is no longer maintained. It is highly recommended that
-you migrate to ``sentry`` (which this documentation covers). If you are still
-using ``raven`` you can
+you `migrate <https://docs.sentry.io/clients/java/migration/>`_ to ``sentry`` (which this
+documentation covers). `Check out the migration guide <https://docs.sentry.io/clients/java/migration/>`_
+for more information. If you are still using ``raven`` you can
 `find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/raven.rst>`_.
-\
 
 Installation
 ------------

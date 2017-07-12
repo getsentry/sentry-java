@@ -13,8 +13,9 @@ The source can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry-logback>`_.
 
 **Note:** The old ``raven-logback`` library is no longer maintained. It is highly recommended that
-you migrate to ``sentry-logback`` (which this documentation covers). If you are still
-using ``raven-logback`` you can
+you `migrate <https://docs.sentry.io/clients/java/migration/>`_ to ``sentry-logback`` (which this
+documentation covers). `Check out the migration guide <https://docs.sentry.io/clients/java/migration/>`_
+for more information. If you are still using ``raven-logback`` you can
 `find the old documentation here <https://github.com/getsentry/sentry-java/blob/raven-java-8.x/docs/modules/logback.rst>`_.
 
 Installation
