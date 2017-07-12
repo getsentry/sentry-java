@@ -40,9 +40,6 @@ New Packages
 Raven Class Changes
 -------------------
 
-rename, static vs not
-Raven->SentryClient
-
 .. describe:: Before (raven-java)
 
     The ``Raven`` class was both the core client class and also had the ability to
