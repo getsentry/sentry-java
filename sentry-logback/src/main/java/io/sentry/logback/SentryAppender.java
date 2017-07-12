@@ -39,10 +39,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
     /**
-     * If set, only events with level = minLevel and up will be recorded. (This
-     * configuration parameter is deprecated in favor of using Logback
-     * Filters.)
+     * If set, only events with level = minLevel and up will be recorded.
+     *
+     * @deprecated use logback filters.
      */
+    @Deprecated
     protected Level minLevel;
 
     /**
@@ -264,6 +265,13 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return stackTraceElements;
     }
 
+    /**
+     * Set minimum level to log.
+     *
+     * @param minLevel minimum level to log.
+     * @deprecated use logback filters.
+     */
+    @Deprecated
     public void setMinLevel(String minLevel) {
         this.minLevel = minLevel != null ? Level.toLevel(minLevel) : null;
     }
