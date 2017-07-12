@@ -13,10 +13,10 @@
     "java.logging": {
       "name": "java.util.logging",
       "type": "framework",
-      "doc_link": "modules/sentry/",
+      "doc_link": "modules/jul/",
       "wizard": [
-        "modules/sentry#installation",
-        "modules/sentry#usage"
+        "modules/jul#installation",
+        "modules/jul#usage"
       ]
     },
     "java.log4j": {
