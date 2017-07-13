@@ -2,4 +2,4 @@
 
 release:
 	download-sentry-cli.sh
-	./gradlew uploadArchives
+	./gradlew uploadArchives --no-daemon
