@@ -28,22 +28,22 @@ Using Maven:
     <dependency>
         <groupId>io.sentry</groupId>
         <artifactId>sentry-logback</artifactId>
-        <version>1.2.2</version>
+        <version>1.3.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry-logback:1.2.2'
+    compile 'io.sentry:sentry-logback:1.3.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "io.sentry" % "sentry-logback" % "1.2.2"
+    libraryDependencies += "io.sentry" % "sentry-logback" % "1.3.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-logback%7C1.2.2%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-logback%7C1.3.0%7Cjar>`_.
 
 Usage
 -----
