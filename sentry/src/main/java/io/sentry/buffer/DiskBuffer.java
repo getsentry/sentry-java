@@ -111,12 +111,10 @@ public class DiskBuffer implements Buffer {
      * @return Event from the File, or null
      */
     private Event fileToEvent(File eventFile) {
-        FileInputStream fileInputStream;
         Object eventObj;
 
-        try {
-            fileInputStream = new FileInputStream(new File(eventFile.getAbsolutePath()));
-            ObjectInputStream ois = new ObjectInputStream(fileInputStream);
+        try (FileInputStream fileInputStream = new FileInputStream(new File(eventFile.getAbsolutePath()));
+             ObjectInputStream ois = new ObjectInputStream(fileInputStream)) {
             eventObj = ois.readObject();
         } catch (Exception e) {
             logger.error("Error reading Event file: " + eventFile.getAbsolutePath(), e);
