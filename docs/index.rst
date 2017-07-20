@@ -33,6 +33,7 @@ for more information. If you are still using ``raven`` you can
 Resources:
 
 * `Documentation <https://docs.sentry.io/clients/java/>`_
+* `Examples <https://github.com/getsentry/examples>`_
 * `Bug Tracker <http://github.com/getsentry/sentry-java/issues>`_
 * `Code <http://github.com/getsentry/sentry-java>`_
 * `Mailing List <https://groups.google.com/group/getsentry>`_
