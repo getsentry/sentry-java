@@ -265,11 +265,22 @@ StackTrace is printed, the result looks like this:
 Some frames are replaced by the ``... N more`` line as they are the same frames
 as in the enclosing exception.
 
-To enable a similar behaviour in Sentry use the stacktrace.hidecommon`` option.
+Similar behaviour is enabled by default in Sentry. To disable it, use the
+``stacktrace.hidecommon`` option.
 
 ::
 
-    stacktrace.hidecommon
+    stacktrace.hidecommon=false
+
+Uncaught Exception Handler
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, an ``UncaughtExceptionHandler`` is configured that will send exceptions
+to Sentry. To disable it, use the ``uncaught.handler.enabled`` option.
+
+::
+
+    uncaught.handler.enabled=false
 
 Event Sampling
 ~~~~~~~~~~~~~~
