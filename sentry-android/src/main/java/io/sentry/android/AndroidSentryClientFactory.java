@@ -69,7 +69,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
-        SentryUncaughtExceptionHandler.setup();
+
         return sentryClient;
     }
 

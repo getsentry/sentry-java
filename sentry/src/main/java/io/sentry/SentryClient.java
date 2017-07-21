@@ -86,6 +86,10 @@ public class SentryClient {
      * such as {@link io.sentry.event.Breadcrumb}s.
      */
     private final ContextManager contextManager;
+    /**
+     * Reference to the {@link SentryUncaughtExceptionHandler} if one was enabled, or null.
+     */
+    private SentryUncaughtExceptionHandler uncaughtExceptionHandler;
 
     /**
      * Constructs a {@link SentryClient} instance using the provided connection.
@@ -226,6 +230,10 @@ public class SentryClient {
      * Closes the connection for the {@link SentryClient} instance.
      */
     public void closeConnection() {
+        if (uncaughtExceptionHandler != null) {
+            uncaughtExceptionHandler.disable();
+        }
+
         try {
             connection.close();
         } catch (IOException e) {
@@ -383,7 +391,7 @@ public class SentryClient {
      *
      * @param eventSendCallback callback instance
      */
-    void addEventSendCallback(EventSendCallback eventSendCallback) {
+    public void addEventSendCallback(EventSendCallback eventSendCallback) {
         connection.addEventSendCallback(eventSendCallback);
     }
 
@@ -392,8 +400,16 @@ public class SentryClient {
      *
      * @param shouldSendEventCallback callback instance
      */
-    void addShouldSendEventCallback(ShouldSendEventCallback shouldSendEventCallback) {
+    public void addShouldSendEventCallback(ShouldSendEventCallback shouldSendEventCallback) {
         shouldSendEventCallbacks.add(shouldSendEventCallback);
+    }
+
+    /**
+     * Setup and store the {@link SentryUncaughtExceptionHandler} so that it can be
+     * disabled on {@link SentryClient#closeConnection()}.
+     */
+    protected void setupUncaughtExceptionHandler() {
+        uncaughtExceptionHandler = SentryUncaughtExceptionHandler.setup();
     }
 
     @Override
@@ -409,6 +425,7 @@ public class SentryClient {
             + ", connection=" + connection
             + ", builderHelpers=" + builderHelpers
             + ", contextManager=" + contextManager
+            + ", uncaughtExceptionHandler=" + uncaughtExceptionHandler
             + '}';
     }
 }
