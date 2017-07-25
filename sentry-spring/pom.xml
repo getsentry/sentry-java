@@ -12,7 +12,7 @@
     <packaging>jar</packaging>
 
     <name>Sentry-Java for Spring</name>
-    <description>TODO</description>
+    <description>Spring exception handler and servlet initializer for sending exceptions to Sentry.</description>
 
     <properties>
         <spring.version>4.3.10.RELEASE</spring.version>
@@ -28,11 +28,13 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
             <version>${spring.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot</artifactId>
             <version>${spring-boot.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
