@@ -141,14 +141,14 @@ In Practice
 
         void logWithTag() {
             // This sends an event with a tag named 'logback-Marker' to Sentry
-            logger.info(MARKER, "This is a test");
+            logger.error(MARKER, "This is a test");
         }
 
         void logWithExtras() {
             // MDC extras
             MDC.put("extra_key", "extra_value");
             // This sends an event with extra data to Sentry
-            logger.info("This is a test");
+            logger.error("This is a test");
         }
 
         void logException() {

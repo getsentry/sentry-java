@@ -305,13 +305,13 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         Connection connection;
 
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
-            logger.info("Using an {} connection to Sentry.", protocol.toUpperCase());
+            logger.debug("Using an {} connection to Sentry.", protocol.toUpperCase());
             connection = createHttpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("out")) {
-            logger.info("Using StdOut to send events.");
+            logger.debug("Using StdOut to send events.");
             connection = createStdOutConnection(dsn);
         } else if (protocol.equalsIgnoreCase("noop")) {
-            logger.info("Using noop to send events.");
+            logger.debug("Using noop to send events.");
             connection = new NoopConnection();
         } else {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
