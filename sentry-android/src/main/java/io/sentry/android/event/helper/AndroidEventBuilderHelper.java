@@ -330,7 +330,12 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         String errorMsg = "Exception while attempting to read kernel information";
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("/proc/version"));
+            File file = new File("/proc/version");
+            if (!file.canRead()) {
+                return null;
+            }
+
+            br = new BufferedReader(new FileReader(file));
             return br.readLine();
         } catch (Exception e) {
             Log.e(TAG, errorMsg, e);
