@@ -527,16 +527,17 @@ Implementation
     public class MySentryClientFactory extends DefaultSentryClientFactory {
         @Override
         public SentryClient createSentryClient(Dsn dsn) {
-            SentryClient sentry = new SentryClient(createConnection(dsn));
+            SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
 
             /*
             Create and use the ForwardedAddressResolver, which will use the
             X-FORWARDED-FOR header for the remote address if it exists.
              */
             ForwardedAddressResolver forwardedAddressResolver = new ForwardedAddressResolver();
-            sentry.addBuilderHelper(new HttpEventBuilderHelper(forwardedAddressResolver));
+            sentryClient.addBuilderHelper(new HttpEventBuilderHelper(forwardedAddressResolver));
 
-            return sentry;
+            sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
+            return configureSentryClient(sentryClient, dsn);
         }
     }
 
