@@ -89,7 +89,7 @@ public class AppEngineAsyncConnection implements Connection {
      */
     @Override
     public void close() throws IOException {
-        logger.info("Gracefully stopping sentry tasks.");
+        logger.debug("Gracefully stopping Sentry tasks.");
         closed = true;
         actualConnection.close();
         APP_ENGINE_ASYNC_CONNECTIONS.remove(id);
