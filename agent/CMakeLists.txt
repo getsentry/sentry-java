@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCE_FILES agent.cpp lib.cpp lib.h)
 add_library(sentry_agent SHARED ${SOURCE_FILES})
-set_target_properties(mylib PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+set_target_properties(sentry_agent PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 
 include_directories($ENV{JAVA_HOME}/include)
 
