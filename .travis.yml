@@ -18,6 +18,7 @@ after_success:
 matrix:
   include:
     - language: cpp
+      dist: trusty
       script: cd agent && cmake CMakeLists.txt && make
       cache: false
       after_success: true
