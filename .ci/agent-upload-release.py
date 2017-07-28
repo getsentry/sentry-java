@@ -17,7 +17,7 @@ AUTH_TOKEN = os.environ['GITHUB_AUTH_TOKEN']
 AUTH = (AUTH_USERNAME, AUTH_TOKEN)
 TAG = os.environ.get('TRAVIS_TAG')
 TARGET = os.environ.get('TARGET')
-LIB = 'libsentry_agent_%(target)s.%(ext)s'
+LIB = 'libsentry_agent_linux-%(target)s.%(ext)s'
 EXT = 'so'
 BIN_TYPE = os.environ.get('BIN_TYPE', 'release')
 REPO = 'getsentry/sentry-java'
@@ -37,8 +37,8 @@ def api_request(method, path, **kwargs):
 
 def find_executable():
     path = LIB % {'target': TARGET, 'ext': EXT}
+    log("Checking for executable: " + path)
     if os.path.isfile(path):
-        log('Executable: ' + path)
         return path
 
 
