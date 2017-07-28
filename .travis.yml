@@ -22,16 +22,8 @@ matrix:
 #      cache:
 #        directories:
 #          - $HOME/.m2
-#    - language: cpp
-#      dist: trusty
-#      jdk: oraclejdk7
-#      script: env | sort && cd agent && cmake CMakeLists.txt && make
-#      cache: false
-#      after_success: true
     - language: cpp
-      os: osx
-      # Build on older OS X for more portable binaries
-      osx_image: xcode6.4
+      dist: trusty
       jdk: oraclejdk7
       script: env | sort && cd agent && cmake CMakeLists.txt && make
       cache: false
