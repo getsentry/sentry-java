@@ -10,4 +10,6 @@ include_directories($ENV{JAVA_HOME}/include)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     include_directories($ENV{JAVA_HOME}/include/darwin)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    include_directories($ENV{JAVA_HOME}/include/linux)
 endif()
