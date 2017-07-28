@@ -25,16 +25,23 @@ matrix:
     - language: cpp
       dist: trusty
       jdk: oraclejdk7
-      before_install:
-        - sudo apt-get -qq update
-        - sudo apt-get install -y g++-multilib
-      script: .ci/build.sh
+      env: TARGET=x86_64
+      before_install: .ci/agent-install.sh
+      script: .ci/agent-build.sh
+      cache: false
+      after_success: true
+    - language: cpp
+      dist: trusty
+      jdk: oraclejdk7
+      env: TARGET=i686
+      before_install: .ci/agent-install.sh
+      script: .ci/agent-build.sh
       cache: false
       after_success: true
 
 deploy:
   provider: script
-  script: .ci/deploy.sh
+  script: .ci/agent-deploy.sh
   skip_cleanup: true
   on:
     tags: true
