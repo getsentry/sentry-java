@@ -7,6 +7,7 @@ set -ex
 pushd agent
 
 pip install --user requests==2.18.2
+find .
 python agent-upload-release.py
 
 popd
