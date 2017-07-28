@@ -28,17 +28,7 @@ matrix:
       before_install:
         - sudo apt-get -qq update
         - sudo apt-get install -y g++-multilib
-      script:
-        - cd agent
-          cmake CMakeLists.txt
-          make
-          mv libsentry_agent.so libsentry_agent_linux-x86_64.so
-          TARGET=i686 cmake CMakeLists.txt
-          make
-          mv libsentry_agent.so libsentry_agent_linux-i686.so
-          ls -lh
-          file libsentry_agent_linux-x86_64.so
-          file libsentry_agent_linux-i686.so
+      script: ./ci/build.sh
       cache: false
       after_success: true
 
