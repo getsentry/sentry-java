@@ -1,4 +1,6 @@
-#!/usr/bin/env bash -ev
+#!/bin/bash
+
+set -ev
 
 pushd agent
 
