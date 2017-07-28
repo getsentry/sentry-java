@@ -1,19 +1,23 @@
 dist: precise
+
+language: java
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+script: mvn verify
+cache:
+  directories:
+    - $HOME/.m2
+env:
+  global:
+    - secure: "Xs3g5ZOMymPp0EvxF0T0tk5xMaV3htMPii5uDS17z9wDWYg7hj78mrP2cFea0ZjIqIjENG7YuxIjw34yb7507pvIxv8v+QvSkwlzVz4XJNzh2w1gbB2C+oVvbmbFd0A2Pmpf3jvkey6Tk5jhW7lxNVAZ7QzONuAf66iWdi6bwSg="
+    - secure: "PBz5Jjoaf33a+Iqv5eJsFHbCYP1ZdeiQvrQBH7hJK5/Kdrbn4GCrDx+RkA58ZC8i8ZHfsW2MkMuD7RphcrgHuB3UwcvHwUgrEZaV1/ypIOe5O8CQ4Z0gkHCj2Ei/dsL3fpDU8WuPJSLa13tsMoQTdGaOhluCuSXpuArx3B3gX28="
+after_success:
+  - "{ [[ $TRAVIS_BRANCH == 'master' ]] || [[ $TRAVIS_BRANCH == raven-*.x ]]; } && { python .travis/addServer.py; mvn clean deploy --settings $HOME/.m2/mySettings.xml; };"
+
 matrix:
   include:
-    - language: java
-      jdk:
-        - oraclejdk7
-        - oraclejdk8
-      script: mvn verify
-      cache:
-        directories:
-          - $HOME/.m2
-      env:
-        global:
-          - secure: "Xs3g5ZOMymPp0EvxF0T0tk5xMaV3htMPii5uDS17z9wDWYg7hj78mrP2cFea0ZjIqIjENG7YuxIjw34yb7507pvIxv8v+QvSkwlzVz4XJNzh2w1gbB2C+oVvbmbFd0A2Pmpf3jvkey6Tk5jhW7lxNVAZ7QzONuAf66iWdi6bwSg="
-          - secure: "PBz5Jjoaf33a+Iqv5eJsFHbCYP1ZdeiQvrQBH7hJK5/Kdrbn4GCrDx+RkA58ZC8i8ZHfsW2MkMuD7RphcrgHuB3UwcvHwUgrEZaV1/ypIOe5O8CQ4Z0gkHCj2Ei/dsL3fpDU8WuPJSLa13tsMoQTdGaOhluCuSXpuArx3B3gX28="
-      after_success:
-        - "{ [[ $TRAVIS_BRANCH == 'master' ]] || [[ $TRAVIS_BRANCH == raven-*.x ]]; } && { python .travis/addServer.py; mvn clean deploy --settings $HOME/.m2/mySettings.xml; };"
     - language: cpp
       script: cd agent && cmake CMakeLists.txt && make
+      cache: false
+      after_success: true
