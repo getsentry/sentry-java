@@ -25,7 +25,7 @@ matrix:
     - language: cpp
       before_install:
         - sudo apt-get update -qq
-        - sudo apt-get install -qq oraclejdk8
+        - sudo apt-get install -qq openjdk-7-jdk
       dist: trusty
       script: env | sort && cd agent && cmake CMakeLists.txt && make
       cache: false
