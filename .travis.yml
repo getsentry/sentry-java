@@ -25,6 +25,9 @@ matrix:
     - language: cpp
       dist: trusty
       jdk: oraclejdk7
+      before_install:
+        - sudo apt-get -qq update
+        - sudo apt-get install -y g++-multilib
       script: env | sort && cd agent && cmake CMakeLists.txt && make
       cache: false
       after_success: true
