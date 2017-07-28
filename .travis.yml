@@ -28,6 +28,6 @@ matrix:
       before_install:
         - sudo apt-get -qq update
         - sudo apt-get install -y g++-multilib
-      script: env | sort && cd agent && cmake CMakeLists.txt && make
+      script: env | sort && cd agent && cmake CMakeLists.txt && make && file libsentry_agent.so
       cache: false
       after_success: true
