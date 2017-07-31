@@ -493,7 +493,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             return Collections.emptyList();
         }
 
-        ArrayList<String> inAppPackages = new ArrayList<>();
+        List<String> inAppPackages = new ArrayList<>();
         for (String inAppPackage : inAppFramesOption.split(",")) {
             if (!inAppPackage.trim().equals("")) {
                 inAppPackages.add(inAppPackage);
