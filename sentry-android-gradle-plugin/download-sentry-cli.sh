@@ -1,7 +1,7 @@
 #!/bin/bash
 cd $(dirname "$0")
 REPO=getsentry/sentry-cli
-VERSION=1.16.0
+VERSION=1.18.0
 PLATFORMS="Darwin-x86_64 Linux-i686 Linux-x86_64 Windows-i686"
 
 rm -f src/main/resources/bin/sentry-cli-*

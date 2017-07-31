@@ -28,22 +28,22 @@ Using Maven:
     <dependency>
         <groupId>io.sentry</groupId>
         <artifactId>sentry-log4j</artifactId>
-        <version>1.3.0</version>
+        <version>1.3.1</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry-log4j:1.3.0'
+    compile 'io.sentry:sentry-log4j:1.3.1'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "io.sentry" % "sentry-log4j" % "1.3.0"
+    libraryDependencies += "io.sentry" % "sentry-log4j" % "1.3.1"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-log4j%7C1.3.0%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-log4j%7C1.3.1%7Cjar>`_.
 
 Usage
 -----

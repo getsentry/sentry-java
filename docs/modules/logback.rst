@@ -28,22 +28,22 @@ Using Maven:
     <dependency>
         <groupId>io.sentry</groupId>
         <artifactId>sentry-logback</artifactId>
-        <version>1.3.0</version>
+        <version>1.3.1</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry-logback:1.3.0'
+    compile 'io.sentry:sentry-logback:1.3.1'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "io.sentry" % "sentry-logback" % "1.3.0"
+    libraryDependencies += "io.sentry" % "sentry-logback" % "1.3.1"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-logback%7C1.3.0%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-logback%7C1.3.1%7Cjar>`_.
 
 Usage
 -----
@@ -141,14 +141,14 @@ In Practice
 
         void logWithTag() {
             // This sends an event with a tag named 'logback-Marker' to Sentry
-            logger.info(MARKER, "This is a test");
+            logger.error(MARKER, "This is a test");
         }
 
         void logWithExtras() {
             // MDC extras
             MDC.put("extra_key", "extra_value");
             // This sends an event with extra data to Sentry
-            logger.info("This is a test");
+            logger.error("This is a test");
         }
 
         void logException() {
