@@ -1,14 +1,47 @@
-language: java
-script: mvn verify
-jdk:
-  - oraclejdk7
-  - oraclejdk8
-cache:
-  directories:
-    - $HOME/.m2
 env:
   global:
     - secure: "Xs3g5ZOMymPp0EvxF0T0tk5xMaV3htMPii5uDS17z9wDWYg7hj78mrP2cFea0ZjIqIjENG7YuxIjw34yb7507pvIxv8v+QvSkwlzVz4XJNzh2w1gbB2C+oVvbmbFd0A2Pmpf3jvkey6Tk5jhW7lxNVAZ7QzONuAf66iWdi6bwSg="
     - secure: "PBz5Jjoaf33a+Iqv5eJsFHbCYP1ZdeiQvrQBH7hJK5/Kdrbn4GCrDx+RkA58ZC8i8ZHfsW2MkMuD7RphcrgHuB3UwcvHwUgrEZaV1/ypIOe5O8CQ4Z0gkHCj2Ei/dsL3fpDU8WuPJSLa13tsMoQTdGaOhluCuSXpuArx3B3gX28="
+
 after_success:
-  - "{ [[ $TRAVIS_BRANCH == 'master' ]] || [[ $TRAVIS_BRANCH == raven-*.x ]]; } && { python .travis/addServer.py; mvn clean deploy --settings $HOME/.m2/mySettings.xml; };"
+  - "[[ $TRAVIS_BRANCH == 'master' ]] && { python .travis/addServer.py; mvn clean deploy --settings $HOME/.m2/mySettings.xml; };"
+
+matrix:
+  include:
+    - language: java
+      dist: precise
+      jdk: oraclejdk7
+      script: env | sort && mvn verify
+      cache:
+        directories:
+          - $HOME/.m2
+    - language: java
+      dist: precise
+      jdk: oraclejdk8
+      script: env | sort && mvn verify
+      cache:
+        directories:
+          - $HOME/.m2
+    - language: cpp
+      dist: trusty
+      jdk: oraclejdk7
+      env: TARGET=x86_64
+      before_install: .ci/agent-install.sh
+      script: .ci/agent-build.sh
+      cache: false
+      after_success: true
+    - language: cpp
+      dist: trusty
+      jdk: oraclejdk7
+      env: TARGET=i686
+      before_install: .ci/agent-install.sh
+      script: .ci/agent-build.sh
+      cache: false
+      after_success: true
+
+deploy:
+  provider: script
+  script: .ci/agent-deploy.sh
+  skip_cleanup: true
+  on:
+    tags: true

@@ -322,15 +322,23 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     }
 
     /**
-     * Get the device's current kernel version, as a string (from /proc/version).
+     * Get the device's current kernel version, as a string. Attempts to read
+     * /proc/version, and falls back to the 'os.version' System Property.
      *
-     * @return the device's current kernel version, as a string (from /proc/version)
+     * @return the device's current kernel version, as a string
      */
     private static String getKernelVersion() {
         String errorMsg = "Exception while attempting to read kernel information";
+        String defaultVersion = System.getProperty("os.version");
+
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("/proc/version"));
+            File file = new File("/proc/version");
+            if (!file.canRead()) {
+                return defaultVersion;
+            }
+
+            br = new BufferedReader(new FileReader(file));
             return br.readLine();
         } catch (Exception e) {
             Log.e(TAG, errorMsg, e);
@@ -344,7 +352,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             }
         }
 
-        return null;
+        return defaultVersion;
     }
 
     /**

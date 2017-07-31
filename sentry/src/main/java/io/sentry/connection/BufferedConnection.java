@@ -117,6 +117,7 @@ public class BufferedConnection implements Connection {
             shutDownHook.enabled = false;
         }
 
+        logger.debug("Gracefully shutting down Sentry buffer threads.");
         closed = true;
         executorService.shutdown();
         try {
@@ -127,19 +128,19 @@ public class BufferedConnection implements Connection {
                     if (executorService.awaitTermination(waitBetweenLoggingMs, TimeUnit.MILLISECONDS)) {
                         break;
                     }
-                    logger.info("Still waiting on buffer flusher executor to terminate.");
+                    logger.debug("Still waiting on buffer flusher executor to terminate.");
                 }
             } else if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
                 logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
-                logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+                logger.warn("{} tasks failed to execute before the shutdown.", tasks.size());
             }
-            logger.info("Shutdown finished.");
+            logger.debug("Shutdown finished.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("Graceful shutdown interrupted, forcing the shutdown.");
+            logger.warn("Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
-            logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+            logger.warn("{} tasks failed to execute before the shutdown.", tasks.size());
         } finally {
             actualConnection.close();
         }
@@ -260,7 +261,6 @@ public class BufferedConnection implements Connection {
             SentryEnvironment.startManagingThread();
             try {
                 // The current thread is managed by sentry
-                logger.info("Automatic shutdown of the buffered connection");
                 BufferedConnection.this.close();
             } catch (Exception e) {
                 logger.error("An exception occurred while closing the connection.", e);

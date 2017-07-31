@@ -123,7 +123,7 @@ public class AsyncConnection implements Connection {
      */
     @SuppressWarnings("checkstyle:magicnumber")
     private void doClose() throws IOException {
-        logger.info("Gracefully shutdown sentry threads.");
+        logger.debug("Gracefully shutting down Sentry async threads.");
         closed = true;
         executorService.shutdown();
         try {
@@ -134,19 +134,19 @@ public class AsyncConnection implements Connection {
                     if (executorService.awaitTermination(waitBetweenLoggingMs, TimeUnit.MILLISECONDS)) {
                         break;
                     }
-                    logger.info("Still waiting on async executor to terminate.");
+                    logger.debug("Still waiting on async executor to terminate.");
                 }
             } else if (!executorService.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)) {
                 logger.warn("Graceful shutdown took too much time, forcing the shutdown.");
                 List<Runnable> tasks = executorService.shutdownNow();
-                logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+                logger.warn("{} tasks failed to execute before shutdown.", tasks.size());
             }
-            logger.info("Shutdown finished.");
+            logger.debug("Shutdown finished.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("Graceful shutdown interrupted, forcing the shutdown.");
+            logger.warn("Graceful shutdown interrupted, forcing the shutdown.");
             List<Runnable> tasks = executorService.shutdownNow();
-            logger.info("{} tasks failed to execute before the shutdown.", tasks.size());
+            logger.warn("{} tasks failed to execute before shutdown.", tasks.size());
         } finally {
             actualConnection.close();
         }
@@ -195,7 +195,6 @@ public class AsyncConnection implements Connection {
             SentryEnvironment.startManagingThread();
             try {
                 // The current thread is managed by sentry
-                logger.info("Automatic shutdown of the async connection");
                 AsyncConnection.this.doClose();
             } catch (Exception e) {
                 logger.error("An exception occurred while closing the connection.", e);
