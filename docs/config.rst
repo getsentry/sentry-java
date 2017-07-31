@@ -265,11 +265,22 @@ StackTrace is printed, the result looks like this:
 Some frames are replaced by the ``... N more`` line as they are the same frames
 as in the enclosing exception.
 
-To enable a similar behaviour in Sentry use the stacktrace.hidecommon`` option.
+Similar behaviour is enabled by default in Sentry. To disable it, use the
+``stacktrace.hidecommon`` option.
 
 ::
 
-    stacktrace.hidecommon
+    stacktrace.hidecommon=false
+
+Uncaught Exception Handler
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, an ``UncaughtExceptionHandler`` is configured that will send exceptions
+to Sentry. To disable it, use the ``uncaught.handler.enabled`` option.
+
+::
+
+    uncaught.handler.enabled=false
 
 Event Sampling
 ~~~~~~~~~~~~~~
@@ -527,16 +538,17 @@ Implementation
     public class MySentryClientFactory extends DefaultSentryClientFactory {
         @Override
         public SentryClient createSentryClient(Dsn dsn) {
-            SentryClient sentry = new SentryClient(createConnection(dsn));
+            SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
 
             /*
             Create and use the ForwardedAddressResolver, which will use the
             X-FORWARDED-FOR header for the remote address if it exists.
              */
             ForwardedAddressResolver forwardedAddressResolver = new ForwardedAddressResolver();
-            sentry.addBuilderHelper(new HttpEventBuilderHelper(forwardedAddressResolver));
+            sentryClient.addBuilderHelper(new HttpEventBuilderHelper(forwardedAddressResolver));
 
-            return sentry;
+            sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
+            return configureSentryClient(sentryClient, dsn);
         }
     }
 

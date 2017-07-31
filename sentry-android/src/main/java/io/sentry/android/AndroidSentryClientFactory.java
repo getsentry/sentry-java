@@ -2,6 +2,7 @@ package io.sentry.android;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import io.sentry.*;
@@ -12,8 +13,12 @@ import io.sentry.config.Lookup;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
+import io.sentry.util.Util;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * SentryClientFactory that handles Android-specific construction, like taking advantage
@@ -69,8 +74,30 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
-        SentryUncaughtExceptionHandler.setup();
+
         return sentryClient;
+    }
+
+    @Override
+    protected Collection<String> getInAppFrames(Dsn dsn) {
+        Collection<String> inAppFrames = super.getInAppFrames(dsn);
+
+        if (inAppFrames.isEmpty()) {
+            PackageInfo info = null;
+            try {
+                info = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.e(TAG, "Error getting package information.", e);
+            }
+
+            if (info != null && !Util.isNullOrEmpty(info.packageName)) {
+                List<String> newPackages = new ArrayList<>(1);
+                newPackages.add(info.packageName);
+                return newPackages;
+            }
+        }
+
+        return inAppFrames;
     }
 
     @Override

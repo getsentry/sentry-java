@@ -214,6 +214,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * Option to set extra data to be sent to Sentry.
      */
     public static final String EXTRA_OPTION = "extra";
+    /**
+     * Option for whether to enable an uncaught exception handler, defaults to 'true'.
+     */
+    public static final String UNCAUGHT_HANDLER_ENABLED_OPTION = "uncaught.handler.enabled";
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentryClientFactory.class);
     private static final String FALSE = Boolean.FALSE.toString();
@@ -291,6 +295,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             }
         }
 
+        if (getUncaughtHandlerEnabled(dsn)) {
+            sentryClient.setupUncaughtExceptionHandler();
+        }
+
         return sentryClient;
     }
 
@@ -305,13 +313,13 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         Connection connection;
 
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
-            logger.info("Using an {} connection to Sentry.", protocol.toUpperCase());
+            logger.debug("Using an {} connection to Sentry.", protocol.toUpperCase());
             connection = createHttpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("out")) {
-            logger.info("Using StdOut to send events.");
+            logger.debug("Using StdOut to send events.");
             connection = createStdOutConnection(dsn);
         } else if (protocol.equalsIgnoreCase("noop")) {
-            logger.info("Using noop to send events.");
+            logger.debug("Using noop to send events.");
             connection = new NoopConnection();
         } else {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
@@ -493,7 +501,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             return Collections.emptyList();
         }
 
-        ArrayList<String> inAppPackages = new ArrayList<>();
+        List<String> inAppPackages = new ArrayList<>();
         for (String inAppPackage : inAppFramesOption.split(",")) {
             if (!inAppPackage.trim().equals("")) {
                 inAppPackages.add(inAppPackage);
@@ -848,6 +856,16 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected int getBufferSize(Dsn dsn) {
         return Util.parseInteger(Lookup.lookup(BUFFER_SIZE_OPTION, dsn), BUFFER_SIZE_DEFAULT);
+    }
+
+    /**
+     * Whether or not to enable a {@link SentryUncaughtExceptionHandler}.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Whether or not to enable a {@link SentryUncaughtExceptionHandler}.
+     */
+    protected boolean getUncaughtHandlerEnabled(Dsn dsn) {
+        return !FALSE.equalsIgnoreCase(Lookup.lookup(UNCAUGHT_HANDLER_ENABLED_OPTION, dsn));
     }
 
     /**

@@ -6,7 +6,7 @@ Features
 
 The Sentry Android SDK is built on top of the main Java SDK and supports all of the same
 features, `configuration options <https://docs.sentry.io/clients/java/config/>`_, and more.
-Adding version ``1.3.0`` of the Android SDK to a sample application that doesn't even use
+Adding version ``1.3.1`` of the Android SDK to a sample application that doesn't even use
 Proguard only increased the release ``.apk`` size by approximately 200KB.
 
 Events will be `buffered to disk <https://docs.sentry.io/clients/java/config/#buffering-events-to-disk>`_
@@ -29,9 +29,9 @@ Using Gradle (Android Studio) in your ``app/build.gradle`` add:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry-android:1.3.0'
+    compile 'io.sentry:sentry-android:1.3.1'
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-android%7C1.3.0%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-android%7C1.3.1%7Cjar>`_.
 
 Initialization
 --------------
@@ -146,7 +146,7 @@ And declare a dependency in your toplevel ``build.gradle``:
 
     buildscript {
         dependencies {
-            classpath 'io.sentry:sentry-android-gradle-plugin:1.3.0'
+            classpath 'io.sentry:sentry-android-gradle-plugin:1.3.1'
         }
     }
 

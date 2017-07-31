@@ -1,7 +1,15 @@
+Version 1.3.2
+-------------
+
+- Automatically set ``stacktrace.app.packages`` on Android if it is not provided by the user.
+- Enable UncaughtExceptionHandler by default, add ``uncaught.handler.enabled`` option.
+
 Version 1.3.1
 -------------
 
 - Add Spring exception reporter and Spring Boot servlet initializer.
+- Reduce startup and shutdown logging noise by moving a lot of INFO level logs to DEBUG.
+- Android: fallback to `os.version` property for kernel version is `/proc/version` is unreadable.
 
 Version 1.3.0
 -------------
