@@ -53,16 +53,20 @@ In order to record all exceptions thrown by your controllers, you can register
 registered, all exceptions will be sent to Sentry and then passed on to the default
 exception handlers.
 
-**Please note** that you should not configure the ``SentryExceptionResolver``
+**Note** that you should **not** configure the ``SentryExceptionResolver``
 alongside a logging integration (such as ``sentry-logback``), or you will most
 likely double-report exceptions. You should use one or the other depending on
 your needs. A logging integration is more general and will capture errors (and
 possibly warnings, depending on your configuration) that occur inside *or outside*
 of a Spring controller.
 
+Configuration via ``web.xml``:
+
 .. sourcecode:: xml
 
     <bean class="io.sentry.spring.SentryExceptionResolver"/>
+
+Or via a configuration class:
 
 .. sourcecode:: java
 
@@ -83,9 +87,13 @@ to collect information about the HTTP request. In order to add HTTP request data
 your Sentry events in Spring Boot, you need to register the
 ``io.sentry.spring.SentryServletContextInitializer`` class as a Bean in your application.
 
+Configuration via ``web.xml``:
+
 .. sourcecode:: xml
 
     <bean class="io.sentry.spring.SentryServletContextInitializer"/>
+
+Or via a configuration class:
 
 .. sourcecode:: java
 
@@ -94,4 +102,4 @@ your Sentry events in Spring Boot, you need to register the
         return new io.sentry.spring.SentryServletContextInitializer();
     }
 
-After that, your events should contain information such as HTTP request headers.
+After that, your Sentry events should contain information such as HTTP request headers.
