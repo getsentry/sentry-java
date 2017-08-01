@@ -81,7 +81,7 @@ Next, **you'll need to configure your DSN** (client key) and optionally other va
 Spring Boot HTTP Data
 ~~~~~~~~~~~~~~~~~~~~~
 
-Spring Boot doesn't automatically load ``javax.servlet.ServletContainerInitializer``s,
+Spring Boot doesn't automatically load any ``javax.servlet.ServletContainerInitializer``,
 which means the Sentry SDK doesn't have an opportunity to hook into the request cycle
 to collect information about the HTTP request. In order to add HTTP request data to
 your Sentry events in Spring Boot, you need to register the
