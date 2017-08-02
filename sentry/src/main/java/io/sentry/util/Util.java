@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -175,6 +176,10 @@ public final class Util {
 
         if (value == null) {
             generator.writeNull();
+        } else if (value instanceof Path) {
+            // Path is weird because it implements Iterable, and then the iterator returns
+            // more Paths, which are iterable... which would cause a stack overflow below.
+            generator.writeString(value.toString());
         } else if (value instanceof Iterable) {
             // TODO: elide long iterables
             generator.writeStartArray();
