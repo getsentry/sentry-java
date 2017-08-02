@@ -1,5 +1,10 @@
 package io.sentry.util;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,6 +16,7 @@ import java.util.Set;
  * Sentry static Utility class.
  */
 public final class Util {
+    private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
     // Hide the constructor.
     private Util() {
@@ -152,6 +158,49 @@ public final class Util {
             // CHECKSTYLE.ON: MagicNumber
         } else {
             return string;
+        }
+    }
+
+    /**
+     * Safely serialize any object to JSON.
+     *
+     * @param generator JsonGenerator to write object out to.
+     * @param value Value to write out.
+     * @throws IOException On Jackson error.
+     */
+    public static void safelyWriteObject(JsonGenerator generator, Object value) throws IOException {
+        if (value != null && value.getClass().isArray()) {
+            value = Arrays.asList((Object[]) value);
+        }
+
+        if (value instanceof Iterable) {
+            generator.writeStartArray();
+            for (Object subValue : (Iterable<?>) value) {
+                safelyWriteObject(generator, subValue);
+            }
+            generator.writeEndArray();
+        } else if (value instanceof Map) {
+            generator.writeStartObject();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+                if (entry.getKey() == null) {
+                    generator.writeFieldName("null");
+                } else {
+                    generator.writeFieldName(entry.getKey().toString());
+                }
+                safelyWriteObject(generator, entry.getValue());
+            }
+            generator.writeEndObject();
+        } else if (value == null) {
+            generator.writeNull();
+        } else {
+            try {
+                /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
+                generator.writeObject(value);
+            } catch (IllegalStateException e) {
+                logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
+                    value, value.getClass());
+                generator.writeString(value.toString());
+            }
         }
     }
 
