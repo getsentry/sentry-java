@@ -63,7 +63,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
             for (Map.Entry<String, Object> varEntry : stackTraceElement.getLocals().entrySet()) {
                 generator.writeFieldName(varEntry.getKey());
-                Util.safelyWriteObject(generator, varEntry.getValue());
+                Util.writeObjectToJson(generator, varEntry.getValue());
             }
             generator.writeEndObject();
         }

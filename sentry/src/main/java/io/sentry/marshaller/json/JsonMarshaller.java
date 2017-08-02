@@ -230,7 +230,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
             generator.writeFieldName(extra.getKey());
-            Util.safelyWriteObject(generator, extra.getValue());
+            Util.writeObjectToJson(generator, extra.getValue());
         }
         generator.writeEndObject();
     }

@@ -163,13 +163,13 @@ public final class Util {
     }
 
     /**
-     * Safely serialize any object to JSON.
+     * Serialize almost any object to JSON.
      *
      * @param generator JsonGenerator to write object out to.
      * @param value Value to write out.
-     * @throws IOException On Jackson error.
+     * @throws IOException On Jackson error (unserializable object).
      */
-    public static void safelyWriteObject(JsonGenerator generator, Object value) throws IOException {
+    public static void writeObjectToJson(JsonGenerator generator, Object value) throws IOException {
         if (value != null && value.getClass().isArray()) {
             value = Arrays.asList((Object[]) value);
         }
@@ -184,7 +184,7 @@ public final class Util {
             // TODO: elide long iterables
             generator.writeStartArray();
             for (Object subValue : (Iterable<?>) value) {
-                safelyWriteObject(generator, subValue);
+                writeObjectToJson(generator, subValue);
             }
             generator.writeEndArray();
         } else if (value instanceof Map) {
@@ -196,7 +196,7 @@ public final class Util {
                 } else {
                     generator.writeFieldName(entry.getKey().toString());
                 }
-                safelyWriteObject(generator, entry.getValue());
+                writeObjectToJson(generator, entry.getValue());
             }
             generator.writeEndObject();
         } else {
