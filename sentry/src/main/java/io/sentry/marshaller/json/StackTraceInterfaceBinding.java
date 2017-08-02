@@ -3,6 +3,7 @@ package io.sentry.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import io.sentry.event.interfaces.StackTraceInterface;
+import io.sentry.util.Util;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -59,14 +60,10 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
         if (stackTraceElement.getLocals() != null && !stackTraceElement.getLocals().isEmpty()) {
             generator.writeObjectFieldStart(VARIABLES_PARAMETER);
+
             for (Map.Entry<String, Object> varEntry : stackTraceElement.getLocals().entrySet()) {
-                String name = varEntry.getKey();
-                Object value = varEntry.getValue();
-                if (value == null) {
-                    generator.writeNullField(name);
-                } else {
-                    generator.writeObjectField(name, value);
-                }
+                generator.writeFieldName(varEntry.getKey());
+                Util.safelyWriteObject(generator, varEntry.getValue());
             }
             generator.writeEndObject();
         }

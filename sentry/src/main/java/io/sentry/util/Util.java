@@ -173,13 +173,17 @@ public final class Util {
             value = Arrays.asList((Object[]) value);
         }
 
-        if (value instanceof Iterable) {
+        if (value == null) {
+            generator.writeNull();
+        } else if (value instanceof Iterable) {
+            // TODO: elide long iterables
             generator.writeStartArray();
             for (Object subValue : (Iterable<?>) value) {
                 safelyWriteObject(generator, subValue);
             }
             generator.writeEndArray();
         } else if (value instanceof Map) {
+            // TODO: elide large maps
             generator.writeStartObject();
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
                 if (entry.getKey() == null) {
@@ -190,8 +194,6 @@ public final class Util {
                 safelyWriteObject(generator, entry.getValue());
             }
             generator.writeEndObject();
-        } else if (value == null) {
-            generator.writeNull();
         } else {
             try {
                 /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
