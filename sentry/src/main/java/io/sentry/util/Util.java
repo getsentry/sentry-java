@@ -171,8 +171,17 @@ public final class Util {
      */
     public static void writeObjectToJson(JsonGenerator generator, Object value) throws IOException {
         if (value != null && value.getClass().isArray()) {
+            // TODO: handle exception (byte[])
             value = Arrays.asList((Object[]) value);
         }
+
+        // TODO: handle byte and byte[]
+        // from python:
+        // MAX_LENGTH_LIST = 50
+        // MAX_LENGTH_STRING = 400
+        // default frame allowance of 25
+        // default 4k bytes of vars per frame, after that they are silently dropped
+        // if all else fails, toString()
 
         if (value == null) {
             generator.writeNull();
