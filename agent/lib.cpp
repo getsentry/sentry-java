@@ -34,10 +34,6 @@ static jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint 
     jclass reflect_class;
     jmethodID value_of;
 
-    jclass obj_class;
-    jmethodID to_string_method;
-    jobject stringified_result = nullptr;
-
     switch (table[index].signature[0]) {
         case '[': // Array
         case 'L': // Object
@@ -45,10 +41,6 @@ static jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint 
             if (jvmti_error != JVMTI_ERROR_NONE || result == nullptr) {
                 return nullptr;
             }
-
-            obj_class = env->GetObjectClass(result);
-            to_string_method = env->GetMethodID(obj_class, "toString", "()Ljava/lang/String;");
-            stringified_result = (jstring) env->CallObjectMethod(result, to_string_method);
 
             break;
         case 'J': // long
@@ -74,10 +66,6 @@ static jobject getLocalValue(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint 
 
     if (jvmti_error != JVMTI_ERROR_NONE) {
         return nullptr;
-    }
-
-    if (stringified_result != nullptr) {
-        return stringified_result;
     }
 
     switch (table[index].signature[0]) {

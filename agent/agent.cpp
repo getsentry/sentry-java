@@ -1,5 +1,4 @@
 // TODO: cache all FindClass/Find* calls globally
-// TODO: trim object string length
 // TODO: better error messages with (void) jvmti->GetErrorName(errnum, &errnum_str);
 // TODO: do we need any locking? jrawMonitorID lock; jvmti->RawMonitorEnter(lock); jvmti->RawMonitorExit(lock);
 // TODO: use *options instead of env for log level
