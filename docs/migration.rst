@@ -37,44 +37,6 @@ New Packages
     For example, the ``logback`` appender is now referenced in configuration by using
     ``io.sentry.logback.SentryAppender``.
 
-Raven Class Changes
--------------------
-
-.. describe:: Before (raven-java)
-
-    The ``Raven`` class was both the core client class and also had the ability to
-    statically store a client and send events without keeping track of the instance
-    yourself.
-
-.. describe:: Now (sentry-java)
-
-    The core client class is now called ``SentryClient`` and there is now separate
-    ``Sentry`` class that you may use to handle initializing Sentry statically and
-    sending events.
-
-    For example:
-
-    .. sourcecode:: java
-
-        // The static SentryClient can be lazily initialized from anywhere in your application.
-        // Your DSN needs to be provided somehow, check the configuration documentation!
-        Sentry.capture("Hello, world!)
-
-Classes Renamed
----------------
-
-.. describe:: Before (raven-java)
-
-    Many classes contained the word ``Raven``. For example ``RavenServletRequestListener``.
-
-.. describe:: Now (sentry-java)
-
-    All instances of ``Raven`` have been renamed ``Sentry``. For example ``SentryServletRequestListener``.
-
-    In addition, as noted above, the underlying client class ``Raven`` became ``SentryClient``, and
-    so ``RavenFactory`` also became ``SentryClientFactory`` and ``DefaultRavenFactory`` became
-    ``DefaultSentryClientFactory``.
-
 Logging Integration Configuration
 ---------------------------------
 
@@ -97,11 +59,10 @@ Logging Integration Configuration
     While setting up the ``SentryAppender`` itself is still required for logging integrations,
     **configuration** of Sentry is no longer done in the same place.
 
-    This is because appenders are initialized only when the first message (above their threshold)
+    This is because appenders are initialized only when the first message (at or above the threshold)
     is sent to them, which means Sentry has no idea how to initialize and configure itself until
-    the first event is sent. This may seem OK, except it prevented users from being able to do
-    things like record breadcrumbs, set the current user, programmatically configure the Sentry
-    client, and more.
+    the first event is sent. This may seem OK, but it prevented users from being able to do
+    things before an error was sent, such as: record breadcrumbs, set the current user, and more.
 
     For this reason, all configuration is now done "outside" of the logging integration itself.
     You may configure Sentry using a properties file (default: ``sentry.properties``) if you
@@ -130,6 +91,29 @@ Logging Integration Configuration
         Sentry.getContext().recordBreadcrumb(
             new BreadcrumbBuilder().setMessage("Made a call to the database.").build()
         );
+
+Raven Class Changes
+-------------------
+
+.. describe:: Before (raven-java)
+
+    The ``Raven`` class was both the core client class and also had the ability to
+    statically store a client and send events without keeping track of the instance
+    yourself.
+
+.. describe:: Now (sentry-java)
+
+    The core client class is now called ``SentryClient`` and there is now separate
+    ``Sentry`` class that you may use to handle initializing Sentry statically and
+    sending events.
+
+    For example:
+
+    .. sourcecode:: java
+
+        // The static SentryClient can be lazily initialized from anywhere in your application.
+        // Your DSN needs to be provided somehow, check the configuration documentation!
+        Sentry.capture("Hello, world!)
 
 Configuration via DSN
 ---------------------
@@ -167,6 +151,21 @@ Configuration via Environment Variables
 
     All options can be configured via Environment Variables, for example: ``SENTRY_ASYNC=false``
     is respected.
+
+Classes Renamed
+---------------
+
+.. describe:: Before (raven-java)
+
+    Many classes contained the word ``Raven``. For example ``RavenServletRequestListener``.
+
+.. describe:: Now (sentry-java)
+
+    All instances of ``Raven`` have been renamed ``Sentry``. For example ``SentryServletRequestListener``.
+
+    In addition, as noted above, the underlying client class ``Raven`` became ``SentryClient``, and
+    so ``RavenFactory`` also became ``SentryClientFactory`` and ``DefaultRavenFactory`` became
+    ``DefaultSentryClientFactory``.
 
 Custom Factories
 ----------------
