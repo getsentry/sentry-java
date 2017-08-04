@@ -54,7 +54,7 @@ public class JsonObjectMarshaller {
         } else if (value instanceof Path) {
             // Path is weird because it implements Iterable, and then the iterator returns
             // more Paths, which are iterable... which would cause a stack overflow below.
-            generator.writeString(value.toString());
+            generator.writeString(Util.trimString(value.toString(), MAX_LENGTH_STRING));
         } else if (value instanceof Iterable) {
             // TODO: elide long iterables
             generator.writeStartArray();
@@ -74,6 +74,8 @@ public class JsonObjectMarshaller {
                 writeObject(generator, entry.getValue());
             }
             generator.writeEndObject();
+        } else if (value instanceof String) {
+            generator.writeString(Util.trimString((String) value, MAX_LENGTH_STRING));
         } else {
             try {
                 /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
@@ -81,7 +83,7 @@ public class JsonObjectMarshaller {
             } catch (IllegalStateException e) {
                 logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
                     value, value.getClass());
-                generator.writeString(value.toString());
+                generator.writeString(Util.trimString(value.toString(), MAX_LENGTH_STRING));
             }
         }
     }
