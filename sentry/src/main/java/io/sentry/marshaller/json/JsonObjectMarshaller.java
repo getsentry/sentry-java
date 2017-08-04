@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -41,8 +40,6 @@ public class JsonObjectMarshaller {
      * @throws IOException On Jackson error (unserializable object).
      */
     public void writeObject(JsonGenerator generator, Object value) throws IOException {
-        boolean isPrimitiveArray = getIsPrimitiveArray(value);
-
         // TODO: handle max recursion
         // TODO: handle cycles
         // default frame allowance of 25
@@ -50,13 +47,10 @@ public class JsonObjectMarshaller {
 
         if (value == null) {
             generator.writeNull();
-        } else if (isPrimitiveArray) {
-            generator.writeStartArray();
-            writePrimitiveArray(generator, value);
-            generator.writeEndArray();
         } else if (value.getClass().isArray()) {
-            // Object arrays
-
+            generator.writeStartArray();
+            writeArray(generator, value);
+            generator.writeEndArray();
         } else if (value instanceof Path) {
             // Path is weird because it implements Iterable, and then the iterator returns
             // more Paths, which are iterable... which would cause a stack overflow below.
@@ -92,33 +86,7 @@ public class JsonObjectMarshaller {
         }
     }
 
-    private boolean getIsPrimitiveArray(Object value) {
-        if (value == null) {
-            return false;
-        } else if (!value.getClass().isArray()) {
-            return false;
-        } else if (value instanceof byte[]) {
-            return true;
-        } else if (value instanceof short[]) {
-            return true;
-        } else if (value instanceof int[]) {
-            return true;
-        } else if (value instanceof long[]) {
-            return true;
-        } else if (value instanceof float[]) {
-            return true;
-        } else if (value instanceof double[]) {
-            return true;
-        } else if (value instanceof char[]) {
-            return true;
-        } else if (value instanceof boolean[]) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void writePrimitiveArray(JsonGenerator generator, Object value) throws IOException {
+    private void writeArray(JsonGenerator generator, Object value) throws IOException {
         if (value instanceof byte[]) {
             byte[] castArray = (byte[]) value;
             for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
@@ -180,6 +148,15 @@ public class JsonObjectMarshaller {
             boolean[] castArray = (boolean[]) value;
             for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
                 generator.writeBoolean(castArray[i]);
+            }
+            if (castArray.length > MAX_LENGTH_LIST) {
+                generator.writeString(ELIDED);
+            }
+        } else {
+            // must be an Object[]
+            Object[] castArray = (Object[]) value;
+            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+                writeObject(generator, castArray[i]);
             }
             if (castArray.length > MAX_LENGTH_LIST) {
                 generator.writeString(ELIDED);

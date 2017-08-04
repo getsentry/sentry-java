@@ -85,13 +85,40 @@ public class JsonObjectMarshallerTest extends BaseTest {
     public void testByteArray() throws Exception {
         final JsonComparisonUtil.JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
 
-        byte[] bytes = {1, 2};
+        byte[] bytes = {3, 4};
         write(jsonOutputStreamParser.outputStream, bytes);
 
         assertThat(jsonOutputStreamParser.value(),
-            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testByte.json")));
+            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testByteArray.json")));
 
     }
+
+    @Test
+    public void testObjectArray() throws Exception {
+        final JsonComparisonUtil.JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+
+        Object o1 = new Object() {
+            @Override
+            public String toString() {
+                return "obj1";
+            }
+        };
+
+        Object o2 = new Object() {
+            @Override
+            public String toString() {
+                return "obj2";
+            }
+        };
+
+        Object[] objs = {o1, o2};
+        write(jsonOutputStreamParser.outputStream, objs);
+
+        assertThat(jsonOutputStreamParser.value(),
+            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testObjectArray.json")));
+
+    }
+
 
     private void write(OutputStream destination, Object object) throws IOException {
         final JsonFactory jsonFactory = new JsonFactory();
