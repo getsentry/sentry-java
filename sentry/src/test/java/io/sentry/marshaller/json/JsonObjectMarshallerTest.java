@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -87,18 +84,18 @@ public class JsonObjectMarshallerTest extends BaseTest {
     public void testMap() throws Exception {
         final JsonComparisonUtil.JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
 
-        Map<String, Map<String, Integer>> mapMap = new HashMap<>();
-        Map<String, Integer> map1 = new HashMap<>();
+        Map<String, Map<String, Integer>> mapMap = new LinkedHashMap<>();
+        Map<String, Integer> map1 = new LinkedHashMap<>();
         map1.put("one very long key that will be elided", 1);
         map1.put("two very long key that will be elided", 2);
         map1.put("three very long key that will be elided", 3);
         mapMap.put("map1", map1);
-        Map<String, Integer> map2 = new HashMap<>();
+        Map<String, Integer> map2 = new LinkedHashMap<>();
         map2.put("four very long key that will be elided", 4);
         map2.put("five very long key that will be elided", 5);
         map2.put("six very long key that will be elided", 6);
         mapMap.put("map2", map2);
-        Map<String, Integer> map3 = new HashMap<>();
+        Map<String, Integer> map3 = new LinkedHashMap<>();
         map3.put("seven very long key that will be elided", 7);
         map3.put("eight very long key that will be elided", 8);
         map3.put("nine very long key that will be elided", 9);
