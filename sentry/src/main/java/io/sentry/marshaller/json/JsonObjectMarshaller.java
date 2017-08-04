@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Marshaller that makes a best attempt at serializing any Java POJO to the "best"
+ * Marshaller that makes an attempt at serializing any Java POJO to the "best"
  * JSON representation. For example, iterables should become JSON arrays, Maps should
  * become JSON objects, etc. As a fallback we use {@link Object#toString()}.
  */
