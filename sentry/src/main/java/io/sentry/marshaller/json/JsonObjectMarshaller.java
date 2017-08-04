@@ -18,8 +18,8 @@ import java.util.Map;
 public class JsonObjectMarshaller {
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
-    private final int MAX_LENGTH_LIST = 50;
-    private final int MAX_LENGTH_STRING = 400;
+    private static final int MAX_LENGTH_LIST = 50;
+    private static final int MAX_LENGTH_STRING = 400;
 
     /**
      * Construct a JsonObjectMarshaller with the default configuration.

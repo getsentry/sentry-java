@@ -127,39 +127,21 @@ public class JsonMarshaller implements Marshaller {
      * Maximum length for a message.
      */
     private final int maxMessageLength;
-    /**
-     * JSON Object marshaller used for serializing Object fields (such as extras).
-     */
-    private JsonObjectMarshaller jsonObjectMarshaller;
 
     /**
-     * Create instance of JsonMarshaller with default message length and the default
-     * JSON Object marshaller.
+     * Create instance of JsonMarshaller with default message length.
      */
     public JsonMarshaller() {
         this(DEFAULT_MAX_MESSAGE_LENGTH);
     }
 
     /**
-     * Create instance of JsonMarshaller with provided the maximum length of the messages
-     * and the default JSON Object marshaller.
+     * Create instance of JsonMarshaller with provided maximum length of the messages.
      *
      * @param maxMessageLength the maximum message length
      */
     public JsonMarshaller(int maxMessageLength) {
         this.maxMessageLength = maxMessageLength;
-        this.jsonObjectMarshaller = new JsonObjectMarshaller();
-    }
-
-    /**
-     * Create instance of JsonMarshaller with provided the maximum length of the messages.
-     *
-     * @param maxMessageLength the maximum message length
-     * @param jsonObjectMarshaller object marshaller
-     */
-    public JsonMarshaller(int maxMessageLength, JsonObjectMarshaller jsonObjectMarshaller) {
-        this.maxMessageLength = maxMessageLength;
-        this.jsonObjectMarshaller = jsonObjectMarshaller;
     }
 
     @Override
@@ -245,6 +227,11 @@ public class JsonMarshaller implements Marshaller {
     }
 
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
+        if (extras.isEmpty()) {
+            return;
+        }
+
+        JsonObjectMarshaller jsonObjectMarshaller = new JsonObjectMarshaller();
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
             generator.writeFieldName(extra.getKey());
@@ -278,6 +265,10 @@ public class JsonMarshaller implements Marshaller {
     }
 
     private void writeTags(JsonGenerator generator, Map<String, String> tags) throws IOException {
+        if (tags.isEmpty()) {
+            return;
+        }
+
         generator.writeObjectFieldStart(TAGS);
         for (Map.Entry<String, String> tag : tags.entrySet()) {
             generator.writeStringField(tag.getKey(), tag.getValue());

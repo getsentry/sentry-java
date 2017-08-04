@@ -28,23 +28,6 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String PLATFORM_PARAMTER = "platform";
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
-    private final JsonObjectMarshaller jsonObjectMarshaller;
-
-    /**
-     * Construct a StackTraceInterfaceBinding with the default JSON Object marshaller.
-     */
-    public StackTraceInterfaceBinding() {
-        this.jsonObjectMarshaller = new JsonObjectMarshaller();
-    }
-
-    /**
-     * Construct a StackTraceInterfaceBinding with the provided JSON Object marshaller.
-     *
-     * @param jsonObjectMarshaller object marshaller
-     */
-    public StackTraceInterfaceBinding(JsonObjectMarshaller jsonObjectMarshaller) {
-        this.jsonObjectMarshaller = jsonObjectMarshaller;
-    }
 
     /**
      * Writes a single frame based on a {@code StackTraceElement}.
@@ -75,8 +58,9 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         }
 
         if (stackTraceElement.getLocals() != null && !stackTraceElement.getLocals().isEmpty()) {
-            generator.writeObjectFieldStart(VARIABLES_PARAMETER);
+            JsonObjectMarshaller jsonObjectMarshaller = new JsonObjectMarshaller();
 
+            generator.writeObjectFieldStart(VARIABLES_PARAMETER);
             for (Map.Entry<String, Object> varEntry : stackTraceElement.getLocals().entrySet()) {
                 generator.writeFieldName(varEntry.getKey());
                 jsonObjectMarshaller.writeObject(generator, varEntry.getValue());
