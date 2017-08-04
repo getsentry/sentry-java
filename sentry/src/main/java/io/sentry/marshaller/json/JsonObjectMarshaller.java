@@ -21,22 +21,26 @@ import java.util.Map;
 public class JsonObjectMarshaller {
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
+    private static final String RECURSION_LIMIT_HIT = "<recursion limit hit>";
     private static final int MAX_LENGTH_LIST = 50;
     private static final int MAX_SIZE_MAP = 50;
     private static final int MAX_LENGTH_STRING = 400;
+    private static final int MAX_NESTING = 3;
     private static final String ELIDED = "...";
 
     private int maxLengthList;
     private int maxLengthString;
     private int maxSizeMap;
+    private int maxNesting;
 
     /**
      * Construct a JsonObjectMarshaller with the default configuration.
      */
     public JsonObjectMarshaller() {
         this.maxLengthList = MAX_LENGTH_LIST;
-        maxSizeMap = MAX_SIZE_MAP;
         this.maxLengthString = MAX_LENGTH_STRING;
+        this.maxSizeMap = MAX_SIZE_MAP;
+        this.maxNesting = MAX_NESTING;
     }
 
     /**
@@ -47,16 +51,25 @@ public class JsonObjectMarshaller {
      * @throws IOException On Jackson error (unserializable object).
      */
     public void writeObject(JsonGenerator generator, Object value) throws IOException {
-        // TODO: handle max recursion/nesting
-        // TODO: handle cycles
+        writeObject(generator, value, 0);
+    }
+
+    private void writeObject(JsonGenerator generator,
+                             Object value,
+                             int recursionLevel) throws IOException {
         // TODO: from python: default frame allowance of 25
         // TODO: from python: default 4k bytes of vars per frame, after that they are silently dropped
+
+        if (recursionLevel >= maxNesting) {
+            generator.writeString(RECURSION_LIMIT_HIT);
+            return;
+        }
 
         if (value == null) {
             generator.writeNull();
         } else if (value.getClass().isArray()) {
             generator.writeStartArray();
-            writeArray(generator, value);
+            writeArray(generator, value, recursionLevel);
             generator.writeEndArray();
         } else if (value instanceof Path) {
             // Path is weird because it implements Iterable, and then the iterator returns
@@ -70,7 +83,7 @@ public class JsonObjectMarshaller {
                     generator.writeString(ELIDED);
                     break;
                 }
-                writeObject(generator, subValue);
+                writeObject(generator, subValue, recursionLevel + 1);
                 i++;
             }
             generator.writeEndArray();
@@ -84,9 +97,9 @@ public class JsonObjectMarshaller {
                 if (entry.getKey() == null) {
                     generator.writeFieldName("null");
                 } else {
-                    generator.writeFieldName(entry.getKey().toString());
+                    generator.writeFieldName(Util.trimString(entry.getKey().toString(), maxLengthString));
                 }
-                writeObject(generator, entry.getValue());
+                writeObject(generator, entry.getValue(), recursionLevel + 1);
                 i++;
             }
             generator.writeEndObject();
@@ -104,7 +117,9 @@ public class JsonObjectMarshaller {
         }
     }
 
-    private void writeArray(JsonGenerator generator, Object value) throws IOException {
+    private void writeArray(JsonGenerator generator,
+                            Object value,
+                            int recursionLevel) throws IOException {
         if (value instanceof byte[]) {
             byte[] castArray = (byte[]) value;
             for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
@@ -174,7 +189,7 @@ public class JsonObjectMarshaller {
             // must be an Object[]
             Object[] castArray = (Object[]) value;
             for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
-                writeObject(generator, castArray[i]);
+                writeObject(generator, castArray[i], recursionLevel + 1);
             }
             if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
@@ -192,6 +207,10 @@ public class JsonObjectMarshaller {
 
     public void setMaxSizeMap(int maxSizeMap) {
         this.maxSizeMap = maxSizeMap;
+    }
+
+    public void setMaxNesting(int maxNesting) {
+        this.maxNesting = maxNesting;
     }
 
 }

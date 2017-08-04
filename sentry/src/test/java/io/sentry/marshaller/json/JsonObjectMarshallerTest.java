@@ -32,6 +32,7 @@ public class JsonObjectMarshallerTest extends BaseTest {
         jsonObjectMarshaller.setMaxLengthList(2);
         jsonObjectMarshaller.setMaxLengthString(10);
         jsonObjectMarshaller.setMaxSizeMap(2);
+        jsonObjectMarshaller.setMaxNesting(3);
     }
 
     @Test
@@ -88,19 +89,19 @@ public class JsonObjectMarshallerTest extends BaseTest {
 
         Map<String, Map<String, Integer>> mapMap = new HashMap<>();
         Map<String, Integer> map1 = new HashMap<>();
-        map1.put("one", 1);
-        map1.put("two", 2);
-        map1.put("three", 3);
+        map1.put("one very long key that will be elided", 1);
+        map1.put("two very long key that will be elided", 2);
+        map1.put("three very long key that will be elided", 3);
         mapMap.put("map1", map1);
         Map<String, Integer> map2 = new HashMap<>();
-        map2.put("four", 4);
-        map2.put("five", 5);
-        map2.put("six", 6);
+        map2.put("four very long key that will be elided", 4);
+        map2.put("five very long key that will be elided", 5);
+        map2.put("six very long key that will be elided", 6);
         mapMap.put("map2", map2);
         Map<String, Integer> map3 = new HashMap<>();
-        map3.put("seven", 7);
-        map3.put("eight", 8);
-        map3.put("nine", 9);
+        map3.put("seven very long key that will be elided", 7);
+        map3.put("eight very long key that will be elided", 8);
+        map3.put("nine very long key that will be elided", 9);
         mapMap.put("map3", map3);
 
         write(jsonOutputStreamParser.outputStream, mapMap);
@@ -111,7 +112,15 @@ public class JsonObjectMarshallerTest extends BaseTest {
 
     @Test
     public void testCycle() throws Exception {
+        final JsonComparisonUtil.JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
 
+        Map<Object, Object> cycleMap = new HashMap<>();
+        cycleMap.put("cycle!", cycleMap);
+
+        write(jsonOutputStreamParser.outputStream, cycleMap);
+
+        assertThat(jsonOutputStreamParser.value(),
+            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testCycle.json")));
     }
 
     @Test
