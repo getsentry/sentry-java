@@ -40,7 +40,7 @@ public class JsonObjectMarshaller {
      * @throws IOException On Jackson error (unserializable object).
      */
     public void writeObject(JsonGenerator generator, Object value) throws IOException {
-        // TODO: handle max recursion
+        // TODO: handle max recursion/nesting
         // TODO: handle cycles
         // default frame allowance of 25
         // default 4k bytes of vars per frame, after that they are silently dropped
@@ -56,22 +56,32 @@ public class JsonObjectMarshaller {
             // more Paths, which are iterable... which would cause a stack overflow below.
             generator.writeString(Util.trimString(value.toString(), MAX_LENGTH_STRING));
         } else if (value instanceof Iterable) {
-            // TODO: elide long iterables
             generator.writeStartArray();
+            int i = 0;
             for (Object subValue : (Iterable<?>) value) {
+                if (i > MAX_LENGTH_LIST) {
+                    generator.writeString(ELIDED);
+                    break;
+                }
                 writeObject(generator, subValue);
+                i++;
             }
             generator.writeEndArray();
         } else if (value instanceof Map) {
-            // TODO: elide large maps
             generator.writeStartObject();
+            int i = 0;
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+                if (i > MAX_LENGTH_LIST) {
+                    generator.writeString(ELIDED);
+                    break;
+                }
                 if (entry.getKey() == null) {
                     generator.writeFieldName("null");
                 } else {
                     generator.writeFieldName(entry.getKey().toString());
                 }
                 writeObject(generator, entry.getValue());
+                i++;
             }
             generator.writeEndObject();
         } else if (value instanceof String) {
