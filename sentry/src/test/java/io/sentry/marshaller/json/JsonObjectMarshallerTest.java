@@ -77,7 +77,7 @@ public class JsonObjectMarshallerTest extends BaseTest {
         write(jsonOutputStreamParser.outputStream, ints);
 
         assertThat(jsonOutputStreamParser.value(),
-            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testByte.json")));
+            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testIntArray.json")));
 
     }
 
