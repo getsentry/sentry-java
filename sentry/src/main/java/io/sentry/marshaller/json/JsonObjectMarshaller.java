@@ -13,10 +13,6 @@ import java.util.Map;
  * Marshaller that makes an attempt at serializing any Java POJO to the "best"
  * JSON representation. For example, iterables should become JSON arrays, Maps should
  * become JSON objects, etc. As a fallback we use {@link Object#toString()}.
- *
- * Not thread safe because it has to maintain a lot of state. Construct a new
- * JsonObjectMarshaller for each group of objects you want to marshall from a
- * single thread.
  */
 public class JsonObjectMarshaller {
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
@@ -44,7 +40,7 @@ public class JsonObjectMarshaller {
     }
 
     /**
-     * Serialize almost any object to JSON.
+     * Serialize any object to JSON. Large collections are elided.
      *
      * @param generator JsonGenerator to write object out to.
      * @param value Value to write out.
@@ -54,12 +50,7 @@ public class JsonObjectMarshaller {
         writeObject(generator, value, 0);
     }
 
-    private void writeObject(JsonGenerator generator,
-                             Object value,
-                             int recursionLevel) throws IOException {
-        // TODO: from python: default frame allowance of 25
-        // TODO: from python: default 4k bytes of vars per frame, after that they are silently dropped
-
+    private void writeObject(JsonGenerator generator, Object value, int recursionLevel) throws IOException {
         if (recursionLevel >= maxNesting) {
             generator.writeString(RECURSION_LIMIT_HIT);
             return;
