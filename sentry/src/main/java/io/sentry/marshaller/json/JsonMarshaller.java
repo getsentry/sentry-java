@@ -227,10 +227,6 @@ public class JsonMarshaller implements Marshaller {
     }
 
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
-        if (extras.isEmpty()) {
-            return;
-        }
-
         JsonObjectMarshaller jsonObjectMarshaller = new JsonObjectMarshaller();
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
@@ -265,10 +261,6 @@ public class JsonMarshaller implements Marshaller {
     }
 
     private void writeTags(JsonGenerator generator, Map<String, String> tags) throws IOException {
-        if (tags.isEmpty()) {
-            return;
-        }
-
         generator.writeObjectFieldStart(TAGS);
         for (Map.Entry<String, String> tag : tags.entrySet()) {
             generator.writeStringField(tag.getKey(), tag.getValue());
