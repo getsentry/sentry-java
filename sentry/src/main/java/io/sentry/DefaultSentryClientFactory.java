@@ -449,10 +449,11 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected Marshaller createMarshaller(Dsn dsn) {
         int maxMessageLength = getMaxMessageLength(dsn);
-        JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength);
+        JsonObjectMarshaller jsonObjectMarshaller = new JsonObjectMarshaller();
+        JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength, jsonObjectMarshaller);
 
         // Set JSON marshaller bindings
-        StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
+        StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding(jsonObjectMarshaller);
         // Enable common frames hiding unless its value is 'false'.
         stackTraceBinding.setRemoveCommonFramesWithEnclosing(getHideCommonFramesEnabled(dsn));
         stackTraceBinding.setInAppFrames(getInAppFrames(dsn));

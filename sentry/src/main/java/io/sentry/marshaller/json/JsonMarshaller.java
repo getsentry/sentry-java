@@ -127,21 +127,39 @@ public class JsonMarshaller implements Marshaller {
      * Maximum length for a message.
      */
     private final int maxMessageLength;
+    /**
+     * JSON Object marshaller used for serializing Object fields (such as extras).
+     */
+    private JsonObjectMarshaller jsonObjectMarshaller;
 
     /**
-     * Create instance of JsonMarshaller with default message length.
+     * Create instance of JsonMarshaller with default message length and the default
+     * JSON Object marshaller.
      */
     public JsonMarshaller() {
-        maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
+        this(DEFAULT_MAX_MESSAGE_LENGTH);
+    }
+
+    /**
+     * Create instance of JsonMarshaller with provided the maximum length of the messages
+     * and the default JSON Object marshaller.
+     *
+     * @param maxMessageLength the maximum message length
+     */
+    public JsonMarshaller(int maxMessageLength) {
+        this.maxMessageLength = maxMessageLength;
+        this.jsonObjectMarshaller = new JsonObjectMarshaller();
     }
 
     /**
      * Create instance of JsonMarshaller with provided the maximum length of the messages.
      *
      * @param maxMessageLength the maximum message length
+     * @param jsonObjectMarshaller object marshaller
      */
-    public JsonMarshaller(int maxMessageLength) {
+    public JsonMarshaller(int maxMessageLength, JsonObjectMarshaller jsonObjectMarshaller) {
         this.maxMessageLength = maxMessageLength;
+        this.jsonObjectMarshaller = jsonObjectMarshaller;
     }
 
     @Override
@@ -230,7 +248,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
             generator.writeFieldName(extra.getKey());
-            Util.writeObjectToJson(generator, extra.getValue());
+            jsonObjectMarshaller.writeObject(generator, extra.getValue());
         }
         generator.writeEndObject();
     }

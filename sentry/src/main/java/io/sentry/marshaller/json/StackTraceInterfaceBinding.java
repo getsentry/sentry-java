@@ -3,7 +3,6 @@ package io.sentry.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import io.sentry.event.interfaces.StackTraceInterface;
-import io.sentry.util.Util;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -29,6 +28,23 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String PLATFORM_PARAMTER = "platform";
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
+    private final JsonObjectMarshaller jsonObjectMarshaller;
+
+    /**
+     * Construct a StackTraceInterfaceBinding with the default JSON Object marshaller.
+     */
+    public StackTraceInterfaceBinding() {
+        this.jsonObjectMarshaller = new JsonObjectMarshaller();
+    }
+
+    /**
+     * Construct a StackTraceInterfaceBinding with the provided JSON Object marshaller.
+     *
+     * @param jsonObjectMarshaller object marshaller
+     */
+    public StackTraceInterfaceBinding(JsonObjectMarshaller jsonObjectMarshaller) {
+        this.jsonObjectMarshaller = jsonObjectMarshaller;
+    }
 
     /**
      * Writes a single frame based on a {@code StackTraceElement}.
@@ -63,7 +79,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
             for (Map.Entry<String, Object> varEntry : stackTraceElement.getLocals().entrySet()) {
                 generator.writeFieldName(varEntry.getKey());
-                Util.writeObjectToJson(generator, varEntry.getValue());
+                jsonObjectMarshaller.writeObject(generator, varEntry.getValue());
             }
             generator.writeEndObject();
         }
