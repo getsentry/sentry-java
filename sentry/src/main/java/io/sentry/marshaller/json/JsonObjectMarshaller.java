@@ -22,14 +22,21 @@ public class JsonObjectMarshaller {
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
     private static final int MAX_LENGTH_LIST = 50;
+    private static final int MAX_SIZE_MAP = 50;
     private static final int MAX_LENGTH_STRING = 400;
     private static final String ELIDED = "...";
+
+    private int maxLengthList;
+    private int maxLengthString;
+    private int maxSizeMap;
 
     /**
      * Construct a JsonObjectMarshaller with the default configuration.
      */
     public JsonObjectMarshaller() {
-
+        this.maxLengthList = MAX_LENGTH_LIST;
+        maxSizeMap = MAX_SIZE_MAP;
+        this.maxLengthString = MAX_LENGTH_STRING;
     }
 
     /**
@@ -42,8 +49,8 @@ public class JsonObjectMarshaller {
     public void writeObject(JsonGenerator generator, Object value) throws IOException {
         // TODO: handle max recursion/nesting
         // TODO: handle cycles
-        // default frame allowance of 25
-        // default 4k bytes of vars per frame, after that they are silently dropped
+        // TODO: from python: default frame allowance of 25
+        // TODO: from python: default 4k bytes of vars per frame, after that they are silently dropped
 
         if (value == null) {
             generator.writeNull();
@@ -54,12 +61,12 @@ public class JsonObjectMarshaller {
         } else if (value instanceof Path) {
             // Path is weird because it implements Iterable, and then the iterator returns
             // more Paths, which are iterable... which would cause a stack overflow below.
-            generator.writeString(Util.trimString(value.toString(), MAX_LENGTH_STRING));
+            generator.writeString(Util.trimString(value.toString(), maxLengthString));
         } else if (value instanceof Iterable) {
             generator.writeStartArray();
             int i = 0;
             for (Object subValue : (Iterable<?>) value) {
-                if (i > MAX_LENGTH_LIST) {
+                if (i >= maxLengthList) {
                     generator.writeString(ELIDED);
                     break;
                 }
@@ -71,8 +78,7 @@ public class JsonObjectMarshaller {
             generator.writeStartObject();
             int i = 0;
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                if (i > MAX_LENGTH_LIST) {
-                    generator.writeString(ELIDED);
+                if (i >= maxSizeMap) {
                     break;
                 }
                 if (entry.getKey() == null) {
@@ -85,7 +91,7 @@ public class JsonObjectMarshaller {
             }
             generator.writeEndObject();
         } else if (value instanceof String) {
-            generator.writeString(Util.trimString((String) value, MAX_LENGTH_STRING));
+            generator.writeString(Util.trimString((String) value, maxLengthString));
         } else {
             try {
                 /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
@@ -93,7 +99,7 @@ public class JsonObjectMarshaller {
             } catch (IllegalStateException e) {
                 logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
                     value, value.getClass());
-                generator.writeString(Util.trimString(value.toString(), MAX_LENGTH_STRING));
+                generator.writeString(Util.trimString(value.toString(), maxLengthString));
             }
         }
     }
@@ -101,78 +107,91 @@ public class JsonObjectMarshaller {
     private void writeArray(JsonGenerator generator, Object value) throws IOException {
         if (value instanceof byte[]) {
             byte[] castArray = (byte[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 // TODO: how *should* we serialize bytes?
                 generator.writeNumber((int) castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof short[]) {
             short[] castArray = (short[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeNumber((int) castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof int[]) {
             int[] castArray = (int[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeNumber(castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof long[]) {
             long[] castArray = (long[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeNumber(castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof float[]) {
             float[] castArray = (float[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeNumber(castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof double[]) {
             double[] castArray = (double[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeNumber(castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof char[]) {
             char[] castArray = (char[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeString(String.valueOf(castArray[i]));
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else if (value instanceof boolean[]) {
             boolean[] castArray = (boolean[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 generator.writeBoolean(castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         } else {
             // must be an Object[]
             Object[] castArray = (Object[]) value;
-            for (int i = 0; i < castArray.length && i <= MAX_LENGTH_LIST; i++) {
+            for (int i = 0; i < castArray.length && i < maxLengthList; i++) {
                 writeObject(generator, castArray[i]);
             }
-            if (castArray.length > MAX_LENGTH_LIST) {
+            if (castArray.length > maxLengthList) {
                 generator.writeString(ELIDED);
             }
         }
     }
+
+    public void setMaxLengthList(int maxLengthList) {
+        this.maxLengthList = maxLengthList;
+    }
+
+    public void setMaxLengthString(int maxLengthString) {
+        this.maxLengthString = maxLengthString;
+    }
+
+    public void setMaxSizeMap(int maxSizeMap) {
+        this.maxSizeMap = maxSizeMap;
+    }
+
 }
