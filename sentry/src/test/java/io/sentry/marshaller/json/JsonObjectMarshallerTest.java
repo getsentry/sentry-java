@@ -140,6 +140,17 @@ public class JsonObjectMarshallerTest extends BaseTest {
 
         assertThat(jsonOutputStreamParser.value(),
             is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testIntArray.json")));
+    }
+
+    @Test
+    public void testIntegerArray() throws Exception {
+        final JsonComparisonUtil.JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+
+        Integer[] ints = {1, 2, 3};
+        write(jsonOutputStreamParser.outputStream, ints);
+
+        assertThat(jsonOutputStreamParser.value(),
+            is(jsonResource("/io/sentry/marshaller/json/jsonobjectmarshallertest/testIntArray.json")));
 
     }
 
