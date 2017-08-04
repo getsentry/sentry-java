@@ -18,6 +18,9 @@ import java.util.Map;
 public class JsonObjectMarshaller {
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
+    private final int MAX_LENGTH_LIST = 50;
+    private final int MAX_LENGTH_STRING = 400;
+
     /**
      * Construct a JsonObjectMarshaller with the default configuration.
      */
@@ -34,17 +37,29 @@ public class JsonObjectMarshaller {
      */
     public void writeObject(JsonGenerator generator, Object value) throws IOException {
         if (value != null && value.getClass().isArray()) {
-            // TODO: handle exception (byte[])
+            // TODO: handle primitive arrays like ArrayUtils does
+            // byte short int long float double char boolean
+            /*
+            public static Byte[] toObject(final byte[] array) {
+                if (array == null) {
+                    return null;
+                } else if (array.length == 0) {
+                    return EMPTY_BYTE_OBJECT_ARRAY;
+                }
+                final Byte[] result = new Byte[array.length];
+                for (int i = 0; i < array.length; i++) {
+                    result[i] = Byte.valueOf(array[i]);
+                }
+                return result;
+            }
+             */
             value = Arrays.asList((Object[]) value);
         }
 
-        // TODO: handle byte and byte[]
-        // from python:
-        // MAX_LENGTH_LIST = 50
-        // MAX_LENGTH_STRING = 400
+        // TODO: handle max recursion
+        // TODO: handle cycles
         // default frame allowance of 25
         // default 4k bytes of vars per frame, after that they are silently dropped
-        // if all else fails, toString()
 
         if (value == null) {
             generator.writeNull();
