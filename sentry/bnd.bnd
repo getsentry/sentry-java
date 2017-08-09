@@ -15,6 +15,13 @@ Bundle-Description: ${project.description}
     io.sentry.jul,\
     io.sentry.jvmti,\
     io.sentry.marshaller,\
+    io.sentry.marshaller.json,\
     io.sentry.servlet,\
     io.sentry.time,\
     io.sentry.util
+
+Import-Package: \
+javax.servlet;resolution:=optional,\
+javax.servlet.http;resolution:=optional,\
+*
+
