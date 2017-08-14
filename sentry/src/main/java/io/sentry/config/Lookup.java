@@ -25,6 +25,11 @@ public final class Lookup {
      * found or it failed to parse.
      */
     private static Properties configProps;
+    /**
+     * Whether or not to check the JNDI system. Exists so that JNDI checks can be disabled
+     * the first time the class is not found.
+     */
+    private static boolean checkJndi = true;
 
     static {
         String filePath = getConfigFilePath();
@@ -99,17 +104,19 @@ public final class Lookup {
     public static String lookup(String key, Dsn dsn) {
         String value = null;
 
-        // Try to obtain from JNDI
-        try {
-            // Check that JNDI is available (not available on Android) by loading InitialContext
-            Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
-            value = JndiLookup.jndiLookup(key);
-            if (value != null) {
-                logger.debug("Found {}={} in JNDI.", key, value);
+        if (checkJndi) {
+            // Try to obtain from JNDI
+            try {
+                // Check that JNDI is available (not available on Android) by loading InitialContext
+                Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
+                value = JndiLookup.jndiLookup(key);
+                if (value != null) {
+                    logger.debug("Found {}={} in JNDI.", key, value);
+                }
+            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                logger.trace("JNDI is not available: " + e.getMessage());
+                checkJndi = false;
             }
-
-        } catch (ClassNotFoundException | NoClassDefFoundError e) {
-            logger.trace("JNDI not available", e);
         }
 
         // Try to obtain from a Java System Property
