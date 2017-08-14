@@ -1,13 +1,9 @@
 package io.sentry.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.BaseTest;
-import mockit.Tested;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,17 +15,12 @@ import static org.hamcrest.Matchers.is;
 
 import static io.sentry.marshaller.json.JsonComparisonUtil.newJsonOutputStream;
 
-public class JsonObjectMarshallerTest extends BaseTest {
-    @Tested
-    private JsonObjectMarshaller jsonObjectMarshaller = null;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        this.jsonObjectMarshaller = new JsonObjectMarshaller();
-        jsonObjectMarshaller.setMaxLengthList(2);
-        jsonObjectMarshaller.setMaxLengthString(10);
-        jsonObjectMarshaller.setMaxSizeMap(2);
-        jsonObjectMarshaller.setMaxNesting(3);
+public class SentryJsonGeneratorTest extends BaseTest {
+    private void configureGenerator(SentryJsonGenerator generator) throws Exception {
+        generator.setMaxLengthList(2);
+        generator.setMaxLengthString(10);
+        generator.setMaxSizeMap(2);
+        generator.setMaxNesting(3);
     }
 
     @Test
@@ -199,13 +190,15 @@ public class JsonObjectMarshallerTest extends BaseTest {
 
     }
 
-    private void write(OutputStream destination, Object object) throws IOException {
+    private void write(OutputStream destination, Object object) throws Exception {
         final JsonFactory jsonFactory = new JsonFactory();
 
-        try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
+        try (SentryJsonGenerator generator = new SentryJsonGenerator(jsonFactory.createGenerator(destination))) {
+            configureGenerator(generator);
+
             generator.writeStartObject();
             generator.writeFieldName("output");
-            jsonObjectMarshaller.writeObject(generator, object);
+            generator.writeObject(object);
             generator.writeEndObject();
         } finally {
             destination.close();

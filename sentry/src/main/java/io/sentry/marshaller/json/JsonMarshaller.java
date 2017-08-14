@@ -153,7 +153,7 @@ public class JsonMarshaller implements Marshaller {
             destination = new GZIPOutputStream(destination);
         }
 
-        try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
+        try (SentryJsonGenerator generator = new SentryJsonGenerator(jsonFactory.createGenerator(destination))) {
             writeContent(generator, event);
         } catch (IOException e) {
             logger.error("An exception occurred while serialising the event.", e);
@@ -227,11 +227,10 @@ public class JsonMarshaller implements Marshaller {
     }
 
     private void writeExtras(JsonGenerator generator, Map<String, Object> extras) throws IOException {
-        JsonObjectMarshaller jsonObjectMarshaller = new JsonObjectMarshaller();
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
             generator.writeFieldName(extra.getKey());
-            jsonObjectMarshaller.writeObject(generator, extra.getValue());
+            generator.writeObject(extra.getValue());
         }
         generator.writeEndObject();
     }

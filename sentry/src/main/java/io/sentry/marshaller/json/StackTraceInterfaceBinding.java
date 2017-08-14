@@ -58,12 +58,10 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         }
 
         if (stackTraceElement.getLocals() != null && !stackTraceElement.getLocals().isEmpty()) {
-            JsonObjectMarshaller jsonObjectMarshaller = new JsonObjectMarshaller();
-
             generator.writeObjectFieldStart(VARIABLES_PARAMETER);
             for (Map.Entry<String, Object> varEntry : stackTraceElement.getLocals().entrySet()) {
                 generator.writeFieldName(varEntry.getKey());
-                jsonObjectMarshaller.writeObject(generator, varEntry.getValue());
+                generator.writeObject(varEntry.getValue());
             }
             generator.writeEndObject();
         }

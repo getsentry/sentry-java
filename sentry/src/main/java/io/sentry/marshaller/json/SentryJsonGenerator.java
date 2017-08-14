@@ -1,20 +1,26 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.*;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.Map;
 
 /**
- * Marshaller that makes an attempt at serializing any Java POJO to the "best"
+ * JsonGenerator that makes an attempt at serializing any Java POJO to the "best"
  * JSON representation. For example, iterables should become JSON arrays, Maps should
  * become JSON objects, etc. As a fallback we use {@link Object#toString()}.
+ *
+ * Every method except {@link JsonGenerator#writeObject(Object)} is proxied to an
+ * underlying {@link JsonGenerator}.
  */
-public class JsonObjectMarshaller {
+public class SentryJsonGenerator extends JsonGenerator {
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
     private static final String RECURSION_LIMIT_HIT = "<recursion limit hit>";
@@ -28,11 +34,16 @@ public class JsonObjectMarshaller {
     private int maxLengthString;
     private int maxSizeMap;
     private int maxNesting;
+    private JsonGenerator generator;
 
     /**
      * Construct a JsonObjectMarshaller with the default configuration.
+     *
+     * @param generator Underlying JsonGenerator used for actual writing
      */
-    public JsonObjectMarshaller() {
+    public SentryJsonGenerator(JsonGenerator generator) {
+        this.generator = generator;
+
         this.maxLengthList = MAX_LENGTH_LIST;
         this.maxLengthString = MAX_LENGTH_STRING;
         this.maxSizeMap = MAX_SIZE_MAP;
@@ -42,15 +53,14 @@ public class JsonObjectMarshaller {
     /**
      * Serialize any object to JSON. Large collections are elided.
      *
-     * @param generator JsonGenerator to write object out to.
      * @param value Value to write out.
      * @throws IOException On Jackson error (unserializable object).
      */
-    public void writeObject(JsonGenerator generator, Object value) throws IOException {
-        writeObject(generator, value, 0);
+    public void writeObject(Object value) throws IOException {
+        writeObject(value, 0);
     }
 
-    private void writeObject(JsonGenerator generator, Object value, int recursionLevel) throws IOException {
+    private void writeObject(Object value, int recursionLevel) throws IOException {
         if (recursionLevel >= maxNesting) {
             generator.writeString(RECURSION_LIMIT_HIT);
             return;
@@ -60,7 +70,7 @@ public class JsonObjectMarshaller {
             generator.writeNull();
         } else if (value.getClass().isArray()) {
             generator.writeStartArray();
-            writeArray(generator, value, recursionLevel);
+            writeArray(value, recursionLevel);
             generator.writeEndArray();
         } else if (value instanceof Path) {
             // Path is weird because it implements Iterable, and then the iterator returns
@@ -71,11 +81,11 @@ public class JsonObjectMarshaller {
             int i = 0;
             for (Object subValue : (Iterable<?>) value) {
                 if (i >= maxLengthList) {
-                    writeElided(generator);
+                    writeElided();
                     break;
                 }
 
-                writeObject(generator, subValue, recursionLevel + 1);
+                writeObject(subValue, recursionLevel + 1);
 
                 i++;
             }
@@ -93,7 +103,7 @@ public class JsonObjectMarshaller {
                 } else {
                     generator.writeFieldName(Util.trimString(entry.getKey().toString(), maxLengthString));
                 }
-                writeObject(generator, entry.getValue(), recursionLevel + 1);
+                writeObject(entry.getValue(), recursionLevel + 1);
 
                 i++;
             }
@@ -112,8 +122,7 @@ public class JsonObjectMarshaller {
         }
     }
 
-    private void writeArray(JsonGenerator generator,
-                            Object value,
+    private void writeArray(Object value,
                             int recursionLevel) throws IOException {
         if (value instanceof byte[]) {
             byte[] byteArray = (byte[]) value;
@@ -121,7 +130,7 @@ public class JsonObjectMarshaller {
                 generator.writeNumber((int) byteArray[i]);
             }
             if (byteArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof short[]) {
             short[] shortArray = (short[]) value;
@@ -129,7 +138,7 @@ public class JsonObjectMarshaller {
                 generator.writeNumber((int) shortArray[i]);
             }
             if (shortArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof int[]) {
             int[] intArray = (int[]) value;
@@ -137,7 +146,7 @@ public class JsonObjectMarshaller {
                 generator.writeNumber(intArray[i]);
             }
             if (intArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof long[]) {
             long[] longArray = (long[]) value;
@@ -145,7 +154,7 @@ public class JsonObjectMarshaller {
                 generator.writeNumber(longArray[i]);
             }
             if (longArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof float[]) {
             float[] floatArray = (float[]) value;
@@ -153,7 +162,7 @@ public class JsonObjectMarshaller {
                 generator.writeNumber(floatArray[i]);
             }
             if (floatArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof double[]) {
             double[] doubleArray = (double[]) value;
@@ -161,7 +170,7 @@ public class JsonObjectMarshaller {
                 generator.writeNumber(doubleArray[i]);
             }
             if (doubleArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof char[]) {
             char[] charArray = (char[]) value;
@@ -169,7 +178,7 @@ public class JsonObjectMarshaller {
                 generator.writeString(String.valueOf(charArray[i]));
             }
             if (charArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else if (value instanceof boolean[]) {
             boolean[] boolArray = (boolean[]) value;
@@ -177,20 +186,20 @@ public class JsonObjectMarshaller {
                 generator.writeBoolean(boolArray[i]);
             }
             if (boolArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         } else {
             Object[] objArray = (Object[]) value;
             for (int i = 0; i < objArray.length && i < maxLengthList; i++) {
-                writeObject(generator, objArray[i], recursionLevel + 1);
+                writeObject(objArray[i], recursionLevel + 1);
             }
             if (objArray.length > maxLengthList) {
-                writeElided(generator);
+                writeElided();
             }
         }
     }
 
-    private void writeElided(JsonGenerator generator) throws IOException {
+    private void writeElided() throws IOException {
         generator.writeString(ELIDED);
     }
 
@@ -210,4 +219,218 @@ public class JsonObjectMarshaller {
         this.maxNesting = maxNesting;
     }
 
+    @Override
+    public JsonGenerator setCodec(ObjectCodec oc) {
+        return generator.setCodec(oc);
+    }
+
+    @Override
+    public ObjectCodec getCodec() {
+        return generator.getCodec();
+    }
+
+    @Override
+    public Version version() {
+        return generator.version();
+    }
+
+    @Override
+    public JsonGenerator enable(Feature f) {
+        return generator.enable(f);
+    }
+
+    @Override
+    public JsonGenerator disable(Feature f) {
+        return generator.disable(f);
+    }
+
+    @Override
+    public boolean isEnabled(Feature f) {
+        return generator.isEnabled(f);
+    }
+
+    @Override
+    public int getFeatureMask() {
+        return generator.getFeatureMask();
+    }
+
+    @Override
+    public JsonGenerator setFeatureMask(int values) {
+        return generator.setFeatureMask(values);
+    }
+
+    @Override
+    public JsonGenerator useDefaultPrettyPrinter() {
+        return generator.useDefaultPrettyPrinter();
+    }
+
+    @Override
+    public void writeStartArray() throws IOException {
+        generator.writeStartArray();
+    }
+
+    @Override
+    public void writeEndArray() throws IOException {
+        generator.writeEndArray();
+    }
+
+    @Override
+    public void writeStartObject() throws IOException {
+        generator.writeStartObject();
+    }
+
+    @Override
+    public void writeEndObject() throws IOException {
+        generator.writeEndObject();
+    }
+
+    @Override
+    public void writeFieldName(String name) throws IOException {
+        generator.writeFieldName(name);
+    }
+
+    @Override
+    public void writeFieldName(SerializableString name) throws IOException {
+        generator.writeFieldName(name);
+    }
+
+    @Override
+    public void writeString(String text) throws IOException {
+        generator.writeString(text);
+    }
+
+    @Override
+    public void writeString(char[] text, int offset, int len) throws IOException {
+        generator.writeString(text, offset, len);
+    }
+
+    @Override
+    public void writeString(SerializableString text) throws IOException {
+        generator.writeString(text);
+    }
+
+    @Override
+    public void writeRawUTF8String(byte[] text, int offset, int length) throws IOException {
+        generator.writeRawUTF8String(text, offset, length);
+    }
+
+    @Override
+    public void writeUTF8String(byte[] text, int offset, int length) throws IOException {
+        generator.writeUTF8String(text, offset, length);
+    }
+
+    @Override
+    public void writeRaw(String text) throws IOException {
+        generator.writeRaw(text);
+    }
+
+    @Override
+    public void writeRaw(String text, int offset, int len) throws IOException {
+        generator.writeRaw(text, offset, len);
+    }
+
+    @Override
+    public void writeRaw(char[] text, int offset, int len) throws IOException {
+        generator.writeRaw(text, offset, len);
+    }
+
+    @Override
+    public void writeRaw(char c) throws IOException {
+        generator.writeRaw(c);
+    }
+
+    @Override
+    public void writeRawValue(String text) throws IOException {
+        generator.writeRawValue(text);
+    }
+
+    @Override
+    public void writeRawValue(String text, int offset, int len) throws IOException {
+        generator.writeRawValue(text, offset, len);
+    }
+
+    @Override
+    public void writeRawValue(char[] text, int offset, int len) throws IOException {
+        generator.writeRawValue(text, offset, len);
+    }
+
+    @Override
+    public void writeBinary(Base64Variant bv, byte[] data, int offset, int len) throws IOException {
+        generator.writeBinary(bv, data, offset, len);
+    }
+
+    @Override
+    public int writeBinary(Base64Variant bv, InputStream data, int dataLength) throws IOException {
+        return generator.writeBinary(bv, data, dataLength);
+    }
+
+    @Override
+    public void writeNumber(int v) throws IOException {
+        generator.writeNumber(v);
+    }
+
+    @Override
+    public void writeNumber(long v) throws IOException {
+        generator.writeNumber(v);
+    }
+
+    @Override
+    public void writeNumber(BigInteger v) throws IOException {
+        generator.writeNumber(v);
+    }
+
+    @Override
+    public void writeNumber(double v) throws IOException {
+        generator.writeNumber(v);
+    }
+
+    @Override
+    public void writeNumber(float v) throws IOException {
+        generator.writeNumber(v);
+    }
+
+    @Override
+    public void writeNumber(BigDecimal v) throws IOException {
+        generator.writeNumber(v);
+    }
+
+    @Override
+    public void writeNumber(String encodedValue) throws IOException {
+        generator.writeNumber(encodedValue);
+    }
+
+    @Override
+    public void writeBoolean(boolean state) throws IOException {
+        generator.writeBoolean(state);
+    }
+
+    @Override
+    public void writeNull() throws IOException {
+        generator.writeNull();
+    }
+
+    @Override
+    public void writeTree(TreeNode rootNode) throws IOException {
+        generator.writeTree(rootNode);
+    }
+
+    @Override
+    public JsonStreamContext getOutputContext() {
+        return generator.getOutputContext();
+    }
+
+    @Override
+    public void flush() throws IOException {
+        generator.flush();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return generator.isClosed();
+    }
+
+    @Override
+    public void close() throws IOException {
+        generator.close();
+    }
 }
