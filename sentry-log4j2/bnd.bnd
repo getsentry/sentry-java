@@ -1,0 +1,5 @@
+Bundle-Name: ${project.name}
+Bundle-Description: ${project.description}
+
+-exportcontents:\
+    io.sentry.log4j2
