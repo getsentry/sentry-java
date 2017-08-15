@@ -1,0 +1,27 @@
+Bundle-Name: ${project.name}
+Bundle-Description: ${project.description}
+
+-exportcontents:\
+    io.sentry,\
+    io.sentry.buffer,\
+    io.sentry.config,\
+    io.sentry.connection,\
+    io.sentry.context,\
+    io.sentry.dsn,\
+    io.sentry.environment,\
+    io.sentry.event,\
+    io.sentry.event.helper,\
+    io.sentry.event.interfaces,\
+    io.sentry.jul,\
+    io.sentry.jvmti,\
+    io.sentry.marshaller,\
+    io.sentry.marshaller.json,\
+    io.sentry.servlet,\
+    io.sentry.time,\
+    io.sentry.util
+
+Import-Package: \
+javax.servlet;resolution:=optional,\
+javax.servlet.http;resolution:=optional,\
+*
+
