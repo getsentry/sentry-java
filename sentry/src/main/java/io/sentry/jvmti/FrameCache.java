@@ -32,10 +32,7 @@ public final class FrameCache {
      */
     public static void add(Throwable throwable, Frame[] frames) {
         Map<Throwable, Frame[]> weakMap = result.get();
-        Frame[] existing = weakMap.get(throwable);
-        if (existing == null || frames.length > existing.length) {
-            weakMap.put(throwable, frames);
-        }
+        weakMap.put(throwable, frames);
     }
 
     /**
