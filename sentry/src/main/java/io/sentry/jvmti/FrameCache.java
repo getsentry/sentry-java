@@ -1,13 +1,14 @@
 package io.sentry.jvmti;
 
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 
 /**
  * Utility class used by the Sentry Java Agent to store per-frame local variable
  * information for the last thrown exception.
  */
 public final class FrameCache {
+    private static final Set<String> appPackages = new HashSet<>();
+
     private static ThreadLocal<WeakHashMap<Throwable, Frame[]>> result =
         new ThreadLocal<WeakHashMap<Throwable, Frame[]>>() {
             @Override
@@ -31,7 +32,10 @@ public final class FrameCache {
      */
     public static void add(Throwable throwable, Frame[] frames) {
         Map<Throwable, Frame[]> weakMap = result.get();
-        weakMap.put(throwable, frames);
+        Frame[] existing = weakMap.get(throwable);
+        if (existing == null || frames.length > existing.length) {
+            weakMap.put(throwable, frames);
+        }
     }
 
     /**
@@ -43,5 +47,30 @@ public final class FrameCache {
     public static Frame[] get(Throwable throwable) {
         Map<Throwable, Frame[]> weakMap = result.get();
         return weakMap.get(throwable);
+    }
+
+    public static boolean shouldCacheThrowable(Throwable throwable) {
+        if (appPackages.isEmpty()) {
+            // only cache frames when 'in app' packages are provided
+            return false;
+        }
+
+        for (StackTraceElement stackTraceElement : throwable.getStackTrace()) {
+            for (String appFrame : appPackages) {
+                if (stackTraceElement.getClassName().startsWith(appFrame)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static void addAppPackage(String newAppPackage) {
+        appPackages.add(newAppPackage);
+    }
+
+    public static int getCacheSize() {
+        return result.get().size();
     }
 }

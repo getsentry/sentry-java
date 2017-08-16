@@ -115,6 +115,13 @@ public class SentryStackTraceElement implements Serializable {
      */
     public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements,
                                                                    Frame[] cachedFrames) {
+        if (cachedFrames != null && cachedFrames.length != stackTraceElements.length) {
+            // cached frames don't match the thrown exception...
+
+            // TODO: double iterate both arrays, compare method names...
+            cachedFrames = null;
+        }
+
         SentryStackTraceElement[] sentryStackTraceElements = new SentryStackTraceElement[stackTraceElements.length];
         for (int i = 0; i < stackTraceElements.length; i++) {
             sentryStackTraceElements[i] = fromStackTraceElement(stackTraceElements[i],

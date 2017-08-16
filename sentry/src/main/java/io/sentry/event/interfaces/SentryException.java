@@ -35,7 +35,9 @@ public final class SentryException implements Serializable {
         this.exceptionClassName = throwable.getClass().getSimpleName();
         Package exceptionPackage = throwable.getClass().getPackage();
         this.exceptionPackageName = exceptionPackage != null ? exceptionPackage.getName() : null;
-        this.stackTraceInterface = new StackTraceInterface(throwable.getStackTrace(), childExceptionStackTrace,
+        this.stackTraceInterface = new StackTraceInterface(
+            throwable.getStackTrace(),
+            childExceptionStackTrace,
             FrameCache.get(throwable));
     }
 

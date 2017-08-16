@@ -21,31 +21,40 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
         return;
     }
 
-    char *class_name = (char *) "io/sentry/jvmti/FrameCache";
-    char *method_name = (char *) "add";
-    char *signature = (char *) "(Ljava/lang/Throwable;[Lio/sentry/jvmti/Frame;)V";
-
-    jclass callback_class = nullptr;
-    jmethodID callback_method_id = nullptr;
-
-    callback_class = env->FindClass(class_name);
-    if (callback_class == nullptr) {
+    jclass framecache_class = env->FindClass("io/sentry/jvmti/FrameCache");
+    if (framecache_class == nullptr) {
         env->ExceptionClear();
         log(TRACE, "Unable to locate FrameCache class.");
         return;
     }
 
-    callback_method_id = env->GetStaticMethodID(callback_class, method_name, signature);
-    if (callback_method_id == nullptr) {
+    jmethodID should_cache_method = env->GetStaticMethodID(framecache_class,
+                                                           "shouldCacheThrowable",
+                                                           "(Ljava/lang/Throwable;)Z");
+    if (should_cache_method == nullptr) {
+        log(TRACE, "Unable to locate static FrameCache.shouldCacheThrowable method.");
+        return;
+    }
+
+    jboolean shouldCache = env->CallStaticBooleanMethod(framecache_class,
+                                                        should_cache_method,
+                                                        exception);
+    if (!((bool) shouldCache)) {
+        return;
+    }
+
+    jmethodID framecache_add_method = env->GetStaticMethodID(framecache_class,
+                                                   "add",
+                                                   "(Ljava/lang/Throwable;[Lio/sentry/jvmti/Frame;)V");
+    if (framecache_add_method == nullptr) {
         log(TRACE, "Unable to locate static FrameCache.add method.");
         return;
     }
 
-    jobjectArray frames;
     jint start_depth = 0;
-    frames = buildStackTraceFrames(jvmti, env, thread, start_depth);
+    jobjectArray frames = buildStackTraceFrames(jvmti, env, thread, start_depth);
 
-    env->CallStaticVoidMethod(callback_class, callback_method_id, exception, frames);
+    env->CallStaticVoidMethod(framecache_class, framecache_add_method, exception, frames);
 
     log(TRACE, "ExceptionCallback exit.");
 }

@@ -1,5 +1,6 @@
 package io.sentry.jvmti;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,6 +11,10 @@ import java.util.Map;
  */
 public final class Frame {
     /**
+     * TODO
+     */
+    private Method method;
+    /**
      * Local variable information for this frame.
      */
     private final LocalVariable[] locals;
@@ -19,8 +24,13 @@ public final class Frame {
      *
      * @param locals Local variable information for this frame.
      */
-    public Frame(LocalVariable[] locals) {
+    public Frame(Method method, LocalVariable[] locals) {
+        this.method = method;
         this.locals = locals;
+    }
+
+    public Method getMethod() {
+        return method;
     }
 
     /**
