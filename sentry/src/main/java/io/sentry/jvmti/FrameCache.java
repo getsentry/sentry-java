@@ -49,9 +49,15 @@ public final class FrameCache {
         return weakMap.get(throwable);
     }
 
-    public static boolean shouldCacheThrowable(Throwable throwable) {
+    public static boolean shouldCacheThrowable(Throwable throwable, int numFrames) {
         if (appPackages.isEmpty()) {
             // only cache frames when 'in app' packages are provided
+            return false;
+        }
+
+        Map<Throwable, Frame[]> weakMap = result.get();
+        Frame[] existing = weakMap.get(throwable);
+        if (existing != null && numFrames <= existing.length) {
             return false;
         }
 

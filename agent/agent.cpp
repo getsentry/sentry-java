@@ -5,7 +5,6 @@
 
 #include "jvmti.h"
 #include <iostream>
-#include <cstring>
 #include "lib.h"
 
 extern Level LOG_LEVEL;
@@ -30,15 +29,23 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
 
     jmethodID should_cache_method = env->GetStaticMethodID(framecache_class,
                                                            "shouldCacheThrowable",
-                                                           "(Ljava/lang/Throwable;)Z");
+                                                           "(Ljava/lang/Throwable;I)Z");
     if (should_cache_method == nullptr) {
         log(TRACE, "Unable to locate static FrameCache.shouldCacheThrowable method.");
         return;
     }
 
+    jint num_frames;
+    jvmtiError jvmti_error = jvmti->GetFrameCount(thread, &num_frames);
+    if (jvmti_error != JVMTI_ERROR_NONE) {
+        log(ERROR, "Could not get the frame count.");
+        return;
+    }
+
     jboolean shouldCache = env->CallStaticBooleanMethod(framecache_class,
                                                         should_cache_method,
-                                                        exception);
+                                                        exception,
+                                                        num_frames);
     if (!((bool) shouldCache)) {
         return;
     }
@@ -52,7 +59,7 @@ static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thre
     }
 
     jint start_depth = 0;
-    jobjectArray frames = buildStackTraceFrames(jvmti, env, thread, start_depth);
+    jobjectArray frames = buildStackTraceFrames(jvmti, env, thread, start_depth, num_frames);
 
     env->CallStaticVoidMethod(framecache_class, framecache_add_method, exception, frames);
 

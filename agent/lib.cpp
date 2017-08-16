@@ -223,22 +223,15 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
 }
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
-                                   jint start_depth) {
+                                   jint start_depth, jint num_frames) {
     log(TRACE, "buildStackTraceFrames called.");
 
-    jint num_frames;
     jvmtiFrameInfo* frames;
     jclass result_class;
     jint num_frames_returned;
     jvmtiError jvmti_error;
     jobjectArray result;
     jobject frame;
-
-    jvmti_error = jvmti->GetFrameCount(thread, &num_frames);
-    if (jvmti_error != JVMTI_ERROR_NONE) {
-        throwException(env, "java/lang/RuntimeException", "Could not get the frame count.");
-        return nullptr;
-    }
 
     jvmti_error = jvmti->Allocate(num_frames * (int)sizeof(jvmtiFrameInfo), (unsigned char **) &frames);
     if (jvmti_error != JVMTI_ERROR_NONE) {
