@@ -80,7 +80,7 @@ public final class Frame {
          * @param name Variable name.
          * @param value Variable value.
          */
-        private LocalVariable(String name, Object value) {
+        public LocalVariable(String name, Object value) {
             this.name = name;
             this.value = value;
         }

@@ -115,22 +115,19 @@ public class SentryStackTraceElement implements Serializable {
      */
     public static SentryStackTraceElement[] fromStackTraceElements(StackTraceElement[] stackTraceElements,
                                                                    Frame[] cachedFrames) {
-//        if (cachedFrames != null && cachedFrames.length != stackTraceElements.length) {
-//            // cached frames don't match the thrown exception...
-//            cachedFrames = null;
-//        }
-
         SentryStackTraceElement[] sentryStackTraceElements = new SentryStackTraceElement[stackTraceElements.length];
         for (int i = 0, j = 0; i < stackTraceElements.length; i++, j++) {
             StackTraceElement stackTraceElement = stackTraceElements[i];
 
             Map<String, Object> locals = null;
             if (cachedFrames != null) {
-                while (j <= cachedFrames.length
+                // step through cachedFrames until we hit a match on the method in the stackTraceElement
+                while (j < cachedFrames.length
                     && !cachedFrames[j].getMethod().getName().equals(stackTraceElement.getMethodName())) {
                     j++;
                 }
 
+                // only use cachedFrame locals if we haven't exhausted the array
                 if (j < cachedFrames.length) {
                     locals = cachedFrames[j].getLocals();
                 }

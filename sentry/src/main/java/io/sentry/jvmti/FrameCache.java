@@ -9,7 +9,7 @@ import java.util.*;
 public final class FrameCache {
     private static Set<String> appPackages = new HashSet<>();
 
-    private static ThreadLocal<WeakHashMap<Throwable, Frame[]>> result =
+    private static ThreadLocal<WeakHashMap<Throwable, Frame[]>> cache =
         new ThreadLocal<WeakHashMap<Throwable, Frame[]>>() {
             @Override
             protected WeakHashMap<Throwable, Frame[]> initialValue() {
@@ -31,7 +31,7 @@ public final class FrameCache {
      * @param frames Array of {@link Frame}s to store
      */
     public static void add(Throwable throwable, Frame[] frames) {
-        Map<Throwable, Frame[]> weakMap = result.get();
+        Map<Throwable, Frame[]> weakMap = cache.get();
         weakMap.put(throwable, frames);
     }
 
@@ -42,7 +42,7 @@ public final class FrameCache {
      * @return Array of {@link Frame}s
      */
     public static Frame[] get(Throwable throwable) {
-        Map<Throwable, Frame[]> weakMap = result.get();
+        Map<Throwable, Frame[]> weakMap = cache.get();
         return weakMap.get(throwable);
     }
 
@@ -65,7 +65,7 @@ public final class FrameCache {
         // stacktraces, which means later ("smaller") throws would overwrite the existing
         // object in cache. for this reason we prefer the throw with the greatest stack
         // length...
-        Map<Throwable, Frame[]> weakMap = result.get();
+        Map<Throwable, Frame[]> weakMap = cache.get();
         Frame[] existing = weakMap.get(throwable);
         if (existing != null && numFrames <= existing.length) {
             return false;
