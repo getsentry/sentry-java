@@ -11,7 +11,6 @@ import java.util.Set;
  * Sentry static Utility class.
  */
 public final class Util {
-
     // Hide the constructor.
     private Util() {
 

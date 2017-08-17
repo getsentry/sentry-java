@@ -132,11 +132,11 @@ public class JsonMarshaller implements Marshaller {
      * Create instance of JsonMarshaller with default message length.
      */
     public JsonMarshaller() {
-        maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
+        this(DEFAULT_MAX_MESSAGE_LENGTH);
     }
 
     /**
-     * Create instance of JsonMarshaller with provided the maximum length of the messages.
+     * Create instance of JsonMarshaller with provided maximum length of the messages.
      *
      * @param maxMessageLength the maximum message length
      */
@@ -153,7 +153,7 @@ public class JsonMarshaller implements Marshaller {
             destination = new GZIPOutputStream(destination);
         }
 
-        try (JsonGenerator generator = jsonFactory.createGenerator(destination)) {
+        try (SentryJsonGenerator generator = new SentryJsonGenerator(jsonFactory.createGenerator(destination))) {
             writeContent(generator, event);
         } catch (IOException e) {
             logger.error("An exception occurred while serialising the event.", e);
@@ -230,7 +230,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeObjectFieldStart(EXTRA);
         for (Map.Entry<String, Object> extra : extras.entrySet()) {
             generator.writeFieldName(extra.getKey());
-            safelyWriteObject(generator, extra.getValue());
+            generator.writeObject(extra.getValue());
         }
         generator.writeEndObject();
     }
@@ -242,42 +242,6 @@ public class JsonMarshaller implements Marshaller {
                 generator.writeString(element);
             }
             generator.writeEndArray();
-        }
-    }
-
-    private void safelyWriteObject(JsonGenerator generator, Object value) throws IOException {
-        if (value != null && value.getClass().isArray()) {
-            value = Arrays.asList((Object[]) value);
-        }
-
-        if (value instanceof Iterable) {
-            generator.writeStartArray();
-            for (Object subValue : (Iterable<?>) value) {
-                safelyWriteObject(generator, subValue);
-            }
-            generator.writeEndArray();
-        } else if (value instanceof Map) {
-            generator.writeStartObject();
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                if (entry.getKey() == null) {
-                    generator.writeFieldName("null");
-                } else {
-                    generator.writeFieldName(entry.getKey().toString());
-                }
-                safelyWriteObject(generator, entry.getValue());
-            }
-            generator.writeEndObject();
-        } else if (value == null) {
-            generator.writeNull();
-        } else {
-            try {
-                /** @see com.fasterxml.jackson.core.JsonGenerator#_writeSimpleObject(Object)  */
-                generator.writeObject(value);
-            } catch (IllegalStateException e) {
-                logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
-                    value, value.getClass());
-                generator.writeString(value.toString());
-            }
         }
     }
 
