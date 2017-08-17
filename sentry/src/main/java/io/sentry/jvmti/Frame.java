@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public final class Frame {
     /**
-     * TODO
+     * Method that this frame originated in.
      */
     private Method method;
     /**
@@ -22,6 +22,7 @@ public final class Frame {
     /**
      * Construct a {@link Frame}.
      *
+     * @param method Method that this frame originated in.
      * @param locals Local variable information for this frame.
      */
     public Frame(Method method, LocalVariable[] locals) {
