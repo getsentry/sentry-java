@@ -5,6 +5,7 @@
 
 #include "jvmti.h"
 #include <iostream>
+#include <cstring>
 #include "lib.h"
 
 extern Level LOG_LEVEL;
