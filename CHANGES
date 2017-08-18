@@ -1,8 +1,9 @@
-Version 1.4.1
+Version 1.5.0
 -------------
 
 - Reduce logging noise if JNDI is missing.
 - Add OSGi support. (thanks markwoon)
+- Local variable agent beta.
 
 Version 1.4.0
 -------------
