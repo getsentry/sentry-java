@@ -27,8 +27,9 @@ for more information. If you are still using ``raven`` you can
     config
     context
     usage
-    modules/index
+    agent
     migration
+    modules/index
 
 Resources:
 
