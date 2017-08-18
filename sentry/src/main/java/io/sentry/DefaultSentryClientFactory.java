@@ -300,6 +300,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             sentryClient.setupUncaughtExceptionHandler();
         }
 
+        for (String inAppPackage : getInAppFrames(dsn)) {
+            FrameCache.addAppPackage(inAppPackage);
+        }
+
         return sentryClient;
     }
 
@@ -511,10 +515,6 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             if (!inAppPackage.trim().equals("")) {
                 inAppPackages.add(inAppPackage);
             }
-        }
-
-        for (String inAppPackage : inAppPackages) {
-            FrameCache.addAppPackage(inAppPackage);
         }
 
         return inAppPackages;
