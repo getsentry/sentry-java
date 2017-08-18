@@ -10,6 +10,7 @@ import io.sentry.dsn.Dsn;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.helper.HttpEventBuilderHelper;
 import io.sentry.event.interfaces.*;
+import io.sentry.jvmti.FrameCache;
 import io.sentry.marshaller.Marshaller;
 import io.sentry.marshaller.json.*;
 import io.sentry.util.Util;
@@ -297,6 +298,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
         if (getUncaughtHandlerEnabled(dsn)) {
             sentryClient.setupUncaughtExceptionHandler();
+        }
+
+        for (String inAppPackage : getInAppFrames(dsn)) {
+            FrameCache.addAppPackage(inAppPackage);
         }
 
         return sentryClient;

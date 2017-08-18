@@ -138,9 +138,23 @@ static void makeLocalVariable(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
     env->SetObjectArrayElement(locals, index, local);
 }
 
-static jobject makeFrameObject(JNIEnv *env, jobjectArray locals) {
+static jobject makeFrameObject(jvmtiEnv* jvmti, JNIEnv *env, jmethodID method, jobjectArray locals) {
+    jvmtiError jvmti_error;
+    jclass method_class;
+    jobject frame_method;
     jclass frame_class;
     jmethodID ctor;
+
+    jvmti_error = jvmti->GetMethodDeclaringClass(method, &method_class);
+    if (jvmti_error != JVMTI_ERROR_NONE) {
+        throwException(env, "java/lang/RuntimeException", "Could not get the declaring class of the method.");
+        return nullptr;
+    }
+
+    frame_method = env->ToReflectedMethod(method_class, method, (jboolean) true);
+    if (frame_method == nullptr) {
+        return nullptr; // ToReflectedMethod raised an exception
+    }
 
     frame_class = env->FindClass("io/sentry/jvmti/Frame");
     if (frame_class == nullptr) {
@@ -148,12 +162,12 @@ static jobject makeFrameObject(JNIEnv *env, jobjectArray locals) {
     }
 
     ctor = env->GetMethodID(frame_class, "<init>",
-                            "([Lio/sentry/jvmti/Frame$LocalVariable;)V");
+                            "(Ljava/lang/reflect/Method;[Lio/sentry/jvmti/Frame$LocalVariable;)V");
     if (ctor == nullptr) {
         return nullptr;
     }
 
-    return env->NewObject(frame_class, ctor, locals);
+    return env->NewObject(frame_class, ctor, frame_method, locals);
 }
 
 static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint depth,
@@ -205,26 +219,19 @@ static jobject buildFrame(jvmtiEnv* jvmti, JNIEnv *env, jthread thread, jint dep
         value_ptr = nullptr;
     }
 
-    return makeFrameObject(env, locals);
+    return makeFrameObject(jvmti, env, method, locals);
 }
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
-                                   jint start_depth) {
+                                   jint start_depth, jint num_frames) {
     log(TRACE, "buildStackTraceFrames called.");
 
-    jint num_frames;
     jvmtiFrameInfo* frames;
     jclass result_class;
     jint num_frames_returned;
     jvmtiError jvmti_error;
     jobjectArray result;
     jobject frame;
-
-    jvmti_error = jvmti->GetFrameCount(thread, &num_frames);
-    if (jvmti_error != JVMTI_ERROR_NONE) {
-        throwException(env, "java/lang/RuntimeException", "Could not get the frame count.");
-        return nullptr;
-    }
 
     jvmti_error = jvmti->Allocate(num_frames * (int)sizeof(jvmtiFrameInfo), (unsigned char **) &frames);
     if (jvmti_error != JVMTI_ERROR_NONE) {

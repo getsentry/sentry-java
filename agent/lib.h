@@ -15,6 +15,6 @@ enum Level {
 void log(Level level, std::string message);
 
 jobjectArray buildStackTraceFrames(jvmtiEnv* jvmti, JNIEnv *env, jthread thread,
-                                   jint start_depth);
+                                   jint start_depth, jint num_frames);
 
 #endif //SENTRY_JAVA_AGENT_LIB_H
