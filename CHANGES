@@ -1,7 +1,7 @@
 Version 1.5.1
 -------------
 
--
+- Don't attempt to serialize Iterables and don't special case serialization for Path objects, fixes broken Android release.
 
 Version 1.5.0
 -------------
