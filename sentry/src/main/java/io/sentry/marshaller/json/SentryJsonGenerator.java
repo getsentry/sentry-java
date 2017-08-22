@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -72,24 +72,6 @@ public class SentryJsonGenerator extends JsonGenerator {
             generator.writeStartArray();
             writeArray(value, recursionLevel);
             generator.writeEndArray();
-        } else if (value instanceof Path) {
-            // Path is weird because it implements Iterable, and then the iterator returns
-            // more Paths, which are iterable... which would cause a stack overflow below.
-            generator.writeString(Util.trimString(value.toString(), maxLengthString));
-        } else if (value instanceof Iterable) {
-            generator.writeStartArray();
-            int i = 0;
-            for (Object subValue : (Iterable<?>) value) {
-                if (i >= maxLengthList) {
-                    writeElided();
-                    break;
-                }
-
-                writeObject(subValue, recursionLevel + 1);
-
-                i++;
-            }
-            generator.writeEndArray();
         } else if (value instanceof Map) {
             generator.writeStartObject();
             int i = 0;
@@ -108,6 +90,20 @@ public class SentryJsonGenerator extends JsonGenerator {
                 i++;
             }
             generator.writeEndObject();
+        } else if (value instanceof Collection) {
+            generator.writeStartArray();
+            int i = 0;
+            for (Object subValue : (Collection<?>) value) {
+                if (i >= maxLengthList) {
+                    writeElided();
+                    break;
+                }
+
+                writeObject(subValue, recursionLevel + 1);
+
+                i++;
+            }
+            generator.writeEndArray();
         } else if (value instanceof String) {
             generator.writeString(Util.trimString((String) value, maxLengthString));
         } else {
