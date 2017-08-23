@@ -62,15 +62,15 @@ public class Context implements Serializable {
      * Clear state from this context.
      */
     public synchronized void clear() {
-        breadcrumbs = null;
-        lastEventId = null;
-        user = null;
-        tags = null;
-        extra = null;
+        setLastEventId(null);
+        clearBreadcrumbs();
+        clearUser();
+        clearTags();
+        clearExtra();
     }
 
     /**
-     * Return {@link Breadcrumb}s attached to this Context.
+     * Return {@link Breadcrumb}s attached to this context.
      *
      * @return List of {@link Breadcrumb}s.
      */
@@ -85,9 +85,9 @@ public class Context implements Serializable {
     }
 
     /**
-     * Return tags attached to this Context.
+     * Return tags attached to this context.
      *
-     * @return tags attached to this Context.
+     * @return tags attached to this context.
      */
     public synchronized Map<String, String> getTags() {
         if (tags == null || tags.isEmpty()) {
@@ -98,9 +98,9 @@ public class Context implements Serializable {
     }
 
     /**
-     * Return extra data attached to this Context.
+     * Return extra data attached to this context.
      *
-     * @return extra data attached to this Context.
+     * @return extra data attached to this context.
      */
     public synchronized Map<String, Object> getExtra() {
         if (extra == null || extra.isEmpty()) {
@@ -111,7 +111,7 @@ public class Context implements Serializable {
     }
 
     /**
-     * Add tag to the current Context.
+     * Add tag to the current context.
      *
      * @param name tag name
      * @param value tag value
@@ -125,7 +125,27 @@ public class Context implements Serializable {
     }
 
     /**
-     * Add extra data to the current Context.
+     * Remove a tag name and value from the current context.
+     *
+     * @param name tag name to remove
+     */
+    public synchronized void removeTag(String name) {
+        if (tags == null) {
+            return;
+        }
+
+        tags.remove(name);
+    }
+
+    /**
+     * Clear all tags from the current context.
+     */
+    public synchronized void clearTags() {
+        tags = null;
+    }
+
+    /**
+     * Add extra data to the current context.
      *
      * @param name extra name
      * @param value extra value
@@ -139,6 +159,26 @@ public class Context implements Serializable {
     }
 
     /**
+     * Remove an extra data name and value from the current context.
+     *
+     * @param name extra name to remove
+     */
+    public synchronized void removeExtra(String name) {
+        if (extra == null) {
+            return;
+        }
+
+        extra.remove(name);
+    }
+
+    /**
+     * Clear all extra data from this context.
+     */
+    public synchronized void clearExtra() {
+        extra = null;
+    }
+
+    /**
      * Record a single {@link Breadcrumb} into this context.
      *
      * @param breadcrumb Breadcrumb object to record
@@ -149,6 +189,13 @@ public class Context implements Serializable {
         }
 
         breadcrumbs.add(breadcrumb);
+    }
+
+    /**
+     * Clear all breadcrumbs from this context.
+     */
+    public synchronized void clearBreadcrumbs() {
+        breadcrumbs = null;
     }
 
     /**

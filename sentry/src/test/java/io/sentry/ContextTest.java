@@ -7,9 +7,7 @@ import io.sentry.event.User;
 import io.sentry.event.UserBuilder;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -19,6 +17,7 @@ public class ContextTest extends BaseTest {
     @Test
     public void testBreadcrumbs() {
         Context context = new Context();
+        assertThat(context.getBreadcrumbs(), equalTo(Collections.<Breadcrumb>emptyList()));
 
         Breadcrumb breadcrumb = new BreadcrumbBuilder()
             .setLevel(Breadcrumb.Level.INFO)
@@ -31,6 +30,9 @@ public class ContextTest extends BaseTest {
         breadcrumbMatch.add(breadcrumb);
 
         assertThat(context.getBreadcrumbs(), equalTo(breadcrumbMatch));
+
+        context.clearBreadcrumbs();
+        assertThat(context.getBreadcrumbs(), equalTo(Collections.<Breadcrumb>emptyList()));
     }
 
     @Test
@@ -55,7 +57,6 @@ public class ContextTest extends BaseTest {
         breadcrumbMatch.add(breadcrumb2);
 
         assertThat(context.getBreadcrumbs(), equalTo(breadcrumbMatch));
-
     }
 
     @Test
@@ -74,4 +75,41 @@ public class ContextTest extends BaseTest {
         context.clearUser();
         assertThat(context.getUser(), equalTo(null));
     }
+
+    @Test
+    public void testTags() {
+        Context context = new Context();
+
+        assertThat(context.getTags(), equalTo(Collections.<String, String>emptyMap()));
+
+        context.removeTag("nonExistant");
+        assertThat(context.getTags(), equalTo(Collections.<String, String>emptyMap()));
+
+        context.addTag("foo", "bar");
+        Map<String, String> matchingTags = new HashMap<>();
+        matchingTags.put("foo", "bar");
+        assertThat(context.getTags(), equalTo(matchingTags));
+
+        context.removeTag("foo");
+        assertThat(context.getTags(), equalTo(Collections.<String, String>emptyMap()));
+    }
+
+    @Test
+    public void testExtras() {
+        Context context = new Context();
+
+        assertThat(context.getExtra(), equalTo(Collections.<String, Object>emptyMap()));
+
+        context.removeExtra("nonExistant");
+        assertThat(context.getExtra(), equalTo(Collections.<String, Object>emptyMap()));
+
+        context.addExtra("foo", "bar");
+        Map<String, Object> matchingExtras = new HashMap<>();
+        matchingExtras.put("foo", "bar");
+        assertThat(context.getExtra(), equalTo(matchingExtras));
+
+        context.removeExtra("foo");
+        assertThat(context.getExtra(), equalTo(Collections.<String, Object>emptyMap()));
+    }
+
 }
