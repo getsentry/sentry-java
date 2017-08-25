@@ -1,7 +1,7 @@
 Version 1.5.2
 -------------
 
--
+- Add ability to remove individual tags or extra data from the context, or clear them entirely.
 
 Version 1.5.1
 -------------
