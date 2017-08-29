@@ -234,7 +234,7 @@ is visible in the Sentry web interface where only the "in application" frames ar
 displayed by default.
 
 You can configure which package prefixes your application uses with the
-stacktrace.app.packages`` option, which takes a comma separated list.
+``stacktrace.app.packages`` option, which takes a comma separated list.
 
 ::
 
