@@ -47,6 +47,7 @@ public class EventTest extends BaseTest {
         }};
         event.getExtra().put("SerializableEntry", 38295L);
         event.getExtra().put("NonSerializableEntry", nonSerializableObject);
+        event.getExtra().put("NullEntry", null);
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
@@ -58,5 +59,7 @@ public class EventTest extends BaseTest {
         assertThat(receivedEvent.getExtra().get("SerializableEntry"), Matchers.<Object>equalTo(38295L));
         assertThat(receivedEvent.getExtra().get("NonSerializableEntry"),
                 Matchers.<Object>equalTo("3c644639-9721-4e32-8cc8-a2b5b77f4424"));
+        assertThat(receivedEvent.getExtra().get("NullEntry"),
+            Matchers.<Object>equalTo(null));
     }
 }
