@@ -1,6 +1,7 @@
 Version 1.5.3
 -------------
 
+- Cleanup SentryEnvironment state to avoid memory leak warnings on Tomcat.
 - Fix for buffering Events to disk that have null values in their extras map.
 
 Version 1.5.2
