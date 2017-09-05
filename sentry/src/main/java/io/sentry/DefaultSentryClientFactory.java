@@ -503,10 +503,12 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     protected Collection<String> getInAppFrames(Dsn dsn) {
         String inAppFramesOption = Lookup.lookup(IN_APP_FRAMES_OPTION, dsn);
         if (Util.isNullOrEmpty(inAppFramesOption)) {
-
-            logger.warn("No '" + IN_APP_FRAMES_OPTION + "' was configured, this option is highly recommended "
-                + "as it affects stacktrace grouping and display on Sentry. See documentation: "
-                + "https://docs.sentry.io/clients/java/config/#in-application-stack-frames");
+            // Only warn if the user didn't set it at all
+            if (inAppFramesOption == null) {
+                logger.warn("No '" + IN_APP_FRAMES_OPTION + "' was configured, this option is highly recommended "
+                    + "as it affects stacktrace grouping and display on Sentry. See documentation: "
+                    + "https://docs.sentry.io/clients/java/config/#in-application-stack-frames");
+            }
             return Collections.emptyList();
         }
 

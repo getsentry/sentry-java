@@ -240,6 +240,13 @@ You can configure which package prefixes your application uses with the
 
     stacktrace.app.packages=com.mycompany,com.other.name
 
+If you don't want to use this feature but want to disable the warning, simply
+set it to an empty string:
+
+::
+
+    stacktrace.app.packages=
+
 Same Frame as Enclosing Exception
 `````````````````````````````````
 
