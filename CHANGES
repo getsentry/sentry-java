@@ -1,7 +1,7 @@
 Version 1.5.3
 -------------
 
--
+- Cleanup SentryEnvironment state to avoid memory leak warnings on Tomcat.
 
 Version 1.5.2
 -------------

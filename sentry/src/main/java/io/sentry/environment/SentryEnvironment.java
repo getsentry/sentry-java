@@ -73,7 +73,11 @@ public final class SentryEnvironment {
                 logger.warn("Thread not yet managed by Sentry");
             }
         } finally {
-            SENTRY_THREAD.get().decrementAndGet();
+            if (SENTRY_THREAD.get().decrementAndGet() == 0) {
+                // Remove the ThreadLocal so we don't log leak warnings on Tomcat.
+                // The next get/incr (if any) will re-initialize it to 0.
+                SENTRY_THREAD.remove();
+            }
         }
     }
 
