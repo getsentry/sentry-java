@@ -1,7 +1,7 @@
 Version 1.5.3
 -------------
 
--
+- Fix for serializing null values in Event extras map.
 
 Version 1.5.2
 -------------

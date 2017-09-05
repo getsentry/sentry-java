@@ -303,7 +303,9 @@ public class Event implements Serializable {
     private static HashMap<String, ? super Serializable> convertToSerializable(Map<String, Object> objectMap) {
         HashMap<String, ? super Serializable> serializableMap = new HashMap<>(objectMap.size());
         for (Map.Entry<String, Object> objectEntry : objectMap.entrySet()) {
-            if (objectEntry.getValue() instanceof Serializable) {
+            if (objectEntry.getValue() == null) {
+                serializableMap.put(objectEntry.getKey(), (String) null);
+            } else if (objectEntry.getValue() instanceof Serializable) {
                 serializableMap.put(objectEntry.getKey(), (Serializable) objectEntry.getValue());
             } else {
                 serializableMap.put(objectEntry.getKey(), objectEntry.getValue().toString());
