@@ -108,7 +108,7 @@ The DSN itself can also be configured directly in code:
 
     import io.sentry.Sentry;
 
-    Sentry.init("https://public:private@host:port/1");
+    Sentry.init("https://public:private@host:port/1?option=value&other.option=othervalue");
 
 Note that Sentry will not be able to do anything with events until this line is run, so this
 method of configuration is not recommended if you might have errors occur during startup.
