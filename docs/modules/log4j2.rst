@@ -98,9 +98,9 @@ filters within the Sentry UI.
 .. sourcecode:: java
 
     void logWithExtras() {
-        // MDC extras
-        MDC.put("Environment", "Development");
-        MDC.put("OS", "Linux");
+        // ThreadContext ("MDC") extras
+        ThreadContext.put("Environment", "Development");
+        ThreadContext.put("OS", "Linux");
 
         // This sends an event where the Environment and OS MDC values are set as additional data
         logger.error("This is a test");
