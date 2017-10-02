@@ -1,7 +1,7 @@
 Version 1.5.4
 -------------
 
--
+- Change ``EventBuilder$HostnameCache`` timeout to only log at debug level.
 
 Version 1.5.3
 -------------

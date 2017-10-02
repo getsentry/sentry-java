@@ -524,7 +524,7 @@ public class EventBuilder {
                 futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
-                logger.warn("Localhost hostname lookup failed, keeping the value '{}'."
+                logger.debug("Localhost hostname lookup failed, keeping the value '{}'."
                     + " If this persists it may mean your DNS is incorrectly configured and"
                     + " you may want to hardcode your server name: https://docs.sentry.io/clients/java/config/",
                     hostname, e);
