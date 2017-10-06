@@ -16,6 +16,7 @@ based application.
 ## Resources
 
 * [Documentation](https://docs.sentry.io/clients/java/)
+* [Examples](https://github.com/getsentry/examples)
 * [Bug Tracker](http://github.com/getsentry/sentry-java/issues)
 * [Code](http://github.com/getsentry/sentry-java)
 * [Mailing List](https://groups.google.com/group/getsentry)
