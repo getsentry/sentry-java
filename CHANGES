@@ -1,7 +1,7 @@
 Version 1.5.5
 -------------
 
--
+- Fix crash on Android API < 16. (thanks Syhids)
 
 Version 1.5.4
 -------------
