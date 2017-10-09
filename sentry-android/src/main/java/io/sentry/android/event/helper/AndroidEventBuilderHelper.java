@@ -121,7 +121,9 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         ActivityManager.MemoryInfo memInfo = getMemInfo(ctx);
         if (memInfo != null) {
             deviceMap.put("free_memory", memInfo.availMem);
-            deviceMap.put("memory_size", memInfo.totalMem);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                deviceMap.put("memory_size", memInfo.totalMem);
+            }
             deviceMap.put("low_memory",  memInfo.lowMemory);
         }
 
