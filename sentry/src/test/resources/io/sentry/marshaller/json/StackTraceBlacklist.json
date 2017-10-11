@@ -1,0 +1,25 @@
+{
+  "frames":[
+    {
+      "filename":"File.java",
+      "module":"inAppModule.Blacklisted$$FastClassBySpringCGLIB$$",
+      "in_app":false,
+      "function":"blacklisted",
+      "lineno":3
+    },
+    {
+      "filename":"File.java",
+      "module":"notInAppModule.bar",
+      "in_app":false,
+      "function":"notInAppMethod",
+      "lineno":2
+    },
+    {
+      "filename":"File.java",
+      "module":"inAppModule.foo",
+      "in_app":true,
+      "function":"inAppMethod",
+      "lineno":1
+    }
+  ]
+}
