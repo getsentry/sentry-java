@@ -100,7 +100,9 @@ public class DiskBuffer implements Buffer {
         File eventFile = new File(bufferDir, event.getId().toString() + FILE_SUFFIX);
         if (eventFile.exists()) {
             logger.debug("Discarding Event from offline storage: " + eventFile.getAbsolutePath());
-            eventFile.delete();
+            if (!eventFile.delete()) {
+                logger.warn("Failed to delete Event: " + eventFile.getAbsolutePath());
+            }
         }
     }
 
@@ -118,7 +120,9 @@ public class DiskBuffer implements Buffer {
             eventObj = ois.readObject();
         } catch (Exception e) {
             logger.error("Error reading Event file: " + eventFile.getAbsolutePath(), e);
-            eventFile.delete();
+            if (!eventFile.delete()) {
+                logger.warn("Failed to delete Event: " + eventFile.getAbsolutePath());
+            }
             return null;
         }
 
@@ -126,7 +130,9 @@ public class DiskBuffer implements Buffer {
             return (Event) eventObj;
         } catch (Exception e) {
             logger.error("Error casting Object to Event: " + eventFile.getAbsolutePath(), e);
-            eventFile.delete();
+            if (!eventFile.delete()) {
+                logger.warn("Failed to delete Event: " + eventFile.getAbsolutePath());
+            }
             return null;
         }
     }
