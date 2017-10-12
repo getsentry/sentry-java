@@ -32,6 +32,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     static {
         // skip CGLIB generated classes like Foo$$FastClassBySpringCGLIB$$4ed8b6b
         inAppBlacklistRegexps.add(Pattern.compile("\\$\\$FastClass[a-zA-Z]*CGLIB\\$\\$"));
+        inAppBlacklistRegexps.add(Pattern.compile("\\$\\$Enhancer[a-zA-Z]*CGLIB\\$\\$"));
     }
 
     /**
