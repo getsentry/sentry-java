@@ -1,7 +1,7 @@
 Agent (Beta)
 ============
 
-As of version 1.5.5 there is a new **experimental (beta)** Java Agent available that
+As of version 1.5.6 there is a new **experimental (beta)** Java Agent available that
 enhances the existing Sentry Java SDK. The agent will enhance your application stacktraces
 on Sentry by adding the names and values of local variables to each frame.
 
