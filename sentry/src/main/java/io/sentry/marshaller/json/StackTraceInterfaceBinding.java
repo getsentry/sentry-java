@@ -5,9 +5,8 @@ import io.sentry.event.interfaces.SentryStackTraceElement;
 import io.sentry.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Binding allowing to convert a {@link StackTraceInterface} into a JSON stream.
@@ -26,8 +25,15 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
     private static final String PLATFORM_PARAMTER = "platform";
+    private static List<Pattern> inAppBlacklistRegexps = new ArrayList<>();
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
+
+    static {
+        // skip CGLIB generated classes like Foo$$FastClassBySpringCGLIB$$4ed8b6b
+        inAppBlacklistRegexps.add(Pattern.compile("\\$\\$FastClass[a-zA-Z]*CGLIB\\$\\$"));
+        inAppBlacklistRegexps.add(Pattern.compile("\\$\\$Enhancer[a-zA-Z]*CGLIB\\$\\$"));
+    }
 
     /**
      * Writes a single frame based on a {@code StackTraceElement}.
@@ -73,10 +79,21 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         // TODO: A linear search is not efficient here, a Trie could be a better solution.
         for (String inAppFrame : inAppFrames) {
             String className = stackTraceElement.getModule();
-            if (className.startsWith(inAppFrame)) {
+            if (className.startsWith(inAppFrame) && !isBlacklistedFromInApp(className)) {
                 return true;
             }
         }
+        return false;
+    }
+
+    private boolean isBlacklistedFromInApp(String className) {
+        for (Pattern inAppBlacklistRegexp : inAppBlacklistRegexps) {
+            boolean found = inAppBlacklistRegexp.matcher(className).find();
+            if (found) {
+                return true;
+            }
+        }
+
         return false;
     }
 
