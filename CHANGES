@@ -1,7 +1,9 @@
 Version 1.5.7
 -------------
 
--
+- Add transaction field to Event and EventBuilder.
+- Deprecate culprits in favor of transactions.
+- Culprit is no longer set automatically in logging integrations.
 
 Version 1.5.6
 -------------
