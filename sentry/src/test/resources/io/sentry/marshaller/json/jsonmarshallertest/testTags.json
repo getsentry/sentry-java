@@ -6,6 +6,7 @@
     "logger": null,
     "platform": null,
     "culprit": null,
+    "transaction": null,
     "tags": {
         "tagName": "tagValue"
     },

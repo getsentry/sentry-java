@@ -220,12 +220,16 @@ public class EventBuilder {
         return this;
     }
 
+
+
     /**
      * Sets the culprit in the event based on a {@link SentryStackTraceElement}.
      *
      * @param frame stack frame during which the event was captured.
      * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Culprit has been removed in favor of Transaction.
      */
+    @Deprecated
     public EventBuilder withCulprit(SentryStackTraceElement frame) {
         return withCulprit(buildCulpritString(frame.getModule(), frame.getFunction(),
             frame.getFileName(), frame.getLineno()));
@@ -237,7 +241,9 @@ public class EventBuilder {
      *
      * @param frame stack frame during which the event was captured.
      * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Culprit has been removed in favor of Transaction.
      */
+    @Deprecated
     public EventBuilder withCulprit(StackTraceElement frame) {
         return withCulprit(buildCulpritString(frame.getClassName(), frame.getMethodName(),
             frame.getFileName(), frame.getLineNumber()));
@@ -266,9 +272,22 @@ public class EventBuilder {
      *
      * @param culprit culprit.
      * @return the current {@code EventBuilder} for chained calls.
+     * @deprecated Culprit has been removed in favor of Transaction.
      */
+    @Deprecated
     public EventBuilder withCulprit(String culprit) {
         event.setCulprit(culprit);
+        return this;
+    }
+
+    /**
+     * Sets the transaction in the event.
+     *
+     * @param transaction transaction.
+     * @return the current {@code EventBuilder} for chained calls.
+     */
+    public EventBuilder withTransaction(String transaction) {
+        event.setTransaction(transaction);
         return this;
     }
 

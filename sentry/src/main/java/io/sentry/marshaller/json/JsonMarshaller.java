@@ -53,6 +53,10 @@ public class JsonMarshaller implements Marshaller {
      */
     public static final String CULPRIT = "culprit";
     /**
+     * Name of the transaction that this event occurred inside of.
+     */
+    public static final String TRANSACTION = "transaction";
+    /**
      * An object representing the SDK name and version.
      */
     public static final String SDK = "sdk";
@@ -189,6 +193,7 @@ public class JsonMarshaller implements Marshaller {
         generator.writeStringField(LOGGER, event.getLogger());
         generator.writeStringField(PLATFORM, event.getPlatform());
         generator.writeStringField(CULPRIT, event.getCulprit());
+        generator.writeStringField(TRANSACTION, event.getTransaction());
         writeSdk(generator, event.getSdk());
         writeTags(generator, event.getTags());
         writeBreadcumbs(generator, event.getBreadcrumbs());

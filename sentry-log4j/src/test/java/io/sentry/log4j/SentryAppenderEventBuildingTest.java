@@ -190,55 +190,6 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
     }
 
     @Test
-    public void testCulpritWithSource(@Injectable final LocationInfo locationInfo) throws Exception {
-        final String className = "a";
-        final String methodName = "b";
-        final String fileName = "c";
-        final int line = 42;
-        new NonStrictExpectations() {{
-            locationInfo.getClassName();
-            result = className;
-            locationInfo.getMethodName();
-            result = methodName;
-            locationInfo.getFileName();
-            result = fileName;
-            locationInfo.getLineNumber();
-            result = Integer.toString(line);
-            setField(locationInfo, "fullInfo", "");
-        }};
-
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null,
-                null, null, locationInfo, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is("a.b(c:42)"));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = "2b27da1d-e03a-4292-9a81-78be5491a7e1";
-        new Expectations() {{
-            mockLogger.getName();
-            result = loggerName;
-        }};
-
-        sentryAppender.append(new LoggingEvent(null, mockLogger, 0, Level.ERROR, null, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is(loggerName));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
     public void testExtraTagObtainedFromMdc() throws Exception {
         Map<String, Object> properties = new HashMap<>();
         properties.put(mockExtraTag, "ac84f38a-3889-41ed-9519-201402688abb");
