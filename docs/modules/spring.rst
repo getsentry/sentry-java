@@ -22,22 +22,22 @@ Using Maven:
     <dependency>
         <groupId>io.sentry</groupId>
         <artifactId>sentry-spring</artifactId>
-        <version>1.5.6</version>
+        <version>1.6.0</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry-spring:1.5.6'
+    compile 'io.sentry:sentry-spring:1.6.0'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "io.sentry" % "sentry-spring" % "1.5.6"
+    libraryDependencies += "io.sentry" % "sentry-spring" % "1.6.0"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-spring%7C1.5.6%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-spring%7C1.6.0%7Cjar>`_.
 
 Usage
 -----
