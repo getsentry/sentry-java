@@ -4,11 +4,7 @@ import io.sentry.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -118,6 +114,9 @@ public class DiskBuffer implements Buffer {
         try (FileInputStream fileInputStream = new FileInputStream(new File(eventFile.getAbsolutePath()));
              ObjectInputStream ois = new ObjectInputStream(fileInputStream)) {
             eventObj = ois.readObject();
+        } catch (FileNotFoundException e) {
+            // event was deleted while we were iterating the array of files
+            return null;
         } catch (Exception e) {
             logger.error("Error reading Event file: " + eventFile.getAbsolutePath(), e);
             if (!eventFile.delete()) {

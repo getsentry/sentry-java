@@ -239,6 +239,8 @@ public class BufferedConnection implements Connection {
                     }
                 }
                 logger.trace("Flusher run exiting, no more events to send.");
+            } catch (Exception e) {
+                logger.error("Error running Flusher: ", e);
             } finally {
                 SentryEnvironment.stopManagingThread();
             }
