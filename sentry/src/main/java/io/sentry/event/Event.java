@@ -189,6 +189,13 @@ public class Event implements Serializable {
         return culprit;
     }
 
+    /**
+     * Sets the culprit.
+     *
+     * @param culprit Function call which was the primary perpetrator of this event.
+     * @deprecated Culprit has been removed in favor of Transaction.
+     */
+    @Deprecated
     void setCulprit(String culprit) {
         this.culprit = culprit;
     }
