@@ -120,39 +120,6 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
         assertNoErrorsInErrorManager();
     }
 
-    @Test
-    public void testCulpritWithSource() throws Exception {
-        final String className = "a";
-        final String methodName = "b";
-        final StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, 0);
-
-        sentryHandler.publish(newLogRecord(null, Level.SEVERE, null, null, null,
-                new StackTraceElement[]{stackTraceElement}, 0, 0));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is("a.b"));
-        }};
-        assertNoErrorsInErrorManager();
-    }
-
-    @Test
-    public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = "0c929a2e-f2bc-4ebb-ad41-a29fb1591ffe";
-
-        sentryHandler.publish(newLogRecord(loggerName, Level.SEVERE, null, null, null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is(loggerName));
-        }};
-        assertNoErrorsInErrorManager();
-    }
-
     private LogRecord newLogRecord(String loggerName, Level level, String message,
                                    Object[] argumentArray, Throwable t) {
         return newLogRecord(loggerName, level, message, argumentArray, t, null,

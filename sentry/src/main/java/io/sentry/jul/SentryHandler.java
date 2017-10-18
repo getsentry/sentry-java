@@ -141,14 +141,6 @@ public class SentryHandler extends Handler {
             eventBuilder.withSentryInterface(new ExceptionInterface(throwable));
         }
 
-        if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
-            StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
-                record.getSourceMethodName(), null, -1);
-            eventBuilder.withCulprit(fakeFrame);
-        } else {
-            eventBuilder.withCulprit(record.getLoggerName());
-        }
-
         Map<String, String> mdc = MDC.getMDCAdapter().getCopyOfContextMap();
         if (mdc != null) {
             for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {

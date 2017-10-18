@@ -213,37 +213,6 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
     }
 
     @Test
-    public void testCulpritWithSource() throws Exception {
-        final StackTraceElement location = new StackTraceElement("a", "b", "c", 42);
-
-        sentryAppender.append(new Log4jLogEvent(null, null, null, Level.INFO, new SimpleMessage(""), null, null, null,
-                null, location, 0));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is("a.b(c:42)"));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
-    public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = "150bbbfa-f729-460e-921b-a0fe1f7ab392 ";
-
-        sentryAppender.append(new Log4jLogEvent(loggerName, null, null, Level.INFO, new SimpleMessage(""), null));
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is(loggerName));
-        }};
-        assertNoErrorsInErrorHandler();
-    }
-
-    @Test
     public void testExtraTagObtainedFromMdc() throws Exception {
         Map<String, String> mdc = new HashMap<>();
         mdc.put(mockExtraTag, "565940d2-f4a4-42f6-9496-42e3c7c85c43");

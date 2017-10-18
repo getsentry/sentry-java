@@ -174,6 +174,19 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
+    public void testEventTransactionWrittenProperly(@Injectable("transaction") final String mockTransaction) throws Exception {
+        final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
+        new NonStrictExpectations() {{
+            mockEvent.getTransaction();
+            result = mockTransaction;
+        }};
+
+        jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
+
+        assertThat(jsonOutputStreamParser.value(), is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testTransaction.json")));
+    }
+
+    @Test
     public void testEventTagsWrittenProperly(@Injectable("tagName") final String mockTagName,
                                              @Injectable("tagValue") final String mockTagValue) throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();

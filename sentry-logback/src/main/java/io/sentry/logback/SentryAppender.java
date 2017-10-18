@@ -143,12 +143,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.withSentryInterface(new StackTraceInterface(iLoggingEvent.getCallerData()));
         }
 
-        if (iLoggingEvent.getCallerData().length > 0) {
-            eventBuilder.withCulprit(iLoggingEvent.getCallerData()[0]);
-        } else {
-            eventBuilder.withCulprit(iLoggingEvent.getLoggerName());
-        }
-
         for (Map.Entry<String, String> contextEntry : iLoggingEvent.getLoggerContextVO().getPropertyMap().entrySet()) {
             eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
         }

@@ -64,6 +64,10 @@ public class Event implements Serializable {
      */
     private String culprit;
     /**
+     * Name of the transaction that this event occurred inside of.
+     */
+    private String transaction;
+    /**
      * A map or list of tags for this event.
      * <p>
      * Automatically created with a Map that is made unmodifiable by the {@link EventBuilder}.
@@ -185,8 +189,23 @@ public class Event implements Serializable {
         return culprit;
     }
 
+    /**
+     * Sets the culprit.
+     *
+     * @param culprit Function call which was the primary perpetrator of this event.
+     * @deprecated Culprit has been removed in favor of Transaction.
+     */
+    @Deprecated
     void setCulprit(String culprit) {
         this.culprit = culprit;
+    }
+
+    public String getTransaction() {
+        return transaction;
+    }
+
+    void setTransaction(String transaction) {
+        this.transaction = transaction;
     }
 
     public List<Breadcrumb> getBreadcrumbs() {

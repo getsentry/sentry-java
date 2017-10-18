@@ -244,38 +244,6 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
     }
 
     @Test
-    public void testCulpritWithSource() throws Exception {
-        final StackTraceElement[] location = {new StackTraceElement("a", "b", "c", 42),
-                new StackTraceElement("d", "e", "f", 69)};
-
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null, null, null, location, 0)
-                .getMockInstance());
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is("a.b(c:42)"));
-        }};
-        assertNoErrorsInStatusManager();
-    }
-
-    @Test
-    public void testCulpritWithoutSource() throws Exception {
-        final String loggerName = "ee1c33e8-2f2e-4613-9c2c-2564624a9d4f";
-
-        sentryAppender.append(new MockUpLoggingEvent(loggerName, null, Level.INFO, null, null, null).getMockInstance());
-
-        new Verifications() {{
-            EventBuilder eventBuilder;
-            mockSentryClient.sendEvent(eventBuilder = withCapture());
-            Event event = eventBuilder.build();
-            assertThat(event.getCulprit(), is(loggerName));
-        }};
-        assertNoErrorsInStatusManager();
-    }
-
-    @Test
     public void testExtraTagObtainedFromMdc() throws Exception {
         Map<String, String> mdcPropertyMap = new HashMap<>();
         mdcPropertyMap.put(mockExtraTag, "47008f35-50c8-4e40-94ca-c8c1a3ddb729");

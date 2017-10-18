@@ -29,6 +29,8 @@ public class UnmarshalledEvent {
     private Map<String, Object> sdk;
     @JsonProperty(value = "culprit")
     private String culprit;
+    @JsonProperty(value = "transaction")
+    private String transaction;
     @JsonProperty(value = "tags")
     private Map<String, String> tags;
     @JsonProperty(value = "server_name")

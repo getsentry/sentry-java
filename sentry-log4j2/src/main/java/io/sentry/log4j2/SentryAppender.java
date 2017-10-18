@@ -171,12 +171,6 @@ public class SentryAppender extends AbstractAppender {
             eventBuilder.withSentryInterface(new StackTraceInterface(stackTrace));
         }
 
-        if (event.getSource() != null) {
-            eventBuilder.withCulprit(event.getSource());
-        } else {
-            eventBuilder.withCulprit(event.getLoggerName());
-        }
-
         if (event.getContextStack() != null) {
             eventBuilder.withExtra(LOG4J_NDC, event.getContextStack().asList());
         }

@@ -6,7 +6,7 @@
   "logger": null,
   "platform": null,
   "culprit": null,
-  "transaction": null,
+  "transaction": "transaction",
   "tags": {},
   "server_name": null,
   "release": null,

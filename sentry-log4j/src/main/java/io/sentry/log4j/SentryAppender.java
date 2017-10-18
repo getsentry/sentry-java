@@ -124,13 +124,6 @@ public class SentryAppender extends AppenderSkeleton {
             }
         }
 
-        // Set culprit
-        if (loggingEvent.getLocationInformation().fullInfo != null) {
-            eventBuilder.withCulprit(asStackTraceElement(loggingEvent.getLocationInformation()));
-        } else {
-            eventBuilder.withCulprit(loggingEvent.getLoggerName());
-        }
-
         if (loggingEvent.getNDC() != null) {
             eventBuilder.withExtra(LOG4J_NDC, loggingEvent.getNDC());
         }
