@@ -1,4 +1,4 @@
-Version 1.5.7
+Version 1.6.0
 -------------
 
 - Add transaction field to Event and EventBuilder.
