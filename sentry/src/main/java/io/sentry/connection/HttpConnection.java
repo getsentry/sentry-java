@@ -156,6 +156,18 @@ public class HttpConnection extends AbstractConnection {
             outputStream.close();
             connection.getInputStream().close();
         } catch (IOException e) {
+            try {
+                int responseCode = connection.getResponseCode();
+                // CHECKSTYLE.OFF: MagicNumber
+                if (responseCode == 403) {
+                    logger.debug("Event '" + event.getId() + "' was rejected by the Sentry server due to a filter.");
+                    return;
+                }
+                // CHECKSTYLE.ON: MagicNumber
+            } catch (IOException responseCodeException) {
+                // pass
+            }
+
             String errorMessage = null;
             final InputStream errorStream = connection.getErrorStream();
             if (errorStream != null) {

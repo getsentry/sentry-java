@@ -1,7 +1,7 @@
 Version 1.6.1
 -------------
 
--
+- Don't throw a ConnectionException if an event is filtered by the Sentry server (HTTP 403).
 
 Version 1.6.0
 -------------
