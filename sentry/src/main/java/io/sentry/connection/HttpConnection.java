@@ -156,6 +156,16 @@ public class HttpConnection extends AbstractConnection {
             outputStream.close();
             connection.getInputStream().close();
         } catch (IOException e) {
+            try {
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
+                    logger.debug("Event '" + event.getId() + "' was rejected by the Sentry server due to a filter.");
+                    return;
+                }
+            } catch (IOException responseCodeException) {
+                // pass
+            }
+
             String errorMessage = null;
             final InputStream errorStream = connection.getErrorStream();
             if (errorStream != null) {

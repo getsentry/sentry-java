@@ -143,6 +143,18 @@ public class HttpConnectionTest extends BaseTest {
     }
 
     @Test
+    public void testHttp403DoesntThrow(@Injectable final Event mockEvent) throws Exception {
+        new NonStrictExpectations() {{
+            mockUrlConnection.getOutputStream();
+            result = new IOException();
+            mockUrlConnection.getResponseCode();
+            result = 403;
+        }};
+
+        httpConnection.doSend(mockEvent);
+    }
+
+    @Test
     public void testRetryAfterHeader(@Injectable final Event mockEvent) throws Exception {
         final String httpErrorMessage = "93e3ddb1-c4f3-46c3-9900-529de83678b7";
         new NonStrictExpectations() {{
