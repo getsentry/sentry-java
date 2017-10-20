@@ -32,13 +32,17 @@ public class BaseIT extends BaseTest {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().port(8080));
 
-    public void stub200ForProject1Store() {
+    public void stubForProject1Store(int responseCode) {
         wireMockRule.stubFor(
             post(urlEqualTo(PROJECT1_STORE_URL))
                 .withHeader(AUTH_HEADER, AUTH_HEADER_PATTERN)
                 .withHeader("Content-Type", new EqualToPattern("application/json"))
                 .withHeader("Content-Encoding", new EqualToPattern("gzip"))
-                .willReturn(aResponse().withStatus(200)));
+                .willReturn(aResponse().withStatus(responseCode)));
+    }
+
+    public void stub200ForProject1Store() {
+        stubForProject1Store(200);
     }
 
     public String getDsn(String projectId) {

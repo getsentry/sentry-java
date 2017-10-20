@@ -158,12 +158,10 @@ public class HttpConnection extends AbstractConnection {
         } catch (IOException e) {
             try {
                 int responseCode = connection.getResponseCode();
-                // CHECKSTYLE.OFF: MagicNumber
-                if (responseCode == 403) {
+                if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
                     logger.debug("Event '" + event.getId() + "' was rejected by the Sentry server due to a filter.");
                     return;
                 }
-                // CHECKSTYLE.ON: MagicNumber
             } catch (IOException responseCodeException) {
                 // pass
             }
