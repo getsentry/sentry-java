@@ -113,7 +113,7 @@ Raven Class Changes
 
         // The static SentryClient can be lazily initialized from anywhere in your application.
         // Your DSN needs to be provided somehow, check the configuration documentation!
-        Sentry.capture("Hello, world!)
+        Sentry.capture("Hello, world!")
 
 Configuration via DSN
 ---------------------
