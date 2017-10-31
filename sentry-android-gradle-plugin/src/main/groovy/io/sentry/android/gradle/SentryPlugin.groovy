@@ -94,8 +94,8 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static Task getProguardTask(Project project, ApplicationVariant variant) {
-        def name = variant.name.capitalize()
-        def rv = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${name}")
+        def name = "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}"
+        def rv = project.tasks.findByName(name)
         if (rv != null) {
             return rv
         }
@@ -110,8 +110,8 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static Task getDexTask(Project project, ApplicationVariant variant) {
-        def name = variant.name.capitalize()
-        def rv = project.tasks.findByName("transformClassesWithDexFor${name}")
+        def name = "transformClassesWithDexFor${variant.name.capitalize()}"
+        def rv = project.tasks.findByName(name)
         if (rv != null) {
             return rv
         }
@@ -138,102 +138,119 @@ class SentryPlugin implements Plugin<Project> {
             }
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
-                def variantOutput = variant.outputs.first()
-
-                def manifestPath
-                try {
-                    // Android Gradle Plugin < 3.0.0
-                    manifestPath = variantOutput.processManifest.manifestOutputFile
-                } catch (Exception ignored) {
-                    // Android Gradle Plugin >= 3.0.0
-                    manifestPath = new File(variantOutput.processManifest.manifestOutputDirectory, "AndroidManifest.xml")
-                }
-
-                def mappingFile = variant.getMappingFile()
-                def proguardTask = getProguardTask(project, variant)
-                def dexTask = getDexTask(project, variant)
-
-                if (proguardTask == null) {
-                    return
-                }
-
-                // create a task to configure proguard automatically unless the user disabled it.
-                if (project.sentry.autoProguardConfig) {
-                    SentryProguardConfigTask proguardConfigTask = project.tasks.create(
-                        "addSentryProguardSettingsFor${variant.name.capitalize()}",
-                        SentryProguardConfigTask)
-                    proguardConfigTask.group = GROUP_NAME
-                    proguardConfigTask.applicationVariant = variant
-                    proguardTask.dependsOn proguardConfigTask
-                }
-
-                def cli = getSentryCli(project)
-
-                // create a task that persists our proguard uuid as android asset
-                def persistIdsTask = project.tasks.create(
-                        name: "persistSentryProguardUuidsFor${variant.name.capitalize()}",
-                        type: Exec) {
-                    description "Write references to proguard UUIDs to the android assets."
-                    workingDir project.rootDir
-
-                    def variantName = variant.buildType.name
-                    def flavorName = variant.flavorName
-                    def propName = "sentry.properties"
-                    def possibleProps = [
-                            "${project.rootDir.toPath()}/app/src/${variantName}/${propName}",
-                            "${project.rootDir.toPath()}/app/src/${variantName}/${flavorName}/${propName}",
-                            "${project.rootDir.toPath()}/app/src/${flavorName}/${variantName}/${propName}",
-                            "${project.rootDir.toPath()}/src/${variantName}/${propName}",
-                            "${project.rootDir.toPath()}/src/${variantName}/${flavorName}/${propName}",
-                            "${project.rootDir.toPath()}/src/${flavorName}/${variantName}/${propName}",
-                            "${project.rootDir.toPath()}/${propName}"
-                    ]
-
-                    def propsFile = null
-                    possibleProps.each {
-                        if (propsFile == null && new File(it).isFile()) {
-                            propsFile = it
+                variant.outputs.each { variantOutput ->
+                    def manifestPath
+                    try {
+                        // Android Gradle Plugin < 3.0.0
+                        manifestPath = variantOutput.processManifest.manifestOutputFile
+                    } catch (Exception ignored) {
+                        // Android Gradle Plugin >= 3.0.0
+                        manifestPath = new File(
+                                variantOutput.processManifest.manifestOutputDirectory,
+                                "AndroidManifest.xml")
+                        if (!manifestPath.isFile()) {
+                            manifestPath = new File(
+                                    new File(
+                                            variantOutput.processManifest.manifestOutputDirectory,
+                                            variantOutput.dirName),
+                                    "AndroidManifest.xml")
+                            if (!manifestPath.isFile()) {
+                                System.err.println("sentry-plugin: Cannot find AndroidManifst.xml")
+                                return
+                            }
                         }
                     }
 
-                    if (propsFile != null) {
-                        environment("SENTRY_PROPERTIES", propsFile)
+                    def mappingFile = variant.getMappingFile()
+                    def proguardTask = getProguardTask(project, variant)
+                    def dexTask = getDexTask(project, variant)
+
+                    if (proguardTask == null) {
+                        return
                     }
 
-                    def args = [
-                        cli,
-                        "upload-proguard",
-                        "--android-manifest",
-                        manifestPath,
-                        "--write-properties",
-                        getDebugMetaPropPath(project, variant),
-                        mappingFile
-                    ]
-
-                    if (!project.sentry.autoUpload) {
-                        args.push("--no-upload")
+                    // create a task to configure proguard automatically unless the user disabled it.
+                    if (project.sentry.autoProguardConfig) {
+                        def addProguardSettingsTaskName = "addSentryProguardSettingsFor${variant.name.capitalize()}"
+                        if (!project.tasks.findByName(addProguardSettingsTaskName)) {
+                            SentryProguardConfigTask proguardConfigTask = project.tasks.create(
+                                    addProguardSettingsTaskName,
+                                    SentryProguardConfigTask)
+                            proguardConfigTask.group = GROUP_NAME
+                            proguardConfigTask.applicationVariant = variant
+                            proguardTask.dependsOn proguardConfigTask
+                        }
                     }
 
-                    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                        commandLine("cmd", "/c", *args)
+                    def cli = getSentryCli(project)
+
+                    def persistIdsTaskName = "persistSentryProguardUuidsFor${variant.name.capitalize()}${variantOutput.name.capitalize()}"
+                    // create a task that persists our proguard uuid as android asset
+                    def persistIdsTask = project.tasks.create(
+                            name: persistIdsTaskName,
+                            type: Exec) {
+                        description "Write references to proguard UUIDs to the android assets."
+                        workingDir project.rootDir
+
+                        def variantName = variant.buildType.name
+                        def flavorName = variant.flavorName
+                        def propName = "sentry.properties"
+                        def possibleProps = [
+                                "${project.rootDir.toPath()}/app/src/${variantName}/${propName}",
+                                "${project.rootDir.toPath()}/app/src/${variantName}/${flavorName}/${propName}",
+                                "${project.rootDir.toPath()}/app/src/${flavorName}/${variantName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${variantName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${variantName}/${flavorName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${flavorName}/${variantName}/${propName}",
+                                "${project.rootDir.toPath()}/${propName}"
+                        ]
+
+                        def propsFile = null
+                        possibleProps.each {
+                            if (propsFile == null && new File(it).isFile()) {
+                                propsFile = it
+                            }
+                        }
+
+                        if (propsFile != null) {
+                            environment("SENTRY_PROPERTIES", propsFile)
+                        }
+
+                        def args = [
+                                cli,
+                                "upload-proguard",
+                                "--android-manifest",
+                                manifestPath,
+                                "--write-properties",
+                                getDebugMetaPropPath(project, variant),
+                                mappingFile
+                        ]
+
+                        if (!project.sentry.autoUpload) {
+                            args.push("--no-upload")
+                        }
+
+                        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                            commandLine("cmd", "/c", *args)
+                        } else {
+                            commandLine(*args)
+                        }
+
+                        enabled true
+                    }
+
+                    // and run before dex transformation.  If we managed to find the dex task
+                    // we set ourselves as dependency, otherwise we just hack outselves into
+                    // the proguard task's doLast.
+                    if (dexTask != null) {
+                        dexTask.dependsOn persistIdsTask
                     } else {
-                        commandLine(*args)
+                        proguardTask.doLast {
+                            persistIdsTask.execute()
+                        }
                     }
-
-                    enabled true
+                    persistIdsTask.dependsOn proguardTask
                 }
-
-                // and run before dex transformation.  If we managed to find the dex task
-                // we set ourselves as dependency, otherwise we just hack outselves into
-                // the proguard task's doLast.
-                if (dexTask != null) {
-                    dexTask.dependsOn persistIdsTask
-                } else {
-                    proguardTask.doLast {
-                        persistIdsTask.execute()
-                    }
-                }
-                persistIdsTask.dependsOn proguardTask
             }
         }
     }
