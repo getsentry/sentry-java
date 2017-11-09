@@ -2,3 +2,4 @@ target/
 docs/_build
 infer-out/
 agent/build/
+local.properties
