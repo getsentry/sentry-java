@@ -154,10 +154,6 @@ class SentryPlugin implements Plugin<Project> {
                                             variantOutput.processManifest.manifestOutputDirectory,
                                             variantOutput.dirName),
                                     "AndroidManifest.xml")
-                            if (!manifestPath.isFile()) {
-                                System.err.println("sentry-plugin: Cannot find AndroidManifst.xml")
-                                return
-                            }
                         }
                     }
 
