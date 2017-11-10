@@ -6,12 +6,12 @@ Version 1.6.4
 Version 1.6.3
 -------------
 
--
+- Fix issue where Gradle tasks were not created. (thanks szymanskip)
 
 Version 1.6.2
 -------------
 
--
+- Handle multi-APK projects with different version codes.
 
 Version 1.6.1
 -------------
