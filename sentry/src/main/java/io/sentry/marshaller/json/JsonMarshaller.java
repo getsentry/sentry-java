@@ -157,7 +157,7 @@ public class JsonMarshaller implements Marshaller {
             destination = new GZIPOutputStream(destination);
         }
 
-        try (SentryJsonGenerator generator = new SentryJsonGenerator(jsonFactory.createGenerator(destination))) {
+        try (JsonGenerator generator = createJsonGenerator(destination)) {
             writeContent(generator, event);
         } catch (IOException e) {
             logger.error("An exception occurred while serialising the event.", e);
@@ -168,6 +168,19 @@ public class JsonMarshaller implements Marshaller {
                 logger.error("An exception occurred while serialising the event.", e);
             }
         }
+    }
+
+    /**
+     * Creates the {@link JsonGenerator} used to marshall to json.
+     * This method makes it easier to provide a custom implementation.
+     *
+     * @param destination used to read the content
+     * @return a new instance
+     * @throws IOException on error reading the stream
+     */
+    @SuppressWarnings("WeakerAccess")
+    protected JsonGenerator createJsonGenerator(OutputStream destination) throws IOException {
+        return new SentryJsonGenerator(jsonFactory.createGenerator(destination));
     }
 
     @Override

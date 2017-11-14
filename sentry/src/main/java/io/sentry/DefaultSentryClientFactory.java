@@ -454,7 +454,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected Marshaller createMarshaller(Dsn dsn) {
         int maxMessageLength = getMaxMessageLength(dsn);
-        JsonMarshaller marshaller = new JsonMarshaller(maxMessageLength);
+        JsonMarshaller marshaller = createJsonMarshaller(maxMessageLength);
 
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
@@ -476,6 +476,17 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         marshaller.setCompression(getCompressionEnabled(dsn));
 
         return marshaller;
+    }
+
+    /**
+     * Create a {@link JsonMarshaller}. This method makes it easier to provide a custom implementation.
+     *
+     * @param maxMessageLength of the whole json output
+     * @return new marshaller
+     */
+    @SuppressWarnings("WeakerAccess")
+    protected JsonMarshaller createJsonMarshaller(int maxMessageLength) {
+        return new JsonMarshaller(maxMessageLength);
     }
 
     /**
