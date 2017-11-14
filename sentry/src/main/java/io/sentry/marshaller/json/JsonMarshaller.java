@@ -170,6 +170,14 @@ public class JsonMarshaller implements Marshaller {
         }
     }
 
+    /**
+     * Creates the {@link JsonGenerator} used to marshall to json.
+     * This method makes it easier to provide a custom implementation.
+     *
+     * @param destination used to read the content
+     * @return a new instance
+     * @throws IOException on error reading the stream
+     */
     @SuppressWarnings("WeakerAccess")
     protected JsonGenerator createJsonGenerator(OutputStream destination) throws IOException {
         return new SentryJsonGenerator(jsonFactory.createGenerator(destination));

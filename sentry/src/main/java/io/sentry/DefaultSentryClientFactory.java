@@ -478,6 +478,12 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         return marshaller;
     }
 
+    /**
+     * Create a {@link JsonMarshaller}. This method makes it easier to provide a custom implementation.
+     *
+     * @param maxMessageLength of the whole json output
+     * @return new marshaller
+     */
     @SuppressWarnings("WeakerAccess")
     protected JsonMarshaller createJsonMarshaller(int maxMessageLength) {
         return new JsonMarshaller(maxMessageLength);
