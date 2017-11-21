@@ -1,7 +1,7 @@
 Version 1.6.4
 -------------
 
--
+- Add web-fragment.xml to prevent classpath scanning.
 
 Version 1.6.3
 -------------
