@@ -73,7 +73,7 @@ Logging Integration Configuration
     .. sourcecode:: xml
 
         <!-- logback.xml -->
-        <appender name="Sentry" class="com.getsentry.raven.logback.SentryAppender">
+        <appender name="Sentry" class="io.sentry.logback.SentryAppender">
             <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
                 <level>WARN</level>
             </filter>
