@@ -37,12 +37,18 @@ class SentryPlugin implements Plugin<Project> {
 
         // in case there is a version from npm right around the corner use that one.  This
         // is the case for react-native-sentry for instance
-        def exePath = "${project.rootDir.toPath()}/../node_modules/sentry-cli-binary/bin/sentry-cli"
-        if ((new File(exePath)).exists()) {
-            return exePath
-        }
-        if ((new File(exePath + ".exe")).exists()) {
-            return exePath + ".exe"
+        def possibleExePaths = [
+            "${project.rootDir.toPath()}/../node_modules/@sentry/cli/bin/sentry-cli",
+            "${project.rootDir.toPath()}/../node_modules/sentry-cli-binary/bin/sentry-cli"
+        ]
+
+        possibleExePaths.each {
+            if ((new File(it)).exists()) {
+                return it
+            }
+            if ((new File(it + ".exe")).exists()) {
+                return it + ".exe"
+            }
         }
 
         // next up try a packaged version of sentry-cli
