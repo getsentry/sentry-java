@@ -2,6 +2,7 @@ Version 1.6.4
 -------------
 
 - Add web-fragment.xml to prevent classpath scanning.
+- Update Android Gradle plugin to use new NPM package if available.
 
 Version 1.6.3
 -------------
