@@ -116,6 +116,17 @@ public class DsnTest extends BaseTest {
         assertThat(Dsn.dsnLookup(), is(dsn));
     }
 
+    @Test
+    public void testDsnLookupWithEmptyEnvironmentVariable(@Mocked("getenv") final System system) throws Exception {
+        final String dsn = "";
+        new NonStrictExpectations() {{
+            System.getenv("SENTRY_DSN");
+            result = dsn;
+        }};
+
+        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
+    }
+
     @Test(expectedExceptions = InvalidDsnException.class)
     public void testMissingSecretKeyInvalid() throws Exception {
         new Dsn("http://publicKey:@host/9");
