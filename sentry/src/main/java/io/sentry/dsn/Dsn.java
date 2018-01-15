@@ -1,6 +1,7 @@
 package io.sentry.dsn;
 
 import io.sentry.config.Lookup;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,12 +80,12 @@ public class Dsn {
     public static String dsnLookup() {
         String dsn = Lookup.lookup("dsn");
 
-        if (dsn == null) {
+        if (Util.isNullOrEmpty(dsn)) {
             // check if the user accidentally set "dns" instead of "dsn"
             dsn = Lookup.lookup("dns");
         }
 
-        if (dsn == null) {
+        if (Util.isNullOrEmpty(dsn)) {
             logger.warn("*** Couldn't find a suitable DSN, Sentry operations will do nothing!"
                 + " See documentation: https://docs.sentry.io/clients/java/ ***");
             dsn = DEFAULT_DSN;
