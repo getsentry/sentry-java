@@ -27,22 +27,22 @@ Using Maven:
     <dependency>
         <groupId>io.sentry</groupId>
         <artifactId>sentry</artifactId>
-        <version>1.6.4</version>
+        <version>1.6.5</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry:1.6.4'
+    compile 'io.sentry:sentry:1.6.5'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "io.sentry" % "sentry" % "1.6.4"
+    libraryDependencies += "io.sentry" % "sentry" % "1.6.5"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry%7C1.6.4%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry%7C1.6.5%7Cjar>`_.
 
 Usage
 -----
