@@ -1,7 +1,8 @@
 Version 1.6.5
 -------------
 
--
+- Implemented Serializable for DebugImage, fixes buffering with Proguard symbols.
+- Use default DSN when empty string is provided. (thanks afking)
 
 Version 1.6.4
 -------------
