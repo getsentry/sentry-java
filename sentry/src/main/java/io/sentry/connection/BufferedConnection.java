@@ -3,6 +3,7 @@ package io.sentry.connection;
 import io.sentry.buffer.Buffer;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +115,7 @@ public class BufferedConnection implements Connection {
     @SuppressWarnings("checkstyle:magicnumber")
     public void close() throws IOException {
         if (gracefulShutdown) {
+            Util.safelyRemoveShutdownHook(shutDownHook);
             shutDownHook.enabled = false;
         }
 

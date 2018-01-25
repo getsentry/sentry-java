@@ -154,4 +154,23 @@ public final class Util {
         }
     }
 
+    /**
+     * Try to remove the shutDownHook, handling the case where the VM is in shutdown process.
+     * @param shutDownHook the shutDownHook to remove
+     * @return true if the hook was removed, false otherwise
+     */
+    public static boolean safelyRemoveShutdownHook(Thread shutDownHook) {
+        try {
+            return Runtime.getRuntime().removeShutdownHook(shutDownHook);
+        } catch (IllegalStateException e) {
+            // CHECKSTYLE.OFF: EmptyBlock
+            if (e.getMessage().equals("Shutdown in progress")) {
+                // ignore
+            } else {
+                throw e;
+            }
+            // CHECKSTYLE.ON: EmptyBlock
+        }
+        return false;
+    }
 }
