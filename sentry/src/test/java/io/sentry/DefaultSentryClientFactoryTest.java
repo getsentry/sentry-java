@@ -5,8 +5,9 @@ import org.testng.annotations.Test;
 import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
+
+import io.sentry.connection.NoopConnection;
 
 public class DefaultSentryClientFactoryTest extends BaseTest {
     @Test
@@ -46,12 +47,13 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
     }
 
     @Test
-    public void testBadDataInitializesNoopConnection() throws Exception {
+    public void testBadDataInitializesWithoutException() {
         String badTags = "foo:";
 
         String dsn = String.format("https://user:pass@example.com/1?tags=%s", badTags);
         SentryClient sentryClient = DefaultSentryClientFactory.sentryClient(dsn);
 
-        sentryClient.getContext();
+        assertThat(sentryClient, isA(SentryClient.class));
+        assertThat(sentryClient.getContext(), notNullValue());
     }
 }
