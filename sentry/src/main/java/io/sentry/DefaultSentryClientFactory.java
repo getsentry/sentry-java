@@ -241,7 +241,8 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                 Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
                 sentryClient.addBuilderHelper(new HttpEventBuilderHelper());
             } catch (ClassNotFoundException e) {
-                logger.debug("The current environment doesn't provide access to servlets," + " or provides an unsupported version.");
+                logger.debug("The current environment doesn't provide access to servlets,"
+                    + " or provides an unsupported version.");
             }
             sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
             return configureSentryClient(sentryClient, dsn);
