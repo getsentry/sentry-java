@@ -43,7 +43,15 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         extrasMap.put("red", "blue");
         extrasMap.put("green", "yellow");
         assertThat(sentryClient.getExtra(), is(extrasMap));
+    }
 
+    @Test
+    public void testBadDataInitializesNoopConnection() throws Exception {
+        String badTags = "foo:";
 
+        String dsn = String.format("https://user:pass@example.com/1?tags=%s", badTags);
+        SentryClient sentryClient = DefaultSentryClientFactory.sentryClient(dsn);
+
+        sentryClient.getContext();
     }
 }
