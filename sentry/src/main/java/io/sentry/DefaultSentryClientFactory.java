@@ -232,19 +232,24 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
-        SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
         try {
-            // `ServletRequestListener` was added in the Servlet 2.4 API, and
-            // is used as part of the `HttpEventBuilderHelper`, see:
-            // https://tomcat.apache.org/tomcat-5.5-doc/servletapi/
-            Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
-            sentryClient.addBuilderHelper(new HttpEventBuilderHelper());
-        } catch (ClassNotFoundException e) {
-            logger.debug("The current environment doesn't provide access to servlets,"
-                + " or provides an unsupported version.");
+            SentryClient sentryClient = new SentryClient(createConnection(dsn), getContextManager(dsn));
+            try {
+                // `ServletRequestListener` was added in the Servlet 2.4 API, and
+                // is used as part of the `HttpEventBuilderHelper`, see:
+                // https://tomcat.apache.org/tomcat-5.5-doc/servletapi/
+                Class.forName("javax.servlet.ServletRequestListener", false, this.getClass().getClassLoader());
+                sentryClient.addBuilderHelper(new HttpEventBuilderHelper());
+            } catch (ClassNotFoundException e) {
+                logger.debug("The current environment doesn't provide access to servlets,"
+                    + " or provides an unsupported version.");
+            }
+            sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
+            return configureSentryClient(sentryClient, dsn);
+        } catch (Exception e) {
+            logger.error("Failed to initialize sentry, falling back to no-op client", e);
+            return new SentryClient(new NoopConnection(), new ThreadLocalContextManager());
         }
-        sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
-        return configureSentryClient(sentryClient, dsn);
     }
 
     /**
