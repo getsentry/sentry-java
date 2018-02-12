@@ -1,7 +1,8 @@
 Version 1.6.8
 -------------
 
--
+- Create a noop sentry client when the user provides bad configuration. (thanks dmclain)
+- Use project.name instead of hardcoding 'app' in Android Gradle Plugin.
 
 Version 1.6.7
 -------------
