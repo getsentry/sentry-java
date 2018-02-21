@@ -1,7 +1,7 @@
 Version 1.6.9
 -------------
 
--
+- Pass MDC context down to AsyncConnection worker threads.
 
 Version 1.6.8
 -------------
