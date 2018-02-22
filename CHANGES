@@ -1,7 +1,10 @@
 Version 1.6.9
 -------------
 
-- Log backoff responses (HTTP 429 Too Many Requests) as a warning to the `lockdown` logger instead of an error.
+- Warn (once) when a client lockdown is first initiated and why.
+- Log events skipped by a lockdown at the DEBUG level.
+- Don't log a full stacktrace when an HTTP 429 (Too Many Requests) is returned.
+- Fix parsing of Retry-After header which apparently changed to a floating point number.
 
 Version 1.6.8
 -------------
