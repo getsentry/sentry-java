@@ -1,7 +1,7 @@
 Version 1.6.9
 -------------
 
--
+- Log backoff responses (HTTP 429 Too Many Requests) as a warning to the `lockdown` logger instead of an error.
 
 Version 1.6.8
 -------------
