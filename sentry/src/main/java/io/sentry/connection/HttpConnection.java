@@ -181,10 +181,9 @@ public class HttpConnection extends AbstractConnection {
                     return;
                 } else if (responseCode == HTTP_TOO_MANY_REQUESTS) {
                     /*
-                    If the response is a 429 we rethrow as a TooManyRequestsException so that,
-                    1. We can avoid logging this at error level
-                    2. We can use a different logger so that users can filter the messages
-                     */
+                    If the response is a 429 we rethrow as a TooManyRequestsException so that we can
+                    avoid logging this is an error.
+                    */
                     throw new TooManyRequestsException(
                             "Too many requests to Sentry: https://docs.sentry.io/learn/quotas/", e, retryAfterMs);
                 }
