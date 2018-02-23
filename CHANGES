@@ -5,6 +5,7 @@ Version 1.6.9
 - Log events skipped by a lockdown at the DEBUG level.
 - Don't log a full stacktrace when an HTTP 429 (Too Many Requests) is returned.
 - Fix parsing of Retry-After header which apparently changed to a floating point number.
+- Pass MDC context down to AsyncConnection worker threads.
 
 Version 1.6.8
 -------------

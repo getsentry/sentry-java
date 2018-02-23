@@ -6,9 +6,11 @@ import io.sentry.event.Event;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +93,7 @@ public class AsyncConnection implements Connection {
     @Override
     public void send(Event event) {
         if (!closed) {
-            executorService.execute(new EventSubmitter(event));
+            executorService.execute(new EventSubmitter(event, MDC.getCopyOfContextMap()));
         }
     }
 
@@ -160,14 +162,24 @@ public class AsyncConnection implements Connection {
      */
     private final class EventSubmitter implements Runnable {
         private final Event event;
+        private Map<String, String> mdcContext;
 
-        private EventSubmitter(Event event) {
+        private EventSubmitter(Event event, Map<String, String> mdcContext) {
             this.event = event;
+            this.mdcContext = mdcContext;
         }
 
         @Override
         public void run() {
             SentryEnvironment.startManagingThread();
+
+            Map<String, String> previous = MDC.getCopyOfContextMap();
+            if (mdcContext == null) {
+                MDC.clear();
+            } else {
+                MDC.setContextMap(mdcContext);
+            }
+
             try {
                 // The current thread is managed by sentry
                 actualConnection.send(event);
@@ -176,6 +188,12 @@ public class AsyncConnection implements Connection {
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
+                if (previous == null) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(previous);
+                }
+
                 SentryEnvironment.stopManagingThread();
             }
         }
