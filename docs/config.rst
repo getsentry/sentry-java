@@ -315,7 +315,7 @@ Sentry always requires write permission on the buffer directory itself.
 
     buffer.dir=sentry-events
 
-The maximum number of events that will be stored on disk defaults to 50,
+The maximum number of events that will be stored on disk defaults to 10,
 but can also be configured with the option buffer.size``:
 
 ::

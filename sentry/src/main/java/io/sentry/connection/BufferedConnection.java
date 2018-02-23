@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -100,7 +101,23 @@ public class BufferedConnection implements Connection {
 
     @Override
     public void send(Event event) {
-        actualConnection.send(event);
+        try {
+            actualConnection.send(event);
+        } catch (ConnectionException e) {
+            boolean notSerializable = e.getCause() instanceof NotSerializableException;
+
+            Integer responseCode = e.getResponseCode();
+            if (notSerializable || (responseCode != null && responseCode != HttpConnection.HTTP_TOO_MANY_REQUESTS)) {
+                // don't retry events (discard from the buffer) if:
+                // 1. they aren't serializable
+                // 2. the connection is up (valid response code was returned) and it's not an HTTP 429
+                buffer.discard(event);
+            }
+
+            // throw regardless
+            throw e;
+        }
+
 
         // success, remove the event from the buffer
         buffer.discard(event);

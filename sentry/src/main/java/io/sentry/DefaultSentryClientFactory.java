@@ -71,9 +71,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     public static final String BUFFER_SIZE_OPTION = "buffer.size";
     /**
-     * Default number of events to cache offline when network is down.
+     * Default number of events to cache offline when network is down or project is throttled.
      */
-    public static final int BUFFER_SIZE_DEFAULT = 50;
+    public static final int BUFFER_SIZE_DEFAULT = 10;
     /**
      * Option for how long to wait between attempts to flush the disk buffer, in milliseconds.
      */

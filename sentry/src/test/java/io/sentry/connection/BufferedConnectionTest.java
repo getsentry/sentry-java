@@ -12,10 +12,9 @@ import org.testng.collections.Lists;
 import org.testng.collections.Sets;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.io.NotSerializableException;
+import java.net.HttpURLConnection;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -34,22 +33,22 @@ public class BufferedConnectionTest extends BaseTest {
     private Buffer mockBuffer;
     private Connection mockConnection;
     private Connection bufferedConnection;
-    private volatile boolean connectionUp;
+    private ConnectionException connectionException;
 
     @BeforeMethod
     public void setup() {
         bufferedEvents = Sets.newHashSet();
         sentEvents = Lists.newArrayList();
-        connectionUp = true;
+        connectionException = null;
 
         mockConnection = new AbstractConnection("public", "private") {
             @Override
             protected void doSend(Event event) throws ConnectionException {
-                if (connectionUp) {
-                    sentEvents.add(event);
-                } else {
-                    throw new ConnectionException("Connection is down.");
+                if (connectionException != null) {
+                    throw connectionException;
                 }
+
+                sentEvents.add(event);
             }
 
             @Override
@@ -99,7 +98,7 @@ public class BufferedConnectionTest extends BaseTest {
         setField(mockConnection, "lockdownManager", lockdownManager);
 
         Event event = new EventBuilder().build();
-        connectionUp = false;
+        connectionException = new ConnectionException();
         try {
             bufferedConnection.send(event);
         } catch (Exception e) {
@@ -120,7 +119,7 @@ public class BufferedConnectionTest extends BaseTest {
         // End the lockdown
         fixedClock.tick(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME, TimeUnit.MILLISECONDS);
 
-        connectionUp = true;
+        connectionException = null;
         waitUntilTrue(1000, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -131,4 +130,53 @@ public class BufferedConnectionTest extends BaseTest {
         assertThat(sentEvents.contains(event), is(true));
         assertThat(sentEvents.contains(event2), is(true));
     }
+
+    @Test
+    public void testNotSerializableNotBuffered() throws Exception {
+        Event event = new EventBuilder().build();
+        connectionException = new ConnectionException("NonSerializable", new NotSerializableException());
+        try {
+            bufferedConnection.send(event);
+        } catch (Exception e) {
+
+        }
+        assertThat(bufferedEvents.size(), equalTo(0));
+    }
+
+    @Test
+    public void test500NotBuffered() throws Exception {
+        Event event = new EventBuilder().build();
+        connectionException = new ConnectionException("500", new IOException(), null, HttpURLConnection.HTTP_INTERNAL_ERROR);
+        try {
+            bufferedConnection.send(event);
+        } catch (Exception e) {
+
+        }
+        assertThat(bufferedEvents.size(), equalTo(0));
+    }
+
+    @Test
+    public void test429IsBuffered() throws Exception {
+        Event event = new EventBuilder().build();
+        connectionException = new ConnectionException("429", new IOException(), null, HttpConnection.HTTP_TOO_MANY_REQUESTS);
+        try {
+            bufferedConnection.send(event);
+        } catch (Exception e) {
+
+        }
+        assertThat(bufferedEvents.size(), equalTo(1));
+    }
+
+    @Test
+    public void testNoResponseCodeIsBuffered() throws Exception {
+        Event event = new EventBuilder().build();
+        connectionException = new ConnectionException("NoResponseCode", new IOException(), null, null);
+        try {
+            bufferedConnection.send(event);
+        } catch (Exception e) {
+
+        }
+        assertThat(bufferedEvents.size(), equalTo(1));
+    }
+
 }
