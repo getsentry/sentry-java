@@ -21,6 +21,10 @@ public abstract class AbstractConnection implements Connection {
      */
     public static final String SENTRY_PROTOCOL_VERSION = "6";
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
+    // CHECKSTYLE.OFF: ConstantName
+    private static final Logger lockdownLogger =
+            LoggerFactory.getLogger(AbstractConnection.class.getName() + ".lockdown");
+    // CHECKSTYLE.ON: ConstantName
     /**
      * Value of the X-Sentry-Auth header.
      */
@@ -65,10 +69,13 @@ public abstract class AbstractConnection implements Connection {
                 important in, for example, a BufferedConnection where the Event would be deleted
                 from the Buffer if an exception isn't raised in the call to send.
                  */
-                throw new LockedDownException("Dropping an Event due to lockdown: " + event);
+                throw new LockedDownException();
             }
 
             doSend(event);
+
+            // success! re-open the floodgates
+            lockdownManager.unlock();
 
             for (EventSendCallback eventSendCallback : eventSendCallbacks) {
                 try {
@@ -78,8 +85,6 @@ public abstract class AbstractConnection implements Connection {
                         + eventSendCallback.getClass().getName(), exc);
                 }
             }
-
-            lockdownManager.resetState();
         } catch (ConnectionException e) {
             for (EventSendCallback eventSendCallback : eventSendCallbacks) {
                 try {
@@ -90,8 +95,10 @@ public abstract class AbstractConnection implements Connection {
                 }
             }
 
-            logger.warn("An exception due to the connection occurred, a lockdown will be initiated.", e);
-            lockdownManager.setState(e);
+            boolean lockedDown = lockdownManager.lockdown(e);
+            if (lockedDown) {
+                lockdownLogger.warn("Initiated a temporary lockdown because of exception: " + e.getMessage());
+            }
 
             throw e;
         }

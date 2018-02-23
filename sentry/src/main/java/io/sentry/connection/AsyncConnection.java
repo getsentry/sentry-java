@@ -171,8 +171,8 @@ public class AsyncConnection implements Connection {
             try {
                 // The current thread is managed by sentry
                 actualConnection.send(event);
-            } catch (LockedDownException e) {
-                lockdownLogger.warn("The connection to Sentry is currently locked down.", e);
+            } catch (LockedDownException | TooManyRequestsException e) {
+                logger.debug("Dropping an Event due to lockdown: " + event);
             } catch (Exception e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {

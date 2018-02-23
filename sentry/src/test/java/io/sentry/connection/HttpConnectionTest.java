@@ -163,14 +163,14 @@ public class HttpConnectionTest extends BaseTest {
             mockUrlConnection.getErrorStream();
             result = new ByteArrayInputStream(httpErrorMessage.getBytes());
             mockUrlConnection.getHeaderField("Retry-After");
-            result = "12345";
+            result = "12345.25";
         }};
 
         try {
             httpConnection.doSend(mockEvent);
             fail();
         } catch (ConnectionException e) {
-            assertThat(e.getRecommendedLockdownTime(), is(12345L * 1000L));
+            assertThat(e.getRecommendedLockdownTime(), is(12345250L));
         }
     }
 

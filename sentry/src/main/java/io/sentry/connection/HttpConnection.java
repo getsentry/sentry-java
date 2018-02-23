@@ -35,6 +35,10 @@ public class HttpConnection extends AbstractConnection {
      */
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
     /**
+     * HTTP code `429 Too Many Requests`, which is not included in HttpURLConnection.
+     */
+    private static final int HTTP_TOO_MANY_REQUESTS = 429;
+    /**
      * Default timeout of an HTTP connection to Sentry.
      */
     private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
@@ -156,11 +160,32 @@ public class HttpConnection extends AbstractConnection {
             outputStream.close();
             connection.getInputStream().close();
         } catch (IOException e) {
+            Long retryAfterMs = null;
+            String retryAfterHeader = connection.getHeaderField("Retry-After");
+            if (retryAfterHeader != null) {
+                // CHECKSTYLE.OFF: EmptyCatchBlock
+                try {
+                    // CHECKSTYLE.OFF: MagicNumber
+                    retryAfterMs = (long) (Double.parseDouble(retryAfterHeader) * 1000L); // seconds -> milliseconds
+                    // CHECKSTYLE.ON: MagicNumber
+                } catch (NumberFormatException nfe) {
+                    // noop, use default retry
+                }
+                // CHECKSTYLE.ON: EmptyCatchBlock
+            }
+
             try {
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
                     logger.debug("Event '" + event.getId() + "' was rejected by the Sentry server due to a filter.");
                     return;
+                } else if (responseCode == HTTP_TOO_MANY_REQUESTS) {
+                    /*
+                    If the response is a 429 we rethrow as a TooManyRequestsException so that we can
+                    avoid logging this is an error.
+                    */
+                    throw new TooManyRequestsException(
+                            "Too many requests to Sentry: https://docs.sentry.io/learn/quotas/", e, retryAfterMs);
                 }
             } catch (IOException responseCodeException) {
                 // pass
@@ -173,20 +198,6 @@ public class HttpConnection extends AbstractConnection {
             }
             if (null == errorMessage || errorMessage.isEmpty()) {
                 errorMessage = "An exception occurred while submitting the event to the Sentry server.";
-            }
-
-            Long retryAfterMs = null;
-            String retryAfterHeader = connection.getHeaderField("Retry-After");
-            if (retryAfterHeader != null) {
-                // CHECKSTYLE.OFF: EmptyCatchBlock
-                try {
-                    // CHECKSTYLE.OFF: MagicNumber
-                    retryAfterMs = Long.parseLong(retryAfterHeader) * 1000L; // seconds -> milliseconds
-                    // CHECKSTYLE.ON: MagicNumber
-                } catch (NumberFormatException nfe) {
-                    // noop, use default retry
-                }
-                // CHECKSTYLE.ON: EmptyCatchBlock
             }
 
             throw new ConnectionException(errorMessage, e, retryAfterMs);
