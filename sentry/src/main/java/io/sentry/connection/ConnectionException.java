@@ -11,30 +11,32 @@ public class ConnectionException extends RuntimeException {
      */
     private Long recommendedLockdownTime = null;
 
+    /**
+     * HTTP response status code, if available.
+     */
+    private Integer responseCode = null;
+
     //CHECKSTYLE.OFF: JavadocMethod
     public ConnectionException() {
 
-    }
-
-    public ConnectionException(String message) {
-        super(message);
     }
 
     public ConnectionException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public ConnectionException(String message, Throwable cause, Long recommendedLockdownTime) {
+    public ConnectionException(String message, Throwable cause, Long recommendedLockdownTime, Integer responseCode) {
         super(message, cause);
         this.recommendedLockdownTime = recommendedLockdownTime;
-    }
-
-    public ConnectionException(Throwable cause) {
-        super(cause);
+        this.responseCode = responseCode;
     }
 
     public Long getRecommendedLockdownTime() {
         return recommendedLockdownTime;
+    }
+
+    public Integer getResponseCode() {
+        return responseCode;
     }
     //CHECKSTYLE.ON: JavadocMethod
 }

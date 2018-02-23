@@ -202,7 +202,7 @@ public class AbstractConnectionTest extends BaseTest {
         final long recommendedLockdownWaitTime = 12345L;
         new NonStrictExpectations() {{
             abstractConnection.doSend((Event) any);
-            result = new ConnectionException("Message", null, recommendedLockdownWaitTime);
+            result = new ConnectionException("Message", null, recommendedLockdownWaitTime, HttpConnection.HTTP_TOO_MANY_REQUESTS);
         }};
 
         try {

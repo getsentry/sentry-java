@@ -24,6 +24,10 @@ import java.util.concurrent.TimeUnit;
  * It is possible to enable the "naive mode" to allow a connection over SSL using a certificate with a wildcard.
  */
 public class HttpConnection extends AbstractConnection {
+    /**
+     * HTTP code `429 Too Many Requests`, which is not included in HttpURLConnection.
+     */
+    public static final int HTTP_TOO_MANY_REQUESTS = 429;
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
     /**
@@ -34,10 +38,6 @@ public class HttpConnection extends AbstractConnection {
      * HTTP Header for the authentication to Sentry.
      */
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
-    /**
-     * HTTP code `429 Too Many Requests`, which is not included in HttpURLConnection.
-     */
-    private static final int HTTP_TOO_MANY_REQUESTS = 429;
     /**
      * Default timeout of an HTTP connection to Sentry.
      */
@@ -174,8 +174,9 @@ public class HttpConnection extends AbstractConnection {
                 // CHECKSTYLE.ON: EmptyCatchBlock
             }
 
+            Integer responseCode = null;
             try {
-                int responseCode = connection.getResponseCode();
+                responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
                     logger.debug("Event '" + event.getId() + "' was rejected by the Sentry server due to a filter.");
                     return;
@@ -185,7 +186,8 @@ public class HttpConnection extends AbstractConnection {
                     avoid logging this is an error.
                     */
                     throw new TooManyRequestsException(
-                            "Too many requests to Sentry: https://docs.sentry.io/learn/quotas/", e, retryAfterMs);
+                            "Too many requests to Sentry: https://docs.sentry.io/learn/quotas/",
+                            e, retryAfterMs, responseCode);
                 }
             } catch (IOException responseCodeException) {
                 // pass
@@ -200,7 +202,7 @@ public class HttpConnection extends AbstractConnection {
                 errorMessage = "An exception occurred while submitting the event to the Sentry server.";
             }
 
-            throw new ConnectionException(errorMessage, e, retryAfterMs);
+            throw new ConnectionException(errorMessage, e, retryAfterMs, responseCode);
         } finally {
             connection.disconnect();
         }
