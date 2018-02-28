@@ -12,6 +12,18 @@ events.
 The source can be found `on Github
 <https://github.com/getsentry/sentry-java/tree/master/sentry-spring>`_.
 
+Important Note About Logging Integrations
+-----------------------------------------
+
+**Note** that you should **not** configure the ``sentry-spring``
+alongside one of the Sentry logging integrations (such as ``sentry-logback``),
+or you will most likely double-report exceptions.
+
+A Sentry logging integration is more general and will capture errors (and
+possibly warnings, depending on your configuration) that occur inside *or outside*
+of a Spring controller. In most scenarios, using one of the logging integrations
+instead of ``sentry-spring`` is preferred.
+
 Installation
 ------------
 
@@ -52,13 +64,6 @@ In order to record all exceptions thrown by your controllers, you can register
 ``io.sentry.spring.SentryExceptionResolver`` as a Bean in your application. Once
 registered, all exceptions will be sent to Sentry and then passed on to the default
 exception handlers.
-
-**Note** that you should **not** configure the ``SentryExceptionResolver``
-alongside a logging integration (such as ``sentry-logback``), or you will most
-likely double-report exceptions. You should use one or the other depending on
-your needs. A logging integration is more general and will capture errors (and
-possibly warnings, depending on your configuration) that occur inside *or outside*
-of a Spring controller.
 
 Configuration via ``web.xml``:
 

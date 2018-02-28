@@ -279,16 +279,6 @@ Similar behaviour is enabled by default in Sentry. To disable it, use the
 
     stacktrace.hidecommon=false
 
-Uncaught Exception Handler
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-By default, an ``UncaughtExceptionHandler`` is configured that will send exceptions
-to Sentry. To disable it, use the ``uncaught.handler.enabled`` option.
-
-::
-
-    uncaught.handler.enabled=false
-
 Event Sampling
 ~~~~~~~~~~~~~~
 
@@ -302,6 +292,19 @@ This option takes a number from 0.0 to 1.0, representing the percent of
 events to allow through to server (from 0% to 100%). By default all
 events will be sent to the Sentry server.
 
+Uncaught Exception Handler
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, an ``UncaughtExceptionHandler`` is configured that will attempt to
+send exceptions to Sentry. To disable it, use the ``uncaught.handler.enabled``
+option. Note that exceptions are sent asynchronously by default, and there is
+no guarantee they will be sent before the JVM exits. This option is best used
+in conjunction with the disk buffering system described below.
+
+::
+
+    uncaught.handler.enabled=false
+
 Buffering Events to Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -309,7 +312,8 @@ Sentry can be configured to write events to a specified directory on disk
 anytime communication with the Sentry server fails with the buffer.dir``
 option. If the directory doesn't exist, Sentry will attempt to create it
 on startup and may therefore need write permission on the parent directory.
-Sentry always requires write permission on the buffer directory itself.
+Sentry always requires write permission on the buffer directory itself. This
+is enabled by default if the ``AndroidSentryClientFactory`` is used.
 
 ::
 
