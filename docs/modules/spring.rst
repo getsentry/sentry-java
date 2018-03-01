@@ -15,8 +15,8 @@ The source can be found `on Github
 Important Note About Logging Integrations
 -----------------------------------------
 
-**Note** that you should **not** configure the ``sentry-spring``
-alongside one of the Sentry logging integrations (such as ``sentry-logback``),
+**Note** that you should **not** configure ``sentry-spring``
+alongside a Sentry logging integration (such as ``sentry-logback``),
 or you will most likely double-report exceptions.
 
 A Sentry logging integration is more general and will capture errors (and
