@@ -1,7 +1,7 @@
 Version 1.7.1
 -------------
 
--
+- Android Gradle Plugin: Improve various directory structure support. (thanks ruZZil)
 
 Version 1.7.0
 -------------
