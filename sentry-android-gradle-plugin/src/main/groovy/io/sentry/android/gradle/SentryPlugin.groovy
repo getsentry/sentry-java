@@ -132,7 +132,7 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static String getDebugMetaPropPath(Project project, ApplicationVariant variant) {
-        return "${project.rootDir.toPath()}/${project.name}/build/intermediates/assets/${variant.dirName}/sentry-debug-meta.properties"
+        return "${project.buildDir}/intermediates/assets/${variant.dirName}/sentry-debug-meta.properties"
     }
 
     void apply(Project project) {
@@ -198,9 +198,9 @@ class SentryPlugin implements Plugin<Project> {
                         def flavorName = variant.flavorName
                         def propName = "sentry.properties"
                         def possibleProps = [
-                                "${project.rootDir.toPath()}/${project.name}/src/${variantName}/${propName}",
-                                "${project.rootDir.toPath()}/${project.name}/src/${variantName}/${flavorName}/${propName}",
-                                "${project.rootDir.toPath()}/${project.name}/src/${flavorName}/${variantName}/${propName}",
+                                "${project.projectDir}/src/${variantName}/${propName}",
+                                "${project.projectDir}/src/${variantName}/${flavorName}/${propName}",
+                                "${project.projectDir}/src/${flavorName}/${variantName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${variantName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${variantName}/${flavorName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${flavorName}/${variantName}/${propName}",
