@@ -1,7 +1,7 @@
 Version 1.7.2
 -------------
 
--
+- Set HTTPConnection read timeout to 5 seconds. (thanks kalaspuffar)
 
 Version 1.7.1
 -------------
