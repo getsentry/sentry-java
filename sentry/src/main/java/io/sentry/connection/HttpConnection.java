@@ -45,7 +45,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Default read timeout of an HTTP connection to Sentry.
      */
-    private static final int DEFAULT_READ_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
+    private static final int DEFAULT_READ_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(5);
 
     /**
      * HostnameVerifier allowing wildcard certificates to work without adding them to the truststore.
@@ -253,7 +253,7 @@ public class HttpConnection extends AbstractConnection {
 
     /**
      * This will set the timeout that is used in establishing a connection to the url.
-     * By default this is set to 1 second.
+     * By default this is set to 5 second.
      *
      * @param timeout New timeout to set. If 0 is used (java default) wait forever.
      */
