@@ -39,9 +39,14 @@ public class HttpConnection extends AbstractConnection {
      */
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
     /**
-     * Default timeout of an HTTP connection to Sentry.
+     * Default connection timeout of an HTTP connection to Sentry.
      */
-    private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
+    private static final int DEFAULT_CONNECTION_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
+    /**
+     * Default read timeout of an HTTP connection to Sentry.
+     */
+    private static final int DEFAULT_READ_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
+
     /**
      * HostnameVerifier allowing wildcard certificates to work without adding them to the truststore.
      */
@@ -68,9 +73,14 @@ public class HttpConnection extends AbstractConnection {
      */
     private Marshaller marshaller;
     /**
-     * Timeout of an HTTP connection to Sentry.
+     * Timeout to connect of an HTTP connection to Sentry.
      */
-    private int timeout = DEFAULT_TIMEOUT;
+    private int connection_timeout = DEFAULT_CONNECTION_TIMEOUT;
+    /**
+     * Read timeout of an HTTP connection to Sentry.
+     */
+    private int read_timeout = DEFAULT_READ_TIMEOUT;
+
     /**
      * Setting allowing to bypass the security system which requires wildcard certificates
      * to be added to the truststore.
@@ -128,7 +138,8 @@ public class HttpConnection extends AbstractConnection {
             }
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-            connection.setConnectTimeout(timeout);
+            connection.setConnectTimeout(connection_timeout);
+            connection.setReadTimeout(read_timeout);
             connection.setRequestProperty(USER_AGENT, SentryEnvironment.getSentryName());
             connection.setRequestProperty(SENTRY_AUTH, getAuthHeader());
 
@@ -228,8 +239,29 @@ public class HttpConnection extends AbstractConnection {
         return sb.toString();
     }
 
+    @Deprecated
     public void setTimeout(int timeout) {
-        this.timeout = timeout;
+        this.connection_timeout = timeout;
+    }
+
+    /**
+     * This will set the timeout that is used in establishing a connection to the url.
+     * By default this is set to 1 second.
+     *
+     * @param timeout New timeout to set. If 0 is used (java default) wait forever.
+     */
+    public void setConnectionTimeout(int timeout) {
+        this.connection_timeout = timeout;
+    }
+
+    /**
+     * This will set the timeout that is used in reading data on an already established connection.
+     * By default this is set to 1 seconds.
+     *
+     * @param timeout New timeout to set. If 0 is used (java default) wait forever.
+     */
+    public void setReadTimeout(int timeout) {
+        this.read_timeout = timeout;
     }
 
     public void setMarshaller(Marshaller marshaller) {

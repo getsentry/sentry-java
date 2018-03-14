@@ -62,9 +62,9 @@ public class HttpConnectionTest extends BaseTest {
     }
 
     @Test
-    public void testTimeout(@Injectable final Event mockEvent) throws Exception {
+    public void testConnectionTimeout(@Injectable final Event mockEvent) throws Exception {
         final int timeout = 12;
-        httpConnection.setTimeout(timeout);
+        httpConnection.setConnectionTimeout(timeout);
 
         httpConnection.send(mockEvent);
 
@@ -72,6 +72,19 @@ public class HttpConnectionTest extends BaseTest {
             mockUrlConnection.setConnectTimeout(timeout);
         }};
     }
+
+    @Test
+    public void testReadTimeout(@Injectable final Event mockEvent) throws Exception {
+        final int timeout = 42;
+        httpConnection.setReadTimeout(timeout);
+
+        httpConnection.send(mockEvent);
+
+        new Verifications() {{
+            mockUrlConnection.setReadTimeout(timeout);
+        }};
+    }
+
 
     @Test
     public void testByPassSecurityDefaultsToFalse(@Injectable final Event mockEvent) throws Exception {

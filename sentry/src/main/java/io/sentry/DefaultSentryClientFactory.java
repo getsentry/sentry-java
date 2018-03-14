@@ -428,7 +428,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         httpConnection.setMarshaller(marshaller);
 
         int timeout = getTimeout(dsn);
-        httpConnection.setTimeout(timeout);
+        httpConnection.setConnectionTimeout(timeout);
 
         boolean bypassSecurityEnabled = getBypassSecurityEnabled(dsn);
         httpConnection.setBypassSecurity(bypassSecurityEnabled);
