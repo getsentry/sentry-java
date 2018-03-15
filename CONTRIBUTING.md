@@ -2,7 +2,7 @@
 
 We love pull requests from everyone.
 
-The test suite currently requires you run JDK version `1.7.1`.
+The test suite currently requires you run JDK version `1.7.2`.
 See [#487](https://github.com/getsentry/sentry-java/issues/478) 
 for more information.
 
