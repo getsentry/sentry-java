@@ -264,9 +264,15 @@ public class Event implements Serializable {
         this.environment = environment;
     }
 
+    //CHECKSTYLE.OFF: JavadocMethod
     public Map<String, Object> getExtra() {
+        if (extra == null) {
+            extra = new HashMap<>();
+        }
+
         return extra;
     }
+    //CHECKSTYLE.ON: JavadocMethod
 
     void setExtra(Map<String, Object> extra) {
         this.extra = extra;
