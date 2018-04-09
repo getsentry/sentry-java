@@ -1,7 +1,7 @@
 Version 1.7.3
 -------------
 
--
+- Fix support for JUL handler level. (thanks nsitbon)
 
 Version 1.7.2
 -------------
