@@ -1,6 +1,8 @@
 package io.sentry.event;
 
 import io.sentry.event.interfaces.SentryInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -30,6 +32,7 @@ import java.util.UUID;
  * </ul>
  */
 public class Event implements Serializable {
+    private static final Logger _logger = LoggerFactory.getLogger(Event.class);
     /**
      * Unique identifier of the event.
      */
@@ -264,9 +267,21 @@ public class Event implements Serializable {
         this.environment = environment;
     }
 
+    //CHECKSTYLE.OFF: JavadocMethod
     public Map<String, Object> getExtra() {
+        if (extra == null) {
+            // `extra` *should* never be null, but there are scenarios such as
+            // when an application is run through ProGuard which may cause deserialization
+            // code to be removed (and thus silently not run). In this case, our overridden
+            // `readObject` may never be called and `extra` will remain null. :(
+            extra = new HashMap<>();
+            _logger.warn("`extra` field was null, deserialization must not have been called,"
+                    + " please check your ProGuard (or other obfuscation) configuration.");
+        }
+
         return extra;
     }
+    //CHECKSTYLE.ON: JavadocMethod
 
     void setExtra(Map<String, Object> extra) {
         this.extra = extra;

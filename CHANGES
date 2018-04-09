@@ -1,6 +1,7 @@
 Version 1.7.3
 -------------
 
+- Handle Event `extra` deserialization failures when using Proguard. (thanks mcomella)
 - Fix support for JUL handler level. (thanks nsitbon)
 
 Version 1.7.2
