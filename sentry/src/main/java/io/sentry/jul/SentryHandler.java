@@ -81,6 +81,15 @@ public class SentryHandler extends Handler {
         LogManager manager = LogManager.getLogManager();
         String className = SentryHandler.class.getName();
         setPrintfStyle(Boolean.valueOf(manager.getProperty(className + ".printfStyle")));
+        setLevel(parseLevelOrDefault(manager.getProperty(className + ".level")));
+    }
+
+    private Level parseLevelOrDefault(String levelName) {
+        try {
+            return Level.parse(levelName.trim());
+        } catch (Exception e) {
+            return Level.WARNING;
+        }
     }
 
     @Override
