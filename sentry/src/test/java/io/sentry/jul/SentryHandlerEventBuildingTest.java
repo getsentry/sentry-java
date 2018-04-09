@@ -52,6 +52,7 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
         final Date date = new Date(1373883196416L);
         final long threadId = 12;
 
+        sentryHandler.setLevel(Level.INFO);
         sentryHandler.publish(newLogRecord(loggerName, Level.INFO, message, arguments, null, null, threadId, date.getTime()));
 
 
@@ -89,6 +90,7 @@ public class SentryHandlerEventBuildingTest extends BaseTest {
 
     @Test(dataProvider = "levels")
     public void testLevelConversion(final Event.Level expectedLevel, Level level) throws Exception {
+        sentryHandler.setLevel(Level.ALL);
         sentryHandler.publish(newLogRecord(null, level, null, null, null));
 
         new Verifications() {{
