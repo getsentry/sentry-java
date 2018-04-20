@@ -18,7 +18,7 @@ public class SentryBreadcrumbAppender extends AppenderBase<ILoggingEvent> {
 
     /**
      * The append method for the SentryBreadcrumbAppender adds breadcrumbs to the context
-     * for all logging events that it receives
+     * for all logging events that it receives.
      * @param iLoggingEvent the event to transform into a breadcrumb
      */
     @Override protected void append(ILoggingEvent iLoggingEvent) {
