@@ -12,12 +12,13 @@ import io.sentry.event.BreadcrumbBuilder;
 
 /**
  * A logback appender that turns logging events into Breadcrumbs on the ThreadLocal
- * context
+ * context.
  */
 public class SentryBreadcrumbAppender extends AppenderBase<ILoggingEvent> {
 
     /**
-     * The append method for
+     * The append method for the SentryBreadcrumbAppender adds breadcrumbs to the context
+     * for all logging events that it receives
      * @param iLoggingEvent the event to transform into a breadcrumb
      */
     @Override protected void append(ILoggingEvent iLoggingEvent) {
