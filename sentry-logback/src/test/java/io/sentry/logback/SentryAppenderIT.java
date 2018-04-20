@@ -1,12 +1,16 @@
 package io.sentry.logback;
 
 import io.sentry.BaseIT;
+import io.sentry.unmarshaller.event.UnmarshalledEvent;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 public class SentryAppenderIT extends BaseIT {
     /*
@@ -30,6 +34,21 @@ public class SentryAppenderIT extends BaseIT {
 
         verifyProject1PostRequestCount(1);
         verifyStoredEventCount(1);
+    }
+
+    @Test
+    public void testInfoThenErrorLog() throws Exception {
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
+        logger.info("Innocuous event");
+        logger.info("Another innocuous event");
+        logger.error("This is a test");
+
+        verifyProject1PostRequestCount(1);
+        verifyStoredEventCount(1);
+        UnmarshalledEvent event = getStoredEvents().get(0);
+        assertEquals(2, event.getBreadcrumbLength());
     }
 
     @Test

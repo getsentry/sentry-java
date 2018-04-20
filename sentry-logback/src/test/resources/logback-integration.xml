@@ -12,6 +12,19 @@
         </filter>
     </appender>
 
+    <appender name="SentryBreadcrumb" class="io.sentry.logback.SentryBreadcrumbAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+    </appender>
+
     <!-- Wiremock can throw WARN logs on shutdown which would trigger Sentry to send more events -->
     <!--<logger name="wiremock.org.eclipse.jetty.util.thread.QueuedThreadPool" level="OFF" />-->
     <!--<logger name="wiremock.org.eclipse.jetty.util.log.JettyAwareLogger" level="OFF" />-->
@@ -19,6 +32,7 @@
 
     <logger name="logback.SentryAppenderIT" level="INFO">
         <appender-ref ref="Sentry" />
+        <appender-ref ref="SentryBreadcrumb" />
     </logger>
 
     <root level="INFO">
