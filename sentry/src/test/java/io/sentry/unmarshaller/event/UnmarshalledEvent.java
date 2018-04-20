@@ -46,7 +46,7 @@ public class UnmarshalledEvent {
     @JsonProperty(value = "extra")
     private Map<String, Object> extras;
     @JsonProperty(value = "breadcrumbs")
-    private List<Breadcrumb> breadcrumbs;
+    private Map<String, List<Breadcrumb>> breadcrumbs;
     @JsonProperty(value = "contexts")
     private Map<String, Map<String, String>> contexts;
     @JsonProperty(value = "sentry.interfaces.Message")
@@ -72,5 +72,12 @@ public class UnmarshalledEvent {
     @JsonProperty(value = "sentry.interfaces.Stacktrace")
     public void setStackTraceInterfaceLong(StackTraceInterface stackTraceInterface) {
         this.stackTraceInterface = stackTraceInterface;
+    }
+
+    public int getBreadcrumbLength() {
+        if (breadcrumbs == null || !breadcrumbs.containsKey("values")) {
+            return 0;
+        }
+        return breadcrumbs.get("values").size();
     }
 }
