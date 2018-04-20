@@ -1,7 +1,7 @@
 package io.sentry.unmarshaller.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.sentry.event.Breadcrumb;
+import io.sentry.unmarshaller.event.interfaces.Breadcrumb;
 import io.sentry.unmarshaller.event.interfaces.ExceptionInterface;
 import io.sentry.unmarshaller.event.interfaces.MessageInterface;
 import io.sentry.unmarshaller.event.interfaces.StackTraceInterface;
