@@ -9,11 +9,17 @@ import io.sentry.Sentry;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
-import io.sentry.event.Event;
-import io.sentry.event.EventBuilder;
 
+/**
+ * A logback appender that turns logging events into Breadcrumbs on the ThreadLocal
+ * context
+ */
 public class SentryBreadcrumbAppender extends AppenderBase<ILoggingEvent> {
 
+    /**
+     * The append method for
+     * @param iLoggingEvent the event to transform into a breadcrumb
+     */
     @Override protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
         if (SentryEnvironment.isManagingThread()) {
@@ -27,14 +33,14 @@ public class SentryBreadcrumbAppender extends AppenderBase<ILoggingEvent> {
                     .setTimestamp(new Date(iLoggingEvent.getTimeStamp()));
             Sentry.getContext().recordBreadcrumb(breadcrumb.build());
         } catch (Exception e) {
-            addError("An exception occurred while creating a new event in Sentry", e);
+            addError("An exception occurred while creating a new breadcrumb in Sentry", e);
         } finally {
             SentryEnvironment.stopManagingThread();
         }
-   }
+    }
 
     /**
-     * Transforms a {@link Level} into an {@link Event.Level}.
+     * Transforms a {@link Level} into an {@link Breadcrumb.Level}.
      *
      * @param level original level as defined in logback.
      * @return log level used within sentry.
