@@ -1,7 +1,7 @@
 package io.sentry.unmarshaller.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.sentry.event.Breadcrumb;
+import io.sentry.unmarshaller.event.interfaces.Breadcrumb;
 import io.sentry.unmarshaller.event.interfaces.ExceptionInterface;
 import io.sentry.unmarshaller.event.interfaces.MessageInterface;
 import io.sentry.unmarshaller.event.interfaces.StackTraceInterface;
@@ -46,7 +46,7 @@ public class UnmarshalledEvent {
     @JsonProperty(value = "extra")
     private Map<String, Object> extras;
     @JsonProperty(value = "breadcrumbs")
-    private List<Breadcrumb> breadcrumbs;
+    private Map<String, List<Breadcrumb>> breadcrumbs;
     @JsonProperty(value = "contexts")
     private Map<String, Map<String, String>> contexts;
     @JsonProperty(value = "sentry.interfaces.Message")

@@ -27,7 +27,7 @@ public class BaseIT extends BaseTest {
     public static final String PROJECT1_ID = "1";
     public static final String PROJECT1_STORE_URL = "/api/" + PROJECT1_ID + "/store/";
     public static final String AUTH_HEADER = "X-Sentry-Auth";
-    public static final StringValuePattern AUTH_HEADER_PATTERN = new RegexPattern("Sentry sentry_version=6,sentry_client=sentry-java/[\\w\\-\\.]+,sentry_key=8292bf61d620417282e68a72ae03154a,sentry_secret=e3908e05ad874b24b7a168992bfa3577");
+    public static final StringValuePattern AUTH_HEADER_PATTERN = new RegexPattern("Sentry sentry_version=6,sentry_client=sentry-java/[\\w\\-\\.]*,sentry_key=8292bf61d620417282e68a72ae03154a,sentry_secret=e3908e05ad874b24b7a168992bfa3577");
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().port(8080));
