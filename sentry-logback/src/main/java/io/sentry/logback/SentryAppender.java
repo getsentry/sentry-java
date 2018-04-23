@@ -89,6 +89,26 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
     }
 
+    /**
+     * Transforms a {@link Level} into an {@link Breadcrumb.Level}.
+     *
+     * @param level original level as defined in logback.
+     * @return log level used within sentry.
+     */
+    protected static Breadcrumb.Level formatBreadcrumbLevel(Level level) {
+        if (level.isGreaterOrEqual(Level.ERROR)) {
+            return Breadcrumb.Level.ERROR;
+        } else if (level.isGreaterOrEqual(Level.WARN)) {
+            return Breadcrumb.Level.WARNING;
+        } else if (level.isGreaterOrEqual(Level.INFO)) {
+            return Breadcrumb.Level.INFO;
+        } else if (level.isGreaterOrEqual(Level.ALL)) {
+            return Breadcrumb.Level.DEBUG;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
@@ -160,6 +180,12 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return eventBuilder;
     }
 
+    /**
+     * Builds a BreadcrumbBuilder based on the logging event.
+     *
+     * @param iLoggingEvent Log generated.
+     * @return BreadcrumbBuilder containing details provided by the logging system.
+     */
     protected BreadcrumbBuilder createBreadcrumbBuilder(ILoggingEvent iLoggingEvent) {
         BreadcrumbBuilder breadcrumb = new BreadcrumbBuilder()
                 .setLevel(formatBreadcrumbLevel(iLoggingEvent.getLevel()))
@@ -300,26 +326,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 return FilterReply.DENY;
             }
             return FilterReply.NEUTRAL;
-        }
-    }
-
-    /**
-     * Transforms a {@link Level} into an {@link Breadcrumb.Level}.
-     *
-     * @param level original level as defined in logback.
-     * @return log level used within sentry.
-     */
-    protected static Breadcrumb.Level formatBreadcrumbLevel(Level level) {
-        if (level.isGreaterOrEqual(Level.ERROR)) {
-            return Breadcrumb.Level.ERROR;
-        } else if (level.isGreaterOrEqual(Level.WARN)) {
-            return Breadcrumb.Level.WARNING;
-        } else if (level.isGreaterOrEqual(Level.INFO)) {
-            return Breadcrumb.Level.INFO;
-        } else if (level.isGreaterOrEqual(Level.ALL)) {
-            return Breadcrumb.Level.DEBUG;
-        } else {
-            return null;
         }
     }
 
