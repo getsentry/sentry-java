@@ -6,9 +6,9 @@
     </appender>
 
     <appender name="Sentry" class="io.sentry.logback.SentryAppender">
-        <!-- Set Sentry to WARNING level, as we recommend this as the lowest users go in their own configuration -->
+        <minLevel>WARN</minLevel>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>WARN</level>
+            <level>DEBUG</level>
         </filter>
     </appender>
 

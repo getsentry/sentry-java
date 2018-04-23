@@ -9,6 +9,8 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import io.sentry.Sentry;
 import io.sentry.environment.SentryEnvironment;
+import io.sentry.event.Breadcrumb;
+import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -39,11 +41,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
     /**
-     * If set, only events with level = minLevel and up will be recorded.
-     *
-     * @deprecated use logback filters.
+     * If set, only events with level = minLevel and up will be recorded. Events below this level
+     * will be appended to the current Sentry context as breadcrumbs.
      */
-    @Deprecated
     protected Level minLevel;
 
     /**
@@ -92,13 +92,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by sentry
-        if (isNotLoggable(iLoggingEvent) || SentryEnvironment.isManagingThread()) {
+        if (SentryEnvironment.isManagingThread()) {
             return;
         }
 
         SentryEnvironment.startManagingThread();
         try {
             if (minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel)) {
+                BreadcrumbBuilder breadcrumbBuilder = createBreadcrumbBuilder(iLoggingEvent);
+                Sentry.getContext().recordBreadcrumb(breadcrumbBuilder.build());
                 return;
             }
 
@@ -109,10 +111,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } finally {
             SentryEnvironment.stopManagingThread();
         }
-    }
-
-    private boolean isNotLoggable(ILoggingEvent iLoggingEvent) {
-        return minLevel != null && !iLoggingEvent.getLevel().isGreaterOrEqual(minLevel);
     }
 
     /**
@@ -160,6 +158,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         return eventBuilder;
+    }
+
+    protected BreadcrumbBuilder createBreadcrumbBuilder(ILoggingEvent iLoggingEvent) {
+        BreadcrumbBuilder breadcrumb = new BreadcrumbBuilder()
+                .setLevel(formatBreadcrumbLevel(iLoggingEvent.getLevel()))
+                .setMessage(iLoggingEvent.getFormattedMessage())
+                .setTimestamp(new Date(iLoggingEvent.getTimeStamp()));
+        return breadcrumb;
     }
 
     /**
@@ -296,4 +302,25 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             return FilterReply.NEUTRAL;
         }
     }
+
+    /**
+     * Transforms a {@link Level} into an {@link Breadcrumb.Level}.
+     *
+     * @param level original level as defined in logback.
+     * @return log level used within sentry.
+     */
+    protected static Breadcrumb.Level formatBreadcrumbLevel(Level level) {
+        if (level.isGreaterOrEqual(Level.ERROR)) {
+            return Breadcrumb.Level.ERROR;
+        } else if (level.isGreaterOrEqual(Level.WARN)) {
+            return Breadcrumb.Level.WARNING;
+        } else if (level.isGreaterOrEqual(Level.INFO)) {
+            return Breadcrumb.Level.INFO;
+        } else if (level.isGreaterOrEqual(Level.ALL)) {
+            return Breadcrumb.Level.DEBUG;
+        } else {
+            return null;
+        }
+    }
+
 }

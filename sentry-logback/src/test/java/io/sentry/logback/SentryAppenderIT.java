@@ -33,6 +33,22 @@ public class SentryAppenderIT extends BaseIT {
     }
 
     @Test
+    public void testInfoAsBreadcrumbLog() throws Exception {
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
+        logger.info("Some innocuous logging for a breadcrumb");
+
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
+        logger.error("This is a test");
+
+        verifyProject1PostRequestCount(1);
+        verifyStoredEventCount(1);
+    }
+
+    @Test
     public void testChainedExceptions() throws Exception {
         verifyProject1PostRequestCount(0);
         verifyStoredEventCount(0);
