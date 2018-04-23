@@ -3,3 +3,9 @@ docs/_build
 infer-out/
 agent/build/
 local.properties
+.gradle/
+.idea/
+gradle/
+gradlew
+gradlew.bat
+*.iml
