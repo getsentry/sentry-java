@@ -7,8 +7,10 @@ import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
 import io.sentry.dsn.Dsn;
+import io.sentry.event.Event;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.helper.HttpEventBuilderHelper;
+import io.sentry.event.helper.ShouldSendEventCallback;
 import io.sentry.event.interfaces.*;
 import io.sentry.jvmti.FrameCache;
 import io.sentry.marshaller.Marshaller;
@@ -216,6 +218,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     public static final String EXTRA_OPTION = "extra";
     /**
+     * TODO
+     */
+    public static final String MIN_LEVEL = "min.level";
+    /**
      * Option for whether to enable an uncaught exception handler, defaults to 'true'.
      */
     public static final String UNCAUGHT_HANDLER_ENABLED_OPTION = "uncaught.handler.enabled";
@@ -307,6 +313,16 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
         for (String inAppPackage : getInAppFrames(dsn)) {
             FrameCache.addAppPackage(inAppPackage);
+        }
+
+        final Event.Level minLevel = getMinLevel(dsn);
+        if (minLevel != null) {
+            sentryClient.addShouldSendEventCallback(new ShouldSendEventCallback() {
+                @Override
+                public boolean shouldSend(Event event) {
+                    return event.getLevel().ordinal() <= minLevel.ordinal();
+                }
+            });
         }
 
         return sentryClient;
@@ -569,6 +585,21 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         }
 
         return handler;
+    }
+
+    /**
+     * TODO
+     *
+     * @param dsn
+     * @return
+     */
+    protected Event.Level getMinLevel(Dsn dsn) {
+        String minLevel = Lookup.lookup(MIN_LEVEL, dsn);
+        if (minLevel == null) {
+            return null;
+        }
+
+        return Event.Level.valueOf(minLevel.toUpperCase().trim());
     }
 
     /**

@@ -6,6 +6,8 @@ import io.sentry.connection.LockedDownException;
 import io.sentry.connection.TooManyRequestsException;
 import io.sentry.context.Context;
 import io.sentry.context.ContextManager;
+import io.sentry.event.Breadcrumb;
+import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
@@ -124,6 +126,15 @@ public class SentryClient {
      * @param event event to send to Sentry.
      */
     public void sendEvent(Event event) {
+        // Record this event as a breadcrumb for future events.
+        Breadcrumb breadcrumb = new BreadcrumbBuilder()
+                .setLevel(eventLevelToBreadcrumbLevel(event.getLevel()))
+                .setMessage(event.getMessage())
+                .setTimestamp(event.getTimestamp())
+                .build();
+
+        getContext().recordBreadcrumb(breadcrumb);
+
         for (ShouldSendEventCallback shouldSendEventCallback : shouldSendEventCallbacks) {
             if (!shouldSendEventCallback.shouldSend(event)) {
                 logger.trace("Not sending Event because of ShouldSendEventCallback: {}", shouldSendEventCallback);
@@ -140,6 +151,23 @@ public class SentryClient {
         } finally {
             getContext().setLastEventId(event.getId());
         }
+    }
+
+    private Breadcrumb.Level eventLevelToBreadcrumbLevel(Event.Level level) {
+        switch (level) {
+            case FATAL:
+                return Breadcrumb.Level.CRITICAL;
+            case ERROR:
+                return Breadcrumb.Level.ERROR;
+            case WARNING:
+                return Breadcrumb.Level.WARNING;
+            case INFO:
+                return Breadcrumb.Level.INFO;
+            case DEBUG:
+                return Breadcrumb.Level.DEBUG;
+        }
+
+        return null;
     }
 
     /**
