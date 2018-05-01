@@ -2,6 +2,7 @@ package io.sentry.connection;
 
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +48,8 @@ public abstract class AbstractConnection implements Connection {
         this.eventSendCallbacks = new HashSet<>();
         this.authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
             + "sentry_client=" + SentryEnvironment.getSentryName() + ","
-            + "sentry_key=" + publicKey + ","
-            + "sentry_secret=" + secretKey;
+            + "sentry_key=" + publicKey
+            + (!Util.isNullOrEmpty(secretKey) ? (",sentry_secret=" + secretKey) : "");
     }
 
     /**

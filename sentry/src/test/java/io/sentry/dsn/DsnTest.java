@@ -58,6 +58,18 @@ public class DsnTest extends BaseTest {
     }
 
     @Test
+    public void testSimpleDsnNoSecretValid() throws Exception {
+        Dsn dsn = new Dsn("http://publicKey@host/9");
+
+        assertThat(dsn.getProtocol(), is("http"));
+        assertThat(dsn.getPublicKey(), is("publicKey"));
+        assertThat(dsn.getSecretKey(), isEmptyOrNullString());
+        assertThat(dsn.getHost(), is("host"));
+        assertThat(dsn.getPath(), is("/"));
+        assertThat(dsn.getProjectId(), is("9"));
+    }
+
+    @Test
     public void testDsnLookupWithNothingSet() throws Exception {
         assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
     }
@@ -125,11 +137,6 @@ public class DsnTest extends BaseTest {
         }};
 
         assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
-    }
-
-    @Test(expectedExceptions = InvalidDsnException.class)
-    public void testMissingSecretKeyInvalid() throws Exception {
-        new Dsn("http://publicKey:@host/9");
     }
 
     @Test(expectedExceptions = InvalidDsnException.class)

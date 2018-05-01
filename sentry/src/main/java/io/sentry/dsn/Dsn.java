@@ -185,7 +185,7 @@ public class Dsn {
     /**
      * Validates internally the DSN, and check for mandatory elements.
      * <p>
-     * Mandatory elements are the {@link #host}, {@link #publicKey}, {@link #secretKey} and {@link #projectId}.
+     * Mandatory elements are the {@link #host}, {@link #publicKey} and {@link #projectId}.
      */
     private void validate() {
         List<String> missingElements = new LinkedList<>();
@@ -199,9 +199,6 @@ public class Dsn {
 
             if (publicKey == null) {
                 missingElements.add("public key");
-            }
-            if (secretKey == null) {
-                missingElements.add("secret key");
             }
             if (projectId == null || projectId.isEmpty()) {
                 missingElements.add("project ID");

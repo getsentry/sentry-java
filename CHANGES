@@ -1,7 +1,7 @@
 Version 1.7.4
 -------------
 
--
+- Allow new-style DSNs without the secret key.
 
 Version 1.7.3
 -------------
