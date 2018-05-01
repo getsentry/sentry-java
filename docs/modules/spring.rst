@@ -34,22 +34,22 @@ Using Maven:
     <dependency>
         <groupId>io.sentry</groupId>
         <artifactId>sentry-spring</artifactId>
-        <version>1.7.3</version>
+        <version>1.7.4</version>
     </dependency>
 
 Using Gradle:
 
 .. sourcecode:: groovy
 
-    compile 'io.sentry:sentry-spring:1.7.3'
+    compile 'io.sentry:sentry-spring:1.7.4'
 
 Using SBT:
 
 .. sourcecode:: scala
 
-    libraryDependencies += "io.sentry" % "sentry-spring" % "1.7.3"
+    libraryDependencies += "io.sentry" % "sentry-spring" % "1.7.4"
 
-For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-spring%7C1.7.3%7Cjar>`_.
+For other dependency managers see the `central Maven repository <https://search.maven.org/#artifactdetails%7Cio.sentry%7Csentry-spring%7C1.7.4%7Cjar>`_.
 
 Usage
 -----
