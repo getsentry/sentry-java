@@ -31,8 +31,6 @@
         </dependency>
 
         <!-- Test dependencies -->
-        
-        <!-- Log4j must be added here because it's set to provided scope in the compile configuration -->
         <dependency>
             <groupId>org.jmockit</groupId>
             <artifactId>jmockit</artifactId>
