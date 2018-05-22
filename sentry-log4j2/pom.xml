@@ -15,7 +15,7 @@
     <description>log4j2 appender allowing to send logs to the Sentry-Java client.</description>
 
     <properties>
-        <log4j2.version>2.11.0</log4j2.version>
+        <log4j2.version>2.8.1</log4j2.version>
     </properties>
 
     <dependencies>
@@ -25,16 +25,14 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j2.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4j2.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Test dependencies -->
+        
+        <!-- Log4j must be added here because it's set to provided scope in the compile configuration -->
         <dependency>
             <groupId>org.jmockit</groupId>
             <artifactId>jmockit</artifactId>
