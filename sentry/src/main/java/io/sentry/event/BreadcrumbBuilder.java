@@ -90,7 +90,7 @@ public class BreadcrumbBuilder {
      * @param value Value of the data
      * @return current BreadcrumbBuilder
      */
-    public BreadcrumbBuilder withData(String name, Object value) {
+    public BreadcrumbBuilder withData(String name, String value) {
         if (this.data == null) {
             this.data = new HashMap<>();
         }
