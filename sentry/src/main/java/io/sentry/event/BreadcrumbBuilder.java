@@ -1,6 +1,7 @@
 package io.sentry.event;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -80,6 +81,22 @@ public class BreadcrumbBuilder {
      */
     public BreadcrumbBuilder setData(Map<String, String> newData) {
         this.data = newData;
+        return this;
+    }
+
+    /**
+     * Adds to the related data for the {@link breadcrumb}.
+     *
+     * @param name Name of the data
+     * @param value Value of the data
+     * @return current BreadcrumbBuilder
+     */
+    public BreadcrumbBuilder withData(String name, String value) {
+        if (this.data == null) {
+            this.data = new HashMap<>();
+        }
+
+        this.data.put(name, value);
         return this;
     }
 
