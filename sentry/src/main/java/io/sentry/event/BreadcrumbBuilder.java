@@ -83,7 +83,7 @@ public class BreadcrumbBuilder {
         this.data = newData;
         return this;
     }
-    
+
     /**
      * Adds to the related data for the {@link breadcrumb}.
      *
