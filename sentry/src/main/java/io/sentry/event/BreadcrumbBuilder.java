@@ -82,6 +82,22 @@ public class BreadcrumbBuilder {
         this.data = newData;
         return this;
     }
+    
+    /**
+     * Adds to the related data for the {@link breadcrumb}.
+     *
+     * @param name Name of the data
+     * @param value Value of the data
+     * @return current BreadcrumbBuilder
+     */
+    public BreadcrumbBuilder withData(String name, Object value) {
+        if (this.data == null) {
+            this.data = new HashMap<>();
+        }
+
+        this.data.put(name, value);
+        return this;
+    }
 
     /**
      * Build and return the {@link Breadcrumb} object.
