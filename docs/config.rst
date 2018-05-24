@@ -25,13 +25,13 @@ In a properties file on your filesystem or classpath (defaults to ``sentry.prope
 
     dsn=https://public:private@host:port/1
 
-Via the Java System Properties:
+Via the Java System Properties *(not available on Android)*:
 
 .. sourcecode:: shell
 
     java -Dsentry.dsn=https://public:private@host:port/1 -jar app.jar
 
-Via a System Environment Variable:
+Via a System Environment Variable *(not available on Android)*:
 
 .. sourcecode:: shell
 
@@ -80,7 +80,9 @@ Configuration via the runtime environment
 
 This is the most flexible method for configuring the Sentry client
 because it can be easily changed based on the environment you run your
-application in.
+application in. *(Note that neither Java System Properties or System Environment
+Variables are available for Android applications. Please configure Sentry for
+Android via code or the properties file.)*
 
 Two methods are available for runtime configuration, checked in this order: Java System Properties
 and System Environment Variables.
@@ -282,7 +284,7 @@ Similar behaviour is enabled by default in Sentry. To disable it, use the
 Event Sampling
 ~~~~~~~~~~~~~~
 
-Sentry can be configured to sample events with the sample.rate`` option:
+Sentry can be configured to sample events with the ``sample.rate`` option:
 
 ::
 
@@ -309,7 +311,7 @@ Buffering Events to Disk
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sentry can be configured to write events to a specified directory on disk
-anytime communication with the Sentry server fails with the buffer.dir``
+anytime communication with the Sentry server fails with the ``buffer.dir``
 option. If the directory doesn't exist, Sentry will attempt to create it
 on startup and may therefore need write permission on the parent directory.
 Sentry always requires write permission on the buffer directory itself. This
@@ -320,7 +322,7 @@ is enabled by default if the ``AndroidSentryClientFactory`` is used.
     buffer.dir=sentry-events
 
 The maximum number of events that will be stored on disk defaults to 10,
-but can also be configured with the option buffer.size``:
+but can also be configured with the option ``buffer.size``:
 
 ::
 
@@ -329,7 +331,7 @@ but can also be configured with the option buffer.size``:
 If a buffer directory is provided, a background thread will periodically
 attempt to re-send the events that are found on disk. By default it will
 attempt to send events every 60 seconds. You can change this with the
-buffer.flushtime`` option (in milliseconds):
+``buffer.flushtime`` option (in milliseconds):
 
 ::
 
@@ -341,7 +343,7 @@ Graceful Shutdown of Buffering (Advanced)
 In order to shutdown the buffer flushing thread gracefully, a ``ShutdownHook``
 is created. By default, the buffer flushing thread is given 1 second
 to shutdown gracefully, but this can be adjusted via
-buffer.shutdowntimeout`` (represented in milliseconds):
+``buffer.shutdowntimeout`` (represented in milliseconds):
 
 ::
 
@@ -357,7 +359,7 @@ An example would be in a JEE environment where the application using Sentry
 could be deployed and undeployed regularly.
 
 To avoid this behaviour, it is possible to disable the graceful shutdown
-by setting the buffer.gracefulshutdown`` option:
+by setting the ``buffer.gracefulshutdown`` option:
 
 ::
 
@@ -370,7 +372,7 @@ In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, an asynchronous connection
 is set up, using a low priority thread pool to submit events to Sentry.
 
-To disable the async mode, add async=false`` to your options:
+To disable the async mode, add ``async=false`` to your options:
 
 ::
 
@@ -382,7 +384,7 @@ Graceful Shutdown of Async (Advanced)
 In order to shutdown the asynchronous connection gracefully, a ``ShutdownHook``
 is created. By default, the asynchronous connection is given 1 second
 to shutdown gracefully, but this can be adjusted via
-async.shutdowntimeout`` (represented in milliseconds):
+``async.shutdowntimeout`` (represented in milliseconds):
 
 ::
 
@@ -401,7 +403,7 @@ To avoid this behaviour, it is possible to disable the graceful shutdown.
 This might lead to some log entries being lost if the log application
 doesn't shut down the ``SentryClient`` instance nicely.
 
-The option to do so is async.gracefulshutdown``:
+The option to do so is ``async.gracefulshutdown``:
 
 ::
 
@@ -416,7 +418,7 @@ never sent to the Sentry server.
 Depending on the environment (if the memory is sparse) it is important to be
 able to control the size of that queue to avoid memory issues.
 
-It is possible to set a maximum with the option async.queuesize``:
+It is possible to set a maximum with the option ``async.queuesize``:
 
 ::
 
@@ -436,7 +438,7 @@ By default the thread pool used by the async connection contains one thread per
 processor available to the JVM.
 
 It's possible to manually set the number of threads (for example if you want
-only one thread) with the option async.threads``:
+only one thread) with the option ``async.threads``:
 
 ::
 
@@ -450,7 +452,7 @@ running smoothly, so the threads have a
 `minimal priority <http://docs.oracle.com/javase/6/docs/api/java/lang/Thread.html#MIN_PRIORITY>`_.
 
 It is possible to customise this value to increase the priority of those threads
-with the option async.priority``:
+with the option ``async.priority``:
 
 ::
 
@@ -468,7 +470,7 @@ limited connection, Sentry hosted on an external network), it can be useful
 to compress the data beforehand or not.
 
 It's possible to manually enable/disable the compression with the option
-compression``
+``compression``
 
 ::
 
@@ -478,7 +480,7 @@ Max Message Size
 ~~~~~~~~~~~~~~~~
 
 By default only the first 1000 characters of a message will be sent to
-the server. This can be changed with the maxmessagelength`` option.
+the server. This can be changed with the ``maxmessagelength`` option.
 
 ::
 
@@ -490,7 +492,7 @@ Timeout (Advanced)
 A timeout is set to avoid blocking Sentry threads because establishing a
 connection is taking too long.
 
-It's possible to manually set the timeout length with timeout``
+It's possible to manually set the timeout length with ``timeout``
 (in milliseconds):
 
 ::
