@@ -7,6 +7,9 @@ import io.sentry.marshaller.json.generator.GsonGenerator;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * JsonFactory implementation for runtime Gson Injection.
+ */
 public class JsonFactoryImpl implements JsonFactory {
 
     @Override

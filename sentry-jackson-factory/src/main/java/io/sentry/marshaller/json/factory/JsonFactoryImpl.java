@@ -7,6 +7,9 @@ import io.sentry.marshaller.json.generator.JacksonGenerator;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * JsonFactory implementation for runtime Jackson Injection.
+ */
 public class JsonFactoryImpl implements JsonFactory {
     private final com.fasterxml.jackson.core.JsonFactory jsonFactory = new com.fasterxml.jackson.core.JsonFactory();
 

@@ -6,9 +6,17 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+/**
+ * Jackson Json Generator Facade, it just delegates directly to <code>com.fasterxml.jackson.core.JsonGenerator</code>.
+ */
 public class JacksonGenerator implements JsonGenerator {
     private final com.fasterxml.jackson.core.JsonGenerator generator;
 
+    /**
+     * Creates a new facade delegating to parameter  generator.
+     *
+     * @param generator Jackson Core JsonGenerator instance.
+     */
     public JacksonGenerator(com.fasterxml.jackson.core.JsonGenerator generator) {
         this.generator = generator;
     }

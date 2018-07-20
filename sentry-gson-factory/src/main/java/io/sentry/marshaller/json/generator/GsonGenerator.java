@@ -10,9 +10,17 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Gson Json Generator Facade, it just delegates directly to <code>com.fasterxml.jackson.core.JsonGenerator</code>.
+ */
 public class GsonGenerator implements JsonGenerator {
     private final JsonWriter writer;
 
+    /**
+     * Creates a new facade delegating to @{@code com.google.gson.stream.JsonWriter}.
+     *
+     * @param destination Destination OutputStream whose Json will be written.
+     */
     public GsonGenerator(OutputStream destination) {
         this.writer = new JsonWriter(new OutputStreamWriter(destination));
     }
@@ -73,6 +81,11 @@ public class GsonGenerator implements JsonGenerator {
         writeSimpleObject(value);
     }
 
+    /**
+     * Tries to write object value to simple types or error out.
+     * @param value any object value.
+     * @throws IOException when there's and issue with output stream.
+     */
     private void writeSimpleObject(Object value) throws IOException {
         if (value == null) {
             this.writeNull();
@@ -104,6 +117,12 @@ public class GsonGenerator implements JsonGenerator {
         }
     }
 
+    /**
+     * NOT SUPPORTED YET.
+     * Writes byte array to json output as field value.
+     *
+     * @param bytes byte array object.
+     */
     private void writeBinary(byte[] bytes) {
         throw new IllegalStateException(GsonGenerator.class.getSimpleName() + " don't support serializing byte[] yet.");
     }
