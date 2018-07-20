@@ -1,12 +1,13 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.Event;
 import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.SentryInterface;
 import io.sentry.marshaller.Marshaller;
+import io.sentry.marshaller.json.connector.JsonFactory;
+import io.sentry.marshaller.json.connector.JsonGenerator;
+import io.sentry.marshaller.json.connector.JsonFactoryRuntimeClasspathLocator;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,7 @@ public class JsonMarshaller implements Marshaller {
     };
 
     private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
-    private final JsonFactory jsonFactory = new JsonFactory();
+    private final JsonFactory jsonFactory;
     private final Map<Class<? extends SentryInterface>, InterfaceBinding<?>> interfaceBindings = new HashMap<>();
     /**
      * Enables disables the compression of JSON.
@@ -146,6 +147,7 @@ public class JsonMarshaller implements Marshaller {
      */
     public JsonMarshaller(int maxMessageLength) {
         this.maxMessageLength = maxMessageLength;
+        jsonFactory = new JsonFactoryRuntimeClasspathLocator().getInstance();
     }
 
     @Override

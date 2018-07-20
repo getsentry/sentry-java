@@ -1,9 +1,9 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.StackTraceInterface;
+import io.sentry.marshaller.json.connector.JsonGenerator;
 
 import java.io.IOException;
 import java.util.Deque;

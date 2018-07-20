@@ -1,7 +1,7 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.BaseTest;
+import io.sentry.marshaller.json.connector.JsonGenerator;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;

@@ -1,12 +1,12 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.BaseTest;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.Sdk;
+import io.sentry.marshaller.json.connector.JsonGenerator;
 import mockit.*;
 import io.sentry.event.Event;
 import io.sentry.event.interfaces.SentryInterface;

@@ -1,7 +1,8 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import io.sentry.BaseTest;
+import io.sentry.marshaller.json.connector.JsonFactory;
+import io.sentry.marshaller.json.connector.JsonFactoryRuntimeClasspathLocator;
 import org.testng.annotations.Test;
 
 import java.io.OutputStream;
@@ -191,7 +192,7 @@ public class SentryJsonGeneratorTest extends BaseTest {
     }
 
     private void write(OutputStream destination, Object object) throws Exception {
-        final JsonFactory jsonFactory = new JsonFactory();
+        final JsonFactory jsonFactory = new JsonFactoryRuntimeClasspathLocator().getInstance();
 
         try (SentryJsonGenerator generator = new SentryJsonGenerator(jsonFactory.createGenerator(destination))) {
             configureGenerator(generator);

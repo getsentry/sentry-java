@@ -1,7 +1,7 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.interfaces.HttpInterface;
+import io.sentry.marshaller.json.connector.JsonGenerator;
 import io.sentry.util.Util;
 
 import java.io.IOException;
