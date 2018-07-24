@@ -83,6 +83,7 @@ public class GsonGenerator implements JsonGenerator {
 
     /**
      * Tries to write object value to simple types or error out.
+     *
      * @param value any object value.
      * @throws IOException when there's and issue with output stream.
      */
@@ -90,30 +91,33 @@ public class GsonGenerator implements JsonGenerator {
         if (value == null) {
             this.writeNull();
         } else if (value instanceof String) {
-            this.writeString((String)value);
+            this.writeString((String) value);
         } else {
             if (value instanceof Number) {
-                Number n = (Number)value;
-                writeNumber(n);
+                Number n = (Number) value;
+                this.writeNumber(n);
                 return;
             } else {
                 if (value instanceof byte[]) {
-                    this.writeBinary((byte[])value);
+                    this.writeBinary((byte[]) value);
                     return;
                 }
 
                 if (value instanceof Boolean) {
-                    this.writeBoolean((Boolean)value);
+                    this.writeBoolean((Boolean) value);
                     return;
                 }
 
                 if (value instanceof AtomicBoolean) {
-                    this.writeBoolean(((AtomicBoolean)value).get());
+                    this.writeBoolean(((AtomicBoolean) value).get());
                     return;
                 }
             }
 
-            throw new IllegalStateException(GsonGenerator.class.getSimpleName() + " can only serialize simple wrapper types (type passed " + value.getClass().getName() + ")");
+            throw new IllegalStateException(GsonGenerator.class.getSimpleName()
+                    + " can only serialize simple wrapper types (type passed "
+                    + value.getClass().getName()
+                    + ")");
         }
     }
 
@@ -124,7 +128,8 @@ public class GsonGenerator implements JsonGenerator {
      * @param bytes byte array object.
      */
     private void writeBinary(byte[] bytes) {
-        throw new IllegalStateException(GsonGenerator.class.getSimpleName() + " don't support serializing byte[] yet.");
+        throw new IllegalStateException(GsonGenerator.class.getSimpleName()
+                + " don't support serializing byte[] yet.");
     }
 
     private void writeNumber(Number number) throws IOException {
