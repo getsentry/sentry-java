@@ -11,14 +11,16 @@ matrix:
     - language: java
       dist: precise
       jdk: oraclejdk7
-      script: env | sort && mvn verify
+      install: make install
+      script: env | sort && make verify
       cache:
         directories:
           - $HOME/.m2
     - language: java
       dist: precise
       jdk: oraclejdk8
-      script: env | sort && mvn verify
+      install: make install
+      script: env | sort && make verify
       cache:
         directories:
           - $HOME/.m2
