@@ -11,6 +11,7 @@ matrix:
     - language: java
       dist: precise
       jdk: oraclejdk7
+      install: make install
       script: env | sort && make verify
       cache:
         directories:
@@ -18,6 +19,7 @@ matrix:
     - language: java
       dist: precise
       jdk: oraclejdk8
+      install: make install
       script: env | sort && make verify
       cache:
         directories:

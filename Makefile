@@ -26,7 +26,7 @@ verify:
 test: verify
 
 install:
-	$(MVN) source:jar install -Dcheckstyle.skip=true -DskipTests
+	$(MVN) source:jar install -Dcheckstyle.skip=true -DskipTests -Dmaven.javadoc.skip=true -B -V
 
 clean:
 	$(MVN) clean
