@@ -8,7 +8,7 @@
 .PHONY: checkstyle compile test install clean prepare prepareMvn prepareChanges perform verify
 
 # TODO: Fix to work between macOS and Linux
-MVN=mvn -e
+MVN=mvn -e -Dhttps.protocols=TLSv1.2
 ECHO=echo
 SED=sed
 
