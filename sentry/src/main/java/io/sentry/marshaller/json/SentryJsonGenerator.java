@@ -112,8 +112,12 @@ public class SentryJsonGenerator extends JsonGenerator {
                 generator.writeObject(value);
             } catch (IllegalStateException e) {
                 logger.debug("Couldn't marshal '{}' of type '{}', had to be converted into a String",
-                    value, value.getClass());
-                generator.writeString(Util.trimString(value.toString(), maxLengthString));
+                        value, value.getClass());
+                try {
+                    generator.writeString(Util.trimString(value.toString(), maxLengthString));
+                } catch (Exception innerE) {
+                    generator.writeString("<exception calling toString on object>");
+                }
             }
         }
     }

@@ -1,7 +1,7 @@
 Version 1.7.6
 -------------
 
--
+- Handle exceptions in `toString` calls when marshalling arbitrary objects to JSON.
 
 Version 1.7.5
 -------------
