@@ -3,10 +3,15 @@ Version 1.7.8
 
 -
 
-Version 1.7.6
+Version 1.7.7
 -------------
 
 - Handle exceptions in `toString` calls when marshalling arbitrary objects to JSON.
+
+Version 1.7.6
+-------------
+
+*Built with the incorrect version of Java, please skip this release*
 
 Version 1.7.5
 -------------
