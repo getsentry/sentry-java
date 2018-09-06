@@ -42,9 +42,9 @@ public abstract class AbstractSentryConfiguration implements SentryConfiguration
     getClient().setServerName(serverName);
   }
 
-  public void register(MBeanServer server, String name)
+  public ObjectName register(MBeanServer server, String name)
       throws MBeanRegistrationException, NotCompliantMBeanException, MalformedObjectNameException, InstanceAlreadyExistsException {
-    server.registerMBean(new StandardMBean(this, SentryConfigurationMXBean.class, true), makeName(name));
+    return server.registerMBean(new StandardMBean(this, SentryConfigurationMXBean.class, true), makeName(name)).getObjectName();
   }
 
   protected static ObjectName makeName(String instance) throws MalformedObjectNameException {

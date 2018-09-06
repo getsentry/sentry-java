@@ -17,7 +17,7 @@ import javax.management.ObjectName;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class SentryJmxTest extends BaseTest {
+public class GlobalSentryJmxTest extends BaseTest {
   private MBeanServer beanServer;
   private ObjectName globalBeanName;
 

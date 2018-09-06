@@ -7,6 +7,7 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 
 public class GlobalSentryConfiguration extends AbstractSentryConfiguration {
   @Override
@@ -19,9 +20,9 @@ public class GlobalSentryConfiguration extends AbstractSentryConfiguration {
     Sentry.init(dsn);
   }
 
-  public static void register(MBeanServer server) throws MBeanRegistrationException, InstanceAlreadyExistsException {
+  public static ObjectName register(MBeanServer server) throws MBeanRegistrationException, InstanceAlreadyExistsException {
     try {
-      new GlobalSentryConfiguration().register(server, "global");
+      return new GlobalSentryConfiguration().register(server, "global");
     } catch (MalformedObjectNameException | NotCompliantMBeanException e) {
       throw new IllegalStateException(e);
     }
