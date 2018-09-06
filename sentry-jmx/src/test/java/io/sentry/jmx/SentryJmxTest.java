@@ -41,7 +41,7 @@ public class SentryJmxTest extends BaseTest {
   public void testSetGlobalClientAttributeViaJmx() throws Exception {
     assertNoGlobalSentry();
 
-    SentryConfigurationMBean jmxConfiguration = JMX.newMBeanProxy(beanServer, globalBeanName, SentryConfigurationMBean.class);
+    SentryConfigurationMXBean jmxConfiguration = JMX.newMBeanProxy(beanServer, globalBeanName, SentryConfigurationMXBean.class);
 
     jmxConfiguration.setDist("foo");
     assertThat(Sentry.getStoredClient().getDist(), equalTo("foo"));
@@ -50,7 +50,7 @@ public class SentryJmxTest extends BaseTest {
   @Test
   public void testSetGlobalDSN() throws Exception {
     assertNoGlobalSentry();
-    SentryConfigurationMBean jmxConfiguration = JMX.newMBeanProxy(beanServer, globalBeanName, SentryConfigurationMBean.class);
+    SentryConfigurationMXBean jmxConfiguration = JMX.newMBeanProxy(beanServer, globalBeanName, SentryConfigurationMXBean.class);
     jmxConfiguration.reinitialize("http://foo@example.org/3");
     assertThat(Sentry.getStoredClient().toString(), containsString("connection=io.sentry.connection.AsyncConnection"));
   }

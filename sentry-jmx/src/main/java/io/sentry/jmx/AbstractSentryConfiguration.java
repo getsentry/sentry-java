@@ -7,8 +7,9 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import javax.management.StandardMBean;
 
-public abstract class AbstractSentryConfiguration implements SentryConfigurationMBean {
+public abstract class AbstractSentryConfiguration implements SentryConfigurationMXBean {
   protected abstract SentryClient getClient();
 
   @Override
@@ -43,7 +44,7 @@ public abstract class AbstractSentryConfiguration implements SentryConfiguration
 
   public void register(MBeanServer server, String name)
       throws MBeanRegistrationException, NotCompliantMBeanException, MalformedObjectNameException, InstanceAlreadyExistsException {
-    server.registerMBean(this, makeName(name));
+    server.registerMBean(new StandardMBean(this, SentryConfigurationMXBean.class, true), makeName(name));
   }
 
   protected static ObjectName makeName(String instance) throws MalformedObjectNameException {

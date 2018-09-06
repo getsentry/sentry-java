@@ -1,6 +1,6 @@
 package io.sentry.jmx;
 
-public interface SentryConfigurationMBean {
+public interface SentryConfigurationMXBean {
   void reinitialize(String dsn);
   String getRelease();
   void setRelease(String release);
