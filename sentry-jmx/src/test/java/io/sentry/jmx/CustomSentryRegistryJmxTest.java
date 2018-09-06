@@ -7,19 +7,19 @@ import static org.hamcrest.Matchers.not;
 
 import io.sentry.BaseTest;
 import io.sentry.SentryClient;
-import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.management.JMX;
 import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import org.testng.annotations.Test;
 
 public class CustomSentryRegistryJmxTest extends BaseTest {
-  private MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
-  private SentryRegistry registry = new SentryRegistry();
+  private MBeanServer beanServer = MBeanServerFactory.newMBeanServer();
+  private SentryRegistry registry = new SentryRegistry(beanServer);
 
   @Test
   public void testRegistrationOfRegistryBeans() throws Exception {
@@ -56,7 +56,11 @@ public class CustomSentryRegistryJmxTest extends BaseTest {
   private static class SentryRegistry {
     private Map<String, SentryClient> clients = new HashMap<>();
     private Map<String, ObjectName> objectNames = new HashMap<>();
-    private MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
+    private MBeanServer beanServer;
+
+    private SentryRegistry(MBeanServer beanServer) {
+      this.beanServer = beanServer;
+    }
 
     SentryClient getClient(String name) throws Exception {
       if (clients.containsKey(name)) {
