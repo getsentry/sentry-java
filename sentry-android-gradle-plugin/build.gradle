@@ -7,6 +7,9 @@ apply plugin: 'maven-publish'
 
 repositories {
     jcenter()
+    mavenLocal()
+    mavenCentral()
+    google()
 }
 
 compileGroovy {
