@@ -87,8 +87,12 @@ public class EventBuilder {
 
         // Ensure that an SDK is set
         if (event.getSdk() == null) {
-            event.setSdk(new Sdk(SentryEnvironment.SDK_NAME, SentryEnvironment.SDK_VERSION,
-                sdkIntegrations));
+            Sdk sdk = new Sdk(
+                    SentryEnvironment.getSdkName(),
+                    SentryEnvironment.getSdkVersion(),
+                    sdkIntegrations
+            );
+            event.setSdk(sdk);
         }
 
         // Ensure that a hostname is set

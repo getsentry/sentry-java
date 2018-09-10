@@ -14,14 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class SentryEnvironment {
     /**
-     * Name of this SDK.
-     */
-    public static final String SDK_NAME = "sentry-java";
-    /**
-     * Version of this SDK.
-     */
-    public static final String SDK_VERSION = ResourceBundle.getBundle("sentry-build").getString("build.name");
-    /**
      * Indicates whether the current thread is managed by sentry or not.
      */
     protected static final ThreadLocal<AtomicInteger> SENTRY_THREAD = new ThreadLocal<AtomicInteger>() {
@@ -31,6 +23,15 @@ public final class SentryEnvironment {
         }
     };
     private static final Logger logger = LoggerFactory.getLogger(SentryEnvironment.class);
+    /**
+     * Name of this SDK.
+     */
+    private static final String SDK_NAME = "sentry-java";
+    /**
+     * Version of this SDK. Lazily initialized to avoid locating the resource
+     * at startup time.
+     */
+    private static volatile String sdkVersion = null;
 
     private SentryEnvironment() {
     }
@@ -91,11 +92,34 @@ public final class SentryEnvironment {
     }
 
     /**
-     * Returns sdk name+version string, used for HTTP User Agent, sentry_client, etc.
+     * Returns the name of the SDK.
      *
-     * @return Sentry sdk string
+     * @return the name of the SDK.
+     */
+    public static String getSdkName() {
+        return SDK_NAME;
+    }
+
+    /**
+     * Returns the version of the SDK. Lazily initialized to avoid locating the resource
+     * at startup time.
+     *
+     * @return the version of the SDK.
+     */
+    public static String getSdkVersion() {
+        if (sdkVersion == null) {
+            sdkVersion = ResourceBundle.getBundle("sentry-build").getString("build.name");
+        }
+
+        return sdkVersion;
+    }
+
+    /**
+     * Returns SDK `name/version` string, used for HTTP User Agent, sentry_client, etc.
+     *
+     * @return SDK `name/version` string.
      */
     public static String getSentryName() {
-        return SDK_NAME + "/" + SDK_VERSION;
+        return getSdkName() + "/" + getSdkVersion();
     }
 }
