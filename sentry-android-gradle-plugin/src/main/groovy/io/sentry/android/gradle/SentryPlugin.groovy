@@ -152,12 +152,12 @@ class SentryPlugin implements Plugin<Project> {
                     } catch (Exception ignored) {
                         // Android Gradle Plugin >= 3.0.0
                         manifestPath = new File(
-                                variantOutput.processManifest.manifestOutputDirectory,
+                                variantOutput.processManifest.manifestOutputDirectory.toString(),
                                 "AndroidManifest.xml")
                         if (!manifestPath.isFile()) {
                             manifestPath = new File(
                                     new File(
-                                            variantOutput.processManifest.manifestOutputDirectory,
+                                            variantOutput.processManifest.manifestOutputDirectory.toString(),
                                             variantOutput.dirName),
                                     "AndroidManifest.xml")
                         }
