@@ -1,6 +1,7 @@
 package io.sentry.connection;
 
 import io.sentry.BaseTest;
+import io.sentry.environment.Version;
 import io.sentry.time.FixedClock;
 import mockit.*;
 import io.sentry.event.Event;
@@ -40,7 +41,7 @@ public class AbstractConnectionTest extends BaseTest {
         String authHeader = abstractConnection.getAuthHeader();
 
         assertThat(authHeader, is("Sentry sentry_version=6,"
-                + "sentry_client=sentry-java/test,"
+                + "sentry_client=sentry-java/" + Version.SDK_VERSION + ","
                 + "sentry_key=" + publicKey + ","
                 + "sentry_secret=" + secretKey));
     }

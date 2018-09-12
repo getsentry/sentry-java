@@ -1,7 +1,7 @@
 Version 1.7.9
 -------------
 
--
+- Encode SDK_VERSION in a Java class instead of looking up a ResouceBundle.
 
 Version 1.7.8
 -------------

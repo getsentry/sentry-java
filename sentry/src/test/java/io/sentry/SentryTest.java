@@ -6,6 +6,7 @@ import io.sentry.connection.NoopConnection;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
+import io.sentry.environment.Version;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
@@ -141,7 +142,7 @@ public class SentryTest extends BaseTest {
         assertThat(sentryUrl.getPath(), equalTo("/api/1/store/"));
 
         String authHeader = getField(connection, "authHeader");
-        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/test,sentry_key=public,sentry_secret=private"));
+        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/" + Version.SDK_VERSION + ",sentry_key=public,sentry_secret=private"));
     }
 
     @Test
@@ -157,7 +158,7 @@ public class SentryTest extends BaseTest {
         assertThat(sentryUrl.getPath(), equalTo("/api/1/store/"));
 
         String authHeader = getField(connection, "authHeader");
-        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/test,sentry_key=public,sentry_secret=private"));
+        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/" + Version.SDK_VERSION + ",sentry_key=public,sentry_secret=private"));
     }
 
     @Test

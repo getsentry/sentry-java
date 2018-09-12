@@ -3,7 +3,6 @@ package io.sentry.environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,7 +19,7 @@ public final class SentryEnvironment {
     /**
      * Version of this SDK.
      */
-    public static final String SDK_VERSION = ResourceBundle.getBundle("sentry-build").getString("build.name");
+    public static final String SDK_VERSION = Version.SDK_VERSION;
     /**
      * Indicates whether the current thread is managed by sentry or not.
      */
