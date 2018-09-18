@@ -199,9 +199,11 @@ class SentryPlugin implements Plugin<Project> {
                         def propName = "sentry.properties"
                         def possibleProps = [
                                 "${project.projectDir}/src/${variantName}/${propName}",
+                                "${project.projectDir}/src/${flavorName}/${propName}",
                                 "${project.projectDir}/src/${variantName}/${flavorName}/${propName}",
                                 "${project.projectDir}/src/${flavorName}/${variantName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${variantName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${flavorName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${variantName}/${flavorName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${flavorName}/${variantName}/${propName}",
                                 "${project.rootDir.toPath()}/${propName}"
