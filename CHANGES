@@ -1,7 +1,7 @@
 Version 1.7.10
 --------------
 
--
+- Android Plugin: Look for properties file directly under flavor directory. (thanks biggestT)
 
 Version 1.7.9
 -------------
