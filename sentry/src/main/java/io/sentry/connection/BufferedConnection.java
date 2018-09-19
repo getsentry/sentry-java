@@ -107,10 +107,10 @@ public class BufferedConnection implements Connection {
             boolean notSerializable = e.getCause() instanceof NotSerializableException;
 
             Integer responseCode = e.getResponseCode();
-            if (notSerializable || (responseCode != null && responseCode != HttpConnection.HTTP_TOO_MANY_REQUESTS)) {
+            if (notSerializable || (responseCode != null)) {
                 // don't retry events (discard from the buffer) if:
                 // 1. they aren't serializable
-                // 2. the connection is up (valid response code was returned) and it's not an HTTP 429
+                // 2. the connection is up (valid response code was returned)
                 buffer.discard(event);
             }
 

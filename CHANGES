@@ -2,6 +2,7 @@ Version 1.7.10
 --------------
 
 - Android Plugin: Look for properties file directly under flavor directory. (thanks biggestT)
+- Drop events when the server returns an HTTP 429.
 
 Version 1.7.9
 -------------

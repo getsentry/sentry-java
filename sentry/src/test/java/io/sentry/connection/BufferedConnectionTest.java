@@ -156,7 +156,7 @@ public class BufferedConnectionTest extends BaseTest {
     }
 
     @Test
-    public void test429IsBuffered() throws Exception {
+    public void test429IsNotBuffered() throws Exception {
         Event event = new EventBuilder().build();
         connectionException = new ConnectionException("429", new IOException(), null, HttpConnection.HTTP_TOO_MANY_REQUESTS);
         try {
@@ -164,7 +164,7 @@ public class BufferedConnectionTest extends BaseTest {
         } catch (Exception e) {
 
         }
-        assertThat(bufferedEvents.size(), equalTo(1));
+        assertThat(bufferedEvents.size(), equalTo(0));
     }
 
     @Test
