@@ -56,8 +56,12 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
         eventBuilder.withSdkIntegration("android");
         PackageInfo packageInfo = getPackageInfo(ctx);
         if (packageInfo != null) {
-            eventBuilder.withRelease(packageInfo.packageName + "-" + packageInfo.versionName);
-            eventBuilder.withDist(Integer.toString(packageInfo.versionCode));
+            if (eventBuilder.getEvent().getRelease() == null) {
+                eventBuilder.withRelease(packageInfo.packageName + "-" + packageInfo.versionName);
+            }
+            if (eventBuilder.getEvent().getDist() == null) {
+                eventBuilder.withDist(Integer.toString(packageInfo.versionCode));
+            }
         }
 
         String androidId = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
