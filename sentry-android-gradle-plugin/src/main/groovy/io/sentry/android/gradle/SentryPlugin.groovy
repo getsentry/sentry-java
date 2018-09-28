@@ -136,7 +136,7 @@ class SentryPlugin implements Plugin<Project> {
     }
 
     void apply(Project project) {
-        project.extensions.create("sentry", SentryPluginExtension)
+        SentryPluginExtension extension = project.extensions.create("sentry", SentryPluginExtension)
 
         project.afterEvaluate {
             if(!project.plugins.hasPlugin(AppPlugin)) {
@@ -172,7 +172,7 @@ class SentryPlugin implements Plugin<Project> {
                     }
 
                     // create a task to configure proguard automatically unless the user disabled it.
-                    if (project.sentry.autoProguardConfig) {
+                    if (extension.autoProguardConfig) {
                         def addProguardSettingsTaskName = "addSentryProguardSettingsFor${variant.name.capitalize()}"
                         if (!project.tasks.findByName(addProguardSettingsTaskName)) {
                             SentryProguardConfigTask proguardConfigTask = project.tasks.create(
@@ -230,7 +230,7 @@ class SentryPlugin implements Plugin<Project> {
                                 mappingFile
                         ]
 
-                        if (!project.sentry.autoUpload) {
+                        if (!extension.autoUpload) {
                             args.push("--no-upload")
                         }
 
