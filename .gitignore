@@ -1,4 +1,5 @@
 target/
 infer-out/
 agent/build/
+agent/.vscode/
 local.properties

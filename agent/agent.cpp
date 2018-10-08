@@ -10,14 +10,23 @@
 
 extern Level LOG_LEVEL;
 
-static bool INIT_SUCCESS = false;
-
 static void JNICALL ExceptionCallback(jvmtiEnv *jvmti, JNIEnv *env, jthread thread,
                                       jmethodID method, jlocation location, jobject exception,
                                       jmethodID catch_method, jlocation catch_location) {
     log(TRACE, "ExceptionCallback called.");
 
-    if (!INIT_SUCCESS) {
+    jclass sentry_class = env->FindClass("io/sentry/Sentry");
+    if (sentry_class == nullptr) {
+        env->ExceptionClear();
+        log(TRACE, "Unable to locate Sentry class.");
+        return;
+    }
+
+    jfieldID storedClientId = env->GetStaticFieldID(sentry_class, "storedClient", "Lio/sentry/SentryClient;");
+    jobject storedClientVal = env->GetStaticObjectField(sentry_class, storedClientId);
+    if (storedClientVal == nullptr) {
+        env->ExceptionClear();
+        log(TRACE, "No stored SentryClient.");
         return;
     }
 
@@ -125,7 +134,6 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
         return JNI_ABORT;
     }
 
-    INIT_SUCCESS = true;
     log(TRACE, "OnLoad exit.");
     return JNI_OK;
 }
