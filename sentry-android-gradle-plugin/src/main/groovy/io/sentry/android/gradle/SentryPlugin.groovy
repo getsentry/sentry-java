@@ -1,6 +1,7 @@
 package io.sentry.android.gradle
 
 import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.ApplicationVariant
 import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
@@ -139,7 +140,7 @@ class SentryPlugin implements Plugin<Project> {
         project.extensions.create("sentry", SentryPluginExtension)
 
         project.afterEvaluate {
-            if(!project.plugins.hasPlugin(AppPlugin)) {
+            if(!project.plugins.hasPlugin(AppPlugin) && !project.getPlugins().hasPlugin(LibraryPlugin)) {
                 throw new IllegalStateException('Must apply \'com.android.application\' first!')
             }
 
