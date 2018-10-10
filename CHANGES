@@ -2,6 +2,7 @@ Version 1.7.11
 --------------
 
 - Only set `release` and `dist` on Android events if the user didn't provide their own.
+- Allow Gradle plugin to be included in library projects. (thanks linakis)
 
 Version 1.7.10
 --------------
