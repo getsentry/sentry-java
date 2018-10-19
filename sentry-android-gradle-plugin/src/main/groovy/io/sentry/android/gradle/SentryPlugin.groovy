@@ -231,6 +231,9 @@ class SentryPlugin implements Plugin<Project> {
                                 mappingFile
                         ]
 
+                        println "SENTRY-CLI ARGS"
+                        println args
+
                         if (!extension.autoUpload) {
                             args.push("--no-upload")
                         }
