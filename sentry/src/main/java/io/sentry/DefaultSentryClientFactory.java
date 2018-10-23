@@ -385,7 +385,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
             @Override
             public void close() throws IOException {
-                if (socket != null) {
+                if (socket != null){
                     this.socket.close();
                 }
             }
