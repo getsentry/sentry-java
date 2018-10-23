@@ -400,7 +400,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                         address = InetAddress.getByName("localhost");
                     }
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
-                    if (socket == null) {
+                    if(socket == null){
                         socket = new DatagramSocket();
                     }
                     socket.send(packet);
