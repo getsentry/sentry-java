@@ -379,6 +379,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                 Lookup.lookup(UDP_FORWARDING_PORT, dsn), JsonMarshaller.DEFAULT_UDP_FORWARDING_PORT);
 
         return new Connection() {
+            InetAddress address = null;
             DatagramSocket socket = null;
             List<EventSendCallback> eventSendCallbacks = new ArrayList<>();
 
@@ -395,7 +396,10 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                     ByteArrayOutputStream destination = new ByteArrayOutputStream();
                     marshaller.marshall(event, destination);
                     byte[] buf = destination.toByteArray();
-                    DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName("localhost"), udpPort);
+                    if(address == null){
+                        address = InetAddress.getByName("localhost");
+                    }
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
                     if (socket == null) {
                         socket = new DatagramSocket();
                     }
