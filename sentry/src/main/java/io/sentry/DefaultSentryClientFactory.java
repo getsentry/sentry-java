@@ -385,7 +385,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
             @Override
             public void close() throws IOException {
-                if (socket != null){
+                if (socket != null) {
                     this.socket.close();
                 }
             }
@@ -396,11 +396,11 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                     ByteArrayOutputStream destination = new ByteArrayOutputStream();
                     marshaller.marshall(event, destination);
                     byte[] buf = destination.toByteArray();
-                    if(address == null){
+                    if (address == null) {
                         address = InetAddress.getByName("localhost");
                     }
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
-                    if(socket == null){
+                    if (socket == null) {
                         socket = new DatagramSocket();
                     }
                     socket.send(packet);
