@@ -50,7 +50,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * Option to set the maximum length of the message body in the requests to the
      * Sentry Server.
      */
-    public static final String UDP_FORWARDING_PORT = "rsyslogudpport";
+    public static final String LOCAL_UDP_FORWARDING_PORT = "localudpforwardingport";
 
     /**
      * Option to set a timeout for requests to the Sentry server, in milliseconds.
@@ -376,7 +376,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     private Connection createUdpConnection(Dsn dsn) {
         final Marshaller marshaller = createMarshaller(dsn);
         final int udpPort = Util.parseInteger(
-                Lookup.lookup(UDP_FORWARDING_PORT, dsn), JsonMarshaller.DEFAULT_UDP_FORWARDING_PORT);
+                Lookup.lookup(LOCAL_UDP_FORWARDING_PORT, dsn), JsonMarshaller.DEFAULT_LOCAL_UDP_FORWARDING_PORT);
 
         return new Connection() {
             InetAddress address = null;
