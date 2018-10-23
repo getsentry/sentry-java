@@ -7,6 +7,7 @@ import io.sentry.connection.*;
 import io.sentry.context.ContextManager;
 import io.sentry.context.ThreadLocalContextManager;
 import io.sentry.dsn.Dsn;
+import io.sentry.event.Event;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.helper.HttpEventBuilderHelper;
 import io.sentry.event.interfaces.*;
@@ -17,11 +18,10 @@ import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.net.InetSocketAddress;
-import java.net.Authenticator;
-import java.net.Proxy;
-import java.net.URL;
+import java.io.IOException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,6 +45,13 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * Sentry Server.
      */
     public static final String MAX_MESSAGE_LENGTH_OPTION = "maxmessagelength";
+
+    /**
+     * Option to set the maximum length of the message body in the requests to the
+     * Sentry Server.
+     */
+    public static final String UDP_FORWARDING_PORT = "rsyslogudpport";
+
     /**
      * Option to set a timeout for requests to the Sentry server, in milliseconds.
      */
@@ -203,6 +210,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     public static final String TAGS_OPTION = "tags";
     /**
      * Option to set tags that are extracted from the MDC system, where applicable.
+     *
      * @deprecated prefer {@link DefaultSentryClientFactory#MDCTAGS_OPTION}
      */
     @Deprecated
@@ -224,6 +232,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     private static final String FALSE = Boolean.FALSE.toString();
 
     private static final Map<String, RejectedExecutionHandler> REJECT_EXECUTION_HANDLERS = new HashMap<>();
+
     static {
         REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_SYNC, new ThreadPoolExecutor.CallerRunsPolicy());
         REJECT_EXECUTION_HANDLERS.put(ASYNC_QUEUE_DISCARDNEW, new ThreadPoolExecutor.DiscardPolicy());
@@ -242,7 +251,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                 sentryClient.addBuilderHelper(new HttpEventBuilderHelper());
             } catch (ClassNotFoundException e) {
                 logger.debug("The current environment doesn't provide access to servlets,"
-                    + " or provides an unsupported version.");
+                        + " or provides an unsupported version.");
             }
             sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
             return configureSentryClient(sentryClient, dsn);
@@ -256,7 +265,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * Configures a {@link SentryClient} instance after it has been constructed.
      *
      * @param sentryClient The {@link SentryClient} to configure.
-     * @param dsn Data Source Name of the Sentry server to use.
+     * @param dsn          Data Source Name of the Sentry server to use.
      * @return The same {@link SentryClient} instance, after configuration.
      */
     protected SentryClient configureSentryClient(SentryClient sentryClient, Dsn dsn) {
@@ -325,6 +334,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
             logger.debug("Using an {} connection to Sentry.", protocol.toUpperCase());
             connection = createHttpConnection(dsn);
+        } else if (protocol.equalsIgnoreCase("udp")) {
+            logger.debug("Using an {} connection to Sentry.", protocol.toUpperCase());
+            connection = createUdpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("out")) {
             logger.debug("Using StdOut to send events.");
             connection = createStdOutConnection(dsn);
@@ -343,7 +355,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                 boolean gracefulShutdown = getBufferedConnectionGracefulShutdownEnabled(dsn);
                 Long shutdownTimeout = getBufferedConnectionShutdownTimeout(dsn);
                 bufferedConnection = new BufferedConnection(connection, eventBuffer, flushtime, gracefulShutdown,
-                    shutdownTimeout);
+                        shutdownTimeout);
                 connection = bufferedConnection;
             }
         }
@@ -359,6 +371,51 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         }
 
         return connection;
+    }
+
+    private Connection createUdpConnection(Dsn dsn) {
+        final Marshaller marshaller = createMarshaller(dsn);
+        final int udpPort = Util.parseInteger(
+                Lookup.lookup(UDP_FORWARDING_PORT, dsn), JsonMarshaller.DEFAULT_UDP_FORWARDING_PORT);
+
+        return new Connection() {
+            DatagramSocket socket = null;
+            List<EventSendCallback> eventSendCallbacks = new ArrayList<>();
+
+            @Override
+            public void close() throws IOException {
+                if (socket != null) {
+                    this.socket.close();
+                }
+            }
+
+            @Override
+            public void send(Event event) throws ConnectionException {
+                try {
+                    ByteArrayOutputStream destination = new ByteArrayOutputStream();
+                    marshaller.marshall(event, destination);
+                    byte[] buf = destination.toByteArray();
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName("localhost"), udpPort);
+                    if (socket == null) {
+                        socket = new DatagramSocket();
+                    }
+                    socket.send(packet);
+                    for (EventSendCallback eventSendCallback : eventSendCallbacks) {
+                        eventSendCallback.onSuccess(event);
+                    }
+                } catch (IOException ioex) {
+                    for (EventSendCallback eventSendCallback : eventSendCallbacks) {
+                        eventSendCallback.onFailure(event, ioex);
+                    }
+                    throw new ConnectionException("Error writing to udp", ioex);
+                }
+            }
+
+            @Override
+            public void addEventSendCallback(EventSendCallback eventSendCallback) {
+                eventSendCallbacks.add(eventSendCallback);
+            }
+        };
     }
 
     /**
@@ -383,8 +440,8 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(
-            maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
-            new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
+                maxThreads, maxThreads, 0L, TimeUnit.MILLISECONDS, queue,
+                new DaemonThreadFactory(priority), getRejectedExecutionHandler(dsn));
 
         boolean gracefulShutdown = getAsyncGracefulShutdownEnabled(dsn);
 
@@ -422,7 +479,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         }
 
         HttpConnection httpConnection = new HttpConnection(sentryApiUrl, dsn.getPublicKey(),
-            dsn.getSecretKey(), proxy, eventSampler);
+                dsn.getSecretKey(), proxy, eventSampler);
 
         Marshaller marshaller = createMarshaller(dsn);
         httpConnection.setMarshaller(marshaller);
@@ -522,8 +579,8 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             // Only warn if the user didn't set it at all
             if (inAppFramesOption == null) {
                 logger.warn("No '" + IN_APP_FRAMES_OPTION + "' was configured, this option is highly recommended "
-                    + "as it affects stacktrace grouping and display on Sentry. See documentation: "
-                    + "https://docs.sentry.io/clients/java/config/#in-application-stack-frames");
+                        + "as it affects stacktrace grouping and display on Sentry. See documentation: "
+                        + "https://docs.sentry.io/clients/java/config/#in-application-stack-frames");
             }
             return Collections.emptyList();
         }
@@ -565,7 +622,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         if (handler == null) {
             String options = Arrays.toString(REJECT_EXECUTION_HANDLERS.keySet().toArray());
             throw new RuntimeException("RejectedExecutionHandler not found: '" + overflowName
-                + "', valid choices are: " + options);
+                    + "', valid choices are: " + options);
         }
 
         return handler;
@@ -649,7 +706,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected int getAsyncThreads(Dsn dsn) {
         return Util.parseInteger(Lookup.lookup(ASYNC_THREADS_OPTION, dsn),
-            Runtime.getRuntime().availableProcessors());
+                Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -790,7 +847,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             val = Lookup.lookup(EXTRATAGS_OPTION, dsn);
             if (!Util.isNullOrEmpty(val)) {
                 logger.warn("The '" + EXTRATAGS_OPTION + "' option is deprecated, please use"
-                    + " the '" + MDCTAGS_OPTION + "' option instead.");
+                        + " the '" + MDCTAGS_OPTION + "' option instead.");
             }
         }
 
@@ -835,7 +892,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected int getMaxMessageLength(Dsn dsn) {
         return Util.parseInteger(
-            Lookup.lookup(MAX_MESSAGE_LENGTH_OPTION, dsn), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
+                Lookup.lookup(MAX_MESSAGE_LENGTH_OPTION, dsn), JsonMarshaller.DEFAULT_MAX_MESSAGE_LENGTH);
     }
 
     /**
