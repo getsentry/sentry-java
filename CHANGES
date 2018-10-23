@@ -1,7 +1,8 @@
 Version 1.7.13
 --------------
 
--
+- Fix compatibility with Gradle 4.4+ (#621) (thanks cezary-butler)
+- Bump Sentry Gradle Plugin embedded sentry-cli to 1.36.3
 
 Version 1.7.12
 --------------
