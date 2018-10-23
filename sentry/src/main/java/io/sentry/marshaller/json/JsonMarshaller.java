@@ -110,11 +110,6 @@ public class JsonMarshaller implements Marshaller {
     public static final int DEFAULT_MAX_MESSAGE_LENGTH = 1000;
 
     /**
-     * Default maximum length for a message.
-     */
-    public static final int DEFAULT_LOCAL_UDP_FORWARDING_PORT = 514;
-
-    /**
      * Date format for ISO 8601.
      */
     private static final ThreadLocal<DateFormat> ISO_FORMAT = new ThreadLocal<DateFormat>() {

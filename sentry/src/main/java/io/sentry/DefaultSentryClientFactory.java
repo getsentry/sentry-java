@@ -47,12 +47,6 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     public static final String MAX_MESSAGE_LENGTH_OPTION = "maxmessagelength";
 
     /**
-     * Option to set the maximum length of the message body in the requests to the
-     * Sentry Server.
-     */
-    public static final String LOCAL_UDP_FORWARDING_PORT = "localudpforwardingport";
-
-    /**
      * Option to set a timeout for requests to the Sentry server, in milliseconds.
      */
     public static final String TIMEOUT_OPTION = "timeout";
@@ -373,10 +367,8 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         return connection;
     }
 
-    private Connection createUdpConnection(Dsn dsn) {
+    private Connection createUdpConnection(final Dsn dsn) {
         final Marshaller marshaller = createMarshaller(dsn);
-        final int udpPort = Util.parseInteger(
-                Lookup.lookup(LOCAL_UDP_FORWARDING_PORT, dsn), JsonMarshaller.DEFAULT_LOCAL_UDP_FORWARDING_PORT);
 
         return new Connection() {
             InetAddress address = null;
@@ -397,9 +389,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
                     marshaller.marshall(event, destination);
                     byte[] buf = destination.toByteArray();
                     if (address == null) {
-                        address = InetAddress.getByName("localhost");
+                        address = InetAddress.getByName(dsn.getHost());
                     }
-                    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, dsn.getPort());
                     if (socket == null) {
                         socket = new DatagramSocket();
                     }
