@@ -46,7 +46,7 @@ public class UdpConnectionTest extends BaseTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testSendReceive() throws Exception {
-        udpConnection.setMaxSize(1024);
+        udpConnection.setMaxChunkSize(1024);
 
         EventBuilder eventBuilder = new EventBuilder()
                 .withLevel(Event.Level.DEBUG)
@@ -70,7 +70,7 @@ public class UdpConnectionTest extends BaseTest {
 
     @Test
     public void testChunkification() throws Exception {
-        udpConnection.setMaxSize(100);
+        udpConnection.setMaxChunkSize(100);
 
         EventBuilder eventBuilder = new EventBuilder()
                 .withLevel(Event.Level.DEBUG)

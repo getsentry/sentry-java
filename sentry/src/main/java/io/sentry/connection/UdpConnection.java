@@ -14,25 +14,54 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Support for sending events using UDP transport
+ */
 public class UdpConnection implements Connection {
 
+    /**
+     * Host to send UDP data to
+     */
     private final String host;
+    /**
+     * UDP Port
+     */
     private final int port;
-
-
+    /**
+     * Marshaller to generate JSON payload for Sentry Events
+     */
     private final JsonMarshaller marshaller;
+    /**
+     * Set of callbacks that get called on send sucess or failure of event send
+     */
     private final Set<EventSendCallback> eventSendCallbacks;
+    /**
+     * JsonFactory for creating chunks
+     */
     private final JsonFactory jsonFactory;
-
-    private int maxSize;
+    /**
+     * The maximum chunk size beyond which a new UDP message will be sent
+     */
+    private int maxChunkSize;
+    /**
+     * InetAddress for the remote UDP socket
+     */
     private InetAddress address = null;
+    /**
+     * UDP Socket
+     */
     private DatagramSocket socket = null;
 
 
-    public UdpConnection(Dsn dsn, int maxMessageSize) {
+    /**
+     * Create a UDP connection
+     * @param dsn for example. udp://public:private@localhost:1234/1
+     * @param maxChunkSize maxChunkSize
+     */
+    public UdpConnection(Dsn dsn, int maxChunkSize) {
         this.host = dsn.getHost();
         this.port = dsn.getPort();
-        this.maxSize = maxMessageSize;
+        this.maxChunkSize = maxChunkSize;
         this.jsonFactory = new JsonFactory();
         this.marshaller = new JsonMarshaller();
         this.marshaller.setCompression(false);
@@ -63,7 +92,9 @@ public class UdpConnection implements Connection {
             chunkify(new String(eventBuf), chunks);
             int totalChunks = chunks.size();
             for (int numChunk = 0; numChunk < totalChunks; numChunk++) {
-                byte[] sendArray = this.getChunkBytes(chunks.get(numChunk), event.getId().toString(), numChunk + 1, totalChunks);
+                String chunk = chunks.get(numChunk);
+                String eventId = event.getId().toString();
+                byte[] sendArray = this.getChunkBytes(chunk, eventId, numChunk + 1, totalChunks);
                 DatagramPacket packet = new DatagramPacket(sendArray, sendArray.length, address, this.port);
                 this.sendPacket(packet);
             }
@@ -86,7 +117,7 @@ public class UdpConnection implements Connection {
 
     private void chunkify(String payload, List<String> chunks) {
         int payloadLength = payload.length();
-        if (payloadLength <= this.maxSize) {
+        if (payloadLength <= this.maxChunkSize) {
             chunks.add(payload);
         } else {
             int split = payloadLength / 2;
@@ -118,8 +149,8 @@ public class UdpConnection implements Connection {
         return port;
     }
 
-    void setMaxSize(int maxSize) {
-        this.maxSize = maxSize;
+    void setMaxChunkSize(int maxChunkSize) {
+        this.maxChunkSize = maxChunkSize;
     }
 
     @Override
