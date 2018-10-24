@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Support for sending events using UDP transport
+ * Support for sending events using UDP transport.
  */
 public class UdpConnection implements Connection {
 
@@ -24,7 +24,7 @@ public class UdpConnection implements Connection {
      */
     private final String host;
     /**
-     * UDP Port
+     * UDP Port.
      */
     private final int port;
     /**
@@ -111,8 +111,21 @@ public class UdpConnection implements Connection {
         }
     }
 
+    /**
+     * Package private method to allow mocking of socket send.
+     * @param packet
+     * @throws IOException
+     */
     void sendPacket(DatagramPacket packet) throws IOException {
         this.socket.send(packet);
+    }
+
+    /**
+     * Package private method to allow unit tests to set maxChunkSize.
+     * @param maxChunkSize
+     */
+    void setMaxChunkSize(int maxChunkSize) {
+        this.maxChunkSize = maxChunkSize;
     }
 
     private void chunkify(String payload, List<String> chunks) {
@@ -141,17 +154,22 @@ public class UdpConnection implements Connection {
         return baos.toByteArray();
     }
 
+    /**
+     * Get host parsed from dsn.
+     * @return
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * Get port parsed from dsn.
+     * @return
+     */
     public int getPort() {
         return port;
     }
 
-    void setMaxChunkSize(int maxChunkSize) {
-        this.maxChunkSize = maxChunkSize;
-    }
 
     @Override
     public void addEventSendCallback(EventSendCallback eventSendCallback) {
