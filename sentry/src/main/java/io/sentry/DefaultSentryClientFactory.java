@@ -330,7 +330,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             connection = createHttpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("udp")) {
             logger.debug("Using an {} connection to Sentry.", protocol.toUpperCase());
-            connection = new UdpConnection(dsn);
+            connection = new UdpConnection(dsn, getMaxMessageLength(dsn));
         } else if (protocol.equalsIgnoreCase("out")) {
             logger.debug("Using StdOut to send events.");
             connection = createStdOutConnection(dsn);
