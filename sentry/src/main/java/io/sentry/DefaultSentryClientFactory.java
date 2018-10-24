@@ -330,7 +330,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             connection = createHttpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("udp")) {
             logger.debug("Using an {} connection to Sentry.", protocol.toUpperCase());
-            connection = createUdpConnection(dsn);
+            connection = new UdpConnection(dsn);
         } else if (protocol.equalsIgnoreCase("out")) {
             logger.debug("Using StdOut to send events.");
             connection = createStdOutConnection(dsn);
@@ -365,53 +365,6 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
         }
 
         return connection;
-    }
-
-    private Connection createUdpConnection(final Dsn dsn) {
-        final Marshaller marshaller = createMarshaller(dsn);
-
-        return new Connection() {
-            InetAddress address = null;
-            DatagramSocket socket = null;
-            List<EventSendCallback> eventSendCallbacks = new ArrayList<>();
-
-            @Override
-            public void close() throws IOException {
-                if (socket != null) {
-                    this.socket.close();
-                }
-            }
-
-            @Override
-            public void send(Event event) throws ConnectionException {
-                try {
-                    ByteArrayOutputStream destination = new ByteArrayOutputStream();
-                    marshaller.marshall(event, destination);
-                    byte[] buf = destination.toByteArray();
-                    if (address == null) {
-                        address = InetAddress.getByName(dsn.getHost());
-                    }
-                    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, dsn.getPort());
-                    if (socket == null) {
-                        socket = new DatagramSocket();
-                    }
-                    socket.send(packet);
-                    for (EventSendCallback eventSendCallback : eventSendCallbacks) {
-                        eventSendCallback.onSuccess(event);
-                    }
-                } catch (IOException ioex) {
-                    for (EventSendCallback eventSendCallback : eventSendCallbacks) {
-                        eventSendCallback.onFailure(event, ioex);
-                    }
-                    throw new ConnectionException("Error writing to udp", ioex);
-                }
-            }
-
-            @Override
-            public void addEventSendCallback(EventSendCallback eventSendCallback) {
-                eventSendCallbacks.add(eventSendCallback);
-            }
-        };
     }
 
     /**
