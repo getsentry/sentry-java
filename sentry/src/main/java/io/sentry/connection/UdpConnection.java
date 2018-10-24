@@ -113,10 +113,8 @@ public class UdpConnection implements Connection {
 
     /**
      * Package private method to allow mocking of socket send.
-     * @param packet
-     *
-     * @throws IOException
-     * @return void.
+     * @param packet DataGram Packet to send.
+     * @throws IOException can be thrown if socket send fails.
      */
     void sendPacket(DatagramPacket packet) throws IOException {
         this.socket.send(packet);
@@ -124,9 +122,7 @@ public class UdpConnection implements Connection {
 
     /**
      * Package private method to allow unit tests to set maxChunkSize.
-     * @param maxChunkSize
-     *
-     * @return void.
+     * @param maxChunkSize Max allowable size of chunk.
      */
     void setMaxChunkSize(int maxChunkSize) {
         this.maxChunkSize = maxChunkSize;
