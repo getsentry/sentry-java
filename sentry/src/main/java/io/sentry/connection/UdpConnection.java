@@ -20,7 +20,7 @@ import java.util.Set;
 public class UdpConnection implements Connection {
 
     /**
-     * Host to send UDP data to
+     * Host to send UDP data to.
      */
     private final String host;
     /**
@@ -28,35 +28,35 @@ public class UdpConnection implements Connection {
      */
     private final int port;
     /**
-     * Marshaller to generate JSON payload for Sentry Events
+     * Marshaller to generate JSON payload for Sentry Events.
      */
     private final JsonMarshaller marshaller;
     /**
-     * Set of callbacks that get called on send sucess or failure of event send
+     * Set of callbacks that get called on send sucess or failure of event send.
      */
     private final Set<EventSendCallback> eventSendCallbacks;
     /**
-     * JsonFactory for creating chunks
+     * JsonFactory for creating chunks.
      */
     private final JsonFactory jsonFactory;
     /**
-     * The maximum chunk size beyond which a new UDP message will be sent
+     * The maximum chunk size beyond which a new UDP message will be sent.
      */
     private int maxChunkSize;
     /**
-     * InetAddress for the remote UDP socket
+     * InetAddress for the remote UDP socket.
      */
     private InetAddress address = null;
     /**
-     * UDP Socket
+     * UDP Socket.
      */
     private DatagramSocket socket = null;
 
 
     /**
-     * Create a UDP connection
-     * @param dsn for example. udp://public:private@localhost:1234/1
-     * @param maxChunkSize maxChunkSize
+     * Create a UDP connection.
+     * @param dsn for example. udp://public:private@localhost:1234/1.
+     * @param maxChunkSize maxChunkSize.
      */
     public UdpConnection(Dsn dsn, int maxChunkSize) {
         this.host = dsn.getHost();
