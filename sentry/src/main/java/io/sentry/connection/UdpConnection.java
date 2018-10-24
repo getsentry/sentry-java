@@ -114,7 +114,9 @@ public class UdpConnection implements Connection {
     /**
      * Package private method to allow mocking of socket send.
      * @param packet
+     *
      * @throws IOException
+     * @return void.
      */
     void sendPacket(DatagramPacket packet) throws IOException {
         this.socket.send(packet);
@@ -123,6 +125,8 @@ public class UdpConnection implements Connection {
     /**
      * Package private method to allow unit tests to set maxChunkSize.
      * @param maxChunkSize
+     *
+     * @return void.
      */
     void setMaxChunkSize(int maxChunkSize) {
         this.maxChunkSize = maxChunkSize;
@@ -156,7 +160,7 @@ public class UdpConnection implements Connection {
 
     /**
      * Get host parsed from dsn.
-     * @return
+     * @return hostName.
      */
     public String getHost() {
         return host;
@@ -164,7 +168,7 @@ public class UdpConnection implements Connection {
 
     /**
      * Get port parsed from dsn.
-     * @return
+     * @return port.
      */
     public int getPort() {
         return port;
