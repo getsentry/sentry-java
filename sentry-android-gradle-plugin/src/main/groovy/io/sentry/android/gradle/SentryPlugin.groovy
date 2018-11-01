@@ -133,7 +133,7 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static String getDebugMetaPropPath(Project project, ApplicationVariant variant) {
-        return "${project.buildDir}/intermediates/assets/${variant.dirName}/sentry-debug-meta.properties"
+        return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
     }
 
     void apply(Project project) {

@@ -1,7 +1,9 @@
 Version 1.7.14
 --------------
 
--
+- Fix Sentry Gradle Plugin asset directory so Proguard debug information
+  is written to the correct location when using newer versions of the
+  Android Gradle Plugin.
 
 Version 1.7.13
 --------------
