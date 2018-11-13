@@ -80,6 +80,7 @@
         <module>sentry-logback</module>
         <module>sentry-log4j2</module>
         <module>sentry-spring</module>
+        <module>sentry-spring-boot-starter</module>
     </modules>
 
     <scm>
