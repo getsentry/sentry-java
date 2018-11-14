@@ -1,7 +1,7 @@
 Version 1.7.15
 --------------
 
--
+- Allow users to provide a custom `manifestPath` in the Sentry Gradle Plugin.
 
 Version 1.7.14
 --------------

@@ -146,21 +146,23 @@ class SentryPlugin implements Plugin<Project> {
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 variant.outputs.each { variantOutput ->
-                    def manifestPath
-                    try {
-                        // Android Gradle Plugin < 3.0.0
-                        manifestPath = variantOutput.processManifest.manifestOutputFile
-                    } catch (Exception ignored) {
-                        // Android Gradle Plugin >= 3.0.0
-                        manifestPath = new File(
-                                variantOutput.processManifest.manifestOutputDirectory.toString(),
-                                "AndroidManifest.xml")
-                        if (!manifestPath.isFile()) {
+                    def manifestPath = extension.manifestPath
+                    if (manifestPath == null) {
+                        try {
+                            // Android Gradle Plugin < 3.0.0
+                            manifestPath = variantOutput.processManifest.manifestOutputFile
+                        } catch (Exception ignored) {
+                            // Android Gradle Plugin >= 3.0.0
                             manifestPath = new File(
-                                    new File(
-                                            variantOutput.processManifest.manifestOutputDirectory.toString(),
-                                            variantOutput.dirName),
+                                    variantOutput.processManifest.manifestOutputDirectory.toString(),
                                     "AndroidManifest.xml")
+                            if (!manifestPath.isFile()) {
+                                manifestPath = new File(
+                                        new File(
+                                                variantOutput.processManifest.manifestOutputDirectory.toString(),
+                                                variantOutput.dirName),
+                                        "AndroidManifest.xml")
+                            }
                         }
                     }
 
