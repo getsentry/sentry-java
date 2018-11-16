@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "sentry.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable sentry.",
+      "defaultValue": "true"
+    }
+  ]
+}
