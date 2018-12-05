@@ -114,7 +114,7 @@ public class JsonMarshaller implements Marshaller {
     private static final ThreadLocal<DateFormat> ISO_FORMAT = new ThreadLocal<DateFormat>() {
         @Override
         protected DateFormat initialValue() {
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
             dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             return dateFormat;
         }

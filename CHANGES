@@ -1,6 +1,7 @@
 Version 1.7.16
 --------------
 
+- Fix timestamp format locale to be what Sentry expects.
 - Add `sentry-spring-boot-starter` module that autoconfigures Sentry for Spring-Boot. (thanks eddumelendez)
 
 Version 1.7.15
