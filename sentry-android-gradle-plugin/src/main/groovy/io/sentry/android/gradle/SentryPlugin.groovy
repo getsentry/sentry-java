@@ -153,16 +153,18 @@ class SentryPlugin implements Plugin<Project> {
                             manifestPath = variantOutput.processManifest.manifestOutputFile
                         } catch (Exception ignored) {
                             // Android Gradle Plugin >= 3.0.0
-                            manifestPath = new File(
-                                    variantOutput.processManifest.manifestOutputDirectory.toString(),
-                                    "AndroidManifest.xml")
-                            if (!manifestPath.isFile()) {
-                                manifestPath = new File(
-                                        new File(
-                                                variantOutput.processManifest.manifestOutputDirectory.toString(),
-                                                variantOutput.dirName),
-                                        "AndroidManifest.xml")
+                            def outputDir = variantOutput.processManifest.manifestOutputDirectory
+                            // Gradle 4.7 introduced the lazy task API and AGP 3.3+ adopts that,
+                            // so we apparently have a Provider<File> here instead
+                            // TODO: This will let us depend on the configuration of each flavor's
+                            // manifest creation task and their transitive dependencies, which in
+                            // turn prolongs the configuration time accordingly. Evaluate how Gradle's
+                            // new Task Avoidance API can be used instead.
+                            // (https://docs.gradle.org/current/userguide/task_configuration_avoidance.html)
+                            if (!(outputDir instanceof File)) {
+                                outputDir = outputDir.get().asFile
                             }
+                            manifestPath = new File(outputDir, "AndroidManifest.xml")
                         }
                     }
 
