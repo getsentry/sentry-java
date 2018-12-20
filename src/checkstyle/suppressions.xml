@@ -6,4 +6,5 @@
 <suppressions>
     <suppress files="io.sentry/util/CircularFifoQueue\.java" checks=".*"/>
     <suppress files="io.sentry/environment/Version\.java" checks=".*"/>
+    <suppress files="io.sentry/android/BuildConfig\.java" checks=".*"/>
 </suppressions>

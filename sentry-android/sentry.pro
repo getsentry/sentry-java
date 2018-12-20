@@ -1,0 +1,5 @@
+-keepattributes LineNumberTable,SourceFile
+-dontwarn com.facebook.fbui.**
+-dontwarn org.slf4j.**
+-dontwarn javax.**
+-keep class io.sentry.event.Event { *; }

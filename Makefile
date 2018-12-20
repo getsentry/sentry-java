@@ -8,7 +8,7 @@
 .PHONY: checkstyle compile test install clean prepare prepareMvn prepareChanges perform verify
 
 # TODO: Fix to work between macOS and Linux
-MVN=mvn -e -Dhttps.protocols=TLSv1.2
+MVN=mvn -e -Dhttps.protocols=TLSv1.2 -Dandroid.sdk.path=$(ANDROID_HOME)
 ECHO=echo
 SED=sed
 

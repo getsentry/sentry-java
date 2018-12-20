@@ -177,7 +177,8 @@ class SentryPlugin implements Plugin<Project> {
                     }
 
                     // create a task to configure proguard automatically unless the user disabled it.
-                    if (extension.autoProguardConfig) {
+                    // This is not needed anymore with consumerProguard files
+                    /* if (extension.autoProguardConfig) {
                         def addProguardSettingsTaskName = "addSentryProguardSettingsFor${variant.name.capitalize()}"
                         if (!project.tasks.findByName(addProguardSettingsTaskName)) {
                             SentryProguardConfigTask proguardConfigTask = project.tasks.create(
@@ -187,7 +188,7 @@ class SentryPlugin implements Plugin<Project> {
                             proguardConfigTask.applicationVariant = variant
                             proguardTask.dependsOn proguardConfigTask
                         }
-                    }
+                    } */
 
                     def cli = getSentryCli(project)
 

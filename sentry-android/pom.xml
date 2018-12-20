@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>sentry-android</artifactId>
-    <packaging>jar</packaging>
+    <packaging>aar</packaging>
 
     <name>Sentry-Java for Android</name>
     <description>Android Sentry-Java client.</description>
@@ -89,6 +89,16 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.simpligility.maven.plugins</groupId>
+                    <artifactId>android-maven-plugin</artifactId>
+                    <version>4.5.0</version>
+                    <extensions>true</extensions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
@@ -125,6 +135,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.simpligility.maven.plugins</groupId>
+                <artifactId>android-maven-plugin</artifactId>
+                <configuration>
+                    <sdk>
+                        <platform>26</platform>
+                    </sdk>
+                    <consumerProguardFiles>
+                        <file>sentry.pro</file>
+                    </consumerProguardFiles>
+                    <release>true</release>
+                </configuration>
             </plugin>
         </plugins>
     </build>
