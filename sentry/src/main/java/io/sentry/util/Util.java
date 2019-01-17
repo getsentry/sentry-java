@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -172,5 +173,20 @@ public final class Util {
             // CHECKSTYLE.ON: EmptyBlock
         }
         return false;
+    }
+
+    /**
+     * Closes an instance of Closeable and suppress all possible raised Exceptions.
+     * @param closeable an instance that needs to be closed. null value is supported.
+     */
+    public static void closeQuietly(Closeable closeable) {
+        // CHECKSTYLE.OFF: EmptyCatchBlock
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception ignored) {
+            }
+        }
+        // CHECKSTYLE.ON: EmptyCatchBlock
     }
 }
