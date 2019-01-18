@@ -254,9 +254,7 @@ class SentryPlugin implements Plugin<Project> {
                     if (dexTask != null) {
                         dexTask.dependsOn persistIdsTask
                     } else {
-                        proguardTask.doLast {
-                            persistIdsTask.execute()
-                        }
+                        proguardTask.finalizedBy(persistIdsTask)
                     }
                     persistIdsTask.dependsOn proguardTask
                 }
