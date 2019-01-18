@@ -1,6 +1,7 @@
 package io.sentry.config;
 
 import io.sentry.dsn.Dsn;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +34,9 @@ public final class Lookup {
 
     static {
         String filePath = getConfigFilePath();
+        InputStream input = null;
         try {
-            InputStream input = getInputStream(filePath);
+            input = getInputStream(filePath);
 
             if (input != null) {
                 configProps = new Properties();
@@ -44,6 +46,8 @@ public final class Lookup {
             }
         } catch (Exception e) {
             logger.error("Error loading Sentry configuration file '{}': ", filePath, e);
+        } finally {
+            Util.closeQuietly(input);
         }
     }
 
