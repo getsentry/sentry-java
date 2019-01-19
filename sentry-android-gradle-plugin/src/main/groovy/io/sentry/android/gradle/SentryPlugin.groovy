@@ -117,12 +117,20 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static Task getDexTask(Project project, ApplicationVariant variant) {
-        def name = "transformClassesWithDexFor${variant.name.capitalize()}"
-        def rv = project.tasks.findByName(name)
-        if (rv != null) {
-            return rv
+        def names = [
+            "transformClassesWithDexFor${variant.name.capitalize()}",
+            "transformClassesWithDexBuilderFor${variant.name.capitalize()}"
+        ]
+
+        def rv = null
+        names.each {
+            rv = project.tasks.findByName(it)
+            if (rv != null) {
+                return rv
+            }
         }
-        return project.tasks.findByName("dex${name}")
+
+        return project.tasks.findByName("dex${names[0]}")
     }
 
     /**
