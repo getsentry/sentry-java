@@ -1,7 +1,7 @@
 Version 1.7.17
 --------------
 
--
+- Fixes for Sentry Gradle Plugin when using Android Studio 3.3 and Gradle 5.1.
 
 Version 1.7.16
 --------------
