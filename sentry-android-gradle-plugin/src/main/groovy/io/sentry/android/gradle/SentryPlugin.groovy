@@ -12,6 +12,8 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 class SentryPlugin implements Plugin<Project> {
     static final String GROUP_NAME = 'Sentry'
+    private static final String SENTRY_ORG_PARAMETER = "sentryOrg"
+    private static final String SENTRY_PROJECT_PARAMETER = "sentryProject"
 
     /**
      * Return the correct sentry-cli executable path to use for the given project.  This
@@ -244,7 +246,17 @@ class SentryPlugin implements Plugin<Project> {
                         ]
 
                         if (!extension.autoUpload) {
-                            args.push("--no-upload")
+                            args.add("--no-upload")
+                        }
+
+                        def buildTypeProperties = variant.buildType.ext
+                        if (buildTypeProperties.has(SENTRY_ORG_PARAMETER)) {
+                            args.add("--org")
+                            args.add(buildTypeProperties.get(SENTRY_ORG_PARAMETER).toString())
+                        }
+                        if (buildTypeProperties.has(SENTRY_PROJECT_PARAMETER)) {
+                            args.add("--project")
+                            args.add(buildTypeProperties.get(SENTRY_PROJECT_PARAMETER).toString())
                         }
 
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
