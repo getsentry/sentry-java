@@ -246,7 +246,7 @@ class SentryPlugin implements Plugin<Project> {
                         ]
 
                         if (!extension.autoUpload) {
-                            args.add("--no-upload")
+                            args << "--no-upload"
                         }
 
                         def buildTypeProperties = variant.buildType.ext
