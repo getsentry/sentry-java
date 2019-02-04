@@ -2,6 +2,7 @@ Version 1.7.18
 --------------
 
 - Fix `--no-upload` option in Sentry Gradle Plugin under newer Groovy.
+- Allow overriding Sentry Organization and Project per buildType. (thanks nesterov-n)
 
 Version 1.7.17
 --------------
