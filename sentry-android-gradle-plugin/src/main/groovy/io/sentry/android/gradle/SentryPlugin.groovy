@@ -244,7 +244,7 @@ class SentryPlugin implements Plugin<Project> {
                         ]
 
                         if (!extension.autoUpload) {
-                            args.push("--no-upload")
+                            args << "--no-upload"
                         }
 
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
