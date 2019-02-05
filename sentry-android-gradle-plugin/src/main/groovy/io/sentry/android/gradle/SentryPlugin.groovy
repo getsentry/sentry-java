@@ -103,12 +103,21 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static Task getProguardTask(Project project, ApplicationVariant variant) {
-        def name = "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}"
-        def rv = project.tasks.findByName(name)
-        if (rv != null) {
-            return rv
+        def names = [
+                // Android Studio 3.3 includes the R8 shrinker.
+                "transformClassesAndResourcesWithR8For${variant.name.capitalize()}",
+                "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}"
+        ]
+
+        def rv = null
+        names.each {
+            rv = project.tasks.findByName(it)
+            if (rv != null) {
+                return rv
+            }
         }
-        return project.tasks.findByName("proguard${name}")
+
+        return project.tasks.findByName("proguard${names[1]}")
     }
 
     /**
