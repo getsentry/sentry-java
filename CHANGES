@@ -1,7 +1,7 @@
 Version 1.7.19
 --------------
 
--
+- Add support for Android R8 minification.
 
 Version 1.7.18
 --------------
