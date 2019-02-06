@@ -109,15 +109,7 @@ class SentryPlugin implements Plugin<Project> {
                 "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}"
         ]
 
-        def rv = null
-        names.each {
-            rv = project.tasks.findByName(it)
-            if (rv != null) {
-                return rv
-            }
-        }
-
-        return project.tasks.findByName("proguard${names[1]}")
+        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("proguard${names[1]}")
     }
 
     /**
