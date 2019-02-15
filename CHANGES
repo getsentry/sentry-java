@@ -1,7 +1,7 @@
 Version 1.7.21
 --------------
 
--
+- Updating sentry-cli version in the Android gradle plugin.
 
 Version 1.7.20
 --------------
