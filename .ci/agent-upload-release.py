@@ -51,7 +51,7 @@ def ensure_release():
             return release
     resp = api_request('POST', 'repos/%s/releases' % REPO, json={
         'tag_name': TAG,
-        'name': 'sentry-java-agent %s' % TAG,
+        'name': 'sentry-java %s' % TAG,
         'draft': True,
     })
     resp.raise_for_status()

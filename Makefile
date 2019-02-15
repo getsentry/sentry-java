@@ -10,7 +10,7 @@
 # TODO: Fix to work between macOS and Linux
 MVN=mvn -e -Dhttps.protocols=TLSv1.2
 ECHO=echo
-SED=sed
+SED=gsed
 
 all: checkstyle test install
 
