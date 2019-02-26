@@ -106,12 +106,10 @@ class SentryPlugin implements Plugin<Project> {
         def names = [
                 // Android Studio 3.3 includes the R8 shrinker.
                 "transformClassesAndResourcesWithR8For${variant.name.capitalize()}",
-                //Dexguard introduces a step pre-dex transformation.
-                "transformClassesWithPreDexFor${variant.name.capitalize()}",
                 "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}"
         ]
 
-        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("proguard${names[2]}")
+        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("proguard${names[1]}")
     }
 
     /**
@@ -124,7 +122,9 @@ class SentryPlugin implements Plugin<Project> {
     static Task getDexTask(Project project, ApplicationVariant variant) {
         def names = [
             "transformClassesWithDexFor${variant.name.capitalize()}",
-            "transformClassesWithDexBuilderFor${variant.name.capitalize()}"
+            "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
+            //Dexguard uses a pre-dex step
+            "transformClassesWithPreDexFor${variant.name.capitalize()}",
         ]
 
         def rv = null
