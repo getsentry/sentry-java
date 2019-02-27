@@ -2,6 +2,7 @@ Version 1.7.22
 --------------
 
 - Don't put body in nested object if parameterMap is empty. (thanks erhangullu)
+- Support DexGuard in Android Gradle Plugin. (thanks mpp-anasa)
 
 Version 1.7.21
 --------------
