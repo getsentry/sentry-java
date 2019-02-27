@@ -1,7 +1,7 @@
 Version 1.7.22
 --------------
 
--
+- Don't put body in nested object if parameterMap is empty. (thanks erhangullu)
 
 Version 1.7.21
 --------------
