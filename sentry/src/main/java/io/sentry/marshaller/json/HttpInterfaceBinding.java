@@ -109,19 +109,23 @@ public class HttpInterfaceBinding implements InterfaceBinding<HttpInterface> {
             return;
         }
 
-        generator.writeStartObject();
-        if (body != null) {
-            generator.writeStringField(BODY, Util.trimString(body, MAX_BODY_LENGTH));
-        }
-        if (parameterMap != null) {
-            for (Map.Entry<String, Collection<String>> parameter : parameterMap.entrySet()) {
-                generator.writeArrayFieldStart(parameter.getKey());
-                for (String parameterValue : parameter.getValue()) {
-                    generator.writeString(parameterValue);
-                }
-                generator.writeEndArray();
+        if ((parameterMap == null || parameterMap.isEmpty()) && body != null) {
+            generator.writeString(Util.trimString(body, MAX_BODY_LENGTH));
+        } else {
+            generator.writeStartObject();
+            if (body != null) {
+                generator.writeStringField(BODY, Util.trimString(body, MAX_BODY_LENGTH));
             }
+            if (parameterMap != null) {
+                for (Map.Entry<String, Collection<String>> parameter : parameterMap.entrySet()) {
+                    generator.writeArrayFieldStart(parameter.getKey());
+                    for (String parameterValue : parameter.getValue()) {
+                        generator.writeString(parameterValue);
+                    }
+                    generator.writeEndArray();
+                }
+            }
+            generator.writeEndObject();
         }
-        generator.writeEndObject();
     }
 }
