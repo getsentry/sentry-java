@@ -39,6 +39,10 @@ public class ContextBuilderHelper implements EventBuilderHelper {
             eventBuilder.withBreadcrumbs(breadcrumbs);
         }
 
+        if (context.getHttp() != null) {
+            eventBuilder.withSentryInterface(context.getHttp());
+        }
+
         if (context.getUser() != null) {
             eventBuilder.withSentryInterface(fromUser(context.getUser()));
         }
