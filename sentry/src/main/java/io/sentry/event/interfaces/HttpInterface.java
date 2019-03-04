@@ -94,6 +94,69 @@ public class HttpInterface implements SentryInterface {
         this.body = body;
     }
 
+    // CHECKSTYLE.OFF: ParameterNumber
+
+    /**
+     * Creates an HTTP element for an {@link io.sentry.event.Event}.
+     *
+     * @param requestUrl   The full url including the scheme, host, path and query parameters
+     * @param method       The HTTP method
+     * @param parameters   Extra request parameters from either the query string or posted form data.
+     * @param queryString  The query string
+     * @param cookies      Collection of values for each cookie
+     * @param remoteAddr   The remote ip address
+     * @param serverName   The server's hostname
+     * @param serverPort   The port from the server's hostname
+     * @param localAddr    The IP that received the request
+     * @param localName    The hostname of the IP that received the request
+     * @param localPort    The port that received the request
+     * @param protocol     The protocol name and version
+     * @param secure       True if the request was made using a secure channel
+     * @param asyncStarted Servlet specific
+     * @param authType     Servlet specific
+     * @param remoteUser   The login of the user making the request
+     * @param headers      The headers sent with the request
+     * @param body         The request body
+     */
+    public HttpInterface(String requestUrl,
+                         String method,
+                         Map<String, Collection<String>> parameters,
+                         String queryString, Map<String, String> cookies,
+                         String remoteAddr,
+                         String serverName,
+                         int serverPort,
+                         String localAddr,
+                         String localName,
+                         int localPort,
+                         String protocol,
+                         boolean secure,
+                         boolean asyncStarted,
+                         String authType,
+                         String remoteUser,
+                         Map<String, Collection<String>> headers,
+                         String body) {
+
+        this.requestUrl = requestUrl;
+        this.method = method;
+        this.parameters = parameters;
+        this.queryString = queryString;
+        this.cookies = cookies;
+        this.remoteAddr = remoteAddr;
+        this.serverName = serverName;
+        this.serverPort = serverPort;
+        this.localAddr = localAddr;
+        this.localName = localName;
+        this.localPort = localPort;
+        this.protocol = protocol;
+        this.secure = secure;
+        this.asyncStarted = asyncStarted;
+        this.authType = authType;
+        this.remoteUser = remoteUser;
+        this.headers = headers;
+        this.body = body;
+    }
+    // CHECKSTYLE.ON: ParameterNumber
+
     @Override
     public String getInterfaceName() {
         return HTTP_INTERFACE;

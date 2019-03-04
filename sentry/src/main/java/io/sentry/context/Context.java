@@ -2,6 +2,7 @@ package io.sentry.context;
 
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.User;
+import io.sentry.event.interfaces.HttpInterface;
 import io.sentry.util.CircularFifoQueue;
 
 import java.io.Serializable;
@@ -43,6 +44,12 @@ public class Context implements Serializable {
     private volatile Map<String, Object> extra;
 
     /**
+     * HTTP data to add to any future {@link io.sentry.event.Event}s.
+     */
+    private volatile HttpInterface http;
+
+
+    /**
      * Create a new (empty) Context object with the default Breadcrumb limit.
      */
     public Context() {
@@ -67,6 +74,7 @@ public class Context implements Serializable {
         clearUser();
         clearTags();
         clearExtra();
+        clearHttp();
     }
 
     /**
@@ -176,6 +184,32 @@ public class Context implements Serializable {
      */
     public synchronized void clearExtra() {
         extra = null;
+    }
+
+
+    /**
+     * Store the http information in the context.
+     *
+     * @param http Http data to store in context.
+     */
+    public synchronized void setHttp(HttpInterface http) {
+        this.http = http;
+    }
+
+    /**
+     * Gets the http information from the context.
+     *
+     * @return HttpInterface currently stored in context.
+     */
+    public synchronized HttpInterface getHttp() {
+        return http;
+    }
+
+    /**
+     * Clear the http data from this context.
+     */
+    public synchronized void clearHttp() {
+        http = null;
     }
 
     /**
