@@ -1,7 +1,8 @@
 Version 1.7.22
 --------------
-
+ 
 - Don't put body in nested object if parameterMap is empty. (thanks erhangullu)
+- Allow creating and setting an `HttpInterface` in the Context. (thanks chris-smith-zocdoc)
 
 Version 1.7.21
 --------------
