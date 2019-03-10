@@ -186,7 +186,7 @@ public class SentryAppender extends AbstractAppender {
         }
 
         if (event.getMarker() != null) {
-            eventBuilder.withTag(LOG4J_MARKER, event.getMarker().getName());
+            eventBuilder.withTag(LOG4J_MARKER, event.getMarker().toString());
         }
 
         return eventBuilder;
