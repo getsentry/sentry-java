@@ -10,7 +10,7 @@
 
     <groupId>io.sentry</groupId>
     <artifactId>sentry-all</artifactId>
-    <version>1.7.22</version>
+    <version>1.7.23-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Sentry-Java</name>
@@ -87,7 +87,7 @@
         <url>https://github.com/${github.repo}</url>
         <connection>scm:git:git://github.com/${github.repo}.git</connection>
         <developerConnection>scm:git:git@github.com:${github.repo}.git</developerConnection>
-        <tag>v1.7.22</tag>
+        <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <url>https://github.com/${github.repo}/issues</url>
