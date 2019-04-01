@@ -185,4 +185,11 @@ public class DsnTest extends BaseTest {
 
         dsn.getProtocolSettings().add("test");
     }
+
+    @Test
+    public void testDsnEqualsMethodWithNoSecretKey() {
+        final Dsn dsn1 = new Dsn("http://publicKey@host/9");
+        final Dsn dsn2 = new Dsn("http://publicKey@host/9");
+        assertThat(dsn1, equalTo(dsn2));
+    }
 }
