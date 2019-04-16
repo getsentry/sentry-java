@@ -106,9 +106,13 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
             "inAppModule.Blacklisted$$FastClassBySpringCGLIB$$", "blacklisted",
             "File.java", 3, null, null, null, null);
 
+        final SentryStackTraceElement stackTraceElement4 = new SentryStackTraceElement(
+                        "inAppModule.Blacklisted$HibernateProxy$", "blacklisted",
+                        "File.java", 4, null, null, null, null);
+
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
-            result = new SentryStackTraceElement[]{stackTraceElement1, stackTraceElement2, stackTraceElement3};
+            result = new SentryStackTraceElement[]{stackTraceElement1, stackTraceElement2, stackTraceElement3, stackTraceElement4};
         }};
 
         List<String> inAppModules = new ArrayList<>();

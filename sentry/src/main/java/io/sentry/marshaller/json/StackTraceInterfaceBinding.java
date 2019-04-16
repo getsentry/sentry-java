@@ -33,6 +33,8 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         // skip CGLIB generated classes like Foo$$FastClassBySpringCGLIB$$4ed8b6b
         inAppBlacklistRegexps.add(Pattern.compile("\\$\\$FastClass[a-zA-Z]*CGLIB\\$\\$"));
         inAppBlacklistRegexps.add(Pattern.compile("\\$\\$Enhancer[a-zA-Z]*CGLIB\\$\\$"));
+        // skip hibernate generated class proxies like Foo$HibernateProxy$SzXDkaYB
+        inAppBlacklistRegexps.add(Pattern.compile("\\$HibernateProxy\\$"));
     }
 
     /**
