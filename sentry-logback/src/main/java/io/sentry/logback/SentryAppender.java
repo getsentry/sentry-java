@@ -4,7 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
-import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import io.sentry.Sentry;
@@ -28,7 +28,7 @@ import java.util.Set;
 /**
  * Appender for logback in charge of sending the logged events to a Sentry server.
  */
-public class SentryAppender extends AppenderBase<ILoggingEvent> {
+public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     /**
      * Name of the {@link Event#extra} property containing Maker details.
@@ -44,7 +44,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @deprecated use logback filters.
      */
     @Deprecated
-    protected Level minLevel;
+    protected volatile Level minLevel;
 
     /**
      * Creates an instance of SentryAppender.
