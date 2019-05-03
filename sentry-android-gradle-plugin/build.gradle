@@ -18,9 +18,9 @@ compileGroovy {
 }
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
-    compile 'com.android.tools.build:gradle:2.3.3'
+    compileOnly gradleApi()
+    compileOnly localGroovy()
+    compileOnly 'com.android.tools.build:gradle:3.4.0'
 }
 
 publishing {
