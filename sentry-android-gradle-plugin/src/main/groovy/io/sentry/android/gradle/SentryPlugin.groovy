@@ -144,7 +144,11 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static String getDebugMetaPropPath(Project project, ApplicationVariant variant) {
-        return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
+        if (variant.hasProperty("mergeAssetsProvider")) {
+            return variant.mergeAssetsProvider.get().outputDir.get().file("sentry-debug-meta.properties")
+        } else { // Keep this for when the plugin is applied on a pre 3.4.0 project
+            return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
+        }
     }
 
     void apply(Project project) {
