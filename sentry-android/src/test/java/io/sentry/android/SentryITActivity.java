@@ -18,7 +18,7 @@ public class SentryITActivity extends Activity {
          * @param app Android Application
          */
         CustomAndroidSentryClientFactory(Application app) {
-            super(app.getApplicationContext());
+            super(app);
             customFactoryUsed.set(true);
         }
     }
