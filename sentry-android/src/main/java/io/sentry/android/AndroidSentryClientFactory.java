@@ -1,11 +1,13 @@
 package io.sentry.android;
 
 import android.Manifest;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
-import io.sentry.*;
+import io.sentry.DefaultSentryClientFactory;
+import io.sentry.SentryClient;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
@@ -14,7 +16,6 @@ import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Logger tag.
      */
     public static final String TAG = AndroidSentryClientFactory.class.getName();
+
     /**
      * Default Buffer directory name.
      */
@@ -43,9 +45,19 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * @param ctx Android Context.
      */
     public AndroidSentryClientFactory(Context ctx) {
-        Log.d(TAG, "Construction of Android Sentry.");
+        Log.d(TAG, "Construction of Android Sentry from Android Context.");
 
         this.ctx = ctx.getApplicationContext();
+    }
+
+    public AndroidSentryClientFactory(Application app) {
+        Log.d(TAG, "Construction of Android Sentry from Android Application.");
+
+        this.ctx = app.getBaseContext();
+    }
+
+    public Context getApplicationContext() {
+        return ctx;
     }
 
     @Override
@@ -55,7 +67,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                 + " please add it to your AndroidManifest.xml");
         }
 
-        Log.d(TAG, "Sentry init with ctx='" + ctx.toString() + "'");
+        Log.d(TAG, "Sentry init with ctx='" + getApplicationContext().toString() + "'");
 
         String protocol = dsn.getProtocol();
         if (protocol.equalsIgnoreCase("noop")) {
@@ -73,7 +85,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         }
 
         SentryClient sentryClient = super.createSentryClient(dsn);
-        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(getApplicationContext()));
 
         return sentryClient;
     }
@@ -85,7 +97,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         if (inAppFrames.isEmpty()) {
             PackageInfo info = null;
             try {
-                info = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+                info = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), 0);
             } catch (PackageManager.NameNotFoundException e) {
                 Log.e(TAG, "Error getting package information.", e);
             }
@@ -107,7 +119,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         if (bufferDirOpt != null) {
             bufferDir = new File(bufferDirOpt);
         } else {
-            bufferDir = new File(ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
+            bufferDir = new File(getApplicationContext().getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
         }
 
         Log.d(TAG, "Using buffer dir: " + bufferDir.getAbsolutePath());
@@ -123,11 +135,11 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Check whether the application has been granted a certain permission.
      *
      * @param permission Permission as a string
+     *
      * @return true if permissions is granted
      */
     private boolean checkPermission(String permission) {
-        int res = ctx.checkCallingOrSelfPermission(permission);
+        int res = getApplicationContext().checkCallingOrSelfPermission(permission);
         return (res == PackageManager.PERMISSION_GRANTED);
     }
-
 }
