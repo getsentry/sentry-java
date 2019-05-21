@@ -25,13 +25,13 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
     private static final String PLATFORM_PARAMTER = "platform";
-    private static List<Pattern> inAppBlacklistRegexps = new ArrayList<>();
+    private static Pattern cglibBlacklistRegex;
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
 
     static {
         // skip CGLIB generated classes like Foo$$FastClassBySpringCGLIB$$4ed8b6b
-        inAppBlacklistRegexps.add(Pattern.compile("\\$\\$(FastClass|Enhancer)[a-zA-Z]*CGLIB\\$\\$"));
+        cglibBlacklistRegex = Pattern.compile("\\$\\$(?:FastClass|Enhancer)[a-zA-Z]*CGLIB\\$\\$");
     }
 
     /**
@@ -86,8 +86,10 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     private boolean isBlacklistedFromInApp(String className) {
-        for (Pattern inAppBlacklistRegexp : inAppBlacklistRegexps) {
-            boolean found = inAppBlacklistRegexp.matcher(className).find();
+	
+	if( className.contains("CGLIB") ){
+
+            boolean found = cglibBlacklistRegex.matcher(className).find();
             if (found) {
                 return true;
             }
