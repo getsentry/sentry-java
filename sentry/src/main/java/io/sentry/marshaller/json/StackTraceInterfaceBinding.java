@@ -85,8 +85,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
         return false;
     }
 
-    private boolean isBlacklistedFromInApp(String className) {
-	
+    private boolean isBlacklistedFromInApp(String className) {	
         if(className.contains("CGLIB")){
 
             boolean found = cglibBlacklistRegex.matcher(className).find();
