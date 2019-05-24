@@ -3,17 +3,31 @@
   "method": "GET",
   "data": {
     "body": "body",
-    "Parameter1": ["Value1"],
-    "Parameter2": ["Value2","Value3"]
+    "Parameter1": [
+      "Value1"
+    ],
+    "Parameter2": [
+      "Value2",
+      "Value3"
+    ]
   },
   "query_string": "query",
   "cookies": {
     "Cookie1": "Value1"
   },
-  "headers":  [
-    ["Header1","Value1"],
-    ["Header2","Value1"],
-    ["Header2","Value2"]
+  "headers": [
+    [
+      "Header1",
+      "Value1"
+    ],
+    [
+      "Header2",
+      "Value1"
+    ],
+    [
+      "Header2",
+      "Value2"
+    ]
   ],
   "env": {
     "REMOTE_ADDR": "1.2.3.4",

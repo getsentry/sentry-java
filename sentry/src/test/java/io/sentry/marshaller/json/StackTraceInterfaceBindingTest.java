@@ -2,22 +2,24 @@ package io.sentry.marshaller.json;
 
 import io.sentry.BaseTest;
 import io.sentry.event.interfaces.SentryStackTraceElement;
+import io.sentry.event.interfaces.StackTraceInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
-import io.sentry.event.interfaces.StackTraceInterface;
 import org.testng.annotations.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class StackTraceInterfaceBindingTest extends BaseTest {
+
     @Tested
     private StackTraceInterfaceBinding interfaceBinding = null;
+
     @Injectable
     private StackTraceInterface mockStackTraceInterface = null;
 
@@ -26,7 +28,7 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
         final SentryStackTraceElement sentryStackTraceElement = new SentryStackTraceElement(
             "", "throwError", "index.js", 100, 10,
-            "http://localhost","javascript", null);
+            "http://localhost", "javascript", null);
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
             result = new SentryStackTraceElement[]{sentryStackTraceElement};
@@ -94,21 +96,27 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
     public void testInAppFrames() throws Exception {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
 
-        final SentryStackTraceElement stackTraceElement1 = new SentryStackTraceElement(
-            "inAppModule.foo", "inAppMethod",
-            "File.java", 1, null, null, null, null);
-
-        final SentryStackTraceElement stackTraceElement2 = new SentryStackTraceElement(
-            "notInAppModule.bar", "notInAppMethod",
-            "File.java", 2, null, null, null, null);
-
-        final SentryStackTraceElement stackTraceElement3 = new SentryStackTraceElement(
-            "inAppModule.Blacklisted$$FastClassBySpringCGLIB$$", "blacklisted",
-            "File.java", 3, null, null, null, null);
+        final List<SentryStackTraceElement> sentryStackTraceElements = Arrays.asList(
+            new SentryStackTraceElement(
+                "inAppModule.foo", "inAppMethod", "File.java",
+                1, null, null, null, null),
+            new SentryStackTraceElement(
+                "notInAppModule.bar", "notInAppMethod",
+                "File.java", 2, null, null, null, null),
+            new SentryStackTraceElement(
+                "inAppModule.Blacklisted$$FastClassBySpringCGLIB$$", "blacklisted",
+                "File.java", 3, null, null, null, null),
+            new SentryStackTraceElement(
+                "inAppModule.Blacklisted$HibernateProxy$", "blacklisted",
+                "File.java", 4, null, null, null, null),
+            new SentryStackTraceElement(
+                "inAppModule.Blacklisted$$EnhancerBySpringCGLIB$$", "blacklisted",
+                "File.java", 5, null, null, null, null)
+        );
 
         new NonStrictExpectations() {{
             mockStackTraceInterface.getStackTrace();
-            result = new SentryStackTraceElement[]{stackTraceElement1, stackTraceElement2, stackTraceElement3};
+            result = sentryStackTraceElements.toArray(new SentryStackTraceElement[4]);
         }};
 
         List<String> inAppModules = new ArrayList<>();
@@ -118,5 +126,4 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/StackTraceBlacklist.json")));
     }
-
 }

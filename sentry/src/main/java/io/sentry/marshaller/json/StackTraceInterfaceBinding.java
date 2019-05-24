@@ -25,15 +25,13 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
     private static final String PLATFORM_PARAMTER = "platform";
-    private static List<Pattern> inAppBlacklistRegexps = new ArrayList<>();
+    private static final Pattern IN_APP_BLACKLIST = Pattern.compile("\\$+" + // match $ (one or more)
+        "(?:" + // start outer group
+        "(?:(?:FastClass|Enhancer)[a-zA-Z]*CGLIB)" + // Match Spring's FastClass and Enhancer classes
+        "|(?:HibernateProxy)" + // match Hibernate proxies
+        ")\\$+"); // end outer group and match $ (one or more)
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
-
-    static {
-        // skip CGLIB generated classes like Foo$$FastClassBySpringCGLIB$$4ed8b6b
-        inAppBlacklistRegexps.add(Pattern.compile("\\$\\$FastClass[a-zA-Z]*CGLIB\\$\\$"));
-        inAppBlacklistRegexps.add(Pattern.compile("\\$\\$Enhancer[a-zA-Z]*CGLIB\\$\\$"));
-    }
 
     /**
      * Writes a single frame based on a {@code StackTraceElement}.
@@ -76,25 +74,22 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     private boolean isFrameInApp(SentryStackTraceElement stackTraceElement) {
-        // TODO: A linear search is not efficient here, a Trie could be a better solution.
+        String className = stackTraceElement.getModule();
+        if (classIsBlacklisted(className)) {
+            return false;
+        }
+
         for (String inAppFrame : inAppFrames) {
-            String className = stackTraceElement.getModule();
-            if (className.startsWith(inAppFrame) && !isBlacklistedFromInApp(className)) {
+            if (className.startsWith(inAppFrame)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isBlacklistedFromInApp(String className) {
-        for (Pattern inAppBlacklistRegexp : inAppBlacklistRegexps) {
-            boolean found = inAppBlacklistRegexp.matcher(className).find();
-            if (found) {
-                return true;
-            }
-        }
-
-        return false;
+    private boolean classIsBlacklisted(String className) {
+        return (className.contains("CGLIB") || className.contains("Hibernate"))
+            && IN_APP_BLACKLIST.matcher(className).find();
     }
 
     @Override
