@@ -25,11 +25,11 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
     private static final String PLATFORM_PARAMTER = "platform";
-    private static final Pattern IN_APP_BLACKLIST = Pattern.compile("\\$+" + // match $ (one or more)
-        "(?:" + // start outer group
-        "(?:(?:FastClass|Enhancer)[a-zA-Z]*CGLIB)" + // Match Spring's FastClass and Enhancer classes
-        "|(?:HibernateProxy)" + // match Hibernate proxies
-        ")\\$+"); // end outer group and match $ (one or more)
+    private static final Pattern IN_APP_BLACKLIST = Pattern.compile("\\$+" // match $ (one or more)
+        + "(?:" // start outer group
+        + "(?:(?:FastClass|Enhancer)[a-zA-Z]*CGLIB)" // Match Spring's FastClass and Enhancer classes
+        + "|(?:HibernateProxy)" // match Hibernate proxies
+        + ")\\$+"); // end outer group and match $ (one or more)
     private Collection<String> inAppFrames = Collections.emptyList();
     private boolean removeCommonFramesWithEnclosing = true;
 
