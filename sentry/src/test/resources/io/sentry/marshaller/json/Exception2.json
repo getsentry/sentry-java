@@ -1,8 +1,8 @@
 [
-    {
-        "type": "DefaultPackageException",
-        "value": null,
-        "module": "(default)",
-        "stacktrace": {}
-    }
+  {
+    "type": "DefaultPackageException",
+    "value": null,
+    "module": "(default)",
+    "stacktrace": {}
+  }
 ]

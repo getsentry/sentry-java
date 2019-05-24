@@ -6,10 +6,19 @@
   "cookies": {
     "Cookie1": "Value1"
   },
-  "headers":  [
-    ["Header1","Value1"],
-    ["Header2","Value1"],
-    ["Header2","Value2"]
+  "headers": [
+    [
+      "Header1",
+      "Value1"
+    ],
+    [
+      "Header2",
+      "Value1"
+    ],
+    [
+      "Header2",
+      "Value2"
+    ]
   ],
   "env": {
     "REMOTE_ADDR": "1.2.3.4",

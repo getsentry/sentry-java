@@ -17,6 +17,9 @@
   "sdk": {
     "name": "sdkName",
     "version": "sdkVersion",
-    "integrations": ["integration2", "integration1"]
+    "integrations": [
+      "integration2",
+      "integration1"
+    ]
   }
 }

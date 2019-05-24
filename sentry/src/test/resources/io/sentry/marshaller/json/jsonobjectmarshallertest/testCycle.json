@@ -1,1 +1,9 @@
-{"output":{"cycle!":{"cycle!":{"cycle!":"<recursion limit hit>"}}}}
+{
+  "output": {
+    "cycle!": {
+      "cycle!": {
+        "cycle!": "<recursion limit hit>"
+      }
+    }
+  }
+}

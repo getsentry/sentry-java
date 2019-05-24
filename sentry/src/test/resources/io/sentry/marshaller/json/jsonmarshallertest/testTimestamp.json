@@ -1,21 +1,21 @@
 {
-    "event_id": "00000000000000000000000000000000",
-    "message": null,
-    "timestamp": "2013-11-24T04:11:35",
-    "level": null,
-    "logger": null,
-    "platform": null,
-    "culprit": null,
-    "transaction": null,
-    "tags": {},
-    "server_name": null,
-    "release": null,
-    "dist": null,
-    "extra": {},
-    "environment": null,
-    "checksum": null,
-    "sdk": {
-        "name": null,
-        "version": null
-    }
+  "event_id": "00000000000000000000000000000000",
+  "message": null,
+  "timestamp": "2013-11-24T04:11:35",
+  "level": null,
+  "logger": null,
+  "platform": null,
+  "culprit": null,
+  "transaction": null,
+  "tags": {},
+  "server_name": null,
+  "release": null,
+  "dist": null,
+  "extra": {},
+  "environment": null,
+  "checksum": null,
+  "sdk": {
+    "name": null,
+    "version": null
+  }
 }

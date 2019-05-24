@@ -1,8 +1,8 @@
 {
-    "images": [
-        {
-            "uuid": "abcd",
-            "type": "proguard"
-        }
-    ]
+  "images": [
+    {
+      "uuid": "abcd",
+      "type": "proguard"
+    }
+  ]
 }
