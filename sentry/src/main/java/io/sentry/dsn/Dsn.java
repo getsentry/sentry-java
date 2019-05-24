@@ -290,7 +290,7 @@ public class Dsn {
         if (!publicKey.equals(dsn.publicKey)) {
             return false;
         }
-        if (!secretKey.equals(dsn.secretKey)) {
+        if (!Util.equals(secretKey, dsn.secretKey)) {
             return false;
         }
 
