@@ -12,11 +12,31 @@ import java.util.concurrent.Callable;
 public class SentryAndroidIT extends AndroidTest {
 
     @Test
-    public void test() throws Exception {
+    public void testInitializingUsingBaseContext() throws Exception {
         verifyProject1PostRequestCount(0);
         verifyStoredEventCount(0);
 
-        SentryITActivity activity = Robolectric.setupActivity(SentryITActivity.class);
+        SentryITActivityUsingBaseContext activity = Robolectric.setupActivity(SentryITActivityUsingBaseContext.class);
+        Assert.assertEquals(activity.getCustomFactoryUsed(), true);
+
+        activity.sendEvent();
+        waitUntilTrue(1000, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return getStoredEvents().size() == 1;
+            }
+        });
+
+        verifyProject1PostRequestCount(1);
+        verifyStoredEventCount(1);
+    }
+
+    @Test
+    public void testInitializingUsingApplication() throws Exception {
+        verifyProject1PostRequestCount(0);
+        verifyStoredEventCount(0);
+
+        SentryITActivityUsingApplication activity = Robolectric.setupActivity(SentryITActivityUsingApplication.class);
         Assert.assertEquals(activity.getCustomFactoryUsed(), true);
 
         activity.sendEvent();

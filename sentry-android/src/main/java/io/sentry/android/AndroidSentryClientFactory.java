@@ -48,7 +48,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     public AndroidSentryClientFactory(Application app) {
         Log.d(TAG, "Construction of Android Sentry from Android Application.");
 
-        this.ctx = new WeakReference<>(app.getBaseContext());
+        this.ctx = new WeakReference<>(app.getApplicationContext());
     }
 
     /**
