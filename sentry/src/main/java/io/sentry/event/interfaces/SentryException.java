@@ -1,7 +1,6 @@
 package io.sentry.event.interfaces;
 
 import io.sentry.jvmti.FrameCache;
-
 import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -31,10 +30,18 @@ public final class SentryException implements Serializable {
      * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
      */
     public SentryException(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
-        this.exceptionMessage = throwable.getMessage();
-        this.exceptionClassName = throwable.getClass().getSimpleName();
         Package exceptionPackage = throwable.getClass().getPackage();
-        this.exceptionPackageName = exceptionPackage != null ? exceptionPackage.getName() : null;
+        String fullClassName = throwable.getClass().getName();
+
+        this.exceptionMessage = throwable.getMessage();
+        this.exceptionClassName = exceptionPackage != null
+            ? fullClassName.replace(exceptionPackage.getName() + ".", "")
+            : fullClassName;
+
+        this.exceptionPackageName = exceptionPackage != null
+            ? exceptionPackage.getName()
+            : null;
+
         this.stackTraceInterface = new StackTraceInterface(
             throwable.getStackTrace(),
             childExceptionStackTrace,

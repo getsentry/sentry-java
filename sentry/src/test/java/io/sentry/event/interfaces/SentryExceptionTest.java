@@ -1,19 +1,22 @@
 package io.sentry.event.interfaces;
 
 import io.sentry.BaseTest;
+import java.util.Deque;
 import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import org.testng.annotations.Test;
 
-import java.util.Deque;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryExceptionTest extends BaseTest {
+
     @Injectable
     private Throwable mockThrowable = null;
+
+    @Injectable
+    private InnerClassThrowable mockInnerClassThrowable = null;
 
     @Test
     public void ensureConversionToQueueKeepsOrder(@Injectable final Throwable mockCause) throws Exception {
@@ -37,5 +40,25 @@ public class SentryExceptionTest extends BaseTest {
 
         assertThat(exceptions.getFirst().getExceptionMessage(), is(exceptionMessage));
         assertThat(exceptions.getLast().getExceptionMessage(), is(causeMessage));
+    }
+
+    @Test
+    public void ensureInnerClassesAreRepresentedCorrectly(@Injectable final InnerClassThrowable mockCause) throws Exception {
+        new NonStrictExpectations() {{
+            mockInnerClassThrowable.getCause();
+            result = new Delegate<Throwable>() {
+                @SuppressWarnings("unused")
+                public Throwable getCause() {
+                    return mockCause;
+                }
+            };
+        }};
+
+        Deque<SentryException> exceptions = SentryException.extractExceptionQueue(mockInnerClassThrowable);
+        assertThat(exceptions.getFirst().getExceptionClassName(), is("SentryExceptionTest$InnerClassThrowable"));
+    }
+
+    private static final class InnerClassThrowable extends Throwable {
+
     }
 }
