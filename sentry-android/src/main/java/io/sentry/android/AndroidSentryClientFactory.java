@@ -63,6 +63,12 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         this.ctx = new WeakReference<>(targetContext);
     }
 
+    /**
+     * Get the available base application context.
+     *
+     * @return Android Context
+     * @throws IllegalStateException When the reference to the context is no longer available
+     */
     public Context getAndroidContext() {
         Context context = ctx.get();
         if (context == null) {
