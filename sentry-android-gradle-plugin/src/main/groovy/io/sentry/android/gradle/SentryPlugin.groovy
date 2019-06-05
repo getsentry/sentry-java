@@ -8,7 +8,6 @@ import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.internal.coerce.PropertySetTransformer
 import org.gradle.api.tasks.Exec
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -167,7 +166,7 @@ class SentryPlugin implements Plugin<Project> {
                     def manifestPath = extension.manifestPath
 
                     if (manifestPath == null) {
-                        def dir = findAndroidManifestFilePath(variantOutput)
+                        def dir = findAndroidManifestFileDir(variantOutput)
                         manifestPath = new File(dir, "AndroidManifest.xml")
                     }
 
@@ -290,7 +289,7 @@ class SentryPlugin implements Plugin<Project> {
         }
     }
 
-    static File findAndroidManifestFilePath(BaseVariantOutput variantOutput) {
+    static File findAndroidManifestFileDir(BaseVariantOutput variantOutput) {
         // Gradle 4.7 introduced the lazy task API and AGP 3.3+ adopts that,
         // so we apparently have a Provider<File> here instead
         // TODO: This will let us depend on the configuration of each flavor's
