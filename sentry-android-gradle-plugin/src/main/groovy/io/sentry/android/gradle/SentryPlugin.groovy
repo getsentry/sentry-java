@@ -7,6 +7,7 @@ import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.internal.coerce.PropertySetTransformer
 import org.gradle.api.tasks.Exec
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -144,7 +145,12 @@ class SentryPlugin implements Plugin<Project> {
      * @return
      */
     static String getDebugMetaPropPath(Project project, ApplicationVariant variant) {
-        return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
+        try {
+            return "${variant.mergeAssetsProvider.outputDir}/sentry-debug-meta.properties"
+        } catch (Throwable ignored) {
+            return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
+        }
+
     }
 
     void apply(Project project) {
