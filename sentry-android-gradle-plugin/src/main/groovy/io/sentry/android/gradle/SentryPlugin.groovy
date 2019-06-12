@@ -170,21 +170,6 @@ class SentryPlugin implements Plugin<Project> {
                         manifestPath = new File(dir, "AndroidManifest.xml")
                     }
 
-//                    if (manifestPath == null) {
-//                        try {
-//                            // Android Gradle Plugin < 3.0.0
-//                            manifestPath = variantOutput.processManifest.manifestOutputFile
-//                        } catch (Exception ignored) {
-//                            // Android Gradle Plugin >= 3.0.0
-//                            def outputDir = variantOutput.processManifest.manifestOutputDirectory
-//
-//                            if (!(outputDir instanceof File)) {
-//                                outputDir = outputDir.get().asFile
-//                            }
-//                            manifestPath = new File(outputDir, "AndroidManifest.xml")
-//                        }
-//                    }
-
                     def mappingFile = variant.getMappingFile()
                     def proguardTask = getProguardTask(project, variant)
                     def dexTask = getDexTask(project, variant)
