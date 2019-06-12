@@ -54,6 +54,14 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     public static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
     /**
+     * Option to set a read timeout for requests to the Sentry server, in milliseconds.
+     */
+    public static final String READ_TIMEOUT_OPTION = "readtimeout";
+    /**
+     * Default read timeout of an HTTP request to Sentry.
+     */
+    public static final int READ_TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(5);
+    /**
      * Option to enable or disable Event buffering. A buffering directory is also required.
      * This setting is mostly useful on Android where a buffering directory is set by default.
      */
@@ -429,6 +437,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
         int timeout = getTimeout(dsn);
         httpConnection.setConnectionTimeout(timeout);
+
+        int readTimeout = getReadTimeout(dsn);
+        httpConnection.setReadTimeout(readTimeout);
 
         boolean bypassSecurityEnabled = getBypassSecurityEnabled(dsn);
         httpConnection.setBypassSecurity(bypassSecurityEnabled);
@@ -846,6 +857,16 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     protected int getTimeout(Dsn dsn) {
         return Util.parseInteger(Lookup.lookup(TIMEOUT_OPTION, dsn), TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Read timeout for requests to the Sentry server, in milliseconds.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Read timeout for requests to the Sentry server, in milliseconds.
+     */
+    protected int getReadTimeout(Dsn dsn) {
+        return Util.parseInteger(Lookup.lookup(READ_TIMEOUT_OPTION, dsn), READ_TIMEOUT_DEFAULT);
     }
 
     /**
