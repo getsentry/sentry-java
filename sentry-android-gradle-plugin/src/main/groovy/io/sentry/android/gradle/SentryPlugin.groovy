@@ -146,7 +146,7 @@ class SentryPlugin implements Plugin<Project> {
      */
     static String getDebugMetaPropPath(Project project, ApplicationVariant variant) {
         try {
-            return "${variant.mergeAssetsProvider.outputDir}/sentry-debug-meta.properties"
+            return variant.mergeAssets.outputDir.get().file("sentry-debug-meta.properties").getAsFile().path
         } catch (Throwable ignored) {
             return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
         }
