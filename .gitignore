@@ -4,3 +4,4 @@ agent/build/
 agent/.vscode/
 local.properties
 .idea
+*.iml
