@@ -52,7 +52,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     /**
      * Default timeout of an HTTP connection to Sentry.
      */
-    public static final int CONNENCTION_TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
+    public static final int CONNECTION_TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
     /**
      * Option to set a read timeout for requests to the Sentry server, in milliseconds.
      */
@@ -856,7 +856,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Timeout for requests to the Sentry server, in milliseconds.
      */
     protected int getTimeout(Dsn dsn) {
-        return Util.parseInteger(Lookup.lookup(CONNECTION_TIMEOUT_OPTION, dsn), CONNENCTION_TIMEOUT_DEFAULT);
+        return Util.parseInteger(Lookup.lookup(CONNECTION_TIMEOUT_OPTION, dsn), CONNECTION_TIMEOUT_DEFAULT);
     }
 
     /**
