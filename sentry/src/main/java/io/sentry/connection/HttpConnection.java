@@ -253,7 +253,7 @@ public class HttpConnection extends AbstractConnection {
 
     /**
      * This will set the timeout that is used in establishing a connection to the url.
-     * By default this is set to 5 second.
+     * By default this is set to 1 second.
      *
      * @param timeout New timeout to set. If 0 is used (java default) wait forever.
      */
@@ -263,7 +263,7 @@ public class HttpConnection extends AbstractConnection {
 
     /**
      * This will set the timeout that is used in reading data on an already established connection.
-     * By default this is set to 1 seconds.
+     * By default this is set to 5 seconds.
      *
      * @param timeout New timeout to set. If 0 is used (java default) wait forever.
      */

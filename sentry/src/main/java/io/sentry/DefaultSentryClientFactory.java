@@ -46,13 +46,21 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      */
     public static final String MAX_MESSAGE_LENGTH_OPTION = "maxmessagelength";
     /**
-     * Option to set a timeout for requests to the Sentry server, in milliseconds.
+     * Option to set a timeout for HTTP connections to the Sentry server, in milliseconds.
      */
-    public static final String TIMEOUT_OPTION = "timeout";
+    public static final String CONNECTION_TIMEOUT_OPTION = "timeout";
     /**
      * Default timeout of an HTTP connection to Sentry.
      */
-    public static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
+    public static final int CONNECTION_TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(1);
+    /**
+     * Option to set a read timeout for requests to the Sentry server, in milliseconds.
+     */
+    public static final String READ_TIMEOUT_OPTION = "readtimeout";
+    /**
+     * Default read timeout of an HTTP request to Sentry.
+     */
+    public static final int READ_TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(5);
     /**
      * Option to enable or disable Event buffering. A buffering directory is also required.
      * This setting is mostly useful on Android where a buffering directory is set by default.
@@ -429,6 +437,9 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
 
         int timeout = getTimeout(dsn);
         httpConnection.setConnectionTimeout(timeout);
+
+        int readTimeout = getReadTimeout(dsn);
+        httpConnection.setReadTimeout(readTimeout);
 
         boolean bypassSecurityEnabled = getBypassSecurityEnabled(dsn);
         httpConnection.setBypassSecurity(bypassSecurityEnabled);
@@ -845,7 +856,17 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Timeout for requests to the Sentry server, in milliseconds.
      */
     protected int getTimeout(Dsn dsn) {
-        return Util.parseInteger(Lookup.lookup(TIMEOUT_OPTION, dsn), TIMEOUT_DEFAULT);
+        return Util.parseInteger(Lookup.lookup(CONNECTION_TIMEOUT_OPTION, dsn), CONNECTION_TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Read timeout for requests to the Sentry server, in milliseconds.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Read timeout for requests to the Sentry server, in milliseconds.
+     */
+    protected int getReadTimeout(Dsn dsn) {
+        return Util.parseInteger(Lookup.lookup(READ_TIMEOUT_OPTION, dsn), READ_TIMEOUT_DEFAULT);
     }
 
     /**
