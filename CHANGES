@@ -1,7 +1,16 @@
 Version 1.7.23
 --------------
 
--
+- Remove usage of deprecated constructors in log4j2 (thanks justacodefan)
+- Change logback appender to the unsynchronized version (thanks SerCeMan)
+- When a secret key is not set, don't throw NPE (thanks mayt017)
+- Upgrade Jackson to version 2.9.9 (thanks justacodefan)
+- Don't erase inner class names from stack trace interface when it's of type exception (thanks justacodefan)
+- Add more classes to blacklist and optimize parsing (thanks justacodefan)
+- Include log4j marker parent(s) in log4j marker tag (thanks JoakimNil)
+- Allow read timeout to be configured (thanks mdreis2211)
+- Gradle plugin on AGP version 3.4 (thanks justacodefan, ninniuz, remcomokveld, realdadfish)
+- Find dex task when shrinking resources (thanks codeniko)
 
 Version 1.7.22
 --------------
