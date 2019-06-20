@@ -6,6 +6,8 @@
     <h1>sentry-java - Sentry SDK for Java</h1>
 </p>
 
+[![Travis](https://travis-ci.org/getsentry/sentry-java.svg?branch=master)](https://travis-ci.org/getsentry/sentry-java)
+
 This is the Java SDK for [Sentry](https://sentry.io/). It provides out-of-the-box support for
 many popular JVM based frameworks and libraries, including Android, Log4j, Logback, and more.
 
