@@ -144,7 +144,7 @@ public class SentryStackTraceElement implements Serializable {
             if (cachedFrames != null) {
                 // step through cachedFrames until we hit a match on the method in the stackTraceElement
                 while (j < cachedFrames.length
-                    && !cachedFrames[j].getMethod().getName().equals(stackTraceElement.getMethodName())) {
+                    && !stackTraceElement.getMethodName().equals(cachedFrames[j].getMethod().getName())) {
                     j++;
                 }
 
