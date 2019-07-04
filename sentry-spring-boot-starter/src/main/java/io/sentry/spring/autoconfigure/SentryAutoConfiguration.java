@@ -12,22 +12,33 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
+/**
+ * Spring Auto Configuration for Sentry.
+ */
 @Configuration
 @ConditionalOnClass({ HandlerExceptionResolver.class, SentryExceptionResolver.class })
 @ConditionalOnWebApplication
 @ConditionalOnProperty(name = "sentry.enabled", havingValue = "true", matchIfMissing = true)
 public class SentryAutoConfiguration {
 
-	@Bean
-	@ConditionalOnMissingBean(SentryExceptionResolver.class)
-	public HandlerExceptionResolver sentryExceptionResolver() {
-		return new SentryExceptionResolver();
-	}
+    /**
+     * Resolves a {@link HandlerExceptionResolver}.
+     * @return a new instance of {@link SentryAutoConfiguration}.
+     */
+    @Bean
+    @ConditionalOnMissingBean(SentryExceptionResolver.class)
+    public HandlerExceptionResolver sentryExceptionResolver() {
+        return new SentryExceptionResolver();
+    }
 
-	@Bean
-	@ConditionalOnMissingBean(SentryServletContextInitializer.class)
-	public ServletContextInitializer sentryServletContextInitializer() {
-		return new SentryServletContextInitializer();
-	}
+    /**
+     * Initializes a {@link ServletContextInitializer}.
+     * @return a new instance of {@link SentryServletContextInitializer}.
+     */
+    @Bean
+    @ConditionalOnMissingBean(SentryServletContextInitializer.class)
+    public ServletContextInitializer sentryServletContextInitializer() {
+        return new SentryServletContextInitializer();
+    }
 
 }
