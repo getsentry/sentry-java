@@ -1,7 +1,8 @@
--e Version 1.7.24
+Version 1.7.24
 --------------
 
--
+- Android Gradle plugin: Look for sentry.properties on flavor directory.
+- Android Gradle plugin: Bumped sentry-cli version.
 
 Version 1.7.23
 --------------
