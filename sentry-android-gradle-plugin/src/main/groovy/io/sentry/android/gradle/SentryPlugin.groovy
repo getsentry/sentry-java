@@ -202,7 +202,7 @@ class SentryPlugin implements Plugin<Project> {
                         description "Write references to proguard UUIDs to the android assets."
                         workingDir project.rootDir
 
-                        def variantName = variant.buildType.name
+                        def buildTypeName = variant.buildType.name
                         def flavorName = variant.flavorName
                         // When flavor is used in combination with dimensions, variant.flavorName will be a concatenation
                         // of flavors of different dimensions
@@ -215,15 +215,15 @@ class SentryPlugin implements Plugin<Project> {
                         }
 
                         possibleProps = [
+                                "${project.projectDir}/src/${buildTypeName}/${propName}",
+                                "${project.projectDir}/src/${buildTypeName}/${flavorName}/${propName}",
+                                "${project.projectDir}/src/${flavorName}/${buildTypeName}/${propName}",
                                 "${project.projectDir}/src/${flavorName}/${propName}",
                                 "${project.rootDir.toPath()}/src/${flavorName}/${propName}",
                         ] + possibleProps + [
-                                "${project.projectDir}/src/${variantName}/${propName}",
-                                "${project.projectDir}/src/${variantName}/${flavorName}/${propName}",
-                                "${project.projectDir}/src/${flavorName}/${variantName}/${propName}",
-                                "${project.rootDir.toPath()}/src/${variantName}/${propName}",
-                                "${project.rootDir.toPath()}/src/${variantName}/${flavorName}/${propName}",
-                                "${project.rootDir.toPath()}/src/${flavorName}/${variantName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${buildTypeName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${buildTypeName}/${flavorName}/${propName}",
+                                "${project.rootDir.toPath()}/src/${flavorName}/${buildTypeName}/${propName}",
                                 // Root sentry.properties is the last to be looked up
                                 "${project.rootDir.toPath()}/${propName}"
                         ]
