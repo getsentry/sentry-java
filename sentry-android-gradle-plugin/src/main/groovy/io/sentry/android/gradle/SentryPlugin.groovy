@@ -168,7 +168,7 @@ class SentryPlugin implements Plugin<Project> {
 
                     if (manifestPath == null) {
                         def dir = findAndroidManifestFileDir(variantOutput)
-                        manifestPath = new File(dir, "AndroidManifest.xml")
+                        manifestPath = new File(new File(dir, variantOutput.dirName), "AndroidManifest.xml")
                     }
 
                     def mappingFile = variant.getMappingFile()
