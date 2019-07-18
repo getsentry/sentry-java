@@ -18,7 +18,6 @@ import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
 import java.io.File;
 import java.util.ArrayList;
-import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.List;
 
