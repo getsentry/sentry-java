@@ -1,11 +1,13 @@
 package io.sentry.android;
 
 import android.Manifest;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
-import io.sentry.*;
+import io.sentry.DefaultSentryClientFactory;
+import io.sentry.SentryClient;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
@@ -14,7 +16,6 @@ import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Logger tag.
      */
     public static final String TAG = AndroidSentryClientFactory.class.getName();
+
     /**
      * Default Buffer directory name.
      */
@@ -38,15 +40,30 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     private Context ctx;
 
     /**
+     * Construct an AndroidSentryClientFactory using the base Context from the specified Android Application.
+     *
+     * @param app Android Application
+     */
+    public AndroidSentryClientFactory(Application app) {
+        Log.d(TAG, "Construction of Android Sentry from Android Application.");
+
+        this.ctx = app.getApplicationContext();
+    }
+
+    /**
      * Construct an AndroidSentryClientFactory using the specified Android Context.
      *
      * @param ctx Android Context.
      */
     public AndroidSentryClientFactory(Context ctx) {
-        Log.d(TAG, "Construction of Android Sentry.");
+        Log.d(TAG, "Construction of Android Sentry from Android Context.");
 
         this.ctx = ctx.getApplicationContext();
+        if (this.ctx == null) {
+            this.ctx = ctx;
+        }
     }
+
 
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
@@ -123,11 +140,11 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Check whether the application has been granted a certain permission.
      *
      * @param permission Permission as a string
+     *
      * @return true if permissions is granted
      */
     private boolean checkPermission(String permission) {
         int res = ctx.checkCallingOrSelfPermission(permission);
         return (res == PackageManager.PERMISSION_GRANTED);
     }
-
 }
