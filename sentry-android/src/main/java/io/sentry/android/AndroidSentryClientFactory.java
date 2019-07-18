@@ -72,7 +72,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                 + " please add it to your AndroidManifest.xml");
         }
 
-        Log.d(TAG, "Sentry init with ctx='" + this.ctx.toString() + "'");
+        Log.d(TAG, "Sentry init with ctx='" + ctx.toString() + "'");
 
         String protocol = dsn.getProtocol();
         if (protocol.equalsIgnoreCase("noop")) {
@@ -90,7 +90,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         }
 
         SentryClient sentryClient = super.createSentryClient(dsn);
-        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(this.ctx));
+        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
 
         return sentryClient;
     }
@@ -102,7 +102,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         if (inAppFrames.isEmpty()) {
             PackageInfo info = null;
             try {
-                info = this.ctx.getPackageManager().getPackageInfo(this.ctx.getPackageName(), 0);
+                info = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
             } catch (PackageManager.NameNotFoundException e) {
                 Log.e(TAG, "Error getting package information.", e);
             }
@@ -124,7 +124,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         if (bufferDirOpt != null) {
             bufferDir = new File(bufferDirOpt);
         } else {
-            bufferDir = new File(this.ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
+            bufferDir = new File(ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
         }
 
         Log.d(TAG, "Using buffer dir: " + bufferDir.getAbsolutePath());
@@ -144,7 +144,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * @return true if permissions is granted
      */
     private boolean checkPermission(String permission) {
-        int res = this.ctx.checkCallingOrSelfPermission(permission);
+        int res = ctx.checkCallingOrSelfPermission(permission);
         return (res == PackageManager.PERMISSION_GRANTED);
     }
 }
