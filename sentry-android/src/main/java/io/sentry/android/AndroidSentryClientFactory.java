@@ -38,7 +38,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      */
     private static final String DEFAULT_BUFFER_DIR = "sentry-buffered-events";
 
-    private WeakReference<Context> ctx;
+    private Context ctx;
 
     /**
      * Construct an AndroidSentryClientFactory using the base Context from the specified Android Application.
@@ -48,7 +48,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     public AndroidSentryClientFactory(Application app) {
         Log.d(TAG, "Construction of Android Sentry from Android Application.");
 
-        this.ctx = new WeakReference<>(app.getApplicationContext());
+        this.ctx = app.getApplicationContext();
     }
 
     /**
@@ -59,26 +59,12 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     public AndroidSentryClientFactory(Context ctx) {
         Log.d(TAG, "Construction of Android Sentry from Android Context.");
 
-        Context targetContext = ctx.getApplicationContext() != null ? ctx.getApplicationContext() : ctx;
-        this.ctx = new WeakReference<>(targetContext);
-    }
-
-    /**
-     * Get the available base application context.
-     *
-     * @return Android Context
-     * @throws IllegalStateException When the reference to the context is no longer available
-     */
-    public Context getAndroidContext() {
-        Context context = ctx.get();
-        if (context == null) {
-            throw new IllegalStateException("Application context no longer available!"
-                + "Ensure that you supply the root context of your application via Application.getBaseContext()"
-                + "or the Application class itself to this class constructor.");
+        this.ctx = ctx.getApplicationContext();
+        if (this.ctx == null) {
+            this.ctx = ctx;
         }
-
-        return context;
     }
+
 
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
@@ -87,7 +73,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                 + " please add it to your AndroidManifest.xml");
         }
 
-        Log.d(TAG, "Sentry init with ctx='" + getAndroidContext().toString() + "'");
+        Log.d(TAG, "Sentry init with ctx='" + this.ctx.toString() + "'");
 
         String protocol = dsn.getProtocol();
         if (protocol.equalsIgnoreCase("noop")) {
@@ -105,7 +91,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         }
 
         SentryClient sentryClient = super.createSentryClient(dsn);
-        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(getAndroidContext()));
+        sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(this.ctx));
 
         return sentryClient;
     }
@@ -117,7 +103,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         if (inAppFrames.isEmpty()) {
             PackageInfo info = null;
             try {
-                info = getAndroidContext().getPackageManager().getPackageInfo(getAndroidContext().getPackageName(), 0);
+                info = this.ctx.getPackageManager().getPackageInfo(this.ctx.getPackageName(), 0);
             } catch (PackageManager.NameNotFoundException e) {
                 Log.e(TAG, "Error getting package information.", e);
             }
@@ -139,7 +125,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         if (bufferDirOpt != null) {
             bufferDir = new File(bufferDirOpt);
         } else {
-            bufferDir = new File(getAndroidContext().getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
+            bufferDir = new File(this.ctx.getCacheDir().getAbsolutePath(), DEFAULT_BUFFER_DIR);
         }
 
         Log.d(TAG, "Using buffer dir: " + bufferDir.getAbsolutePath());
@@ -159,7 +145,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * @return true if permissions is granted
      */
     private boolean checkPermission(String permission) {
-        int res = getAndroidContext().checkCallingOrSelfPermission(permission);
+        int res = this.ctx.checkCallingOrSelfPermission(permission);
         return (res == PackageManager.PERMISSION_GRANTED);
     }
 }
