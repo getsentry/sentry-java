@@ -139,6 +139,17 @@ class SentryPlugin implements Plugin<Project> {
     }
 
     /**
+     * Returns the bundle task for the given project and variant.
+     *
+     * @param project
+     * @param variant
+     * @return
+     */
+    static Task getBundleTask(Project project, ApplicationVariant variant) {
+        return project.tasks.findByName("build${variant.name.capitalize()}PreBundle")
+    }
+
+    /**
      * Returns the path to the debug meta properties file for the given variant.
      *
      * @param project
@@ -174,6 +185,7 @@ class SentryPlugin implements Plugin<Project> {
                     def mappingFile = variant.getMappingFile()
                     def proguardTask = getProguardTask(project, variant)
                     def dexTask = getDexTask(project, variant)
+                    def bundleTask = getBundleTask(project, variant)
 
                     if (proguardTask == null) {
                         return
@@ -281,6 +293,10 @@ class SentryPlugin implements Plugin<Project> {
                         dexTask.dependsOn persistIdsTask
                     } else {
                         proguardTask.finalizedBy(persistIdsTask)
+                    }
+                    // To include proguard uuid file into aab, run before bundle task.
+                    if (bundleTask != null) {
+                        bundleTask.dependsOn persistIdsTask
                     }
                     persistIdsTask.dependsOn proguardTask
                 }
