@@ -1,7 +1,14 @@
--e Version 1.7.25
+-e Version 1.7.26
 --------------
 
 -
+
+ Version 1.7.25
+--------------
+
+- Android Gradle Plugin: Fixed bug when using ABI splits #667
+- Android Gradle Plugin: Support Android App Bundle #707
+- Android SDK: Support providing the whole Application Context #713
 
 Version 1.7.24
 --------------
