@@ -64,7 +64,6 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         }
     }
 
-
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
         if (!checkPermission(Manifest.permission.INTERNET)) {

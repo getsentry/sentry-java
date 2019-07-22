@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.config.ResourceLoader;
 import io.sentry.context.Context;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.Breadcrumb;
@@ -27,11 +28,21 @@ public final class Sentry {
      */
     private static AtomicBoolean autoInitAttempted = new AtomicBoolean(false);
 
+    private static ResourceLoader resourceLoader = null;
+
     /**
      * Hide constructor.
      */
     private Sentry() {
 
+    }
+
+    public static ResourceLoader getResourceLoader() {
+        return resourceLoader;
+    }
+
+    private static void setResourceLoader(ResourceLoader resourceLoader) {
+        Sentry.resourceLoader = resourceLoader;
     }
 
     /**
@@ -81,6 +92,23 @@ public final class Sentry {
         SentryClient sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
         setStoredClient(sentryClient);
         return sentryClient;
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link Dsn}, {@link SentryClientFactory} and {@link ResourceLoader}.
+     * <p>
+     * Note that the Dsn, SentryClientFactory or ResourceLoader may be null, at which a best effort attempt
+     * is made to look up or choose the best value(s).
+     *
+     * @param dsn                   Data Source Name of the Sentry server.
+     * @param sentryClientFactory   SentryClientFactory to use.
+     * @param resLoader        ResourceLoader to use to retrieve Sentry options.
+     * @return SentryClient
+     */
+    public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory, ResourceLoader resLoader) {
+        setResourceLoader(resLoader);
+        return init(dsn, sentryClientFactory);
     }
 
     /**
