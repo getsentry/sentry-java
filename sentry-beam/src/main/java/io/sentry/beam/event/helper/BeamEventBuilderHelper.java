@@ -23,7 +23,7 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
             return;
         }
 
-        eventBuilder.withTag("Timestamp", BoundedWindow.formatTimestamp(timestamp));
+        eventBuilder.withTag("timestamp", BoundedWindow.formatTimestamp(timestamp));
     }
 
     private void attachBoundedWindow(EventBuilder eventBuilder) {
@@ -33,34 +33,34 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
 
         Instant instant = boundedWindow.maxTimestamp();
         if (instant != null) {
-            eventBuilder.withTag("Max Timestamp", BoundedWindow.formatTimestamp(instant));
+            eventBuilder.withTag("max_timestamp", BoundedWindow.formatTimestamp(instant));
         }
     }
 
     private void attachPaneInfo(EventBuilder eventBuilder) {
-      if (paneInfo == null) {
-          return;
-      }
+        if (paneInfo == null) {
+            return;
+        }
 
-      PaneInfo.Timing timing = paneInfo.getTiming();
-      if (timing != null) {
-          eventBuilder.withTag("Timing", timing.name());
-      }
+        PaneInfo.Timing timing = paneInfo.getTiming();
+        if (timing != null) {
+            eventBuilder.withTag("timing", timing.name());
+        }
 
-      boolean first = paneInfo.isFirst();
-      if (first) {
-          eventBuilder.withTag("First Pane", Boolean.toString(first));
-      }
+        boolean first = paneInfo.isFirst();
+        if (first) {
+            eventBuilder.withTag("first_pane", Boolean.toString(first));
+        }
 
-      boolean last = paneInfo.isLast();
-      if (last) {
-          eventBuilder.withTag("Last Pane", Boolean.toString(last));
-      }
+        boolean last = paneInfo.isLast();
+        if (last) {
+            eventBuilder.withTag("last_pane", Boolean.toString(last));
+        }
 
-      boolean unknown = paneInfo.isUnknown();
-      if (unknown) {
-          eventBuilder.withTag("Unknown Pane", Boolean.toString(unknown));
-      }
+        boolean unknown = paneInfo.isUnknown();
+        if (unknown) {
+            eventBuilder.withTag("unknown_pane", Boolean.toString(unknown));
+        }
     }
 
     private void attachPipelineOptions(EventBuilder eventBuilder) {
@@ -70,26 +70,26 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
 
         String jobName = pipelineOptions.getJobName();
         if (jobName != null && !jobName.isEmpty()) {
-            eventBuilder.withTag("Job Name", jobName);
+            eventBuilder.withTag("job_name", jobName);
         }
 
         eventBuilder.withTag("Options Id", Long.toString(pipelineOptions.getOptionsId()));
 
         String tempLocation = pipelineOptions.getTempLocation();
         if (tempLocation != null && !tempLocation.isEmpty()) {
-            eventBuilder.withTag("Temp Location", tempLocation);
+            eventBuilder.withTag("temp_location", tempLocation);
         }
 
         String userAgent = pipelineOptions.getUserAgent();
         if (userAgent != null && !userAgent.isEmpty()) {
-            eventBuilder.withTag("User Agent", userAgent);
+            eventBuilder.withTag("user_agent", userAgent);
         }
 
         Class<? extends PipelineRunner<?>> runner = pipelineOptions.getRunner();
         if (runner != null) {
             String runnerName = runner.getCanonicalName();
             if (runnerName != null && !runnerName.isEmpty()) {
-                eventBuilder.withTag("Pipeline Runner Class", runnerName);
+                eventBuilder.withTag("pipeline_runner_class", runnerName);
             }
         }
     }

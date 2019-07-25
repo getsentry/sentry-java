@@ -54,9 +54,9 @@ public class BeamSentryClientFactory extends DefaultSentryClientFactory {
             return factory;
         }
 
-        public Builder withTimetstamp(Instant timestamp) {
-          this.timestamp = timestamp;
-          return this;
+        public Builder withTimestamp(Instant timestamp) {
+            this.timestamp = timestamp;
+            return this;
         }
 
         public Builder withBoundedWindow(BoundedWindow boundedWindow) {
