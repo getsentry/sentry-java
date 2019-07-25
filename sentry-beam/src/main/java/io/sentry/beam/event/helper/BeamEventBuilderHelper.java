@@ -73,7 +73,7 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
             eventBuilder.withTag("job_name", jobName);
         }
 
-        eventBuilder.withTag("Options Id", Long.toString(pipelineOptions.getOptionsId()));
+        eventBuilder.withTag("options_id", Long.toString(pipelineOptions.getOptionsId()));
 
         String tempLocation = pipelineOptions.getTempLocation();
         if (tempLocation != null && !tempLocation.isEmpty()) {
