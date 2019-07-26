@@ -18,6 +18,11 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
     public PaneInfo paneInfo = null;
     public PipelineOptions pipelineOptions = null;
 
+    /**
+     * Attach tags with information from the timestamp.
+     *
+     * @param eventBuilder The event builder object.
+     */
     private void attachTimestamp(EventBuilder eventBuilder) {
         if (timestamp == null) {
             return;
@@ -26,6 +31,11 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
         eventBuilder.withTag("timestamp", BoundedWindow.formatTimestamp(timestamp));
     }
 
+    /**
+     * Attach tags with information from the bounded window.
+     *
+     * @param eventBuilder The event builder object.
+     */
     private void attachBoundedWindow(EventBuilder eventBuilder) {
         if (boundedWindow == null) {
             return;
@@ -37,6 +47,11 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
         }
     }
 
+    /**
+     * Attach tags with information from the pane info.
+     *
+     * @param eventBuilder The event builder object.
+     */
     private void attachPaneInfo(EventBuilder eventBuilder) {
         if (paneInfo == null) {
             return;
@@ -63,6 +78,11 @@ public class BeamEventBuilderHelper implements EventBuilderHelper {
         }
     }
 
+    /**
+     * Attach tags with information from the pipeline options.
+     *
+     * @param eventBuilder The event builder object.
+     */
     private void attachPipelineOptions(EventBuilder eventBuilder) {
         if (pipelineOptions == null) {
             return;
