@@ -101,14 +101,14 @@ public final class SentryBeam  {
             Sentry.capture(message);
         }
 
-        private void attachTags() {
+        protected void attachTags() {
             attachTimestamp();
             attachBoundedWindow();
             attachPaneInfo();
             attachPipelineOptions();
         }
 
-        private void addTag(String name, String value) {
+        public void addTag(String name, String value) {
             Sentry.getContext().addTag(name, value);
         }
 
