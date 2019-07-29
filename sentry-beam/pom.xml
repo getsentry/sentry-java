@@ -10,7 +10,7 @@
     <artifactId>sentry-beam</artifactId>
     <packaging>jar</packaging>
 
-    <name>Sentry-Java for Google Dataflow</name>
+    <name>Sentry-Java for Apache Beam</name>
     <description>Sentry module allowing to use Apache Beam</description>
 
     <properties>
