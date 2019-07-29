@@ -76,6 +76,7 @@
         <module>sentry</module>
         <module>sentry-android</module>
         <module>sentry-appengine</module>
+        <module>sentry-beam</module>
         <module>sentry-log4j</module>
         <module>sentry-logback</module>
         <module>sentry-log4j2</module>
