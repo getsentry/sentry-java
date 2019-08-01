@@ -101,9 +101,12 @@ public final class Sentry {
      * @return SentryClient
      */
     public static SentryClient init(SentryOptions sentryOptions) {
-        SentryClient sentryClient = SentryClientFactory.sentryClient(sentryOptions.getDsn(), sentryOptions.getSentryClientFactory());
+        SentryClient sentryClient = SentryClientFactory.sentryClient(
+                sentryOptions.getDsn(),
+                sentryOptions.getSentryClientFactory());
         // Hack to allow Lookup.java access to a different resource locator before its static initializer runs.
-        // v2: Lookup won't be static and this hack will be removed. ResourceLocator will ba passed to Lookup upon instantiation
+        // v2: Lookup won't be static and this hack will be removed.
+        // ResourceLocator will ba passed to Lookup upon instantiation
         Sentry.resourceLoader = sentryOptions.getResourceLoader();
         setStoredClient(sentryClient);
         return sentryClient;

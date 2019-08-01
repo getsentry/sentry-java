@@ -12,7 +12,7 @@ public class SentryOptions {
 
     /**
      * Gets the optionally set {@Link SentryClientFactory}.
-     * @return
+     * @return {@link SentryClientFactory}
      */
     public SentryClientFactory getSentryClientFactory() {
         return sentryClientFactory;
@@ -20,7 +20,7 @@ public class SentryOptions {
 
     /**
      * Sets the {@link SentryClientFactory} to be used when initializing the SDK.
-     * @param sentryClientFactory
+     * @param sentryClientFactory Factory used to create a {@link SentryClient}.
      */
     public void setSentryClientFactory(SentryClientFactory sentryClientFactory) {
         this.sentryClientFactory = sentryClientFactory;
@@ -36,7 +36,7 @@ public class SentryOptions {
 
     /**
      * Sets the DSN to be used by the {@link SentryClient}.
-     * @param dsn
+     * @param dsn Sentry Data Source Name.
      */
     public void setDsn(String dsn) {
         this.dsn = dsn;
@@ -44,7 +44,7 @@ public class SentryOptions {
 
     /**
      * Gets the {@link ResourceLoader} to be used when looking for properties.
-     * @return
+     * @return {@link ResourceLoader}
      */
     public ResourceLoader getResourceLoader() {
         return resourceLoader;
@@ -52,7 +52,7 @@ public class SentryOptions {
 
     /**
      * Sets the {@link ResourceLoader} to be used when looking for properties.
-     * @param resourceLoader
+     * @param resourceLoader Optional {@link ResourceLoader} used to lookup properties.
      */
     public void setResourceLoader(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
