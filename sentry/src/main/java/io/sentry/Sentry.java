@@ -28,6 +28,9 @@ public final class Sentry {
      */
     private static AtomicBoolean autoInitAttempted = new AtomicBoolean(false);
 
+    /**
+     * Optional override for the default resource loader used to look for properties.
+     */
     private static ResourceLoader resourceLoader = null;
 
     /**
@@ -35,14 +38,6 @@ public final class Sentry {
      */
     private Sentry() {
 
-    }
-
-    public static ResourceLoader getResourceLoader() {
-        return resourceLoader;
-    }
-
-    private static void setResourceLoader(ResourceLoader resourceLoader) {
-        Sentry.resourceLoader = resourceLoader;
     }
 
     /**
@@ -89,7 +84,27 @@ public final class Sentry {
      * @return SentryClient
      */
     public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory) {
-        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn, sentryClientFactory);
+        SentryOptions sentryOptions = new SentryOptions();
+        sentryOptions.setDsn(dsn);
+        sentryOptions.setSentryClientFactory(sentryClientFactory);
+        return init(sentryOptions);
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link SentryOptions}.
+     * <p>x
+     * Note that the Dsn or SentryClientFactory may be null, at which a best effort attempt
+     * is made to look up or choose the best value(s).
+     *
+     * @param sentryOptions SentryOptions to take DSN and other options from.
+     * @return SentryClient
+     */
+    public static SentryClient init(SentryOptions sentryOptions) {
+        SentryClient sentryClient = SentryClientFactory.sentryClient(sentryOptions.getDsn(), sentryOptions.getSentryClientFactory());
+        // Hack to allow Lookup.java access to a different resource locator before its static initializer runs.
+        // v2: Lookup won't be static and this hack will be removed. ResourceLocator will ba passed to Lookup upon instantiation
+        Sentry.resourceLoader = sentryOptions.getResourceLoader();
         setStoredClient(sentryClient);
         return sentryClient;
     }
@@ -107,7 +122,6 @@ public final class Sentry {
      * @return SentryClient
      */
     public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory, ResourceLoader resLoader) {
-        setResourceLoader(resLoader);
         return init(dsn, sentryClientFactory);
     }
 
@@ -132,6 +146,14 @@ public final class Sentry {
         }
 
         return storedClient;
+    }
+
+    /**
+     * The {@link ResourceLoader} used to lookup properties.
+     * @return {link ResourceLoader}.
+     */
+    public static ResourceLoader getResourceLoader() {
+        return resourceLoader;
     }
 
     /**
