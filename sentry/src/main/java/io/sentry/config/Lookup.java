@@ -79,8 +79,9 @@ public final class Lookup {
             return new FileInputStream(file);
         }
 
-        if (Sentry.getResourceLoader() != null) {
-            return Sentry.getResourceLoader().getInputStream(filePath);
+        ResourceLoader resourceLoader = Sentry.getResourceLoader();
+        if (resourceLoader != null) {
+            return resourceLoader.getInputStream(filePath);
         } else {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             return classLoader.getResourceAsStream(filePath);
