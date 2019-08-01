@@ -127,15 +127,7 @@ class SentryPlugin implements Plugin<Project> {
             "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
         ]
 
-        def rv = null
-        names.each {
-            rv = project.tasks.findByName(it)
-            if (rv != null) {
-                return rv
-            }
-        }
-
-        return project.tasks.findByName("dex${names[0]}")
+        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
     }
 
     /**
