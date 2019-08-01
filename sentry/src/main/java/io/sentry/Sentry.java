@@ -113,22 +113,6 @@ public final class Sentry {
     }
 
     /**
-     * Initialize and statically store a {@link SentryClient} by using the provided
-     * {@link Dsn}, {@link SentryClientFactory} and {@link ResourceLoader}.
-     * <p>
-     * Note that the Dsn, SentryClientFactory or ResourceLoader may be null, at which a best effort attempt
-     * is made to look up or choose the best value(s).
-     *
-     * @param dsn                   Data Source Name of the Sentry server.
-     * @param sentryClientFactory   SentryClientFactory to use.
-     * @param resLoader        ResourceLoader to use to retrieve Sentry options.
-     * @return SentryClient
-     */
-    public static SentryClient init(String dsn, SentryClientFactory sentryClientFactory, ResourceLoader resLoader) {
-        return init(dsn, sentryClientFactory);
-    }
-
-    /**
      * Returns the last statically stored {@link SentryClient} instance. If no instance
      * is already stored, the {@link #init()} method will be called one time in an attempt to
      * create a {@link SentryClient}.
