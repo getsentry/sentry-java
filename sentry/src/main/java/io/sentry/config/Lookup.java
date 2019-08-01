@@ -1,5 +1,6 @@
 package io.sentry.config;
 
+import io.sentry.Sentry;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
@@ -78,8 +79,12 @@ public final class Lookup {
             return new FileInputStream(file);
         }
 
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        return classLoader.getResourceAsStream(filePath);
+        if (Sentry.getResourceLoader() != null) {
+            return Sentry.getResourceLoader().getInputStream(filePath);
+        } else {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            return classLoader.getResourceAsStream(filePath);
+        }
     }
 
     /**
