@@ -233,4 +233,123 @@ public class SentryClientTest extends BaseTest {
             assertThat(called.get(), is(true));
         }};
     }
+
+    @Test
+    public void testDefaultTagDoesntOverrideEvent() {
+        final String key = "key";
+        final String expectedValue = "expected";
+        sentryClient.addTag(key, "default");
+        EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withTag(key, expectedValue);
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getTags().get(key), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultTagSetToEvent() {
+        final String key = "key";
+        final String expectedValue = "expected";
+        sentryClient.addTag(key, expectedValue);
+        EventBuilder eventBuilder = new EventBuilder();
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getTags().get(key), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultExtraDoesntOverrideEvent() {
+        final String key = "key";
+        final Object expectedValue = "expected";
+        sentryClient.addExtra(key, (Object)"default");
+        EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withExtra(key, expectedValue);
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getExtra().get(key), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultExtraSetToEvent() {
+        final String key = "key";
+        final Object expectedValue = "expected";
+        sentryClient.addExtra(key, expectedValue);
+        EventBuilder eventBuilder = new EventBuilder();
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getExtra().get(key), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultReleaseDoesntOverrideEvent() {
+        final String expectedValue = "release";
+        sentryClient.setRelease("default");
+        EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withRelease(expectedValue);
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getRelease(), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultReleaseSetToEvent() {
+        final String expectedValue = "release";
+        sentryClient.setRelease(expectedValue);
+        EventBuilder eventBuilder = new EventBuilder();
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getRelease(), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultEnvironmentDoesntOverrideEvent() {
+        final String expectedValue = "env";
+        sentryClient.setEnvironment("default");
+        EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withEnvironment(expectedValue);
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getEnvironment(), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultEnvironmentSetToEvent() {
+        final String expectedValue = "env";
+        sentryClient.setEnvironment(expectedValue);
+        EventBuilder eventBuilder = new EventBuilder();
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getEnvironment(), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultServerNameDoesntOverrideEvent() {
+        final String expectedValue = "srv";
+        sentryClient.setServerName("default");
+        EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.withServerName(expectedValue);
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getServerName(), equalTo(expectedValue));
+    }
+
+    @Test
+    public void testDefaultServerNameSetToEvent() {
+        final String expectedValue = "srv";
+        sentryClient.setServerName(expectedValue);
+        EventBuilder eventBuilder = new EventBuilder();
+
+        Event event = sentryClient.buildEvent(eventBuilder);
+
+        assertThat(event.getServerName(), equalTo(expectedValue));
+    }
 }
