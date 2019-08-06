@@ -10,7 +10,10 @@ import javax.naming.NoInitialContextException;
 
 /**
  * Handles JNDI lookup of a provided key within the Sentry namespace.
+ *
+ * @deprecated Do not use this. Superseded by {@link io.sentry.config.provider.JndiConfigurationProvider}
  */
+@Deprecated
 public final class JndiLookup {
     /**
      * Lookup prefix for Sentry configuration in JNDI.

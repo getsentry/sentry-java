@@ -1,90 +1,123 @@
 package io.sentry.config;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import io.sentry.Sentry;
+import io.sentry.config.location.CompoundResourceLocator;
+import io.sentry.config.location.ConfigurationResourceLocator;
+import io.sentry.config.location.DefaultLocator;
+import io.sentry.config.location.EnvironmentBasedLocator;
+import io.sentry.config.location.SystemPropertiesBasedLocator;
+import io.sentry.config.provider.CompoundConfigurationProvider;
+import io.sentry.config.provider.ConfigurationProvider;
+import io.sentry.config.provider.EnvironmentConfigurationProvider;
+import io.sentry.config.provider.JndiConfigurationProvider;
+import io.sentry.config.provider.JndiSupport;
+import io.sentry.config.provider.LocatorBasedConfigurationProvider;
+import io.sentry.config.provider.SystemPropertiesConfigurationProvider;
 import io.sentry.dsn.Dsn;
-import io.sentry.util.Util;
+import io.sentry.util.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
  * Handle lookup of configuration keys by trying JNDI, System Environment, and Java System Properties.
+ *
+ * By default (when instantiated using the default constructor), the order of the configuration properties is
+ * the following:
+ *
+ * 1. JNDI, if available
+ * 2. Java System Properties
+ * 3. System Environment Variables
+ * 4. DSN options, if a non-null DSN is provided
+ * 5. Sentry properties file found in resources
  */
-public final class Lookup {
+public final class Lookup implements SentryConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(Lookup.class);
+    private static final Object INSTANCE_LOCK = new Object();
+    private static Lookup instance;
+
+    private final ConfigurationProvider highPriorityProvider;
+    private final ConfigurationProvider lowPriorityProvider;
 
     /**
-     * The filename of the Sentry configuration file.
+     * Constructs a new instance of Lookup with the default configuration providers.
      */
-    private static final String CONFIG_FILE_NAME = "sentry.properties";
-    /**
-     * Properties loaded from the Sentry configuration file, or null if no file was
-     * found or it failed to parse.
-     */
-    private static Properties configProps;
-    /**
-     * Whether or not to check the JNDI system. Exists so that JNDI checks can be disabled
-     * the first time the class is not found.
-     */
-    private static boolean checkJndi = true;
+    public Lookup() {
+        this(new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders()),
+                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders()));
+    }
 
-    static {
-        String filePath = getConfigFilePath();
-        InputStream input = null;
+    /**
+     * Constructs a new Lookup instance.
+     *
+     * The two configuration providers are used before and after an attempt to load the configuration property from
+     * the DSN in the {@link #get(String, Dsn)} method.
+     *
+     * @param highPriorityProvider the configuration provider that is consulted before the check in DSN
+     * @param lowPriorityProvider the configuration provider that is consulted only after the high priority one and
+     *                            the DSN
+     */
+    public Lookup(ConfigurationProvider highPriorityProvider, ConfigurationProvider lowPriorityProvider) {
+        this.highPriorityProvider = highPriorityProvider;
+        this.lowPriorityProvider = lowPriorityProvider;
+    }
+
+    private static List<ConfigurationResourceLocator> getDefaultResourceLocators() {
+        return asList(new SystemPropertiesBasedLocator(), new EnvironmentBasedLocator(), new DefaultLocator());
+    }
+
+    private static List<ConfigurationProvider> getDefaultHighPriorityConfigurationProviders() {
+        boolean jndiPresent = JndiSupport.isAvailable();
+
+        @SuppressWarnings("checkstyle:MagicNumber")
+        List<ConfigurationProvider> providers = new ArrayList<>(jndiPresent ? 3 : 2);
+
+        if (jndiPresent) {
+            providers.add(new JndiConfigurationProvider());
+        }
+
+        providers.add(new SystemPropertiesConfigurationProvider());
+        providers.add(new EnvironmentConfigurationProvider());
+
+        return providers;
+    }
+
+    private static List<ResourceLoader> getDefaultResourceLoaders() {
+        ResourceLoader sentryLoader = Sentry.getResourceLoader();
+
+        return sentryLoader == null
+                ? Arrays.asList(new FileResourceLoader(), new ContextClassLoaderResourceLoader())
+                : Arrays.asList(new FileResourceLoader(), sentryLoader, new ContextClassLoaderResourceLoader());
+    }
+
+    private static List<ConfigurationProvider> getDefaultLowPriorityConfigurationProviders() {
         try {
-            input = getInputStream(filePath);
+            return singletonList((ConfigurationProvider)
+                    new LocatorBasedConfigurationProvider(new CompoundResourceLoader(getDefaultResourceLoaders()),
+                            new CompoundResourceLocator(getDefaultResourceLocators()), Charset.defaultCharset()));
+        } catch (IOException e) {
+            logger.debug("Failed to instantiate resource locator-based configuration provider.", e);
+            return emptyList();
+        }
+    }
 
-            if (input != null) {
-                configProps = new Properties();
-                configProps.load(input);
-            } else {
-                logger.debug("Sentry configuration file not found in filesystem or classpath: '{}'.", filePath);
+    // for use in the deprecated methods
+    private static Lookup getDeprecatedInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new Lookup();
             }
-        } catch (Exception e) {
-            logger.error("Error loading Sentry configuration file '{}': ", filePath, e);
-        } finally {
-            Util.closeQuietly(input);
-        }
-    }
 
-    /**
-     * Hidden constructor for static utility class.
-     */
-    private Lookup() {
-
-    }
-
-    private static String getConfigFilePath() {
-        String filePath = System.getProperty("sentry.properties.file");
-
-        if (filePath == null) {
-            filePath = System.getenv("SENTRY_PROPERTIES_FILE");
-        }
-
-        if (filePath == null) {
-            filePath = CONFIG_FILE_NAME;
-        }
-
-        return filePath;
-    }
-
-    private static InputStream getInputStream(String filePath) throws FileNotFoundException {
-        File file = new File(filePath);
-        if (file.isFile() && file.canRead()) {
-            return new FileInputStream(file);
-        }
-
-        ResourceLoader resourceLoader = Sentry.getResourceLoader();
-        if (resourceLoader != null) {
-            return resourceLoader.getInputStream(filePath);
-        } else {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            return classLoader.getResourceAsStream(filePath);
+            return instance;
         }
     }
 
@@ -93,7 +126,10 @@ public final class Lookup {
      *
      * @param key name of configuration key, e.g. "dsn"
      * @return value of configuration key, if found, otherwise null
+     *
+     * @deprecated obtain an instance of this class and use {@link #get(String)}
      */
+    @Deprecated
     public static String lookup(String key) {
         return lookup(key, null);
     }
@@ -110,62 +146,47 @@ public final class Lookup {
      * @param key name of configuration key, e.g. "dsn"
      * @param dsn an optional DSN to retrieve options from
      * @return value of configuration key, if found, otherwise null
+     *
+     * @deprecated obtain an instance of this class and use {@link #get(String, Dsn)}
      */
+    @Deprecated
     public static String lookup(String key, Dsn dsn) {
-        String value = null;
-
-        if (checkJndi) {
-            // Try to obtain from JNDI
-            try {
-                // Check that JNDI is available (not available on Android) by loading InitialContext
-                Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
-                value = JndiLookup.jndiLookup(key);
-                if (value != null) {
-                    logger.debug("Found {}={} in JNDI.", key, value);
-                }
-            } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                logger.trace("JNDI is not available: " + e.getMessage());
-                checkJndi = false;
-            }
-        }
-
-        // Try to obtain from a Java System Property
-        if (value == null) {
-            value = System.getProperty("sentry." + key.toLowerCase());
-            if (value != null) {
-                logger.debug("Found {}={} in Java System Properties.", key, value);
-            }
-        }
-
-        // Try to obtain from a System Environment Variable
-        if (value == null) {
-            value = System.getenv("SENTRY_" + key.replace(".", "_").toUpperCase());
-            if (value != null) {
-                logger.debug("Found {}={} in System Environment Variables.", key, value);
-            }
-        }
-
-        // Try to obtain from the provided DSN, if set
-        if (value == null && dsn != null) {
-            value = dsn.getOptions().get(key);
-            if (value != null) {
-                logger.debug("Found {}={} in DSN.", key, value);
-            }
-        }
-
-        // Try to obtain from config file
-        if (value == null && configProps != null) {
-            value = configProps.getProperty(key);
-            if (value != null) {
-                logger.debug("Found {}={} in {}.", key, value, CONFIG_FILE_NAME);
-            }
-        }
-
-        if (value != null) {
-            return value.trim();
-        } else {
-            return null;
-        }
+        return getDeprecatedInstance().get(key, dsn);
     }
 
+    /**
+     * Attempt to lookup a configuration key, without checking any DSN options.
+     *
+     * @param key name of configuration key, e.g. "dsn"
+     * @return value of configuration key, if found, otherwise null
+     */
+    @Nullable
+    public String get(String key) {
+        return get(key, null);
+    }
+
+    /**
+     * Attempt to lookup a configuration key using either some internal means or from the DSN.
+     *
+     * @param key name of configuration key, e.g. "dsn"
+     * @param dsn an optional DSN to retrieve options from
+     * @return value of configuration key, if found, otherwise null
+     */
+    @Nullable
+    public String get(String key, Dsn dsn) {
+        String val = highPriorityProvider.getProperty(key);
+
+        if (val == null && dsn != null) {
+            val = dsn.getOptions().get(key);
+            if (val != null) {
+                logger.debug("Found {}={} in DSN.", key, val);
+            }
+        }
+
+        if (val == null) {
+            val = lowPriorityProvider.getProperty(key);
+        }
+
+        return val == null ? null : val.trim();
+    }
 }
