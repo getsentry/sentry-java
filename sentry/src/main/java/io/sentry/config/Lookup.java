@@ -13,7 +13,7 @@ import java.util.List;
 import io.sentry.Sentry;
 import io.sentry.config.location.CompoundResourceLocator;
 import io.sentry.config.location.ConfigurationResourceLocator;
-import io.sentry.config.location.DefaultLocator;
+import io.sentry.config.location.StaticFileLocator;
 import io.sentry.config.location.EnvironmentBasedLocator;
 import io.sentry.config.location.SystemPropertiesBasedLocator;
 import io.sentry.config.provider.CompoundConfigurationProvider;
@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Handle lookup of configuration keys by trying JNDI, System Environment, and Java System Properties.
  *
- * By default (when instantiated using the default constructor), the order of the configuration properties is
- * the following:
+ * By default (when instantiated using the default constructor), the order sources from which the configuration
+ * properties are obtained is the following:
  *
  * 1. JNDI, if available
  * 2. Java System Properties
@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * 4. DSN options, if a non-null DSN is provided
  * 5. Sentry properties file found in resources
  */
-public final class Lookup implements SentryConfiguration {
+public final class Lookup {
     private static final Logger logger = LoggerFactory.getLogger(Lookup.class);
     private static final Object INSTANCE_LOCK = new Object();
     private static Lookup instance;
@@ -72,7 +72,7 @@ public final class Lookup implements SentryConfiguration {
     }
 
     private static List<ConfigurationResourceLocator> getDefaultResourceLocators() {
-        return asList(new SystemPropertiesBasedLocator(), new EnvironmentBasedLocator(), new DefaultLocator());
+        return asList(new SystemPropertiesBasedLocator(), new EnvironmentBasedLocator(), new StaticFileLocator());
     }
 
     private static List<ConfigurationProvider> getDefaultHighPriorityConfigurationProviders() {

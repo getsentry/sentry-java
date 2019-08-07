@@ -12,7 +12,10 @@ import io.sentry.util.Nullable;
 /**
  * A configuration provider that loads the properties from a {@link ResourceLoader}.
  */
-public class ResourceLoaderConfigurationProvider extends PropertiesConfigurationProvider {
+public class ResourceLoaderConfigurationProvider implements ConfigurationProvider {
+    @Nullable
+    private final Properties properties;
+
     /**
      * Instantiates a new resource loader based configuration provider.
      * @param rl the resource loader used to load the configuration file
@@ -22,7 +25,7 @@ public class ResourceLoaderConfigurationProvider extends PropertiesConfiguration
      */
     public ResourceLoaderConfigurationProvider(ResourceLoader rl, @Nullable String filePath, Charset charset)
             throws IOException {
-        super(loadProperties(rl, filePath, charset));
+        properties = loadProperties(rl, filePath, charset);
     }
 
     @Nullable
@@ -43,5 +46,10 @@ public class ResourceLoaderConfigurationProvider extends PropertiesConfiguration
             props.load(rdr);
             return props;
         }
+    }
+
+    @Override
+    public String getProperty(String key) {
+        return properties == null ? null : properties.getProperty(key);
     }
 }
