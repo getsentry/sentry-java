@@ -148,32 +148,53 @@ public class SentryClient {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public void sendEvent(EventBuilder eventBuilder) {
-        if (!Util.isNullOrEmpty(release)) {
+        Event event = buildEvent(eventBuilder);
+        sendEvent(event);
+    }
+
+    /**
+     * Adds the SentryClient data into the builder without overriding existent data and builds the event.
+     * @param eventBuilder The event builder to potentially modify and to build the event.
+     * @return The event.
+     */
+    Event buildEvent(EventBuilder eventBuilder) {
+        Event workingEvent = eventBuilder.getEvent();
+
+        if (!Util.isNullOrEmpty(release) && workingEvent.getRelease() == null) {
             eventBuilder.withRelease(release.trim());
             if (!Util.isNullOrEmpty(dist)) {
                 eventBuilder.withDist(dist.trim());
             }
         }
 
-        if (!Util.isNullOrEmpty(environment)) {
+        if (!Util.isNullOrEmpty(environment) && workingEvent.getEnvironment() == null) {
             eventBuilder.withEnvironment(environment.trim());
         }
 
-        if (!Util.isNullOrEmpty(serverName)) {
+        if (!Util.isNullOrEmpty(serverName) && workingEvent.getServerName() == null) {
             eventBuilder.withServerName(serverName.trim());
         }
 
         for (Map.Entry<String, String> tagEntry : tags.entrySet()) {
-            eventBuilder.withTag(tagEntry.getKey(), tagEntry.getValue());
+            Map<String, String> workingTags = workingEvent.getTags();
+            String currentValue = workingTags.put(tagEntry.getKey(), tagEntry.getValue());
+            // Default tags should not override event-specific tags:
+            if (currentValue != null) {
+                workingTags.put(tagEntry.getKey(), currentValue);
+            }
         }
 
         for (Map.Entry<String, Object> extraEntry : extra.entrySet()) {
-            eventBuilder.withExtra(extraEntry.getKey(), extraEntry.getValue());
+            Map<String, Object> workingExtra = workingEvent.getExtra();
+            Object currentValue = workingExtra.put(extraEntry.getKey(), extraEntry.getValue());
+            // Default extra should not override event-specific extra:
+            if (currentValue != null) {
+                workingExtra.put(extraEntry.getKey(), currentValue);
+            }
         }
 
         runBuilderHelpers(eventBuilder);
-        Event event = eventBuilder.build();
-        sendEvent(event);
+        return eventBuilder.build();
     }
 
     /**
