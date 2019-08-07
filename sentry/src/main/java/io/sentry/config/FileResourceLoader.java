@@ -26,6 +26,9 @@ public class FileResourceLoader implements ResourceLoader {
                 logger.debug("Configuration file {} could not be found even though we just checked it can be read...",
                         filepath);
             }
+        } else {
+            logger.debug("The configuration file {} (which resolves to absolute path {}) doesn't exist, is not a file"
+                    + " or is not readable.", f, f.getAbsolutePath());
         }
 
         return null;
