@@ -1,6 +1,12 @@
+-e Version 1.7.27
+--------------
+
+-
+
 Version 1.7.26
 --------------
 
+- SentryClient fixed override of event data with default data #751
 - Introduce SentryOptions #751
 - Android Gradle Plugin: Allow replacing ResourceLoader #739
 - Android Gradle Plugin: Fix find dex task #743
