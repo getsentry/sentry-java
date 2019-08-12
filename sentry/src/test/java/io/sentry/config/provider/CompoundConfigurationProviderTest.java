@@ -2,7 +2,7 @@ package io.sentry.config.provider;
 
 import static java.util.Arrays.asList;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -11,15 +11,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.sentry.config.location.CompoundResourceLocator;
-import io.sentry.config.location.ConfigurationResourceLocator;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+
 
 public class CompoundConfigurationProviderTest {
 
     @Test
-    void testReturnsFirstNonNullValue() {
+    public void testReturnsFirstNonNullValue() {
         // given
         ConfigurationProvider first = mock(ConfigurationProvider.class);
         ConfigurationProvider second = mock(ConfigurationProvider.class);
@@ -33,7 +31,7 @@ public class CompoundConfigurationProviderTest {
         String val = compoundLocator.getProperty("prop");
 
         // then
-        Assertions.assertEquals("non-null", val);
+        assertEquals("non-null", val);
 
         verify(first, times(1)).getProperty(eq("prop"));
         verify(second, times(1)).getProperty(eq("prop"));

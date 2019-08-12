@@ -2,20 +2,20 @@ package io.sentry.config.provider;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 
 import io.sentry.config.ResourceLoader;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
-class ResourceLoaderConfigurationProviderTest {
+public class ResourceLoaderConfigurationProviderTest {
 
     @Test
-    void testLoadsPropertiesFromResourceLoader() throws Exception {
+    public void testLoadsPropertiesFromResourceLoader() throws Exception {
         // given
         ResourceLoader resourceLoader = mock(ResourceLoader.class);
 
@@ -37,7 +37,7 @@ class ResourceLoaderConfigurationProviderTest {
     }
 
     @Test
-    void testUnknownFileSuppliesNullPropertyValues() throws Exception {
+    public void testUnknownFileSuppliesNullPropertyValues() throws Exception {
         // given
         ResourceLoader resourceLoader = mock(ResourceLoader.class);
 

@@ -1,19 +1,19 @@
 package io.sentry.config.provider;
 
 import static io.sentry.config.provider.JndiConfigurationProvider.DEFAULT_JNDI_PREFIX;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import javax.naming.Context;
 
 import io.sentry.config.provider.JndiConfigurationProvider.JndiContextProvider;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
-class JndiConfigurationProviderTest {
+public class JndiConfigurationProviderTest {
 
     @Test
-    void testUsesJndiContextProvider() throws Exception {
+    public void testUsesJndiContextProvider() throws Exception {
         // given
         JndiContextProvider jndiProvider = mock(JndiContextProvider.class);
         Context jndiContext = mock(Context.class);
@@ -26,11 +26,11 @@ class JndiConfigurationProviderTest {
         String val = provider.getProperty("prop");
 
         // then
-        Assertions.assertEquals("val", val);
+        assertEquals("val", val);
     }
 
     @Test
-    void testUsesCustomJNDIRootPath() throws Exception {
+    public void testUsesCustomJNDIRootPath() throws Exception {
         // given
         JndiContextProvider jndiProvider = mock(JndiContextProvider.class);
         Context jndiContext = mock(Context.class);
@@ -43,6 +43,6 @@ class JndiConfigurationProviderTest {
         String val = provider.getProperty("prop");
 
         // then
-        Assertions.assertEquals("val", val);
+        assertEquals("val", val);
     }
 }

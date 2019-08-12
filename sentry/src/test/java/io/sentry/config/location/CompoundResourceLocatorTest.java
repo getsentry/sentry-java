@@ -2,19 +2,19 @@ package io.sentry.config.location;
 
 import static java.util.Arrays.asList;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
-class CompoundResourceLocatorTest {
+public class CompoundResourceLocatorTest {
 
     @Test
-    void testReturnsFirstNonNullValue() {
+    public void testReturnsFirstNonNullValue() {
         // given
         ConfigurationResourceLocator first = mock(ConfigurationResourceLocator.class);
         ConfigurationResourceLocator second = mock(ConfigurationResourceLocator.class);
@@ -28,7 +28,7 @@ class CompoundResourceLocatorTest {
         String val = compoundLocator.getConfigurationResourcePath();
 
         // then
-        Assertions.assertEquals("non-null", val);
+        assertEquals("non-null", val);
 
         verify(first, times(1)).getConfigurationResourcePath();
         verify(second, times(1)).getConfigurationResourcePath();
