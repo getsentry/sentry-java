@@ -11,6 +11,8 @@ import io.sentry.SentryClient;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
+import io.sentry.event.EventBuilder;
+import io.sentry.Sentry;
 import io.sentry.config.Lookup;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
@@ -36,6 +38,8 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Default Buffer directory name.
      */
     private static final String DEFAULT_BUFFER_DIR = "sentry-buffered-events";
+
+    private static volatile ANRWatchDog anrWatchDog;
 
     private Context ctx;
 
@@ -90,6 +94,23 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+
+        if (anrWatchDog == null)
+        {
+            anrWatchDog = new ANRWatchDog(1000); // 1 second to test it out
+            anrWatchDog.setANRListener(new ANRWatchDog.ANRListener() {
+                @Override public void onAppNotResponding(ANRError error) {
+                    EventBuilder builder = new EventBuilder();
+
+                    // TODO: Read 'error' data into 'builder'
+                    builder.withMessage(error.getMessage());
+
+                    // Pointing to static Sentry but not unhooking at all.
+                    Sentry.capture(builder);
+                }
+            });
+            anrWatchDog.start();
+        }
 
         return sentryClient;
     }
