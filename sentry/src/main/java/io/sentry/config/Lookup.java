@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Handle lookup of configuration keys by trying JNDI, System Environment, and Java System Properties.
  *
- * By default (when instantiated using the default constructor), the order sources from which the configuration
- * properties are obtained is the following:
+ * By default (when instantiated using the default constructor), the sources from which the configuration
+ * properties are consulted in the following order:
  *
  * 1. JNDI, if available
  * 2. Java System Properties
