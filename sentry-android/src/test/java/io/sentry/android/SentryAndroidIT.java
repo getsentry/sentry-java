@@ -28,7 +28,7 @@ public class SentryAndroidIT extends AndroidTest {
         });
 
         verifyProject1PostRequestCount(2);
-        verifyStoredEventCount(2);
+        verifyStoredEventCount(1);
     }
 
     @Test

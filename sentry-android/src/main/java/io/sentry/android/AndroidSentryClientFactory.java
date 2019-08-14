@@ -112,7 +112,6 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                     Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
                     builder.withSentryInterface(new ExceptionInterface(throwable));
 
-                    // Pointing to static Sentry but not unhooking at all.
                     Sentry.capture(builder);
                 }
             });
