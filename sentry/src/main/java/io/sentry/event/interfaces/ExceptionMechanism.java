@@ -12,6 +12,8 @@ public final class ExceptionMechanism implements Serializable {
 
     /**
      * The exception mechanism used in an exception.
+     * @param type The type of the mechanism.
+     * @param handled Whether the exception was handled or not.
      */
     public ExceptionMechanism(String type, boolean handled) {
         this.type = type;
