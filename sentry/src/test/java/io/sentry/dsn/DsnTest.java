@@ -21,6 +21,7 @@ public class DsnTest extends BaseTest {
     @BeforeMethod
     public void setUp() throws Exception {
         InitialContextFactory.context = mockContext;
+
     }
 
     @Test(expectedExceptions = InvalidDsnException.class)
