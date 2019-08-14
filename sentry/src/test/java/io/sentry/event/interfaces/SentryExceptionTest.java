@@ -64,19 +64,42 @@ public class SentryExceptionTest extends BaseTest {
     }
 
     @Test
-    public void exceptionMechanismThrowerIsUnwrapped() throws Exception {
+    public void exceptionMechanismThrowerIsUnwrappedViaConstructor() throws Exception {
 
         Throwable throwableMock = mock(Throwable.class);
         ExceptionMechanism mechanism = new ExceptionMechanism("type", true);
         String expectedMessage = "message";
         when(throwableMock.getMessage()).thenReturn(expectedMessage);
-        StackTraceElement[] stackTrace = new StackTraceElement[] { new StackTraceElement("c", "m", "f", 1) };
+        StackTraceElement expectedStackTraceElement = new StackTraceElement("c", "m", "f", 1);
+        StackTraceElement[] stackTrace = new StackTraceElement[] { expectedStackTraceElement };
         when(throwableMock.getStackTrace()).thenReturn(stackTrace);
         ExceptionMechanismThrowable wrapper = new ExceptionMechanismThrowable(mechanism, throwableMock);
 
         // Act
         SentryException target = new SentryException(wrapper, new StackTraceElement[0]);
 
+        assertEquals(expectedStackTraceElement.getFileName(), target.getStackTraceInterface().getStackTrace()[0].getFileName());
+        assertEquals(expectedMessage, target.getExceptionMessage());
+        assertSame(mechanism, target.getExceptionMechanism());
+    }
+
+    @Test
+    public void exceptionMechanismThrowerIsUnwrappedViaExtractExceptionQueue() throws Exception {
+
+        Throwable throwableMock = mock(Throwable.class);
+        ExceptionMechanism mechanism = new ExceptionMechanism("type", true);
+        String expectedMessage = "message";
+        when(throwableMock.getMessage()).thenReturn(expectedMessage);
+        StackTraceElement expectedStackTraceElement = new StackTraceElement("c", "m", "f", 1);
+        StackTraceElement[] stackTrace = new StackTraceElement[] { expectedStackTraceElement };
+        when(throwableMock.getStackTrace()).thenReturn(stackTrace);
+        ExceptionMechanismThrowable wrapper = new ExceptionMechanismThrowable(mechanism, throwableMock);
+
+        // Act
+        Deque<SentryException> exceptionDeque = SentryException.extractExceptionQueue(wrapper);
+        SentryException target = exceptionDeque.getFirst();
+
+        assertEquals(expectedStackTraceElement.getFileName(), target.getStackTraceInterface().getStackTrace()[0].getFileName());
         assertEquals(expectedMessage, target.getExceptionMessage());
         assertSame(mechanism, target.getExceptionMechanism());
     }

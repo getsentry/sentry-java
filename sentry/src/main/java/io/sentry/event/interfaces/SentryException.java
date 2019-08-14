@@ -36,6 +36,7 @@ public final class SentryException implements Serializable {
             ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable) throwable;
             this.exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
             throwable = exceptionMechanismThrowable.getThrowable();
+            childExceptionStackTrace = throwable.getStackTrace();
         } else {
             this.exceptionMechanism = null;
         }

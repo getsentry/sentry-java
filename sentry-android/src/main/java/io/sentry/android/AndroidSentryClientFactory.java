@@ -18,6 +18,9 @@ import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
+import io.sentry.event.interfaces.ExceptionMechanism;
+import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.ExceptionMechanismThrowable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -103,7 +106,11 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                     EventBuilder builder = new EventBuilder();
 
                     // TODO: Read 'error' data into 'builder'
-                    builder.withMessage(error.getMessage());
+//                    builder.withMessage(error.getMessage());
+
+                    ExceptionMechanism mechanism = new ExceptionMechanism("ANR", false);
+                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
+                    builder.withSentryInterface(new ExceptionInterface(throwable));
 
                     // Pointing to static Sentry but not unhooking at all.
                     Sentry.capture(builder);
