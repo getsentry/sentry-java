@@ -10,6 +10,12 @@ import org.testng.annotations.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+
 public class SentryExceptionTest extends BaseTest {
 
     @Injectable
@@ -56,6 +62,24 @@ public class SentryExceptionTest extends BaseTest {
 
         Deque<SentryException> exceptions = SentryException.extractExceptionQueue(mockInnerClassThrowable);
         assertThat(exceptions.getFirst().getExceptionClassName(), is("SentryExceptionTest$InnerClassThrowable"));
+    }
+
+    @Test
+    public void exceptionMechanismThrowerIsUnwrapped() throws Exception {
+
+        Throwable throwableMock = mock(Throwable.class);
+        ExceptionMechanism mechanism = new ExceptionMechanism("type", true);
+        String expectedMessage = "message";
+        when(throwableMock.getMessage()).thenReturn(expectedMessage);
+        StackTraceElement[] stackTrace = new StackTraceElement[] { new StackTraceElement("c", "m", "f", 1) };
+        when(throwableMock.getStackTrace()).thenReturn(stackTrace);
+        ExceptionMechanismThrowable wrapper = new ExceptionMechanismThrowable(mechanism, throwableMock);
+
+        // Act
+        SentryException target = new SentryException(wrapper, new StackTraceElement[0]);
+
+        assertEquals(expectedMessage, target.getExceptionMessage());
+        assertSame(mechanism, target.getExceptionMechanism());
     }
 
     private static final class InnerClassThrowable extends Throwable {

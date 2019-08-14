@@ -19,6 +19,7 @@ public final class SentryException implements Serializable {
     private final String exceptionClassName;
     private final String exceptionPackageName;
     private final StackTraceInterface stackTraceInterface;
+    private final ExceptionMechanism exceptionMechanism;
 
     /**
      * Creates a Sentry exception based on a Java Throwable.
@@ -30,6 +31,15 @@ public final class SentryException implements Serializable {
      * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
      */
     public SentryException(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
+
+        if (throwable.getClass() == ExceptionMechanismThrowable.class) {
+            ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable)throwable;
+            this.exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
+            throwable = exceptionMechanismThrowable.getThrowable();
+        } else {
+            this.exceptionMechanism = null;
+        }
+
         Package exceptionPackage = throwable.getClass().getPackage();
         String fullClassName = throwable.getClass().getName();
 
@@ -60,10 +70,33 @@ public final class SentryException implements Serializable {
                            String exceptionClassName,
                            String exceptionPackageName,
                            StackTraceInterface stackTraceInterface) {
+
+        this(exceptionMessage,
+                exceptionClassName,
+                exceptionPackageName,
+                stackTraceInterface,
+                null);
+    }
+
+    /**
+     * Creates a Sentry exception.
+     *
+     * @param exceptionMessage     message of the exception.
+     * @param exceptionClassName   exception's class name (simple name).
+     * @param exceptionPackageName exception's package name.
+     * @param stackTraceInterface  {@code StackTraceInterface} holding the StackTrace information of the exception.
+     */
+    public SentryException(String exceptionMessage,
+                           String exceptionClassName,
+                           String exceptionPackageName,
+                           StackTraceInterface stackTraceInterface,
+                           ExceptionMechanism exceptionMechanism) {
+
         this.exceptionMessage = exceptionMessage;
         this.exceptionClassName = exceptionClassName;
         this.exceptionPackageName = exceptionPackageName;
         this.stackTraceInterface = stackTraceInterface;
+        this.exceptionMechanism = exceptionMechanism;
     }
 
     /**
@@ -112,12 +145,17 @@ public final class SentryException implements Serializable {
         return stackTraceInterface;
     }
 
+    public ExceptionMechanism getExceptionMechanism() {
+        return exceptionMechanism;
+    }
+
     @Override
     public String toString() {
         return "SentryException{"
             + "exceptionMessage='" + exceptionMessage + '\''
             + ", exceptionClassName='" + exceptionClassName + '\''
             + ", exceptionPackageName='" + exceptionPackageName + '\''
+            + ", exceptionMechanism='" + exceptionMechanism + '\''
             + ", stackTraceInterface=" + stackTraceInterface
             + '}';
     }
@@ -141,7 +179,11 @@ public final class SentryException implements Serializable {
             return false;
         }
         if (exceptionPackageName != null ? !exceptionPackageName.equals(that.exceptionPackageName)
-            : that.exceptionPackageName != null) {
+                : that.exceptionPackageName != null) {
+            return false;
+        }
+        if (exceptionMechanism != null ? !exceptionMechanism.equals(that.exceptionMechanism)
+                : that.exceptionMechanism != null) {
             return false;
         }
 
