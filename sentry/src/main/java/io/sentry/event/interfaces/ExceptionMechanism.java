@@ -1,11 +1,6 @@
 package io.sentry.event.interfaces;
 
-import io.sentry.jvmti.FrameCache;
 import java.io.Serializable;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Class describing an exception's mechanism.
@@ -16,16 +11,25 @@ public final class ExceptionMechanism implements Serializable {
     private final boolean handled;
 
     /**
+     * The exception mechanism used in an exception.
      */
     public ExceptionMechanism(String type, boolean handled) {
         this.type = type;
         this.handled = handled;
     }
 
+    /**
+     * The type of the mechanism.
+     * @return The type of the mechanism.
+     */
     public String getType() {
         return type;
     }
 
+    /**
+     * Whether the exception was handled or not.
+     * @return True if the exception was handled, otherwise false.
+     */
     public boolean isHandled() {
         return handled;
     }

@@ -15,7 +15,6 @@ import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
 public class SentryExceptionTest extends BaseTest {
 
     @Injectable

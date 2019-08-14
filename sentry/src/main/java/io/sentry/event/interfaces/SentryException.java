@@ -33,7 +33,7 @@ public final class SentryException implements Serializable {
     public SentryException(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
 
         if (throwable.getClass() == ExceptionMechanismThrowable.class) {
-            ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable)throwable;
+            ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable) throwable;
             this.exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
             throwable = exceptionMechanismThrowable.getThrowable();
         } else {
@@ -85,6 +85,7 @@ public final class SentryException implements Serializable {
      * @param exceptionClassName   exception's class name (simple name).
      * @param exceptionPackageName exception's package name.
      * @param stackTraceInterface  {@code StackTraceInterface} holding the StackTrace information of the exception.
+     * @param exceptionMechanism  {@code exceptionMechanism} used for this exception.
      */
     public SentryException(String exceptionMessage,
                            String exceptionClassName,
