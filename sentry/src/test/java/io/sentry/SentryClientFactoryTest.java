@@ -22,7 +22,7 @@ public class SentryClientFactoryTest extends BaseTest {
     public void testSentryClientForFactoryNameSucceedsIfFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=io.sentry.TestFactory";
         SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
-        assertThat(sentryClient.getRelease(), is("312407214120"));
+        assertThat(sentryClient.getRelease(), is(TestFactory.RELEASE));
     }
 
     @Test

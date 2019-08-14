@@ -2,6 +2,8 @@ package io.sentry.config;
 
 import java.io.InputStream;
 
+import io.sentry.util.Nullable;
+
 /**
  * Interface for platform-specific resource loaders.
  */
@@ -13,5 +15,5 @@ public interface ResourceLoader {
      * @param filepath  Path of the resource to open
      * @return  Resource's input stream or null
      */
-    InputStream getInputStream(String filepath);
+    @Nullable InputStream getInputStream(String filepath);
 }
