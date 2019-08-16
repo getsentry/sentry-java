@@ -98,11 +98,22 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
 
-        if (anrWatchDog == null)
+        boolean enableAnrTracking = "true".equalsIgnoreCase(Lookup.lookup("anr.enable", dsn));
+        Log.d(TAG, "ANR is='" + String.valueOf(enableAnrTracking) + "'");
+        if (enableAnrTracking && anrWatchDog == null)
         {
-            anrWatchDog = new ANRWatchDog(1000); // 1 second to test it out
+            String timeIntervalMillsConfig = Lookup.lookup("anr.timeoutIntervalMills", dsn);
+            int timeoutIntervalMills = timeIntervalMillsConfig != null
+                    ? Integer.parseInt(timeIntervalMillsConfig)
+                    : 5000;
+
+            Log.d(TAG, "ANR timeoutIntervalMills is='" + String.valueOf(timeoutIntervalMills) + "'");
+
+            anrWatchDog = new ANRWatchDog(timeoutIntervalMills);
             anrWatchDog.setANRListener(new ANRWatchDog.ANRListener() {
                 @Override public void onAppNotResponding(ANRError error) {
+                    Log.d(TAG, "ANR triggered='" + error.getMessage() + "'");
+
                     EventBuilder builder = new EventBuilder();
 
                     // TODO: Read 'error' data into 'builder'
