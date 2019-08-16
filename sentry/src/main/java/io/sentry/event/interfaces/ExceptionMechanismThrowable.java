@@ -1,7 +1,7 @@
 package io.sentry.event.interfaces;
 
 /**
- * A throwable decorator that holds an {@link ExceptionMechanism}. related to the decorated {@link Throwable}.
+ * A throwable decorator that holds an {@link ExceptionMechanism} related to the decorated {@link Throwable}.
  */
 public final class ExceptionMechanismThrowable extends Throwable {
 

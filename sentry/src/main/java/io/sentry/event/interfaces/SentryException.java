@@ -31,15 +31,23 @@ public final class SentryException implements Serializable {
      * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
      */
     public SentryException(Throwable throwable, StackTraceElement[] childExceptionStackTrace) {
+        this(throwable, childExceptionStackTrace, null);
+    }
 
-        if (throwable.getClass() == ExceptionMechanismThrowable.class) {
-            ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable) throwable;
-            this.exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
-            throwable = exceptionMechanismThrowable.getThrowable();
-            childExceptionStackTrace = throwable.getStackTrace();
-        } else {
-            this.exceptionMechanism = null;
-        }
+    /**
+     * Creates a Sentry exception based on a Java Throwable.
+     * <p>
+     * The {@code childExceptionStackTrace} parameter is used to define the common frames with the child exception
+     * (Exception caused by {@code throwable}).
+     *
+     * @param throwable                Java exception to send to Sentry.
+     * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
+     * @param exceptionMechanism The {@link ExceptionMechanism} of the {@code throwable}.
+     */
+    public SentryException(
+            Throwable throwable,
+            StackTraceElement[] childExceptionStackTrace,
+            ExceptionMechanism exceptionMechanism) {
 
         Package exceptionPackage = throwable.getClass().getPackage();
         String fullClassName = throwable.getClass().getName();
@@ -57,6 +65,8 @@ public final class SentryException implements Serializable {
             throwable.getStackTrace(),
             childExceptionStackTrace,
             FrameCache.get(throwable));
+
+        this.exceptionMechanism = exceptionMechanism;
     }
 
     /**
@@ -113,10 +123,19 @@ public final class SentryException implements Serializable {
         Deque<SentryException> exceptions = new ArrayDeque<>();
         Set<Throwable> circularityDetector = new HashSet<>();
         StackTraceElement[] childExceptionStackTrace = new StackTraceElement[0];
+        ExceptionMechanism exceptionMechanism = null;
 
         //Stack the exceptions to send them in the reverse order
         while (throwable != null && circularityDetector.add(throwable)) {
-            exceptions.add(new SentryException(throwable, childExceptionStackTrace));
+            if (throwable.getClass() == ExceptionMechanismThrowable.class) {
+                ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable) throwable;
+                exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
+                throwable = exceptionMechanismThrowable.getThrowable();
+            } else {
+                exceptionMechanism = null;
+            }
+
+            exceptions.add(new SentryException(throwable, childExceptionStackTrace, exceptionMechanism));
             childExceptionStackTrace = throwable.getStackTrace();
             throwable = throwable.getCause();
         }
