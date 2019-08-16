@@ -110,17 +110,16 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
             Log.d(TAG, "ANR timeoutIntervalMills is='" + String.valueOf(timeoutIntervalMills) + "'");
 
             anrWatchDog = new ANRWatchDog(timeoutIntervalMills);
+            anrWatchDog.setReportMainThreadOnly();
             anrWatchDog.setANRListener(new ANRWatchDog.ANRListener() {
                 @Override public void onAppNotResponding(ANRError error) {
                     Log.d(TAG, "ANR triggered='" + error.getMessage() + "'");
 
                     EventBuilder builder = new EventBuilder();
-
-                    // TODO: Read 'error' data into 'builder'
-//                    builder.withMessage(error.getMessage());
+                    builder.withMessage(error.getMessage());
 
                     ExceptionMechanism mechanism = new ExceptionMechanism("ANR", false);
-                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
+                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error.getCause());
                     builder.withSentryInterface(new ExceptionInterface(throwable));
 
                     Sentry.capture(builder);
