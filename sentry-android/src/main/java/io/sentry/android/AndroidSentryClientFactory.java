@@ -100,12 +100,13 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
         boolean enableAnrTracking = "true".equalsIgnoreCase(Lookup.lookup("anr.enable", dsn));
         Log.d(TAG, "ANR is='" + String.valueOf(enableAnrTracking) + "'");
-        if (enableAnrTracking && anrWatchDog == null)
-        {
+        if (enableAnrTracking && anrWatchDog == null) {
             String timeIntervalMillsConfig = Lookup.lookup("anr.timeoutIntervalMills", dsn);
             int timeoutIntervalMills = timeIntervalMillsConfig != null
                     ? Integer.parseInt(timeIntervalMillsConfig)
+                    //CHECKSTYLE.OFF: MagicNumber
                     : 5000;
+                    //CHECKSTYLE.ON: MagicNumber
 
             Log.d(TAG, "ANR timeoutIntervalMills is='" + String.valueOf(timeoutIntervalMills) + "'");
 
