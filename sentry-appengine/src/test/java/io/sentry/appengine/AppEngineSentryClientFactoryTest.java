@@ -1,5 +1,6 @@
 package io.sentry.appengine;
 
+import io.sentry.config.Lookup;
 import mockit.*;
 import io.sentry.appengine.connection.AppEngineAsyncConnection;
 import io.sentry.connection.Connection;
@@ -19,6 +20,8 @@ public class AppEngineSentryClientFactoryTest {
     private Connection mockConnection;
     @Injectable
     private Dsn mockDsn;
+    @Injectable
+    private Lookup mockLookup;
 
     @Test
     public void asyncConnectionCreatedByAppEngineSentryClientFactoryIsForAppEngine() throws Exception {
@@ -74,8 +77,8 @@ public class AppEngineSentryClientFactoryTest {
             @Mocked final AppEngineAsyncConnection mockAppEngineAsyncConnection,
             @Injectable("queueName") final String mockQueueName) throws Exception {
         new NonStrictExpectations() {{
-            mockDsn.getOptions();
-            result = Collections.singletonMap(AppEngineSentryClientFactory.QUEUE_NAME, mockQueueName);
+            mockLookup.get(AppEngineSentryClientFactory.QUEUE_NAME, (Dsn) any);
+            result = mockQueueName;
         }};
 
         appEngineSentryClientFactory.createAsyncConnection(mockDsn, mockConnection);

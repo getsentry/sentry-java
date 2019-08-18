@@ -17,7 +17,7 @@ public class SentryIT extends BaseIT {
         verifyProject1PostRequestCount(0);
         verifyStoredEventCount(0);
 
-        SentryClient client = SentryClientFactory.sentryClient();
+        SentryClient client = SentryOptions.defaults().createClient();
         client.sendMessage("Test");
 
         verifyProject1PostRequestCount(1);
@@ -33,7 +33,7 @@ public class SentryIT extends BaseIT {
         verifyProject1PostRequestCount(0);
         verifyStoredEventCount(0);
 
-        SentryClient client = SentryClientFactory.sentryClient();
+        SentryClient client = SentryOptions.defaults().createClient();
         client.sendMessage("Test");
 
         verifyProject1PostRequestCount(1);
@@ -49,7 +49,7 @@ public class SentryIT extends BaseIT {
         verifyProject1PostRequestCount(0);
         verifyStoredEventCount(0);
 
-        SentryClient client = SentryClientFactory.sentryClient();
+        SentryClient client = SentryOptions.defaults().createClient();
         client.sendMessage("Test");
 
         verifyProject1PostRequestCount(1);

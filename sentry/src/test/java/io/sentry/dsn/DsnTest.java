@@ -1,6 +1,7 @@
 package io.sentry.dsn;
 
 import io.sentry.BaseTest;
+import io.sentry.SentryOptions;
 import io.sentry.config.JndiLookup;
 import mockit.Expectations;
 import mockit.Mocked;
@@ -137,7 +138,7 @@ public class DsnTest extends BaseTest {
             result = dsn;
         }};
 
-        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
+        assertThat(Dsn.dsnFrom(SentryOptions.getDefaultLookup()), is(Dsn.DEFAULT_DSN));
     }
 
     @Test(expectedExceptions = InvalidDsnException.class)

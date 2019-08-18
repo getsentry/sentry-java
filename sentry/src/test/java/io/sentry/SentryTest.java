@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.config.Lookup;
 import io.sentry.connection.Connection;
 import io.sentry.connection.HttpConnection;
 import io.sentry.connection.NoopConnection;
@@ -110,14 +111,14 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitNoDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init();
+        SentryClient sentryClient = Sentry.init(SentryOptions.defaults());
         Object connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(NoopConnection.class));
     }
 
     @Test
     public void testInitNullDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init((String) null);
+        SentryClient sentryClient = Sentry.init(SentryOptions.defaults());
         NoopConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(NoopConnection.class));
     }
@@ -131,7 +132,8 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false");
+        SentryClient sentryClient = Sentry.init(SentryOptions.from(SentryOptions.getDefaultLookup(),
+                "http://public:private@localhost:4567/1?async=false"));
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
 
@@ -147,7 +149,9 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsnAndFactory() throws Exception {
-        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false", new DefaultSentryClientFactory());
+        SentryClient sentryClient = Sentry.init(new SentryOptions(SentryOptions.getDefaultLookup(),
+                new Dsn("http://public:private@localhost:4567/1?async=false"),
+                new DefaultSentryClientFactory(SentryOptions.getDefaultLookup())));
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
 

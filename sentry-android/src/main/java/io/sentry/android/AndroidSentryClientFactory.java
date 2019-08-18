@@ -50,8 +50,10 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Construct an AndroidSentryClientFactory using the base Context from the specified Android Application.
      *
      * @param app Android Application
+     * @param lookup the lookup for locating the configuration
      */
-    public AndroidSentryClientFactory(Application app) {
+    public AndroidSentryClientFactory(Application app, Lookup lookup) {
+        super(lookup);
         Log.d(TAG, "Construction of Android Sentry from Android Application.");
 
         this.ctx = app.getApplicationContext();
@@ -61,8 +63,10 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Construct an AndroidSentryClientFactory using the specified Android Context.
      *
      * @param ctx Android Context.
+     * @param lookup the lookup for locating the configuration
      */
-    public AndroidSentryClientFactory(Context ctx) {
+    public AndroidSentryClientFactory(Context ctx, Lookup lookup) {
+        super(lookup);
         Log.d(TAG, "Construction of Android Sentry from Android Context.");
 
         this.ctx = ctx.getApplicationContext();
@@ -85,7 +89,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
             Log.w(TAG, "*** Couldn't find a suitable DSN, Sentry operations will do nothing!"
                 + " See documentation: https://docs.sentry.io/clients/java/modules/android/ ***");
         } else if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
-            String async = Lookup.lookup(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
+            String async = lookup.get(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
             if (async != null && async.equalsIgnoreCase("false")) {
                 throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
                     + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your options.");
@@ -98,10 +102,10 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
 
-        boolean enableAnrTracking = "true".equalsIgnoreCase(Lookup.lookup("anr.enable", dsn));
+        boolean enableAnrTracking = "true".equalsIgnoreCase(lookup.get("anr.enable", dsn));
         Log.d(TAG, "ANR is='" + String.valueOf(enableAnrTracking) + "'");
         if (enableAnrTracking && anrWatchDog == null) {
-            String timeIntervalMsConfig = Lookup.lookup("anr.timeoutIntervalMs", dsn);
+            String timeIntervalMsConfig = lookup.get("anr.timeoutIntervalMs", dsn);
             int timeoutIntervalMs = timeIntervalMsConfig != null
                     ? Integer.parseInt(timeIntervalMsConfig)
                     //CHECKSTYLE.OFF: MagicNumber
@@ -154,7 +158,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     @Override
     protected Buffer getBuffer(Dsn dsn) {
         File bufferDir;
-        String bufferDirOpt = Lookup.lookup(BUFFER_DIR_OPTION, dsn);
+        String bufferDirOpt = lookup.get(BUFFER_DIR_OPTION, dsn);
         if (bufferDirOpt != null) {
             bufferDir = new File(bufferDirOpt);
         } else {

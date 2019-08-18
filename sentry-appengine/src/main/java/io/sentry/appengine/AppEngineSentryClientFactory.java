@@ -30,6 +30,10 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
      */
     public static final String CONNECTION_IDENTIFIER = "sentry.async.gae.connectionid";
 
+    public AppEngineSentryClientFactory(Lookup lookup) {
+        super(lookup);
+    }
+
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
         SentryClient sentryClientInstance = super.createSentryClient(dsn);
@@ -47,7 +51,7 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
      */
     @Override
     protected Connection createAsyncConnection(Dsn dsn, Connection connection) {
-        String connectionIdentifier = Lookup.lookup(CONNECTION_IDENTIFIER, dsn);
+        String connectionIdentifier = lookup.get(CONNECTION_IDENTIFIER, dsn);
         if (connectionIdentifier == null) {
             connectionIdentifier = AppEngineSentryClientFactory.class.getCanonicalName()
                 + dsn + SystemProperty.version.get();
@@ -55,7 +59,7 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
 
         AppEngineAsyncConnection asyncConnection = new AppEngineAsyncConnection(connectionIdentifier, connection);
 
-        String queueName = Lookup.lookup(QUEUE_NAME, dsn);
+        String queueName = lookup.get(QUEUE_NAME, dsn);
         if (queueName != null) {
             asyncConnection.setQueue(queueName);
         }

@@ -1,5 +1,6 @@
 package io.sentry.dsn;
 
+import io.sentry.SentryOptions;
 import io.sentry.config.Lookup;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
@@ -76,13 +77,26 @@ public class Dsn {
      * Looks for a DSN configuration within JNDI, the System environment or Java properties.
      *
      * @return a DSN configuration or null if nothing could be found.
+     *
+     * @deprecated use {@link #dsnFrom(Lookup)} instead (kept because this is heavily used in tests)
      */
+    @Deprecated
     public static String dsnLookup() {
-        String dsn = Lookup.lookup("dsn");
+        return dsnFrom(SentryOptions.getDefaultLookup());
+    }
+
+    /**
+     * Looks for the DSN configuration in the provided configuration lookup.
+     *
+     * @param lookup the lookup used to find the DSN configuration
+     * @return the DSN URI or the {@link #DEFAULT_DSN} if none found in the lookup
+     */
+    public static String dsnFrom(Lookup lookup) {
+        String dsn = lookup.get("dsn");
 
         if (Util.isNullOrEmpty(dsn)) {
             // check if the user accidentally set "dns" instead of "dsn"
-            dsn = Lookup.lookup("dns");
+            dsn = lookup.get("dns");
         }
 
         if (Util.isNullOrEmpty(dsn)) {

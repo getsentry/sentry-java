@@ -7,8 +7,6 @@ import java.util.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-import io.sentry.connection.NoopConnection;
-
 public class DefaultSentryClientFactoryTest extends BaseTest {
     @Test
     public void testFieldsFromDsn() throws Exception {
@@ -23,7 +21,7 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         String dsn = String.format("https://user:pass@example.com/1?" +
             "release=%s&dist=%s&environment=%s&servername=%s&tags=%s&extratags=%s&extra=%s",
             release, dist, environment, serverName, tags, extraTags, extras);
-        SentryClient sentryClient = DefaultSentryClientFactory.sentryClient(dsn);
+        SentryClient sentryClient = SentryOptions.defaults(dsn).createClient();
 
         assertThat(sentryClient.getRelease(), is(release));
         assertThat(sentryClient.getDist(), is(dist));
@@ -51,7 +49,7 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         String badTags = "foo:";
 
         String dsn = String.format("https://user:pass@example.com/1?tags=%s", badTags);
-        SentryClient sentryClient = DefaultSentryClientFactory.sentryClient(dsn);
+        SentryClient sentryClient = SentryOptions.defaults(dsn).createClient();
 
         assertThat(sentryClient, isA(SentryClient.class));
         assertThat(sentryClient.getContext(), notNullValue());

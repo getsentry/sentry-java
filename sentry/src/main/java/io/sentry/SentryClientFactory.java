@@ -1,80 +1,80 @@
 package io.sentry;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
+import io.sentry.util.Nullable;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Factory in charge of creating {@link SentryClient} instances.
+ * Factory in charge of creating {@link SentryClient} instances. The implementations should have a constructor with a
+ * single parameter of type {@link Lookup}.
+ *
+ * @see SentryClientFactory#instantiateFrom(Lookup, Dsn)
  */
 public abstract class SentryClientFactory {
     private static final Logger logger = LoggerFactory.getLogger(SentryClientFactory.class);
 
     /**
-     * Creates an instance of Sentry by discovering the DSN.
+     * Creates a new instance of the configured implementation of the Sentry client factory.
      *
-     * @return an instance of Sentry.
-     */
-    public static SentryClient sentryClient() {
-        return sentryClient(null, null);
-    }
-
-    /**
-     * Creates an instance of Sentry using the provided DSN.
+     * <p>The provided parameters (lookup and dsn) are used to get the class name of the client factory (by looking
+     * for the configuration parameter called "factory"). If no such configuration parameter exists an instance of
+     * the {@link DefaultSentryClientFactory} initialized with the provided lookup is returned.
      *
-     * @param dsn Data Source Name of the Sentry server.
-     * @return an instance of Sentry.
-     */
-    public static SentryClient sentryClient(String dsn) {
-        return sentryClient(dsn, null);
-    }
-
-    /**
-     * Creates an instance of Sentry using the provided DSN and the specified factory.
+     * <p>If such configuration parameter exists, a new instance of the configured class is created by first looking
+     * for a constructor accepting a single parameter of type {@link Lookup} or using a default constructor if no such
+     * constructor is found. If for any reason such instantiation fails, {@code null} is returned.
      *
-     * @param dsn Data Source Name of the Sentry server.
-     * @param sentryClientFactory SentryClientFactory instance to use, or null to do a config lookup.
-     * @return SentryClient instance, or null if one couldn't be constructed.
+     * @param lookup the lookup instance to use for reading the configuration
+     * @param dsn the DSN instance
+     * @return the Sentry client factory or null if not available
      */
-    public static SentryClient sentryClient(String dsn, SentryClientFactory sentryClientFactory) {
-        Dsn realDsn = resolveDsn(dsn);
+    public static @Nullable SentryClientFactory instantiateFrom(Lookup lookup, Dsn dsn) {
+        Dsn realDsn = dsnOrLookedUp(dsn, lookup);
 
-        // If the caller didn't pass a factory, try to look one up
-        if (sentryClientFactory == null) {
-            String sentryClientFactoryName = Lookup.lookup("factory", realDsn);
-            if (Util.isNullOrEmpty(sentryClientFactoryName)) {
-                // no name specified, use the default factory
-                sentryClientFactory = new DefaultSentryClientFactory();
-            } else {
-                // attempt to construct the user specified factory class
-                Class<? extends SentryClientFactory> factoryClass = null;
+        SentryClientFactory sentryClientFactory;
+
+        String sentryClientFactoryName = lookup.get("factory", realDsn);
+        if (Util.isNullOrEmpty(sentryClientFactoryName)) {
+            // no name specified, use the default factory
+            sentryClientFactory = new DefaultSentryClientFactory(lookup);
+        } else {
+            // attempt to construct the user specified factory class
+            try {
+                Class<?> factoryClass = Class.forName(sentryClientFactoryName);
+
+                Constructor<?> ctor = null;
                 try {
-                    factoryClass = (Class<? extends SentryClientFactory>) Class.forName(sentryClientFactoryName);
-                    sentryClientFactory = factoryClass.newInstance();
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-                    logger.error("Error creating SentryClient using factory class: '"
-                        + sentryClientFactoryName + "'.", e);
-                    return null;
+                    ctor = factoryClass.getConstructor(Lookup.class);
+                    sentryClientFactory = (SentryClientFactory) ctor.newInstance(lookup);
+                } catch (NoSuchMethodException e) {
+                    sentryClientFactory = (SentryClientFactory) factoryClass.newInstance();
+                } catch (InvocationTargetException e) {
+                    logger.warn("Failed to instantiate SentryClientFactory using " + ctor + ". Falling back to using"
+                            + " the default constructor, if any.");
+                    sentryClientFactory = (SentryClientFactory) factoryClass.newInstance();
                 }
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                logger.error("Error creating SentryClient using factory class: '"
+                        + sentryClientFactoryName + "'.", e);
+                return null;
             }
         }
 
-        return sentryClientFactory.createSentryClient(realDsn);
+        return sentryClientFactory;
     }
 
-    private static Dsn resolveDsn(String dsn) {
-        try {
-            if (Util.isNullOrEmpty(dsn)) {
-                dsn = Dsn.dsnLookup();
-            }
-
-            return new Dsn(dsn);
-        } catch (Exception e) {
-            logger.error("Error creating valid DSN from: '{}'.", dsn, e);
-            throw e;
+    private static Dsn dsnOrLookedUp(@Nullable Dsn dsn, Lookup lookup) {
+        if (dsn == null) {
+            dsn = new Dsn(Dsn.dsnFrom(lookup));
         }
+
+        return dsn;
     }
 
     /**
