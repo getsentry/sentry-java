@@ -218,8 +218,6 @@ public class SentryClient {
      * @param throwable exception to send to Sentry.
      */
     public void sendException(Throwable throwable) {
-        logger.debug("Sending exception '{}'", throwable.getMessage());
-
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
             .withLevel(Event.Level.ERROR)
             .withSentryInterface(new ExceptionInterface(throwable));

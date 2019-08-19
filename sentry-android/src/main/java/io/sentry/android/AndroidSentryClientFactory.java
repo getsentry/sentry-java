@@ -101,26 +101,23 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
         boolean enableAnrTracking = "true".equalsIgnoreCase(Lookup.lookup("anr.enable", dsn));
         Log.d(TAG, "ANR is='" + String.valueOf(enableAnrTracking) + "'");
         if (enableAnrTracking && anrWatchDog == null) {
-            String timeIntervalMillsConfig = Lookup.lookup("anr.timeoutIntervalMills", dsn);
-            int timeoutIntervalMills = timeIntervalMillsConfig != null
-                    ? Integer.parseInt(timeIntervalMillsConfig)
+            String timeIntervalMsConfig = Lookup.lookup("anr.timeoutIntervalMs", dsn);
+            int timeoutIntervalMs = timeIntervalMsConfig != null
+                    ? Integer.parseInt(timeIntervalMsConfig)
                     //CHECKSTYLE.OFF: MagicNumber
                     : 5000;
                     //CHECKSTYLE.ON: MagicNumber
 
-            Log.d(TAG, "ANR timeoutIntervalMills is='" + String.valueOf(timeoutIntervalMills) + "'");
+            Log.d(TAG, "ANR timeoutIntervalMs is='" + String.valueOf(timeoutIntervalMs) + "'");
 
-            anrWatchDog = new ANRWatchDog(timeoutIntervalMills);
-            anrWatchDog.setReportMainThreadOnly();
-            anrWatchDog.setANRListener(new ANRWatchDog.ANRListener() {
-                @Override public void onAppNotResponding(ANRError error) {
+            anrWatchDog = new ANRWatchDog(timeoutIntervalMs, new ANRWatchDog.ANRListener() {
+                @Override public void onAppNotResponding(ApplicationNotResponding error) {
                     Log.d(TAG, "ANR triggered='" + error.getMessage() + "'");
 
                     EventBuilder builder = new EventBuilder();
-                    builder.withMessage(error.getMessage());
-
-                    ExceptionMechanism mechanism = new ExceptionMechanism("ANR", false);
-                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error.getCause());
+                    builder.withTag("thread_safe", error.getState().toString());
+                    ExceptionMechanism mechanism = new ExceptionMechanism("anr", false);
+                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
                     builder.withSentryInterface(new ExceptionInterface(throwable));
 
                     Sentry.capture(builder);
