@@ -10,6 +10,9 @@ public class ContextClassLoaderResourceLoader implements ResourceLoader {
     @Override
     public InputStream getInputStream(String filepath) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = ClassLoader.getSystemClassLoader();
+        }
         return classLoader.getResourceAsStream(filepath);
     }
 }
