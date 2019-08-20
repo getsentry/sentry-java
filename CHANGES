@@ -1,7 +1,9 @@
 Version 1.7.27
 --------------
 
--
+- Android: Fix setResourceLoader order #753
+- Fix classLoader lookup #754
+- Android ANR support: #752
 
 Version 1.7.26
 --------------
