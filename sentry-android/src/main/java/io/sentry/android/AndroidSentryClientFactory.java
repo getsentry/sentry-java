@@ -115,7 +115,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
                     Log.d(TAG, "ANR triggered='" + error.getMessage() + "'");
 
                     EventBuilder builder = new EventBuilder();
-                    builder.withTag("thread_safe", error.getState().toString());
+                    builder.withTag("thread_state", error.getState().toString());
                     ExceptionMechanism mechanism = new ExceptionMechanism("anr", false);
                     Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
                     builder.withSentryInterface(new ExceptionInterface(throwable));

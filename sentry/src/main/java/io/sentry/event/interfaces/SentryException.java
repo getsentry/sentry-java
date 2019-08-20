@@ -127,7 +127,7 @@ public final class SentryException implements Serializable {
 
         //Stack the exceptions to send them in the reverse order
         while (throwable != null && circularityDetector.add(throwable)) {
-            if (throwable.getClass() == ExceptionMechanismThrowable.class) {
+            if (throwable.getClass() instanceof ExceptionMechanismThrowable.class) {
                 ExceptionMechanismThrowable exceptionMechanismThrowable = (ExceptionMechanismThrowable) throwable;
                 exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
                 throwable = exceptionMechanismThrowable.getThrowable();
