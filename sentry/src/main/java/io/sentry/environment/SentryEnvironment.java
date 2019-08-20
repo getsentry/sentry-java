@@ -14,24 +14,58 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class SentryEnvironment {
     /**
      * Name of this SDK.
+     *
+     * This constant field is prone to subtle bugs caused by constant inlining, see
+     * https://revapi.org/modules/revapi-java/index.html#constant_field_changed_value
+     *
+     * @deprecated use {@link #sdkName()}
      */
+    @Deprecated
     public static final String SDK_NAME = "sentry-java";
+
     /**
      * Version of this SDK.
+     *
+     * This constant field is prone to subtle bugs caused by constant inlining, see
+     * https://revapi.org/modules/revapi-java/index.html#constant_field_changed_value
+     *
+     * @deprecated use {@link #sdkVersion()}
      */
+    @Deprecated
     public static final String SDK_VERSION = Version.SDK_VERSION;
+
     /**
      * Indicates whether the current thread is managed by sentry or not.
      */
-    protected static final ThreadLocal<AtomicInteger> SENTRY_THREAD = new ThreadLocal<AtomicInteger>() {
+    // visible for testing
+    static final ThreadLocal<AtomicInteger> SENTRY_THREAD = new ThreadLocal<AtomicInteger>() {
         @Override
         protected AtomicInteger initialValue() {
             return new AtomicInteger();
         }
     };
+
     private static final Logger logger = LoggerFactory.getLogger(SentryEnvironment.class);
 
     private SentryEnvironment() {
+    }
+
+    /**
+     * Name of this SDK.
+     *
+     * @return the name of this SDK
+     */
+    public static String sdkName() {
+        return SDK_NAME;
+    }
+
+    /**
+     * Version of this SDK.
+     *
+     * @return the version of this SDK
+     */
+    public static String sdkVersion() {
+        return SDK_VERSION;
     }
 
     /**

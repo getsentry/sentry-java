@@ -202,6 +202,32 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.revapi</groupId>
+                <artifactId>revapi-maven-plugin</artifactId>
+                <configuration>
+                    <analysisConfiguration>
+                        <revapi.java>
+                            <missing-classes>
+                                <behavior>ignore</behavior>
+                            </missing-classes>
+                        </revapi.java>
+                        <!--
+                            while these should not be public because of constant inlining, we keep them for back-compat
+                        -->
+                        <revapi.ignore>
+                            <item>
+                                <code>java.field.constantValueChanged</code>
+                                <classQualifiedName>io.sentry.environment.SentryEnvironment</classQualifiedName>
+                            </item>
+                            <item>
+                                <code>java.field.constantValueChanged</code>
+                                <classQualifiedName>io.sentry.environment.Version</classQualifiedName>
+                            </item>
+                        </revapi.ignore>
+                    </analysisConfiguration>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -1,0 +1,16 @@
+{
+  "1.7.28": [
+    {
+      "extension": "revapi.ignore",
+      "configuration": [
+        {
+          "code": "java.field.visibilityReduced",
+          "old": "field io.sentry.environment.SentryEnvironment.SENTRY_THREAD",
+          "oldVisibility": "protected",
+          "newVisibility": "package",
+          "justification": "This was a protected field in a final class. That is effectively equal to package private."
+        }
+      ]
+    }
+  ]
+}
