@@ -42,7 +42,7 @@ public final class SentryException implements Serializable {
      *
      * @param throwable                Java exception to send to Sentry.
      * @param childExceptionStackTrace StackTrace of the exception caused by {@code throwable}.
-     * @param exceptionMechanism The {@link ExceptionMechanism} of the {@code throwable}.
+     * @param exceptionMechanism The optional {@link ExceptionMechanism} of the {@code throwable}. Or null if none exist.
      */
     public SentryException(
             Throwable throwable,
@@ -96,7 +96,7 @@ public final class SentryException implements Serializable {
      * @param exceptionClassName   exception's class name (simple name).
      * @param exceptionPackageName exception's package name.
      * @param stackTraceInterface  {@code StackTraceInterface} holding the StackTrace information of the exception.
-     * @param exceptionMechanism  {@code exceptionMechanism} used for this exception.
+     * @param exceptionMechanism The optional {@link ExceptionMechanism} of the {@code throwable}. Or null if none exist.
      */
     public SentryException(String exceptionMessage,
                            String exceptionClassName,
