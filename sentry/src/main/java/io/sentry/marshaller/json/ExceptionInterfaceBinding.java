@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.StackTraceInterface;
+import io.sentry.event.interfaces.ExceptionMechanism;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -55,6 +56,16 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
         generator.writeStringField(TYPE_PARAMETER, sentryException.getExceptionClassName());
         generator.writeStringField(VALUE_PARAMETER, sentryException.getExceptionMessage());
         generator.writeStringField(MODULE_PARAMETER, sentryException.getExceptionPackageName());
+
+        ExceptionMechanism exceptionMechanism = sentryException.getExceptionMechanism();
+        if (exceptionMechanism != null) {
+            generator.writeFieldName("mechanism");
+            generator.writeStartObject();
+            generator.writeStringField("type", exceptionMechanism.getType());
+            generator.writeBooleanField("handled", exceptionMechanism.isHandled());
+            generator.writeEndObject();
+        }
+
         generator.writeFieldName(STACKTRACE_PARAMETER);
         stackTraceInterfaceBinding.writeInterface(generator, sentryException.getStackTraceInterface());
         generator.writeEndObject();

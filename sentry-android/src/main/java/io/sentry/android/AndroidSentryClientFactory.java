@@ -11,11 +11,16 @@ import io.sentry.SentryClient;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
+import io.sentry.event.EventBuilder;
+import io.sentry.Sentry;
 import io.sentry.config.Lookup;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
+import io.sentry.event.interfaces.ExceptionMechanism;
+import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.ExceptionMechanismThrowable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +41,8 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      * Default Buffer directory name.
      */
     private static final String DEFAULT_BUFFER_DIR = "sentry-buffered-events";
+
+    private static volatile ANRWatchDog anrWatchDog;
 
     private Context ctx;
 
@@ -90,6 +97,34 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+
+        boolean enableAnrTracking = "true".equalsIgnoreCase(Lookup.lookup("anr.enable", dsn));
+        Log.d(TAG, "ANR is='" + String.valueOf(enableAnrTracking) + "'");
+        if (enableAnrTracking && anrWatchDog == null) {
+            String timeIntervalMsConfig = Lookup.lookup("anr.timeoutIntervalMs", dsn);
+            int timeoutIntervalMs = timeIntervalMsConfig != null
+                    ? Integer.parseInt(timeIntervalMsConfig)
+                    //CHECKSTYLE.OFF: MagicNumber
+                    : 5000;
+                    //CHECKSTYLE.ON: MagicNumber
+
+            Log.d(TAG, "ANR timeoutIntervalMs is='" + String.valueOf(timeoutIntervalMs) + "'");
+
+            anrWatchDog = new ANRWatchDog(timeoutIntervalMs, new ANRWatchDog.ANRListener() {
+                @Override public void onAppNotResponding(ApplicationNotResponding error) {
+                    Log.d(TAG, "ANR triggered='" + error.getMessage() + "'");
+
+                    EventBuilder builder = new EventBuilder();
+                    builder.withTag("thread_state", error.getState().toString());
+                    ExceptionMechanism mechanism = new ExceptionMechanism("anr", false);
+                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
+                    builder.withSentryInterface(new ExceptionInterface(throwable));
+
+                    Sentry.capture(builder);
+                }
+            });
+            anrWatchDog.start();
+        }
 
         return sentryClient;
     }

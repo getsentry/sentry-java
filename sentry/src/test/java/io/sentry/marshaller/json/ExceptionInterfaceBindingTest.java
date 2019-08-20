@@ -6,9 +6,12 @@ import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Tested;
+import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.StackTraceInterface;
+import io.sentry.event.interfaces.ExceptionMechanism;
+import io.sentry.event.interfaces.ExceptionMechanismThrowable;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -103,6 +106,32 @@ public class ExceptionInterfaceBindingTest extends BaseTest {
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockExceptionInterface);
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/Exception3.json")));
+    }
+
+    @Test
+    public void testExceptionWithMechanism() throws Exception {
+        final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
+        final String message = "6e65f60d-9f22-495a-9556-7a61eeea2a14";
+        final Throwable originalThrowable = new IllegalStateException(message);
+
+        EventBuilder builder = new EventBuilder();
+        ExceptionMechanism mechanism = new ExceptionMechanism("the type", true);
+        final Throwable throwable = new ExceptionMechanismThrowable(mechanism, originalThrowable);
+        builder.withSentryInterface(new ExceptionInterface(throwable));
+
+        new NonStrictExpectations() {{
+            mockExceptionInterface.getExceptions();
+            result = new Delegate<Deque<SentryException>>() {
+                @SuppressWarnings("unused")
+                public Deque<SentryException> getExceptions() {
+                    return SentryException.extractExceptionQueue(throwable);
+                }
+            };
+        }};
+
+        interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockExceptionInterface);
+
+        assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/ExceptionWithMechanism.json")));
     }
 
 }
