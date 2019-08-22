@@ -5,13 +5,13 @@ import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import org.testng.collections.Lists;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -25,12 +25,12 @@ public class DiskBufferTest extends BaseTest {
 
     private DiskBuffer buffer;
 
-    @BeforeMethod
+    @Before
     public void setup() {
         buffer = new DiskBuffer(BUFFER_DIR, maxEvents);
     }
 
-    @AfterMethod
+    @After
     public void teardown() {
         delete(BUFFER_DIR);
     }
@@ -38,7 +38,7 @@ public class DiskBufferTest extends BaseTest {
     @Test
     public void testAddAndDiscard() throws IOException {
         Breadcrumb breadcrumb = new BreadcrumbBuilder().setMessage("MESSAGE").build();
-        List<Breadcrumb> breadcrumbs = Lists.newArrayList();
+        List<Breadcrumb> breadcrumbs = new ArrayList<>();
         breadcrumbs.add(breadcrumb);
 
         Event event1 = new EventBuilder().withBreadcrumbs(breadcrumbs).build();
