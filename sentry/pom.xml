@@ -178,6 +178,11 @@
                             ${project.build.directory}/test-classes/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
+                    <environmentVariables>
+                        <!-- Used by the EnvironmentConfigurationProviderTest -->
+                        <SENTRY_TEST_PROPERTY>testValue1</SENTRY_TEST_PROPERTY>
+                        <CUSTOM_PREFIX_TEST_PROPERTY>testValue2</CUSTOM_PREFIX_TEST_PROPERTY>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>

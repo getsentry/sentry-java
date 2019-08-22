@@ -2,13 +2,18 @@ package io.sentry.config.provider;
 
 import static io.sentry.config.provider.JndiConfigurationProvider.DEFAULT_JNDI_PREFIX;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
 
 import io.sentry.config.provider.JndiConfigurationProvider.JndiContextProvider;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class JndiConfigurationProviderTest {
 
@@ -44,5 +49,36 @@ public class JndiConfigurationProviderTest {
 
         // then
         assertEquals("val", val);
+    }
+
+    @Test
+    public void testReturnsNullOnNamingException() throws Exception {
+        testReturnsNullOnException(new NamingException());
+    }
+
+    @Test
+    public void testReturnsNullOnNoInitialContextException() throws Exception {
+        testReturnsNullOnException(new NoInitialContextException());
+    }
+
+    @Test
+    public void testReturnsNullOnRuntimeException() throws Exception {
+        testReturnsNullOnException(new IllegalStateException());
+    }
+
+    private void testReturnsNullOnException(Exception e) throws Exception {
+        // given
+        JndiContextProvider jndiProvider = mock(JndiContextProvider.class);
+        Context jndiContext = mock(Context.class);
+        when(jndiProvider.getContext()).thenReturn(jndiContext);
+        when(jndiContext.lookup(anyString())).thenThrow(e);
+
+        JndiConfigurationProvider provider = new JndiConfigurationProvider("something", jndiProvider);
+
+        // when
+        String val = provider.getProperty("property");
+
+        // then
+        assertNull(val);
     }
 }
