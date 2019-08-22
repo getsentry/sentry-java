@@ -4,6 +4,10 @@ import org.testng.annotations.BeforeMethod;
 
 import java.util.concurrent.Callable;
 
+/**
+ * @deprecated we're slowly moving to JUnit, so this will only stay as long as our TestNG tests
+ */
+@Deprecated
 public class BaseTest {
     @BeforeMethod
     public void baseTestSetup() {
