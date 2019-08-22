@@ -1,36 +1,29 @@
 package io.sentry.dsn;
 
-import io.sentry.BaseTest;
-import io.sentry.config.JndiLookup;
-import io.sentry.config.Lookup;
-import mockit.Expectations;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 
-import javax.naming.Context;
 import java.net.URI;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import io.sentry.BaseJUnitTest;
+import io.sentry.EmptyConfigurationProvider;
+import io.sentry.config.Lookup;
+import io.sentry.config.provider.ConfigurationProvider;
+import io.sentry.util.Nullable;
+import org.junit.Test;
 
-public class DsnTest extends BaseTest {
-    @Mocked
-    private Context mockContext = null;
+public class DsnTest extends BaseJUnitTest {
 
-    @BeforeMethod
-    public void setUp() throws Exception {
-        InitialContextFactory.context = mockContext;
-
-    }
-
-    @Test(expectedExceptions = InvalidDsnException.class)
+    @Test(expected = InvalidDsnException.class)
     public void testEmptyDsnInvalid() throws Exception {
         new Dsn("");
     }
 
-    @Test(expectedExceptions = InvalidDsnException.class)
+    @Test(expected = InvalidDsnException.class)
     public void testDsnFromInvalidUri() throws Exception {
         new Dsn(URI.create(""));
     }
@@ -73,85 +66,36 @@ public class DsnTest extends BaseTest {
 
     @Test
     public void testDsnLookupWithNothingSet() throws Exception {
-        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
+        assertThat(Dsn.dsnFrom(new Lookup(new EmptyConfigurationProvider(), new EmptyConfigurationProvider())),
+                is(Dsn.DEFAULT_DSN));
     }
 
     @Test
-    public void testJndiLookupFailsWithException(
-            @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
-        new NonStrictExpectations() {{
-            JndiLookup.jndiLookup("dsn");
-            result = new ClassNotFoundException("Couldn't find the JNDI classes");
-        }};
+    public void testEmptyStringAsDsnYieldsDefaultDsn() throws Exception {
+        // given
+        Lookup lookup = new Lookup(new ConfigurationProvider() {
+            @Nullable
+            @Override
+            public String getProperty(String key) {
+                return "dsn".equals(key) ? "" : null;
+            }
+        }, new EmptyConfigurationProvider());
 
-        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
+        // then
+        assertThat(Dsn.dsnFrom(lookup), is(Dsn.DEFAULT_DSN));
     }
 
-    @Test
-    public void testJndiLookupFailsWithError(
-            @SuppressWarnings("unused") @Mocked("jndiLookup") JndiLookup mockJndiLookup) throws Exception {
-        new NonStrictExpectations() {{
-            JndiLookup.jndiLookup("dsn");
-            result = new NoClassDefFoundError("Couldn't find the JNDI classes");
-        }};
-
-        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
-    }
-
-    @Test
-    public void testDsnLookupWithJndi() throws Exception {
-        final String dsn = "6621980c-e27b-4dc9-9130-7fc5e9ea9750";
-        new Expectations() {{
-            mockContext.lookup("java:comp/env/sentry/dsn");
-            result = dsn;
-        }};
-
-        assertThat(Dsn.dsnLookup(), is(dsn));
-    }
-
-    @Test
-    public void testDsnLookupWithSystemProperty() throws Exception {
-        String dsn = "aa9171a4-7e9b-4e3c-b3cc-fe537dc03527";
-        System.setProperty("sentry.dsn", dsn);
-
-        assertThat(Dsn.dsnLookup(), is(dsn));
-
-        System.clearProperty("sentry.dsn");
-    }
-
-    @Test
-    public void testDsnLookupWithEnvironmentVariable(@Mocked("getenv") final System system) throws Exception {
-        final String dsn = "759ed060-dd4f-4478-8a1a-3f23e044787c";
-        new NonStrictExpectations() {{
-            System.getenv("SENTRY_DSN");
-            result = dsn;
-        }};
-
-        assertThat(Dsn.dsnLookup(), is(dsn));
-    }
-
-    @Test
-    public void testDsnLookupWithEmptyEnvironmentVariable(@Mocked("getenv") final System system) throws Exception {
-        final String dsn = "";
-        new NonStrictExpectations() {{
-            System.getenv("SENTRY_DSN");
-            result = dsn;
-        }};
-
-        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
-    }
-
-    @Test(expectedExceptions = InvalidDsnException.class)
+    @Test(expected = InvalidDsnException.class)
     public void testMissingHostInvalid() throws Exception {
         new Dsn("http://publicKey:secretKey@/9");
     }
 
-    @Test(expectedExceptions = InvalidDsnException.class)
+    @Test(expected = InvalidDsnException.class)
     public void testMissingPathInvalid() throws Exception {
         new Dsn("http://publicKey:secretKey@host");
     }
 
-    @Test(expectedExceptions = InvalidDsnException.class)
+    @Test(expected = InvalidDsnException.class)
     public void testMissingProjectIdInvalid() throws Exception {
         new Dsn("http://publicKey:secretKey@host/");
     }
@@ -174,14 +118,14 @@ public class DsnTest extends BaseTest {
         assertThat(dsn.getOptions().get("option2"), is("valueOption2"));
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testOptionsImmutable() throws Exception {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
 
         dsn.getOptions().put("test", "test");
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testProtocolSettingsImmutable() throws Exception {
         Dsn dsn = new Dsn("http://publicKey:secretKey@host/9");
 
