@@ -1,39 +1,47 @@
 package io.sentry.connection;
 
-import io.sentry.BaseTest;
+import io.sentry.BaseJUnitTest;
 import io.sentry.environment.Version;
 import io.sentry.time.FixedClock;
-import mockit.*;
 import io.sentry.event.Event;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static mockit.Deencapsulation.getField;
-import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.testng.AssertJUnit.fail;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.withSettings;
 
-public class AbstractConnectionTest extends BaseTest {
+public class AbstractConnectionTest extends BaseJUnitTest {
     private static final Date FIXED_DATE = new Date(1483228800L);
-    @Injectable
     private final String publicKey = "9bcf4a8c-f353-4f25-9dda-76a873fff905";
-    @Injectable
     private final String secretKey = "56a9d05e-9032-4fdd-8f67-867d526422f9";
-    @Tested
-    private AbstractConnection abstractConnection = null;
-    private FixedClock fixedClock = new FixedClock(FIXED_DATE);
-    private LockdownManager lockdownManager = new LockdownManager(fixedClock);
 
-    @BeforeMethod
+    private AbstractConnection abstractConnection = null;
+    private FixedClock fixedClock;
+    private LockdownManager lockdownManager;
+
+    @Before
     public void setup() {
         fixedClock = new FixedClock(FIXED_DATE);
-        lockdownManager = new LockdownManager(fixedClock);
+
+        lockdownManager = mock(LockdownManager.class, withSettings()
+                .useConstructor(fixedClock)
+                .defaultAnswer(CALLS_REAL_METHODS));
+
+        abstractConnection = mock(AbstractConnection.class, withSettings()
+                .useConstructor(publicKey, secretKey, lockdownManager)
+                .defaultAnswer(CALLS_REAL_METHODS));
     }
 
     @Test
@@ -47,31 +55,28 @@ public class AbstractConnectionTest extends BaseTest {
     }
 
     @Test
-    public void testSuccessfulSendCallsDoSend(@Injectable final Event mockEvent) throws Exception {
+    public void testSuccessfulSendCallsDoSend() throws Exception {
+        final Event mockEvent = mock(Event.class);
+
         abstractConnection.send(mockEvent);
 
-        new Verifications() {{
-            abstractConnection.doSend(mockEvent);
-        }};
+        verify(abstractConnection).doSend(mockEvent);
     }
 
     @Test
-    public void testExceptionOnSendStartLockDown(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lockdownManager", lockdownManager);
+    public void testExceptionOnSendStartLockDown() throws Exception {
+        final Event mockEvent = mock(Event.class);
 
-        new NonStrictExpectations() {{
-            abstractConnection.doSend((Event) any);
-            result = new ConnectionException();
-        }};
+        doThrow(new ConnectionException()).when(abstractConnection).doSend(any(Event.class));
 
         try {
             abstractConnection.send(mockEvent);
-        } catch (Exception e) {
+        } catch (ConnectionException e) {
             // ignore
         }
 
-        Date lockdownStartTime = getField(lockdownManager, "lockdownStartTime");
-        assertThat(lockdownStartTime, is(FIXED_DATE));
+        verify(lockdownManager).lockdown(any(ConnectionException.class));
+        assertTrue(lockdownManager.isLockedDown());
 
         // Send while in lockdown throws LockedDownException
         try {
@@ -83,22 +88,19 @@ public class AbstractConnectionTest extends BaseTest {
     }
 
     @Test
-    public void testLockDownDoublesTheTime(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lockdownManager", lockdownManager);
+    public void testLockDownDoublesTheTime() throws Exception {
+        Event mockEvent = mock(Event.class);
 
-        new NonStrictExpectations() {{
-            abstractConnection.doSend((Event) any);
-            result = new ConnectionException();
-        }};
+        doThrow(new ConnectionException()).when(abstractConnection).doSend(any(Event.class));
 
         try {
             abstractConnection.send(mockEvent);
-        } catch (Exception e) {
+        } catch (ConnectionException e) {
             // ignore
         }
 
         // Check for default lockdown time
-        long lockdownTimeAfter = getField(lockdownManager, "lockdownTime");
+        long lockdownTimeAfter = lockdownManager.getLockdownTime();
         assertThat(lockdownTimeAfter, is(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME));
 
         // Roll forward by the base lockdown time, allowing the lockdown to retried
@@ -107,38 +109,46 @@ public class AbstractConnectionTest extends BaseTest {
         // Send a second event, doubling the lockdown
         try {
             abstractConnection.send(mockEvent);
-        } catch (Exception e) {
+        } catch (ConnectionException e) {
             // ignore
         }
 
         // Check for doubled lockdown time
-        long lockdownTimeAfter2 = getField(lockdownManager, "lockdownTime");
+        long lockdownTimeAfter2 = lockdownManager.getLockdownTime();
         assertThat(lockdownTimeAfter2, is(LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME * 2));
     }
 
     @Test
-    public void testLockDownDoesntDoubleItAtMax(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lockdownManager", lockdownManager);
-        setField(lockdownManager, "lockdownTime", LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME);
-        setField(lockdownManager, "lockdownStartTime", fixedClock.date());
+    public void testLockDownDoesntDoubleItAtMax() throws Exception {
+        Event mockEvent = mock(Event.class);
 
-        new NonStrictExpectations() {{
-            abstractConnection.doSend((Event) any);
-            result = new ConnectionException();
-        }};
+        lockdownManager.setBaseLockdownTime(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME);
+
+        doThrow(new ConnectionException()).when(abstractConnection).doSend(any(Event.class));
 
         try {
             abstractConnection.send(mockEvent);
-        } catch (Exception e) {
+        } catch (ConnectionException e) {
             // ignore
         }
 
-        long lockdownTimeAfter = getField(lockdownManager, "lockdownTime");
+        long lockdownTimeAfter = lockdownManager.getLockdownTime();
+        assertThat(lockdownTimeAfter, is(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME));
+
+        try {
+            abstractConnection.send(mockEvent);
+        } catch (LockedDownException e) {
+            // ignore
+        }
+
+        lockdownTimeAfter = lockdownManager.getLockdownTime();
         assertThat(lockdownTimeAfter, is(LockdownManager.DEFAULT_MAX_LOCKDOWN_TIME));
     }
 
     @Test
-    public void testEventSendCallbackSuccess(@Injectable final Event mockEvent) throws Exception {
+    public void testEventSendCallbackSuccess() throws Exception {
+        Event mockEvent = mock(Event.class);
+
         final AtomicBoolean callbackCalled = new AtomicBoolean(false);
         EventSendCallback callback = new EventSendCallback() {
 
@@ -153,17 +163,16 @@ public class AbstractConnectionTest extends BaseTest {
             }
 
         };
-        HashSet<EventSendCallback> callbacks = new HashSet<>();
-        callbacks.add(callback);
 
-        setField(abstractConnection, "eventSendCallbacks", callbacks);
+        abstractConnection.addEventSendCallback(callback);
+
         abstractConnection.send(mockEvent);
 
         assertThat(callbackCalled.get(), is(true));
     }
 
     @Test
-    public void testEventSendCallbackFailure(@Injectable final Event mockEvent) throws Exception {
+    public void testEventSendCallbackFailure() throws Exception {
         final AtomicBoolean callbackCalled = new AtomicBoolean(false);
         EventSendCallback callback = new EventSendCallback() {
 
@@ -178,18 +187,16 @@ public class AbstractConnectionTest extends BaseTest {
             }
 
         };
-        HashSet<EventSendCallback> callbacks = new HashSet<>();
-        callbacks.add(callback);
 
-        setField(abstractConnection, "eventSendCallbacks", callbacks);
-        new NonStrictExpectations() {{
-            abstractConnection.doSend((Event) any);
-            result = new ConnectionException();
-        }};
+        abstractConnection.addEventSendCallback(callback);
+
+        doThrow(new ConnectionException()).when(abstractConnection).doSend(any(Event.class));
+
+        Event mockEvent = mock(Event.class);
 
         try {
             abstractConnection.send(mockEvent);
-        } catch (Exception e) {
+        } catch (ConnectionException e) {
             // ignore
         }
 
@@ -197,22 +204,22 @@ public class AbstractConnectionTest extends BaseTest {
     }
 
     @Test
-    public void testRecommendedLockdownRespected(@Injectable final Event mockEvent) throws Exception {
-        setField(abstractConnection, "lockdownManager", lockdownManager);
+    public void testRecommendedLockdownRespected() throws Exception {
+        Event mockEvent = mock(Event.class);
 
         final long recommendedLockdownWaitTime = 12345L;
-        new NonStrictExpectations() {{
-            abstractConnection.doSend((Event) any);
-            result = new ConnectionException("Message", null, recommendedLockdownWaitTime, HttpConnection.HTTP_TOO_MANY_REQUESTS);
-        }};
+
+        doThrow(new ConnectionException("Message", null, recommendedLockdownWaitTime,
+                HttpConnection.HTTP_TOO_MANY_REQUESTS))
+                .when(abstractConnection).doSend(any(Event.class));
 
         try {
             abstractConnection.send(mockEvent);
-        } catch (Exception e) {
+        } catch (ConnectionException e) {
             // ignore
         }
 
-        long lockdownTimeAfter = getField(lockdownManager, "lockdownTime");
+        long lockdownTimeAfter = lockdownManager.getLockdownTime();
         assertThat(lockdownTimeAfter, is(recommendedLockdownWaitTime));
     }
 }
