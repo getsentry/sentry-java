@@ -3,6 +3,7 @@ package io.sentry.connection;
 import io.sentry.SentryClient;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
+import io.sentry.util.Nullable;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,8 @@ public class AsyncConnection implements Connection {
     /**
      * Shutdown hook used to stop the async connection properly when the JVM quits.
      */
-    private final ShutDownHook shutDownHook = new ShutDownHook();
+    // visible for testing
+    final ShutDownHook shutDownHook = new ShutDownHook();
     /**
      * Boolean that represents if graceful shutdown is enabled.
      */
@@ -62,7 +64,7 @@ public class AsyncConnection implements Connection {
      * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
      * @param shutdownTimeout  timeout for graceful shutdown of the executor, in milliseconds.
      */
-    public AsyncConnection(Connection actualConnection, ExecutorService executorService, boolean gracefulShutdown,
+    public AsyncConnection(Connection actualConnection, @Nullable ExecutorService executorService, boolean gracefulShutdown,
                            long shutdownTimeout) {
         this.actualConnection = actualConnection;
         if (executorService == null) {
