@@ -1,6 +1,6 @@
 package io.sentry.connection;
 
-import io.sentry.BaseJUnitTest;
+import io.sentry.BaseTest;
 import io.sentry.environment.Version;
 import io.sentry.time.FixedClock;
 import io.sentry.event.Event;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 
-public class AbstractConnectionTest extends BaseJUnitTest {
+public class AbstractConnectionTest extends BaseTest {
     private static final Date FIXED_DATE = new Date(1483228800L);
     private final String publicKey = "9bcf4a8c-f353-4f25-9dda-76a873fff905";
     private final String secretKey = "56a9d05e-9032-4fdd-8f67-867d526422f9";

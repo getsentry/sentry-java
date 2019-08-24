@@ -9,14 +9,14 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import java.net.URI;
 
-import io.sentry.BaseJUnitTest;
+import io.sentry.BaseTest;
 import io.sentry.EmptyConfigurationProvider;
 import io.sentry.config.Lookup;
 import io.sentry.config.provider.ConfigurationProvider;
 import io.sentry.util.Nullable;
 import org.junit.Test;
 
-public class DsnTest extends BaseJUnitTest {
+public class DsnTest extends BaseTest {
 
     @Test(expected = InvalidDsnException.class)
     public void testEmptyDsnInvalid() throws Exception {

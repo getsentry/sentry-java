@@ -15,7 +15,7 @@ import static org.mockito.Mockito.withSettings;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import io.sentry.BaseJUnitTest;
+import io.sentry.BaseTest;
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
 import org.junit.Before;
@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class AsyncConnectionTest extends BaseJUnitTest {
+public class AsyncConnectionTest extends BaseTest {
     private AsyncConnection asyncConnection = null;
     private Connection mockConnection = null;
     private ExecutorService mockExecutorService = null;

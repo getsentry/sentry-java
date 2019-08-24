@@ -1,16 +1,15 @@
 package io.sentry;
 
-import org.testng.annotations.BeforeMethod;
-
 import java.util.concurrent.Callable;
 
-/**
- * @deprecated we're slowly moving to JUnit, so this will only stay as long as our TestNG tests
- */
-@Deprecated
+import org.junit.Before;
+import org.testng.annotations.BeforeMethod;
+
 public class BaseTest {
+
+    @Before
     @BeforeMethod
-    public void baseTestSetup() {
+    public void resetClient() {
         Sentry.setStoredClient(null);
     }
 
