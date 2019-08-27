@@ -3,8 +3,7 @@ package io.sentry.connection;
 import io.sentry.BaseTest;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.Random;
 
