@@ -1,49 +1,41 @@
 package io.sentry.connection;
 
 import io.sentry.BaseTest;
-import mockit.*;
-import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.Event;
 import io.sentry.marshaller.Marshaller;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URL;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class OutputStreamConnectionTest extends BaseTest {
-    @Tested
     private OutputStreamConnection outputStreamConnection = null;
-    @Injectable
     private Marshaller mockMarshaller = null;
-    @Injectable
     private OutputStream mockOutputStream = null;
 
-    @Test
-    public void testContentMarshalled(@Injectable final Event mockEvent) throws Exception {
-        outputStreamConnection.send(mockEvent);
+    @Before
+    public void setup() {
+        mockOutputStream = mock(OutputStream.class);
+        mockMarshaller = mock(Marshaller.class);
 
-        new Verifications() {{
-            mockMarshaller.marshall(mockEvent, mockOutputStream);
-        }};
+        outputStreamConnection = new OutputStreamConnection(mockOutputStream);
+        outputStreamConnection.setMarshaller(mockMarshaller);
+    }
+
+    @Test
+    public void testContentMarshalled() throws Exception {
+        Event mockEvent = mock(Event.class);
+        outputStreamConnection.send(mockEvent);
+        verify(mockMarshaller).marshall(eq(mockEvent), eq(mockOutputStream));
     }
 
     @Test
     public void testClose() throws Exception {
         outputStreamConnection.close();
-
-        new Verifications() {{
-            mockOutputStream.close();
-        }};
+        verify(mockOutputStream).close();
     }
 }
