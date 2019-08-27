@@ -1,30 +1,32 @@
 package io.sentry.event.helper;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.isIn;
+import static org.mockito.Mockito.mock;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import io.sentry.SentryClient;
 import io.sentry.connection.Connection;
 import io.sentry.context.Context;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
-import io.sentry.event.*;
+import io.sentry.event.Breadcrumb;
+import io.sentry.event.BreadcrumbBuilder;
+import io.sentry.event.Event;
+import io.sentry.event.EventBuilder;
+import io.sentry.event.User;
+import io.sentry.event.UserBuilder;
 import io.sentry.event.interfaces.UserInterface;
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
-import org.testng.annotations.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import org.junit.Test;
 
 public class ContextBuilderHelperTest {
-    @Tested
-    private SentryClient client = null;
-    @Injectable
-    private Connection mockConnection = null;
-    @Injectable
     private ContextManager contextManager = new SingletonContextManager();
+    private SentryClient client = new SentryClient(mock(Connection.class), contextManager);
 
     @Test
     public void testHelper() {
@@ -61,11 +63,9 @@ public class ContextBuilderHelperTest {
         tags.put("tag1", "value1");
         tags.put("tag2", "value2");
 
-        new Verifications() {{
-            assertThat(event.getBreadcrumbs(), contains(breadcrumb1, breadcrumb2));
-            assertThat(userInterface.getEmail(), equalTo(user.getEmail()));
-            assertThat(event.getExtra().entrySet(), everyItem(isIn(extra.entrySet())));
-            assertThat(event.getTags().entrySet(), everyItem(isIn(tags.entrySet())));
-        }};
+        assertThat(event.getBreadcrumbs(), contains(breadcrumb1, breadcrumb2));
+        assertThat(userInterface.getEmail(), equalTo(user.getEmail()));
+        assertThat(event.getExtra().entrySet(), everyItem(isIn(extra.entrySet())));
+        assertThat(event.getTags().entrySet(), everyItem(isIn(tags.entrySet())));
     }
 }
