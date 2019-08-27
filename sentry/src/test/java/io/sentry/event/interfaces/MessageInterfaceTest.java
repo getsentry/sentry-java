@@ -1,7 +1,7 @@
 package io.sentry.event.interfaces;
 
 import io.sentry.BaseTest;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
