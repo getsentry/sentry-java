@@ -512,7 +512,8 @@ public class EventBuilder {
          * Sets up a cache for the hostname.
          *
          * @param cacheDuration cache duration in milliseconds.
-         * @param clock the clock to track time with
+         * @param clock the clock to track time with - this is mostly here because of testability
+         * @param getLocalhost a callback to obtain the localhost address - this is mostly here because of testability
          */
         HostnameCache(long cacheDuration, Clock clock, Callable<InetAddress> getLocalhost) {
             this.cacheDuration = cacheDuration;

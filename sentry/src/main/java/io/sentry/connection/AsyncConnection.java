@@ -28,6 +28,11 @@ public class AsyncConnection implements Connection {
     private static final Logger lockdownLogger = LoggerFactory.getLogger(SentryClient.class.getName() + ".lockdown");
     // CHECKSTYLE.ON: ConstantName
     /**
+     * Shutdown hook used to stop the async connection properly when the JVM quits.
+     */
+    // visible for testing
+    final ShutDownHook shutDownHook = new ShutDownHook();
+    /**
      * Timeout of the {@link #executorService}, in milliseconds.
      */
     private final long shutdownTimeout;
@@ -39,11 +44,6 @@ public class AsyncConnection implements Connection {
      * Executor service in charge of running the connection in separate threads.
      */
     private final ExecutorService executorService;
-    /**
-     * Shutdown hook used to stop the async connection properly when the JVM quits.
-     */
-    // visible for testing
-    final ShutDownHook shutDownHook = new ShutDownHook();
     /**
      * Boolean that represents if graceful shutdown is enabled.
      */
@@ -64,8 +64,8 @@ public class AsyncConnection implements Connection {
      * @param gracefulShutdown Indicates whether or not the shutdown operation should be managed by a ShutdownHook.
      * @param shutdownTimeout  timeout for graceful shutdown of the executor, in milliseconds.
      */
-    public AsyncConnection(Connection actualConnection, @Nullable ExecutorService executorService, boolean gracefulShutdown,
-                           long shutdownTimeout) {
+    public AsyncConnection(Connection actualConnection, @Nullable ExecutorService executorService,
+            boolean gracefulShutdown, long shutdownTimeout) {
         this.actualConnection = actualConnection;
         if (executorService == null) {
             this.executorService = Executors.newSingleThreadExecutor();
