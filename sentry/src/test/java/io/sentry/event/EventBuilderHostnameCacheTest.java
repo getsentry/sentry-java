@@ -1,99 +1,73 @@
 package io.sentry.event;
 
 import io.sentry.BaseTest;
-import mockit.*;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import io.sentry.time.FixedClock;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.InetAddress;
+import java.util.Date;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static mockit.Deencapsulation.getField;
-import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-@Test(singleThreaded = true)
 public class EventBuilderHostnameCacheTest extends BaseTest {
-    @Injectable
     private InetAddress mockLocalHost = null;
-    @Injectable("serverName")
-    private String mockLocalHostName = null;
-    @Injectable
     private InetAddress mockTimingOutLocalHost = null;
+    private FixedClock fixedClock = new FixedClock(new Date());
 
-    private static void resetHostnameCache() {
-        setField(getHostnameCache(), "expirationTimestamp", 0L);
-        setField(getHostnameCache(), "hostname", EventBuilder.DEFAULT_HOSTNAME);
-    }
-
-    private static Object getHostnameCache() {
-        return getField(EventBuilder.class, "HOSTNAME_CACHE");
-    }
-
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        new NonStrictExpectations() {{
-            mockLocalHost.getCanonicalHostName();
-            result = mockLocalHostName;
+        mockLocalHost = mock(InetAddress.class);
+        mockTimingOutLocalHost = mock(InetAddress.class);
+        when(mockLocalHost.getCanonicalHostName()).thenReturn("mockLocalhost");
+        when(mockTimingOutLocalHost.getCanonicalHostName())
+                .thenThrow(new RuntimeException("For all intents and purposes, an exception is the same as a timeout"));
+    }
 
-            mockTimingOutLocalHost.getCanonicalHostName();
-            result = new RuntimeException("For all intents and purposes, an exception is the same as a timeout");
-        }};
-        // Clean Hostname Cache
-        resetHostnameCache();
+    private EventBuilder.HostnameCache createCacheUsingLocalhost(final InetAddress mockAddress) {
+        return new EventBuilder.HostnameCache(EventBuilder.HOSTNAME_CACHE_DURATION, fixedClock, new Callable<InetAddress>() {
+            @Override
+            public InetAddress call() throws Exception {
+                return mockAddress;
+            }
+        });
     }
 
     @Test
-    public void successfulHostnameRetrievalIsCachedForFiveHours(
-            @SuppressWarnings("unused") @Mocked("currentTimeMillis") final System system)
-            throws Exception {
-        new NonStrictExpectations(InetAddress.class) {{
-            System.currentTimeMillis();
-            result = 1L;
-            InetAddress.getLocalHost();
-            result = mockLocalHost;
-        }};
-
-        new EventBuilder().build();
-        final long expirationTime = Deencapsulation.<Long>getField(getHostnameCache(), "expirationTimestamp");
-
-        assertThat(expirationTime, is(TimeUnit.HOURS.toMillis(5) + System.currentTimeMillis()));
+    public void successfulHostnameRetrievalIsCachedForFiveHours() throws Exception {
+        EventBuilder.HostnameCache cache = createCacheUsingLocalhost(mockLocalHost);
+        cache.getHostname();
+        assertThat(cache.expirationTimestamp, is(EventBuilder.HOSTNAME_CACHE_DURATION + fixedClock.millis()));
     }
 
     @Test
-    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond(
-            @SuppressWarnings("unused") @Mocked("currentTimeMillis") final System system)
-            throws Exception {
-        new NonStrictExpectations(InetAddress.class) {{
-            System.currentTimeMillis();
-            result = 1L;
-            InetAddress.getLocalHost();
-            result = mockTimingOutLocalHost;
-        }};
-
-        new EventBuilder().build();
-        final long expirationTime = Deencapsulation.<Long>getField(getHostnameCache(), "expirationTimestamp");
-
-        assertThat(expirationTime, is(TimeUnit.SECONDS.toMillis(1) + System.currentTimeMillis()));
+    public void unsuccessfulHostnameRetrievalIsCachedForOneSecond() throws Exception {
+        EventBuilder.HostnameCache cache = createCacheUsingLocalhost(mockTimingOutLocalHost);
+        cache.getHostname();
+        assertThat(cache.expirationTimestamp, is(TimeUnit.SECONDS.toMillis(1) + fixedClock.millis()));
     }
 
     @Test
     public void unsuccessfulHostnameRetrievalUsesLastKnownCachedValue() throws Exception {
-        new NonStrictExpectations(InetAddress.class) {{
-            InetAddress.getLocalHost();
-            result = mockLocalHost;
-            result = mockTimingOutLocalHost;
-        }};
+        InetAddress localhost = mock(InetAddress.class);
+        when(localhost.getCanonicalHostName()).thenReturn("mockLocalhost").thenThrow(new RuntimeException());
 
-        new EventBuilder().build();
-        setField(getHostnameCache(), "expirationTimestamp", 0l);
-        Event event = new EventBuilder().build();
+        EventBuilder.HostnameCache cache = createCacheUsingLocalhost(localhost);
 
-        assertThat(event.getServerName(), is(mockLocalHostName));
-        new Verifications() {{
-            mockLocalHost.getCanonicalHostName();
-            mockTimingOutLocalHost.getCanonicalHostName();
-        }};
+        // get the "last known cached value"
+        String resolved = cache.getHostname();
+        assertThat(resolved, is("mockLocalhost"));
+
+        // expire the cache
+        fixedClock.tick(cache.cacheDuration + 1, TimeUnit.MILLISECONDS);
+
+        // check that the second failing invocation returns the previously cached value
+        resolved = cache.getHostname();
+        assertThat(resolved, is("mockLocalhost"));
     }
 }

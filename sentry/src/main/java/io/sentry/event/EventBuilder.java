@@ -1,13 +1,16 @@
 package io.sentry.event;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import io.sentry.environment.SentryEnvironment;
 import io.sentry.event.interfaces.SentryInterface;
 import io.sentry.event.interfaces.SentryStackTraceElement;
+import io.sentry.time.Clock;
+import io.sentry.time.SystemClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -34,7 +37,6 @@ public class EventBuilder {
      * @see HostnameCache
      */
     public static final long HOSTNAME_CACHE_DURATION = TimeUnit.HOURS.toMillis(5);
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
@@ -470,36 +472,52 @@ public class EventBuilder {
      * time
      * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
      */
-    private static final class HostnameCache {
+    // visible for testing
+    static final class HostnameCache {
         /**
          * Time before the get hostname operation times out (in ms).
          */
-        public static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+        static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
         private static final Logger logger = LoggerFactory.getLogger(HostnameCache.class);
         /**
          * Time for which the cache is kept.
          */
-        private final long cacheDuration;
+        final long cacheDuration;
         /**
          * Current value for hostname (might change over time).
          */
-        private volatile String hostname = DEFAULT_HOSTNAME;
+        volatile String hostname = DEFAULT_HOSTNAME;
         /**
          * Time at which the cache should expire.
          */
-        private volatile long expirationTimestamp;
+        volatile long expirationTimestamp;
         /**
          * Whether a cache update thread is currently running or not.
          */
         private AtomicBoolean updateRunning = new AtomicBoolean(false);
 
+        private final Clock clock;
+        private final Callable<InetAddress> getLocalhost;
+
+        private HostnameCache(long cacheDuration) {
+            this(cacheDuration, new SystemClock(), new Callable<InetAddress>() {
+                @Override
+                public InetAddress call() throws Exception {
+                    return InetAddress.getLocalHost();
+                }
+            });
+        }
+
         /**
          * Sets up a cache for the hostname.
          *
          * @param cacheDuration cache duration in milliseconds.
+         * @param clock the clock to track time with
          */
-        private HostnameCache(long cacheDuration) {
+        HostnameCache(long cacheDuration, Clock clock, Callable<InetAddress> getLocalhost) {
             this.cacheDuration = cacheDuration;
+            this.clock = clock;
+            this.getLocalhost = getLocalhost;
         }
 
         /**
@@ -509,8 +527,8 @@ public class EventBuilder {
          *
          * @return the hostname of the current machine.
          */
-        public String getHostname() {
-            if (expirationTimestamp < System.currentTimeMillis()
+        String getHostname() {
+            if (expirationTimestamp < clock.millis()
                 && updateRunning.compareAndSet(false, true)) {
                 updateCache();
             }
@@ -521,13 +539,13 @@ public class EventBuilder {
         /**
          * Force an update of the cache to get the current value of the hostname.
          */
-        public void updateCache() {
+        void updateCache() {
             Callable<Void> hostRetriever = new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
                     try {
-                        hostname = InetAddress.getLocalHost().getCanonicalHostName();
-                        expirationTimestamp = System.currentTimeMillis() + cacheDuration;
+                        hostname = getLocalhost.call().getCanonicalHostName();
+                        expirationTimestamp = clock.millis() + cacheDuration;
                     } finally {
                         updateRunning.set(false);
                     }
@@ -542,7 +560,7 @@ public class EventBuilder {
                 new Thread(futureTask).start();
                 futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
+                expirationTimestamp = clock.millis() + TimeUnit.SECONDS.toMillis(1);
                 logger.debug("Localhost hostname lookup failed, keeping the value '{}'."
                     + " If this persists it may mean your DNS is incorrectly configured and"
                     + " you may want to hardcode your server name: https://docs.sentry.io/clients/java/config/",
