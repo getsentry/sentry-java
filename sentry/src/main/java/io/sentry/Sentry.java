@@ -130,9 +130,9 @@ public final class Sentry {
         // ResourceLocator will ba passed to Lookup upon instantiation
         Sentry.resourceLoader = sentryOptions.getResourceLoader();
 
-        // make sure to use the DSN configured in the options instead of the one that the factory can find in
-        // its lookup
-        SentryClient client = sentryOptions.getSentryClientFactory().createSentryClient(sentryOptions.getDsn());
+        // make sure to use the DSN configured in the options instead of the one that the factory can find in its
+        // lookup
+        SentryClient client = sentryOptions.getSentryClientFactory().createClient(sentryOptions.getDsn());
         setStoredClient(client);
         return client;
     }

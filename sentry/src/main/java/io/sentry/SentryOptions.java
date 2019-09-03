@@ -216,15 +216,20 @@ public final class SentryOptions {
     /**
      * A dummy factory used in case of invalid configuration.
      */
-    private static final class InvalidSentryClientFactory extends SentryClientFactory {
+    private final class InvalidSentryClientFactory extends SentryClientFactory {
+
+        private InvalidSentryClientFactory() {
+            super(getLookup());
+        }
+
         /**
          * Returns null.
          *
-         * @param dsn not used
+         * @param newDsn not used
          * @return always null
          */
         @Override
-        public SentryClient createSentryClient(Dsn dsn) {
+        public SentryClient createSentryClient(Dsn newDsn) {
             return null;
         }
     }

@@ -9,16 +9,14 @@ public class SentryClientFactoryTest extends BaseTest {
     @Test
     public void testSentryClientForFactoryNameSucceedsIfFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=io.sentry.TestFactory";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory()
-                .createSentryClient((String) null);
+        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory().createClient(null);
         assertThat(sentryClient.getRelease(), is(TestFactory.RELEASE));
     }
 
     @Test
     public void testSentryClientForFactoryReturnsNullIfNoFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=invalid";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory()
-                .createSentryClient((String) null);
+        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory().createClient(null);
         assertThat(sentryClient, is(nullValue()));
     }
 
@@ -29,8 +27,7 @@ public class SentryClientFactoryTest extends BaseTest {
         String previous = System.getProperty(propName);
         try {
             System.setProperty(propName, "noop://localhost/1?release=xyz");
-            sentryClient = SentryOptions.defaults().getSentryClientFactory()
-                .createSentryClient((String) null);
+            sentryClient = SentryOptions.defaults().getSentryClientFactory().createClient(null);
         } finally {
             if (previous == null) {
                 System.clearProperty(propName);
@@ -45,8 +42,7 @@ public class SentryClientFactoryTest extends BaseTest {
     @Test
     public void testCreateDsnIfStringProvided() throws Exception {
         final String dsn = "noop://localhost/1?release=abc";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory()
-                .createSentryClient((String) null);
+        SentryClient sentryClient = SentryOptions.defaults().getSentryClientFactory().createClient(dsn);
         assertThat(sentryClient.getRelease(), is("abc"));
     }
 }
