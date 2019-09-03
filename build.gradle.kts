@@ -16,13 +16,12 @@ allprojects {
         jcenter()
         mavenCentral()
     }
-    spotless {
-        java {
-            target("**/*.java")
-            trimTrailingWhitespace()
-            removeUnusedImports()
-            googleJavaFormat()
-            paddedCell()
-        }
+}
+
+spotless {
+    java {
+        target("**/*.java")
+        removeUnusedImports()
+        googleJavaFormat()
     }
 }

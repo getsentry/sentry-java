@@ -3,8 +3,5 @@ public class Sentry {
     init(new SentryOptions());
   }
 
-  public static void init(SentryOptions options) {
-
-
-  }
+  public static void init(SentryOptions options) {}
 }
