@@ -244,6 +244,17 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
     protected final Lookup lookup;
 
     /**
+     * Provided only for backwards compatibility. Do not use this because it cannot take advantage of the customizable
+     * lookup configuration.
+     * @see #DefaultSentryClientFactory(Lookup)
+     * @deprecated use {@link #DefaultSentryClientFactory(Lookup)} instead
+     */
+    @Deprecated
+    public DefaultSentryClientFactory() {
+        this(Lookup.getDefault());
+    }
+
+    /**
      * Creates a new instance using the provided lookup to locate the configuration.
      * @param lookup the lookup instance
      */

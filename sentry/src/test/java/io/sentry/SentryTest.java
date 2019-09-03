@@ -132,7 +132,7 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init(SentryOptions.from(SentryOptions.getDefaultLookup(),
+        SentryClient sentryClient = Sentry.init(SentryOptions.from(Lookup.getDefault(),
                 "http://public:private@localhost:4567/1?async=false"));
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
@@ -149,9 +149,9 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsnAndFactory() throws Exception {
-        SentryClient sentryClient = Sentry.init(new SentryOptions(SentryOptions.getDefaultLookup(),
-                new Dsn("http://public:private@localhost:4567/1?async=false"),
-                new DefaultSentryClientFactory(SentryOptions.getDefaultLookup())));
+        SentryClient sentryClient = Sentry.init(new SentryOptions(Lookup.getDefault(),
+                "http://public:private@localhost:4567/1?async=false",
+                new DefaultSentryClientFactory(Lookup.getDefault())));
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
 

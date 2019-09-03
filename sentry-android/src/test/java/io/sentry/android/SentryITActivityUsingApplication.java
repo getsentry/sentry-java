@@ -30,9 +30,9 @@ public class SentryITActivityUsingApplication extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Sentry.init(new SentryOptions(SentryOptions.getDefaultLookup(),
-            new Dsn("http://8292bf61d620417282e68a72ae03154a:e3908e05ad874b24b7a168992bfa3577@localhost:8080/1"),
-            new CustomAndroidSentryClientFactory(getApplication(), SentryOptions.getDefaultLookup())));
+        Sentry.init(new SentryOptions(Lookup.getDefault(),
+            "http://8292bf61d620417282e68a72ae03154a:e3908e05ad874b24b7a168992bfa3577@localhost:8080/1",
+            new CustomAndroidSentryClientFactory(getApplication(), Lookup.getDefault())));
     }
 
     public void sendEvent() {

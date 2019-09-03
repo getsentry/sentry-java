@@ -1,33 +1,9 @@
 package io.sentry;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import io.sentry.config.CompoundResourceLoader;
-import io.sentry.config.ContextClassLoaderResourceLoader;
-import io.sentry.config.FileResourceLoader;
 import io.sentry.config.Lookup;
 import io.sentry.config.ResourceLoader;
-import io.sentry.config.location.CompoundResourceLocator;
-import io.sentry.config.location.ConfigurationResourceLocator;
-import io.sentry.config.location.EnvironmentBasedLocator;
-import io.sentry.config.location.StaticFileLocator;
-import io.sentry.config.location.SystemPropertiesBasedLocator;
-import io.sentry.config.provider.CompoundConfigurationProvider;
-import io.sentry.config.provider.ConfigurationProvider;
-import io.sentry.config.provider.EnvironmentConfigurationProvider;
-import io.sentry.config.provider.JndiConfigurationProvider;
-import io.sentry.config.provider.JndiSupport;
-import io.sentry.config.provider.LocatorBasedConfigurationProvider;
-import io.sentry.config.provider.SystemPropertiesConfigurationProvider;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Nullable;
 import io.sentry.util.Util;
@@ -40,22 +16,42 @@ import org.slf4j.LoggerFactory;
 public final class SentryOptions {
     private static final Logger logger = LoggerFactory.getLogger(SentryOptions.class);
 
-    private final Lookup lookup;
-    private final Dsn dsn;
-    private final SentryClientFactory clientFactory;
+    private Lookup lookup;
+    private SentryClientFactory clientFactory;
+    private String dsn;
+
+    /**
+     * The resource loader to use during {@link Lookup#getDefault()}, if an instance of {@code SentryOptions} is first
+     * passed to {@link Sentry#init(SentryOptions)}.
+     *
+     * @deprecated this is just in support of the hack to use a custom resource loader during the deprecated static
+     * lookup
+     */
+    @Deprecated
+    private ResourceLoader resourceLoader;
 
     /**
      * Creates a new instance of the options using the provided parameters.
      *
      * @param lookup        the lookup to locate the configuration with
-     * @param dsn           the dsn to use
-     * @param clientFactory the client factory to use
-     * @throws NullPointerException if any of the parameters is null
+     * @param dsn           the DSN to use or null if the DSN should be found in the lookup
+     * @param clientFactory the client factory to use or null if the instance should be found in the lookup
+     * @throws NullPointerException if lookup is null
      */
-    public SentryOptions(Lookup lookup, Dsn dsn, SentryClientFactory clientFactory) {
+    public SentryOptions(Lookup lookup, @Nullable String dsn, @Nullable SentryClientFactory clientFactory) {
         this.lookup = requireNonNull(lookup, "lookup");
-        this.dsn = requireNonNull(dsn, "dsn");
-        this.clientFactory = requireNonNull(clientFactory, "clientFactory");
+        this.dsn = resolveDsn(lookup, dsn);
+        this.clientFactory = clientFactory == null
+                ? SentryClientFactory.instantiateFrom(this.lookup, this.dsn)
+                : clientFactory;
+        this.resourceLoader = null;
+
+        if (this.clientFactory == null) {
+            logger.error("Failed to find a Sentry client factory in the provided configuration. Will continue"
+                    + " with a dummy implementation that will send no data.");
+
+            this.clientFactory = new InvalidSentryClientFactory();
+        }
     }
 
     /**
@@ -66,7 +62,7 @@ public final class SentryOptions {
      * @return new instance of SentryOptions
      */
     public static SentryOptions from(Lookup lookup) {
-        return from(lookup, (String) null, null);
+        return from(lookup, null, null);
     }
 
     /**
@@ -91,28 +87,13 @@ public final class SentryOptions {
      * @return new instance of SentryOptions
      */
     public static SentryOptions from(Lookup lookup, @Nullable String dsn, @Nullable SentryClientFactory factory) {
-        return from(lookup, resolveDsn(lookup, dsn), factory);
-    }
-
-    private static SentryOptions from(Lookup lookup, Dsn dsn, @Nullable SentryClientFactory factory) {
-        if (factory == null) {
-            factory = SentryClientFactory.instantiateFrom(lookup, dsn);
-        }
-
-        if (factory == null) {
-            logger.error("Failed to find a Sentry client factory in the provided configuration. Will continue"
-                    + " with a dummy implementation that will send no data.");
-
-            factory = new InvalidSentryClientFactory();
-        }
-
         return new SentryOptions(lookup, dsn, factory);
     }
 
     /**
      * A convenience method to load the default SentryOptions using the default lookup instance.
      *
-     * @see #getDefaultLookup()
+     * @see Lookup#getDefault()
      *
      * @return the default sentry options
      */
@@ -128,109 +109,95 @@ public final class SentryOptions {
      *
      * @param dsn the DSN to override the configured default with
      *
-     * @see #getDefaultLookup()
+     * @see Lookup#getDefault()
      *
      * @return the default sentry options with the provided DSN
      */
     public static SentryOptions defaults(@Nullable String dsn) {
-        return from(getDefaultLookup(), dsn, null);
+        return from(Lookup.getDefault(), dsn, null);
     }
 
     /**
-     * In the default lookup returned from this method, the configuration properties are looked up in the sources in the
-     * following order.
-     *
-     * <ol>
-     * <li>JNDI, if available
-     * <li>Java System Properties
-     * <li>System Environment Variables
-     * <li>DSN options, if a non-null DSN is provided
-     * <li>Sentry properties file found in resources
-     * </ol>
-     *
-     * @return the default lookup instance
+     * Gets the optionally set {@Link SentryClientFactory}.
+     * @return {@link SentryClientFactory}
      */
-    public static Lookup getDefaultLookup() {
-        return new Lookup(new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders()),
-                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders()));
+    public SentryClientFactory getClientFactory() {
+        return clientFactory;
     }
 
     /**
-     * Similar to {@link #with(Dsn)} but uses just the string representation of the DSN. If the provided DSN is null,
-     * the one from the current instance is used.
-     *
-     * @param newDsn the DSN to use or null if it should remain the same.
-     * @return the new options instance (or this instance if the provided dsn is null)
+     * Sets the {@link SentryClientFactory} to be used when initializing the SDK.
+     * @param clientFactory Factory used to create a {@link SentryClient}.
      */
-    public SentryOptions withDsn(@Nullable String newDsn) {
-        return newDsn == null ? this : with(new Dsn(newDsn));
+    public void setClientFactory(@Nullable SentryClientFactory clientFactory) {
+        this.clientFactory = clientFactory == null
+                ? SentryClientFactory.instantiateFrom(getLookup(), getDsn())
+                : clientFactory;
     }
 
     /**
-     * Returns a copy of this options instance with the dsn set to the provided value.
-     *
-     * @param newDsn the dsn to use in the new options instance
-     * @return the new options instance
+     * Gets the DSN. If not DSN was set, the SDK will attempt to find one in the environment.
+     * @return Data Source Name.
      */
-    public SentryOptions with(Dsn newDsn) {
-        return from(getLookup(), requireNonNull(newDsn), null);
+    public String getDsn() {
+        return dsn;
     }
 
     /**
-     * Returns a copy of this options instance with the lookup set to the provided value.
-     *
-     * @param newLookup the lookup to use in the new options instance
-     * @return the new options instance
+     * Sets the DSN to be used by the {@link SentryClient}.
+     * @param dsn Sentry Data Source Name.
      */
-    public SentryOptions with(Lookup newLookup) {
-        return from(requireNonNull(newLookup), getDsn(), null);
+    public void setDsn(@Nullable String dsn) {
+        this.dsn = resolveDsn(getLookup(), dsn);
     }
 
     /**
-     * Returns a copy of this options instance with the client factory set to the provided value.
-     *
-     * @param newClientFactory the client factory to use in the new options instance
-     * @return the new options instance
-     */
-    public SentryOptions with(SentryClientFactory newClientFactory) {
-        return from(getLookup(), getDsn(), requireNonNull(newClientFactory));
-    }
-
-    /**
-     * Gets the value of the configuration key using the {@link #getLookup() lookup} and {@link #getDsn() DSN}.
-     *
-     * @param key the name of the configuration key
-     * @return the value of the configuration key or null if not found
-     */
-    @Nullable
-    public String getConfigurationKey(String key) {
-        return lookup.get(key, dsn);
-    }
-
-    /**
-     * Gets the lookup instance used by this options instance.
-     *
-     * @return the configured lookup instance
+     * Returns the lookup instance to use.
+     * @return the lookup instance
      */
     public Lookup getLookup() {
         return lookup;
     }
 
     /**
-     * Gets the DSN instance used by this options instance.
-     *
-     * @return the configured DSN instance
+     * Sets the lookup instance to use.
+     * @param lookup the lookup to use
      */
-    public Dsn getDsn() {
-        return dsn;
+    public void setLookup(Lookup lookup) {
+        this.lookup = requireNonNull(lookup);
     }
 
     /**
-     * Gets the Sentry client factory instance used by this options instance.
-     * @return the configured client factory instance
+     * Gets the resource loader to be used during {@link Sentry#init(SentryOptions)} to set the
+     * {@link Sentry#getResourceLoader()}. This is kept for supporting the initialization of a default lookup instance
+     * ({@link Lookup#getDefault()}) that is used during the deprecated static lookups ({@link Lookup#lookup(String)}
+     * and {@link Lookup#lookup(String, Dsn)}).
+     *
+     * @deprecated don't use this method. Instead configure the {@link Lookup} instance with appropriate
+     * {@link io.sentry.config.provider.ResourceLoaderConfigurationProvider}s and create a new {@link SentryOptions}
+     * instance
+     * @return the resource loader
      */
-    public SentryClientFactory getClientFactory() {
-        return clientFactory;
+    @Deprecated
+    public ResourceLoader getResourceLoader() {
+        return resourceLoader;
+    }
+
+    /**
+     * Sets the resource loader to be used during {@link Sentry#init(SentryOptions)} to set the
+     * {@link Sentry#getResourceLoader()}. This is kept for supporting the initialization of a default lookup instance
+     * ({@link Lookup#getDefault()}) that is used during the deprecated static lookups ({@link Lookup#lookup(String)}
+     * and {@link Lookup#lookup(String, Dsn)}).
+     *
+     * @param resourceLoader the resource loader to use in default lookup instance
+     *
+     * @deprecated don't use this method. Instead configure the {@link Lookup} instance with appropriate
+     * {@link io.sentry.config.provider.ResourceLoaderConfigurationProvider}s and create a new {@link SentryOptions}
+     * instance
+     */
+    @Deprecated
+    public void setResourceLoader(@Nullable ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
     }
 
     /**
@@ -243,53 +210,16 @@ public final class SentryOptions {
         return getClientFactory().createSentryClient(getDsn());
     }
 
-    private static Dsn resolveDsn(Lookup lookup, @Nullable String dsn) {
+    private static String resolveDsn(Lookup lookup, @Nullable String dsn) {
         try {
             if (Util.isNullOrEmpty(dsn)) {
                 dsn = Dsn.dsnFrom(lookup);
             }
 
-            return new Dsn(dsn);
+            return dsn;
         } catch (Exception e) {
             logger.error("Error creating valid DSN from: '{}'.", dsn, e);
             throw e;
-        }
-    }
-
-    // the below is support for instantiating the default lookup
-
-    private static List<ConfigurationResourceLocator> getDefaultResourceLocators() {
-        return asList(new SystemPropertiesBasedLocator(), new EnvironmentBasedLocator(), new StaticFileLocator());
-    }
-
-    private static List<ConfigurationProvider> getDefaultHighPriorityConfigurationProviders() {
-        boolean jndiPresent = JndiSupport.isAvailable();
-
-        @SuppressWarnings("checkstyle:MagicNumber")
-        List<ConfigurationProvider> providers = new ArrayList<>(jndiPresent ? 3 : 2);
-
-        if (jndiPresent) {
-            providers.add(new JndiConfigurationProvider());
-        }
-
-        providers.add(new SystemPropertiesConfigurationProvider());
-        providers.add(new EnvironmentConfigurationProvider());
-
-        return providers;
-    }
-
-    private static List<ResourceLoader> getDefaultResourceLoaders() {
-        return Arrays.asList(new FileResourceLoader(), new ContextClassLoaderResourceLoader());
-    }
-
-    private static List<ConfigurationProvider> getDefaultLowPriorityConfigurationProviders() {
-        try {
-            return singletonList((ConfigurationProvider)
-                    new LocatorBasedConfigurationProvider(new CompoundResourceLoader(getDefaultResourceLoaders()),
-                            new CompoundResourceLocator(getDefaultResourceLocators()), Charset.defaultCharset()));
-        } catch (IOException e) {
-            logger.debug("Failed to instantiate resource locator-based configuration provider.", e);
-            return emptyList();
         }
     }
 

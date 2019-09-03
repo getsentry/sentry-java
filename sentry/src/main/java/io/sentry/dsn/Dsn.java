@@ -1,6 +1,5 @@
 package io.sentry.dsn;
 
-import io.sentry.SentryOptions;
 import io.sentry.config.Lookup;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
@@ -82,7 +81,7 @@ public class Dsn {
      */
     @Deprecated
     public static String dsnLookup() {
-        return dsnFrom(SentryOptions.getDefaultLookup());
+        return dsnFrom(Lookup.getDefault());
     }
 
     /**

@@ -30,6 +30,15 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
      */
     public static final String CONNECTION_IDENTIFIER = "sentry.async.gae.connectionid";
 
+    /**
+     * This is provided for backwards compatibility but doesn't support custom lookup injection.
+     * @deprecated use {@link #AppEngineSentryClientFactory(Lookup)} instead
+     */
+    @Deprecated
+    public AppEngineSentryClientFactory() {
+        this(Lookup.getDefault());
+    }
+
     public AppEngineSentryClientFactory(Lookup lookup) {
         super(lookup);
     }

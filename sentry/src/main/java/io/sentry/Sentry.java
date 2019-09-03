@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.config.Lookup;
+import io.sentry.config.ResourceLoader;
 import io.sentry.context.Context;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.Breadcrumb;
@@ -30,10 +31,32 @@ public final class Sentry {
     private static SentryClient storedClient = null;
 
     /**
+     * Optional override for the default resource loader used to look for properties.
+     *
+     * @deprecated This was a hack to be able to inject the resource loader into the static Lookup initialization.
+     * This is no longer required due to {@link Lookup} being configurable and passed throughout the classes as an
+     * instance.
+     */
+    @Deprecated
+    private static ResourceLoader resourceLoader;
+
+    /**
      * Hide constructor.
      */
     private Sentry() {
 
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by looking up
+     * a {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     *
+     * @return SentryClient
+     * @deprecated use {@link #init(SentryOptions)}
+     */
+    @Deprecated
+    public static SentryClient init() {
+        return init((String) null);
     }
 
     /**
@@ -47,7 +70,7 @@ public final class Sentry {
      */
     @Deprecated
     public static SentryClient init(@Nullable SentryClientFactory sentryClientFactory) {
-        return init(SentryOptions.from(SentryOptions.getDefaultLookup(), null, sentryClientFactory));
+        return init(SentryOptions.from(Lookup.getDefault(), null, sentryClientFactory));
     }
 
     /**
@@ -62,6 +85,27 @@ public final class Sentry {
     @Deprecated
     public static SentryClient init(@Nullable String dsn) {
         return init(SentryOptions.defaults(dsn));
+    }
+
+    /**
+     * Initialize and statically store a {@link SentryClient} by using the provided
+     * {@link Dsn} and {@link SentryClientFactory}.
+     * <p>
+     * Note that the Dsn or SentryClientFactory may be null, at which a best effort attempt
+     * is made to look up or choose the best value(s).
+     *
+     * @param dsn                 Data Source Name of the Sentry server.
+     * @param sentryClientFactory SentryClientFactory to use.
+     * @return SentryClient
+     * @deprecated use {@link #init(SentryOptions)}
+     */
+    @Deprecated
+    public static SentryClient init(@Nullable String dsn, @Nullable SentryClientFactory sentryClientFactory) {
+        SentryOptions options = SentryOptions.defaults(dsn);
+        if (sentryClientFactory != null) {
+            options.setClientFactory(sentryClientFactory);
+        }
+        return init(options);
     }
 
     /**
@@ -83,7 +127,14 @@ public final class Sentry {
      * @return the Sentry client
      */
     public static SentryClient init(SentryOptions sentryOptions) {
-        SentryClient client = sentryOptions.createClient();
+        // Hack to allow Lookup.java access to a different resource locator before its static initializer runs.
+        // v2: Lookup won't be static and this hack will be removed.
+        // ResourceLocator will ba passed to Lookup upon instantiation
+        Sentry.resourceLoader = sentryOptions.getResourceLoader();
+
+        // make sure to use the DSN configured in the options instead of the one that the factory can find in
+        // its lookup
+        SentryClient client = sentryOptions.getClientFactory().createSentryClient(sentryOptions.getDsn());
         setStoredClient(client);
         return client;
     }
@@ -105,6 +156,18 @@ public final class Sentry {
         }
 
         return storedClient;
+    }
+
+    /**
+     * The {@link ResourceLoader} used to lookup properties.
+     *
+     * @return {@link ResourceLoader}.
+     * @deprecated Using this field is discouraged in favour of using the configurable {@link Lookup} with
+     * {@link io.sentry.config.provider.ResourceLoaderConfigurationProvider}.
+     */
+    @Deprecated
+    public static ResourceLoader getResourceLoader() {
+        return resourceLoader;
     }
 
     /**
