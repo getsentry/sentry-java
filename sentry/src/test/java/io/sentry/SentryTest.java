@@ -111,14 +111,14 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitNoDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init(SentryOptions.defaults());
+        SentryClient sentryClient = Sentry.init();
         Object connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(NoopConnection.class));
     }
 
     @Test
     public void testInitNullDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init(SentryOptions.defaults());
+        SentryClient sentryClient = Sentry.init((String) null);
         NoopConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(NoopConnection.class));
     }
@@ -132,8 +132,7 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsn() throws Exception {
-        SentryClient sentryClient = Sentry.init(SentryOptions.from(Lookup.getDefault(),
-                "http://public:private@localhost:4567/1?async=false"));
+        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false");
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
 
@@ -149,9 +148,8 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsnAndFactory() throws Exception {
-        SentryClient sentryClient = Sentry.init(new SentryOptions(Lookup.getDefault(),
-                "http://public:private@localhost:4567/1?async=false",
-                new DefaultSentryClientFactory(Lookup.getDefault())));
+        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false",
+                new DefaultSentryClientFactory());
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
 

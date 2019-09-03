@@ -2,6 +2,7 @@ package io.sentry;
 
 import org.testng.annotations.Test;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -9,14 +10,15 @@ public class SentryClientFactoryTest extends BaseTest {
     @Test
     public void testSentryClientForFactoryNameSucceedsIfFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=io.sentry.TestFactory";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory().createClient(null);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is(TestFactory.RELEASE));
     }
 
     @Test
     public void testSentryClientForFactoryReturnsNullIfNoFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=invalid";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory().createClient(null);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
         assertThat(sentryClient, is(nullValue()));
     }
 
@@ -27,7 +29,7 @@ public class SentryClientFactoryTest extends BaseTest {
         String previous = System.getProperty(propName);
         try {
             System.setProperty(propName, "noop://localhost/1?release=xyz");
-            sentryClient = SentryOptions.defaults().getSentryClientFactory().createClient(null);
+            sentryClient = SentryClientFactory.sentryClient(null);
         } finally {
             if (previous == null) {
                 System.clearProperty(propName);
@@ -36,13 +38,15 @@ public class SentryClientFactoryTest extends BaseTest {
             }
         }
 
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is("xyz"));
     }
 
     @Test
     public void testCreateDsnIfStringProvided() throws Exception {
         final String dsn = "noop://localhost/1?release=abc";
-        SentryClient sentryClient = SentryOptions.defaults().getSentryClientFactory().createClient(dsn);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is("abc"));
     }
 }

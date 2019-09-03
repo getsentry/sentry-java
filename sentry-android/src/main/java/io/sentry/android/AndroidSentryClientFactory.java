@@ -49,11 +49,12 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
     /**
      * Construct an AndroidSentryClientFactory using the base Context from the specified Android Application.
+     * <p>
+     * This uses a default lookup instance, use {@link #AndroidSentryClientFactory(Application, Lookup)} if
+     * you need to pass a specially configured lookup.
      *
      * @param app Android Application
-     * @deprecated uses a non-configurable lookup instance, use {@link #AndroidSentryClientFactory(Application, Lookup)}
      */
-    @Deprecated
     public AndroidSentryClientFactory(Application app) {
         this(app, Lookup.getDefault());
     }
@@ -73,11 +74,12 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
     /**
      * Construct an AndroidSentryClientFactory using the specified Android Context.
+     * <p>
+     * This uses a default lookup instance, use {@link #AndroidSentryClientFactory(Context, Lookup)} if
+     * you need to pass a specially configured lookup.
      *
      * @param ctx Android Context.
-     * @deprecated uses a non-configurable lookup instance, use {@link #AndroidSentryClientFactory(Context, Lookup)}
      */
-    @Deprecated
     public AndroidSentryClientFactory(Context ctx) {
         this(ctx, Lookup.getDefault());
     }

@@ -36,22 +36,25 @@ public abstract class SentryClientFactory {
     }
 
     /**
-     * Do not use this constructor. This depends on the deprecated static initialization of the {@link Lookup} instance.
-     * @deprecated use {@link #SentryClientFactory(Lookup)} instead
+     * Creates a new instance with default configuration.
+     * <p>
+     * This uses a default lookup instance, use {@link #SentryClientFactory(Lookup)} if you need to pass
+     * a specially configured lookup.
+     *
+     * @see #SentryClientFactory(Lookup)
      */
-    @Deprecated
     protected SentryClientFactory() {
         this(Lookup.getDefault());
     }
 
     /**
      * Creates an instance of Sentry by discovering the DSN.
+     * <p>
+     * This uses a default lookup instance, use {@link #instantiateFrom(Lookup, String)}.{@link #createClient(String)}
+     * if you need to use a specially configured lookup
      *
      * @return an instance of Sentry.
-     * @deprecated use {@link SentryOptions sentryOptions}
-     * .{@link SentryOptions#getSentryClientFactory() getClientFactory()}.{@link #createClient(String)} instead
      */
-    @Deprecated
     @Nullable
     public static SentryClient sentryClient() {
         return sentryClient(null, null);
@@ -59,13 +62,13 @@ public abstract class SentryClientFactory {
 
     /**
      * Creates an instance of Sentry using the provided DSN.
+     * <p>
+     * This uses a default lookup instance, use {@link #instantiateFrom(Lookup, String)}.{@link #createClient(String)}
+     * if you need to use a specially configured lookup
      *
      * @param dsn Data Source Name of the Sentry server.
      * @return an instance of Sentry.
-     * @deprecated use {@link SentryOptions sentryOptions}
-     * .{@link SentryOptions#getSentryClientFactory() getClientFactory()}.{@link #createClient(String)} instead
      */
-    @Deprecated
     @Nullable
     public static SentryClient sentryClient(@Nullable String dsn) {
         return sentryClient(dsn, null);
@@ -73,14 +76,14 @@ public abstract class SentryClientFactory {
 
     /**
      * Creates an instance of Sentry using the provided DSN and the specified factory.
+     * <p>
+     * This uses a default lookup instance, use {@link #instantiateFrom(Lookup, String)}.{@link #createClient(String)}
+     * if you need to use a specially configured lookup
      *
      * @param dsn Data Source Name of the Sentry server.
      * @param sentryClientFactory SentryClientFactory instance to use, or null to do a config lookup.
      * @return SentryClient instance, or null if one couldn't be constructed.
-     * @deprecated use {@link SentryOptions sentryOptions}
-     * .{@link SentryOptions#getSentryClientFactory() getClientFactory()}.{@link #createClient(String)} instead
      */
-    @Deprecated
     @Nullable
     public static SentryClient sentryClient(@Nullable String dsn, @Nullable SentryClientFactory sentryClientFactory) {
         Lookup lookup = Lookup.getDefault();
@@ -152,20 +155,21 @@ public abstract class SentryClientFactory {
 
     /**
      * Creates an instance of Sentry given a DSN.
+     * <p>
+     * You may want to prefer the {@link #createClient(String)} method, which can accept a null DSN if the DSN from the
+     * lookup configuration should be used.
      *
      * @param dsn Data Source Name of the Sentry server to override the configuration of the factory
      * @return an instance of Sentry.
      * @throws RuntimeException when an instance couldn't be created.
-     *
-     * @deprecated use {@link #createClient(String)}
      */
-    @Deprecated
     public abstract SentryClient createSentryClient(Dsn dsn);
 
     /**
-     * Creates an instance of Sentry given a DSN.
+     * Creates an instance of Sentry given a DSN. Uses either the explicitly provided non-null DSN or the default
+     * DSN found in the configuration if {@code null} is provided.
      *
-     * @param dsn Data Source Name of the Sentry server to override the configuration of the factory
+     * @param dsn optional Data Source Name of the Sentry server to override the configuration of the factory
      * @return an instance of Sentry.
      * @throws RuntimeException when an instance couldn't be created.
      */

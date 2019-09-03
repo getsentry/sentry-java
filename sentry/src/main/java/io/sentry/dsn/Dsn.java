@@ -74,12 +74,12 @@ public class Dsn {
 
     /**
      * Looks for a DSN configuration within JNDI, the System environment or Java properties.
+     * <p>
+     * This uses the default lookup. If you need a specially configured lookup instance, use {@link #dsnFrom(Lookup)}
+     * method.
      *
      * @return a DSN configuration or null if nothing could be found.
-     *
-     * @deprecated use {@link #dsnFrom(Lookup)} instead (kept because this is heavily used in tests)
      */
-    @Deprecated
     public static String dsnLookup() {
         return dsnFrom(Lookup.getDefault());
     }

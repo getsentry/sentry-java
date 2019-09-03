@@ -21,8 +21,9 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         String dsn = String.format("https://user:pass@example.com/1?" +
             "release=%s&dist=%s&environment=%s&servername=%s&tags=%s&extratags=%s&extra=%s",
             release, dist, environment, serverName, tags, extraTags, extras);
-        SentryClient sentryClient = SentryOptions.defaults().getSentryClientFactory().createClient(dsn);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
 
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is(release));
         assertThat(sentryClient.getDist(), is(dist));
         assertThat(sentryClient.getEnvironment(), is(environment));
@@ -49,8 +50,9 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         String badTags = "foo:";
 
         String dsn = String.format("https://user:pass@example.com/1?tags=%s", badTags);
-        SentryClient sentryClient = SentryOptions.defaults().getSentryClientFactory().createClient(dsn);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
 
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient, isA(SentryClient.class));
         assertThat(sentryClient.getContext(), notNullValue());
     }

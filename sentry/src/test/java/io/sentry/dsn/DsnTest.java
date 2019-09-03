@@ -138,7 +138,7 @@ public class DsnTest extends BaseTest {
             result = dsn;
         }};
 
-        assertThat(Dsn.dsnFrom(Lookup.getDefault()), is(Dsn.DEFAULT_DSN));
+        assertThat(Dsn.dsnLookup(), is(Dsn.DEFAULT_DSN));
     }
 
     @Test(expectedExceptions = InvalidDsnException.class)

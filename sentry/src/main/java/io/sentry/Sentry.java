@@ -50,11 +50,13 @@ public final class Sentry {
     /**
      * Initialize and statically store a {@link SentryClient} by looking up
      * a {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     * <p>
+     * This uses a default lookup instance, use {@link #init(SentryOptions)} if you need to pass a specially
+     * configured lookup.
      *
      * @return SentryClient
-     * @deprecated use {@link #init(SentryOptions)}
+     * @see #init(SentryOptions)
      */
-    @Deprecated
     public static SentryClient init() {
         return init((String) null);
     }
@@ -62,13 +64,14 @@ public final class Sentry {
     /**
      * Initialize and statically store a {@link SentryClient} by looking up
      * a {@link Dsn} and using the provided {@link SentryClientFactory}.
+     * <p>
+     * This uses a default lookup instance, use {@link #init(SentryOptions)} if you need to pass a specially
+     * configured lookup.
      *
      * @param sentryClientFactory SentryClientFactory to use.
      * @return SentryClient
-     *
-     * @deprecated use {@link #init(SentryOptions)}
+     * @see #init(SentryOptions)
      */
-    @Deprecated
     public static SentryClient init(@Nullable SentryClientFactory sentryClientFactory) {
         return init(SentryOptions.from(Lookup.getDefault(), null, sentryClientFactory));
     }
@@ -76,13 +79,14 @@ public final class Sentry {
     /**
      * Initialize and statically store a {@link SentryClient} by using the provided
      * {@link Dsn} and automatically choosing a {@link SentryClientFactory}.
+     * <p>
+     * This uses a default lookup instance, use {@link #init(SentryOptions)} if you need to pass a specially
+     * configured lookup.
      *
      * @param dsn Data Source Name of the Sentry server.
      * @return SentryClient
-     *
-     * @deprecated use {@link #init(SentryOptions)}
+     * @see #init(SentryOptions)
      */
-    @Deprecated
     public static SentryClient init(@Nullable String dsn) {
         return init(SentryOptions.defaults(dsn));
     }
@@ -93,13 +97,15 @@ public final class Sentry {
      * <p>
      * Note that the Dsn or SentryClientFactory may be null, at which a best effort attempt
      * is made to look up or choose the best value(s).
+     * <p>
+     * This uses a default lookup instance, use {@link #init(SentryOptions)} if you need to pass a specially
+     * configured lookup.
      *
      * @param dsn                 Data Source Name of the Sentry server.
      * @param sentryClientFactory SentryClientFactory to use.
      * @return SentryClient
-     * @deprecated use {@link #init(SentryOptions)}
+     * @see #init(SentryOptions)
      */
-    @Deprecated
     public static SentryClient init(@Nullable String dsn, @Nullable SentryClientFactory sentryClientFactory) {
         SentryOptions options = SentryOptions.defaults(dsn);
         options.setSentryClientFactory(sentryClientFactory);

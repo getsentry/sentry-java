@@ -32,13 +32,19 @@ public class AppEngineSentryClientFactory extends DefaultSentryClientFactory {
 
     /**
      * This is provided for backwards compatibility but doesn't support custom lookup injection.
-     * @deprecated use {@link #AppEngineSentryClientFactory(Lookup)} instead
+     * <p>
+     * This uses a default lookup instance, use {@link #AppEngineSentryClientFactory(Lookup)} if you need to
+     * pass a specially configured lookup.
      */
-    @Deprecated
-    public AppEngineSentryClientFactory() {
+     public AppEngineSentryClientFactory() {
         this(Lookup.getDefault());
     }
 
+    /**
+     * Creates a new instance configured using the provided lookup instance.
+     *
+     * @param lookup the lookup instance to load configuration from
+     */
     public AppEngineSentryClientFactory(Lookup lookup) {
         super(lookup);
     }
