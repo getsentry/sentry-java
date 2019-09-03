@@ -17,7 +17,7 @@ public final class SentryOptions {
     private static final Logger logger = LoggerFactory.getLogger(SentryOptions.class);
 
     private Lookup lookup;
-    private SentryClientFactory clientFactory;
+    private SentryClientFactory sentryClientFactory;
     private String dsn;
 
     /**
@@ -35,22 +35,22 @@ public final class SentryOptions {
      *
      * @param lookup        the lookup to locate the configuration with
      * @param dsn           the DSN to use or null if the DSN should be found in the lookup
-     * @param clientFactory the client factory to use or null if the instance should be found in the lookup
+     * @param sentryClientFactory the client factory to use or null if the instance should be found in the lookup
      * @throws NullPointerException if lookup is null
      */
-    public SentryOptions(Lookup lookup, @Nullable String dsn, @Nullable SentryClientFactory clientFactory) {
+    public SentryOptions(Lookup lookup, @Nullable String dsn, @Nullable SentryClientFactory sentryClientFactory) {
         this.lookup = requireNonNull(lookup, "lookup");
         this.dsn = resolveDsn(lookup, dsn);
-        this.clientFactory = clientFactory == null
+        this.sentryClientFactory = sentryClientFactory == null
                 ? SentryClientFactory.instantiateFrom(this.lookup, this.dsn)
-                : clientFactory;
+                : sentryClientFactory;
         this.resourceLoader = null;
 
-        if (this.clientFactory == null) {
+        if (this.sentryClientFactory == null) {
             logger.error("Failed to find a Sentry client factory in the provided configuration. Will continue"
                     + " with a dummy implementation that will send no data.");
 
-            this.clientFactory = new InvalidSentryClientFactory();
+            this.sentryClientFactory = new InvalidSentryClientFactory();
         }
     }
 
@@ -118,19 +118,19 @@ public final class SentryOptions {
     }
 
     /**
-     * Gets the optionally set {@Link SentryClientFactory}.
+     * Gets the optionally set {@link SentryClientFactory}.
      * @return {@link SentryClientFactory}
      */
-    public SentryClientFactory getClientFactory() {
-        return clientFactory;
+    public SentryClientFactory getSentryClientFactory() {
+        return sentryClientFactory;
     }
 
     /**
      * Sets the {@link SentryClientFactory} to be used when initializing the SDK.
      * @param clientFactory Factory used to create a {@link SentryClient}.
      */
-    public void setClientFactory(@Nullable SentryClientFactory clientFactory) {
-        this.clientFactory = clientFactory == null
+    public void setSentryClientFactory(@Nullable SentryClientFactory clientFactory) {
+        this.sentryClientFactory = clientFactory == null
                 ? SentryClientFactory.instantiateFrom(getLookup(), getDsn())
                 : clientFactory;
     }
@@ -201,13 +201,13 @@ public final class SentryOptions {
     }
 
     /**
-     * Returns a new Sentry client obtained from the {@link #getClientFactory() factory}.
+     * Returns a new Sentry client obtained from the {@link #getSentryClientFactory() factory}.
      *
      * @return the new sentry client or null if the client factory is invalid
      */
     @Nullable
     public SentryClient createClient() {
-        return getClientFactory().createSentryClient(getDsn());
+        return getSentryClientFactory().createSentryClient(getDsn());
     }
 
     private static String resolveDsn(Lookup lookup, @Nullable String dsn) {

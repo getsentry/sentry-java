@@ -102,9 +102,7 @@ public final class Sentry {
     @Deprecated
     public static SentryClient init(@Nullable String dsn, @Nullable SentryClientFactory sentryClientFactory) {
         SentryOptions options = SentryOptions.defaults(dsn);
-        if (sentryClientFactory != null) {
-            options.setClientFactory(sentryClientFactory);
-        }
+        options.setSentryClientFactory(sentryClientFactory);
         return init(options);
     }
 
@@ -134,7 +132,7 @@ public final class Sentry {
 
         // make sure to use the DSN configured in the options instead of the one that the factory can find in
         // its lookup
-        SentryClient client = sentryOptions.getClientFactory().createSentryClient(sentryOptions.getDsn());
+        SentryClient client = sentryOptions.getSentryClientFactory().createSentryClient(sentryOptions.getDsn());
         setStoredClient(client);
         return client;
     }

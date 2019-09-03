@@ -23,8 +23,8 @@ public abstract class SentryClientFactory {
      * Creates an instance of Sentry by discovering the DSN.
      *
      * @return an instance of Sentry.
-     * @deprecated use {@link SentryOptions sentryOptions}.{@link SentryOptions#getClientFactory() getClientFactory()}
-     * .{@link #createSentryClient(Dsn)} instead
+     * @deprecated use {@link SentryOptions sentryOptions}
+     * .{@link SentryOptions#getSentryClientFactory() getClientFactory()}.{@link #createSentryClient(Dsn)} instead
      */
     @Deprecated
     @Nullable
@@ -37,8 +37,8 @@ public abstract class SentryClientFactory {
      *
      * @param dsn Data Source Name of the Sentry server.
      * @return an instance of Sentry.
-     * @deprecated use {@link SentryOptions sentryOptions}.{@link SentryOptions#getClientFactory() getClientFactory()}
-     * .{@link #createSentryClient(Dsn)} instead
+     * @deprecated use {@link SentryOptions sentryOptions}
+     * .{@link SentryOptions#getSentryClientFactory() getClientFactory()}.{@link #createSentryClient(Dsn)} instead
      */
     @Deprecated
     @Nullable
@@ -52,8 +52,8 @@ public abstract class SentryClientFactory {
      * @param dsn Data Source Name of the Sentry server.
      * @param sentryClientFactory SentryClientFactory instance to use, or null to do a config lookup.
      * @return SentryClient instance, or null if one couldn't be constructed.
-     * @deprecated use {@link SentryOptions sentryOptions}.{@link SentryOptions#getClientFactory() getClientFactory()}
-     * .{@link #createSentryClient(Dsn)} instead
+     * @deprecated use {@link SentryOptions sentryOptions}
+     * .{@link SentryOptions#getSentryClientFactory() getClientFactory()}.{@link #createSentryClient(Dsn)} instead
      */
     @Deprecated
     @Nullable
