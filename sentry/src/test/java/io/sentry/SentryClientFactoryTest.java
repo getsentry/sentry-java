@@ -9,14 +9,16 @@ public class SentryClientFactoryTest extends BaseTest {
     @Test
     public void testSentryClientForFactoryNameSucceedsIfFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=io.sentry.TestFactory";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).createClient();
+        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory()
+                .createSentryClient((String) null);
         assertThat(sentryClient.getRelease(), is(TestFactory.RELEASE));
     }
 
     @Test
     public void testSentryClientForFactoryReturnsNullIfNoFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=invalid";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).createClient();
+        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory()
+                .createSentryClient((String) null);
         assertThat(sentryClient, is(nullValue()));
     }
 
@@ -27,7 +29,8 @@ public class SentryClientFactoryTest extends BaseTest {
         String previous = System.getProperty(propName);
         try {
             System.setProperty(propName, "noop://localhost/1?release=xyz");
-            sentryClient = SentryOptions.defaults().createClient();
+            sentryClient = SentryOptions.defaults().getSentryClientFactory()
+                .createSentryClient((String) null);
         } finally {
             if (previous == null) {
                 System.clearProperty(propName);
@@ -42,7 +45,8 @@ public class SentryClientFactoryTest extends BaseTest {
     @Test
     public void testCreateDsnIfStringProvided() throws Exception {
         final String dsn = "noop://localhost/1?release=abc";
-        SentryClient sentryClient = SentryOptions.defaults(dsn).createClient();
+        SentryClient sentryClient = SentryOptions.defaults(dsn).getSentryClientFactory()
+                .createSentryClient((String) null);
         assertThat(sentryClient.getRelease(), is("abc"));
     }
 }

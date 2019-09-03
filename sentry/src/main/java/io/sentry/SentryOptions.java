@@ -200,16 +200,6 @@ public final class SentryOptions {
         this.resourceLoader = resourceLoader;
     }
 
-    /**
-     * Returns a new Sentry client obtained from the {@link #getSentryClientFactory() factory}.
-     *
-     * @return the new sentry client or null if the client factory is invalid
-     */
-    @Nullable
-    public SentryClient createClient() {
-        return getSentryClientFactory().createSentryClient(getDsn());
-    }
-
     private static String resolveDsn(Lookup lookup, @Nullable String dsn) {
         try {
             if (Util.isNullOrEmpty(dsn)) {
