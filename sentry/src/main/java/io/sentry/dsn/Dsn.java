@@ -74,15 +74,28 @@ public class Dsn {
 
     /**
      * Looks for a DSN configuration within JNDI, the System environment or Java properties.
+     * <p>
+     * This uses the default lookup. If you need a specially configured lookup instance, use {@link #dsnFrom(Lookup)}
+     * method.
      *
      * @return a DSN configuration or null if nothing could be found.
      */
     public static String dsnLookup() {
-        String dsn = Lookup.lookup("dsn");
+        return dsnFrom(Lookup.getDefault());
+    }
+
+    /**
+     * Looks for the DSN configuration in the provided configuration lookup.
+     *
+     * @param lookup the lookup used to find the DSN configuration
+     * @return the DSN URI or the {@link #DEFAULT_DSN} if none found in the lookup
+     */
+    public static String dsnFrom(Lookup lookup) {
+        String dsn = lookup.get("dsn");
 
         if (Util.isNullOrEmpty(dsn)) {
             // check if the user accidentally set "dns" instead of "dsn"
-            dsn = Lookup.lookup("dns");
+            dsn = lookup.get("dns");
         }
 
         if (Util.isNullOrEmpty(dsn)) {

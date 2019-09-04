@@ -2,6 +2,7 @@ package io.sentry.dsn;
 
 import io.sentry.BaseTest;
 import io.sentry.config.JndiLookup;
+import io.sentry.config.Lookup;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;

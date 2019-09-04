@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.config.Lookup;
 import io.sentry.connection.Connection;
 import io.sentry.connection.HttpConnection;
 import io.sentry.connection.NoopConnection;
@@ -147,7 +148,8 @@ public class SentryTest extends BaseTest {
 
     @Test
     public void testInitStringDsnAndFactory() throws Exception {
-        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false", new DefaultSentryClientFactory());
+        SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false",
+                new DefaultSentryClientFactory());
         HttpConnection connection = getField(sentryClient, "connection");
         assertThat(connection, instanceOf(HttpConnection.class));
 

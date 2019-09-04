@@ -13,8 +13,8 @@ import java.util.List;
 import io.sentry.Sentry;
 import io.sentry.config.location.CompoundResourceLocator;
 import io.sentry.config.location.ConfigurationResourceLocator;
-import io.sentry.config.location.StaticFileLocator;
 import io.sentry.config.location.EnvironmentBasedLocator;
+import io.sentry.config.location.StaticFileLocator;
 import io.sentry.config.location.SystemPropertiesBasedLocator;
 import io.sentry.config.provider.CompoundConfigurationProvider;
 import io.sentry.config.provider.ConfigurationProvider;
@@ -29,32 +29,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Handle lookup of configuration keys by trying JNDI, System Environment, and Java System Properties.
+ * Handle lookup of configuration keys from the various sources.
  *
- * By default (when instantiated using the default constructor), the sources from which the configuration
- * properties are consulted in the following order:
- *
- * 1. JNDI, if available
- * 2. Java System Properties
- * 3. System Environment Variables
- * 4. DSN options, if a non-null DSN is provided
- * 5. Sentry properties file found in resources
+ * @see #getDefault() for obtaining the default instance
  */
 public final class Lookup {
     private static final Logger logger = LoggerFactory.getLogger(Lookup.class);
-    private static final Object INSTANCE_LOCK = new Object();
-    private static Lookup instance;
 
     private final ConfigurationProvider highPriorityProvider;
     private final ConfigurationProvider lowPriorityProvider;
-
-    /**
-     * Constructs a new instance of Lookup with the default configuration providers.
-     */
-    public Lookup() {
-        this(new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders()),
-                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders()));
-    }
 
     /**
      * Constructs a new Lookup instance.
@@ -69,6 +52,25 @@ public final class Lookup {
     public Lookup(ConfigurationProvider highPriorityProvider, ConfigurationProvider lowPriorityProvider) {
         this.highPriorityProvider = highPriorityProvider;
         this.lowPriorityProvider = lowPriorityProvider;
+    }
+
+    /**
+     * In the default lookup returned from this method, the configuration properties are looked up in the sources in the
+     * following order.
+     *
+     * <ol>
+     * <li>JNDI, if available
+     * <li>Java System Properties
+     * <li>System Environment Variables
+     * <li>DSN options, if a non-null DSN is provided
+     * <li>Sentry properties file found in resources
+     * </ol>
+     *
+     * @return the default lookup instance
+     */
+    public static Lookup getDefault() {
+        return new Lookup(new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders()),
+                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders()));
     }
 
     private static List<ConfigurationResourceLocator> getDefaultResourceLocators() {
@@ -110,16 +112,6 @@ public final class Lookup {
         }
     }
 
-    // for use in the deprecated methods
-    private static Lookup getDeprecatedInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (instance == null) {
-                instance = new Lookup();
-            }
-
-            return instance;
-        }
-    }
 
     /**
      * Attempt to lookup a configuration key, without checking any DSN options.
@@ -151,7 +143,7 @@ public final class Lookup {
      */
     @Deprecated
     public static String lookup(String key, Dsn dsn) {
-        return getDeprecatedInstance().get(key, dsn);
+        return getDefault().get(key, dsn);
     }
 
     /**
@@ -173,7 +165,7 @@ public final class Lookup {
      * @return value of configuration key, if found, otherwise null
      */
     @Nullable
-    public String get(String key, Dsn dsn) {
+    public String get(String key, @Nullable Dsn dsn) {
         String val = highPriorityProvider.getProperty(key);
 
         if (val == null && dsn != null) {

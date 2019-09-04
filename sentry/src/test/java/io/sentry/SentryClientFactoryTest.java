@@ -1,17 +1,6 @@
 package io.sentry;
 
-import mockit.*;
-import io.sentry.dsn.Dsn;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.ServiceLoader;
-
-import static mockit.Deencapsulation.setField;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -22,6 +11,7 @@ public class SentryClientFactoryTest extends BaseTest {
     public void testSentryClientForFactoryNameSucceedsIfFactoryFound() throws Exception {
         String dsn = "noop://localhost/1?factory=io.sentry.TestFactory";
         SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is(TestFactory.RELEASE));
     }
 
@@ -48,6 +38,7 @@ public class SentryClientFactoryTest extends BaseTest {
             }
         }
 
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is("xyz"));
     }
 
@@ -55,6 +46,7 @@ public class SentryClientFactoryTest extends BaseTest {
     public void testCreateDsnIfStringProvided() throws Exception {
         final String dsn = "noop://localhost/1?release=abc";
         SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient.getRelease(), is("abc"));
     }
 }

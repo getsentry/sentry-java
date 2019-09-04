@@ -5,6 +5,7 @@ import io.sentry.connection.LockdownManager;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static mockit.Deencapsulation.getField;
 
@@ -18,6 +19,8 @@ public class SentryIT extends BaseIT {
         verifyStoredEventCount(0);
 
         SentryClient client = SentryClientFactory.sentryClient();
+        assertNotNull(client);
+
         client.sendMessage("Test");
 
         verifyProject1PostRequestCount(1);
@@ -34,6 +37,8 @@ public class SentryIT extends BaseIT {
         verifyStoredEventCount(0);
 
         SentryClient client = SentryClientFactory.sentryClient();
+        assertNotNull(client);
+
         client.sendMessage("Test");
 
         verifyProject1PostRequestCount(1);
@@ -50,6 +55,8 @@ public class SentryIT extends BaseIT {
         verifyStoredEventCount(0);
 
         SentryClient client = SentryClientFactory.sentryClient();
+        assertNotNull(client);
+
         client.sendMessage("Test");
 
         verifyProject1PostRequestCount(1);
