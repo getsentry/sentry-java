@@ -1,5 +1,13 @@
 package io.sentry.event;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import io.sentry.BaseTest;
 import io.sentry.SentryClient;
 import io.sentry.connection.Connection;
@@ -7,29 +15,20 @@ import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.event.interfaces.UserInterface;
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class UserTest extends BaseTest {
-    @Tested
     private SentryClient sentryClient = null;
-    @Injectable
     private Connection mockConnection = null;
-    @Injectable
     private ContextManager contextManager = new SingletonContextManager();
 
-    @BeforeMethod
+    @Before
     public void setup() {
         contextManager.clear();
+        mockConnection = mock(Connection.class);
+        sentryClient = new SentryClient(mockConnection, contextManager);
     }
 
     @Test
@@ -54,16 +53,16 @@ public class UserTest extends BaseTest {
         map.put("foo", "bar");
         map.put("baz", 2);
 
-        new Verifications() {{
-            Event event;
-            mockConnection.send(event = withCapture());
-            UserInterface userInterface = (UserInterface) event.getSentryInterfaces().get(UserInterface.USER_INTERFACE);
-            assertThat(userInterface.getId(), equalTo(user.getId()));
-            assertThat(userInterface.getEmail(), equalTo(user.getEmail()));
-            assertThat(userInterface.getIpAddress(), equalTo(user.getIpAddress()));
-            assertThat(userInterface.getUsername(), equalTo(user.getUsername()));
-            assertThat(userInterface.getData(), equalTo(map));
-        }};
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+        verify(mockConnection).send(eventCaptor.capture());
+        Event event = eventCaptor.getValue();
+        UserInterface userInterface = (UserInterface) event.getSentryInterfaces().get(UserInterface.USER_INTERFACE);
+        assertThat(userInterface.getId(), equalTo(user.getId()));
+        assertThat(userInterface.getEmail(), equalTo(user.getEmail()));
+        assertThat(userInterface.getIpAddress(), equalTo(user.getIpAddress()));
+        assertThat(userInterface.getUsername(), equalTo(user.getUsername()));
+        assertThat(userInterface.getData(), equalTo(map));
     }
 
 }
