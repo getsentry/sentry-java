@@ -1,31 +1,33 @@
 package io.sentry.helper;
 
 import io.sentry.BaseTest;
-import io.sentry.dsn.Dsn;
 import io.sentry.event.helper.BasicRemoteAddressResolver;
 import io.sentry.event.helper.ForwardedAddressResolver;
-import mockit.Expectations;
-import mockit.Mocked;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class RemoteAddressResolverTest extends BaseTest {
 
-    @Mocked
     private HttpServletRequest request;
+
+    @Before
+    public void setup() {
+        request = mock(HttpServletRequest.class);
+    }
 
     @Test
     public void testBasicRemoteAddressResolver() {
         BasicRemoteAddressResolver resolver = new BasicRemoteAddressResolver();
 
-        new Expectations() {{
-            request.getRemoteAddr();
-            result = "1.2.3.4";
-        }};
+        when(request.getRemoteAddr()).thenReturn("1.2.3.4");
 
         String remoteAddress = resolver.getRemoteAddress(request);
         assertThat(remoteAddress, is("1.2.3.4"));
@@ -34,13 +36,8 @@ public class RemoteAddressResolverTest extends BaseTest {
     @Test
     public void testBasicRemoteAddressResolverWithXForwardedFor() {
         BasicRemoteAddressResolver resolver = new BasicRemoteAddressResolver();
-
-        new Expectations() {{
-            request.getRemoteAddr();
-            result = "1.2.3.4";
-            request.getHeader("X-FORWARDED-FOR");
-            result = "9.9.9.9";
-        }};
+        when(request.getRemoteAddr()).thenReturn("1.2.3.4");
+        when(request.getHeader(eq("X-FORWARDED-FOR"))).thenReturn("9.9.9.9");
 
         String remoteAddress = resolver.getRemoteAddress(request);
         assertThat(remoteAddress, is("1.2.3.4"));
@@ -53,10 +50,7 @@ public class RemoteAddressResolverTest extends BaseTest {
     public void testForwardedAddressResolver() {
         ForwardedAddressResolver resolver = new ForwardedAddressResolver();
 
-        new Expectations() {{
-            request.getHeader("X-FORWARDED-FOR");
-            result = "9.9.9.9";
-        }};
+        when(request.getHeader(eq("X-FORWARDED-FOR"))).thenReturn("9.9.9.9");
 
         String remoteAddress = resolver.getRemoteAddress(request);
         assertThat(remoteAddress, is("9.9.9.9"));
@@ -66,13 +60,9 @@ public class RemoteAddressResolverTest extends BaseTest {
     public void testForwardedAddressResolverFallthrough() {
         ForwardedAddressResolver resolver = new ForwardedAddressResolver();
 
-        new Expectations() {{
-            request.getRemoteAddr();
-            result = "1.2.3.4";
-        }};
+        when(request.getRemoteAddr()).thenReturn("1.2.3.4");
 
         String remoteAddress = resolver.getRemoteAddress(request);
         assertThat(remoteAddress, is("1.2.3.4"));
     }
-
 }
