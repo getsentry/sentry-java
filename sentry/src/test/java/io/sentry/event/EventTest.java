@@ -1,10 +1,8 @@
 package io.sentry.event;
 
 import io.sentry.BaseTest;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
 import org.hamcrest.Matchers;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.io.*;
 import java.util.Date;
@@ -13,38 +11,35 @@ import java.util.UUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class EventTest extends BaseTest {
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void ensureEventIdCantBeNull() throws Exception {
         new Event(null);
     }
 
     @Test
-    public void returnsCloneOfTimestamp(@Injectable final Date mockTimestamp,
-                                        @Injectable final Date mockCloneTimestamp,
-                                        @Injectable final UUID mockUuid)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockTimestamp.clone();
-            result = mockCloneTimestamp;
-        }};
-        final Event event = new Event(mockUuid);
+    public void returnsCloneOfTimestamp() throws Exception {
+        final Event event = new Event(UUID.randomUUID());
 
-        event.setTimestamp(mockTimestamp);
+        Date timeStamp = new Date();
+        event.setTimestamp(timeStamp);
 
-        assertThat(event.getTimestamp(), is(sameInstance(mockCloneTimestamp)));
+        assertThat(event.getTimestamp(), is(equalTo(timeStamp)));
+        assertThat(event.getTimestamp(), is(not(sameInstance(timeStamp))));
     }
 
     @Test
-    public void serializedEventContainsSerializableExtras(@Injectable final Object nonSerializableObject)
-            throws Exception {
+    public void serializedEventContainsSerializableExtras() throws Exception {
         final Event event = new Event(UUID.fromString("fb3fe928-69af-41a5-b76b-1db4c324caf6"));
-        new NonStrictExpectations() {{
-            nonSerializableObject.toString();
-            result = "3c644639-9721-4e32-8cc8-a2b5b77f4424";
-        }};
+
+        Object nonSerializableObject = mock(Object.class);
+        when(nonSerializableObject.toString()).thenReturn("3c644639-9721-4e32-8cc8-a2b5b77f4424");
+
         event.getExtra().put("SerializableEntry", 38295L);
         event.getExtra().put("NonSerializableEntry", nonSerializableObject);
         event.getExtra().put("NullEntry", null);
