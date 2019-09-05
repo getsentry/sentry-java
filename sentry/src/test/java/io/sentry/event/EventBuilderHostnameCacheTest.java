@@ -53,6 +53,12 @@ public class EventBuilderHostnameCacheTest extends BaseTest {
     }
 
     @Test
+    public void unsuccessfulHostnameRetrievalUsesDefaultHostnameAsResult() throws Exception {
+        EventBuilder.HostnameCache cache = createCacheUsingLocalhost(mockTimingOutLocalHost);
+        assertThat(cache.getHostname(), is(EventBuilder.DEFAULT_HOSTNAME));
+    }
+
+    @Test
     public void unsuccessfulHostnameRetrievalUsesLastKnownCachedValue() throws Exception {
         InetAddress localhost = mock(InetAddress.class);
         when(localhost.getCanonicalHostName()).thenReturn("mockLocalhost").thenThrow(new RuntimeException());

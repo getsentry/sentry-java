@@ -37,7 +37,12 @@ public class EventBuilder {
      * @see HostnameCache
      */
     public static final long HOSTNAME_CACHE_DURATION = TimeUnit.HOURS.toMillis(5);
-    private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
+
+    /**
+     * The global hostname cache to speed up localhost hostname resolution.
+     */
+    // visible for testing
+    static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
     private Set<String> sdkIntegrations = new HashSet<>();
@@ -567,6 +572,17 @@ public class EventBuilder {
                     + " you may want to hardcode your server name: https://docs.sentry.io/clients/java/config/",
                     hostname, e);
             }
+        }
+
+        /**
+         * This method is to support testing. It serves little purpose outside of it. It forgets the resolved
+         * hostname and sets the expiration time to the provided value.
+         *
+         * @param newExpirationTimestamp the expiration
+         */
+        void reset(long newExpirationTimestamp) {
+            this.hostname = DEFAULT_HOSTNAME;
+            this.expirationTimestamp = newExpirationTimestamp;
         }
     }
 }
