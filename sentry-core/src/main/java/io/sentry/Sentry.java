@@ -1,3 +1,5 @@
+package io.sentry;
+
 public class Sentry {
   public static void init() {
     init(new SentryOptions());

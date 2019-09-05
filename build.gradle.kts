@@ -1,4 +1,5 @@
 plugins {
+    `java-library`
     java
     id("com.diffplug.gradle.spotless") version "3.24.2" apply true
 }

@@ -1,6 +1,5 @@
 plugins {
     `java-library`
-    java
 }
 
 dependencies {
