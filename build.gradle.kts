@@ -28,4 +28,14 @@ spotless {
         removeUnusedImports()
         googleJavaFormat()
     }
+
+    kotlin {
+        // optionally takes a version
+        ktlint()
+        target("**/*.kt")
+    }
+    kotlinGradle {
+        // same as kotlin, but for .gradle.kts files (defaults to '*.gradle.kts')
+        ktlint()
+    }
 }

@@ -4,8 +4,12 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.*
-import kotlin.test.*
+import java.util.UUID
+import java.util.Locale
+import kotlin.test.Test
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 class SentryEventTest {
     @Test
@@ -22,6 +26,7 @@ class SentryEventTest {
 
     @Test
     fun `timestamp is formatted in ISO 8601 in UTC with Z format`() {
+
         // Sentry expects this format:
         val expected = "2000-12-31T23:59:59Z"
         val formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ssX", Locale.ROOT)
