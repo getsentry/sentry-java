@@ -20,6 +20,7 @@ allprojects {
 }
 
 spotless {
+    lineEndings('UNIX')
     java {
         target("**/*.java")
         removeUnusedImports()
