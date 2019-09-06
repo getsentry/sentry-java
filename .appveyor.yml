@@ -1,0 +1,7 @@
+version: '{build}'
+image: Visual Studio 2017
+build_script:
+  - cmd: gradlew.bat assemble check
+artifacts:
+  - path: '**\*.aar'
+  - path: '**\*.jar'
