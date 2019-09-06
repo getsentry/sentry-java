@@ -1,3 +1,5 @@
+import com.diffplug.spotless.LineEnding
+
 plugins {
     `java-library`
     java
@@ -20,7 +22,7 @@ allprojects {
 }
 
 spotless {
-    lineEndings('UNIX')
+    lineEndings = LineEnding.UNIX
     java {
         target("**/*.java")
         removeUnusedImports()

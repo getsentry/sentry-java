@@ -3,5 +3,5 @@ image: Visual Studio 2017
 build_script:
   - cmd: gradlew.bat assemble check
 artifacts:
-  - path: '**\*.aar'
-  - path: '**\*.jar'
+  - path: '**\libs\*sentry*.jar'
+  - path: '**\libs\*sentry*.aar'
