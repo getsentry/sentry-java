@@ -5,3 +5,10 @@ build_script:
 artifacts:
   - path: '**\libs\*sentry*.jar'
   - path: '**\libs\*sentry*.aar'
+on_finish:
+  - ps: |
+      $wc = New-Object 'System.Net.WebClient'
+      Get-ChildItem . -Name -Recurse 'TEST-*.xml'  |
+      Foreach-Object {
+          $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $_))
+      }
