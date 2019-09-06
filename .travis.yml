@@ -17,6 +17,8 @@ matrix:
     - os: linux
       dist: trusty
       jdk: oraclejdk8
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
     - os: linux
       dist: trusty
       jdk: openjdk8
