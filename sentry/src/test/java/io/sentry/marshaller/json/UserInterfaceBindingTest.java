@@ -1,12 +1,9 @@
 package io.sentry.marshaller.json;
 
 import io.sentry.BaseTest;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Tested;
 import io.sentry.event.interfaces.UserInterface;
 import io.sentry.marshaller.json.JsonComparisonUtil.JsonGeneratorParser;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,10 +14,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class UserInterfaceBindingTest extends BaseTest {
-    @Tested
-    private UserInterfaceBinding userInterfaceBinding = null;
-    @Injectable
-    private UserInterface mockUserInterface = null;
 
     @Test
     public void testSimpleMessage() throws Exception {
@@ -34,20 +27,11 @@ public class UserInterfaceBindingTest extends BaseTest {
         data.put("baz", 2);
         data.put("qux", null);
 
-        new NonStrictExpectations() {{
-            mockUserInterface.getId();
-            result = id;
-            mockUserInterface.getUsername();
-            result = username;
-            mockUserInterface.getEmail();
-            result = email;
-            mockUserInterface.getIpAddress();
-            result = ipAddress;
-            mockUserInterface.getData();
-            result = data;
-        }};
+        UserInterface userInterface = new UserInterface(id, username, ipAddress, email, data);
 
-        userInterfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockUserInterface);
+        UserInterfaceBinding userInterfaceBinding = new UserInterfaceBinding();
+
+        userInterfaceBinding.writeInterface(jsonGeneratorParser.generator(), userInterface);
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/User1.json")));
     }
