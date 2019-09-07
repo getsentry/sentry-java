@@ -45,4 +45,13 @@ public class SentryServletRequestListener implements ServletRequestListener {
             THREAD_REQUEST.set((HttpServletRequest) servletRequest);
         }
     }
+
+    /**
+     * Used for resetting the state of the thread-local storing the current HttpServletRequest.
+     * <p>
+     * This method exists solely for testing purposes.
+     */
+    static void reset() {
+        THREAD_REQUEST.remove();
+    }
 }
