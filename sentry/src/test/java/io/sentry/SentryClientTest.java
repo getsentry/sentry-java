@@ -3,50 +3,54 @@ package io.sentry;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.event.helper.ShouldSendEventCallback;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Tested;
-import mockit.Verifications;
 import io.sentry.connection.Connection;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.ExceptionInterface;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class SentryClientTest extends BaseTest {
-    @Tested
     private SentryClient sentryClient = null;
-    @Injectable
     private Connection mockConnection = null;
-    @Injectable
     private ContextManager contextManager = new SingletonContextManager();
-    @Injectable
     private Event mockEvent = null;
-    @Injectable
     private EventBuilderHelper mockEventBuilderHelper = null;
 
-    @BeforeMethod
+    @Before
     public void setup() {
         contextManager.clear();
+        mockConnection = mock(Connection.class);
+        mockEvent = mock(Event.class);
+        mockEventBuilderHelper = mock(EventBuilderHelper.class);
+        sentryClient = new SentryClient(mockConnection, contextManager);
     }
 
     @Test
     public void testSendEvent() throws Exception {
         sentryClient.sendEvent(mockEvent);
 
-        new Verifications() {{
-            mockConnection.send(mockEvent);
-        }};
+        verify(mockConnection).send(eq(mockEvent));
     }
 
     @Test
@@ -58,27 +62,22 @@ public class SentryClientTest extends BaseTest {
             .withMessage(message)
             .withLevel(Event.Level.INFO));
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.INFO));
-            assertThat(event.getMessage(), equalTo(message));
-        }};
+        verify(mockEventBuilderHelper).helpBuildingEvent(any(EventBuilder.class));
+
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.INFO));
+        assertThat(event.getMessage(), equalTo(message));
     }
 
     @Test
     public void testSendEventFailingIsCaught() throws Exception {
-        new NonStrictExpectations() {{
-            mockConnection.send((Event) any);
-            result = new RuntimeException();
-        }};
+        doThrow(new RuntimeException()).when(mockConnection).send(eq(mockEvent));
 
         sentryClient.sendEvent(mockEvent);
 
-        new Verifications() {{
-            mockConnection.send(mockEvent);
-        }};
+        verify(mockConnection).send(eq(mockEvent));
     }
 
     @Test
@@ -88,13 +87,12 @@ public class SentryClientTest extends BaseTest {
 
         sentryClient.sendMessage(message);
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.INFO));
-            assertThat(event.getMessage(), equalTo(message));
-        }};
+        verify(mockEventBuilderHelper).helpBuildingEvent(any(EventBuilder.class));
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.INFO));
+        assertThat(event.getMessage(), equalTo(message));
     }
 
     @Test
@@ -105,18 +103,18 @@ public class SentryClientTest extends BaseTest {
 
         sentryClient.sendException(exception);
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
-            assertThat(event.getMessage(), equalTo(message));
-            assertThat(event.getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
-        }};
+        verify(mockEventBuilderHelper).helpBuildingEvent(any(EventBuilder.class));
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
+        assertThat(event.getMessage(), equalTo(message));
+        assertThat(event.getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
     }
 
     @Test
-    public void testAddRemoveBuilderHelpers(@Injectable final EventBuilderHelper mockBuilderHelper) throws Exception {
+    public void testAddRemoveBuilderHelpers() throws Exception {
+        EventBuilderHelper mockBuilderHelper = mock(EventBuilderHelper.class);
         assertThat(sentryClient.getBuilderHelpers(), not(contains(mockBuilderHelper)));
 
         sentryClient.addBuilderHelper(mockBuilderHelper);
@@ -125,38 +123,31 @@ public class SentryClientTest extends BaseTest {
         assertThat(sentryClient.getBuilderHelpers(), not(contains(mockBuilderHelper)));
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testCantModifyBuilderHelpersDirectly(@Injectable final EventBuilderHelper mockBuilderHelper) throws Exception {
-        sentryClient.getBuilderHelpers().add(mockBuilderHelper);
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCantModifyBuilderHelpersDirectly() throws Exception {
+        sentryClient.getBuilderHelpers().add(mock(EventBuilderHelper.class));
     }
 
     @Test
-    public void testRunBuilderHelpers(@Injectable final EventBuilderHelper mockBuilderHelper,
-                                      @Injectable final EventBuilder mockEventBuilder) throws Exception {
-        sentryClient.addBuilderHelper(mockBuilderHelper);
+    public void testRunBuilderHelpers() throws Exception {
+        EventBuilderHelper mockBuilderHelper = mock(EventBuilderHelper.class);
+        EventBuilder mockEventBuilder = mock(EventBuilder.class);
 
+        sentryClient.addBuilderHelper(mockBuilderHelper);
         sentryClient.runBuilderHelpers(mockEventBuilder);
 
-        new Verifications() {{
-            mockBuilderHelper.helpBuildingEvent(mockEventBuilder);
-        }};
+        verify(mockBuilderHelper).helpBuildingEvent(eq(mockEventBuilder));
     }
 
     @Test
     public void testCloseConnectionSuccessful() throws Exception {
         sentryClient.closeConnection();
-
-        new Verifications() {{
-            mockConnection.close();
-        }};
+        verify(mockConnection).close();
     }
 
-    @Test(expectedExceptions = RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void testCloseConnectionFailed() throws Exception {
-        new NonStrictExpectations() {{
-            mockConnection.close();
-            result = new IOException();
-        }};
+        doThrow(new IOException()).when(mockConnection).close();
 
         sentryClient.closeConnection();
     }
@@ -182,18 +173,17 @@ public class SentryClientTest extends BaseTest {
 
         sentryClient.sendMessage("message");
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.INFO));
-            assertThat(event.getServerName(), equalTo(serverName));
-            assertThat(event.getEnvironment(), equalTo(environment));
-            assertThat(event.getDist(), equalTo(dist));
-            assertThat(event.getRelease(), equalTo(release));
-            assertThat(event.getTags(), equalTo(tags));
-            assertThat(event.getExtra(), equalTo(extras));
-        }};
+        verify(mockEventBuilderHelper).helpBuildingEvent(any(EventBuilder.class));
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.INFO));
+        assertThat(event.getServerName(), equalTo(serverName));
+        assertThat(event.getEnvironment(), equalTo(environment));
+        assertThat(event.getDist(), equalTo(dist));
+        assertThat(event.getRelease(), equalTo(release));
+        assertThat(event.getTags(), equalTo(tags));
+        assertThat(event.getExtra(), equalTo(extras));
     }
 
     @Test
@@ -209,10 +199,8 @@ public class SentryClientTest extends BaseTest {
 
         sentryClient.sendEvent(mockEvent);
 
-        new Verifications() {{
-            mockConnection.send(mockEvent); times = 0;
-            assertThat(called.get(), is(true));
-        }};
+        verify(mockConnection, never()).send(eq(mockEvent));
+        assertThat(called.get(), is(true));
     }
 
     @Test
@@ -228,10 +216,8 @@ public class SentryClientTest extends BaseTest {
 
         sentryClient.sendEvent(mockEvent);
 
-        new Verifications() {{
-            mockConnection.send(mockEvent);
-            assertThat(called.get(), is(true));
-        }};
+        verify(mockConnection).send(eq(mockEvent));
+        assertThat(called.get(), is(true));
     }
 
     @Test
