@@ -5,14 +5,13 @@ import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.User;
 import io.sentry.event.UserBuilder;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-@Test(singleThreaded = true)
 public class ContextTest extends BaseTest {
     @Test
     public void testBreadcrumbs() {
