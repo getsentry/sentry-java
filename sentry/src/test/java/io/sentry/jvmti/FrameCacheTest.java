@@ -1,32 +1,18 @@
 package io.sentry.jvmti;
 
 import io.sentry.BaseTest;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.util.Set;
-import java.util.WeakHashMap;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static mockit.Deencapsulation.getField;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 public class FrameCacheTest extends BaseTest {
-    ThreadLocal<WeakHashMap<Throwable, Frame[]>> cache;
-
-    @BeforeMethod
-    @AfterMethod
+    @Before
     public void setup() {
-        cache = getField(FrameCache.class, "cache");
-        cache.get().clear();
-
-        Set<String> appPackages = getField(FrameCache.class, "appPackages");
-        appPackages.clear();
+        FrameCache.reset();
     }
-
 
     @Test
     public void test() throws Exception {

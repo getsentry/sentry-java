@@ -97,4 +97,12 @@ public final class FrameCache {
         appPackages.add(newAppPackage);
     }
 
+    /**
+     * This method is meant for cleaner testing. Don't attempt to use it in production.
+     */
+    // visible for testing
+    static void reset() {
+        cache.get().clear();
+        appPackages.clear();
+    }
 }
