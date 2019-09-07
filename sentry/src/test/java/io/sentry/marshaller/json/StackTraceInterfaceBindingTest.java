@@ -6,22 +6,24 @@ import io.sentry.event.interfaces.StackTraceInterface;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Tested;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class StackTraceInterfaceBindingTest extends BaseTest {
-
-    @Tested
     private StackTraceInterfaceBinding interfaceBinding = null;
-
-    @Injectable
     private StackTraceInterface mockStackTraceInterface = null;
+
+    @Before
+    public void setup() {
+        mockStackTraceInterface = mock(StackTraceInterface.class);
+        interfaceBinding = new StackTraceInterfaceBinding();
+    }
 
     @Test
     public void testSingleSentryStackFrame() throws Exception {
@@ -29,31 +31,12 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
         final SentryStackTraceElement sentryStackTraceElement = new SentryStackTraceElement(
             "", "throwError", "index.js", 100, 10,
             "http://localhost", "javascript", null);
-        new NonStrictExpectations() {{
-            mockStackTraceInterface.getStackTrace();
-            result = new SentryStackTraceElement[]{sentryStackTraceElement};
-        }};
+
+        when(mockStackTraceInterface.getStackTrace()).thenReturn(new SentryStackTraceElement[]{sentryStackTraceElement});
+
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/SentryStackTrace.json")));
-    }
-
-    @Test
-    public void testSingleStackFrame() throws Exception {
-        final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
-        final String methodName = "0cce55c9-478f-4386-8ede-4b6f000da3e6";
-        final String className = "31b26f01-9b97-442b-9f36-8a317f94ad76";
-        final int lineNumber = 1;
-        final SentryStackTraceElement stackTraceElement = new SentryStackTraceElement(className, methodName,
-            "File.java", lineNumber, null, null, null, null);
-        new NonStrictExpectations() {{
-            mockStackTraceInterface.getStackTrace();
-            result = new SentryStackTraceElement[]{stackTraceElement};
-        }};
-
-        interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
-
-        assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/StackTrace1.json")));
     }
 
     @Test
@@ -61,14 +44,12 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
         final SentryStackTraceElement stackTraceElement = new SentryStackTraceElement("", "",
             "File.java", 0, null, null, null, null);
-        new NonStrictExpectations() {{
-            mockStackTraceInterface.getStackTrace();
-            result = new SentryStackTraceElement[]{stackTraceElement, stackTraceElement};
-            mockStackTraceInterface.getFramesCommonWithEnclosing();
-            result = 1;
-        }};
-        interfaceBinding.setRemoveCommonFramesWithEnclosing(true);
 
+        when(mockStackTraceInterface.getStackTrace())
+                .thenReturn(new SentryStackTraceElement[]{stackTraceElement, stackTraceElement});
+        when(mockStackTraceInterface.getFramesCommonWithEnclosing()).thenReturn(1);
+
+        interfaceBinding.setRemoveCommonFramesWithEnclosing(true);
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/StackTrace2.json")));
@@ -79,12 +60,11 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
         final SentryStackTraceElement stackTraceElement = new SentryStackTraceElement("", "",
             "File.java", 0, null, null, null, null);
-        new NonStrictExpectations() {{
-            mockStackTraceInterface.getStackTrace();
-            result = new SentryStackTraceElement[]{stackTraceElement, stackTraceElement};
-            mockStackTraceInterface.getFramesCommonWithEnclosing();
-            result = 1;
-        }};
+
+        when(mockStackTraceInterface.getStackTrace())
+                .thenReturn(new SentryStackTraceElement[]{stackTraceElement, stackTraceElement});
+        when(mockStackTraceInterface.getFramesCommonWithEnclosing()).thenReturn(1);
+
         interfaceBinding.setRemoveCommonFramesWithEnclosing(false);
 
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockStackTraceInterface);
@@ -114,10 +94,8 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
                 "File.java", 5, null, null, null, null)
         );
 
-        new NonStrictExpectations() {{
-            mockStackTraceInterface.getStackTrace();
-            result = sentryStackTraceElements.toArray(new SentryStackTraceElement[4]);
-        }};
+        when(mockStackTraceInterface.getStackTrace())
+                .thenReturn(sentryStackTraceElements.toArray(new SentryStackTraceElement[4]));
 
         List<String> inAppModules = new ArrayList<>();
         inAppModules.add("inAppModule");
