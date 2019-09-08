@@ -1,42 +1,40 @@
 package io.sentry;
 
-import io.sentry.config.Lookup;
 import io.sentry.connection.Connection;
 import io.sentry.connection.HttpConnection;
 import io.sentry.connection.NoopConnection;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
-import io.sentry.environment.Version;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.interfaces.ExceptionInterface;
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.net.URL;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static mockit.Deencapsulation.getField;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class SentryTest extends BaseTest {
-    @Tested
     private SentryClient sentryClient = null;
-    @Injectable
     private Connection mockConnection = null;
-    @Injectable
     private ContextManager contextManager = new SingletonContextManager();
-    @Injectable
     private EventBuilderHelper mockEventBuilderHelper = null;
 
-    @BeforeMethod
+    @Before
     public void setup() {
         contextManager.clear();
+        mockConnection = mock(Connection.class);
+        mockEventBuilderHelper = mock(EventBuilderHelper.class);
+        sentryClient = new SentryClient(mockConnection, contextManager);
     }
 
     @Test
@@ -47,12 +45,11 @@ public class SentryTest extends BaseTest {
         Sentry.setStoredClient(sentryClient);
         Sentry.capture(event);
 
-        new Verifications() {{
-            Event event;
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
-            assertThat(event.getMessage(), equalTo(message));
-        }};
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
+        assertThat(event.getMessage(), equalTo(message));
     }
 
     @Test
@@ -64,13 +61,11 @@ public class SentryTest extends BaseTest {
         Sentry.setStoredClient(sentryClient);
         Sentry.capture(eventBuilder);
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
-            assertThat(event.getMessage(), equalTo(message));
-        }};
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
+        assertThat(event.getMessage(), equalTo(message));
     }
 
     @Test
@@ -81,13 +76,12 @@ public class SentryTest extends BaseTest {
         Sentry.setStoredClient(sentryClient);
         Sentry.capture(message);
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.INFO));
-            assertThat(event.getMessage(), equalTo(message));
-        }};
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockEventBuilderHelper).helpBuildingEvent(any(EventBuilder.class));
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.INFO));
+        assertThat(event.getMessage(), equalTo(message));
     }
 
     @Test
@@ -99,68 +93,46 @@ public class SentryTest extends BaseTest {
         Sentry.setStoredClient(sentryClient);
         Sentry.capture(exception);
 
-        new Verifications() {{
-            Event event;
-            mockEventBuilderHelper.helpBuildingEvent((EventBuilder) any);
-            mockConnection.send(event = withCapture());
-            assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
-            assertThat(event.getMessage(), equalTo(message));
-            assertThat(event.getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
-        }};
+        ArgumentCaptor<Event> eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockEventBuilderHelper).helpBuildingEvent(any(EventBuilder.class));
+        verify(mockConnection).send(eventArgumentCaptor.capture());
+        Event event = eventArgumentCaptor.getValue();
+        assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
+        assertThat(event.getMessage(), equalTo(message));
+        assertThat(event.getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
     }
 
     @Test
     public void testInitNoDsn() throws Exception {
         SentryClient sentryClient = Sentry.init();
-        Object connection = getField(sentryClient, "connection");
-        assertThat(connection, instanceOf(NoopConnection.class));
+        assertThat(sentryClient.getConnection(), instanceOf(NoopConnection.class));
     }
 
     @Test
     public void testInitNullDsn() throws Exception {
         SentryClient sentryClient = Sentry.init((String) null);
-        NoopConnection connection = getField(sentryClient, "connection");
-        assertThat(connection, instanceOf(NoopConnection.class));
+        assertThat(sentryClient.getConnection(), instanceOf(NoopConnection.class));
     }
 
     @Test
     public void testInitNullFactory() throws Exception {
         SentryClient sentryClient = Sentry.init((SentryClientFactory) null);
-        NoopConnection connection = getField(sentryClient, "connection");
-        assertThat(connection, instanceOf(NoopConnection.class));
+        assertThat(sentryClient.getConnection(), instanceOf(NoopConnection.class));
     }
 
     @Test
     public void testInitStringDsn() throws Exception {
         SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false");
-        HttpConnection connection = getField(sentryClient, "connection");
+        Connection connection = sentryClient.getConnection();
         assertThat(connection, instanceOf(HttpConnection.class));
-
-        URL sentryUrl = getField(connection, "sentryUrl");
-        assertThat(sentryUrl.getHost(), equalTo("localhost"));
-        assertThat(sentryUrl.getProtocol(), equalTo("http"));
-        assertThat(sentryUrl.getPort(), equalTo(4567));
-        assertThat(sentryUrl.getPath(), equalTo("/api/1/store/"));
-
-        String authHeader = getField(connection, "authHeader");
-        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/" + Version.SDK_VERSION + ",sentry_key=public,sentry_secret=private"));
     }
 
     @Test
     public void testInitStringDsnAndFactory() throws Exception {
         SentryClient sentryClient = Sentry.init("http://public:private@localhost:4567/1?async=false",
                 new DefaultSentryClientFactory());
-        HttpConnection connection = getField(sentryClient, "connection");
+        Connection connection = sentryClient.getConnection();
         assertThat(connection, instanceOf(HttpConnection.class));
-
-        URL sentryUrl = getField(connection, "sentryUrl");
-        assertThat(sentryUrl.getHost(), equalTo("localhost"));
-        assertThat(sentryUrl.getProtocol(), equalTo("http"));
-        assertThat(sentryUrl.getPort(), equalTo(4567));
-        assertThat(sentryUrl.getPath(), equalTo("/api/1/store/"));
-
-        String authHeader = getField(connection, "authHeader");
-        assertThat(authHeader, equalTo("Sentry sentry_version=6,sentry_client=sentry-java/" + Version.SDK_VERSION + ",sentry_key=public,sentry_secret=private"));
     }
 
     @Test
@@ -176,5 +148,4 @@ public class SentryTest extends BaseTest {
         SentryClient sentryClient = Sentry.init(specificInstanceFactory);
         assertThat(sentryClient, sameInstance(specificInstance));
     }
-
 }
