@@ -1,21 +1,21 @@
 package io.sentry;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class SentryUncaughtExceptionHandlerTest {
     private Thread.UncaughtExceptionHandler defaultUncaughtExceptionHandler;
 
-    @BeforeMethod
+    @Before
     public void setup() {
         defaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
-    @AfterMethod
+    @After
     public void teardown() {
         Thread.setDefaultUncaughtExceptionHandler(defaultUncaughtExceptionHandler);
     }
