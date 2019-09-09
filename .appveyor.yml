@@ -1,10 +1,27 @@
 version: '{build}'
 image: Visual Studio 2017
+environment:
+  ANDROID_HOME: "C:\\android-sdk-windows"
+  ANDROID_BUILD_VERSION: 29
+  ANDROID_TOOLS_VERSION: 28.0.3
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  SDK_TOOLS_URL: https://dl.google.com/android/repository/sdk-tools-windows-4333796.zip
+install:
+  - mkdir "%ANDROID_HOME%"
+  - appveyor DownloadFile "%SDK_TOOLS_URL%" -FileName "%TMP%/sdk-tools.zip"
+  - 7z x "%TMP%/sdk-tools.zip" -o"%ANDROID_HOME%" > nul
+  - set PATH=%PATH%;"%ANDROID_HOME%\tools\bin"
+  - yes 2> nul | sdkmanager --licenses > nul
+  - yes 2> nul | sdkmanager "platform-tools" "platforms;android-%ANDROID_BUILD_VERSION%"
+cache:
+  - "%USERPROFILE%\\.gradle\\caches"
+  - "%USERPROFILE%\\.gradle\\wrapper"
+  - "%USERPROFILE%\\.m2\\repository"
 build_script:
   - cmd: gradlew.bat assemble check
 artifacts:
   - path: '**\libs\*sentry*.jar'
-  - path: '**\libs\*sentry*.aar'
+  - path: '**\outputs\aar\*sentry*.aar'
 on_finish:
   - ps: |
       $wc = New-Object 'System.Net.WebClient'
