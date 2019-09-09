@@ -1,37 +1,39 @@
 package io.sentry.appengine.connection;
 
 import com.google.appengine.api.taskqueue.*;
-import mockit.*;
+import com.google.apphosting.api.ApiProxy;
+import io.sentry.appengine.TestQueueFactoryProvider;
 import io.sentry.connection.Connection;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import org.hamcrest.Matchers;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
-import static mockit.Deencapsulation.getField;
-import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class AppEngineAsyncConnectionTest {
-    @Tested
     private AppEngineAsyncConnection asyncConnection = null;
-    @Injectable
     private Connection mockConnection = null;
-    @Injectable
     private Queue mockQueue = null;
-    @SuppressWarnings("unused")
-    @Mocked("getDefaultQueue")
-    private QueueFactory queueFactory = null;
-    @Injectable("7b55a129-6975-4434-8edc-29ceefd38c95")
     private String mockConnectionId = null;
 
     private static DeferredTask extractDeferredTask(TaskOptions taskOptions) throws Exception {
@@ -40,37 +42,51 @@ public class AppEngineAsyncConnectionTest {
     }
 
     private static AppEngineAsyncConnection getTaskConnection(DeferredTask deferredTask) throws Exception {
-        Map<UUID, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
-                = getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
-        return appEngineAsyncConnectionRegister.get(Deencapsulation.<UUID>getField(deferredTask, "connectionId"));
+        AppEngineAsyncConnection.EventSubmitter submitter = (AppEngineAsyncConnection.EventSubmitter)  deferredTask;
+        String connectionId = submitter.getConnectionId();
+        return AppEngineAsyncConnection.APP_ENGINE_ASYNC_CONNECTIONS.get(connectionId);
     }
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
+        TestQueueFactoryProvider.reset();
+        mockQueue = mock(Queue.class);
+        TestQueueFactoryProvider.registerQueue(getClass().getSimpleName(), mockQueue);
+
+        mockConnection = mock(Connection.class);
+        mockConnectionId = "7b55a129-6975-4434-8edc-29ceefd38c95";
         asyncConnection = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
-        new NonStrictExpectations() {{
-            QueueFactory.getDefaultQueue();
-            result = mockQueue;
-        }};
+        asyncConnection.setQueue(getClass().getSimpleName());
+
+        Map<String, Object> attrs = new HashMap<>();
+        ApiProxy.Environment env = mock(ApiProxy.Environment.class);
+        when(env.getAttributes()).thenReturn(attrs);
+
+        ApiProxy.setEnvironmentForCurrentThread(env);
+    }
+
+    @After
+    public void tearDown() {
+        ApiProxy.setEnvironmentForCurrentThread(null);
     }
 
     @Test
-    public void testRegisterNewInstance(
-            @Injectable("1bac02f7-c9ed-41b8-9126-e2da257a06ef") final String mockConnectionId) throws Exception {
+    public void testRegisterNewInstance() throws Exception {
+        String mockConnectionId = "1bac02f7-c9ed-41b8-9126-e2da257a06ef";
         AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
 
-        Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
-                = getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
+        Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister =
+                AppEngineAsyncConnection.APP_ENGINE_ASYNC_CONNECTIONS;
         assertThat(appEngineAsyncConnectionRegister, hasEntry(mockConnectionId, asyncConnection2));
     }
 
     @Test
-    public void testUnregisterInstance(
-            @Injectable("648f76e2-39ed-40e0-91a2-b1887a03b782") final String mockConnectionId) throws Exception {
+    public void testUnregisterInstance() throws Exception {
+        String mockConnectionId = "648f76e2-39ed-40e0-91a2-b1887a03b782";
         new AppEngineAsyncConnection(mockConnectionId, mockConnection).close();
 
-        Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister
-                = getField(AppEngineAsyncConnection.class, "APP_ENGINE_ASYNC_CONNECTIONS");
+        Map<String, AppEngineAsyncConnection> appEngineAsyncConnectionRegister =
+                AppEngineAsyncConnection.APP_ENGINE_ASYNC_CONNECTIONS;
         assertThat(appEngineAsyncConnectionRegister, not(hasKey(mockConnectionId)));
     }
 
@@ -80,64 +96,59 @@ public class AppEngineAsyncConnectionTest {
 
         asyncConnection.send(event);
 
-        new Verifications() {{
-            TaskOptions taskOptions;
-            DeferredTask deferredTask;
-            mockQueue.add(taskOptions = withCapture());
-
-            deferredTask = extractDeferredTask(taskOptions);
-            assertThat(getField(deferredTask, "event"), Matchers.<Object>equalTo(event));
-        }};
+        ArgumentCaptor<TaskOptions> taskOptionsArgumentCaptor = ArgumentCaptor.forClass(TaskOptions.class);
+        verify(mockQueue).add(taskOptionsArgumentCaptor.capture());
+        TaskOptions taskOptions = taskOptionsArgumentCaptor.getValue();
+        DeferredTask deferredTask = extractDeferredTask(taskOptions);
+        AppEngineAsyncConnection.EventSubmitter eventSubmitter = (AppEngineAsyncConnection.EventSubmitter) deferredTask;
+        assertThat(eventSubmitter.getEvent(), Matchers.<Object>equalTo(event));
     }
 
     @Test
-    public void testQueuedEventSubmitted(@SuppressWarnings("unused")
-                                         @Mocked("setDoNotRetry") DeferredTaskContext deferredTaskContext)
-            throws Exception {
+    public void testQueuedEventSubmitted() throws Exception {
         final Event event = new EventBuilder().build();
-        new NonStrictExpectations() {{
-            mockQueue.add((TaskOptions) any);
-            result = new Delegate<TaskHandle>() {
-                @SuppressWarnings("unused")
-                TaskHandle add(TaskOptions taskOptions) {
-                    try {
-                        extractDeferredTask(taskOptions).run();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Couldn't extract the task", e);
-                    }
-                    return null;
+        when(mockQueue.add(any(TaskOptions.class))).thenAnswer(new Answer<TaskHandle>() {
+            @Override
+            public TaskHandle answer(InvocationOnMock invocation) throws Throwable {
+                TaskOptions taskOptions = invocation.getArgument(0);
+                try {
+                    extractDeferredTask(taskOptions).run();
+                } catch (Exception e) {
+                    throw new RuntimeException("Couldn't extract the task", e);
                 }
-            };
-        }};
+                return null;
+            }
+        });
 
         asyncConnection.send(event);
 
-        new Verifications() {{
-            DeferredTaskContext.setDoNotRetry(true);
-            mockConnection.send((Event) any);
-        }};
+        verify(mockConnection).send(any(Event.class));
+
+        // the below verifies that we called DeferredTask.setDoNotRetry(true)
+        ApiProxy.Environment env = ApiProxy.getCurrentEnvironment();
+        Map<String, Object> attrs = env.getAttributes();
+        String key = String.valueOf(DeferredTaskContext.class.getName()).concat(".doNotRetry");
+        assertThat(attrs.get(key), is((Object) true));
     }
 
     @Test
-    public void testEventLinkedToCorrectConnection(
-            @Injectable("eb37bfe4-7316-47e8-94e4-073aefd0fbf8") final String mockConnectionId) throws Exception {
-        final AppEngineAsyncConnection asyncConnection2 = new AppEngineAsyncConnection(mockConnectionId, mockConnection);
+    public void testEventLinkedToCorrectConnection() throws Exception {
+        final AppEngineAsyncConnection asyncConnection2 =
+                new AppEngineAsyncConnection("eb37bfe4-7316-47e8-94e4-073aefd0fbf8", mockConnection);
+        asyncConnection2.setQueue(getClass().getSimpleName());
+
         final Event event = new EventBuilder().build();
 
         asyncConnection.send(event);
         asyncConnection2.send(event);
 
-        new Verifications() {{
-            List<TaskOptions> taskOptionsList = new ArrayList<>();
-            DeferredTask deferredTask;
+        ArgumentCaptor<TaskOptions> taskOptionsCaptor = ArgumentCaptor.forClass(TaskOptions.class);
+        verify(mockQueue, times(2)).add(taskOptionsCaptor.capture());
 
-            mockQueue.add(withCapture(taskOptionsList));
+        DeferredTask deferredTask = extractDeferredTask(taskOptionsCaptor.getAllValues().get(0));
+        assertThat(getTaskConnection(deferredTask), is(asyncConnection));
 
-            deferredTask = extractDeferredTask(taskOptionsList.get(0));
-            assertThat(getTaskConnection(deferredTask), is(asyncConnection));
-
-            deferredTask = extractDeferredTask(taskOptionsList.get(1));
-            assertThat(getTaskConnection(deferredTask), is(asyncConnection2));
-        }};
+        deferredTask = extractDeferredTask(taskOptionsCaptor.getAllValues().get(1));
+        assertThat(getTaskConnection(deferredTask), is(asyncConnection2));
     }
 }
