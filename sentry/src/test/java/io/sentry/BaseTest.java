@@ -3,12 +3,10 @@ package io.sentry;
 import java.util.concurrent.Callable;
 
 import org.junit.Before;
-import org.testng.annotations.BeforeMethod;
 
 public class BaseTest {
 
     @Before
-    @BeforeMethod
     public void resetClient() {
         Sentry.setStoredClient(null);
     }
