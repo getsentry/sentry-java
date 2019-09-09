@@ -7,7 +7,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static mockit.Deencapsulation.getField;
 
 public class SentryIT extends BaseIT {
 
@@ -66,9 +65,8 @@ public class SentryIT extends BaseIT {
     }
 
     private boolean isLockedDown(SentryClient client) {
-        AbstractConnection connection = getField(client, "connection");
-        LockdownManager lockdownManager = getField(connection, "lockdownManager");
-        return lockdownManager.isLockedDown();
+        AbstractConnection connection = (AbstractConnection) client.getConnection();
+        return connection.isLockedDown();
     }
 
 }

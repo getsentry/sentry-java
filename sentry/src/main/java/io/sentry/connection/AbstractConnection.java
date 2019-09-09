@@ -135,4 +135,12 @@ public abstract class AbstractConnection implements Connection {
         eventSendCallbacks.add(eventSendCallback);
     }
 
+    /**
+     * A helper method to figure out whether the connection is locked down or not. Used primarily for testing purposes.
+     *
+     * @return true if the connection is locked down, false otherwise
+     */
+    public boolean isLockedDown() {
+        return lockdownManager.isLockedDown();
+    }
 }
