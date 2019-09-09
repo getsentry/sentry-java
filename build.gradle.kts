@@ -15,8 +15,18 @@ configure<JavaPluginConvention> {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+buildscript {
+    repositories {
+        google()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:3.1.3")
+    }
+}
+
 allprojects {
     repositories {
+        google()
         jcenter()
         mavenCentral()
     }
@@ -31,12 +41,10 @@ spotless {
     }
 
     kotlin {
-        // optionally takes a version
         ktlint()
         target("**/*.kt")
     }
     kotlinGradle {
-        // same as kotlin, but for .gradle.kts files (defaults to '*.gradle.kts')
         ktlint()
     }
 }
