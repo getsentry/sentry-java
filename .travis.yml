@@ -25,4 +25,3 @@ matrix:
     - os: linux
       dist: bionic
       jdk: openjdk11
-
