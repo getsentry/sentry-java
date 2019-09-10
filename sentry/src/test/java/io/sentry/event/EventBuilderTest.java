@@ -2,70 +2,50 @@ package io.sentry.event;
 
 import io.sentry.BaseTest;
 import io.sentry.event.interfaces.DebugMetaInterface;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
+import junitparams.JUnitParamsRunner;
+import junitparams.NamedParameters;
+import junitparams.Parameters;
 import io.sentry.event.interfaces.SentryInterface;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import java.net.InetAddress;
 import java.util.Date;
+import java.util.Random;
 import java.util.UUID;
 
-import static mockit.Deencapsulation.getField;
-import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+@RunWith(JUnitParamsRunner.class)
 public class EventBuilderTest extends BaseTest {
-    @Injectable
-    private InetAddress mockLocalHost = null;
-
-    private static void resetHostnameCache() {
-        setField(getHostnameCache(), "expirationTimestamp", 0l);
-        setField(getHostnameCache(), "hostname", EventBuilder.DEFAULT_HOSTNAME);
-    }
-
-    private static Object getHostnameCache() {
-        return getField(EventBuilder.class, "HOSTNAME_CACHE");
-    }
-
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        new NonStrictExpectations(InetAddress.class) {{
-            InetAddress.getLocalHost();
-            result = mockLocalHost;
-            mockLocalHost.getCanonicalHostName();
-            result = "local";
-        }};
+        EventBuilder.HOSTNAME_CACHE.reset(System.currentTimeMillis());
     }
 
     @Test
-    public void builtEventHasRandomlyGeneratedUuid(@Injectable final UUID mockUuid)
-            throws Exception {
-        new NonStrictExpectations(UUID.class) {{
-            UUID.randomUUID();
-            result = mockUuid;
-        }};
-        final EventBuilder eventBuilder = new EventBuilder();
+    public void builtEventHasRandomlyGeneratedUuid() throws Exception {
 
-        final Event event = eventBuilder.build();
+        Event ev1 = new EventBuilder().build();
+        Event ev2 = new EventBuilder().build();
 
-        assertThat(event.getId(), is(sameInstance(mockUuid)));
+        assertThat(ev1.getId(), not(is(ev2.getId())));
     }
 
     @Test
-    public void builtEventWithCustomUuidHasProperUuid(@Injectable final UUID mockUuid)
-            throws Exception {
-        final EventBuilder eventBuilder = new EventBuilder(mockUuid);
+    public void builtEventWithCustomUuidHasProperUuid() throws Exception {
+        UUID id = UUID.randomUUID();
+        final EventBuilder eventBuilder = new EventBuilder(id);
 
         final Event event = eventBuilder.build();
 
-        assertThat(event.getId(), is(sameInstance(mockUuid)));
+        assertThat(event.getId(), is(sameInstance(id)));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected= IllegalArgumentException.class)
     public void builtEventWithCustomNullUuidFails() throws Exception {
         new EventBuilder(null);
     }
@@ -80,9 +60,8 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithMessageHasProperMessage(
-            @Injectable("message") final String mockMessage)
-            throws Exception {
+    public void builtEventWithMessageHasProperMessage() throws Exception {
+        String mockMessage = "teh massage";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withMessage(mockMessage);
 
@@ -92,34 +71,31 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithoutTimestampHasDefaultTimestamp(@Injectable final Date mockTimestamp)
-            throws Exception {
-        new NonStrictExpectations(Date.class) {{
-            new Date();
-            result = mockTimestamp;
-            mockTimestamp.clone();
-            result = mockTimestamp;
-        }};
+    public void builtEventWithoutTimestampHasDefaultTimestamp() throws Exception {
+        long before = System.currentTimeMillis();
+
         final EventBuilder eventBuilder = new EventBuilder();
 
         final Event event = eventBuilder.build();
 
-        assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
+        long after = System.currentTimeMillis();
+
+        long eventTimestamp = event.getTimestamp().getTime();
+
+        assertThat(eventTimestamp, is(greaterThanOrEqualTo(before)));
+        assertThat(eventTimestamp, is(lessThanOrEqualTo(after)));
     }
 
     @Test
-    public void builtEventWithTimestampHasProperTimestamp(@Injectable final Date mockTimestamp)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockTimestamp.clone();
-            result = mockTimestamp;
-        }};
+    public void builtEventWithTimestampHasProperTimestamp() throws Exception {
+        Date mockTimestamp = new Date(new Random().nextLong());
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withTimestamp(mockTimestamp);
 
         final Event event = eventBuilder.build();
 
-        assertThat(event.getTimestamp(), is(sameInstance(mockTimestamp)));
+        assertThat(event.getTimestamp(), is(not(sameInstance(mockTimestamp))));
+        assertThat(event.getTimestamp(), is(mockTimestamp));
     }
 
     @Test
@@ -132,8 +108,8 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithLevelHasProperLevel(@Injectable final Event.Level mockLevel)
-            throws Exception {
+    public void builtEventWithLevelHasProperLevel() throws Exception {
+        Event.Level mockLevel = Event.Level.INFO;
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withLevel(mockLevel);
 
@@ -152,8 +128,8 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithLoggerHasProperLogger(@Injectable("logger") final String mockLogger)
-            throws Exception {
+    public void builtEventWithLoggerHasProperLogger() throws Exception {
+        String mockLogger = "mockLogger";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withLogger(mockLogger);
 
@@ -172,8 +148,8 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithPlatformHasProperPlatform(@Injectable("platform") final String mockPlatform)
-            throws Exception {
+    public void builtEventWithPlatformHasProperPlatform() throws Exception {
+        String mockPlatform = "mockPlatform";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withPlatform(mockPlatform);
 
@@ -192,8 +168,8 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithCulpritHasProperCulprit(@Injectable("culprit") final String mockCulprit)
-            throws Exception {
+    public void builtEventWithCulpritHasProperCulprit() throws Exception {
+        String mockCulprit = "mockCulprit";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withCulprit(mockCulprit);
 
@@ -202,7 +178,7 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getCulprit(), is(sameInstance(mockCulprit)));
     }
 
-    @DataProvider
+    @NamedParameters("stackFrames")
     public Object[][] stackFrameProvider() {
         return new Object[][]{
                 {new StackTraceElement("class", "method", "file", 12), "class.method(file:12)"},
@@ -212,7 +188,8 @@ public class EventBuilderTest extends BaseTest {
         };
     }
 
-    @Test(dataProvider = "stackFrameProvider")
+    @Test
+    @Parameters(named = "stackFrames")
     public void builtEventWithStackFrameAsCulpritHasProperCulprit(StackTraceElement mockStackFrame,
                                                                   String expectedCulprit)
             throws Exception {
@@ -224,7 +201,7 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getCulprit(), is(expectedCulprit));
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void builtEventHasImmutableTags() throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
         final Event event = eventBuilder.build();
@@ -242,9 +219,9 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithTagsHasProperTags(@Injectable("tagKey") final String mockTagKey,
-                                                @Injectable("tagValue") final String mockTagValue)
-            throws Exception {
+    public void builtEventWithTagsHasProperTags() throws Exception {
+        String mockTagKey = "tagKey";
+        String mockTagValue = "tagValue";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withTag(mockTagKey, mockTagValue);
 
@@ -254,47 +231,25 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getTags().entrySet(), hasSize(1));
     }
 
+
     @Test
-    public void builtEventWithNoServerNameUsesDefaultIfSearchTimesOut()
-            throws Exception {
-        resetHostnameCache();
-        new NonStrictExpectations(InetAddress.class) {{
-            InetAddress.getLocalHost();
-            result = mockLocalHost;
-            mockLocalHost.getCanonicalHostName();
-            result = new RuntimeException("For all intents and purposes, an exception is the same as a timeout");
-        }};
+    public void builtEventWithNoServerNameUsesLocalHost() throws Exception {
+        EventBuilder.HOSTNAME_CACHE.reset(System.currentTimeMillis() + 1_000_000_000);
         final EventBuilder eventBuilder = new EventBuilder();
 
         final Event event = eventBuilder.build();
-        synchronized (this) {
-            this.notify();
-        }
 
         assertThat(event.getServerName(), is(EventBuilder.DEFAULT_HOSTNAME));
     }
 
     @Test
-    public void builtEventWithNoServerNameUsesLocalHost(@Injectable("serverName") final String mockServerName)
-            throws Exception {
-        resetHostnameCache();
-        new NonStrictExpectations(InetAddress.class) {{
-            InetAddress.getLocalHost();
-            result = mockLocalHost;
-            mockLocalHost.getCanonicalHostName();
-            result = mockServerName;
-        }};
-        final EventBuilder eventBuilder = new EventBuilder();
+    public void builtEventWithServerNameUsesProvidedServerName() throws Exception {
+        String mockServerName = "mockServer.name";
 
-        final Event event = eventBuilder.build();
+        // this is to make the hostname cache think it has to resolve the hostname. But because we provide the
+        // server name on our own, this should actually never happen.
+        EventBuilder.HOSTNAME_CACHE.reset(System.currentTimeMillis() - 100);
 
-        assertThat(event.getServerName(), is(mockServerName));
-    }
-
-    @Test
-    public void builtEventWithServerNameUsesProvidedServerName(@Injectable("serverName") final String mockServerName)
-            throws Exception {
-        resetHostnameCache();
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withServerName(mockServerName);
 
@@ -303,7 +258,7 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getServerName(), is(mockServerName));
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void builtEventHasImmutableExtras() throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
         final Event event = eventBuilder.build();
@@ -321,9 +276,9 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithExtrasHasProperExtras(@Injectable("extraKey") final String mockExtraKey,
-                                                    @Injectable("extraValue") final String mockExtraValue)
-            throws Exception {
+    public void builtEventWithExtrasHasProperExtras() throws Exception {
+        String mockExtraKey = "key";
+        String mockExtraValue = "value";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withExtra(mockExtraKey, mockExtraValue);
 
@@ -343,9 +298,8 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithChecksumHasProperChecksum(
-            @Injectable("checksum") final String mockChecksum)
-            throws Exception {
+    public void builtEventWithChecksumHasProperChecksum() throws Exception {
+        String mockChecksum = "checksum";
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withChecksum(mockChecksum);
 
@@ -354,7 +308,7 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getChecksum(), is(sameInstance(mockChecksum)));
     }
 
-    @DataProvider
+    @NamedParameters("checksums")
     public Object[][] checksumProvider() {
         return new Object[][]{
                 {"", "0"},
@@ -363,7 +317,8 @@ public class EventBuilderTest extends BaseTest {
         };
     }
 
-    @Test(dataProvider = "checksumProvider")
+    @Test
+    @Parameters(named = "checksums")
     public void builtEventWithGeneratedChecksumHasCRC32Checksum(String string, String expectedChecksum)
             throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
@@ -374,13 +329,12 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getChecksum(), is(expectedChecksum));
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void builtEventHasImmutableSentryInterfaces(@Injectable final SentryInterface mockSentryInterface)
-            throws Exception {
+    @Test(expected = UnsupportedOperationException.class)
+    public void builtEventHasImmutableSentryInterfaces() throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
         final Event event = eventBuilder.build();
 
-        event.getSentryInterfaces().put("interfaceName", mockSentryInterface);
+        event.getSentryInterfaces().put("interfaceName", mock(SentryInterface.class));
     }
 
     @Test
@@ -393,35 +347,29 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventWithSentryInterfacesHasProperSentryInterfaces(
-            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
-            @Injectable final SentryInterface mockSentryInterface)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockSentryInterface.getInterfaceName();
-            result = mockSentryInterfaceName;
-        }};
+    public void builtEventWithSentryInterfacesHasProperSentryInterfaces() throws Exception {
+
+        SentryInterface mockSentryInterface = mock(SentryInterface.class);
+        when(mockSentryInterface.getInterfaceName()).thenReturn("sentryInterfaceName");
+
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withSentryInterface(mockSentryInterface);
 
         final Event event = eventBuilder.build();
 
-        assertThat(event.getSentryInterfaces(), hasEntry(mockSentryInterfaceName, mockSentryInterface));
+        assertThat(event.getSentryInterfaces(), hasEntry("sentryInterfaceName", mockSentryInterface));
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
 
     @Test
-    public void builtEventReplacesSentryInterfacesWithSameNameByDefault(
-            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
-            @Injectable final SentryInterface mockSentryInterface,
-            @Injectable final SentryInterface mockSentryInterface2)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockSentryInterface.getInterfaceName();
-            result = mockSentryInterfaceName;
-            mockSentryInterface2.getInterfaceName();
-            result = mockSentryInterfaceName;
-        }};
+    public void builtEventReplacesSentryInterfacesWithSameNameByDefault() throws Exception {
+        String mockSentryInterfaceName = "sentryInterfaceName";
+        SentryInterface mockSentryInterface = mock(SentryInterface.class);
+        SentryInterface mockSentryInterface2 = mock(SentryInterface.class);
+
+        when(mockSentryInterface.getInterfaceName()).thenReturn(mockSentryInterfaceName);
+        when(mockSentryInterface2.getInterfaceName()).thenReturn(mockSentryInterfaceName);
+
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withSentryInterface(mockSentryInterface);
         eventBuilder.withSentryInterface(mockSentryInterface2);
@@ -432,19 +380,15 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
 
+        @Test
+    public void builtEventReplacesSentryInterfacesWithSameNameIfReplacementEnabled() throws Exception {
+        String mockSentryInterfaceName = "sentryInterfaceName";
+        SentryInterface mockSentryInterface = mock(SentryInterface.class);
+        SentryInterface mockSentryInterface2 = mock(SentryInterface.class);
 
-    @Test
-    public void builtEventReplacesSentryInterfacesWithSameNameIfReplacementEnabled(
-            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
-            @Injectable final SentryInterface mockSentryInterface,
-            @Injectable final SentryInterface mockSentryInterface2)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockSentryInterface.getInterfaceName();
-            result = mockSentryInterfaceName;
-            mockSentryInterface2.getInterfaceName();
-            result = mockSentryInterfaceName;
-        }};
+        when(mockSentryInterface.getInterfaceName()).thenReturn(mockSentryInterfaceName);
+        when(mockSentryInterface2.getInterfaceName()).thenReturn(mockSentryInterfaceName);
+
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withSentryInterface(mockSentryInterface);
         eventBuilder.withSentryInterface(mockSentryInterface2, true);
@@ -456,17 +400,14 @@ public class EventBuilderTest extends BaseTest {
     }
 
     @Test
-    public void builtEventKeepsSentryInterfacesWithSameNameIfReplacementDisabled(
-            @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
-            @Injectable final SentryInterface mockSentryInterface,
-            @Injectable final SentryInterface mockSentryInterface2)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockSentryInterface.getInterfaceName();
-            result = mockSentryInterfaceName;
-            mockSentryInterface2.getInterfaceName();
-            result = mockSentryInterfaceName;
-        }};
+    public void builtEventKeepsSentryInterfacesWithSameNameIfReplacementDisabled() throws Exception {
+        String mockSentryInterfaceName = "sentryInterfaceName";
+        SentryInterface mockSentryInterface = mock(SentryInterface.class);
+        SentryInterface mockSentryInterface2 = mock(SentryInterface.class);
+
+        when(mockSentryInterface.getInterfaceName()).thenReturn(mockSentryInterfaceName);
+        when(mockSentryInterface2.getInterfaceName()).thenReturn(mockSentryInterfaceName);
+
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.withSentryInterface(mockSentryInterface);
         eventBuilder.withSentryInterface(mockSentryInterface2, false);
@@ -477,7 +418,7 @@ public class EventBuilderTest extends BaseTest {
         assertThat(event.getSentryInterfaces().entrySet(), hasSize(1));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void buildingTheEventTwiceFails() throws Exception {
         final EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.build();

@@ -2,7 +2,7 @@ package io.sentry.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import io.sentry.BaseTest;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.io.OutputStream;
 import java.nio.file.Path;

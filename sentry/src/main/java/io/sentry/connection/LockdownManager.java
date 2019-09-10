@@ -110,4 +110,9 @@ public class LockdownManager {
     public synchronized void setMaxLockdownTime(long maxLockdownTime) {
         this.maxLockdownTime = maxLockdownTime;
     }
+
+    // visible for testing
+    long getLockdownTime() {
+        return lockdownTime;
+    }
 }

@@ -1,72 +1,41 @@
 package io.sentry.event.interfaces;
 
-import io.sentry.BaseTest;
-import java.util.Deque;
-import mockit.Delegate;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import org.testng.annotations.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Deque;
+
+import io.sentry.BaseTest;
+import org.junit.Test;
+
 public class SentryExceptionTest extends BaseTest {
-
-    @Injectable
-    private Throwable mockThrowable = null;
-
-    @Injectable
-    private InnerClassThrowable mockInnerClassThrowable = null;
-
     @Test
-    public void ensureConversionToQueueKeepsOrder(@Injectable final Throwable mockCause) throws Exception {
+    public void ensureConversionToQueueKeepsOrder() throws Exception {
         final String exceptionMessage = "208ea34a-9c99-42d6-a399-59a4c85900dc";
         final String causeMessage = "46a1b2ee-629b-49eb-a2be-f5250c995ea4";
-        new NonStrictExpectations() {{
-            mockThrowable.getCause();
-            result = new Delegate<Throwable>() {
-                @SuppressWarnings("unused")
-                public Throwable getCause() {
-                    return mockCause;
-                }
-            };
-            mockThrowable.getMessage();
-            result = exceptionMessage;
-            mockCause.getMessage();
-            result = causeMessage;
-        }};
+        Throwable exception = new Exception(exceptionMessage, new Exception(causeMessage));
 
-        Deque<SentryException> exceptions = SentryException.extractExceptionQueue(mockThrowable);
+        Deque<SentryException> exceptions = SentryException.extractExceptionQueue(exception);
 
         assertThat(exceptions.getFirst().getExceptionMessage(), is(exceptionMessage));
         assertThat(exceptions.getLast().getExceptionMessage(), is(causeMessage));
     }
 
     @Test
-    public void ensureInnerClassesAreRepresentedCorrectly(@Injectable final InnerClassThrowable mockCause) throws Exception {
-        new NonStrictExpectations() {{
-            mockInnerClassThrowable.getCause();
-            result = new Delegate<Throwable>() {
-                @SuppressWarnings("unused")
-                public Throwable getCause() {
-                    return mockCause;
-                }
-            };
-        }};
+    public void ensureInnerClassesAreRepresentedCorrectly() throws Exception {
+        InnerClassThrowable exception = new InnerClassThrowable(new InnerClassThrowable());
 
-        Deque<SentryException> exceptions = SentryException.extractExceptionQueue(mockInnerClassThrowable);
+        Deque<SentryException> exceptions = SentryException.extractExceptionQueue(exception);
         assertThat(exceptions.getFirst().getExceptionClassName(), is("SentryExceptionTest$InnerClassThrowable"));
     }
 
     @Test
     public void exceptionMechanismThrowerIsUnwrappedViaExtractExceptionQueue() throws Exception {
-
         Throwable throwableMock = mock(Throwable.class);
         String expectedMessage = "message";
         when(throwableMock.getMessage()).thenReturn(expectedMessage);
@@ -122,6 +91,11 @@ public class SentryExceptionTest extends BaseTest {
     }
 
     private static final class InnerClassThrowable extends Throwable {
+        InnerClassThrowable() {
+        }
 
+        InnerClassThrowable(Throwable cause) {
+            super(cause);
+        }
     }
 }

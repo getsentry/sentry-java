@@ -53,11 +53,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jmockit</groupId>
-            <artifactId>jmockit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
@@ -68,13 +63,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>pl.pragmatists</groupId>
+            <artifactId>JUnitParams</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -178,6 +173,11 @@
                             ${project.build.directory}/test-classes/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
+                    <environmentVariables>
+                        <!-- Used by the EnvironmentConfigurationProviderTest -->
+                        <SENTRY_TEST_PROPERTY>testValue1</SENTRY_TEST_PROPERTY>
+                        <CUSTOM_PREFIX_TEST_PROPERTY>testValue2</CUSTOM_PREFIX_TEST_PROPERTY>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>

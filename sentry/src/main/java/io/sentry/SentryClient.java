@@ -427,6 +427,16 @@ public class SentryClient {
     }
 
     /**
+     * The connection to the Sentry server used by this client.
+     *
+     * @return the connection of this client
+     */
+    // visible for testing
+    Connection getConnection() {
+        return connection;
+    }
+
+    /**
      * Setup and store the {@link SentryUncaughtExceptionHandler} so that it can be
      * disabled on {@link SentryClient#closeConnection()}.
      */

@@ -44,7 +44,19 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
-        this.lockdownManager = new LockdownManager();
+        this(publicKey, secretKey, new LockdownManager());
+    }
+
+    /**
+     * Creates a connection based on the public and secret keys and uses the provided lockdown manager.
+     *
+     * @param publicKey public key (identifier) to the Sentry server.
+     * @param secretKey secret key (password) to the Sentry server.
+     * @param lockdownManager the lockdown manager to use
+     */
+    // visible for testing
+    AbstractConnection(String publicKey, String secretKey, LockdownManager lockdownManager) {
+        this.lockdownManager = lockdownManager;
         this.eventSendCallbacks = new HashSet<>();
         this.authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
             + "sentry_client=" + SentryEnvironment.getSentryName() + ","
@@ -123,4 +135,12 @@ public abstract class AbstractConnection implements Connection {
         eventSendCallbacks.add(eventSendCallback);
     }
 
+    /**
+     * A helper method to figure out whether the connection is locked down or not. Used primarily for testing purposes.
+     *
+     * @return true if the connection is locked down, false otherwise
+     */
+    public boolean isLockedDown() {
+        return lockdownManager.isLockedDown();
+    }
 }

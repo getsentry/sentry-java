@@ -1,157 +1,151 @@
 package io.sentry.connection;
 
-import io.sentry.BaseTest;
-import io.sentry.SentryClient;
-import mockit.*;
-import io.sentry.environment.SentryEnvironment;
-import io.sentry.event.Event;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class AsyncConnectionTest extends BaseTest {
-    @Tested
-    private AsyncConnection asyncConnection = null;
-    @Injectable
-    private Connection mockConnection = null;
-    @Injectable
-    private ExecutorService mockExecutorService = null;
-    @Injectable("false")
-    private boolean mockGracefulShutdown = false;
-    @Injectable
-    private long mockTimeout = 10000L;
-    @SuppressWarnings("unused")
-    @Mocked("addShutdownHook")
-    private Runtime mockRuntime = null;
+import io.sentry.BaseTest;
+import io.sentry.environment.SentryEnvironment;
+import io.sentry.event.Event;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-    @BeforeMethod
+public class AsyncConnectionTest extends BaseTest {
+    private AsyncConnection asyncConnection = null;
+    private Connection mockConnection = null;
+    private ExecutorService mockExecutorService = null;
+    private long mockTimeout = 10000L;
+
+    @Before
     public void setUp() throws Exception {
-        new NonStrictExpectations() {{
-            mockExecutorService.awaitTermination(anyLong, (TimeUnit) any);
-            result = true;
-        }};
+        mockExecutorService = mock(ExecutorService.class);
+        when(mockExecutorService.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
+
+        mockConnection = mock(Connection.class);
+
+        asyncConnection = mock(AsyncConnection.class, withSettings()
+                .useConstructor(mockConnection, mockExecutorService, false, mockTimeout)
+                .defaultAnswer(CALLS_REAL_METHODS));
     }
 
     @Test
     public void verifyShutdownHookIsAddedWhenGraceful() throws Exception {
-        // Ensure that the shutdown hooks for the unused @Tested instance are removed
-        asyncConnection.close();
+        AsyncConnection conn = new AsyncConnection(mockConnection, mockExecutorService, true, mockTimeout);
 
-        new AsyncConnection(mockConnection, mockExecutorService, true, mockTimeout);
+        boolean registered = Runtime.getRuntime().removeShutdownHook(conn.shutDownHook);
 
-        new Verifications() {{
-            mockRuntime.addShutdownHook((Thread) any);
-        }};
+        assertTrue(registered);
     }
 
     @Test
     public void verifyShutdownHookNotAddedWhenNotGraceful() throws Exception {
-        // Ensure that the shutdown hooks for the unused @Tested instance are removed
-        asyncConnection.close();
+        AsyncConnection conn = new AsyncConnection(mockConnection, mockExecutorService, false, mockTimeout);
 
-        new AsyncConnection(mockConnection, mockExecutorService, false, mockTimeout);
+        boolean registered = Runtime.getRuntime().removeShutdownHook(conn.shutDownHook);
 
-        new Verifications() {{
-            mockRuntime.addShutdownHook((Thread) any);
-            times = 0;
-        }};
+        assertFalse(registered);
     }
 
     @Test
-    public void verifyShutdownHookSetManagedBySentryAndCloseConnection(
-            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) SentryClient mockSentryClient)
+    public void verifyShutdownHookSetManagedBySentryAndCloseConnection()
             throws Exception {
-        // Ensure that the shutdown hooks for the unused @Tested instance are removed
-        asyncConnection.close();
+        //instantiate a new async connection installing the shutdown hook
+        AsyncConnection conn = new AsyncConnection(mockConnection, mockExecutorService, true, mockTimeout);
 
-        new NonStrictExpectations() {{
-            mockRuntime.addShutdownHook((Thread) any);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                public void addShutdownHook(Thread hook) {
-                    hook.run();
-                }
-            };
-        }};
+        assertFalse(SentryEnvironment.isManagingThread());
 
-        new AsyncConnection(mockConnection, mockExecutorService, true, mockTimeout);
+        // the shutdown hook should start managing the thread and call close on the connection
+        // we take advantage of that and we check below that during the call to mockConnection.close()
+        // the thread is indeed managed.
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue(SentryEnvironment.isManagingThread());
+                return null;
+            }
+        }).when(mockConnection).close();
 
-        new VerificationsInOrder() {{
-            SentryEnvironment.startManagingThread();
-            mockConnection.close();
-            SentryEnvironment.stopManagingThread();
-        }};
+        // this simulates the running of the shutdown hook
+        //noinspection CallToThreadRun
+        ((Thread) conn.shutDownHook).run();;
+
+        verify(mockConnection).close();
+
+        // the thread should no longer be managed after the shutdown hook ran
+        assertFalse(SentryEnvironment.isManagingThread());
     }
 
     @Test
-    public void ensureFailingShutdownHookStopsBeingManaged(
-            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) SentryClient mockSentryClient)
+    public void ensureFailingShutdownHookStopsBeingManaged()
             throws Exception {
-        // Ensure that the shutdown hooks for the unused @Tested instance are removed
-        asyncConnection.close();
+        //instantiate a new async connection installing the shutdown hook
+        AsyncConnection conn = new AsyncConnection(mockConnection, mockExecutorService, true, mockTimeout);
 
-        new NonStrictExpectations() {{
-            mockRuntime.addShutdownHook((Thread) any);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                public void addShutdownHook(Thread hook) {
-                    hook.run();
-                }
-            };
-            mockConnection.close();
-            result = new RuntimeException("Close operation failed");
-        }};
+        assertFalse(SentryEnvironment.isManagingThread());
 
-        new AsyncConnection(mockConnection, mockExecutorService, true, mockTimeout);
+        // the shutdown hook should start managing the thread and call close on the connection
+        // we take advantage of that and we check below that during the call to mockConnection.close()
+        // the thread is indeed managed. The close() operation then fails.
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue(SentryEnvironment.isManagingThread());
+                throw new RuntimeException("Close operation failed.");
+            }
+        }).when(mockConnection).close();
 
-        new Verifications() {{
-            SentryEnvironment.stopManagingThread();
-        }};
+        // this simulates the running of the shutdown hook
+        //noinspection CallToThreadRun
+        ((Thread) conn.shutDownHook).run();;
+
+        verify(mockConnection).close();
+
+        // the thread should no longer be managed after the shutdown hook ran even if the close() failed.
+        assertFalse(SentryEnvironment.isManagingThread());
     }
 
     @Test
     public void testCloseOperation() throws Exception {
         asyncConnection.close();
 
-        new Verifications() {{
-            mockConnection.close();
-            mockExecutorService.awaitTermination(anyLong, (TimeUnit) any);
-        }};
+        verify(mockConnection).close();
+        verify(mockExecutorService).awaitTermination(anyLong(), any(TimeUnit.class));
     }
 
     @Test
-    public void testSendEventQueued(@Injectable final Event mockEvent) throws Exception {
-        asyncConnection.send(mockEvent);
+    public void testSendEventQueued() throws Exception {
+        asyncConnection.send(mock(Event.class));
 
-        new Verifications() {{
-            mockExecutorService.execute((Runnable) any);
-        }};
-
-        // Ensure that the shutdown hooks for the used @Tested instance are removed
-        asyncConnection.close();
+        verify(mockExecutorService).execute(any(Runnable.class));
     }
 
     @Test
-    public void testQueuedEventExecuted(@Injectable final Event mockEvent) throws Exception {
-        new NonStrictExpectations() {{
-            mockExecutorService.execute((Runnable) any);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                public void execute(Runnable command) {
-                    command.run();
-                }
-            };
-        }};
+    public void testQueuedEventExecuted() throws Exception {
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                ((Runnable) invocation.getArgument(0)).run();
+                return null;
+            }
+        }).when(mockExecutorService).execute(any(Runnable.class));
 
-        asyncConnection.send(mockEvent);
+        Event ev = mock(Event.class);
 
-        new Verifications() {{
-            mockConnection.send(mockEvent);
-        }};
+        asyncConnection.send(ev);
 
-        // Ensure that the shutdown hooks for the used @Tested instance are removed
-        asyncConnection.close();
+        verify(mockConnection).send(eq(ev));
     }
 }

@@ -23,7 +23,7 @@ public final class SentryEnvironment {
     /**
      * Indicates whether the current thread is managed by sentry or not.
      */
-    protected static final ThreadLocal<AtomicInteger> SENTRY_THREAD = new ThreadLocal<AtomicInteger>() {
+    static final ThreadLocal<AtomicInteger> SENTRY_THREAD = new ThreadLocal<AtomicInteger>() {
         @Override
         protected AtomicInteger initialValue() {
             return new AtomicInteger();
