@@ -1,4 +1,4 @@
-language: java
+sudo: false
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -6,22 +6,51 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/.android/build-cache
+licenses:
+  - android-sdk-preview-license-.+
+  - android-sdk-license-.+
+  - google-gdk-license-.+
+before_install:
+  - touch $HOME/.android/repositories.cfg
+  - yes | sdkmanager --update
+android:
+  components:
+    - platform-tools
+    - build-tools-28.0.3
+    - android-29
+os: linux
+dist: trusty
+language: android
+env:
+  matrix:
+    - API=android-14 ABI=armeabi-v7a
+# Keeping only lowest/higher API level per ABI temporarily
+#    - API=android-15 ABI=armeabi-v7a
+#    - API=android-16 ABI=armeabi-v7a
+#    - API=android-17 ABI=armeabi-v7a
+#    - API=android-18 ABI=armeabi-v7a
+#    - API=android-19 ABI=armeabi-v7a
+#    - API=android-21 ABI=armeabi-v7aq
+#    - API=android-22 ABI=armeabi-v7a
+#    - API=android-23 ABI=armeabi-v7a
+#    - API=android-24 ABI=armeabi-v7a
+#    - API=android-25 ABI=armeabi-v7a
+#    - API=android-26 ABI=armeabi-v7a
+#    - API=android-27 ABI=armeabi-v7a
+#    - API=android-28 ABI=armeabi-v7a
+    - API=android-29 ABI=armeabi-v7a
+    - API=android-21 ABI=arm64-v8a
+#    - API=android-22 ABI=arm64-v8a
+#    - API=android-23 ABI=arm64-v8a
+#    - API=android-24 ABI=arm64-v8a
+#    - API=android-25 ABI=arm64-v8a
+#    - API=android-26 ABI=arm64-v8a
+#    - API=android-27 ABI=arm64-v8a
+#    - API=android-28 ABI=arm64-v8a
+    - API=android-29 ABI=arm64-v8a
 matrix:
   include:
-    - os: osx
-      osx_image: xcode9.3
-      jdk: oraclejdk8
-    - os: osx
-      osx_image: xcode11
-      jdk: oraclejdk12
-    - os: linux
-      dist: trusty
-      jdk: oraclejdk8
+    - jdk: openjdk8
       after_success:
         - bash <(curl -s https://codecov.io/bash)
-    - os: linux
-      dist: trusty
-      jdk: openjdk8
-    - os: linux
-      dist: bionic
-      jdk: openjdk11
