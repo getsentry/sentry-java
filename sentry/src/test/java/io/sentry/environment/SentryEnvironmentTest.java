@@ -1,14 +1,14 @@
 package io.sentry.environment;
 
 import io.sentry.BaseTest;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SentryEnvironmentTest extends BaseTest {
-    @AfterMethod
+    @After
     public void tearDown() throws Exception {
         SentryEnvironment.SENTRY_THREAD.remove();
     }

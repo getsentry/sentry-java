@@ -1,18 +1,25 @@
 package io.sentry.marshaller;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import io.sentry.BaseTest;
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.OutputStream;
 
 public class UncloseableOutputStreamTest extends BaseTest {
-    @Tested
     private Marshaller.UncloseableOutputStream uncloseableOutputStream = null;
-    @Injectable
     private OutputStream mockOutputStream = null;
+
+    @Before
+    public void setup() {
+        mockOutputStream = mock(OutputStream.class);
+        uncloseableOutputStream = new Marshaller.UncloseableOutputStream(mockOutputStream);
+    }
 
     @Test
     public void testWriteSingleByte() throws Exception {
@@ -20,9 +27,7 @@ public class UncloseableOutputStreamTest extends BaseTest {
 
         uncloseableOutputStream.write(i);
 
-        new Verifications() {{
-            mockOutputStream.write(i);
-        }};
+        verify(mockOutputStream).write(eq(i));
     }
 
     @Test
@@ -31,9 +36,7 @@ public class UncloseableOutputStreamTest extends BaseTest {
 
         uncloseableOutputStream.write(array);
 
-        new Verifications() {{
-            mockOutputStream.write(array);
-        }};
+        verify(mockOutputStream).write(eq(array));
     }
 
     @Test
@@ -44,28 +47,20 @@ public class UncloseableOutputStreamTest extends BaseTest {
 
         uncloseableOutputStream.write(array, off, len);
 
-        new Verifications() {{
-            mockOutputStream.write(array, off, len);
-        }};
+        verify(mockOutputStream).write(eq(array), eq(off), eq(len));
     }
 
     @Test
     public void testFlush() throws Exception {
         uncloseableOutputStream.flush();
 
-        new Verifications() {{
-            mockOutputStream.flush();
-        }};
-
+        verify(mockOutputStream).flush();
     }
 
     @Test
     public void testClose() throws Exception {
         uncloseableOutputStream.close();
 
-        new Verifications() {{
-            mockOutputStream.close();
-            times = 0;
-        }};
+        verify(mockOutputStream, never()).close();
     }
 }

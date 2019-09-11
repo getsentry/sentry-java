@@ -11,11 +11,16 @@ import io.sentry.SentryClient;
 import io.sentry.android.event.helper.AndroidEventBuilderHelper;
 import io.sentry.buffer.Buffer;
 import io.sentry.buffer.DiskBuffer;
+import io.sentry.event.EventBuilder;
+import io.sentry.Sentry;
 import io.sentry.config.Lookup;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Util;
+import io.sentry.event.interfaces.ExceptionMechanism;
+import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.ExceptionMechanismThrowable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,14 +42,31 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
      */
     private static final String DEFAULT_BUFFER_DIR = "sentry-buffered-events";
 
+    private static volatile ANRWatchDog anrWatchDog;
+
     private Context ctx;
+
+
+    /**
+     * Construct an AndroidSentryClientFactory using the base Context from the specified Android Application.
+     * <p>
+     * This uses a default lookup instance, use {@link #AndroidSentryClientFactory(Application, Lookup)} if
+     * you need to pass a specially configured lookup.
+     *
+     * @param app Android Application
+     */
+    public AndroidSentryClientFactory(Application app) {
+        this(app, Lookup.getDefault());
+    }
 
     /**
      * Construct an AndroidSentryClientFactory using the base Context from the specified Android Application.
      *
      * @param app Android Application
+     * @param lookup the lookup for locating the configuration
      */
-    public AndroidSentryClientFactory(Application app) {
+    public AndroidSentryClientFactory(Application app, Lookup lookup) {
+        super(lookup);
         Log.d(TAG, "Construction of Android Sentry from Android Application.");
 
         this.ctx = app.getApplicationContext();
@@ -52,10 +74,24 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
     /**
      * Construct an AndroidSentryClientFactory using the specified Android Context.
+     * <p>
+     * This uses a default lookup instance, use {@link #AndroidSentryClientFactory(Context, Lookup)} if
+     * you need to pass a specially configured lookup.
      *
      * @param ctx Android Context.
      */
     public AndroidSentryClientFactory(Context ctx) {
+        this(ctx, Lookup.getDefault());
+    }
+
+    /**
+     * Construct an AndroidSentryClientFactory using the specified Android Context.
+     *
+     * @param ctx Android Context.
+     * @param lookup the lookup for locating the configuration
+     */
+    public AndroidSentryClientFactory(Context ctx, Lookup lookup) {
+        super(lookup);
         Log.d(TAG, "Construction of Android Sentry from Android Context.");
 
         this.ctx = ctx.getApplicationContext();
@@ -78,7 +114,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
             Log.w(TAG, "*** Couldn't find a suitable DSN, Sentry operations will do nothing!"
                 + " See documentation: https://docs.sentry.io/clients/java/modules/android/ ***");
         } else if (!(protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https"))) {
-            String async = Lookup.lookup(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
+            String async = lookup.get(DefaultSentryClientFactory.ASYNC_OPTION, dsn);
             if (async != null && async.equalsIgnoreCase("false")) {
                 throw new IllegalArgumentException("Sentry Android cannot use synchronous connections, remove '"
                     + DefaultSentryClientFactory.ASYNC_OPTION + "=false' from your options.");
@@ -90,6 +126,34 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
 
         SentryClient sentryClient = super.createSentryClient(dsn);
         sentryClient.addBuilderHelper(new AndroidEventBuilderHelper(ctx));
+
+        boolean enableAnrTracking = "true".equalsIgnoreCase(lookup.get("anr.enable", dsn));
+        Log.d(TAG, "ANR is='" + String.valueOf(enableAnrTracking) + "'");
+        if (enableAnrTracking && anrWatchDog == null) {
+            String timeIntervalMsConfig = lookup.get("anr.timeoutIntervalMs", dsn);
+            int timeoutIntervalMs = timeIntervalMsConfig != null
+                    ? Integer.parseInt(timeIntervalMsConfig)
+                    //CHECKSTYLE.OFF: MagicNumber
+                    : 5000;
+                    //CHECKSTYLE.ON: MagicNumber
+
+            Log.d(TAG, "ANR timeoutIntervalMs is='" + String.valueOf(timeoutIntervalMs) + "'");
+
+            anrWatchDog = new ANRWatchDog(timeoutIntervalMs, new ANRWatchDog.ANRListener() {
+                @Override public void onAppNotResponding(ApplicationNotResponding error) {
+                    Log.d(TAG, "ANR triggered='" + error.getMessage() + "'");
+
+                    EventBuilder builder = new EventBuilder();
+                    builder.withTag("thread_state", error.getState().toString());
+                    ExceptionMechanism mechanism = new ExceptionMechanism("anr", false);
+                    Throwable throwable = new ExceptionMechanismThrowable(mechanism, error);
+                    builder.withSentryInterface(new ExceptionInterface(throwable));
+
+                    Sentry.capture(builder);
+                }
+            });
+            anrWatchDog.start();
+        }
 
         return sentryClient;
     }
@@ -119,7 +183,7 @@ public class AndroidSentryClientFactory extends DefaultSentryClientFactory {
     @Override
     protected Buffer getBuffer(Dsn dsn) {
         File bufferDir;
-        String bufferDirOpt = Lookup.lookup(BUFFER_DIR_OPTION, dsn);
+        String bufferDirOpt = lookup.get(BUFFER_DIR_OPTION, dsn);
         if (bufferDirOpt != null) {
             bufferDir = new File(bufferDirOpt);
         } else {

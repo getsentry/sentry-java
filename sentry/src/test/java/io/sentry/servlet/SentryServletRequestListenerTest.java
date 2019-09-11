@@ -1,31 +1,28 @@
 package io.sentry.servlet;
 
 import io.sentry.BaseTest;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Tested;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.http.HttpServletRequest;
 
-import static mockit.Deencapsulation.getField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SentryServletRequestListenerTest extends BaseTest {
-    @Tested
     private SentryServletRequestListener sentryServletRequestListener = null;
-    @Injectable
     private ServletRequestEvent mockServletRequestEvent = null;
 
-    @AfterMethod
-    public void tearDown() throws Exception {
-        // Reset the threadLocal value
-        ((ThreadLocal) getField(SentryServletRequestListener.class, "THREAD_REQUEST")).remove();
+    @Before
+    public void setup() {
+        mockServletRequestEvent = mock(ServletRequestEvent.class);
+        sentryServletRequestListener = new SentryServletRequestListener();
+        SentryServletRequestListener.reset();
     }
 
     @Test
@@ -34,12 +31,9 @@ public class SentryServletRequestListenerTest extends BaseTest {
     }
 
     @Test
-    public void requestListenerContainsTheCurrentRequest(@Injectable final HttpServletRequest mockHttpServletRequest)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockServletRequestEvent.getServletRequest();
-            result = mockHttpServletRequest;
-        }};
+    public void requestListenerContainsTheCurrentRequest() throws Exception {
+        HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
+        when(mockServletRequestEvent.getServletRequest()).thenReturn(mockHttpServletRequest);
 
         sentryServletRequestListener.requestInitialized(mockServletRequestEvent);
 
@@ -47,12 +41,9 @@ public class SentryServletRequestListenerTest extends BaseTest {
     }
 
     @Test
-    public void requestListenerDoesntWorkWithNonHttpRequests(@Injectable final ServletRequest mockServletRequest)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockServletRequestEvent.getServletRequest();
-            result = mockServletRequest;
-        }};
+    public void requestListenerDoesntWorkWithNonHttpRequests() throws Exception {
+        ServletRequest mockServletRequest = mock(ServletRequest.class);
+        when(mockServletRequestEvent.getServletRequest()).thenReturn(mockServletRequest);
 
         sentryServletRequestListener.requestInitialized(mockServletRequestEvent);
 
@@ -60,12 +51,10 @@ public class SentryServletRequestListenerTest extends BaseTest {
     }
 
     @Test
-    public void requestListenerDestroyRemovesTheCurrentRequest(@Injectable final HttpServletRequest mockHttpServletRequest)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockServletRequestEvent.getServletRequest();
-            result = mockHttpServletRequest;
-        }};
+    public void requestListenerDestroyRemovesTheCurrentRequest() throws Exception {
+        HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
+        when(mockServletRequestEvent.getServletRequest()).thenReturn(mockHttpServletRequest);
+
         sentryServletRequestListener.requestInitialized(mockServletRequestEvent);
 
         sentryServletRequestListener.requestDestroyed(mockServletRequestEvent);
@@ -74,12 +63,9 @@ public class SentryServletRequestListenerTest extends BaseTest {
     }
 
     @Test
-    public void requestListenerSpecificToLocalThread(@Injectable final HttpServletRequest mockHttpServletRequest)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockServletRequestEvent.getServletRequest();
-            result = mockHttpServletRequest;
-        }};
+    public void requestListenerSpecificToLocalThread() throws Exception {
+        HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
+        when(mockServletRequestEvent.getServletRequest()).thenReturn(mockHttpServletRequest);
 
         new Thread() {
             @Override

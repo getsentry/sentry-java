@@ -1,5 +1,7 @@
 package io.sentry.marshaller.json;
 
+import static java.util.Arrays.asList;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,57 +9,65 @@ import io.sentry.BaseTest;
 import io.sentry.event.Breadcrumb;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.Sdk;
-import mockit.*;
+import junitparams.JUnitParamsRunner;
+import junitparams.NamedParameters;
+import junitparams.Parameters;
 import io.sentry.event.Event;
 import io.sentry.event.interfaces.SentryInterface;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.zip.DataFormatException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 
 import static io.sentry.marshaller.json.JsonComparisonUtil.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@RunWith(JUnitParamsRunner.class)
 public class JsonMarshallerTest extends BaseTest {
-    @Tested
     private JsonMarshaller jsonMarshaller = null;
-    @Injectable
     private Event mockEvent = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         jsonMarshaller = new JsonMarshaller();
         // Do not compress by default during the tests
         jsonMarshaller.setCompression(false);
 
-        new NonStrictExpectations() {{
-            mockEvent.getId();
-            result = UUID.fromString("00000000-0000-0000-0000-000000000000");
-            mockEvent.getTimestamp();
-            result = new Date(0);
-            mockEvent.getLevel();
-            result = null;
-        }};
+        mockEvent = mock(Event.class);
+        when(mockEvent.getId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000000"));
+        when(mockEvent.getTimestamp()).thenReturn(new Date(0));
+        when(mockEvent.getLevel()).thenReturn(null);
+        when(mockEvent.getSdk()).thenReturn(new Sdk(null, null, Collections.<String>emptySet()));
     }
 
     @Test
-    public void testEventIdWrittenProperly(@Injectable final UUID mockUuid) throws Exception {
+    public void testEventIdWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getId();
-            result = mockUuid;
-            mockUuid.toString();
-            result = "3b71fba5-413e-4022-ae98-5f0b80a155a5";
-        }};
+
+        UUID id = UUID.fromString("3b71fba5-413e-4022-ae98-5f0b80a155a5");
+        when(mockEvent.getId()).thenReturn(id);
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -65,12 +75,10 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventMessageWrittenProperly(@Injectable("message") final String mockMessage) throws Exception {
+    public void testEventMessageWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getMessage();
-            result = mockMessage;
-        }};
+
+        when(mockEvent.getMessage()).thenReturn("message");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -78,22 +86,19 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventTimestampWrittenProperly(@Injectable final Date mockTimestamp) throws Exception {
+    public void testEventTimestampWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getTimestamp();
-            result = mockTimestamp;
-            mockTimestamp.getTime();
-            // 2013-11-24T04:11:35.338 (UTC)
-            result = 1385266295338L;
-        }};
+
+        // 2013-11-24T04:11:35.338 (UTC)
+        Date mockTimestamp = new Date(1385266295338L);
+        when(mockEvent.getTimestamp()).thenReturn(mockTimestamp);
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
         assertThat(jsonOutputStreamParser.value(), is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testTimestamp.json")));
     }
 
-    @DataProvider(name = "levelProvider")
+    @NamedParameters("levelProvider")
     public Object[][] levelProvider() {
         return new Object[][]{
                 {Event.Level.DEBUG, "/io/sentry/marshaller/json/jsonmarshallertest/testLevelDebug.json"},
@@ -104,13 +109,11 @@ public class JsonMarshallerTest extends BaseTest {
         };
     }
 
-    @Test(dataProvider = "levelProvider")
+    @Test
+    @Parameters(named = "levelProvider")
     public void testEventLevelWrittenProperly(final Event.Level eventLevel, String levelFile) throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getLevel();
-            result = eventLevel;
-        }};
+        when(mockEvent.getLevel()).thenReturn(eventLevel);
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -118,12 +121,9 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventLoggerWrittenProperly(@Injectable("logger") final String mockLogger) throws Exception {
+    public void testEventLoggerWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getLogger();
-            result = mockLogger;
-        }};
+        when(mockEvent.getLogger()).thenReturn("logger");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -131,12 +131,9 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventPlaftormWrittenProperly(@Injectable("platform") final String mockPlatform) throws Exception {
+    public void testEventPlaftormWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getPlatform();
-            result = mockPlatform;
-        }};
+        when(mockEvent.getPlatform()).thenReturn("platform");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -150,10 +147,8 @@ public class JsonMarshallerTest extends BaseTest {
         integrations.add("integration2");
         final Sdk sdk = new Sdk("sdkName", "sdkVersion", integrations);
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getSdk();
-            result = sdk;
-        }};
+
+        when(mockEvent.getSdk()).thenReturn(sdk);
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -161,12 +156,9 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventCulpritWrittenProperly(@Injectable("culprit") final String mockCulprit) throws Exception {
+    public void testEventCulpritWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getCulprit();
-            result = mockCulprit;
-        }};
+        when(mockEvent.getCulprit()).thenReturn("culprit");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -174,12 +166,9 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventTransactionWrittenProperly(@Injectable("transaction") final String mockTransaction) throws Exception {
+    public void testEventTransactionWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getTransaction();
-            result = mockTransaction;
-        }};
+        when(mockEvent.getTransaction()).thenReturn("transaction");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -187,13 +176,9 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventTagsWrittenProperly(@Injectable("tagName") final String mockTagName,
-                                             @Injectable("tagValue") final String mockTagValue) throws Exception {
+    public void testEventTagsWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getTags();
-            result = Collections.singletonMap(mockTagName, mockTagValue);
-        }};
+        when(mockEvent.getTags()).thenReturn(Collections.singletonMap("tagName", "tagValue"));
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -201,27 +186,20 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testFingerPrintWrittenProperly(@Injectable("fingerprint1") final String mockFingerprint1,
-                                             @Injectable("fingerprint2") final String mockFingerprint2) throws Exception {
+    public void testFingerPrintWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getFingerprint();
-            result = Arrays.asList(mockFingerprint1, mockFingerprint2);
-        }};
+        when(mockEvent.getFingerprint()).thenReturn(asList("fingerprint1", "fingerprint2"));
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
         assertThat(jsonOutputStreamParser.value(), is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testFingerprint.json")));
     }
 
-
     @Test
-    public void testEventServerNameWrittenProperly(@Injectable("serverName") final String mockServerName) throws Exception {
+    public void testEventServerNameWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getServerName();
-            result = mockServerName;
-        }};
+
+        when(mockEvent.getServerName()).thenReturn("serverName");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -229,12 +207,10 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventReleaseWrittenProperly(@Injectable("release") final String mockRelease) throws Exception {
+    public void testEventReleaseWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getRelease();
-            result = mockRelease;
-        }};
+
+        when(mockEvent.getRelease()).thenReturn("release");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -242,15 +218,11 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventDistWrittenProperly(@Injectable("release") final String mockRelease,
-                                             @Injectable("dist") final String mockDist) throws Exception {
+    public void testEventDistWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getRelease();
-            result = mockRelease;
-            mockEvent.getDist();
-            result = mockDist;
-        }};
+
+        when(mockEvent.getRelease()).thenReturn("release");
+        when(mockEvent.getDist()).thenReturn("dist");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -258,12 +230,10 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventEnvironmentWrittenProperly(@Injectable("environment") final String mockEnvironment) throws Exception {
+    public void testEventEnvironmentWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getEnvironment();
-            result = mockEnvironment;
-        }};
+
+        when(mockEvent.getEnvironment()).thenReturn("environment");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -291,10 +261,7 @@ public class JsonMarshallerTest extends BaseTest {
         breadcrumbs.add(breadcrumb1);
         breadcrumbs.add(breadcrumb2);
 
-        new NonStrictExpectations() {{
-            mockEvent.getBreadcrumbs();
-            result = breadcrumbs;
-        }};
+        when(mockEvent.getBreadcrumbs()).thenReturn(breadcrumbs);
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -321,10 +288,7 @@ public class JsonMarshallerTest extends BaseTest {
         contexts.put("context1", context1);
         contexts.put("context2", context2);
 
-        new NonStrictExpectations() {{
-            mockEvent.getContexts();
-            result = contexts;
-        }};
+        when(mockEvent.getContexts()).thenReturn(contexts);
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -332,19 +296,16 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventChecksumWrittenProperly(@Injectable("1234567890abcdef") final String mockChecksum) throws Exception {
+    public void testEventChecksumWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getChecksum();
-            result = mockChecksum;
-        }};
+        when(mockEvent.getChecksum()).thenReturn("1234567890abcdef");
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
         assertThat(jsonOutputStreamParser.value(), is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testChecksum.json")));
     }
 
-    @DataProvider(name = "extraProvider")
+    @NamedParameters("extraProvider")
     public Object[][] extraProvider() {
         return new Object[][]{
                 {"key", "string", "/io/sentry/marshaller/json/jsonmarshallertest/testExtraString.json"},
@@ -361,13 +322,11 @@ public class JsonMarshallerTest extends BaseTest {
         };
     }
 
-    @Test(dataProvider = "extraProvider")
+    @Test
+    @Parameters(named = "extraProvider")
     public void testEventExtraWrittenProperly(final String extraKey, final Object extraValue, String extraFile) throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getExtra();
-            result = Collections.singletonMap(extraKey, extraValue);
-        }};
+        when(mockEvent.getExtra()).thenReturn(Collections.singletonMap(extraKey, extraValue));
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -375,15 +334,15 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testEventExtraWrittenProperly(@Injectable("key") final String mockExtraKey,
-                                              @Injectable final Object mockExtraValue) throws Exception {
+    public void testEventExtraWrittenProperly() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getExtra();
-            result = Collections.singletonMap(mockExtraKey, mockExtraValue);
-            mockExtraValue.toString();
-            result = "test";
-        }};
+
+        when(mockEvent.getExtra()).thenReturn(Collections.<String, Object>singletonMap("key", new Object() {
+            @Override
+            public String toString() {
+                return "test";
+            }
+        }));
 
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
@@ -391,28 +350,29 @@ public class JsonMarshallerTest extends BaseTest {
     }
 
     @Test
-    public void testInterfaceBindingIsProperlyUsed(
-            @Injectable final SentryInterface mockSentryInterface,
-            @Injectable final InterfaceBinding<SentryInterface> mockInterfaceBinding) throws Exception {
+    public void testInterfaceBindingIsProperlyUsed() throws Exception {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
-        new NonStrictExpectations() {{
-            mockEvent.getSentryInterfaces();
-            result = Collections.singletonMap("interfaceKey", mockSentryInterface);
-            mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                public void writeInterface(JsonGenerator generator, SentryInterface sentryInterface) throws IOException {
-                    generator.writeNull();
-                }
-            };
-        }};
+
+        SentryInterface mockSentryInterface = mock(SentryInterface.class);
+        when(mockEvent.getSentryInterfaces()).thenReturn(Collections.singletonMap("interfaceKey", mockSentryInterface));
+
+        @SuppressWarnings("unchecked")
+        InterfaceBinding<SentryInterface> mockInterfaceBinding = mock(InterfaceBinding.class);
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                JsonGenerator generator = invocation.getArgument(0);
+                generator.writeNull();
+                return null;
+            }
+        }).when(mockInterfaceBinding).writeInterface(any(JsonGenerator.class), eq(mockSentryInterface));
 
         jsonMarshaller.addInterfaceBinding(mockSentryInterface.getClass(), mockInterfaceBinding);
         jsonMarshaller.marshall(mockEvent, jsonOutputStreamParser.outputStream());
 
-        new Verifications() {{
-            mockInterfaceBinding.writeInterface((JsonGenerator) any, mockSentryInterface);
-        }};
+        verify(mockInterfaceBinding).writeInterface(any(JsonGenerator.class), eq(mockSentryInterface));
+
         assertThat(jsonOutputStreamParser.value(), is(jsonResource("/io/sentry/marshaller/json/jsonmarshallertest/testInterfaceBinding.json")));
     }
 

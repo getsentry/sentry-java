@@ -6,29 +6,27 @@ import io.sentry.connection.Connection;
 import io.sentry.context.ContextManager;
 import io.sentry.context.SingletonContextManager;
 import io.sentry.event.helper.ContextBuilderHelper;
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class BreadcrumbTest extends BaseTest {
-    @Tested
     private SentryClient sentryClient = null;
-
-    @Injectable
     private Connection mockConnection = null;
-    @Injectable
     private ContextManager contextManager = new SingletonContextManager();
 
-    @BeforeMethod
+    @Before
     public void setup() {
         contextManager.clear();
+        mockConnection = mock(Connection.class);
+        sentryClient = new SentryClient(mockConnection, contextManager);
     }
 
     @Test
@@ -47,11 +45,9 @@ public class BreadcrumbTest extends BaseTest {
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO));
 
-        new Verifications() {{
-            Event event;
-            mockConnection.send(event = withCapture());
-            assertThat(event.getBreadcrumbs().size(), equalTo(1));
-        }};
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getBreadcrumbs().size(), equalTo(1));
     }
 
     @Test
@@ -72,11 +68,9 @@ public class BreadcrumbTest extends BaseTest {
             .withMessage("Some random message")
             .withLevel(Event.Level.INFO));
 
-        new Verifications() {{
-            Event event;
-            mockConnection.send(event = withCapture());
-            assertThat(event.getBreadcrumbs().size(), equalTo(1));
-        }};
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getBreadcrumbs().size(), equalTo(1));
     }
 
     @Test
@@ -98,10 +92,8 @@ public class BreadcrumbTest extends BaseTest {
             .withLevel(Event.Level.INFO)
             .build());
 
-        new Verifications() {{
-            Event event;
-            mockConnection.send(event = withCapture());
-            assertThat(event.getBreadcrumbs().size(), equalTo(1));
-        }};
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(mockConnection).send(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getBreadcrumbs().size(), equalTo(1));
     }
 }

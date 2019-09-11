@@ -1,46 +1,53 @@
 package io.sentry.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import io.sentry.BaseTest;
-import mockit.Delegate;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Tested;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.StackTraceInterface;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.util.Deque;
-
-import static mockit.Deencapsulation.setField;
-import static io.sentry.marshaller.json.JsonComparisonUtil.*;
+import static io.sentry.marshaller.json.JsonComparisonUtil.JsonGeneratorParser;
+import static io.sentry.marshaller.json.JsonComparisonUtil.jsonResource;
+import static io.sentry.marshaller.json.JsonComparisonUtil.newJsonGenerator;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Deque;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import io.sentry.BaseTest;
+import io.sentry.event.EventBuilder;
+import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.ExceptionMechanism;
+import io.sentry.event.interfaces.ExceptionMechanismThrowable;
+import io.sentry.event.interfaces.SentryException;
+import io.sentry.event.interfaces.StackTraceInterface;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class ExceptionInterfaceBindingTest extends BaseTest {
-    @Tested
     private ExceptionInterfaceBinding interfaceBinding = null;
-    @Injectable
     private ExceptionInterface mockExceptionInterface = null;
-    @Injectable
     private InterfaceBinding<StackTraceInterface> mockStackTraceInterfaceBinding = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        new NonStrictExpectations() {{
-            mockStackTraceInterfaceBinding.writeInterface(withInstanceOf(JsonGenerator.class), (StackTraceInterface) any);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                public void writeInterface(JsonGenerator generator, StackTraceInterface sentryInterface)
-                        throws IOException {
-                    generator.writeStartObject();
-                    generator.writeEndObject();
-                }
-            };
-        }};
+        mockExceptionInterface = mock(ExceptionInterface.class);
+        //noinspection unchecked
+        mockStackTraceInterfaceBinding = mock(InterfaceBinding.class);
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                JsonGenerator generator = invocation.getArgument(0);
+                generator.writeStartObject();
+                generator.writeEndObject();
+                return null;
+            }
+        }).when(mockStackTraceInterfaceBinding).writeInterface(any(JsonGenerator.class), any(StackTraceInterface.class));
+
+        interfaceBinding = new ExceptionInterfaceBinding(mockStackTraceInterfaceBinding);
+
     }
 
     @Test
@@ -48,15 +55,13 @@ public class ExceptionInterfaceBindingTest extends BaseTest {
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
         final String message = "6e65f60d-9f22-495a-9556-7a61eeea2a14";
         final Throwable throwable = new IllegalStateException(message);
-        new NonStrictExpectations() {{
-            mockExceptionInterface.getExceptions();
-            result = new Delegate<Deque<SentryException>>() {
-                @SuppressWarnings("unused")
-                public Deque<SentryException> getExceptions() {
-                    return SentryException.extractExceptionQueue(throwable);
-                }
-            };
-        }};
+
+        when(mockExceptionInterface.getExceptions()).thenAnswer(new Answer<Deque<SentryException>>() {
+            @Override
+            public Deque<SentryException> answer(InvocationOnMock invocation) throws Throwable {
+                return SentryException.extractExceptionQueue(throwable);
+            }
+        });
 
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockExceptionInterface);
 
@@ -65,18 +70,15 @@ public class ExceptionInterfaceBindingTest extends BaseTest {
 
     @Test
     public void testClassInDefaultPackage() throws Exception {
-        setField((Object) DefaultPackageException.class, "name", DefaultPackageException.class.getSimpleName());
         final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
-        final Throwable throwable = new DefaultPackageException();
-        new NonStrictExpectations() {{
-            mockExceptionInterface.getExceptions();
-            result = new Delegate<Deque<SentryException>>() {
-                @SuppressWarnings("unused")
-                public Deque<SentryException> getExceptions() {
-                    return SentryException.extractExceptionQueue(throwable);
-                }
-            };
-        }};
+        final Throwable throwable = (Throwable) Class.forName("DefaultPackageException").newInstance();
+
+        when(mockExceptionInterface.getExceptions()).thenAnswer(new Answer<Deque<SentryException>>() {
+            @Override
+            public Deque<SentryException> answer(InvocationOnMock invocation) throws Throwable {
+                return SentryException.extractExceptionQueue(throwable);
+            }
+        });
 
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockExceptionInterface);
 
@@ -90,29 +92,40 @@ public class ExceptionInterfaceBindingTest extends BaseTest {
         final Throwable throwable1 = new IllegalStateException(message1);
         final String message2 = "f1296959-5b86-45f7-853a-cdc25196710b";
         final Throwable throwable2 = new IllegalStateException(message2, throwable1);
-        new NonStrictExpectations() {{
-            mockExceptionInterface.getExceptions();
-            result = new Delegate<Deque<SentryException>>() {
-                @SuppressWarnings("unused")
-                public Deque<SentryException> getExceptions() {
-                    return SentryException.extractExceptionQueue(throwable2);
-                }
-            };
-        }};
+
+        when(mockExceptionInterface.getExceptions()).thenAnswer(new Answer<Deque<SentryException>>() {
+            @Override
+            public Deque<SentryException> answer(InvocationOnMock invocation) throws Throwable {
+                return SentryException.extractExceptionQueue(throwable2);
+            }
+        });
 
         interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockExceptionInterface);
 
         assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/Exception3.json")));
     }
 
-}
+    @Test
+    public void testExceptionWithMechanism() throws Exception {
+        final JsonGeneratorParser jsonGeneratorParser = newJsonGenerator();
+        final String message = "6e65f60d-9f22-495a-9556-7a61eeea2a14";
+        final Throwable originalThrowable = new IllegalStateException(message);
 
-/**
- * Exception used to test exceptions defined in the default package.
- * <p>
- * Obviously we can't use an Exception which is really defined in the default package within those tests
- * (can't import it), so instead set the name of the class to remove the package name.<br>
- * {@code Deencapsulation.setField(Object) DefaultPackageException.class, "name", "DefaultPackageClass")}
- */
-class DefaultPackageException extends Exception {
+        EventBuilder builder = new EventBuilder();
+        ExceptionMechanism mechanism = new ExceptionMechanism("the type", true);
+        final Throwable throwable = new ExceptionMechanismThrowable(mechanism, originalThrowable);
+        builder.withSentryInterface(new ExceptionInterface(throwable));
+
+        when(mockExceptionInterface.getExceptions()).thenAnswer(new Answer<Deque<SentryException>>() {
+            @Override
+            public Deque<SentryException> answer(InvocationOnMock invocation) throws Throwable {
+                return SentryException.extractExceptionQueue(throwable);
+            }
+        });
+
+        interfaceBinding.writeInterface(jsonGeneratorParser.generator(), mockExceptionInterface);
+
+        assertThat(jsonGeneratorParser.value(), is(jsonResource("/io/sentry/marshaller/json/ExceptionWithMechanism.json")));
+    }
+
 }

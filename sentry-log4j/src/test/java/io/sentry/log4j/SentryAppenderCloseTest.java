@@ -25,6 +25,7 @@ public class SentryAppenderCloseTest extends BaseTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        resetClient();
         mockUpErrorHandler = new MockUpErrorHandler();
     }
 

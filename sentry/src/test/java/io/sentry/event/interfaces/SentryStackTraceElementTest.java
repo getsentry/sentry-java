@@ -2,8 +2,8 @@ package io.sentry.event.interfaces;
 
 import io.sentry.BaseTest;
 import io.sentry.jvmti.Frame;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.lang.reflect.Method;
 
@@ -16,7 +16,7 @@ public class SentryStackTraceElementTest extends BaseTest {
     private Method method2;
     private Method method3;
 
-    @BeforeMethod
+    @Before
     public void setup() {
         // setup valid Method instances (since they can't be easily constructed)
         method1();
