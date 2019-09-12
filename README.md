@@ -21,7 +21,4 @@ based application.
 * [Examples](https://github.com/getsentry/examples)
 * [Bug Tracker](http://github.com/getsentry/sentry-java/issues)
 * [Code](http://github.com/getsentry/sentry-java)
-* [Mailing List](https://groups.google.com/group/getsentry)
-* [IRC](irc://irc.freenode.net/sentry)  (irc.freenode.net, #sentry)
-* [Travis CI](http://travis-ci.org/getsentry/sentry-java)
-
+* [![Discord](https://img.shields.io/discord/621778831602221064)](https://discord.gg/Ww9hbqr)
