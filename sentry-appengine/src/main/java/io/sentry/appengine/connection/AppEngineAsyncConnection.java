@@ -108,6 +108,14 @@ public class AppEngineAsyncConnection implements Connection {
     }
 
     /**
+     * Gets the queue that the events are sent to.
+     * @return the App Engine Queue used by this connection
+     */
+    public String getQueue() {
+        return queue == null ? null : queue.getQueueName();
+    }
+
+    /**
      * Simple DeferredTask using the {@link #send(Event)} method of the {@link #actualConnection}.
      */
     // visible for testing
