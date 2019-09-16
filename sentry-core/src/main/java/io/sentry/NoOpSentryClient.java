@@ -3,6 +3,9 @@ package io.sentry;
 import java.util.UUID;
 
 class NoOpSentryClient implements ISentryClient {
+
+  private static final UUID emptyId = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
   @Override
   public boolean isEnabled() {
     return false;
@@ -10,7 +13,7 @@ class NoOpSentryClient implements ISentryClient {
 
   @Override
   public UUID captureEvent(SentryEvent event) {
-    return UUID.fromString("00000000-0000-0000-0000-000000000000");
+    return emptyId;
   }
 
   @Override
