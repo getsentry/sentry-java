@@ -1,26 +1,37 @@
 package io.sentry;
 
-import java.time.Instant;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.UUID;
 
 public class SentryEvent {
   private UUID eventUuid;
-  private Instant eventInstant;
+  private Date timestamp;
 
-  SentryEvent(UUID eventUuid, Instant instant) {
+  SentryEvent(UUID eventUuid, Date timestamp) {
     this.eventUuid = eventUuid;
-    this.eventInstant = instant;
+    this.timestamp = timestamp;
   }
 
   public SentryEvent() {
-    this(UUID.randomUUID(), Instant.now());
+    this(UUID.randomUUID(), Calendar.getInstance().getTime());
   }
 
   public UUID getEventId() {
     return eventUuid;
   }
 
-  public Instant getTimestamp() {
-    return eventInstant;
+  public Date getTimestamp() {
+    return (Date) timestamp.clone();
+  }
+
+  String getTimestampIsoFormat() {
+    TimeZone tz = TimeZone.getTimeZone("UTC");
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    df.setTimeZone(tz);
+    return df.format(timestamp);
   }
 }

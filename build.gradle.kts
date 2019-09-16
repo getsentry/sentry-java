@@ -1,4 +1,6 @@
 import com.diffplug.spotless.LineEnding
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
@@ -28,6 +30,17 @@ allprojects {
     }
     group = "io.sentry"
     version = "2.0.0-SNAPSHOT"
+    tasks {
+        withType<Test> {
+            testLogging.showStandardStreams = true
+            testLogging.exceptionFormat = TestExceptionFormat.FULL
+            testLogging.events = setOf(
+                TestLogEvent.SKIPPED,
+                TestLogEvent.PASSED,
+                TestLogEvent.FAILED)
+            dependsOn("cleanTest")
+        }
+    }
 }
 
 spotless {
