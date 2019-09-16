@@ -4,9 +4,9 @@ public final class Sentry {
 
   private Sentry() {}
 
-  private static ISentryClient currentClient;
+  private static ISentryClient currentClient = NoOpSentryClient.getInstance();
 
-  public boolean isEnabled() {
+  public static boolean isEnabled() {
     return currentClient.isEnabled();
   }
 
@@ -21,15 +21,13 @@ public final class Sentry {
   }
 
   static synchronized void init(SentryOptions options) {
-    if (currentClient != null) {
-      currentClient.close();
-    }
+    currentClient.close();
     currentClient = new SentryClient(options);
   }
 
   public static synchronized void close() {
     currentClient.close();
-    currentClient = new NoOpSentryClient();
+    currentClient = NoOpSentryClient.getInstance();
   }
 
   public interface OptionsConfiguration {

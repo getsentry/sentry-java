@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 
 class NoOpSentryClientTest {
-    private var sut: NoOpSentryClient = NoOpSentryClient()
+    private var sut: NoOpSentryClient = NoOpSentryClient.getInstance()
 
     @Test
     fun `client is always disabled`() = assertFalse(sut.isEnabled)
