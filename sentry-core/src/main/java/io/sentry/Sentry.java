@@ -21,7 +21,9 @@ public final class Sentry {
   }
 
   static synchronized void init(SentryOptions options) {
-    currentClient.close();
+    if (currentClient != null) {
+      currentClient.close();
+    }
     currentClient = new SentryClient(options);
   }
 
