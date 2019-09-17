@@ -32,7 +32,7 @@ class SentryInitProviderTest {
     }
 
     @Test
-    fun `when applicationId defined, SDK initializes`() {
+    fun `when applicationId is defined, SDK initializes`() {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
