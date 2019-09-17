@@ -33,7 +33,10 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  */
 public class AppEngineAsyncConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(AppEngineAsyncConnection.class);
-    private static final Map<String, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS = new HashMap<>();
+
+    // visible for testing
+    static final Map<String, AppEngineAsyncConnection> APP_ENGINE_ASYNC_CONNECTIONS = new HashMap<>();
+
     /**
      * Identifier of the async connection.
      */
@@ -105,15 +108,34 @@ public class AppEngineAsyncConnection implements Connection {
     }
 
     /**
+     * Gets the queue that the events are sent to.
+     * @return the App Engine Queue used by this connection
+     */
+    public String getQueue() {
+        return queue == null ? null : queue.getQueueName();
+    }
+
+    /**
      * Simple DeferredTask using the {@link #send(Event)} method of the {@link #actualConnection}.
      */
-    private static final class EventSubmitter implements DeferredTask {
+    // visible for testing
+    static final class EventSubmitter implements DeferredTask {
         private final String connectionId;
         private final Event event;
 
         private EventSubmitter(String connectionId, Event event) {
             this.connectionId = connectionId;
             this.event = event;
+        }
+
+        // visible for testing
+        String getConnectionId() {
+            return connectionId;
+        }
+
+        // visible for testing
+        Event getEvent() {
+            return event;
         }
 
         @Override

@@ -1,92 +1,93 @@
 package io.sentry.appengine.event.helper;
 
+import static java.util.Collections.singletonMap;
+
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.apphosting.api.ApiProxy;
-import mockit.*;
 import io.sentry.event.EventBuilder;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.util.*;
-
-import static mockit.Deencapsulation.setField;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
 
 public class AppEngineEventBuilderHelperTest {
-    @Tested
     private AppEngineEventBuilderHelper eventBuilderHelper = null;
-    @Injectable
     private EventBuilder mockEventBuilder = null;
-    @SuppressWarnings("unused")
-    @Mocked("getCurrentEnvironment")
-    private ApiProxy mockApiProxy;
-    @Injectable
     private ApiProxy.Environment mockEnvironment = null;
-    @Injectable
-    private SystemProperty mockApplicationId = null;
-    @Injectable
-    private SystemProperty mockApplicationVersion = null;
+    private String originalApplicationId;
+    private String originalApplicationVersion;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        setField(SystemProperty.class, "applicationId", mockApplicationId);
-        setField(SystemProperty.class, "applicationVersion", mockApplicationVersion);
+        originalApplicationId = SystemProperty.applicationId.get();
+        originalApplicationVersion = SystemProperty.applicationVersion.get();
 
-        new NonStrictExpectations() {{
-            ApiProxy.getCurrentEnvironment();
-            result = mockEnvironment;
-            mockEnvironment.getAttributes();
-            result = Collections.emptyMap();
-        }};
+        mockEventBuilder = mock(EventBuilder.class);
+
+        mockEnvironment = mock(ApiProxy.Environment.class);
+        when(mockEnvironment.getAttributes()).thenReturn(Collections.<String, Object>emptyMap());
+
+        ApiProxy.setEnvironmentForCurrentThread(mockEnvironment);
+
+        eventBuilderHelper = new AppEngineEventBuilderHelper();
+    }
+
+    @After
+    public void tearDown() {
+        ApiProxy.setEnvironmentForCurrentThread(null);
+        resetSystemProperty(SystemProperty.applicationId, originalApplicationId);
+        resetSystemProperty(SystemProperty.applicationVersion, originalApplicationVersion);
+    }
+
+    private static void resetSystemProperty(SystemProperty property, String value) {
+        if (value == null) {
+            System.clearProperty(property.key());
+        } else {
+            property.set(value);
+        }
     }
 
     @Test
-    public void ensureHostnameDefineByApiProxyEnvironment(
-            @Injectable("d7b8f251-ebe1-446f-8549-2b37982bd548") final String mockHostname)
-            throws Exception {
-        new NonStrictExpectations() {{
-            mockEnvironment.getAttributes();
-            result = Collections.singletonMap("com.google.appengine.runtime.default_version_hostname", mockHostname);
-        }};
+    public void ensureHostnameDefineByApiProxyEnvironment() throws Exception {
+        Object mockHostName = "d7b8f251-ebe1-446f-8549-2b37982bd548";
+        when(mockEnvironment.getAttributes())
+                .thenReturn(singletonMap("com.google.appengine.runtime.default_version_hostname",
+                        mockHostName));
 
         eventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        new Verifications() {{
-            String hostname;
-            mockEventBuilder.withServerName(hostname = withCapture());
-            assertThat(hostname, is(mockHostname));
-        }};
+        ArgumentCaptor<String> hostnameCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mockEventBuilder).withServerName(hostnameCaptor.capture());
+        String hostname = hostnameCaptor.getValue();
+        assertThat(hostname, is(mockHostName));
     }
 
     @Test
-    public void ensureApplicationVersionIsAddedAsTag(
-            @Injectable("dc485fa3-fc23-4e6c-b374-0d05d248e5a5") final String version) throws Exception {
-        new NonStrictExpectations() {{
-            mockApplicationVersion.get();
-            result = version;
-        }};
+    public void ensureApplicationVersionIsAddedAsTag() throws Exception {
+        String version = "dc485fa3-fc23-4e6c-b374-0d05d248e5a5";
+        SystemProperty.applicationVersion.set(version);
 
         eventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        new Verifications() {{
-            mockEventBuilder.withTag("GAE Application Version", version);
-        }};
+        verify(mockEventBuilder).withTag(eq("GAE Application Version"), eq(version));
     }
 
     @Test
-    public void ensureApplicationIdIsAddedAsTag(
-            @Injectable("50a180eb-1484-4a07-9e44-b60d394cad18") final String applicationId) throws Exception {
-        new NonStrictExpectations() {{
-            mockApplicationId.get();
-            result = applicationId;
-        }};
+    public void ensureApplicationIdIsAddedAsTag() throws Exception {
+        String applicationId = "50a180eb-1484-4a07-9e44-b60d394cad18";
+        SystemProperty.applicationId.set(applicationId);
 
         eventBuilderHelper.helpBuildingEvent(mockEventBuilder);
 
-        new Verifications() {{
-            mockEventBuilder.withTag("GAE Application Id", applicationId);
-        }};
+        verify(mockEventBuilder).withTag(eq("GAE Application Id"), eq(applicationId));
     }
 }
