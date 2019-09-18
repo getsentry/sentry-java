@@ -5,8 +5,8 @@ plugins {
 }
 
 dependencies {
-    testImplementation(kotlin("stdlib-jdk8"))
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.3.50")
+    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(Config.TestLibs.kotlinTestJunit)
 }
 
 configure<SourceSetContainer> {
@@ -16,7 +16,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = "0.8.4"
+    toolVersion = Config.QualityPlugins.jacocoVersion
 }
 
 tasks.jacocoTestReport {

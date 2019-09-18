@@ -1,25 +1,15 @@
 plugins {
     id("com.android.library")
-    id("kotlin-android")
+    kotlin("android")
     jacoco
 }
 
-dependencies {
-    api(project(":sentry-core"))
-    testImplementation("org.robolectric:robolectric:4.3")
-    testImplementation(kotlin("stdlib-jdk8"))
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.3.50")
-    testImplementation("androidx.test:core:1.2.0")
-    testImplementation("androidx.test:runner:1.2.0")
-    testImplementation("androidx.test.ext:junit:1.1.1")
-}
-
 android {
-    compileSdkVersion(29)
-    buildToolsVersion("29.0.2")
+    compileSdkVersion(Config.Android.compileSdkVersion)
+    buildToolsVersion(Config.Android.buildToolsVersion)
     defaultConfig {
-        minSdkVersion(14)
-        targetSdkVersion(29)
+        minSdkVersion(Config.Android.minSdkVersion)
+        targetSdkVersion(Config.Android.targetSdkVersion)
         javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath = true
@@ -44,4 +34,15 @@ android {
             }, this))
         }
     }
+}
+
+dependencies {
+    api(project(":sentry-core"))
+
+    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(Config.TestLibs.robolectric)
+    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(Config.TestLibs.androidxCore)
+    testImplementation(Config.TestLibs.androidxRunner)
+    testImplementation(Config.TestLibs.androidxJunit)
 }

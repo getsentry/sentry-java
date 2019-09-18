@@ -4,7 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
-    id("com.diffplug.gradle.spotless") version "3.24.2" apply true
+    id("com.diffplug.gradle.spotless") version Config.QualityPlugins.spotlessVersion apply true
     jacoco
 }
 
@@ -16,10 +16,11 @@ configure<JavaPluginConvention> {
 buildscript {
     repositories {
         google()
+        jcenter()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:3.4.1")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50")
+        classpath(Config.BuildPlugins.androidGradle)
+        classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
     }
 }
 
@@ -42,7 +43,7 @@ allprojects {
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile"))
         }
     }
 }
