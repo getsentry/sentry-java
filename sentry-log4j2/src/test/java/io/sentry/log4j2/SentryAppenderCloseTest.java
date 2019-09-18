@@ -3,47 +3,38 @@ package io.sentry.log4j2;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import mockit.*;
-import io.sentry.SentryClientFactory;
-import io.sentry.dsn.Dsn;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class SentryAppenderCloseTest extends BaseTest {
-    private MockUpErrorHandler mockUpErrorHandler;
-    @Injectable
+    private ErrorCounter errorCounter;
     private SentryClient mockSentryClient = null;
-    @SuppressWarnings("unused")
-    @Mocked("sentryClient")
-    private SentryClientFactory mockSentryClientFactory = null;
-    @SuppressWarnings("unused")
-    @Mocked("dsnLookup")
-    private Dsn mockDsn = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        mockUpErrorHandler = new MockUpErrorHandler();
+        errorCounter = new ErrorCounter();
+        mockSentryClient = mock(SentryClient.class);
     }
 
     private void assertNoErrorsInErrorHandler() throws Exception {
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        assertThat(errorCounter.getErrorCount(), is(0));
     }
 
     @Test
     public void testConnectionClosedWhenAppenderStopped() throws Exception {
         Sentry.setStoredClient(mockSentryClient);
         final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setHandler(errorCounter.getErrorHandler());
         sentryAppender.start();
 
         sentryAppender.stop();
 
-        new Verifications() {{
-            mockSentryClient.closeConnection();
-        }};
+        verify(mockSentryClient).closeConnection();
         assertNoErrorsInErrorHandler();
     }
 
@@ -52,20 +43,19 @@ public class SentryAppenderCloseTest extends BaseTest {
         // This checks that even if sentry wasn't setup correctly its appender can still be closed.
         Sentry.setStoredClient(null);
         final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setHandler(errorCounter.getErrorHandler());
 
         sentryAppender.start();
         sentryAppender.stop();
 
-        //Two errors, one because of the exception, one because of the null event.
-        assertThat(mockUpErrorHandler.getErrorCount(), is(0));
+        assertNoErrorsInErrorHandler();
     }
 
     @Test
     public void testStopDoNotFailIfNoInit()
             throws Exception {
         final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setHandler(errorCounter.getErrorHandler());
 
         sentryAppender.stop();
 
@@ -76,16 +66,13 @@ public class SentryAppenderCloseTest extends BaseTest {
     public void testStopDoNotFailWhenMultipleCalls() throws Exception {
         Sentry.setStoredClient(mockSentryClient);
         final SentryAppender sentryAppender = new SentryAppender();
-        sentryAppender.setHandler(mockUpErrorHandler.getMockInstance());
+        sentryAppender.setHandler(errorCounter.getErrorHandler());
         sentryAppender.start();
 
         sentryAppender.stop();
         sentryAppender.stop();
 
-        new Verifications() {{
-            mockSentryClient.closeConnection();
-            times = 1;
-        }};
+        verify(mockSentryClient).closeConnection();
         assertNoErrorsInErrorHandler();
     }
 }
