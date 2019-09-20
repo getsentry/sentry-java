@@ -5,40 +5,30 @@ import ch.qos.logback.core.Context;
 import ch.qos.logback.core.status.OnConsoleStatusListener;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
-import mockit.*;
 import io.sentry.SentryClient;
-import io.sentry.SentryClientFactory;
-import io.sentry.dsn.Dsn;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SentryAppenderCloseTest extends BaseTest {
-    @Injectable
-    private SentryClient mockSentryClient = null;
-    @Injectable
-    private Context mockContext = null;
-    @SuppressWarnings("unused")
-    @Mocked("sentryClient")
-    private SentryClientFactory mockSentryClientFactory = null;
-    @SuppressWarnings("unused")
-    @Mocked("dsnLookup")
-    private Dsn mockDsn = null;
+    private SentryClient mockSentryClient = null;private Context mockContext = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        new MockUpStatusPrinter();
-        new NonStrictExpectations() {{
-            final BasicStatusManager statusManager = new BasicStatusManager();
-            final OnConsoleStatusListener listener = new OnConsoleStatusListener();
-            listener.start();
-            statusManager.add(listener);
+        mockSentryClient = mock(SentryClient.class);
 
-            mockContext.getStatusManager();
-            result = statusManager;
-        }};
+        final BasicStatusManager statusManager = new BasicStatusManager();
+        final OnConsoleStatusListener listener = new OnConsoleStatusListener();
+        listener.start();
+        statusManager.add(listener);
+
+        mockContext = mock(Context.class);
+        when(mockContext.getStatusManager()).thenReturn(statusManager);
     }
 
     private void assertNoErrorsInStatusManager() throws Exception {
@@ -54,9 +44,7 @@ public class SentryAppenderCloseTest extends BaseTest {
 
         sentryAppender.stop();
 
-        new Verifications() {{
-            mockSentryClient.closeConnection();
-        }};
+        verify(mockSentryClient).closeConnection();
         assertNoErrorsInStatusManager();
     }
 
@@ -75,8 +63,7 @@ public class SentryAppenderCloseTest extends BaseTest {
     }
 
     @Test
-    public void testStopDoNotFailIfNoInit()
-            throws Exception {
+    public void testStopDoNotFailIfNoInit() throws Exception {
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
 
@@ -95,10 +82,7 @@ public class SentryAppenderCloseTest extends BaseTest {
         sentryAppender.stop();
         sentryAppender.stop();
 
-        new Verifications() {{
-            mockSentryClient.closeConnection();
-            times = 1;
-        }};
+        verify(mockSentryClient).closeConnection();
         assertNoErrorsInStatusManager();
     }
 }
