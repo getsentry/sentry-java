@@ -74,6 +74,11 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>pl.pragmatists</groupId>
+            <artifactId>JUnitParams</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Integration tests dependencies -->
         <!-- Sentry Test-jar does not provide test dependencies transitively -->
