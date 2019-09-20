@@ -45,4 +45,5 @@ dependencies {
     testImplementation(Config.TestLibs.androidxCore)
     testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)
+    testImplementation(Config.TestLibs.mockitoKotlin)
 }
