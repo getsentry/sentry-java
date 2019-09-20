@@ -10,6 +10,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 @RunWith(AndroidJUnit4::class)
 class SentryInitProviderTest {
@@ -27,8 +28,8 @@ class SentryInitProviderTest {
     fun `when missing applicationId, SentryInitProvider throws`() {
         val providerInfo = ProviderInfo()
 
-        providerInfo.authority = "io.sentry.android.SentryInitProvider"
-        sentryInitProvider.attachInfo(context, providerInfo)
+        providerInfo.authority = "io.sentry.SentryInitProvider"
+        assertFailsWith<IllegalStateException> { sentryInitProvider.attachInfo(context, providerInfo) }
     }
 
     @Test
