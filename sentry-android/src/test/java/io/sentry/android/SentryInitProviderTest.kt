@@ -28,7 +28,7 @@ class SentryInitProviderTest {
     fun `when missing applicationId, SentryInitProvider throws`() {
         val providerInfo = ProviderInfo()
 
-        providerInfo.authority = "io.sentry.SentryInitProvider"
+        providerInfo.authority = AUTHORITY
         assertFailsWith<IllegalStateException> { sentryInitProvider.attachInfo(context, providerInfo) }
     }
 
@@ -37,9 +37,14 @@ class SentryInitProviderTest {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
-        providerInfo.authority = "io.sentry.android.SentryInitProvider"
+        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+
         sentryInitProvider.attachInfo(context, providerInfo)
 
         assertTrue(Sentry.isEnabled())
+    }
+
+    companion object {
+        private const val AUTHORITY = "io.sentry.android.SentryInitProvider"
     }
 }

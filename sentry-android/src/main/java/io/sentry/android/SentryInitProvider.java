@@ -23,7 +23,7 @@ public class SentryInitProvider extends ContentProvider {
   @Override
   public void attachInfo(Context context, ProviderInfo info) {
     // applicationId is expected to be prepended. See AndroidManifest.xml
-    if ("io.sentry.SentryInitProvider".equals(info.authority)) {
+    if ("io.sentry.android.SentryInitProvider".equals(info.authority)) {
       //
       throw new IllegalStateException(
           "An applicationId is required to fulfill the manifest placeholder.");
