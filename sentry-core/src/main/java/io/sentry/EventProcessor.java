@@ -1,5 +1,5 @@
 package io.sentry;
 
 public interface EventProcessor {
-  public SentryEvent Process(SentryEvent event);
+  SentryEvent process(SentryEvent event);
 }

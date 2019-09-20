@@ -11,7 +11,7 @@ import io.sentry.Sentry;
 public class SentryInitProvider extends ContentProvider {
   @Override
   public boolean onCreate() {
-    Sentry.init(o -> o.AddEventProcessor(new DefaultAndroidEventProcessor()));
+    Sentry.init(o -> o.AddEventProcessor(new DefaultAndroidEventProcessor(getContext())));
     return true;
   }
 
