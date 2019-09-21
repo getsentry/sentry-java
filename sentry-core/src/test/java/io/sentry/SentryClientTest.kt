@@ -14,7 +14,7 @@ class SentryClientTest {
         fun getSut() = SentryClient(sentryOptions)
     }
 
-    private val fixture: Fixture = Fixture()
+    private val fixture = Fixture()
 
     @Test
     fun `when fixture is unchanged, client is enabled`() {
