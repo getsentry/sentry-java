@@ -7,6 +7,7 @@ plugins {
 dependencies {
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(Config.TestLibs.mockitoKotlin)
 }
 
 configure<SourceSetContainer> {

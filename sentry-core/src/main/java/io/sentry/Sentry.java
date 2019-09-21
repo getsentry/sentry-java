@@ -21,6 +21,10 @@ public final class Sentry {
   }
 
   static synchronized void init(SentryOptions options) {
+    ILogger logger = options.getLogger();
+    if (logger != null) {
+      logger.log(SentryLevel.Info, "Initializing SDK with DSN: '%d'", options.getDsn());
+    }
     currentClient.close();
     currentClient = new SentryClient(options);
   }

@@ -17,10 +17,18 @@ public class SentryClient implements ISentryClient {
   }
 
   public UUID captureEvent(SentryEvent event) {
-    return UUID.randomUUID();
+    ILogger logger = options.getLogger();
+    if (logger != null) {
+      logger.log(SentryLevel.Debug, "Capturing event: %d", event.getEventId());
+    }
+    return event.getEventId();
   }
 
   public void close() {
+    ILogger logger = options.getLogger();
+    if (logger != null) {
+      logger.log(SentryLevel.Info, "Closing SDK.");
+    }
     // TODO: Flush events
     isEnabled = false;
   }
