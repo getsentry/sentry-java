@@ -16,7 +16,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SentryAppenderCloseTest extends BaseTest {
-    private SentryClient mockSentryClient = null;private Context mockContext = null;
+    private SentryClient mockSentryClient = null;
+    private Context mockContext = null;
 
     @Before
     public void setUp() throws Exception {
