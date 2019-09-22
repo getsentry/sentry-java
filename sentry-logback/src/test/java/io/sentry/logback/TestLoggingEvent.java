@@ -1,39 +1,36 @@
 package io.sentry.logback;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.LoggerContextVO;
 import ch.qos.logback.classic.spi.ThrowableProxy;
-import mockit.Mock;
-import mockit.MockUp;
 import org.slf4j.Marker;
 import org.slf4j.helpers.MessageFormatter;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+public class TestLoggingEvent implements ILoggingEvent {
+    private final String loggerName;
+    private final Marker marker;
+    private final Level level;
+    private final String message;
+    private final Object[] argumentArray;
+    private final Throwable throwable;
+    private final Map<String, String> mdcPropertyMap;
+    private final String threadName;
+    private final StackTraceElement[] callerData;
+    private final long timestamp;
+    private final LoggerContextVO loggerContextVO;
 
-public class MockUpLoggingEvent extends MockUp<ILoggingEvent> {
-    private String loggerName;
-    private Marker marker;
-    private Level level;
-    private String message;
-    private Object[] argumentArray;
-    private Throwable throwable;
-    private Map<String, String> mdcPropertyMap;
-    private String threadName;
-    private StackTraceElement[] callerData;
-    private long timestamp;
-    private LoggerContextVO loggerContextVO;
-
-
-    public MockUpLoggingEvent(String loggerName, Marker marker, Level level, String message,
+        public TestLoggingEvent(String loggerName, Marker marker, Level level, String message,
                               Object[] argumentArray, Throwable t) {
         this(loggerName, marker, level, message, argumentArray, t, null, null, null, System.currentTimeMillis());
     }
 
-    public MockUpLoggingEvent(String loggerName, Marker marker, Level level, String message, Object[] argumentArray,
+    public TestLoggingEvent(String loggerName, Marker marker, Level level, String message, Object[] argumentArray,
                               Throwable throwable, Map<String, String> mdcPropertyMap, String threadName,
                               StackTraceElement[] callerData, long timestamp) {
         this(loggerName,
@@ -49,7 +46,7 @@ public class MockUpLoggingEvent extends MockUp<ILoggingEvent> {
                 new HashMap<String, String>());
     }
 
-    public MockUpLoggingEvent(String loggerName, Marker marker, Level level, String message, Object[] argumentArray,
+    public TestLoggingEvent(String loggerName, Marker marker, Level level, String message, Object[] argumentArray,
                               Throwable throwable, Map<String, String> mdcPropertyMap, String threadName,
                               StackTraceElement[] callerData, long timestamp, Map<String, String> contextProperties) {
         this.loggerName = loggerName;
@@ -65,68 +62,78 @@ public class MockUpLoggingEvent extends MockUp<ILoggingEvent> {
         this.loggerContextVO = new LoggerContextVO("loggerContextOf" + loggerName, contextProperties, System.currentTimeMillis());
     }
 
-    @Mock
+    @Override
     public String getThreadName() {
         return threadName;
     }
 
-    @Mock
+    @Override
     public Level getLevel() {
         return level;
     }
 
-    @Mock
+    @Override
     public String getMessage() {
         return message;
     }
 
-    @Mock
+    @Override
     public Object[] getArgumentArray() {
         return argumentArray;
     }
 
-    @Mock
+    @Override
     public String getFormattedMessage() {
         return argumentArray != null ? MessageFormatter.arrayFormat(message, argumentArray).getMessage() : message;
     }
 
-    @Mock
+    @Override
     public String getLoggerName() {
         return loggerName;
     }
 
-    @Mock
+    @Override
+    public LoggerContextVO getLoggerContextVO() {
+        return loggerContextVO;
+    }
+
+    @Override
     public IThrowableProxy getThrowableProxy() {
         return throwable != null ? new ThrowableProxy(throwable) : null;
     }
 
-    @Mock
+    @Override
     public StackTraceElement[] getCallerData() {
         return callerData != null ? callerData : new StackTraceElement[0];
     }
 
-    @Mock
+    @Override
     public boolean hasCallerData() {
         return callerData != null && callerData.length > 0;
     }
 
-    @Mock
+    @Override
     public Marker getMarker() {
         return marker;
     }
 
-    @Mock
+    @Override
     public Map<String, String> getMDCPropertyMap() {
         return mdcPropertyMap != null ? mdcPropertyMap : Collections.<String, String>emptyMap();
     }
 
-    @Mock
+    @Override
+    public Map<String, String> getMdc() {
+        return getMDCPropertyMap();
+    }
+
+    @Override
     public long getTimeStamp() {
         return timestamp;
     }
 
-    @Mock
-    public LoggerContextVO getLoggerContextVO() {
-        return loggerContextVO;
+    @Override
+    public void prepareForDeferredProcessing() {
+
     }
 }

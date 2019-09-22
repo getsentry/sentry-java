@@ -8,38 +8,34 @@ import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.event.EventBuilder;
-import mockit.*;
-import io.sentry.SentryClientFactory;
-import io.sentry.dsn.Dsn;
 import io.sentry.environment.SentryEnvironment;
-import io.sentry.event.Event;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SentryAppenderFailuresTest extends BaseTest {
-    @Injectable
     private SentryClient mockSentryClient = null;
-    @Injectable
     private Context mockContext = null;
-    @SuppressWarnings("unused")
-    @Mocked("sentryClient")
-    private SentryClientFactory mockSentryClientFactory;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        new MockUpStatusPrinter();
-        new NonStrictExpectations() {{
-            final BasicStatusManager statusManager = new BasicStatusManager();
-            final OnConsoleStatusListener listener = new OnConsoleStatusListener();
-            listener.start();
-            statusManager.add(listener);
+        mockSentryClient = mock(SentryClient.class);
+        mockContext = mock(Context.class);
 
-            mockContext.getStatusManager();
-            result = statusManager;
-        }};
+        final BasicStatusManager statusManager = new BasicStatusManager();
+        final OnConsoleStatusListener listener = new OnConsoleStatusListener();
+        listener.start();
+        statusManager.add(listener);
+
+        when(mockContext.getStatusManager()).thenReturn(statusManager);
     }
 
     @Test
@@ -48,17 +44,14 @@ public class SentryAppenderFailuresTest extends BaseTest {
         final SentryAppender sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
         sentryAppender.setMinLevel("ALL");
-        new NonStrictExpectations() {{
-            mockSentryClient.sendEvent((EventBuilder) any);
-            result = new UnsupportedOperationException();
-        }};
+
+        doThrow(new UnsupportedOperationException()).when(mockSentryClient).sendEvent(any(EventBuilder.class));
+
         sentryAppender.start();
 
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null).getMockInstance());
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null));
 
-        new Verifications() {{
-            mockSentryClient.sendEvent((EventBuilder) any);
-        }};
+        verify(mockSentryClient).sendEvent(any(EventBuilder.class));
         assertThat(mockContext.getStatusManager().getCount(), is(1));
     }
 
@@ -71,12 +64,9 @@ public class SentryAppenderFailuresTest extends BaseTest {
             sentryAppender.setContext(mockContext);
             sentryAppender.start();
 
-            sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null).getMockInstance());
+            sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null));
 
-            new Verifications() {{
-                mockSentryClient.sendEvent((EventBuilder) any);
-                times = 0;
-            }};
+            verify(mockSentryClient, never()).sendEvent(any(EventBuilder.class));
             assertThat(mockContext.getStatusManager().getCount(), is(0));
         } finally {
             SentryEnvironment.stopManagingThread();

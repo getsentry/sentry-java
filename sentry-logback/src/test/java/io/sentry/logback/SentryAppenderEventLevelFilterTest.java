@@ -1,39 +1,43 @@
 package io.sentry.logback;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.event.EventBuilder;
-import mockit.Injectable;
-import mockit.Tested;
-import mockit.Verifications;
+import junitparams.JUnitParamsRunner;
+import junitparams.NamedParameters;
+import junitparams.Parameters;
 import io.sentry.SentryClient;
-import io.sentry.event.Event;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author Felipe G Almeida
  */
+@RunWith(JUnitParamsRunner.class)
 public class SentryAppenderEventLevelFilterTest extends BaseTest {
-    @Tested
     private SentryAppender sentryAppender = null;
-    @Injectable
     private SentryClient mockSentryClient = null;
-    @Injectable
     private Context mockContext = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
-        new MockUpStatusPrinter();
+        mockSentryClient = mock(SentryClient.class);
+        mockContext = mock(Context.class);
+        
         Sentry.setStoredClient(mockSentryClient);
         sentryAppender = new SentryAppender();
         sentryAppender.setContext(mockContext);
     }
 
-    @DataProvider(name = "levels")
+    @NamedParameters("levels")
     private Object[][] levelConversions() {
         return new Object[][]{
                 {"ALL", 5},
@@ -47,35 +51,27 @@ public class SentryAppenderEventLevelFilterTest extends BaseTest {
                 {null, 5}};
     }
 
-    @Test(dataProvider = "levels")
+    @Test
+    @Parameters(named = "levels")
     public void testLevelFilter(final String minLevel, final Integer expectedEvents) throws Exception {
         sentryAppender.setMinLevel(minLevel);
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.TRACE, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.DEBUG, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.WARN, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.ERROR, null, null, null).getMockInstance());
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.TRACE, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.DEBUG, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.WARN, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.ERROR, null, null, null));
 
-        new Verifications() {{
-            mockSentryClient.sendEvent((EventBuilder) any);
-            minTimes = expectedEvents;
-            maxTimes = expectedEvents;
-        }};
+        verify(mockSentryClient, times(expectedEvents)).sendEvent(any(EventBuilder.class));
     }
 
     @Test
     public void testDefaultLevelFilter() throws Exception {
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.TRACE, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.DEBUG, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.INFO, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.WARN, null, null, null).getMockInstance());
-        sentryAppender.append(new MockUpLoggingEvent(null, null, Level.ERROR, null, null, null).getMockInstance());
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.TRACE, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.DEBUG, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.WARN, null, null, null));
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.ERROR, null, null, null));
 
-        new Verifications() {{
-            mockSentryClient.sendEvent((EventBuilder) any);
-            minTimes = 5;
-            maxTimes = 5;
-        }};
+        verify(mockSentryClient, times(5)).sendEvent(any(EventBuilder.class));
     }
-
 }
