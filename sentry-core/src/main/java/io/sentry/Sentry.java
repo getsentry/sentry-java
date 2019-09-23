@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
+
 public final class Sentry {
 
   private Sentry() {}
@@ -32,6 +34,18 @@ public final class Sentry {
   public static synchronized void close() {
     currentClient.close();
     currentClient = NoOpSentryClient.getInstance();
+  }
+
+  public static SentryId captureEvent(SentryEvent event) {
+    return currentClient.captureEvent(event);
+  }
+
+  public static SentryId captureMessage(String message) {
+    return currentClient.captureMessage(message);
+  }
+
+  public static SentryId captureException(Throwable throwable) {
+    return currentClient.captureException(throwable);
   }
 
   public interface OptionsConfiguration {

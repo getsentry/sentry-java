@@ -1,27 +1,39 @@
 package io.sentry;
 
+import io.sentry.protocol.Message;
+import io.sentry.protocol.SentryId;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.UUID;
 
 public class SentryEvent {
-  private UUID eventUuid;
+  private SentryId eventId;
   private Date timestamp;
+  private Throwable throwable;
+  private Message message;
 
-  SentryEvent(UUID eventUuid, Date timestamp) {
-    this.eventUuid = eventUuid;
+  SentryEvent(SentryId eventId, Date timestamp) {
+    this.eventId = eventId;
     this.timestamp = timestamp;
   }
 
-  public SentryEvent() {
-    this(UUID.randomUUID(), Calendar.getInstance().getTime());
+  public SentryEvent(Throwable throwable) {
+    this();
+    this.throwable = throwable;
   }
 
-  public UUID getEventId() {
-    return eventUuid;
+  Throwable getThrowable() {
+    return throwable;
+  }
+
+  public SentryEvent() {
+    this(new SentryId(), Calendar.getInstance().getTime());
+  }
+
+  public SentryId getEventId() {
+    return eventId;
   }
 
   public Date getTimestamp() {
@@ -33,5 +45,13 @@ public class SentryEvent {
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
     df.setTimeZone(tz);
     return df.format(timestamp);
+  }
+
+  public Message getMessage() {
+    return message;
+  }
+
+  public void setMessage(Message message) {
+    this.message = message;
   }
 }
