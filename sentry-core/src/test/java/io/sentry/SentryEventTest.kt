@@ -1,11 +1,11 @@
 package io.sentry
 
+import io.sentry.protocol.SentryId
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
-import java.util.UUID
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertNotEquals
@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 class SentryEventTest {
     @Test
     fun `constructor creates a non empty event id`() =
-            assertNotEquals(UUID.fromString("00000000-0000-0000-0000-00000000000"), SentryEvent().eventId)
+            assertNotEquals(SentryId.EMPTY_ID, SentryEvent().eventId)
 
     @Test
     fun `constructor defines timestamp after now`() =

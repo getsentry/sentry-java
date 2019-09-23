@@ -1,6 +1,7 @@
 package io.sentry;
 
-import java.util.UUID;
+import io.sentry.protocol.Message;
+import io.sentry.protocol.SentryId;
 
 public class SentryClient implements ISentryClient {
   private boolean isEnabled;
@@ -16,12 +17,26 @@ public class SentryClient implements ISentryClient {
     this.isEnabled = true;
   }
 
-  public UUID captureEvent(SentryEvent event) {
+  public SentryId captureEvent(SentryEvent event) {
     ILogger logger = options.getLogger();
     if (logger != null) {
       logger.log(SentryLevel.Debug, "Capturing event: %d", event.getEventId());
     }
     return event.getEventId();
+  }
+
+  @Override
+  public SentryId captureMessage(String message) {
+    SentryEvent event = new SentryEvent();
+    Message sentryMessage = new Message();
+    sentryMessage.setFormatted(message);
+    return captureEvent(event);
+  }
+
+  @Override
+  public SentryId captureException(Throwable throwable) {
+    SentryEvent event = new SentryEvent(throwable);
+    return captureEvent(event);
   }
 
   public void close() {

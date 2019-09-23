@@ -1,10 +1,9 @@
 package io.sentry;
 
-import java.util.UUID;
+import io.sentry.protocol.SentryId;
 
 class NoOpSentryClient implements ISentryClient {
 
-  private static final UUID emptyId = UUID.fromString("00000000-0000-0000-0000-000000000000");
   private static final NoOpSentryClient instance = new NoOpSentryClient();
 
   private NoOpSentryClient() {}
@@ -19,8 +18,18 @@ class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public UUID captureEvent(SentryEvent event) {
-    return emptyId;
+  public SentryId captureEvent(SentryEvent event) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public SentryId captureMessage(String message) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public SentryId captureException(Throwable throwable) {
+    return SentryId.EMPTY_ID;
   }
 
   @Override

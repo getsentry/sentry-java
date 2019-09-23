@@ -1,11 +1,15 @@
 package io.sentry;
 
-import java.util.UUID;
+import io.sentry.protocol.SentryId;
 
 public interface ISentryClient {
   boolean isEnabled();
 
-  UUID captureEvent(SentryEvent event);
+  SentryId captureEvent(SentryEvent event);
+
+  SentryId captureMessage(String message);
+
+  SentryId captureException(Throwable throwable);
 
   void close();
 }
