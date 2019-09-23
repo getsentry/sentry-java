@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
+
 plugins {
     id("com.android.library")
     kotlin("android")
@@ -7,19 +9,47 @@ plugins {
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
     buildToolsVersion(Config.Android.buildToolsVersion)
+
     defaultConfig {
-        minSdkVersion(Config.Android.minSdkVersion)
         targetSdkVersion(Config.Android.targetSdkVersion)
         javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath = true
             }
         }
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+        }
+        getByName("release") {
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    flavorDimensions("version")
+
+    productFlavors {
+        create("staging") {
+            minSdkVersion(Config.Android.minSdkVersionDebug)
+        }
+        create("production") {
+            minSdkVersion(Config.Android.minSdkVersion)
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+
     testOptions {
         animationsDisabled = true
         unitTests.apply {
@@ -39,7 +69,7 @@ android {
 dependencies {
     api(project(":sentry-core"))
 
-    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.robolectric)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxCore)
