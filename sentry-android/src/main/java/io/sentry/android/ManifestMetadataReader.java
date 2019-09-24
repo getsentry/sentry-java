@@ -9,8 +9,8 @@ import io.sentry.SentryOptions;
 
 class ManifestMetadataReader {
 
-  private static final String DSN_KEY = "io.sentry.dsn";
-  private static final String DEBUG_KEY = "io.sentry.debug";
+  static final String DSN_KEY = "io.sentry.dsn";
+  static final String DEBUG_KEY = "io.sentry.debug";
 
   public static void applyMetadata(Context context, SentryOptions options) {
     try {
@@ -20,16 +20,17 @@ class ManifestMetadataReader {
               .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
       Bundle metadata = app.metaData;
 
-      options.setDebug(metadata.getBoolean(DEBUG_KEY, options.isDebug()));
+      if (metadata != null) {
+        options.setDebug(metadata.getBoolean(DEBUG_KEY, options.isDebug()));
+        String dsn = metadata.getString(DSN_KEY, null);
+        if (dsn != null) {
+          options.getLogger().log(SentryLevel.Debug, "DSN read: %s", dsn);
+          options.setDsn(dsn);
+        }
+      }
       options
           .getLogger()
           .log(SentryLevel.Info, "Retrieving configuration from AndroidManifest.xml");
-
-      String dsn = metadata.getString(DSN_KEY, null);
-      if (dsn != null) {
-        options.getLogger().log(SentryLevel.Debug, "DSN read: %s", dsn);
-        options.setDsn(dsn);
-      }
     } catch (Exception e) {
       options
           .getLogger()
