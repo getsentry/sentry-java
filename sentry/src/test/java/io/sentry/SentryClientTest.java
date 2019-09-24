@@ -54,6 +54,15 @@ public class SentryClientTest extends BaseTest {
     }
 
     @Test
+    public void testSendNullEvent() throws Exception {
+        // when
+        sentryClient.sendEvent((Event) null);
+
+        // then
+        verify(mockConnection, never()).send(any(Event.class));
+    }
+
+    @Test
     public void testSendEventBuilder() throws Exception {
         final String message = "e960981e-656d-4404-9b1d-43b483d3f32c";
         sentryClient.addBuilderHelper(mockEventBuilderHelper);
@@ -69,6 +78,15 @@ public class SentryClientTest extends BaseTest {
         Event event = eventArgumentCaptor.getValue();
         assertThat(event.getLevel(), equalTo(Event.Level.INFO));
         assertThat(event.getMessage(), equalTo(message));
+    }
+
+    @Test
+    public void testSendNullEventBuilder() throws Exception {
+        // when
+        sentryClient.sendEvent((EventBuilder) null);
+
+        // then
+        verify(mockConnection, never()).send(any(Event.class));
     }
 
     @Test
@@ -96,6 +114,15 @@ public class SentryClientTest extends BaseTest {
     }
 
     @Test
+    public void testSendNullMessage() throws Exception {
+        // when
+        sentryClient.sendMessage(null);
+
+        // then
+        verify(mockConnection, never()).send(any(Event.class));
+    }
+
+    @Test
     public void testSendException() throws Exception {
         final String message = "7b61ddb1-eb32-428d-bad9-a7d842605ba7";
         final Exception exception = new Exception(message);
@@ -110,6 +137,15 @@ public class SentryClientTest extends BaseTest {
         assertThat(event.getLevel(), equalTo(Event.Level.ERROR));
         assertThat(event.getMessage(), equalTo(message));
         assertThat(event.getSentryInterfaces(), hasKey(ExceptionInterface.EXCEPTION_INTERFACE));
+    }
+
+    @Test
+    public void testSendNullException() throws Exception {
+        // when
+        sentryClient.sendException(null);
+
+        // then
+        verify(mockConnection, never()).send(any(Event.class));
     }
 
     @Test
