@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.util.NotNull;
 
 public final class Sentry {
 
@@ -16,13 +17,22 @@ public final class Sentry {
     init(new SentryOptions());
   }
 
-  public static void init(OptionsConfiguration optionsConfiguration) {
+  public static void init(@NotNull OptionsConfiguration optionsConfiguration) {
     SentryOptions options = new SentryOptions();
-    optionsConfiguration.configure(options);
+    if (optionsConfiguration != null) {
+      optionsConfiguration.configure(options);
+    }
     init(options);
   }
 
-  static synchronized void init(SentryOptions options) {
+  static synchronized void init(@NotNull SentryOptions options) {
+    String dsn = options.getDsn();
+    if (dsn == null || dsn.isEmpty()) {
+      return;
+    }
+
+    Dsn parsedDsn = new Dsn(dsn);
+
     ILogger logger = options.getLogger();
     if (logger != null) {
       logger.log(SentryLevel.Info, "Initializing SDK with DSN: '%d'", options.getDsn());
