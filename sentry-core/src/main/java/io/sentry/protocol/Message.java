@@ -13,6 +13,7 @@ public class Message {
     return formatted;
   }
 
+  /** @param formatted */
   public void setFormatted(String formatted) {
     this.formatted = formatted;
   }
