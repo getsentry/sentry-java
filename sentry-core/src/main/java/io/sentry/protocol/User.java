@@ -2,9 +2,7 @@ package io.sentry.protocol;
 
 import java.util.Map;
 
-/**
- * The user affected by an event.
- */
+/** The user affected by an event. */
 public class User {
   private String email;
   private String id;
@@ -14,6 +12,7 @@ public class User {
 
   /**
    * Gets the e-mail address of the user.
+   *
    * @return the e-mail.
    */
   public String getEmail() {
@@ -22,6 +21,7 @@ public class User {
 
   /**
    * Gets the e-mail address of the user.
+   *
    * @param email the e-mail.
    */
   public void setEmail(String email) {
@@ -30,6 +30,7 @@ public class User {
 
   /**
    * Gets the id of the user.
+   *
    * @return the id.
    */
   public String getId() {
@@ -38,6 +39,7 @@ public class User {
 
   /**
    * Sets the id of the user.
+   *
    * @param id the user id.
    */
   public void setId(String id) {
@@ -46,6 +48,7 @@ public class User {
 
   /**
    * Gets the username of the user.
+   *
    * @return the username.
    */
   public String getUsername() {
@@ -54,6 +57,7 @@ public class User {
 
   /**
    * Sets the username of the user.
+   *
    * @param username the username.
    */
   public void setUsername(String username) {
@@ -62,6 +66,7 @@ public class User {
 
   /**
    * Gets the IP address of the user.
+   *
    * @return the IP address of the user.
    */
   public String getIpAddress() {
@@ -70,6 +75,7 @@ public class User {
 
   /**
    * Sets the IP address of the user.
+   *
    * @param ipAddress the IP address of the user.
    */
   public void setIpAddress(String ipAddress) {
@@ -78,6 +84,7 @@ public class User {
 
   /**
    * Gets other user related data.
+   *
    * @return the other user data.
    */
   public Map<String, String> getOther() {
@@ -86,6 +93,7 @@ public class User {
 
   /**
    * Sets other user related data.
+   *
    * @param other the other user related data..
    */
   public void setOther(Map<String, String> other) {
