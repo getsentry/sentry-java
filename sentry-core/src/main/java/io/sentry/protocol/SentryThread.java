@@ -1,8 +1,6 @@
 package io.sentry.protocol;
 
-/**
- * Describes a thread in the Sentry protocol.
- */
+/** Describes a thread in the Sentry protocol. */
 public class SentryThread {
   private Integer id;
   private String name;
@@ -12,6 +10,7 @@ public class SentryThread {
 
   /**
    * Gets the Id of the thread.
+   *
    * @return the thread id.
    */
   public Integer getId() {
@@ -20,6 +19,7 @@ public class SentryThread {
 
   /**
    * Sets the Id of the thread.
+   *
    * @param id the thread id.
    */
   public void setId(Integer id) {
@@ -28,6 +28,7 @@ public class SentryThread {
 
   /**
    * Gets the name of the thread.
+   *
    * @return the name of the thread.
    */
   public String getName() {
@@ -36,6 +37,7 @@ public class SentryThread {
 
   /**
    * Sets the name of the thread.
+   *
    * @param name the name of the thread.
    */
   public void setName(String name) {
@@ -44,6 +46,7 @@ public class SentryThread {
 
   /**
    * Gets whether the crash happened on this thread.
+   *
    * @return whether it was the crashed thread.
    */
   public Boolean getCrashed() {
@@ -52,6 +55,7 @@ public class SentryThread {
 
   /**
    * Sets whether the crash happened on this thread.
+   *
    * @param crashed whether it was the crashed thread.
    */
   public void setCrashed(Boolean crashed) {
@@ -60,6 +64,7 @@ public class SentryThread {
 
   /**
    * Get an optional flag to indicate that the thread was in the foreground.
+   *
    * @return whether the thread was in the foreground.
    */
   public Boolean getCurrent() {
@@ -68,6 +73,7 @@ public class SentryThread {
 
   /**
    * Sets an optional flag to indicate that the thread was in the foreground.
+   *
    * @param current whether the thread was in the foreground.
    */
   public void setCurrent(Boolean current) {
@@ -76,6 +82,7 @@ public class SentryThread {
 
   /**
    * Gets the stacktrace of the thread.
+   *
    * @return the thread stacktrace.
    */
   public SentryStackTrace getStacktrace() {
@@ -84,6 +91,7 @@ public class SentryThread {
 
   /**
    * Sets the stacktrace of the thread.
+   *
    * @param stacktrace the thread stacktrace.
    */
   public void setStacktrace(SentryStackTrace stacktrace) {
