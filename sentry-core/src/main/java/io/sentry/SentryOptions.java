@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.util.NotNull;
+import io.sentry.util.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +11,7 @@ public class SentryOptions {
 
   private String dsn;
   private boolean debug;
-  private @NotNull ILogger logger = NoOpLogger.getInstance();
+  private @NonNull ILogger logger = NoOpLogger.getInstance();
   private SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
@@ -38,7 +38,7 @@ public class SentryOptions {
     this.debug = debug;
   }
 
-  public @NotNull ILogger getLogger() {
+  public @NonNull ILogger getLogger() {
     return logger;
   }
 

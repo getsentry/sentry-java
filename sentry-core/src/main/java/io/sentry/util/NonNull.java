@@ -9,8 +9,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Indicates that an instance on the given position can be null. */
+/** Indicates that an instance on the given position cannot be null. */
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({METHOD, PARAMETER, FIELD})
-public @interface Nullable {}
+public @interface NonNull {}
