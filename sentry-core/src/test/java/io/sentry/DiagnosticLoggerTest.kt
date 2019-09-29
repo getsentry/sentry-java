@@ -15,7 +15,7 @@ class DiagnosticLoggerTest {
         var logger: ILogger? = mock()
 
         init {
-            var options = SentryOptions()
+            val options = SentryOptions()
             options.isDebug = true
             options.logger = logger
             this.options = options

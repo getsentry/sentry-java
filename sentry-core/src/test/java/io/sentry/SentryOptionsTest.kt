@@ -13,7 +13,7 @@ class SentryOptionsTest {
 
     @Test
     fun `when logger is set to null, logger getter returns not null`() {
-        var options = SentryOptions()
+        val options = SentryOptions()
         options.logger = null
         assertNotNull(options.logger)
     }
@@ -25,7 +25,7 @@ class SentryOptionsTest {
 
     @Test
     fun `when diagnostic is set to null, diagnostic getter returns no default`() {
-        var options = SentryOptions()
+        val options = SentryOptions()
         options.diagnosticLevel = null
         assertEquals(SentryOptions.DEFAULT_DIAGNOSTIC_LEVEL, SentryOptions().diagnosticLevel)
     }

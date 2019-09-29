@@ -1,7 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
-import io.sentry.util.NotNull;
+import io.sentry.util.NonNull;
 
 public final class Sentry {
 
@@ -17,7 +17,7 @@ public final class Sentry {
     init(new SentryOptions());
   }
 
-  public static void init(@NotNull OptionsConfiguration optionsConfiguration) {
+  public static void init(@NonNull OptionsConfiguration optionsConfiguration) {
     SentryOptions options = new SentryOptions();
     if (optionsConfiguration != null) {
       optionsConfiguration.configure(options);
@@ -25,7 +25,7 @@ public final class Sentry {
     init(options);
   }
 
-  static synchronized void init(@NotNull SentryOptions options) {
+  static synchronized void init(@NonNull SentryOptions options) {
     String dsn = options.getDsn();
     if (dsn == null || dsn.isEmpty()) {
       return;
