@@ -4,12 +4,9 @@ import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 public class SentryEvent extends Scope {
   private SentryId eventId;
@@ -46,10 +43,7 @@ public class SentryEvent extends Scope {
   }
 
   String getTimestampIsoFormat() {
-    TimeZone tz = TimeZone.getTimeZone("UTC");
-    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-    df.setTimeZone(tz);
-    return df.format(timestamp);
+    return DateUtils.getTimestampIsoFormat(timestamp);
   }
 
   Throwable getThrowable() {
