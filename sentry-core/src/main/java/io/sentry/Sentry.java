@@ -7,10 +7,10 @@ public final class Sentry {
 
   private Sentry() {}
 
-  private static ISentryClient currentClient = NoOpSentryClient.getInstance();
+  private static IHub currentHub = NoOpHub.getInstance();
 
   public static boolean isEnabled() {
-    return currentClient.isEnabled();
+    return currentHub.isEnabled();
   }
 
   public static void init() {
@@ -37,25 +37,25 @@ public final class Sentry {
     if (logger != null) {
       logger.log(SentryLevel.Info, "Initializing SDK with DSN: '%d'", options.getDsn());
     }
-    currentClient.close();
-    currentClient = new SentryClient(options);
+    currentHub.close();
+    currentHub = new Hub(options);
   }
 
   public static synchronized void close() {
-    currentClient.close();
-    currentClient = NoOpSentryClient.getInstance();
+    currentHub.close();
+    currentHub = NoOpHub.getInstance();
   }
 
   public static SentryId captureEvent(SentryEvent event) {
-    return currentClient.captureEvent(event);
+    return currentHub.captureEvent(event);
   }
 
   public static SentryId captureMessage(String message) {
-    return currentClient.captureMessage(message);
+    return currentHub.captureMessage(message);
   }
 
   public static SentryId captureException(Throwable throwable) {
-    return currentClient.captureException(throwable);
+    return currentHub.captureException(throwable);
   }
 
   public interface OptionsConfiguration {
