@@ -34,4 +34,9 @@ class NoOpHub implements IHub {
 
   @Override
   public void close() {}
+
+  @Override
+  public IHub clone() {
+    return instance;
+  }
 }
