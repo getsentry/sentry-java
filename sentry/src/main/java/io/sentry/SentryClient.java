@@ -124,6 +124,10 @@ public class SentryClient {
      * @param event event to send to Sentry.
      */
     public void sendEvent(Event event) {
+        if (event == null) {
+            return;
+        }
+
         for (ShouldSendEventCallback shouldSendEventCallback : shouldSendEventCallbacks) {
             if (!shouldSendEventCallback.shouldSend(event)) {
                 logger.trace("Not sending Event because of ShouldSendEventCallback: {}", shouldSendEventCallback);
@@ -148,6 +152,9 @@ public class SentryClient {
      * @param eventBuilder {@link EventBuilder} to send to Sentry.
      */
     public void sendEvent(EventBuilder eventBuilder) {
+        if (eventBuilder == null) {
+            return;
+        }
         Event event = buildEvent(eventBuilder);
         sendEvent(event);
     }
@@ -205,6 +212,9 @@ public class SentryClient {
      * @param message message to send to Sentry.
      */
     public void sendMessage(String message) {
+        if (message == null) {
+            return;
+        }
         EventBuilder eventBuilder = new EventBuilder().withMessage(message)
             .withLevel(Event.Level.INFO);
         sendEvent(eventBuilder);
@@ -218,6 +228,10 @@ public class SentryClient {
      * @param throwable exception to send to Sentry.
      */
     public void sendException(Throwable throwable) {
+        if (throwable == null) {
+            return;
+        }
+
         EventBuilder eventBuilder = new EventBuilder().withMessage(throwable.getMessage())
             .withLevel(Event.Level.ERROR)
             .withSentryInterface(new ExceptionInterface(throwable));
