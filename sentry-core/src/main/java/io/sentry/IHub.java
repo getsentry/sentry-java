@@ -1,3 +1,5 @@
 package io.sentry;
 
-public interface IHub extends ISentryClient {}
+public interface IHub extends ISentryClient {
+  IHub clone();
+}

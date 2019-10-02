@@ -7,10 +7,20 @@ public final class Sentry {
 
   private Sentry() {}
 
-  private static IHub currentHub = NoOpHub.getInstance();
+  private static ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+
+  private static volatile IHub mainHub = NoOpHub.getInstance();
+
+  static IHub getCurrentHub() {
+    IHub hub = currentHub.get();
+    if (hub == null) {
+      currentHub.set(mainHub.clone());
+    }
+    return currentHub.get();
+  }
 
   public static boolean isEnabled() {
-    return currentHub.isEnabled();
+    return getCurrentHub().isEnabled();
   }
 
   public static void init() {
@@ -28,6 +38,7 @@ public final class Sentry {
   static synchronized void init(@NonNull SentryOptions options) {
     String dsn = options.getDsn();
     if (dsn == null || dsn.isEmpty()) {
+      close();
       return;
     }
 
@@ -37,25 +48,29 @@ public final class Sentry {
     if (logger != null) {
       logger.log(SentryLevel.Info, "Initializing SDK with DSN: '%d'", options.getDsn());
     }
-    currentHub.close();
-    currentHub = new Hub(options);
+
+    IHub hub = getCurrentHub();
+    mainHub = new Hub(options);
+    currentHub.set(mainHub);
+    hub.close();
   }
 
   public static synchronized void close() {
-    currentHub.close();
-    currentHub = NoOpHub.getInstance();
+    IHub hub = getCurrentHub();
+    mainHub = NoOpHub.getInstance();
+    hub.close();
   }
 
   public static SentryId captureEvent(SentryEvent event) {
-    return currentHub.captureEvent(event);
+    return getCurrentHub().captureEvent(event);
   }
 
   public static SentryId captureMessage(String message) {
-    return currentHub.captureMessage(message);
+    return getCurrentHub().captureMessage(message);
   }
 
   public static SentryId captureException(Throwable throwable) {
-    return currentHub.captureException(throwable);
+    return getCurrentHub().captureException(throwable);
   }
 
   public interface OptionsConfiguration {

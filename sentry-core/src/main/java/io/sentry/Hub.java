@@ -3,11 +3,17 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 
 public class Hub implements IHub {
-  public Hub(SentryOptions options) {}
+  private SentryOptions options;
+  private volatile boolean isEnabled;
+
+  public Hub(SentryOptions options) {
+    this.options = options;
+    isEnabled = true;
+  }
 
   @Override
   public boolean isEnabled() {
-    return true;
+    return isEnabled;
   }
 
   @Override
@@ -26,5 +32,12 @@ public class Hub implements IHub {
   }
 
   @Override
-  public void close() {}
+  public void close() {
+    isEnabled = false;
+  }
+
+  @Override
+  public IHub clone() {
+    return new Hub(options);
+  }
 }
