@@ -1,13 +1,12 @@
 package io.sentry.protocol;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SdkVersion {
   private String name;
   private String version;
-  private CopyOnWriteArrayList<Package> packages = new CopyOnWriteArrayList<>();
+  private List<Package> packages = new CopyOnWriteArrayList<>();
 
   public String getVersion() {
     return version;
@@ -27,7 +26,7 @@ public class SdkVersion {
 
   public List<Package> getPackages() {
     if (packages == null) {
-      return new ArrayList<>();
+      return new CopyOnWriteArrayList<>();
     }
     return packages;
   }

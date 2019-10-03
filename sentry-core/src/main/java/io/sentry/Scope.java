@@ -1,24 +1,20 @@
 package io.sentry;
 
-import io.sentry.protocol.Request;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Scope {
   private SentryLevel level;
   private String transaction;
-  private String environment;
   private User user;
-  private Request request;
-  private SdkVersion sdkVersion;
   private List<String> fingerprint = new ArrayList<>();
-  private CopyOnWriteArrayList<Breadcrumb> breadcrumbs = new CopyOnWriteArrayList<>();
-  private ConcurrentHashMap<String, String> tags = new ConcurrentHashMap<>();
-  private ConcurrentHashMap<String, Object> extra = new ConcurrentHashMap<>();
+  private List<Breadcrumb> breadcrumbs = new CopyOnWriteArrayList<>();
+  private Map<String, String> tags = new ConcurrentHashMap<>();
+  private Map<String, Object> extra = new ConcurrentHashMap<>();
 
   public SentryLevel getLevel() {
     return level;
@@ -36,36 +32,12 @@ public class Scope {
     this.transaction = transaction;
   }
 
-  public String getEnvironment() {
-    return environment;
-  }
-
-  public void setEnvironment(String environment) {
-    this.environment = environment;
-  }
-
   public User getUser() {
     return user;
   }
 
   public void setUser(User user) {
     this.user = user;
-  }
-
-  public Request getRequest() {
-    return request;
-  }
-
-  public void setRequest(Request request) {
-    this.request = request;
-  }
-
-  public SdkVersion getSdkVersion() {
-    return sdkVersion;
-  }
-
-  public void setSdkVersion(SdkVersion sdkVersion) {
-    this.sdkVersion = sdkVersion;
   }
 
   public List<String> getFingerprint() {
@@ -87,7 +59,7 @@ public class Scope {
     this.breadcrumbs.add(breadcrumb);
   }
 
-  public ConcurrentHashMap<String, String> getTags() {
+  public Map<String, String> getTags() {
     return tags;
   }
 
@@ -95,7 +67,7 @@ public class Scope {
     this.tags.put(key, value);
   }
 
-  public ConcurrentHashMap<String, Object> getExtra() {
+  public Map<String, Object> getExtra() {
     return extra;
   }
 
