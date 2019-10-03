@@ -13,6 +13,7 @@ public class SentryOptions {
   private boolean debug;
   private @NonNull ILogger logger = NoOpLogger.getInstance();
   private SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
+  private ISerializer serializer;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -55,5 +56,13 @@ public class SentryOptions {
       diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
     }
     this.diagnosticLevel = diagnosticLevel;
+  }
+
+  public ISerializer getSerializer() {
+    return serializer;
+  }
+
+  public void setSerializer(ISerializer serializer) {
+    this.serializer = serializer;
   }
 }
