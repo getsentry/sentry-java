@@ -5,5 +5,5 @@ public enum SentryLevel {
   Info,
   Warning,
   Error,
-  Fatal;
+  Fatal
 }
