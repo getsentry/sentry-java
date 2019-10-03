@@ -20,7 +20,7 @@ public class SentryClient implements ISentryClient {
   public SentryId captureEvent(SentryEvent event) {
     ILogger logger = options.getLogger();
     if (logger != null) {
-      logger.log(SentryLevel.Debug, "Capturing event: %d", event.getEventId());
+      logger.log(SentryLevel.Debug, "Capturing event: %s", event.getEventId());
     }
     return event.getEventId();
   }

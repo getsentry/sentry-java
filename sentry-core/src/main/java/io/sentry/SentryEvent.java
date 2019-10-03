@@ -8,7 +8,6 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.User;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +46,7 @@ public class SentryEvent {
   }
 
   public SentryEvent() {
-    this(new SentryId(), Calendar.getInstance().getTime());
+    this(new SentryId(), DateUtils.getCurrentDateTime());
   }
 
   public SentryId getEventId() {
