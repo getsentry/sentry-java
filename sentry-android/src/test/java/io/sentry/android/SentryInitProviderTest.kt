@@ -57,22 +57,6 @@ class SentryInitProviderTest {
     }
 
     @Test
-    fun `when applicationId is defined, dsn in meta-data is not set, SDK doesnt initialize`() {
-        val providerInfo = ProviderInfo()
-
-        assertFalse(Sentry.isEnabled())
-        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
-
-        val mockContext: Context = mock()
-        val metaData = Bundle()
-        mockMetaData(mockContext, metaData)
-
-        sentryInitProvider.attachInfo(mockContext, providerInfo)
-
-        assertFalse(Sentry.isEnabled())
-    }
-
-    @Test
     fun `when applicationId is defined, dsn in meta-data is empty, SDK doesnt initialize`() {
         val providerInfo = ProviderInfo()
 
@@ -91,7 +75,7 @@ class SentryInitProviderTest {
     }
 
     @Test
-    fun `when applicationId is defined, dsn in meta-data is null, SDK doesnt initialize`() {
+    fun `when applicationId is defined, dsn in meta-data is not set or null, SDK doesnt initialize`() {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
@@ -119,7 +103,7 @@ class SentryInitProviderTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "hj3245h27345")
+        metaData.putString(ManifestMetadataReader.DSN_KEY, "invalid dsn")
 
         assertFailsWith<InvalidDsnException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
@@ -137,6 +121,6 @@ class SentryInitProviderTest {
 
     companion object {
         private const val AUTHORITY = "io.sentry.android.SentryInitProvider"
-        private const val TEST_PACKAGE = "io.sentry.android.SentryInitProvider"
+        private const val TEST_PACKAGE = "io.sentry.android.test"
     }
 }

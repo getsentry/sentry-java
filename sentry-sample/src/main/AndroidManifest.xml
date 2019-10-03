@@ -19,6 +19,9 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+
+    <meta-data android:name="io.sentry.dsn" android:value="https://key@sentry.io/123" />
+    <meta-data android:name="io.sentry.debug" android:value="true" />
   </application>
 
 </manifest>

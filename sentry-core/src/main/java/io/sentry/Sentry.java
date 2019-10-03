@@ -46,7 +46,7 @@ public final class Sentry {
 
     ILogger logger = options.getLogger();
     if (logger != null) {
-      logger.log(SentryLevel.Info, "Initializing SDK with DSN: '%d'", options.getDsn());
+      logger.log(SentryLevel.Info, "Initializing SDK with DSN: '%s'", options.getDsn());
     }
 
     IHub hub = getCurrentHub();
