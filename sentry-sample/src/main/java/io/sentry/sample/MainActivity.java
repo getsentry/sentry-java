@@ -3,7 +3,6 @@ package io.sentry.sample;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Sentry;
-import io.sentry.SentryEvent;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,8 +16,22 @@ public class MainActivity extends AppCompatActivity {
 
     Timber.i("Sentry.isEnabled() = %s", Sentry.isEnabled());
 
-    Sentry.captureEvent(new SentryEvent());
-    Sentry.captureMessage("test");
-    Sentry.captureException(new Exception("test"));
+    findViewById(R.id.crash)
+        .setOnClickListener(
+            view -> {
+              throw new RuntimeException("Some runtime exception.");
+            });
+
+    findViewById(R.id.send_message)
+        .setOnClickListener(
+            view -> {
+              Sentry.captureMessage("Some message.");
+            });
+
+    findViewById(R.id.capture_exception)
+        .setOnClickListener(
+            view -> {
+              Sentry.captureException(new Exception("Some exception."));
+            });
   }
 }
