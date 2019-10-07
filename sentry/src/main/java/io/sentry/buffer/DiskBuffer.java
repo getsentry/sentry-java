@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -173,7 +174,11 @@ public class DiskBuffer implements Buffer {
      */
     @Override
     public Iterator<Event> getEvents() {
-        final Iterator<File> files = Arrays.asList(bufferDir.listFiles()).iterator();
+        final File[] fileArray = bufferDir.listFiles();
+        if (fileArray == null) {
+            return new ArrayList<Event>(0).iterator();
+        }
+        final Iterator<File> files = Arrays.asList(fileArray).iterator();
 
         return new Iterator<Event>() {
             private Event next = getNextEvent(files);
