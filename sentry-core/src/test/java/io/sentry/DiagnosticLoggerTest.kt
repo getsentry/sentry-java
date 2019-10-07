@@ -33,7 +33,7 @@ class DiagnosticLoggerTest {
     @Test
     fun `when default fixture, log recorded`() {
         val sut = fixture.getSut()
-        sut.log(SentryLevel.Fatal, "test")
+        sut.log(SentryLevel.FATAL, "test")
         verify(fixture.logger)?.log(any(), any())
     }
 
@@ -46,13 +46,13 @@ class DiagnosticLoggerTest {
     @Test
     fun `when debug is true and Logger is null, a call to log does not throw`() {
         fixture.logger = null
-        fixture.getSut().log(SentryLevel.Debug, expectedMessage)
+        fixture.getSut().log(SentryLevel.DEBUG, expectedMessage)
     }
 
     @Test
     fun `when debug is true and level is set to null, a call to log does not throw`() {
         fixture.options!!.diagnosticLevel = null
-        fixture.getSut().log(SentryLevel.Debug, expectedMessage)
+        fixture.getSut().log(SentryLevel.DEBUG, expectedMessage)
     }
 
     @Test
@@ -68,23 +68,23 @@ class DiagnosticLoggerTest {
     @Test
     fun `when debug is true and Logger is null, a call to log with throwable does not throw`() {
         fixture.logger = null
-        fixture.getSut().log(SentryLevel.Debug, expectedMessage, expectedThrowable)
+        fixture.getSut().log(SentryLevel.DEBUG, expectedMessage, expectedThrowable)
     }
 
     @Test
     fun `when debug is true and option level is info, a call to log and level debug is not logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Info
+        fixture.options!!.diagnosticLevel = SentryLevel.INFO
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Debug
+        val expectedLevel = SentryLevel.DEBUG
         sut.log(expectedLevel, expectedMessage)
         verify(fixture.logger, never())!!.log(expectedLevel, expectedMessage)
     }
 
     @Test
     fun `when debug is true and option level is error, a call to log and level fatal is logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Error
+        fixture.options!!.diagnosticLevel = SentryLevel.ERROR
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Fatal
+        val expectedLevel = SentryLevel.FATAL
         sut.log(expectedLevel, expectedMessage)
         verify(fixture.logger)!!.log(expectedLevel, expectedMessage)
     }
@@ -93,25 +93,25 @@ class DiagnosticLoggerTest {
     fun `when debug is false and option level is fatal, a call to log and level error is not logged`() {
         fixture.options!!.isDebug = false
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Fatal
+        val expectedLevel = SentryLevel.FATAL
         sut.log(expectedLevel, expectedMessage)
         verify(fixture.logger, never())!!.log(expectedLevel, expectedMessage)
     }
 
     @Test
     fun `when debug is true option level is info, a call to log and level debug is not logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Fatal
+        fixture.options!!.diagnosticLevel = SentryLevel.FATAL
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Debug
+        val expectedLevel = SentryLevel.DEBUG
         sut.log(expectedLevel, expectedMessage)
         verify(fixture.logger, never())!!.log(expectedLevel, expectedMessage)
     }
 
     @Test
     fun `when debug is true option level is debug, a call to log with throwable and level info is logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Debug
+        fixture.options!!.diagnosticLevel = SentryLevel.DEBUG
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Info
+        val expectedLevel = SentryLevel.INFO
         sut.log(expectedLevel, expectedMessage, expectedThrowable)
         verify(fixture.logger)!!.log(expectedLevel, expectedMessage, expectedThrowable)
     }
@@ -119,25 +119,25 @@ class DiagnosticLoggerTest {
     @Test
     fun `when debug is false option level is debug, a call to log with throwable and level info is not logged`() {
         fixture.options!!.isDebug = false
-        fixture.options!!.diagnosticLevel = SentryLevel.Debug
+        fixture.options!!.diagnosticLevel = SentryLevel.DEBUG
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Info
+        val expectedLevel = SentryLevel.INFO
         sut.log(expectedLevel, expectedMessage, expectedThrowable)
         verify(fixture.logger, never())!!.log(expectedLevel, expectedMessage, expectedThrowable)
     }
 
     @Test
     fun `when debug is true option level is error, a call to log with throwable and level fatal is logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Error
+        fixture.options!!.diagnosticLevel = SentryLevel.ERROR
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Fatal
+        val expectedLevel = SentryLevel.FATAL
         sut.log(expectedLevel, expectedMessage, expectedThrowable)
         verify(fixture.logger)!!.log(expectedLevel, expectedMessage, expectedThrowable)
     }
 
     @Test
     fun `when debug is true option level is error, a call to log with throwable and level error is logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Error
+        fixture.options!!.diagnosticLevel = SentryLevel.ERROR
         val sut = fixture.getSut()
         val expectedLevel = fixture.options!!.diagnosticLevel
         sut.log(expectedLevel, expectedMessage, expectedThrowable)
@@ -146,7 +146,7 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is true option level is error, a call to log and level error is logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Error
+        fixture.options!!.diagnosticLevel = SentryLevel.ERROR
         val sut = fixture.getSut()
         val expectedLevel = fixture.options!!.diagnosticLevel
         sut.log(expectedLevel, expectedMessage)
@@ -156,18 +156,18 @@ class DiagnosticLoggerTest {
     @Test
     fun `when debug is false option level is fatal, a call to log with throwable and level error is not logged`() {
         fixture.options!!.isDebug = false
-        fixture.options!!.diagnosticLevel = SentryLevel.Fatal
+        fixture.options!!.diagnosticLevel = SentryLevel.FATAL
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Error
+        val expectedLevel = SentryLevel.ERROR
         sut.log(expectedLevel, expectedMessage, expectedThrowable)
         verify(fixture.logger, never())!!.log(expectedLevel, expectedMessage, expectedThrowable)
     }
 
     @Test
     fun `when debug is true option level is info, a call to log with throwable and level debug is not logged`() {
-        fixture.options!!.diagnosticLevel = SentryLevel.Info
+        fixture.options!!.diagnosticLevel = SentryLevel.INFO
         val sut = fixture.getSut()
-        val expectedLevel = SentryLevel.Debug
+        val expectedLevel = SentryLevel.DEBUG
         sut.log(expectedLevel, expectedMessage, expectedThrowable)
         verify(fixture.logger, never())!!.log(expectedLevel, expectedMessage, expectedThrowable)
     }

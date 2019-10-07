@@ -5,6 +5,7 @@ import java.util.Map;
 public class Request {
   private String url;
   private String method;
+  private String queryString;
   private Object data;
   private String cookies;
   private Map<String, String> headers;
@@ -25,6 +26,14 @@ public class Request {
 
   public void setMethod(String method) {
     this.method = method;
+  }
+
+  public String getQueryString() {
+    return queryString;
+  }
+
+  public void setQueryString(String queryString) {
+    this.queryString = queryString;
   }
 
   public Object getData() {

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SentryOptions {
-  static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.Debug;
+  static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
   private List<EventProcessor> eventProcessors = new ArrayList<>();
 
