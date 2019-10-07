@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -186,7 +185,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     protected static PackageInfo getPackageInfo(Context ctx) {
         try {
             return ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
-        } catch (PackageManager.NameNotFoundException e) {
+        } catch (Exception e) {
             Log.e(TAG, "Error getting package info.", e);
             return null;
         }
