@@ -295,8 +295,10 @@ public class JsonMarshaller implements Marshaller {
         generator.writeArrayFieldStart("values");
         for (Breadcrumb breadcrumb : breadcrumbs) {
             generator.writeStartObject();
-            // getTime() returns ts in millis, but breadcrumbs expect seconds
-            generator.writeNumberField("timestamp", breadcrumb.getTimestamp().getTime() / 1000);
+            TimeZone tz = TimeZone.getTimeZone("UTC");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            df.setTimeZone(tz);
+            generator.writeStringField("timestamp", df.format(breadcrumb.getTimestamp()));
 
             if (breadcrumb.getType() != null) {
                 generator.writeStringField("type", breadcrumb.getType().getValue());
