@@ -245,13 +245,13 @@ public class JsonMarshallerTest extends BaseTest {
         final JsonOutputStreamParser jsonOutputStreamParser = newJsonOutputStream();
 
         Breadcrumb breadcrumb1 = new BreadcrumbBuilder()
-            .setTimestamp(new Date(1463169342000L))
+            .setTimestamp(new Date(1463169342123L))
             .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test1")
             .build();
         Breadcrumb breadcrumb2 = new BreadcrumbBuilder()
-            .setTimestamp(new Date(1463169343000L))
+            .setTimestamp(new Date(1463169343111L))
             .setLevel(Breadcrumb.Level.INFO)
             .setCategory("foo")
             .setMessage("test2")
