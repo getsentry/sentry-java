@@ -24,18 +24,18 @@ class ManifestMetadataReader {
         options.setDebug(metadata.getBoolean(DEBUG_KEY, options.isDebug()));
         String dsn = metadata.getString(DSN_KEY, null);
         if (dsn != null) {
-          options.getLogger().log(SentryLevel.Debug, "DSN read: %s", dsn);
+          options.getLogger().log(SentryLevel.DEBUG, "DSN read: %s", dsn);
           options.setDsn(dsn);
         }
       }
       options
           .getLogger()
-          .log(SentryLevel.Info, "Retrieving configuration from AndroidManifest.xml");
+          .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
     } catch (Exception e) {
       options
           .getLogger()
           .log(
-              SentryLevel.Error, "Failed to read configuration from android manifest metadata.", e);
+              SentryLevel.ERROR, "Failed to read configuration from android manifest metadata.", e);
     }
   }
 }
