@@ -176,7 +176,7 @@ public class DiskBuffer implements Buffer {
     public Iterator<Event> getEvents() {
         final File[] fileArray = bufferDir.listFiles();
         if (fileArray == null) {
-            return Collections.emptyIterator();
+            return Collections.<Event>emptyList().iterator();
         }
         final Iterator<File> files = Arrays.asList(fileArray).iterator();
 
