@@ -64,3 +64,7 @@ spotless {
         ktlint()
     }
 }
+
+tasks.named("build") {
+    dependsOn(":spotlessApply")
+}
