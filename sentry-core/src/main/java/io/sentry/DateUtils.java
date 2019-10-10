@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /** Utilities to deal with dates */
@@ -19,7 +20,8 @@ class DateUtils {
    */
   public static String getTimestampIsoFormat(Date date) {
     TimeZone tz = TimeZone.getTimeZone(UTC);
-    DateFormat df = new SimpleDateFormat(UTC_FORMAT);
+    DateFormat df = new SimpleDateFormat(UTC_FORMAT, Locale.US);
+
     df.setTimeZone(tz);
     return df.format(date);
   }
