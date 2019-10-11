@@ -37,6 +37,32 @@ public class Hub implements IHub {
   }
 
   @Override
+  public void addBreadcrumb(Breadcrumb breadcrumb) {}
+
+  @Override
+  public SentryId getLastEventId() {
+    return null;
+  }
+
+  @Override
+  public void pushScope() {}
+
+  @Override
+  public void popScope() {}
+
+  @Override
+  public void withScope(ScopeCallback callback) {}
+
+  @Override
+  public void configureScope(ScopeCallback callback) {}
+
+  @Override
+  public void bindClient(SentryClient client) {}
+
+  @Override
+  public void flush(long timeoutMills) {}
+
+  @Override
   public IHub clone() {
     return new Hub(options);
   }
