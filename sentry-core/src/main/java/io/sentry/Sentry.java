@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.NonNull;
 
+/** Sentry SDK main API entry point */
 public final class Sentry {
 
   private Sentry() {}
@@ -71,6 +72,38 @@ public final class Sentry {
 
   public static SentryId captureException(Throwable throwable) {
     return getCurrentHub().captureException(throwable);
+  }
+
+  public void addBreadcrumb(Breadcrumb breadcrumb) {
+    getCurrentHub().addBreadcrumb(breadcrumb);
+  }
+
+  public SentryId getLastEventId() {
+    return getCurrentHub().getLastEventId();
+  }
+
+  public void pushScope() {
+    getCurrentHub().pushScope();
+  }
+
+  public void popScope() {
+    getCurrentHub().popScope();
+  }
+
+  public void withScope(ScopeCallback callback) {
+    getCurrentHub().withScope(callback);
+  }
+
+  public void configureScope(ScopeCallback callback) {
+    getCurrentHub().configureScope(callback);
+  }
+
+  public void bindClient(SentryClient client) {
+    getCurrentHub().bindClient(client);
+  }
+
+  public void flush(int timeoutMills) {
+    getCurrentHub().flush(timeoutMills);
   }
 
   public interface OptionsConfiguration {

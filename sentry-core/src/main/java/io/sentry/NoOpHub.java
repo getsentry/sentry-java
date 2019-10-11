@@ -36,6 +36,32 @@ class NoOpHub implements IHub {
   public void close() {}
 
   @Override
+  public void addBreadcrumb(Breadcrumb breadcrumb) {}
+
+  @Override
+  public SentryId getLastEventId() {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public void pushScope() {}
+
+  @Override
+  public void popScope() {}
+
+  @Override
+  public void withScope(ScopeCallback callback) {}
+
+  @Override
+  public void configureScope(ScopeCallback callback) {}
+
+  @Override
+  public void bindClient(SentryClient client) {}
+
+  @Override
+  public void flush(long timeoutMills) {}
+
+  @Override
   public IHub clone() {
     return instance;
   }
