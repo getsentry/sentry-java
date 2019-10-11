@@ -1,12 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="io.sentry.android"
-          xmlns:android="http://schemas.android.com/apk/res/android">
-  <application>
-    <!-- 'android:authorities' must be unique in the device, across all apps -->
-    <provider
-      android:name="io.sentry.android.SentryInitProvider"
-      android:authorities="${applicationId}.SentryInitProvider"
-      android:exported="false"
-      android:initOrder="2147483647" />
-  </application>
-</manifest>
+<manifest package="io.sentry.android" />
