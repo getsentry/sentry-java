@@ -4,7 +4,7 @@
   <application>
     <!-- 'android:authorities' must be unique in the device, across all apps -->
     <provider
-      android:name="io.sentry.android.core.SentryInitProvider"
+      android:name=".SentryInitProvider"
       android:authorities="${applicationId}.SentryInitProvider"
       android:exported="false"
       android:initOrder="2147483647" />

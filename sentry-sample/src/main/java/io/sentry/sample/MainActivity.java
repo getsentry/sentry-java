@@ -2,7 +2,7 @@ package io.sentry.sample;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import io.sentry.Sentry;
+import io.sentry.core.Sentry;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
