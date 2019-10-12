@@ -41,4 +41,10 @@ object Config {
         val jacocoVersion = "0.8.4"
         val spotlessVersion = "3.24.2"
     }
+
+    object Flavors {
+        val dimension = "version"
+        val staging = "staging"
+        val production = "production"
+    }
 }
