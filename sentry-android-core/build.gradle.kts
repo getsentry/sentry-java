@@ -19,6 +19,8 @@ android {
         }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        defaultPublishConfig = "${Config.Flavors.production}Release"
     }
 
     buildTypes {
@@ -30,13 +32,13 @@ android {
         }
     }
 
-    flavorDimensions("version")
+    flavorDimensions(Config.Flavors.dimension)
 
     productFlavors {
-        create("staging") {
+        create(Config.Flavors.staging) {
             minSdkVersion(Config.Android.minSdkVersionDebug)
         }
-        create("production") {
+        create(Config.Flavors.production) {
             minSdkVersion(Config.Android.minSdkVersion)
         }
     }
