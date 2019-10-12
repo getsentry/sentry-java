@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+    // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

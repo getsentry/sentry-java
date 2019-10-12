@@ -2,8 +2,8 @@ package io.sentry.core
 
 import io.sentry.core.protocol.SentryId
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
 
 class NoOpHubTest {
