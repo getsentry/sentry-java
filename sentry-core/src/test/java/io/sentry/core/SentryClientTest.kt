@@ -1,8 +1,8 @@
 package io.sentry.core
 
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFalse
-import kotlin.test.Ignore
 import kotlin.test.assertTrue
 
 class SentryClientTest {

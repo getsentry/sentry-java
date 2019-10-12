@@ -1,11 +1,14 @@
 package io.sentry.android.core
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.core.SentryOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
     @Test
     fun `logger set to AndroidLogger`() {
