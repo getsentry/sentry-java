@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SentryInitProviderTest {
-    private var sentryInitProvider: SentryInitProvider = SentryInitProvider()
+    private var sentryInitProvider = SentryInitProvider()
 
     private lateinit var context: Context
 
@@ -34,7 +34,7 @@ class SentryInitProviderTest {
     fun `when missing applicationId, SentryInitProvider throws`() {
         val providerInfo = ProviderInfo()
 
-        providerInfo.authority = AUTHORITY
+        providerInfo.authority = SentryInitProvider::class.java.name
         assertFailsWith<IllegalStateException> { sentryInitProvider.attachInfo(context, providerInfo) }
     }
 
@@ -43,7 +43,7 @@ class SentryInitProviderTest {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
-        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+        providerInfo.authority = AUTHORITY
 
         val mockContext: Context = mock()
         val metaData = Bundle()
@@ -61,7 +61,7 @@ class SentryInitProviderTest {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
-        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+        providerInfo.authority = AUTHORITY
 
         val mockContext: Context = mock()
         val metaData = Bundle()
@@ -79,7 +79,7 @@ class SentryInitProviderTest {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
-        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+        providerInfo.authority = AUTHORITY
 
         val mockContext: Context = mock()
         val metaData = Bundle()
@@ -97,7 +97,7 @@ class SentryInitProviderTest {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
-        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+        providerInfo.authority = AUTHORITY
 
         val mockContext: Context = mock()
         val metaData = Bundle()
@@ -112,7 +112,7 @@ class SentryInitProviderTest {
         val mockPackageManager: PackageManager = mock()
         val mockApplicationInfo: ApplicationInfo = mock()
 
-        whenever(mockContext.packageName).thenReturn(TEST_PACKAGE)
+        whenever(mockContext.packageName).thenReturn("io.sentry.sample.test")
         whenever(mockContext.packageManager).thenReturn(mockPackageManager)
         whenever(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA)).thenReturn(mockApplicationInfo)
 
@@ -120,7 +120,6 @@ class SentryInitProviderTest {
     }
 
     companion object {
-        private const val AUTHORITY = "io.sentry.android.core.SentryInitProvider"
-        private const val TEST_PACKAGE = "io.sentry.android.core.test"
+        private const val AUTHORITY = "io.sentry.sample.SentryInitProvider"
     }
 }

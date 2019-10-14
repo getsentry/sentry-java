@@ -69,6 +69,16 @@ android {
     lintOptions {
         isWarningsAsErrors = true
         isCheckDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        isCheckReleaseBuilds = false
+    }
+
+    // replace with https://issuetracker.google.com/issues/72050365 once released.
+    libraryVariants.all {
+        generateBuildConfigProvider?.configure {
+            enabled = false
+        }
     }
 }
 

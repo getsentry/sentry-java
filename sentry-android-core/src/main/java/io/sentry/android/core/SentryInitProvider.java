@@ -9,6 +9,7 @@ import android.net.Uri;
 import io.sentry.core.Sentry;
 
 public class SentryInitProvider extends ContentProvider {
+
   @Override
   public boolean onCreate() {
     Sentry.init(o -> AndroidOptionsInitializer.init(o, getContext()));
@@ -23,8 +24,7 @@ public class SentryInitProvider extends ContentProvider {
   @Override
   public void attachInfo(Context context, ProviderInfo info) {
     // applicationId is expected to be prepended. See AndroidManifest.xml
-    if ("io.sentry.android.core.SentryInitProvider".equals(info.authority)) {
-      //
+    if (SentryInitProvider.class.getName().equals(info.authority)) {
       throw new IllegalStateException(
           "An applicationId is required to fulfill the manifest placeholder.");
     }
