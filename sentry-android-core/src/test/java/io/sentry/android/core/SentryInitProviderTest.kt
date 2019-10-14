@@ -113,7 +113,7 @@ class SentryInitProviderTest {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
-        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+        providerInfo.authority = AUTHORITY
 
         val mockContext: Context = mock()
         val metaData = Bundle()
