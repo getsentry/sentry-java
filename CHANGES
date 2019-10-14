@@ -1,7 +1,12 @@
 Version 1.7.28
 --------------
 
--
+- Allow an implementation of Lookup to be provided #755
+- Don't attemp to send null events #769
+- Fix error calling getPackageInfo on Huawei devices #774
+- Fix bug where null return instead of file list #775
+- Add millisecond precision to breadcrumb #777
+- Jackson version bumped to 2.10.0 #771
 
 Version 1.7.27
 --------------
