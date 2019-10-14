@@ -24,9 +24,7 @@ android {
     }
 
     buildTypes {
-        getByName("debug") {
-            isMinifyEnabled = false
-        }
+        getByName("debug")
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }

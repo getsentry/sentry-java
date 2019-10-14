@@ -108,6 +108,24 @@ class SentryInitProviderTest {
         assertFailsWith<InvalidDsnException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
 
+    @Test
+    fun `when applicationId is defined, auto-init in meta-data is set to false, SDK doesnt initialize`() {
+        val providerInfo = ProviderInfo()
+
+        assertFalse(Sentry.isEnabled())
+        providerInfo.authority = BuildConfig.LIBRARY_PACKAGE_NAME + AUTHORITY
+
+        val mockContext: Context = mock()
+        val metaData = Bundle()
+        mockMetaData(mockContext, metaData)
+
+        metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
+
+        sentryInitProvider.attachInfo(mockContext, providerInfo)
+
+        assertFalse(Sentry.isEnabled())
+    }
+
     private fun mockMetaData(mockContext: Context, metaData: Bundle) {
         val mockPackageManager: PackageManager = mock()
         val mockApplicationInfo: ApplicationInfo = mock()
