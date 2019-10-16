@@ -7,6 +7,7 @@ import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.protocol.SentryId;
+import java.io.Writer;
 import java.util.Date;
 
 public class AndroidSerializer implements ISerializer {
@@ -32,7 +33,7 @@ public class AndroidSerializer implements ISerializer {
   }
 
   @Override
-  public String serialize(SentryEvent event) {
-    return gson.toJson(event);
+  public void serialize(SentryEvent event, Writer writer) {
+    gson.toJson(event, SentryEvent.class, writer);
   }
 }

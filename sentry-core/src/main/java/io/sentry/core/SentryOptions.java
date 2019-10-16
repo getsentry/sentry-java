@@ -14,6 +14,7 @@ public class SentryOptions {
   private @NonNull ILogger logger = NoOpLogger.getInstance();
   private SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
   private ISerializer serializer;
+  private String sentryClientName;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -64,5 +65,13 @@ public class SentryOptions {
 
   public void setSerializer(ISerializer serializer) {
     this.serializer = serializer;
+  }
+
+  public String getSentryClientName() {
+    return sentryClientName;
+  }
+
+  public void setSentryClientName(String sentryClientName) {
+    this.sentryClientName = sentryClientName;
   }
 }
