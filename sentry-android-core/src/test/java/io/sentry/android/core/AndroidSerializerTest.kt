@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import io.sentry.core.DateUtils
 import io.sentry.core.SentryEvent
+import java.io.StringWriter
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,12 +13,18 @@ class AndroidSerializerTest {
 
     private val serializer = AndroidSerializer()
 
+    private fun serializeToString(ev: SentryEvent): String {
+        val wrt = StringWriter()
+        serializer.serialize(ev, wrt)
+        return wrt.toString()
+    }
+
     @Test
     fun `when serializing SentryEvent-SentryId object, it should become a event_id json without dashes`() {
         val sentryEvent = generateEmptySentryEvent()
         sentryEvent.timestamp = null
 
-        val actual = serializer.serialize(sentryEvent)
+        val actual = serializeToString(sentryEvent)
 
         val expected = "{\"event_id\":\"${sentryEvent.eventId}\"}"
 
@@ -43,7 +50,7 @@ class AndroidSerializerTest {
 
         val expected = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.serialize(sentryEvent)
+        val actual = serializeToString(sentryEvent)
 
         assertEquals(expected, actual)
     }
@@ -117,7 +124,7 @@ class AndroidSerializerTest {
 
         sentryEvent.acceptUnknownProperties(unknown)
 
-        val actual = serializer.serialize(sentryEvent)
+        val actual = serializeToString(sentryEvent)
 
         val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}}}"
 
