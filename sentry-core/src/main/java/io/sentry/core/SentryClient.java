@@ -2,7 +2,6 @@ package io.sentry.core;
 
 import static io.sentry.core.ILogger.log;
 
-import io.sentry.core.protocol.Message;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.AsyncConnection;
 import io.sentry.core.util.Nullable;
@@ -33,7 +32,7 @@ public class SentryClient implements ISentryClient {
     this.connection = connection;
   }
 
-  public SentryId captureEvent(SentryEvent event) {
+  public SentryId captureEvent(SentryEvent event, @Nullable Scope scope) {
     log(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     SentryOptions.BeforeSecondCallback beforeSend = options.getBeforeSend();
@@ -59,23 +58,15 @@ public class SentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureMessage(String message) {
-    SentryEvent event = new SentryEvent();
-    Message sentryMessage = new Message();
-    sentryMessage.setFormatted(message);
-    return captureEvent(event);
-  }
-
-  @Override
-  public SentryId captureException(Throwable throwable) {
-    SentryEvent event = new SentryEvent(throwable);
-    return captureEvent(event);
+  public SentryId captureEvent(SentryEvent event) {
+    return captureEvent(event, null);
   }
 
   public void close() {
     log(options.getLogger(), SentryLevel.INFO, "Closing SDK.");
 
     try {
+      flush(options.getShutdownTimeout());
       connection.close();
     } catch (IOException e) {
       log(
@@ -85,5 +76,10 @@ public class SentryClient implements ISentryClient {
           e);
     }
     isEnabled = false;
+  }
+
+  @Override
+  public void flush(long timeoutMills) {
+    // TODO: Flush transport
   }
 }
