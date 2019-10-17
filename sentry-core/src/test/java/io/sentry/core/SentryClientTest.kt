@@ -1,5 +1,10 @@
 package io.sentry.core
 
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import io.sentry.core.transport.AsyncConnection
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -11,7 +16,8 @@ class SentryClientTest {
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
         }
-        fun getSut() = SentryClient(sentryOptions)
+        var connection: AsyncConnection = mock()
+        fun getSut() = SentryClient(sentryOptions, connection)
     }
 
     private val fixture = Fixture()
@@ -58,5 +64,37 @@ class SentryClientTest {
         assertTrue(sut.isEnabled)
         sut.close()
         assertFalse(sut.isEnabled)
+    }
+
+    @Test
+    fun `when beforeSend is set, callback is invoked`() {
+        var invoked = false
+        fixture.sentryOptions.setBeforeSend { e ->
+            invoked = true
+            e
+        }
+        val sut = fixture.getSut()
+        sut.captureEvent(SentryEvent())
+        assertTrue(invoked)
+    }
+
+    @Test
+    fun `when beforeSend is returns null, event is dropped`() {
+        fixture.sentryOptions.setBeforeSend { null }
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        sut.captureEvent(event)
+        verify(fixture.connection, never()).send(event)
+    }
+
+    @Test
+    fun `when beforeSend is returns new instance, new instance is sent`() {
+        val expected = SentryEvent()
+        fixture.sentryOptions.setBeforeSend { expected }
+        val sut = fixture.getSut()
+        val actual = SentryEvent()
+        sut.captureEvent(actual)
+        verify(fixture.connection, never()).send(actual)
+        verify(fixture.connection, times(1)).send(expected)
     }
 }

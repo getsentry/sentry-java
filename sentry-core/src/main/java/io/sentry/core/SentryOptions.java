@@ -15,6 +15,7 @@ public class SentryOptions {
   private SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
   private ISerializer serializer;
   private String sentryClientName;
+  private BeforeSecondCallback beforeSend;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -73,5 +74,17 @@ public class SentryOptions {
 
   public void setSentryClientName(String sentryClientName) {
     this.sentryClientName = sentryClientName;
+  }
+
+  public BeforeSecondCallback getBeforeSend() {
+    return beforeSend;
+  }
+
+  public void setBeforeSend(BeforeSecondCallback beforeSend) {
+    this.beforeSend = beforeSend;
+  }
+
+  public interface BeforeSecondCallback {
+    SentryEvent execute(SentryEvent event);
   }
 }
