@@ -12,7 +12,10 @@ public class SentryInitProvider extends ContentProvider {
 
   @Override
   public boolean onCreate() {
-    Sentry.init(o -> AndroidOptionsInitializer.init(o, getContext()));
+    AndroidLogger logger = new AndroidLogger();
+    if (ManifestMetadataReader.isAutoInit(getContext(), logger)) {
+      Sentry.init(o -> AndroidOptionsInitializer.init(o, getContext()));
+    }
     return true;
   }
 
