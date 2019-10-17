@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class Scope {
+public class Scope implements Cloneable {
   private SentryLevel level;
   private String transaction;
   private User user;
@@ -73,5 +73,11 @@ public class Scope {
 
   public void setExtra(String key, String value) {
     this.extra.put(key, value);
+  }
+
+  @Override
+  protected Scope clone() {
+    // TODO: clone me
+    return new Scope();
   }
 }

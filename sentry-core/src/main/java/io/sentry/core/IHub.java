@@ -2,7 +2,18 @@ package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
 
-public interface IHub extends ISentryClient {
+public interface IHub {
+
+  boolean isEnabled();
+
+  SentryId captureEvent(SentryEvent event);
+
+  SentryId captureMessage(String message);
+
+  SentryId captureException(Throwable throwable);
+
+  void close();
+
   void addBreadcrumb(Breadcrumb breadcrumb);
 
   SentryId getLastEventId();

@@ -1,6 +1,7 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.util.Nullable;
 
 class NoOpSentryClient implements ISentryClient {
 
@@ -23,7 +24,22 @@ class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
+  public SentryId captureEvent(SentryEvent event, Scope scope) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   public SentryId captureMessage(String message) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public SentryId captureMessage(String message, @Nullable Scope scope) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public SentryId captureException(Throwable throwable, @Nullable Scope scope) {
     return SentryId.EMPTY_ID;
   }
 
@@ -34,4 +50,7 @@ class NoOpSentryClient implements ISentryClient {
 
   @Override
   public void close() {}
+
+  @Override
+  public void flush(long timeoutMills) {}
 }
