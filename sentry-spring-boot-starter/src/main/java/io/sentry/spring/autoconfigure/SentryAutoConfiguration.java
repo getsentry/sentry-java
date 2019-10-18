@@ -74,19 +74,19 @@ public class SentryAutoConfiguration {
 
         SentryClient sentryClient = Sentry.init(properties.getDsn());
 
-        if (StringUtils.isEmpty(properties.getRelease())) {
+        if (!StringUtils.isEmpty(properties.getRelease())) {
             sentryClient.setRelease(properties.getRelease());
         }
 
-        if (StringUtils.isEmpty(properties.getDist())) {
+        if (!StringUtils.isEmpty(properties.getDist())) {
             sentryClient.setDist(properties.getDist());
         }
 
-        if (StringUtils.isEmpty(properties.getEnvironment())) {
+        if (!StringUtils.isEmpty(properties.getEnvironment())) {
             sentryClient.setEnvironment(properties.getEnvironment());
         }
 
-        if (StringUtils.isEmpty(properties.getServerName())) {
+        if (!StringUtils.isEmpty(properties.getServerName())) {
             sentryClient.setServerName(properties.getServerName());
         }
 
