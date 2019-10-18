@@ -23,7 +23,7 @@ public class SentryAutoConfiguration {
 
     /**
      * Resolves a {@link HandlerExceptionResolver}.
-     * @return a new instance of {@link SentryAutoConfiguration}.
+     * @return a new instance of {@link HandlerExceptionResolver}.
      */
     @Bean
     @ConditionalOnMissingBean(SentryExceptionResolver.class)
