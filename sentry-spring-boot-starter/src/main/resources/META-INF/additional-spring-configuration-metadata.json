@@ -5,6 +5,12 @@
       "type": "java.lang.Boolean",
       "description": "Whether to enable sentry.",
       "defaultValue": "true"
+    },
+    {
+      "name": "sentry.init-default-client",
+      "type": "java.lang.Boolean",
+      "description": "Whether to initialize Sentry Client as a bean.",
+      "defaultValue": "true"
     }
   ]
 }
