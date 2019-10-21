@@ -269,9 +269,7 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
    */
   private String getFamily() {
     try {
-      return Build.MODEL
-          .split(" ")[
-          0];
+      return Build.MODEL.split(" ")[0];
     } catch (Exception e) {
       log(SentryLevel.ERROR, "Error getting device family.", e);
       return null;
@@ -345,8 +343,7 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     // do not import class or deprecation lint will throw
-    android.net.NetworkInfo activeNetwork =
-        connectivityManager.getActiveNetworkInfo();
+    android.net.NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
 
     if (activeNetwork != null) {
       return activeNetwork.isConnected();
