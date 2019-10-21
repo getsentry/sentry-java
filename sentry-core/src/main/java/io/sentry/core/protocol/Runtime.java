@@ -6,7 +6,6 @@ public class Runtime {
   private String name;
   private String version;
   private String rawDescription;
-  private String build;
 
   public String getName() {
     return name;
@@ -30,13 +29,5 @@ public class Runtime {
 
   public void setRawDescription(String rawDescription) {
     this.rawDescription = rawDescription;
-  }
-
-  public String getBuild() {
-    return build;
-  }
-
-  public void setBuild(String build) {
-    this.build = build;
   }
 }
