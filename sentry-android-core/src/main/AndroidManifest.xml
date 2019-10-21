@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest package="io.sentry.android.core"
           xmlns:android="http://schemas.android.com/apk/res/android">
-  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.INTERNET"/>
   <application>
     <!-- 'android:authorities' must be unique in the device, across all apps -->
     <provider
       android:name=".SentryInitProvider"
       android:authorities="${applicationId}.SentryInitProvider"
-      android:exported="false" />
+      android:exported="false"/>
   </application>
 </manifest>

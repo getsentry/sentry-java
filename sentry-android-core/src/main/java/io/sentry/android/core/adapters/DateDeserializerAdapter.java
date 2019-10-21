@@ -1,4 +1,4 @@
-package io.sentry.android.core;
+package io.sentry.android.core.adapters;
 
 import static io.sentry.core.ILogger.log;
 
@@ -12,7 +12,7 @@ import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.Date;
 
-class DateDeserializerAdapter implements JsonDeserializer<Date> {
+public class DateDeserializerAdapter implements JsonDeserializer<Date> {
 
   private final ILogger logger;
 

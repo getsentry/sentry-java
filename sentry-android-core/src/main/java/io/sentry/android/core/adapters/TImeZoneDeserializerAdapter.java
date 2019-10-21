@@ -1,4 +1,4 @@
-package io.sentry.android.core;
+package io.sentry.android.core.adapters;
 
 import static io.sentry.core.ILogger.log;
 
@@ -8,24 +8,24 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
-import io.sentry.core.protocol.SentryId;
 import java.lang.reflect.Type;
+import java.util.TimeZone;
 
-class SentryIdDeserializerAdapter implements JsonDeserializer<SentryId> {
+public class TImeZoneDeserializerAdapter implements JsonDeserializer<TimeZone> {
 
   private final ILogger logger;
 
-  public SentryIdDeserializerAdapter(ILogger logger) {
+  public TImeZoneDeserializerAdapter(ILogger logger) {
     this.logger = logger;
   }
 
   @Override
-  public SentryId deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public TimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
     try {
-      return json == null ? null : new SentryId(json.getAsString());
+      return json == null ? null : TimeZone.getTimeZone(json.getAsString());
     } catch (Exception e) {
-      log(logger, SentryLevel.ERROR, "Error when deserializing SentryId", e);
+      log(logger, SentryLevel.ERROR, "Error when deserializing TimeZone", e);
     }
     return null;
   }

@@ -48,12 +48,12 @@ final class Dsn {
     try {
       URI uri = new URI(dsn);
       String userInfo = uri.getUserInfo();
-      if (userInfo == null || userInfo.length() == 0) {
+      if (userInfo == null || userInfo.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: No public key provided.");
       }
       String[] keys = userInfo.split(":");
       publicKey = keys[0]; // TODO: test lack of delimiter returns whole value as first index
-      if (publicKey == null || publicKey.length() == 0) {
+      if (publicKey == null || publicKey.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: No public key provided.");
       }
       secretKey = keys.length > 1 ? keys[1] : null;
@@ -61,7 +61,7 @@ final class Dsn {
       int projectIdStart = uriPath.lastIndexOf("/") + 1;
       path = uriPath.substring(0, projectIdStart);
       projectId = uriPath.substring(projectIdStart);
-      if (projectId == null || projectId.length() == 0) {
+      if (projectId.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: A Project Id is required.");
       }
       sentryUri =

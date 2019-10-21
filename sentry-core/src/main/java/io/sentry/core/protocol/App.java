@@ -5,36 +5,36 @@ import java.util.Date;
 public class App {
   static final String TYPE = "app";
 
-  private String identifier;
-  private Date startTime;
-  private String hash;
+  private String appIdentifier;
+  private Date appStartTime;
+  private String deviceAppHash;
   private String buildType;
-  private String name;
-  private String version;
-  private String build;
+  private String appName;
+  private String appVersion;
+  private String appBuild;
 
-  public String getIdentifier() {
-    return identifier;
+  public String getAppIdentifier() {
+    return appIdentifier;
   }
 
-  public void setIdentifier(String identifier) {
-    this.identifier = identifier;
+  public void setAppIdentifier(String appIdentifier) {
+    this.appIdentifier = appIdentifier;
   }
 
-  public Date getStartTime() {
-    return startTime;
+  public Date getAppStartTime() {
+    return appStartTime;
   }
 
-  public void setStartTime(Date startTime) {
-    this.startTime = startTime;
+  public void setAppStartTime(Date appStartTime) {
+    this.appStartTime = appStartTime;
   }
 
-  public String getHash() {
-    return hash;
+  public String getDeviceAppHash() {
+    return deviceAppHash;
   }
 
-  public void setHash(String hash) {
-    this.hash = hash;
+  public void setDeviceAppHash(String deviceAppHash) {
+    this.deviceAppHash = deviceAppHash;
   }
 
   public String getBuildType() {
@@ -45,27 +45,27 @@ public class App {
     this.buildType = buildType;
   }
 
-  public String getName() {
-    return name;
+  public String getAppName() {
+    return appName;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setAppName(String appName) {
+    this.appName = appName;
   }
 
-  public String getVersion() {
-    return version;
+  public String getAppVersion() {
+    return appVersion;
   }
 
-  public void setVersion(String version) {
-    this.version = version;
+  public void setAppVersion(String appVersion) {
+    this.appVersion = appVersion;
   }
 
-  public String getBuild() {
-    return build;
+  public String getAppBuild() {
+    return appBuild;
   }
 
-  public void setBuild(String build) {
-    this.build = build;
+  public void setAppBuild(String appBuild) {
+    this.appBuild = appBuild;
   }
 }

@@ -1,4 +1,4 @@
-package io.sentry.android.core;
+package io.sentry.android.core.adapters;
 
 import static io.sentry.core.ILogger.log;
 
@@ -11,7 +11,7 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.protocol.SentryId;
 import java.lang.reflect.Type;
 
-class SentryIdSerializerAdapter implements JsonSerializer<SentryId> {
+public class SentryIdSerializerAdapter implements JsonSerializer<SentryId> {
 
   private final ILogger logger;
 

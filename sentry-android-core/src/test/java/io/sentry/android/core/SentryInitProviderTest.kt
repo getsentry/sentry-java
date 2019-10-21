@@ -7,6 +7,7 @@ import android.content.pm.ProviderInfo
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.InvalidDsnException
@@ -45,7 +46,9 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext: Context = mock()
+        val mockContext = mock<Context> {
+            on { applicationContext } doReturn context
+        }
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -63,7 +66,9 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext: Context = mock()
+        val mockContext = mock<Context> {
+            on { applicationContext } doReturn context
+        }
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -81,7 +86,9 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext: Context = mock()
+        val mockContext = mock<Context> {
+            on { applicationContext } doReturn context
+        }
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -99,7 +106,9 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext: Context = mock()
+        val mockContext = mock<Context> {
+            on { applicationContext } doReturn context
+        }
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -115,7 +124,9 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext: Context = mock()
+        val mockContext = mock<Context> {
+            on { applicationContext } doReturn context
+        }
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
