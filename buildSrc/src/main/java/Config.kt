@@ -36,6 +36,7 @@ object Config {
         val espressoCore = "androidx.test.espresso:espresso-core:3.2.0"
         val androidxOrchestrator = "androidx.test:orchestrator:$androidxTestVersion"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
+        val apacheCommonsIo = "commons-io:commons-io:2.6"
     }
 
     object QualityPlugins {

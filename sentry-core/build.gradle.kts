@@ -5,6 +5,8 @@ plugins {
 }
 
 dependencies {
+    // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
+    implementation(Config.Libs.gson)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
