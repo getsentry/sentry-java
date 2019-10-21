@@ -6,7 +6,6 @@ import com.google.gson.GsonBuilder;
 import io.sentry.android.core.adapters.*;
 import io.sentry.core.ILogger;
 import io.sentry.core.ISerializer;
-import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.SentryId;
@@ -40,11 +39,6 @@ public class AndroidSerializer implements ISerializer {
             Device.DeviceOrientation.class, new OrientationDeserializerAdapter(logger))
         .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
         .create();
-  }
-
-  @Override
-  public SentryEnvelope deserializeEnvelope(String envelope) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
