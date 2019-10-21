@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.core.DateUtils
 import io.sentry.core.SentryEvent
 import java.io.StringWriter
@@ -11,7 +12,7 @@ import kotlin.test.assertEquals
 
 class AndroidSerializerTest {
 
-    private val serializer = AndroidSerializer()
+    private val serializer = AndroidSerializer(mock())
 
     private fun serializeToString(ev: SentryEvent): String {
         val wrt = StringWriter()
