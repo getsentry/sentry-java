@@ -25,7 +25,7 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
   private String environment;
   private User user;
   private Request request;
-  private SdkVersion sdkVersion;
+  private SdkVersion sdk;
   private Contexts contexts = new Contexts();
   private List<String> fingerprint = new ArrayList<>();
   private List<Breadcrumb> breadcrumbs = new ArrayList<>();
@@ -187,12 +187,12 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
     this.request = request;
   }
 
-  public SdkVersion getSdkVersion() {
-    return sdkVersion;
+  public SdkVersion getSdk() {
+    return sdk;
   }
 
-  public void setSdkVersion(SdkVersion sdkVersion) {
-    this.sdkVersion = sdkVersion;
+  public void setSdk(SdkVersion sdk) {
+    this.sdk = sdk;
   }
 
   public List<String> getFingerprint() {

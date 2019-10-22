@@ -25,8 +25,6 @@ class SystemOutLogger implements ILogger {
   @Override
   public void log(SentryLevel level, String message, Throwable throwable) {
     System.out.println(
-        String.format(
-            "%s: %s\n%s",
-            level, String.format(message, throwable.toString(), throwable.getStackTrace())));
+        String.format("%s: %s", level, String.format(message, throwable.toString())));
   }
 }
