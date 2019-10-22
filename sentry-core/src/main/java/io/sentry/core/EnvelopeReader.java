@@ -35,11 +35,8 @@ public class EnvelopeReader {
     while ((currentLength = stream.read(buffer)) > 0) {
       for (int i = 0; envelopeEndHeaderOffset == -1 && i < currentLength; i++) {
         if (buffer[i] == '\n') {
-          // TODO: IDE warns this is always true, is it?
-          if (envelopeEndHeaderOffset == -1) {
-            envelopeEndHeaderOffset = streamOffset + i;
-            break;
-          }
+          envelopeEndHeaderOffset = streamOffset + i;
+          break;
         }
       }
       outputStream.write(buffer, 0, currentLength);
