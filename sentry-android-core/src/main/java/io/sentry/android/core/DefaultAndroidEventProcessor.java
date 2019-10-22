@@ -39,7 +39,9 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public SentryEvent process(SentryEvent event) {
-    setSdkVersion(event);
+    if (event.getSdk() == null) {
+      event.setSdk(getSdkVersion());
+    }
 
     if (event.getUser() == null) {
       event.setUser(getUser());
@@ -80,17 +82,17 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
     app.setAppStartTime(appStartTime);
   }
 
-  private void setSdkVersion(SentryEvent event) {
-    SdkVersion sdkVersion = event.getSdkVersion();
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
+  private SdkVersion getSdkVersion() {
+    SdkVersion sdkVersion = new SdkVersion();
+
     sdkVersion.setName("sentry-android");
     String version = BuildConfig.VERSION_NAME;
     sdkVersion.setVersion(version);
     sdkVersion.addPackage("sentry-core", version);
     sdkVersion.addPackage("sentry-android-core", version);
     // sentry-android-ndk, integrations...
+
+    return sdkVersion;
   }
 
   private String getVersionCode(PackageInfo packageInfo) {
