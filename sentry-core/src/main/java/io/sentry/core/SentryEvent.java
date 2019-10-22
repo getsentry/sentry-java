@@ -1,6 +1,7 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.*;
+import io.sentry.core.util.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -239,6 +240,7 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
     this.unknown = unknown;
   }
 
+  @VisibleForTesting
   public Map<String, Object> getUnknown() {
     return unknown;
   }

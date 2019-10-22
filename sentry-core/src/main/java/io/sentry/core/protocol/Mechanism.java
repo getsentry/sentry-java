@@ -1,14 +1,16 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Mechanism {
+public class Mechanism implements IUnknownPropertiesConsumer {
   private String type;
   private String description;
   private String helpLink;
   private Boolean handled;
   private Map<String, Object> meta;
   private Map<String, Object> data;
+  private Map<String, Object> unknown;
 
   public String getType() {
     return type;
@@ -56,5 +58,10 @@ public class Mechanism {
 
   public void setData(Map<String, Object> data) {
     this.data = data;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

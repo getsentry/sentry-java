@@ -1,13 +1,17 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.Map;
+
 /** The Sentry Exception interface. */
-public class SentryException {
+public class SentryException implements IUnknownPropertiesConsumer {
   private String type;
   private String value;
   private String module;
   private Integer threadId;
   private SentryStackTrace stacktrace;
   private Mechanism mechanism;
+  private Map<String, Object> unknown;
 
   /**
    * The Exception Type.
@@ -111,5 +115,10 @@ public class SentryException {
    */
   public void setMechanism(Mechanism mechanism) {
     this.mechanism = mechanism;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

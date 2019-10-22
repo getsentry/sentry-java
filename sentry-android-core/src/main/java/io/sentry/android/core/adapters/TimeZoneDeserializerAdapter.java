@@ -11,11 +11,11 @@ import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.TimeZone;
 
-public class TImeZoneDeserializerAdapter implements JsonDeserializer<TimeZone> {
+public class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZone> {
 
   private final ILogger logger;
 
-  public TImeZoneDeserializerAdapter(ILogger logger) {
+  public TimeZoneDeserializerAdapter(ILogger logger) {
     this.logger = logger;
   }
 

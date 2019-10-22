@@ -1,8 +1,9 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Request {
+public class Request implements IUnknownPropertiesConsumer {
   private String url;
   private String method;
   private String queryString;
@@ -11,6 +12,7 @@ public class Request {
   private Map<String, String> headers;
   private Map<String, String> env;
   private Map<String, String> other;
+  private Map<String, Object> unknown;
 
   public String getUrl() {
     return url;
@@ -74,5 +76,10 @@ public class Request {
 
   public void setOther(Map<String, String> other) {
     this.other = other;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

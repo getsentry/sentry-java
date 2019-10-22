@@ -1,12 +1,15 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class SdkVersion {
+public class SdkVersion implements IUnknownPropertiesConsumer {
   private String name;
   private String version;
   private List<Package> packages = new CopyOnWriteArrayList<>();
+  private Map<String, Object> unknown;
 
   public String getVersion() {
     return version;
@@ -36,5 +39,10 @@ public class SdkVersion {
     newPackage.setName(name);
     newPackage.setVersion(version);
     packages.add(newPackage);
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }
