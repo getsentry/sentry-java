@@ -1,11 +1,15 @@
 package io.sentry.core.protocol;
 
-public class Runtime {
+import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.Map;
+
+public class Runtime implements IUnknownPropertiesConsumer {
   static final String TYPE = "runtime";
 
   private String name;
   private String version;
   private String rawDescription;
+  private Map<String, Object> unknown;
 
   public String getName() {
     return name;
@@ -29,5 +33,10 @@ public class Runtime {
 
   public void setRawDescription(String rawDescription) {
     this.rawDescription = rawDescription;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

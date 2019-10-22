@@ -1,6 +1,9 @@
 package io.sentry.core.protocol;
 
-public class Gpu {
+import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.Map;
+
+public class Gpu implements IUnknownPropertiesConsumer {
   static final String TYPE = "gpu";
 
   private String name;
@@ -12,6 +15,7 @@ public class Gpu {
   private Boolean multiThreadedRendering;
   private String version;
   private String npotSupport;
+  private Map<String, Object> unknown;
 
   public String getName() {
     return name;
@@ -83,5 +87,10 @@ public class Gpu {
 
   public void setNpotSupport(String npotSupport) {
     this.npotSupport = npotSupport;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

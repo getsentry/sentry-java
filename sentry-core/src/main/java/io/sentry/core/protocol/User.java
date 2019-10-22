@@ -1,14 +1,16 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 /** The user affected by an event. */
-public class User {
+public class User implements IUnknownPropertiesConsumer {
   private String email;
   private String id;
   private String username;
   private String ipAddress;
   private Map<String, String> other;
+  private Map<String, Object> unknown;
 
   /**
    * Gets the e-mail address of the user.
@@ -98,5 +100,10 @@ public class User {
    */
   public void setOther(Map<String, String> other) {
     this.other = other;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

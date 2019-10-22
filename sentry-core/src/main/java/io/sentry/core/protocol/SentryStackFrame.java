@@ -1,10 +1,11 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
 
 /** The Sentry stack frame. */
-public class SentryStackFrame {
+public class SentryStackFrame implements IUnknownPropertiesConsumer {
   private List<String> preContext;
   private List<String> postContext;
   private Map<String, String> vars;
@@ -22,6 +23,7 @@ public class SentryStackFrame {
   private Long imageAddress;
   private Long SymbolAddress;
   private Long instructionOffset;
+  private Map<String, Object> unknown;
 
   public List<String> getPreContext() {
     return preContext;
@@ -157,5 +159,10 @@ public class SentryStackFrame {
 
   public void setInstructionOffset(Long instructionOffset) {
     this.instructionOffset = instructionOffset;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

@@ -1,8 +1,12 @@
 package io.sentry.core.protocol;
 
-public class Package {
+import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.Map;
+
+public class Package implements IUnknownPropertiesConsumer {
   private String name;
   private String version;
+  private Map<String, Object> unknown;
 
   public String getName() {
     return name;
@@ -18,5 +22,10 @@ public class Package {
 
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

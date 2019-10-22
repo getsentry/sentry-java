@@ -32,7 +32,7 @@ public class AndroidSerializer implements ISerializer {
         .registerTypeAdapter(Date.class, new DateSerializerAdapter(logger))
         .registerTypeAdapter(Date.class, new DateDeserializerAdapter(logger))
         .registerTypeAdapter(TimeZone.class, new TimeZoneSerializerAdapter(logger))
-        .registerTypeAdapter(TimeZone.class, new TImeZoneDeserializerAdapter(logger))
+        .registerTypeAdapter(TimeZone.class, new TimeZoneDeserializerAdapter(logger))
         .registerTypeAdapter(
             Device.DeviceOrientation.class, new OrientationSerializerAdapter(logger))
         .registerTypeAdapter(

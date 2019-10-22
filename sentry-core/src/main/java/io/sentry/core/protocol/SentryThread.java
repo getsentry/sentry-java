@@ -1,12 +1,16 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.Map;
+
 /** Describes a thread in the Sentry protocol. */
-public class SentryThread {
+public class SentryThread implements IUnknownPropertiesConsumer {
   private Integer id;
   private String name;
   private Boolean crashed;
   private Boolean current;
   private SentryStackTrace stacktrace;
+  private Map<String, Object> unknown;
 
   /**
    * Gets the Id of the thread.
@@ -96,5 +100,10 @@ public class SentryThread {
    */
   public void setStacktrace(SentryStackTrace stacktrace) {
     this.stacktrace = stacktrace;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }

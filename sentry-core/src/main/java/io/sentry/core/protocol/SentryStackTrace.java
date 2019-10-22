@@ -1,10 +1,13 @@
 package io.sentry.core.protocol;
 
+import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
+import java.util.Map;
 
 /** The Sentry stacktrace. */
-public class SentryStackTrace {
+public class SentryStackTrace implements IUnknownPropertiesConsumer {
   private List<SentryStackFrame> frames;
+  private Map<String, Object> unknown;
 
   /**
    * Gets the frames of this stacktrace.
@@ -22,5 +25,10 @@ public class SentryStackTrace {
    */
   public void setFrames(List<SentryStackFrame> frames) {
     this.frames = frames;
+  }
+
+  @Override
+  public void acceptUnknownProperties(Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }
