@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.transport.AsyncConnection
 import kotlin.test.Ignore
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -96,5 +97,18 @@ class SentryClientTest {
         sut.captureEvent(actual)
         verify(fixture.connection, never()).send(actual)
         verify(fixture.connection, times(1)).send(expected)
+    }
+
+    @Test
+    fun `when captureMessage is called, sentry event contains formatted message`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSend { e ->
+            sentEvent = e
+            e
+        }
+        val sut = fixture.getSut()
+        val actual = "actual message"
+        sut.captureMessage(actual)
+        assertEquals(actual, sentEvent!!.message.formatted)
     }
 }
