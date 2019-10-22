@@ -1,5 +1,6 @@
 package io.sentry.core.transport;
 
+import io.sentry.core.util.NonNull;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
@@ -198,12 +199,12 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
     }
 
     @Override
-    public long getDelay(TimeUnit unit) {
+    public long getDelay(@NonNull TimeUnit unit) {
       return task.getDelay(unit);
     }
 
     @Override
-    public int compareTo(Delayed o) {
+    public int compareTo(@NonNull Delayed o) {
       return task.compareTo(o);
     }
 
@@ -235,7 +236,7 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
     }
 
     @Override
-    public V get(long timeout, TimeUnit unit)
+    public V get(long timeout, @NonNull TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
       task.get(timeout, unit);
       return null;
@@ -282,7 +283,7 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) {
+    public T get(long timeout, @NonNull TimeUnit unit) {
       throw new CancellationException();
     }
   }

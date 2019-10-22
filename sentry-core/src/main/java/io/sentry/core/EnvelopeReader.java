@@ -20,10 +20,9 @@ public class EnvelopeReader {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
   private final Gson gson =
       new GsonBuilder()
+          .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
           .registerTypeAdapter(
-              SentryEnvelopeHeader.class, new EnvelopeReader.SentryEnvelopeHeaderAdapter())
-          .registerTypeAdapter(
-              SentryEnvelopeItemHeader.class, new EnvelopeReader.SentryEnvelopeItemHeaderAdapter())
+              SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
           .create();
 
   public @Nullable SentryEnvelope read(InputStream stream) throws IOException {
@@ -36,6 +35,7 @@ public class EnvelopeReader {
     while ((currentLength = stream.read(buffer)) > 0) {
       for (int i = 0; envelopeEndHeaderOffset == -1 && i < currentLength; i++) {
         if (buffer[i] == '\n') {
+          // TODO: IDE warns this is always true, is it?
           if (envelopeEndHeaderOffset == -1) {
             envelopeEndHeaderOffset = streamOffset + i;
             break;
@@ -146,7 +146,7 @@ public class EnvelopeReader {
     return gson.fromJson(json, SentryEnvelopeItemHeader.class);
   }
 
-  private final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelopeHeader> {
+  private static final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelopeHeader> {
     public void write(JsonWriter out, SentryEnvelopeHeader value) {}
 
     public SentryEnvelopeHeader read(JsonReader reader) throws IOException {
@@ -173,7 +173,7 @@ public class EnvelopeReader {
     }
   }
 
-  private final class SentryEnvelopeItemHeaderAdapter
+  private static final class SentryEnvelopeItemHeaderAdapter
       extends TypeAdapter<SentryEnvelopeItemHeader> {
     @Override
     public void write(JsonWriter out, SentryEnvelopeItemHeader value) throws IOException {}

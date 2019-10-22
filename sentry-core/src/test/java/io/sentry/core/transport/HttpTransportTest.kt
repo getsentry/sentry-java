@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 class HttpTransportTest {
 
     private class Fixture {
-        var dsn = URI.create("http://localhost").toURL()
+        var dsn = URI.create("http://key@localhost/proj").toURL()
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
         var requestUpdater = IConnectionConfigurator {}
@@ -37,10 +37,9 @@ class HttpTransportTest {
 
         fun getSUT(): HttpTransport {
             val options = SentryOptions()
-            options.dsn = dsn.toString()
             options.serializer = serializer
 
-            return object : HttpTransport(options, proxy, requestUpdater, connectionTimeout, readTimeout, bypassSecurity) {
+            return object : HttpTransport(options, proxy, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn) {
                 override fun open(url: URL?, proxy: Proxy?): HttpURLConnection {
                     return connection
                 }
