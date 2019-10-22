@@ -9,7 +9,7 @@ class AsyncConnectionFactory {
     try {
       IConnectionConfigurator setCredentials = new CredentialsSettingConfigurator(options);
 
-      HttpTransport transport = new HttpTransport(options, null, setCredentials, 60, 60, true);
+      HttpTransport transport = new HttpTransport(options, null, setCredentials, 60, 60, false);
 
       // TODO this should be made configurable at least for the Android case where we can
       // just not attempt to send if the device is offline.
