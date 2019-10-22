@@ -24,7 +24,7 @@ public abstract class TransportResult {
    * @param retryMillis the number of milliseconds after which the next attempt to send the event
    *     should be made or -1 if not known
    * @param responseCode the HTTP status code if known, -1 otherwise
-   * @return an errorneous transport result
+   * @return an erroneous transport result
    */
   public static TransportResult error(long retryMillis, int responseCode) {
     return new ErrorTransportResult(retryMillis, responseCode);

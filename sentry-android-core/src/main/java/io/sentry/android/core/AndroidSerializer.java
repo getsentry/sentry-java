@@ -9,6 +9,7 @@ import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.SentryId;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.Date;
 import java.util.TimeZone;
@@ -47,7 +48,9 @@ public class AndroidSerializer implements ISerializer {
   }
 
   @Override
-  public void serialize(SentryEvent event, Writer writer) {
+  public void serialize(SentryEvent event, Writer writer) throws IOException {
     gson.toJson(event, SentryEvent.class, writer);
+    writer.flush();
+    writer.close();
   }
 }

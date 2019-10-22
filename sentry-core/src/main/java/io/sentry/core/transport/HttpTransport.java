@@ -1,25 +1,16 @@
 package io.sentry.core.transport;
 
 import static io.sentry.core.ILogger.log;
-import static io.sentry.core.SentryLevel.DEBUG;
-import static io.sentry.core.SentryLevel.ERROR;
+import static io.sentry.core.SentryLevel.*;
 
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Nullable;
 import io.sentry.core.util.VisibleForTesting;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import javax.net.ssl.HttpsURLConnection;
@@ -49,34 +40,33 @@ public class HttpTransport implements ITransport {
    * @param proxy the proxy to use, if any
    * @param connectionConfigurator this consumer is given a chance to set up the request before it
    *     is sent
-   * @param connectionTimeout connection timeout
-   * @param readTimeout read timeout
+   * @param connectionTimeoutMills connection timeout in milliseconds
+   * @param readTimeoutMills read timeout in milliseconds
    * @param bypassSecurity whether to ignore TLS errors
-   * @throws URISyntaxException when options contain invalid DSN
-   * @throws MalformedURLException when options contain invalid DSN
    */
   public HttpTransport(
       SentryOptions options,
       @Nullable Proxy proxy,
       IConnectionConfigurator connectionConfigurator,
-      int connectionTimeout,
-      int readTimeout,
-      boolean bypassSecurity)
-      throws URISyntaxException, MalformedURLException {
+      int connectionTimeoutMills,
+      int readTimeoutMills,
+      boolean bypassSecurity,
+      URL sentryUrl) {
     this.proxy = proxy;
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
-    this.connectionTimeout = connectionTimeout;
-    this.readTimeout = readTimeout;
+    this.connectionTimeout = connectionTimeoutMills;
+    this.readTimeout = readTimeoutMills;
     this.options = options;
-    this.sentryUrl = new URI(options.getDsn()).toURL();
     this.bypassSecurity = bypassSecurity;
+    this.sentryUrl = sentryUrl;
   }
 
   // giving up on testing this method is probably the simplest way of having the rest of the class
   // testable...
   @VisibleForTesting
   protected HttpURLConnection open(URL url, Proxy proxy) throws IOException {
+    // why do we need url here? its not used
     return (HttpURLConnection)
         (proxy == null ? sentryUrl.openConnection() : sentryUrl.openConnection(proxy));
   }
@@ -89,6 +79,12 @@ public class HttpTransport implements ITransport {
     connection.setRequestMethod("POST");
     connection.setDoOutput(true);
     connection.setRequestProperty("Content-Encoding", "UTF-8");
+    connection.setRequestProperty("Content-Type", "application/json");
+    connection.setRequestProperty("Accept", "application/json");
+
+    // https://stackoverflow.com/questions/52726909/java-io-ioexception-unexpected-end-of-stream-on-connection/53089882
+    connection.setRequestProperty("Connection", "close");
+
     connection.setConnectTimeout(connectionTimeout);
     connection.setReadTimeout(readTimeout);
 
@@ -98,9 +94,7 @@ public class HttpTransport implements ITransport {
 
     connection.connect();
 
-    OutputStream outputStream = null;
-    try {
-      outputStream = connection.getOutputStream();
+    try (OutputStream outputStream = connection.getOutputStream()) {
       serializer.serialize(event, new OutputStreamWriter(outputStream, UTF_8));
 
       // need to also close the input stream of the connection
@@ -131,39 +125,36 @@ public class HttpTransport implements ITransport {
                     + "' was rejected by the Sentry server due to a filter.");
           }
         }
+        logErrorInPayload(connection);
         return TransportResult.error(retryAfterMs, responseCode);
       } catch (IOException responseCodeException) {
         // this should not stop us from continuing. We'll just use -1 as response code.
         log(
             options.getLogger(),
-            DEBUG,
+            WARNING,
             "Failed to obtain response code while analyzing event send failure.",
             e);
       }
 
-      if (options.isDebug()) {
-        String errorMessage = null;
-        final InputStream errorStream = connection.getErrorStream();
-        if (errorStream != null) {
-          errorMessage = getErrorMessageFromStream(errorStream);
-        }
-        if (null == errorMessage || errorMessage.isEmpty()) {
-          errorMessage = "An exception occurred while submitting the event to the Sentry server.";
-        }
-
-        log(options.getLogger(), DEBUG, errorMessage);
-      }
-
+      logErrorInPayload(connection);
       return TransportResult.error(retryAfterMs, responseCode);
     } finally {
-      if (outputStream != null) {
-        try {
-          outputStream.close();
-        } catch (IOException e) {
-          // ignored...
-        }
-      }
       connection.disconnect();
+    }
+  }
+
+  private void logErrorInPayload(HttpURLConnection connection) {
+    if (options.isDebug()) {
+      String errorMessage = null;
+      final InputStream errorStream = connection.getErrorStream();
+      if (errorStream != null) {
+        errorMessage = getErrorMessageFromStream(errorStream);
+      }
+      if (null == errorMessage || errorMessage.isEmpty()) {
+        errorMessage = "An exception occurred while submitting the event to the Sentry server.";
+      }
+
+      log(options.getLogger(), DEBUG, errorMessage);
     }
   }
 

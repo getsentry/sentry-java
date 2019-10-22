@@ -5,6 +5,7 @@ import static io.sentry.core.ILogger.log;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
+import io.sentry.core.util.NonNull;
 import io.sentry.core.util.VisibleForTesting;
 import java.io.Closeable;
 import java.io.IOException;
@@ -109,7 +110,7 @@ public class AsyncConnection implements Closeable {
     private int cnt;
 
     @Override
-    public Thread newThread(Runnable r) {
+    public Thread newThread(@NonNull Runnable r) {
       Thread ret = new Thread(r, "SentryAsyncConnection-" + cnt++);
       ret.setDaemon(true);
       return ret;

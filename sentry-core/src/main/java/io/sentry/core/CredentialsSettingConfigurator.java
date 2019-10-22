@@ -15,8 +15,7 @@ final class CredentialsSettingConfigurator implements IConnectionConfigurator {
   private final String authHeader;
   private final String userAgent;
 
-  CredentialsSettingConfigurator(SentryOptions options) {
-    Dsn dsn = new Dsn(options.getDsn());
+  CredentialsSettingConfigurator(Dsn dsn, String clientName) {
 
     String publicKey = dsn.getPublicKey();
     String secretKey = dsn.getSecretKey();
@@ -26,12 +25,12 @@ final class CredentialsSettingConfigurator implements IConnectionConfigurator {
             + SentryClient.SENTRY_PROTOCOL_VERSION
             + ","
             + "sentry_client="
-            + options.getSentryClientName()
+            + clientName
             + ","
             + "sentry_key="
             + publicKey
             + (secretKey != null && secretKey.length() > 0 ? (",sentry_secret=" + secretKey) : "");
-    this.userAgent = options.getSentryClientName();
+    this.userAgent = clientName;
   }
 
   @Override
