@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.core.ILogger
 import io.sentry.core.SentryOptions
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -43,8 +44,9 @@ class AndroidOptionsInitializerTest {
         val mockContext = mock<Context> {
             on { applicationContext } doReturn context
         }
+        val mockLogger = mock<ILogger>()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
         val actual = sentryOptions.eventProcessors.firstOrNull { it::class == DefaultAndroidEventProcessor::class }
         assertNotNull(actual)
     }
