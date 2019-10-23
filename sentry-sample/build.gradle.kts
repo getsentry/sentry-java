@@ -35,8 +35,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    // due https://github.com/gradle/gradle/issues/11083
+//    kotlinOptions {
+//        jvmTarget = JavaVersion.VERSION_1_8.toString()
+//    }
+    withGroovyBuilder {
+        "kotlinOptions" {
+            setProperty("jvmTarget", JavaVersion.VERSION_1_8.toString())
+        }
     }
 
 }
