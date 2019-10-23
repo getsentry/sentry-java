@@ -19,11 +19,11 @@ class SentryEventTest {
 
     @Test
     fun `constructor defines timestamp after now`() =
-            assertTrue(Instant.now().plus(1, ChronoUnit.HOURS).isAfter(SentryEvent().timestamp.toInstant()))
+            assertTrue(Instant.now().plus(1, ChronoUnit.HOURS).isAfter(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))))
 
     @Test
     fun `constructor defines timestamp before hour ago`() =
-            assertTrue(Instant.now().minus(1, ChronoUnit.HOURS).isBefore(SentryEvent().timestamp.toInstant()))
+            assertTrue(Instant.now().minus(1, ChronoUnit.HOURS).isBefore(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))))
 
     @Test
     fun `timestamp is formatted in ISO 8601 in UTC with Z format`() {
@@ -32,6 +32,6 @@ class SentryEventTest {
         val formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ssX", Locale.ROOT)
         val date = OffsetDateTime.parse(expected, formatter)
         val actual = SentryEvent(null, Date(date.toInstant().toEpochMilli()))
-        assertEquals(expected, actual.timestampIsoFormat)
+        assertEquals(expected, DateUtils.getTimestampIsoFormat(actual.timestamp))
     }
 }

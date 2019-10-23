@@ -3,7 +3,6 @@ package io.sentry.core;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -32,8 +31,8 @@ public class DateUtils {
    * @return the ISO UTC date and time
    */
   public static Date getCurrentDateTime() {
-    TimeZone tz = TimeZone.getTimeZone(UTC);
-    return Calendar.getInstance(tz).getTime();
+    String timestampIsoFormat = getTimestampIsoFormat(new Date());
+    return getDateTime(timestampIsoFormat);
   }
 
   /**
