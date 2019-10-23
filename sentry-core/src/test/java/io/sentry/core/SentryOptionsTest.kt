@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class SentryOptionsTest {
     @Test
@@ -33,5 +34,10 @@ class SentryOptionsTest {
     @Test
     fun `when options is initialized, debug is false`() {
         assertFalse(SentryOptions().isDebug)
+    }
+
+    @Test
+    fun `when options is initialized, integrations contain UncaughtExceptionHandlerIntegration`() {
+        assertTrue(SentryOptions().integrations.any { it is UncaughtExceptionHandlerIntegration })
     }
 }
