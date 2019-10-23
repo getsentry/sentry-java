@@ -12,6 +12,7 @@ android {
 
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
+        minSdkVersion(Config.Android.minSdkVersion)
         javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath = true
@@ -20,8 +21,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        defaultPublishConfig = "${Config.Flavors.production}Release"
-
         versionName = "$version"
     }
 
@@ -29,17 +28,6 @@ android {
         getByName("debug")
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
-        }
-    }
-
-    flavorDimensions(Config.Flavors.dimension)
-
-    productFlavors {
-        create(Config.Flavors.staging) {
-            minSdkVersion(Config.Android.minSdkVersionDebug)
-        }
-        create(Config.Flavors.production) {
-            minSdkVersion(Config.Android.minSdkVersion)
         }
     }
 
