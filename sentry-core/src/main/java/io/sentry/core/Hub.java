@@ -31,6 +31,9 @@ public class Hub implements IHub, Cloneable {
     if (rootStackItem != null) {
       this.stack.push(rootStackItem);
     }
+    for (Integration integration : options.getIntegrations()) {
+      integration.register(this, options);
+    }
     this.isEnabled = true;
   }
 
