@@ -20,8 +20,6 @@ android {
         testInstrumentationRunnerArguments = mapOf(
             "clearPackageData" to "true"
         )
-
-        missingDimensionStrategy(Config.Flavors.dimension, Config.Flavors.production)
     }
 
     buildTypes {
