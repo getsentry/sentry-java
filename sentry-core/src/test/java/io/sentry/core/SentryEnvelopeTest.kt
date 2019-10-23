@@ -4,7 +4,6 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import java.io.InputStream
-import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryEnvelopeTest {
-    private val UTF_8 = Charset.forName("UTF-8")
 
     @Test
     fun `deserialize sample envelope with event and two attachments`() {
@@ -46,7 +44,7 @@ class SentryEnvelopeTest {
     @Test
     fun `when envelope is empty, reader throws illegal argument`() {
         val envelopeReader = EnvelopeReader()
-        var stream = mock<InputStream>()
+        val stream = mock<InputStream>()
         whenever(stream.read(any())).thenReturn(-1)
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
         assertEquals("Empty stream.", exception.message)

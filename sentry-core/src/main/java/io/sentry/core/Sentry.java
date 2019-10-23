@@ -8,7 +8,7 @@ public final class Sentry {
 
   private Sentry() {}
 
-  private static ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+  private static final ThreadLocal<IHub> currentHub = new ThreadLocal<>();
 
   private static volatile IHub mainHub = NoOpHub.getInstance();
 

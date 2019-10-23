@@ -27,7 +27,7 @@ public class EnvelopeReader {
 
   public @Nullable SentryEnvelope read(InputStream stream) throws IOException {
     byte[] buffer = new byte[1024];
-    int currentLength = 0;
+    int currentLength;
     int streamOffset = 0;
     // Offset of the line break defining the end of the envelope header
     int envelopeEndHeaderOffset = -1;
