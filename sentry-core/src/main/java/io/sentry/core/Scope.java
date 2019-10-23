@@ -76,8 +76,7 @@ public class Scope implements Cloneable {
   }
 
   @Override
-  protected Scope clone() {
-    // TODO: clone me
-    return new Scope();
+  protected Scope clone() throws CloneNotSupportedException {
+    return (Scope) super.clone();
   }
 }

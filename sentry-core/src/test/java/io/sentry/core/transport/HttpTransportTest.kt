@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 class HttpTransportTest {
 
     private class Fixture {
-        var dsn = URI.create("http://key@localhost/proj").toURL()
+        val dsn: URL = URI.create("http://key@localhost/proj").toURL()
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
         var requestUpdater = IConnectionConfigurator {}

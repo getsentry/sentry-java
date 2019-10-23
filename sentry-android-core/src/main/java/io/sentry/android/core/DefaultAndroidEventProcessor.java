@@ -23,8 +23,8 @@ import java.io.*;
 import java.util.*;
 
 public class DefaultAndroidEventProcessor implements EventProcessor {
-  Context context;
-  SentryOptions options;
+  final Context context;
+  final SentryOptions options;
 
   // it could also be a parameter and get from Sentry.init(...)
   private static final Date appStartTime = DateUtils.getCurrentDateTime();

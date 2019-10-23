@@ -45,6 +45,14 @@ android {
         }
     }
 
+    // if travis ci hangs again on this task, remove comments
+//    tasks.all {
+//        if (this.name == "signingConfigWriterDebugAndroidTest") {
+//            this.enabled = false
+//            println("${this.name} is SKIPPED")
+//        }
+//    }
+
 }
 
 dependencies {
