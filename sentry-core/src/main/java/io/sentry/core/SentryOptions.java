@@ -17,6 +17,7 @@ public class SentryOptions {
   private ISerializer serializer;
   private String sentryClientName;
   private BeforeSecondCallback beforeSend;
+  private String cacheDirPath;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -91,6 +92,14 @@ public class SentryOptions {
 
   public void setBeforeSend(BeforeSecondCallback beforeSend) {
     this.beforeSend = beforeSend;
+  }
+
+  public String getCacheDirPath() {
+    return cacheDirPath;
+  }
+
+  public void setCacheDirPath(String cacheDirPath) {
+    this.cacheDirPath = cacheDirPath;
   }
 
   public interface BeforeSecondCallback {
