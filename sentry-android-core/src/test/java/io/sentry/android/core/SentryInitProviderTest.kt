@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.InvalidDsnException
 import io.sentry.core.Sentry
+import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -46,9 +47,7 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
+        val mockContext = createMockContext()
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -66,9 +65,7 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
+        val mockContext = createMockContext()
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -86,9 +83,7 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
+        val mockContext = createMockContext()
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -106,9 +101,7 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
+        val mockContext = createMockContext()
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -124,9 +117,7 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
+        val mockContext = createMockContext()
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
@@ -146,6 +137,14 @@ class SentryInitProviderTest {
         whenever(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA)).thenReturn(mockApplicationInfo)
 
         mockApplicationInfo.metaData = metaData
+    }
+
+    private fun createMockContext(): Context {
+        val mockContext = mock<Context> {
+            on { applicationContext } doReturn context
+        }
+        whenever(mockContext.cacheDir).thenReturn(File("${File.separator}cache"))
+        return mockContext
     }
 
     companion object {
