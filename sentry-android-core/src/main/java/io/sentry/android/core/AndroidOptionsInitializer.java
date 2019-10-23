@@ -14,7 +14,7 @@ class AndroidOptionsInitializer {
     options.setLogger(logger);
 
     // TODO this needs to fetch the data from somewhere - defined at build time?
-    options.setSentryClientName("sentry-android/0.0.1");
+    options.setSentryClientName("sentry.java.android/0.0.1");
 
     ManifestMetadataReader.applyMetadata(context, options);
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
