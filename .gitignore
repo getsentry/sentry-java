@@ -6,3 +6,5 @@ out/
 local.properties
 **.iml
 *.hprof
+.cxx
+**/sentry-native-local
