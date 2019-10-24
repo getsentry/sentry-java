@@ -35,7 +35,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -156,18 +155,22 @@ public class SentryAutoConfiguration {
     }
 
     private List<ConfigurationProvider> getDefaultHighPriorityConfigurationProviders(SentryProperties properties) {
-        List<ConfigurationProvider> providers = new ArrayList<>(3);
-        providers.add(new SpringBootConfigurationProvider(properties));
-        providers.add(new SystemPropertiesConfigurationProvider());
-        providers.add(new EnvironmentConfigurationProvider());
-        return providers;
+        return asList(
+                new SpringBootConfigurationProvider(properties),
+                new SystemPropertiesConfigurationProvider(),
+                new EnvironmentConfigurationProvider()
+        );
     }
 
     private List<ConfigurationProvider> getDefaultLowPriorityConfigurationProviders() {
         try {
-            return singletonList((ConfigurationProvider)
-                    new LocatorBasedConfigurationProvider(new ContextClassLoaderResourceLoader(),
-                            new CompoundResourceLocator(getDefaultResourceLocators()), Charset.defaultCharset()));
+            ConfigurationProvider configurationProvider = new LocatorBasedConfigurationProvider(
+                    new ContextClassLoaderResourceLoader(),
+                    new CompoundResourceLocator(getDefaultResourceLocators()),
+                    Charset.defaultCharset()
+            );
+
+            return singletonList(configurationProvider);
         } catch (IOException e) {
             logger.debug("Failed to instantiate resource locator-based configuration provider.", e);
             return emptyList();
@@ -175,7 +178,10 @@ public class SentryAutoConfiguration {
     }
 
     private List<ConfigurationResourceLocator> getDefaultResourceLocators() {
-        return asList(new SystemPropertiesBasedLocator(), new EnvironmentBasedLocator());
+        return asList(
+                new SystemPropertiesBasedLocator(),
+                new EnvironmentBasedLocator()
+        );
     }
 
 }
