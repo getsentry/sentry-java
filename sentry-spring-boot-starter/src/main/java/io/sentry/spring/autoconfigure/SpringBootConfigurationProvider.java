@@ -1,8 +1,12 @@
 package io.sentry.spring.autoconfigure;
 
 import io.sentry.config.provider.ConfigurationProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SpringBootConfigurationProvider implements ConfigurationProvider {
+
+    private static final Logger logger = LoggerFactory.getLogger(SpringBootConfigurationProvider.class);
 
     private final SentryProperties sentryProperties;
 
@@ -12,7 +16,17 @@ public class SpringBootConfigurationProvider implements ConfigurationProvider {
 
     @Override
     public String getProperty(String key) {
-        return sentryProperties.getOptions() != null ? sentryProperties.getOptions().get(key) : null;
+        if (sentryProperties.getOptions() == null) {
+            return null;
+        }
+
+        String ret = sentryProperties.getOptions().get(key);
+
+        if (ret != null) {
+            logger.debug("Found {}={} in Spring Boot config.", key, ret);
+        }
+
+        return ret;
     }
 
 }
