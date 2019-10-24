@@ -3,7 +3,7 @@ image: Visual Studio 2017
 environment:
   ANDROID_HOME: "C:\\android-sdk-windows"
   ANDROID_BUILD_VERSION: 29
-  ANDROID_TOOLS_VERSION: 28.0.3
+  ANDROID_TOOLS_VERSION: 29.0.2
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   SDK_TOOLS_URL: https://dl.google.com/android/repository/sdk-tools-windows-4333796.zip
 install:
