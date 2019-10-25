@@ -108,7 +108,13 @@ public class Hub implements IHub, Cloneable {
   public void addBreadcrumb(Breadcrumb breadcrumb) {
     StackItem item = stack.peek();
     if (item != null) {
-      item.scope.addBreadcrumb(breadcrumb);
+      SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
+      if (callback != null) {
+        breadcrumb = callback.execute(breadcrumb);
+      }
+      if (breadcrumb != null) {
+        item.scope.addBreadcrumb(breadcrumb);
+      }
     } else {
       log(options.getLogger(), SentryLevel.FATAL, "Stack peek was NULL when addBreadcrumb");
     }

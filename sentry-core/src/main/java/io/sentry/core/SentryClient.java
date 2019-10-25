@@ -39,7 +39,7 @@ public class SentryClient implements ISentryClient {
       processor.process(event);
     }
 
-    SentryOptions.BeforeSecondCallback beforeSend = options.getBeforeSend();
+    SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
     if (beforeSend != null) {
       event = beforeSend.execute(event);
       if (event == null) {
