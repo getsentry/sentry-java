@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 class SentryValues<T> {
-  private List<T> items;
+  private List<T> values;
 
-  public SentryValues(List<T> items) {
-    if (items == null) {
-      items = new ArrayList<>(0);
+  public SentryValues(List<T> values) {
+    if (values == null) {
+      values = new ArrayList<>(0);
     }
-    this.items = items;
+    this.values = values;
   }
 
   public List<T> getValues() {
-    return items;
+    return values;
   }
 }

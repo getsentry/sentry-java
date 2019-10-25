@@ -108,7 +108,11 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
   }
 
   public List<SentryThread> getThreads() {
-    return threads.getValues();
+    if (threads != null) {
+      return threads.getValues();
+    } else {
+      return null;
+    }
   }
 
   public void setThreads(List<SentryThread> threads) {

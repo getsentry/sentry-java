@@ -18,6 +18,7 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
   private String absolutePath;
   private String contextLine;
   private Boolean inApp;
+  private Boolean isNative;
   private String _package;
   private String platform;
   private Long imageAddress;
@@ -159,6 +160,14 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
 
   public void setInstructionOffset(Long instructionOffset) {
     this.instructionOffset = instructionOffset;
+  }
+
+  public Boolean getNative() {
+    return isNative;
+  }
+
+  public void setNative(Boolean isNative) {
+    this.isNative = isNative;
   }
 
   @Override
