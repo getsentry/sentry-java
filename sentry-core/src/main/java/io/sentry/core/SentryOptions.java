@@ -18,7 +18,8 @@ public class SentryOptions {
   private SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
   private ISerializer serializer;
   private String sentryClientName;
-  private BeforeSecondCallback beforeSend;
+  private BeforeSendCallback beforeSend;
+  private BeforeBreadcrumbCallback beforeBreadcrumb;
   private String cacheDirPath;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
@@ -104,12 +105,20 @@ public class SentryOptions {
     this.sentryClientName = sentryClientName;
   }
 
-  public BeforeSecondCallback getBeforeSend() {
+  public BeforeSendCallback getBeforeSend() {
     return beforeSend;
   }
 
-  public void setBeforeSend(BeforeSecondCallback beforeSend) {
+  public void setBeforeSend(BeforeSendCallback beforeSend) {
     this.beforeSend = beforeSend;
+  }
+
+  public BeforeBreadcrumbCallback getBeforeBreadcrumb() {
+    return beforeBreadcrumb;
+  }
+
+  public void setBeforeBreadcrumb(BeforeBreadcrumbCallback beforeBreadcrumb) {
+    this.beforeBreadcrumb = beforeBreadcrumb;
   }
 
   public String getCacheDirPath() {
@@ -120,8 +129,12 @@ public class SentryOptions {
     this.cacheDirPath = cacheDirPath;
   }
 
-  public interface BeforeSecondCallback {
+  public interface BeforeSendCallback {
     SentryEvent execute(SentryEvent event);
+  }
+
+  public interface BeforeBreadcrumbCallback {
+    Breadcrumb execute(Breadcrumb breadcrumb);
   }
 
   public SentryOptions() {
