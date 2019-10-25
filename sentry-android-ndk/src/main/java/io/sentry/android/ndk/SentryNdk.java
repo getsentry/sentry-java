@@ -17,8 +17,8 @@ public class SentryNdk {
     System.out.println("envelope written to " + path);
   }
 
-  public static void init(SentryOptions options, String cacheDirPath) {
+  public static void init(SentryOptions options) {
     // Java_example
-    initSentryNative(cacheDirPath);
+    initSentryNative(options.getCacheDirPath());
   }
 }

@@ -10,8 +10,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.ILogger
 import io.sentry.core.InvalidDsnException
 import io.sentry.core.Sentry
+import io.sentry.core.SentryOptions
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -126,6 +128,22 @@ class SentryInitProviderTest {
         sentryInitProvider.attachInfo(mockContext, providerInfo)
 
         assertFalse(Sentry.isEnabled())
+    }
+
+    @Test
+    fun `when applicationId is defined, ndk in meta-data is set to false, NDK doesnt initialize`() {
+        val sentryOptions = SentryOptions()
+        val mockLogger = mock<ILogger>()
+
+        val mockContext = createMockContext()
+
+        val metaData = Bundle()
+        mockMetaData(mockContext, metaData)
+        metaData.putBoolean(ManifestMetadataReader.ENABLE_NDK, false)
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
+
+        assertFalse(sentryOptions.isEnableNdk)
     }
 
     private fun mockMetaData(mockContext: Context, metaData: Bundle) {
