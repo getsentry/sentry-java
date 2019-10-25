@@ -111,4 +111,49 @@ class SentryClientTest {
         sut.captureMessage(actual)
         assertEquals(actual, sentEvent!!.message.formatted)
     }
+
+    @Test
+    fun `when event has release, value from options not applied`() {
+        val event = SentryEvent()
+        val expected = "original"
+        fixture.sentryOptions.environment = "not to be applied"
+        event.release = expected
+        val sut = fixture.getSut()
+        sut.captureEvent(event)
+        verify(fixture.connection).send(event)
+        assertEquals(expected, event.release)
+    }
+
+    @Test
+    fun `when event doesn't have release, value from options applied`() {
+        val event = SentryEvent()
+        val expected = "original"
+        fixture.sentryOptions.release = expected
+        val sut = fixture.getSut()
+        sut.captureEvent(event)
+        verify(fixture.connection).send(event)
+        assertEquals(expected, event.release)
+    }
+
+    @Test
+    fun `when event has environment, value from options not applied`() {
+        val event = SentryEvent()
+        val expected = "original"
+        fixture.sentryOptions.environment = "not to be applied"
+        event.environment = expected
+        val sut = fixture.getSut()
+        sut.captureEvent(event)
+        verify(fixture.connection).send(event)
+        assertEquals(expected, event.environment)
+    }
+
+    @Test
+    fun `when event doesn't have environment, value from options applied`() {
+        val event = SentryEvent()
+        val expected = "original"
+        fixture.sentryOptions.environment = expected
+        val sut = fixture.getSut()
+        sut.captureEvent(event)
+        assertEquals(expected, event.environment)
+    }
 }
