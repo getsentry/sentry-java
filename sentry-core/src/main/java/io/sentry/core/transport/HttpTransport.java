@@ -37,7 +37,6 @@ public class HttpTransport implements ITransport {
    * obtained from the options.
    *
    * @param options sentry options to read the config from
-   * @param proxy the proxy to use, if any
    * @param connectionConfigurator this consumer is given a chance to set up the request before it
    *     is sent
    * @param connectionTimeoutMills connection timeout in milliseconds
@@ -46,13 +45,12 @@ public class HttpTransport implements ITransport {
    */
   public HttpTransport(
       SentryOptions options,
-      @Nullable Proxy proxy,
       IConnectionConfigurator connectionConfigurator,
       int connectionTimeoutMills,
       int readTimeoutMills,
       boolean bypassSecurity,
       URL sentryUrl) {
-    this.proxy = proxy;
+    this.proxy = options.getProxy();
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
     this.connectionTimeout = connectionTimeoutMills;

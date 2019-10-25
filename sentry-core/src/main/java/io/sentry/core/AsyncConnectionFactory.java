@@ -14,7 +14,7 @@ class AsyncConnectionFactory {
 
       // TODO: Take configuration values from SentryOptions
       HttpTransport transport =
-          new HttpTransport(options, null, setCredentials, 5000, 5000, false, sentryUrl);
+          new HttpTransport(options, setCredentials, 5000, 5000, false, sentryUrl);
 
       // TODO this should be made configurable at least for the Android case where we can
       // just not attempt to send if the device is offline.

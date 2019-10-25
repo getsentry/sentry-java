@@ -38,8 +38,9 @@ class HttpTransportTest {
         fun getSUT(): HttpTransport {
             val options = SentryOptions()
             options.serializer = serializer
+            options.proxy = proxy
 
-            return object : HttpTransport(options, proxy, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn) {
+            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn) {
                 override fun open(url: URL?, proxy: Proxy?): HttpURLConnection {
                     return connection
                 }
