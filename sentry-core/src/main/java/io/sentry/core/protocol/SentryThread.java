@@ -5,10 +5,13 @@ import java.util.Map;
 
 /** Describes a thread in the Sentry protocol. */
 public class SentryThread implements IUnknownPropertiesConsumer {
-  private Integer id;
+  private Long id;
+  private Integer priority;
   private String name;
+  private String state;
   private Boolean crashed;
   private Boolean current;
+  private Boolean isDaemon;
   private SentryStackTrace stacktrace;
   private Map<String, Object> unknown;
 
@@ -17,7 +20,7 @@ public class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return the thread id.
    */
-  public Integer getId() {
+  public Long getId() {
     return id;
   }
 
@@ -26,7 +29,7 @@ public class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param id the thread id.
    */
-  public void setId(Integer id) {
+  public void setId(Long id) {
     this.id = id;
   }
 
@@ -100,6 +103,60 @@ public class SentryThread implements IUnknownPropertiesConsumer {
    */
   public void setStacktrace(SentryStackTrace stacktrace) {
     this.stacktrace = stacktrace;
+  }
+
+  /**
+   * Gets the priority of the thread.
+   *
+   * @return the thread priority.
+   */
+  public Integer getPriority() {
+    return priority;
+  }
+
+  /**
+   * Sets the priority of the thread.
+   *
+   * @param priority of the thread.
+   */
+  public void setPriority(Integer priority) {
+    this.priority = priority;
+  }
+
+  /**
+   * Gets if this thread is a daemon thread.
+   *
+   * @return if this is a daemon thread.
+   */
+  public Boolean getDaemon() {
+    return isDaemon;
+  }
+
+  /**
+   * Sets if this is a daemon thread.
+   *
+   * @param daemon true if the thread is daemon thread. Otherwise false.
+   */
+  public void setDaemon(Boolean daemon) {
+    isDaemon = daemon;
+  }
+
+  /**
+   * Gets the state of the thread.
+   *
+   * @return the state of the thread.
+   */
+  public String getState() {
+    return state;
+  }
+
+  /**
+   * Sets the state of the thread.
+   *
+   * @param state the state of the thread.
+   */
+  public void setState(String state) {
+    this.state = state;
   }
 
   @Override

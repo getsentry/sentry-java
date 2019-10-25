@@ -9,6 +9,11 @@ public class SentryStackTrace implements IUnknownPropertiesConsumer {
   private List<SentryStackFrame> frames;
   private Map<String, Object> unknown;
 
+  public SentryStackTrace() {}
+
+  public SentryStackTrace(List<SentryStackFrame> frames) {
+    this.frames = frames;
+  }
   /**
    * Gets the frames of this stacktrace.
    *
