@@ -15,6 +15,7 @@ class ManifestMetadataReader {
   static final String DSN_KEY = "io.sentry.dsn";
   static final String DEBUG_KEY = "io.sentry.debug";
   static final String AUTO_INIT = "io.sentry.auto-init";
+  static final String ENABLE_NDK = "io.sentry.ndk";
 
   public static void applyMetadata(Context context, SentryOptions options) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
@@ -32,6 +33,10 @@ class ManifestMetadataReader {
           log(options.getLogger(), SentryLevel.DEBUG, "DSN read: %s", dsn);
           options.setDsn(dsn);
         }
+
+        boolean ndk = metadata.getBoolean(ENABLE_NDK, options.isEnableNdk());
+        log(options.getLogger(), SentryLevel.DEBUG, "NDK read: %s", ndk);
+        options.setEnableNdk(ndk);
       }
       log(
           options.getLogger(),
