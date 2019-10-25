@@ -22,6 +22,8 @@ public class SentryOptions {
   private BeforeSendCallback beforeSend;
   private BeforeBreadcrumbCallback beforeBreadcrumb;
   private String cacheDirPath;
+  private String release;
+  private String environment;
   private Proxy proxy;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
@@ -129,6 +131,22 @@ public class SentryOptions {
 
   public void setCacheDirPath(String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
+  }
+
+  public String getRelease() {
+    return release;
+  }
+
+  public void setRelease(String release) {
+    this.release = release;
+  }
+
+  public String getEnvironment() {
+    return environment;
+  }
+
+  public void setEnvironment(String environment) {
+    this.environment = environment;
   }
 
   public Proxy getProxy() {

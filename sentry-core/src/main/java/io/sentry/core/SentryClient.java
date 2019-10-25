@@ -35,6 +35,14 @@ public class SentryClient implements ISentryClient {
   public SentryId captureEvent(SentryEvent event, @Nullable Scope scope) {
     log(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
+    // TODO: To be done in the main processor
+    if (event.getRelease() == null) {
+      event.setRelease(options.getRelease());
+    }
+    if (event.getEnvironment() == null) {
+      event.setEnvironment(options.getEnvironment());
+    }
+
     for (EventProcessor processor : options.getEventProcessors()) {
       processor.process(event);
     }
