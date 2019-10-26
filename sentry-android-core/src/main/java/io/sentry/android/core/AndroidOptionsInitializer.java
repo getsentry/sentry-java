@@ -21,7 +21,7 @@ class AndroidOptionsInitializer {
     options.setSentryClientName("sentry.java.android/0.0.1");
 
     ManifestMetadataReader.applyMetadata(context, options);
-    createsEnvelopeDirPath(options, context);
+    initializeCacheDirs(context, options);
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
     options.setSerializer(new AndroidSerializer(options.getLogger()));
@@ -45,13 +45,11 @@ class AndroidOptionsInitializer {
     }
   }
 
-  private static void createsEnvelopeDirPath(SentryOptions options, Context context) {
-    File cacheDir = context.getCacheDir().getAbsoluteFile();
-    File envelopesDir = new File(cacheDir, "sentry-envelopes");
-    if (!envelopesDir.exists()) {
-      envelopesDir.mkdirs();
-    }
-    options.setCacheDirPath(envelopesDir.getAbsolutePath());
+  private static void initializeCacheDirs(Context context, SentryOptions options) {
+    File cacheDir = new File(context.getCacheDir(), "sentry");
+    cacheDir.mkdirs();
+    options.setCacheDirPath(cacheDir.getAbsolutePath());
+    (new File(options.getOutboxPath())).mkdirs();
   }
 
   private static boolean isNdkAvailable() {

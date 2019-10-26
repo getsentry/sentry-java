@@ -1,6 +1,7 @@
 package io.sentry.core;
 
 import io.sentry.core.util.NonNull;
+import java.io.File;
 import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +128,10 @@ public class SentryOptions {
 
   public String getCacheDirPath() {
     return cacheDirPath;
+  }
+
+  public String getOutboxPath() {
+    return cacheDirPath + File.separator + "outbox";
   }
 
   public void setCacheDirPath(String cacheDirPath) {
