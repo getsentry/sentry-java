@@ -58,7 +58,7 @@ class AndroidOptionsInitializerTest {
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
 
-        assertTrue(sentryOptions.cacheDirPath.endsWith("${File.separator}cache${File.separator}sentry-envelopes"))
+        assertTrue(sentryOptions.cacheDirPath.endsWith("${File.separator}cache${File.separator}sentry"))
     }
 
     private fun createMockContext(): Context {
