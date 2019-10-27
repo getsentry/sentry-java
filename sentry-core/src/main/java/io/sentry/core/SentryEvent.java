@@ -19,7 +19,7 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
   private String dist;
   private String logger;
   private SentryValues<SentryThread> threads;
-  private SentryValues<SentryException> exceptions;
+  private SentryValues<SentryException> exception;
   private SentryLevel level;
   private String transaction;
   private String environment;
@@ -119,12 +119,12 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
     this.threads = new SentryValues<>(threads);
   }
 
-  public List<SentryException> getExceptions() {
-    return exceptions.getValues();
+  public List<SentryException> getException() {
+    return exception.getValues();
   }
 
-  public void setExceptions(List<SentryException> exceptions) {
-    this.exceptions = new SentryValues<>(exceptions);
+  public void setException(List<SentryException> exception) {
+    this.exception = new SentryValues<>(exception);
   }
 
   public void setEventId(SentryId eventId) {
@@ -137,14 +137,6 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
 
   public void setThrowable(Throwable throwable) {
     this.throwable = throwable;
-  }
-
-  public void setThreads(SentryValues<SentryThread> threads) {
-    this.threads = threads;
-  }
-
-  public void setExceptions(SentryValues<SentryException> exceptions) {
-    this.exceptions = exceptions;
   }
 
   public SentryLevel getLevel() {

@@ -171,6 +171,7 @@ public class SentryOptions {
   }
 
   public SentryOptions() {
+    eventProcessors.add(new MainEventProcessor(this));
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }
 }
