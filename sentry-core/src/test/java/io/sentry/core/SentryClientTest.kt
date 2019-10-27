@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.core.protocol.User
 import io.sentry.core.transport.AsyncConnection
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -155,5 +156,118 @@ class SentryClientTest {
         val sut = fixture.getSut()
         sut.captureEvent(event)
         assertEquals(expected, event.environment)
+    }
+
+    @Test
+    fun `when captureEvent with scope, event should have its data if not set`() {
+        val event = SentryEvent()
+        val scope = createScope()
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+        assertEquals("message", event.breadcrumbs[0].message)
+        assertEquals("extra", event.extra["extra"])
+        assertEquals("tags", event.tags["tags"])
+        assertEquals("fp", event.fingerprint[0])
+        assertEquals("transaction", event.transaction)
+        assertEquals("id", event.user.id)
+        assertEquals(SentryLevel.FATAL, event.level)
+    }
+
+    @Test
+    fun `when captureEvent with scope, event data has priority over scope but level and it should append extras, tags and breadcrumbs`() {
+        val event = createEvent()
+
+        val scope = createScope()
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+
+        // breadcrumbs are appending
+        assertEquals("eventMessage", event.breadcrumbs[0].message)
+        assertEquals("message", event.breadcrumbs[1].message)
+
+        // extras are appending
+        assertEquals("eventExtra", event.extra["eventExtra"])
+        assertEquals("extra", event.extra["extra"])
+
+        // tags are appending
+        assertEquals("eventTag", event.tags["eventTag"])
+        assertEquals("tags", event.tags["tags"])
+
+        // fingerprint is replaced
+        assertEquals("eventFp", event.fingerprint[0])
+        assertEquals(1, event.fingerprint.size)
+
+        assertEquals("eventTransaction", event.transaction)
+
+        assertEquals("eventId", event.user.id)
+
+        assertEquals(SentryLevel.FATAL, event.level)
+    }
+
+    @Test
+    fun `when captureEvent with scope, event extras and tags are only append if key is absent`() {
+        val event = createEvent()
+
+        val scope = createScope()
+        scope.setExtra("eventExtra", "extra")
+        scope.setTag("eventTag", "tags")
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+
+        // extras are appending
+        assertEquals("eventExtra", event.extra["eventExtra"])
+
+        // tags are appending
+        assertEquals("eventTag", event.tags["eventTag"])
+    }
+
+    @Test
+    fun `when captureEvent with scope, event should have its level if set`() {
+        val event = SentryEvent()
+        event.level = SentryLevel.DEBUG
+        val scope = createScope()
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+        assertEquals(SentryLevel.FATAL, event.level)
+    }
+
+    private fun createScope(): Scope {
+        return Scope().apply {
+            addBreadcrumb(Breadcrumb().apply {
+                message = "message"
+            })
+            setExtra("extra", "extra")
+            setTag("tags", "tags")
+            fingerprint.add("fp")
+            transaction = "transaction"
+            level = SentryLevel.FATAL
+            user = User().apply {
+                id = "id"
+            }
+        }
+    }
+
+    private fun createEvent(): SentryEvent {
+        return SentryEvent().apply {
+            addBreadcrumb(Breadcrumb().apply {
+                message = "eventMessage"
+            })
+            setExtra("eventExtra", "eventExtra")
+            setTag("eventTag", "eventTag")
+            fingerprint = listOf("eventFp")
+            transaction = "eventTransaction"
+            level = SentryLevel.DEBUG
+            user = User().apply {
+                id = "eventId"
+            }
+        }
     }
 }

@@ -6,6 +6,9 @@ import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.AsyncConnection;
 import io.sentry.core.util.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
@@ -34,6 +37,45 @@ public class SentryClient implements ISentryClient {
 
   public SentryId captureEvent(SentryEvent event, @Nullable Scope scope) {
     log(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
+
+    if (scope != null) {
+      if (event.getTransaction() == null) {
+        event.setTransaction(scope.getTransaction());
+      }
+      if (event.getUser() == null) {
+        event.setUser(scope.getUser());
+      }
+      if (event.getFingerprint() == null) {
+        event.setFingerprint(scope.getFingerprint());
+      }
+      if (event.getBreadcrumbs() == null) {
+        event.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+      } else {
+        event.getBreadcrumbs().addAll(scope.getBreadcrumbs());
+      }
+      if (event.getTags() == null) {
+        event.setTags(new HashMap<>(scope.getTags()));
+      } else {
+        for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
+          if (!event.getTags().containsKey(item.getKey())) {
+            event.getTags().put(item.getKey(), item.getValue());
+          }
+        }
+      }
+      if (event.getExtra() == null) {
+        event.setExtra(new HashMap<>(scope.getExtra()));
+      } else {
+        for (Map.Entry<String, Object> item : scope.getExtra().entrySet()) {
+          if (!event.getExtra().containsKey(item.getKey())) {
+            event.getExtra().put(item.getKey(), item.getValue());
+          }
+        }
+      }
+      // Level from scope exceptionally take precedence over the event
+      if (scope.getLevel() != null) {
+        event.setLevel(scope.getLevel());
+      }
+    }
 
     for (EventProcessor processor : options.getEventProcessors()) {
       processor.process(event);
