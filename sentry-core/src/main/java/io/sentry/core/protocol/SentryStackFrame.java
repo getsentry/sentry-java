@@ -15,15 +15,15 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
   private String module;
   private Integer lineno;
   private Integer colno;
-  private String absolutePath;
+  private String absPath;
   private String contextLine;
   private Boolean inApp;
-  private Boolean isNative;
-  private String _package;
+  private String _package; // TODO: _package as its a reserverd word
+  private Boolean _native; // TODO: _native as its a reserverd word
   private String platform;
-  private Long imageAddress;
-  private Long SymbolAddress;
-  private Long instructionOffset;
+  private Long imageAddr;
+  private Long symbolAddr;
+  private Long instructionAddr;
   private Map<String, Object> unknown;
 
   public List<String> getPreContext() {
@@ -98,12 +98,12 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
     this.colno = colno;
   }
 
-  public String getAbsolutePath() {
-    return absolutePath;
+  public String getAbsPath() {
+    return absPath;
   }
 
-  public void setAbsolutePath(String absolutePath) {
-    this.absolutePath = absolutePath;
+  public void setAbsPath(String absPath) {
+    this.absPath = absPath;
   }
 
   public String getContextLine() {
@@ -138,36 +138,36 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
     this.platform = platform;
   }
 
-  public Long getImageAddress() {
-    return imageAddress;
+  public Long getImageAddr() {
+    return imageAddr;
   }
 
-  public void setImageAddress(Long imageAddress) {
-    this.imageAddress = imageAddress;
+  public void setImageAddr(Long imageAddr) {
+    this.imageAddr = imageAddr;
   }
 
-  public Long getSymbolAddress() {
-    return SymbolAddress;
+  public Long getSymbolAddr() {
+    return symbolAddr;
   }
 
-  public void setSymbolAddress(Long symbolAddress) {
-    SymbolAddress = symbolAddress;
+  public void setSymbolAddr(Long symbolAddr) {
+    this.symbolAddr = symbolAddr;
   }
 
-  public Long getInstructionOffset() {
-    return instructionOffset;
+  public Long getInstructionAddr() {
+    return instructionAddr;
   }
 
-  public void setInstructionOffset(Long instructionOffset) {
-    this.instructionOffset = instructionOffset;
+  public void setInstructionAddr(Long instructionAddr) {
+    this.instructionAddr = instructionAddr;
   }
 
-  public Boolean getNative() {
-    return isNative;
+  public Boolean isNative() {
+    return _native;
   }
 
-  public void setNative(Boolean isNative) {
-    this.isNative = isNative;
+  public void setNative(Boolean _native) {
+    this._native = _native;
   }
 
   @Override
