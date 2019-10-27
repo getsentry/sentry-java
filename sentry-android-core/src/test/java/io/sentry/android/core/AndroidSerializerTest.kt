@@ -202,10 +202,6 @@ class AndroidSerializerTest {
 
     private fun generateEmptySentryEvent(): SentryEvent {
         return SentryEvent().apply {
-            setBreadcrumbs(null)
-            setTags(null)
-            setExtra(null)
-            fingerprint = null
             contexts = null
         }
     }
