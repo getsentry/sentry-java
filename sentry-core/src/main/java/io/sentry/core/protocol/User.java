@@ -89,7 +89,7 @@ public class User implements IUnknownPropertiesConsumer {
    *
    * @return the other user data.
    */
-  public Map<String, String> getOther() {
+  public Map<String, String> getOthers() {
     return other;
   }
 
@@ -98,7 +98,7 @@ public class User implements IUnknownPropertiesConsumer {
    *
    * @param other the other user related data..
    */
-  public void setOther(Map<String, String> other) {
+  public void setOthers(Map<String, String> other) {
     this.other = other;
   }
 

@@ -167,9 +167,9 @@ class SentryClientTest {
 
         sut.captureEvent(event, scope)
         assertEquals("message", event.breadcrumbs[0].message)
-        assertEquals("extra", event.extra["extra"])
+        assertEquals("extra", event.extras["extra"])
         assertEquals("tags", event.tags["tags"])
-        assertEquals("fp", event.fingerprint[0])
+        assertEquals("fp", event.fingerprints[0])
         assertEquals("transaction", event.transaction)
         assertEquals("id", event.user.id)
         assertEquals(SentryLevel.FATAL, event.level)
@@ -190,16 +190,16 @@ class SentryClientTest {
         assertEquals("message", event.breadcrumbs[1].message)
 
         // extras are appending
-        assertEquals("eventExtra", event.extra["eventExtra"])
-        assertEquals("extra", event.extra["extra"])
+        assertEquals("eventExtra", event.extras["eventExtra"])
+        assertEquals("extra", event.extras["extra"])
 
         // tags are appending
         assertEquals("eventTag", event.tags["eventTag"])
         assertEquals("tags", event.tags["tags"])
 
         // fingerprint is replaced
-        assertEquals("eventFp", event.fingerprint[0])
-        assertEquals(1, event.fingerprint.size)
+        assertEquals("eventFp", event.fingerprints[0])
+        assertEquals(1, event.fingerprints.size)
 
         assertEquals("eventTransaction", event.transaction)
 
@@ -221,7 +221,7 @@ class SentryClientTest {
         sut.captureEvent(event, scope)
 
         // extras are appending
-        assertEquals("eventExtra", event.extra["eventExtra"])
+        assertEquals("eventExtra", event.extras["eventExtra"])
 
         // tags are appending
         assertEquals("eventTag", event.tags["eventTag"])
@@ -262,7 +262,7 @@ class SentryClientTest {
             })
             setExtra("eventExtra", "eventExtra")
             setTag("eventTag", "eventTag")
-            fingerprint = listOf("eventFp")
+            fingerprints = listOf("eventFp")
             transaction = "eventTransaction"
             level = SentryLevel.DEBUG
             user = User().apply {
