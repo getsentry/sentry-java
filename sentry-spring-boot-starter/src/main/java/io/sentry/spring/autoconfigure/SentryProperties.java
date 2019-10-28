@@ -36,6 +36,16 @@ import java.util.Set;
 public class SentryProperties {
 
     /**
+     * Whether to enable sentry.
+     */
+    private boolean enabled = true;
+
+    /**
+     * Whether to initialize Sentry Client as a bean.
+     */
+    private boolean initDefaultClient = true;
+
+    /**
      * Data source name
      * All of the options can be configured by setting querystring parameters on the DSN itself.
      * https://docs.sentry.io/clients/java/config/#configuration-via-the-dsn
@@ -83,6 +93,22 @@ public class SentryProperties {
      * Additional options, check the <a href="https://docs.sentry.io/clients/java/config/">documentation</a>.
      */
     private Map<String, String> options = new LinkedHashMap<>();
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public boolean isInitDefaultClient() {
+        return initDefaultClient;
+    }
+
+    public void setInitDefaultClient(boolean initDefaultClient) {
+        this.initDefaultClient = initDefaultClient;
+    }
 
     public URL getDsn() {
         return dsn;
