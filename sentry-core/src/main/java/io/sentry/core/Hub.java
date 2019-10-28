@@ -4,6 +4,7 @@ import static io.sentry.core.ILogger.log;
 
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.util.Nullable;
+import io.sentry.core.util.Objects;
 import java.util.Deque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -40,7 +41,8 @@ public class Hub implements IHub, Cloneable {
   }
 
   static StackItem createRootStackItem(SentryOptions options) {
-    Scope scope = new Scope();
+    Objects.requireNonNull(options, "SentryOptions is required.");
+    Scope scope = new Scope(options.getMaxBreadcrumbs());
     ISentryClient client = new SentryClient(options);
     return new StackItem(client, scope);
   }

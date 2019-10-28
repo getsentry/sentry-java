@@ -23,6 +23,7 @@ public class SentryOptions {
   private BeforeSendCallback beforeSend;
   private BeforeBreadcrumbCallback beforeBreadcrumb;
   private String cacheDirPath;
+  private int maxBreadcrumbs = 100;
   private String release;
   private String environment;
   private Proxy proxy;
@@ -136,6 +137,14 @@ public class SentryOptions {
 
   public void setCacheDirPath(String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
+  }
+
+  public int getMaxBreadcrumbs() {
+    return maxBreadcrumbs;
+  }
+
+  public void setMaxBreadcrumbs(int maxBreadcrumbs) {
+    this.maxBreadcrumbs = maxBreadcrumbs;
   }
 
   public String getRelease() {

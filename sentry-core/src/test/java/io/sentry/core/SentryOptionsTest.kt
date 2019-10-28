@@ -40,4 +40,15 @@ class SentryOptionsTest {
     fun `when options is initialized, integrations contain UncaughtExceptionHandlerIntegration`() {
         assertTrue(SentryOptions().integrations.any { it is UncaughtExceptionHandlerIntegration })
     }
+
+    @Test
+    fun `when options is initialized, default maxBreadcrumb is 100`() =
+        assertEquals(100, SentryOptions().maxBreadcrumbs)
+
+    @Test
+    fun `when setMaxBreadcrumb is called, overrides default`() {
+        val options = SentryOptions()
+        options.maxBreadcrumbs = 1
+        assertEquals(1, options.maxBreadcrumbs)
+    }
 }
