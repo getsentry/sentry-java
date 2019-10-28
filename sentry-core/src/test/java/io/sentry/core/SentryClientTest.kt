@@ -240,7 +240,7 @@ class SentryClientTest {
     }
 
     private fun createScope(): Scope {
-        return Scope().apply {
+        return Scope(fixture.sentryOptions.maxBreadcrumbs).apply {
             addBreadcrumb(Breadcrumb().apply {
                 message = "message"
             })

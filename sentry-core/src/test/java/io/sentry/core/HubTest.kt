@@ -3,6 +3,7 @@ package io.sentry.core
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.protocol.User
+import java.util.Queue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -12,15 +13,15 @@ class HubTest {
 
     @Test
     fun `when cloning Scope it returns the same values`() {
-        val scope = Scope()
-        scope.extra["test"] = "test"
+        val scope = Scope(10)
+        scope.extra["extra"] = "extra"
         val breadcrumb = Breadcrumb()
-        breadcrumb.message = "test"
-        scope.breadcrumbs.add(breadcrumb)
+        breadcrumb.message = "message"
+        scope.addBreadcrumb(breadcrumb)
         scope.level = SentryLevel.DEBUG
-        scope.transaction = "test"
-        scope.fingerprint.add("test")
-        scope.tags["test"] = "test"
+        scope.transaction = "transaction"
+        scope.fingerprint.add("fingerprint")
+        scope.tags["tags"] = "tags"
         val user = User()
         user.email = "a@a.com"
         scope.user = user
@@ -28,11 +29,11 @@ class HubTest {
         val clone = scope.clone()
         assertNotNull(clone)
         assertNotSame(scope, clone)
-        assertEquals("test", clone.extra["test"])
-        assertEquals("test", clone.breadcrumbs[0].message)
-        assertEquals("test", scope.transaction)
-        assertEquals("test", scope.fingerprint[0])
-        assertEquals("test", clone.tags["test"])
+        assertEquals("extra", clone.extra["extra"])
+        assertEquals("message", clone.breadcrumbs.first().message)
+        assertEquals("transaction", scope.transaction)
+        assertEquals("fingerprint", scope.fingerprint[0])
+        assertEquals("tags", clone.tags["tags"])
         assertEquals("a@a.com", clone.user.email)
     }
 
@@ -47,13 +48,27 @@ class HubTest {
     }
 
     @Test
+    fun `when hub is initialized, breadcrumbs are capped as per options`() {
+        val options = SentryOptions()
+        options.maxBreadcrumbs = 5
+        options.dsn = "https://key@sentry.io/proj"
+        val sut = Hub(options)
+        (1..10).forEach { _ -> sut.addBreadcrumb(Breadcrumb()) }
+        var actual = 0
+        sut.configureScope {
+            actual = it.breadcrumbs.size
+        }
+        assertEquals(options.maxBreadcrumbs, actual)
+    }
+
+    @Test
     fun `when beforeBreadcrumb returns null, crumb is dropped`() {
         val options = SentryOptions()
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { null }
         options.dsn = "https://key@sentry.io/proj"
         val sut = Hub(options)
         sut.addBreadcrumb(Breadcrumb())
-        var breadcrumbs: List<Breadcrumb>? = null
+        var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         assertEquals(0, breadcrumbs!!.size)
     }
@@ -65,10 +80,10 @@ class HubTest {
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { it.message = expected; it }
         options.dsn = "https://key@sentry.io/proj"
         val sut = Hub(options)
-        var crumb = Breadcrumb()
+        val crumb = Breadcrumb()
         crumb.message = "original"
         sut.addBreadcrumb(crumb)
-        var breadcrumbs: List<Breadcrumb>? = null
+        var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         assertEquals(expected, breadcrumbs!!.first().message)
     }
@@ -79,9 +94,9 @@ class HubTest {
         options.beforeBreadcrumb = null
         options.dsn = "https://key@sentry.io/proj"
         val sut = Hub(options)
-        var expected = Breadcrumb()
+        val expected = Breadcrumb()
         sut.addBreadcrumb(expected)
-        var breadcrumbs: List<Breadcrumb>? = null
+        var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         assertEquals(expected, breadcrumbs!!.single())
     }
