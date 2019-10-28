@@ -145,6 +145,9 @@ public final class Sentry {
 
     /**
      * Returns {@code true} if the Sentry object has been already initialized.
+     * <p>
+     * Note that this method will return true even when {@link SentryClient} was disabled passing an empty value
+     * as {@link Dsn}
      *
      * @return {@code true} if stored {@link SentryClient} is not null
      */
