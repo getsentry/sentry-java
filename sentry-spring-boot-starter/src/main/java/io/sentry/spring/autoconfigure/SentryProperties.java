@@ -2,6 +2,7 @@ package io.sentry.spring.autoconfigure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,11 +19,11 @@ import java.util.Set;
  *     release: "1.0.1"
  *     dist: x86
  *     environment: staging
- *     serverName: megaServer
+ *     server-name: megaServer
  *     tags:
  *         firstTag: Hello
  *         secondTag: Awesome
- *     mdcTags: [mdcTagA, mdcTagB]
+ *     mdc-tags: [mdcTagA, mdcTagB]
  *     extra:
  *         extraTag: extra
  *     options:
@@ -40,7 +41,7 @@ public class SentryProperties {
      * https://docs.sentry.io/clients/java/config/#configuration-via-the-dsn
      * More information about configuration via DSN https://docs.sentry.io/clients/java/config/#configuration-via-the-dsn
      */
-    private String dsn;
+    private URL dsn;
 
     /**
      * The application version that will be sent with each event.
@@ -83,11 +84,11 @@ public class SentryProperties {
      */
     private Map<String, String> options = new LinkedHashMap<>();
 
-    public String getDsn() {
+    public URL getDsn() {
         return dsn;
     }
 
-    public void setDsn(String dsn) {
+    public void setDsn(URL dsn) {
         this.dsn = dsn;
     }
 

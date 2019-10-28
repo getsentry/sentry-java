@@ -88,7 +88,9 @@ public class SentryAutoConfiguration {
                                      @Autowired(required = false) List<EventBuilderHelper> eventBuilderHelpers,
                                      @Autowired(required = false) List<EventSendCallback> eventSendCallbacks,
                                      @Autowired(required = false) List<ShouldSendEventCallback> shouldSendEventCallbacks) {
-        SentryOptions sentryOptions = SentryOptions.from(createLookup(properties), properties.getDsn(), null);
+        String dsn = properties.getDsn() != null ? properties.getDsn().toString() : null;
+
+        SentryOptions sentryOptions = SentryOptions.from(createLookup(properties), dsn, null);
 
         SentryClient sentryClient = Sentry.init(sentryOptions);
 

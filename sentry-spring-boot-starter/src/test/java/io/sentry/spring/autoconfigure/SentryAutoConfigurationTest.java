@@ -82,9 +82,9 @@ public class SentryAutoConfigurationTest {
                 "sentry.release:1.0.1",
                 "sentry.dist:x86",
                 "sentry.environment:staging",
-                "sentry.serverName:megaServer",
+                "sentry.server-name:megaServer",
                 "sentry.tags.firstTag:Hello",
-                "sentry.mdcTags:mdcTagA",
+                "sentry.mdc-tags:mdcTagA",
                 "sentry.extra.extraTag:extra");
         this.context.refresh();
 
