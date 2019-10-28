@@ -1,16 +1,15 @@
 package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SdkVersion implements IUnknownPropertiesConsumer {
   private String name;
   private String version;
-  private List<Package> packages = new CopyOnWriteArrayList<>();
-  private Map<String, String> integrations = new ConcurrentHashMap<>();
+  private List<Package> packages;
+  private List<String> integrations;
   private Map<String, Object> unknown;
 
   public String getVersion() {
@@ -29,30 +28,25 @@ public class SdkVersion implements IUnknownPropertiesConsumer {
     this.name = name;
   }
 
-  public List<Package> getPackages() {
-    if (packages == null) {
-      return new CopyOnWriteArrayList<>();
-    }
-    return packages;
-  }
-
   public void addPackage(String name, String version) {
     Package newPackage = new Package();
     newPackage.setName(name);
     newPackage.setVersion(version);
+    if (packages == null) {
+      packages = new ArrayList<>();
+    }
     packages.add(newPackage);
+  }
+
+  public void addIntegration(String integration) {
+    if (integrations == null) {
+      integrations = new ArrayList<>();
+    }
+    integrations.add(integration);
   }
 
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
-  }
-
-  public Map<String, String> getIntegrations() {
-    return integrations;
-  }
-
-  public void setIntegrations(Map<String, String> integrations) {
-    this.integrations = integrations;
   }
 }
