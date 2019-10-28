@@ -29,7 +29,7 @@ public class MainEventProcessor implements EventProcessor {
 
     Throwable throwable = event.getThrowable();
     if (throwable != null) {
-      event.setException(sentryExceptionFactory.getSentryExceptions(throwable));
+      event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
 
     return event;

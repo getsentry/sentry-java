@@ -62,19 +62,19 @@ public class Request implements IUnknownPropertiesConsumer {
     this.headers = headers;
   }
 
-  public Map<String, String> getEnv() {
+  public Map<String, String> getEnvs() {
     return env;
   }
 
-  public void setEnv(Map<String, String> env) {
+  public void setEnvs(Map<String, String> env) {
     this.env = env;
   }
 
-  public Map<String, String> getOther() {
+  public Map<String, String> getOthers() {
     return other;
   }
 
-  public void setOther(Map<String, String> other) {
+  public void setOthers(Map<String, String> other) {
     this.other = other;
   }
 

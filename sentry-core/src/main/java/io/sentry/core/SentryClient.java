@@ -45,8 +45,8 @@ public class SentryClient implements ISentryClient {
       if (event.getUser() == null) {
         event.setUser(scope.getUser());
       }
-      if (event.getFingerprint() == null) {
-        event.setFingerprint(scope.getFingerprint());
+      if (event.getFingerprints() == null) {
+        event.setFingerprints(scope.getFingerprint());
       }
       if (event.getBreadcrumbs() == null) {
         event.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
@@ -62,12 +62,12 @@ public class SentryClient implements ISentryClient {
           }
         }
       }
-      if (event.getExtra() == null) {
-        event.setExtra(new HashMap<>(scope.getExtra()));
+      if (event.getExtras() == null) {
+        event.setExtras(new HashMap<>(scope.getExtras()));
       } else {
-        for (Map.Entry<String, Object> item : scope.getExtra().entrySet()) {
-          if (!event.getExtra().containsKey(item.getKey())) {
-            event.getExtra().put(item.getKey(), item.getValue());
+        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
+          if (!event.getExtras().containsKey(item.getKey())) {
+            event.getExtras().put(item.getKey(), item.getValue());
           }
         }
       }

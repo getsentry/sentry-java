@@ -25,6 +25,7 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
   private Long symbolAddr;
   private Long instructionAddr;
   private Map<String, Object> unknown;
+  private String rawFunction;
 
   public List<String> getPreContext() {
     return preContext;
@@ -173,5 +174,13 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  public String getRawFunction() {
+    return rawFunction;
+  }
+
+  public void setRawFunction(String rawFunction) {
+    this.rawFunction = rawFunction;
   }
 }

@@ -75,7 +75,7 @@ public final class Scope implements Cloneable {
     this.tags.put(key, value);
   }
 
-  public Map<String, Object> getExtra() {
+  public Map<String, Object> getExtras() {
     return extra;
   }
 

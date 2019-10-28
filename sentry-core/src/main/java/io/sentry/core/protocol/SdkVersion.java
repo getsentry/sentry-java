@@ -3,12 +3,14 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SdkVersion implements IUnknownPropertiesConsumer {
   private String name;
   private String version;
   private List<Package> packages = new CopyOnWriteArrayList<>();
+  private Map<String, String> integrations = new ConcurrentHashMap<>();
   private Map<String, Object> unknown;
 
   public String getVersion() {
@@ -44,5 +46,13 @@ public class SdkVersion implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  public Map<String, String> getIntegrations() {
+    return integrations;
+  }
+
+  public void setIntegrations(Map<String, String> integrations) {
+    this.integrations = integrations;
   }
 }

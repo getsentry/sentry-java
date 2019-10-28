@@ -14,7 +14,7 @@ class HubTest {
     @Test
     fun `when cloning Scope it returns the same values`() {
         val scope = Scope(10)
-        scope.extra["extra"] = "extra"
+        scope.setExtra("extra", "extra")
         val breadcrumb = Breadcrumb()
         breadcrumb.message = "message"
         scope.addBreadcrumb(breadcrumb)
@@ -29,7 +29,7 @@ class HubTest {
         val clone = scope.clone()
         assertNotNull(clone)
         assertNotSame(scope, clone)
-        assertEquals("extra", clone.extra["extra"])
+        assertEquals("extra", clone.extras["extra"])
         assertEquals("message", clone.breadcrumbs.first().message)
         assertEquals("transaction", scope.transaction)
         assertEquals("fingerprint", scope.fingerprint[0])
