@@ -74,35 +74,35 @@ public final class Sentry {
     return getCurrentHub().captureException(throwable);
   }
 
-  public void addBreadcrumb(Breadcrumb breadcrumb) {
+  public static void addBreadcrumb(Breadcrumb breadcrumb) {
     getCurrentHub().addBreadcrumb(breadcrumb);
   }
 
-  public SentryId getLastEventId() {
+  public static SentryId getLastEventId() {
     return getCurrentHub().getLastEventId();
   }
 
-  public void pushScope() {
+  public static void pushScope() {
     getCurrentHub().pushScope();
   }
 
-  public void popScope() {
+  public static void popScope() {
     getCurrentHub().popScope();
   }
 
-  public void withScope(ScopeCallback callback) {
+  public static void withScope(ScopeCallback callback) {
     getCurrentHub().withScope(callback);
   }
 
-  public void configureScope(ScopeCallback callback) {
+  public static void configureScope(ScopeCallback callback) {
     getCurrentHub().configureScope(callback);
   }
 
-  public void bindClient(SentryClient client) {
+  public static void bindClient(SentryClient client) {
     getCurrentHub().bindClient(client);
   }
 
-  public void flush(int timeoutMills) {
+  public static void flush(int timeoutMills) {
     getCurrentHub().flush(timeoutMills);
   }
 

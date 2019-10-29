@@ -6,6 +6,7 @@ import com.google.gson.internal.LinkedTreeMap
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.core.DateUtils
 import io.sentry.core.SentryEvent
+import io.sentry.core.SentryLevel
 import io.sentry.core.protocol.Contexts
 import io.sentry.core.protocol.Device
 import java.io.StringWriter
@@ -198,6 +199,33 @@ class AndroidSerializerTest {
         val orientation = (actual.contexts["device"] as LinkedTreeMap<*, *>)["orientation"] as String // TODO: fix it when casting is being done proerly
 
         assertEquals(Device.DeviceOrientation.LANDSCAPE, Device.DeviceOrientation.valueOf(orientation.toUpperCase())) // here too
+    }
+
+    @Test
+    fun `when serializing a SentryLevel, it should become a sentry level string`() {
+        val sentryEvent = generateEmptySentryEvent()
+        sentryEvent.eventId = null
+        sentryEvent.timestamp = null
+        sentryEvent.level = SentryLevel.DEBUG
+
+        val expected = "{\"level\":\"debug\"}"
+
+        val actual = serializeToString(sentryEvent)
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `when deserializing a sentry level string, it should become a SentryLevel`() {
+        val sentryEvent = generateEmptySentryEvent()
+        sentryEvent.eventId = null
+        sentryEvent.timestamp = null
+
+        val jsonEvent = "{\"level\":\"debug\"}"
+
+        val actual = serializer.deserializeEvent(jsonEvent)
+
+        assertEquals(SentryLevel.DEBUG, actual.level)
     }
 
     private fun generateEmptySentryEvent(): SentryEvent {
