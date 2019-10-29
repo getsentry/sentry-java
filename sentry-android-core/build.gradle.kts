@@ -13,6 +13,7 @@ android {
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersion)
+
         javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath = true
@@ -60,6 +61,7 @@ android {
             }, this))
         }
     }
+
     lintOptions {
         isWarningsAsErrors = true
         isCheckDependencies = true
