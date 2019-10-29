@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
@@ -17,6 +18,7 @@ public class SentryClient implements ISentryClient {
 
   private final SentryOptions options;
   private final AsyncConnection connection;
+  private final Random random;
 
   public boolean isEnabled() {
     return isEnabled;
@@ -33,9 +35,19 @@ public class SentryClient implements ISentryClient {
       connection = AsyncConnectionFactory.create(options);
     }
     this.connection = connection;
+    random = options.getSampling() == null ? null : new Random();
   }
 
   public SentryId captureEvent(SentryEvent event, @Nullable Scope scope) {
+    if (!sample()) {
+      log(
+          options.getLogger(),
+          SentryLevel.DEBUG,
+          "Event %s was dropped due to sampling decision.",
+          event.getEventId());
+      return SentryId.EMPTY_ID;
+    }
+
     log(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (scope != null) {
@@ -127,5 +139,16 @@ public class SentryClient implements ISentryClient {
   @Override
   public void flush(long timeoutMills) {
     // TODO: Flush transport
+  }
+
+  private boolean sample() {
+    // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
+    if (options.getSampling() != null && random != null) {
+      double sampling = options.getSampling();
+      if (sampling < random.nextDouble()) {
+        return false; // bad luck
+      }
+    }
+    return true;
   }
 }
