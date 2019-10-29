@@ -27,6 +27,7 @@ public class SentryOptions {
   private String release;
   private String environment;
   private Proxy proxy;
+  private Double sampling;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -169,6 +170,21 @@ public class SentryOptions {
 
   public void setProxy(Proxy proxy) {
     this.proxy = proxy;
+  }
+
+  public Double getSampling() {
+    return sampling;
+  }
+
+  // Can be anything between 0.01 (1%) and 1.0 (99.9%) or null (default), to disable it.
+  public void setSampling(Double sampling) {
+    if (sampling != null && (sampling > 1.0 || sampling <= 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + sampling
+              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+    }
+    this.sampling = sampling;
   }
 
   public interface BeforeSendCallback {
