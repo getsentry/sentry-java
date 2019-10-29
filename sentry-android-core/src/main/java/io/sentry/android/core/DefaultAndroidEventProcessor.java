@@ -157,6 +157,8 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
   private Device getDevice() {
+    // TODO: missing name and usable memory
+
     Device device = new Device();
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);

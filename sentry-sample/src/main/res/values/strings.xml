@@ -3,4 +3,5 @@
   <string name="crash_me">Crash Me</string>
   <string name="send_message">Send Message</string>
   <string name="capture_exception">Capture Exception</string>
+  <string name="breadcrumb">Breadcrumb</string>
 </resources>

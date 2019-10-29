@@ -39,7 +39,7 @@ public class Contexts extends ConcurrentHashMap<String, Object> {
   }
 
   public void setOperatingSystem(OperatingSystem operatingSystem) {
-    this.put(Device.TYPE, operatingSystem);
+    this.put(OperatingSystem.TYPE, operatingSystem);
   }
 
   public Runtime getRuntime() {
