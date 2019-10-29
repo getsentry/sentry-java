@@ -1,24 +1,28 @@
 
 plugins {
     id("com.android.library")
+    kotlin("android")
+    jacoco
 }
 
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
     buildToolsVersion(Config.Android.buildToolsVersion)
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
+
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
+        minSdkVersion(Config.Android.minSdkVersionNdk)
+
         javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath = true
             }
         }
 
-        minSdkVersion(Config.Android.minSdkVersionNdk)
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        versionName = "$version"
+
         externalNativeBuild {
             val sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
                 "sentry-native-local"
@@ -28,9 +32,10 @@ android {
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
                 arguments.add(0, "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON")
-                arguments.add(0, "-DSENTRY_NATIVE_SRC=" + sentryNativeSrc)
+                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
             }
         }
+
         ndk {
             val platform = System.getenv("ABI")
             if (platform == null || platform.toLowerCase() == "all") {
@@ -40,13 +45,63 @@ android {
             }
         }
 
-        missingDimensionStrategy(Config.Flavors.dimension, Config.Flavors.production)
+        // replace with https://issuetracker.google.com/issues/72050365 once released.
+        libraryVariants.all {
+            generateBuildConfigProvider?.configure {
+                enabled = false
+            }
+        }
     }
 
     externalNativeBuild {
         cmake {
             setPath("CMakeLists.txt")
         }
+    }
+
+    buildTypes {
+        getByName("debug")
+        getByName("release") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    // due https://github.com/gradle/gradle/issues/11083
+//    kotlinOptions {
+//        jvmTarget = JavaVersion.VERSION_1_8.toString()
+//    }
+    withGroovyBuilder {
+        "kotlinOptions" {
+            setProperty("jvmTarget", JavaVersion.VERSION_1_8.toString())
+        }
+    }
+
+    testOptions {
+        animationsDisabled = true
+        unitTests.apply {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+            all(KotlinClosure1<Any, Test>({
+                (this as Test).also { testTask ->
+                    testTask.extensions
+                        .getByType(JacocoTaskExtension::class.java)
+                        .isIncludeNoLocationClasses = true
+                }
+            }, this))
+        }
+    }
+
+    lintOptions {
+        isWarningsAsErrors = true
+        isCheckDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        isCheckReleaseBuilds = false
     }
 }
 

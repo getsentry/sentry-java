@@ -9,6 +9,8 @@ android {
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersionNdk)
+
+        versionName = "$version"
     }
 
     compileOptions {
