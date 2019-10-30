@@ -108,6 +108,8 @@ android {
 dependencies {
     api(project(":sentry-core"))
     api(project(":sentry-android-core"))
+
+    compileOnly(Config.CompileOnly.annotations)
 }
 
 val initNative = tasks.register<Exec>("initNative") {

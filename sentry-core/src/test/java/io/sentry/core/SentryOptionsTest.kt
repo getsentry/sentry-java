@@ -17,7 +17,7 @@ class SentryOptionsTest {
     @Test
     fun `when logger is set to null, logger getter returns not null`() {
         val options = SentryOptions()
-        options.logger = null
+        options.setLogger(null)
         assertNotNull(options.logger)
     }
 

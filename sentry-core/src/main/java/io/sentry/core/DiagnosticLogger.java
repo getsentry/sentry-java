@@ -1,7 +1,7 @@
 package io.sentry.core;
 
-import io.sentry.core.util.Nullable;
 import io.sentry.core.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK internal diagnostic logger. */
 public class DiagnosticLogger implements ILogger {

@@ -5,13 +5,13 @@ import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.protocol.SentryException;
 import io.sentry.core.protocol.SentryStackTrace;
 import io.sentry.core.util.Objects;
-import io.sentry.core.util.VisibleForTesting;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java Throwable to SentryExceptions */
 class SentryExceptionFactory {
@@ -88,7 +88,7 @@ class SentryExceptionFactory {
    * @param throwable throwable to transform in a queue of exceptions.
    * @return a queue of exception with StackTrace.
    */
-  @VisibleForTesting
+  @TestOnly
   Deque<SentryException> extractExceptionQueue(final Throwable throwable) {
     Deque<SentryException> exceptions = new ArrayDeque<>();
     Set<Throwable> circularityDetector = new HashSet<>();

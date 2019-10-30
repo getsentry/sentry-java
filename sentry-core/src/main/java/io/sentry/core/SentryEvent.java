@@ -1,12 +1,12 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.*;
-import io.sentry.core.util.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.TestOnly;
 
 public class SentryEvent implements IUnknownPropertiesConsumer {
   private SentryId eventId;
@@ -254,7 +254,7 @@ public class SentryEvent implements IUnknownPropertiesConsumer {
     this.unknown = unknown;
   }
 
-  @VisibleForTesting
+  @TestOnly
   public Map<String, Object> getUnknown() {
     return unknown;
   }

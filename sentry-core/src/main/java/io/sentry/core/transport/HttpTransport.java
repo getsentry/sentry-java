@@ -6,14 +6,13 @@ import static io.sentry.core.SentryLevel.*;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Nullable;
-import io.sentry.core.util.VisibleForTesting;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.Charset;
 import javax.net.ssl.HttpsURLConnection;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An implementation of the {@link ITransport} interface that sends the events to the Sentry server
@@ -62,7 +61,6 @@ public class HttpTransport implements ITransport {
 
   // giving up on testing this method is probably the simplest way of having the rest of the class
   // testable...
-  @VisibleForTesting
   protected HttpURLConnection open(URL url, Proxy proxy) throws IOException {
     // why do we need url here? its not used
     return (HttpURLConnection)

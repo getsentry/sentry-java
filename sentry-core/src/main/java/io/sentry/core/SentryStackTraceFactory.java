@@ -1,9 +1,9 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.SentryStackFrame;
-import io.sentry.core.util.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 /** class responsible for converting Java StackTraceElements to SentryStackFrames */
 class SentryStackTraceFactory {
@@ -19,14 +19,16 @@ class SentryStackTraceFactory {
 
     if (elements != null) {
       for (StackTraceElement item : elements) {
-        SentryStackFrame sentryStackFrame = new SentryStackFrame();
-        sentryStackFrame.setModule(item.getClassName());
-        sentryStackFrame.setFunction(item.getMethodName());
-        sentryStackFrame.setFilename(item.getFileName());
-        sentryStackFrame.setLineno(item.getLineNumber());
-        sentryStackFrame.setNative(item.isNativeMethod());
+        if (item != null) {
+          SentryStackFrame sentryStackFrame = new SentryStackFrame();
+          sentryStackFrame.setModule(item.getClassName());
+          sentryStackFrame.setFunction(item.getMethodName());
+          sentryStackFrame.setFilename(item.getFileName());
+          sentryStackFrame.setLineno(item.getLineNumber());
+          sentryStackFrame.setNative(item.isNativeMethod());
 
-        sentryStackFrames.add(sentryStackFrame);
+          sentryStackFrames.add(sentryStackFrame);
+        }
       }
     }
 

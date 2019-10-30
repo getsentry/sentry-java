@@ -2,7 +2,7 @@ package io.sentry.core;
 
 import io.sentry.core.protocol.Message;
 import io.sentry.core.protocol.SentryId;
-import io.sentry.core.util.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface ISentryClient {
   boolean isEnabled();

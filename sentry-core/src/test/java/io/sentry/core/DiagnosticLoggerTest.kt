@@ -17,7 +17,7 @@ class DiagnosticLoggerTest {
         init {
             val options = SentryOptions()
             options.isDebug = true
-            options.logger = logger
+            options.setLogger(logger)
             this.options = options
         }
 
