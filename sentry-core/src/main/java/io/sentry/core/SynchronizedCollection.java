@@ -16,6 +16,7 @@
  */
 package io.sentry.core;
 
+import com.jakewharton.nopen.annotation.Open;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
@@ -38,6 +39,7 @@ import java.util.Iterator;
  * @param <E> the type of the elements in the collection
  * @since 3.0
  */
+@Open
 class SynchronizedCollection<E> implements Collection<E>, Serializable {
 
   /** Serialization version */
@@ -206,6 +208,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
     }
   }
 
+  @SuppressWarnings("UndefinedEquals") // TODO: https://errorprone.info/bugpattern/UndefinedEquals
   @Override
   public boolean equals(final Object object) {
     synchronized (lock) {

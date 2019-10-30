@@ -1,6 +1,6 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -11,7 +11,7 @@ import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.Locale;
 
-public class SentryLevelDeserializerAdapter implements JsonDeserializer<SentryLevel> {
+public final class SentryLevelDeserializerAdapter implements JsonDeserializer<SentryLevel> {
 
   private final ILogger logger;
 
@@ -25,7 +25,7 @@ public class SentryLevelDeserializerAdapter implements JsonDeserializer<SentryLe
     try {
       return json == null ? null : SentryLevel.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
     } catch (Exception e) {
-      log(logger, SentryLevel.ERROR, "Error when deserializing SentryLevel", e);
+      logIfNotNull(logger, SentryLevel.ERROR, "Error when deserializing SentryLevel", e);
     }
     return null;
   }

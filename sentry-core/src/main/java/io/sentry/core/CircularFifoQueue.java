@@ -28,7 +28,7 @@ import java.util.Queue;
  * @since 4.0
  * @version $Id$
  */
-class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<E>, Serializable {
+final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<E>, Serializable {
 
   /** Serialization version. */
   private static final long serialVersionUID = -8423413834657610406L;

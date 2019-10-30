@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 /** The Sentry stack frame. */
-public class SentryStackFrame implements IUnknownPropertiesConsumer {
+public final class SentryStackFrame implements IUnknownPropertiesConsumer {
   private List<String> preContext;
   private List<String> postContext;
   private Map<String, String> vars;
@@ -24,7 +24,10 @@ public class SentryStackFrame implements IUnknownPropertiesConsumer {
   private Long imageAddr;
   private Long symbolAddr;
   private Long instructionAddr;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
+
   private String rawFunction;
 
   public List<String> getPreContext() {

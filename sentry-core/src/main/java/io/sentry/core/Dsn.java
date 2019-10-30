@@ -51,7 +51,7 @@ final class Dsn {
       if (userInfo == null || userInfo.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: No public key provided.");
       }
-      String[] keys = userInfo.split(":");
+      String[] keys = userInfo.split(":", -1);
       publicKey = keys[0]; // TODO: test lack of delimiter returns whole value as first index
       if (publicKey == null || publicKey.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: No public key provided.");

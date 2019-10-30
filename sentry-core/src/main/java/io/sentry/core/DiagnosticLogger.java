@@ -4,7 +4,7 @@ import io.sentry.core.util.Objects;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK internal diagnostic logger. */
-public class DiagnosticLogger implements ILogger {
+public final class DiagnosticLogger implements ILogger {
   private final SentryOptions options;
   private final ILogger logger;
 

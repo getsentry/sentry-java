@@ -1,6 +1,6 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -12,7 +12,7 @@ import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.Date;
 
-public class DateDeserializerAdapter implements JsonDeserializer<Date> {
+public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
 
   private final ILogger logger;
 
@@ -26,7 +26,7 @@ public class DateDeserializerAdapter implements JsonDeserializer<Date> {
     try {
       return json == null ? null : DateUtils.getDateTime(json.getAsString());
     } catch (Exception e) {
-      log(logger, SentryLevel.ERROR, "Error when deserializing Date", e);
+      logIfNotNull(logger, SentryLevel.ERROR, "Error when deserializing Date", e);
     }
     return null;
   }

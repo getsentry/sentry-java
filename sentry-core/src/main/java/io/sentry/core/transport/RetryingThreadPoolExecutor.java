@@ -63,6 +63,8 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
    *
    * @param task the task to execute
    */
+  @SuppressWarnings("FutureReturnValueIgnored") // TODO:
+  // https://errorprone.info/bugpattern/FutureReturnValueIgnored
   public void submit(Retryable task) {
     if (isSchedulingAllowed()) {
       super.submit(task);
@@ -116,6 +118,8 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
     currentlyRunning.incrementAndGet();
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored") // TODO:
+  // https://errorprone.info/bugpattern/FutureReturnValueIgnored
   @Override
   protected void afterExecute(Runnable r, Throwable t) {
     try {

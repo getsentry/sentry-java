@@ -8,7 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import io.sentry.core.Sentry;
 
-public class SentryInitProvider extends ContentProvider {
+public final class SentryInitProvider extends ContentProvider {
 
   @Override
   public boolean onCreate() {

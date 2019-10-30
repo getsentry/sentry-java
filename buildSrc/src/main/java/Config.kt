@@ -41,13 +41,20 @@ object Config {
     object QualityPlugins {
         val jacocoVersion = "0.8.4"
         val spotlessVersion = "3.25.0"
-    }
-
-    object CompileOnly {
-        val annotations = "org.jetbrains:annotations:17.0.0"
+        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
     }
 
     object Sentry {
         val SENTRY_CLIENT_NAME = "sentry.java.android"
+    }
+
+    object CompileOnly {
+        private val nopenVersion = "1.0.1"
+
+        val annotations = "org.jetbrains:annotations:17.0.0"
+        val noopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
+        val noopenProne = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
+        val errorprone = "com.google.errorprone:error_prone_core:2.3.3"
+        val errorProneJavac = "com.google.errorprone:javac:9+181-r4173-1"
     }
 }

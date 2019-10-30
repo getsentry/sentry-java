@@ -2,7 +2,7 @@ package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
 
-class NoOpHub implements IHub {
+final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
 

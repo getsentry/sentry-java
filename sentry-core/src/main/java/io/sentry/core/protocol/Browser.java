@@ -3,10 +3,12 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Browser implements IUnknownPropertiesConsumer {
+public final class Browser implements IUnknownPropertiesConsumer {
   static final String TYPE = "browser";
   private String name;
   private String version;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getName() {

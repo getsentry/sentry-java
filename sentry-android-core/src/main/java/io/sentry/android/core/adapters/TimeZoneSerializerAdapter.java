@@ -1,6 +1,6 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
@@ -11,7 +11,7 @@ import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.TimeZone;
 
-public class TimeZoneSerializerAdapter implements JsonSerializer<TimeZone> {
+public final class TimeZoneSerializerAdapter implements JsonSerializer<TimeZone> {
 
   private final ILogger logger;
 
@@ -24,7 +24,7 @@ public class TimeZoneSerializerAdapter implements JsonSerializer<TimeZone> {
     try {
       return src == null ? null : new JsonPrimitive(src.getID());
     } catch (Exception e) {
-      log(logger, SentryLevel.ERROR, "Error when serializing TimeZone", e);
+      logIfNotNull(logger, SentryLevel.ERROR, "Error when serializing TimeZone", e);
     }
     return null;
   }

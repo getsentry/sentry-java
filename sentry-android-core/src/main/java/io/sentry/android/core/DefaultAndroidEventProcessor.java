@@ -20,9 +20,14 @@ import io.sentry.core.*;
 import io.sentry.core.protocol.*;
 import io.sentry.core.util.Objects;
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.*;
 
-public class DefaultAndroidEventProcessor implements EventProcessor {
+public final class DefaultAndroidEventProcessor implements EventProcessor {
+
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   final Context context;
   final SentryOptions options;
 
@@ -275,7 +280,7 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
    */
   private String getFamily() {
     try {
-      return Build.MODEL.split(" ")[0];
+      return Build.MODEL.split(" ", -1)[0];
     } catch (Exception e) {
       log(SentryLevel.ERROR, "Error getting device family.", e);
       return null;
@@ -589,6 +594,7 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return the device's current kernel version, as a string
    */
+  @SuppressWarnings("DefaultCharset")
   private String getKernelVersion() {
     // its possible to try to execute 'uname' and parse it or also another unix commands or even
     // looking for well known root installed apps
@@ -602,7 +608,11 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
         return defaultVersion;
       }
 
-      br = new BufferedReader(new FileReader(file));
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        br = Files.newBufferedReader(file.toPath(), UTF_8);
+      } else {
+        br = new BufferedReader(new FileReader(file));
+      }
       return br.readLine();
     } catch (Exception e) {
       log(SentryLevel.ERROR, errorMsg, e);
@@ -704,6 +714,7 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
     return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
   }
 
+  @SuppressWarnings("UnusedMethod")
   private String[] getProGuardUuids() {
     InputStream is = null;
     try {

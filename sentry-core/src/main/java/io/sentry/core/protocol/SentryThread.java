@@ -4,7 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 /** Describes a thread in the Sentry protocol. */
-public class SentryThread implements IUnknownPropertiesConsumer {
+public final class SentryThread implements IUnknownPropertiesConsumer {
   private Long id;
   private Integer priority;
   private String name;
@@ -13,6 +13,8 @@ public class SentryThread implements IUnknownPropertiesConsumer {
   private Boolean current;
   private Boolean isDaemon;
   private SentryStackTrace stacktrace;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   /**

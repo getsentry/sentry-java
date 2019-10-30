@@ -3,12 +3,11 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Runtime implements IUnknownPropertiesConsumer {
-  static final String TYPE = "runtime";
-
+public final class SentryPackage implements IUnknownPropertiesConsumer {
   private String name;
   private String version;
-  private String rawDescription;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getName() {
@@ -25,14 +24,6 @@ public class Runtime implements IUnknownPropertiesConsumer {
 
   public void setVersion(String version) {
     this.version = version;
-  }
-
-  public String getRawDescription() {
-    return rawDescription;
-  }
-
-  public void setRawDescription(String rawDescription) {
-    this.rawDescription = rawDescription;
   }
 
   @Override

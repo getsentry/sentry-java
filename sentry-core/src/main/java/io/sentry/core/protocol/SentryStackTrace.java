@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Map;
 
 /** The Sentry stacktrace. */
-public class SentryStackTrace implements IUnknownPropertiesConsumer {
+public final class SentryStackTrace implements IUnknownPropertiesConsumer {
   private List<SentryStackFrame> frames;
   private Map<String, String> registers;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public SentryStackTrace() {}

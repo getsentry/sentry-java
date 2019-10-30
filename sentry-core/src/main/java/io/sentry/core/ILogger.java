@@ -15,7 +15,8 @@ public interface ILogger {
    * @param args the formatting arguments
    * @see #log(SentryLevel, String, Object...)
    */
-  static void log(@Nullable ILogger logger, SentryLevel level, String message, Object... args) {
+  static void logIfNotNull(
+      @Nullable ILogger logger, SentryLevel level, String message, Object... args) {
     if (logger != null) {
       logger.log(level, message, args);
     }
@@ -31,7 +32,7 @@ public interface ILogger {
    * @param throwable the exception to log
    * @see #log(SentryLevel, String, Throwable)
    */
-  static void log(ILogger logger, SentryLevel level, String message, Throwable throwable) {
+  static void logIfNotNull(ILogger logger, SentryLevel level, String message, Throwable throwable) {
     if (logger != null) {
       logger.log(level, message, throwable);
     }

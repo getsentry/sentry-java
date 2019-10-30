@@ -1,6 +1,6 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
@@ -11,7 +11,7 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.protocol.SentryId;
 import java.lang.reflect.Type;
 
-public class SentryIdSerializerAdapter implements JsonSerializer<SentryId> {
+public final class SentryIdSerializerAdapter implements JsonSerializer<SentryId> {
 
   private final ILogger logger;
 
@@ -24,7 +24,7 @@ public class SentryIdSerializerAdapter implements JsonSerializer<SentryId> {
     try {
       return src == null ? null : new JsonPrimitive(src.toString());
     } catch (Exception e) {
-      log(logger, SentryLevel.ERROR, "Error when serializing SentryId", e);
+      logIfNotNull(logger, SentryLevel.ERROR, "Error when serializing SentryId", e);
     }
     return null;
   }

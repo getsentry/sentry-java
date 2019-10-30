@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
+final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
 
   private static final TypeAdapterFactory instance = new UnknownPropertiesTypeAdapterFactory();
 

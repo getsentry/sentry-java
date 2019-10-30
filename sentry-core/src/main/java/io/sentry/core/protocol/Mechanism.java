@@ -3,13 +3,15 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Mechanism implements IUnknownPropertiesConsumer {
+public final class Mechanism implements IUnknownPropertiesConsumer {
   private String type;
   private String description;
   private String helpLink;
   private Boolean handled;
   private Map<String, Object> meta;
   private Map<String, Object> data;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getType() {

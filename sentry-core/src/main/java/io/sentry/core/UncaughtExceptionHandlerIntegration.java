@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.util.Objects;
 
@@ -8,7 +8,7 @@ import io.sentry.core.util.Objects;
  * Sends any uncaught exception to Sentry, then passes the exception on to the pre-existing uncaught
  * exception handler.
  */
-public class UncaughtExceptionHandlerIntegration
+public final class UncaughtExceptionHandlerIntegration
     implements Integration, Thread.UncaughtExceptionHandler {
   /** Reference to the pre-existing uncaught exception handler. */
   private Thread.UncaughtExceptionHandler defaultExceptionHandler;
@@ -30,7 +30,7 @@ public class UncaughtExceptionHandlerIntegration
   @Override
   public void register(IHub hub, SentryOptions options) {
     if (isRegistered) {
-      log(
+      logIfNotNull(
           options.getLogger(),
           SentryLevel.ERROR,
           "Attempt to register a UncaughtExceptionHandlerIntegration twice. ");
@@ -43,7 +43,7 @@ public class UncaughtExceptionHandlerIntegration
     Thread.UncaughtExceptionHandler currentHandler =
         threadAdapter.getDefaultUncaughtExceptionHandler();
     if (currentHandler != null) {
-      log(
+      logIfNotNull(
           options.getLogger(),
           SentryLevel.DEBUG,
           "default UncaughtExceptionHandler class='" + currentHandler.getClass().getName() + "'");
@@ -55,13 +55,14 @@ public class UncaughtExceptionHandlerIntegration
 
   @Override
   public void uncaughtException(Thread thread, Throwable thrown) {
-    log(options.getLogger(), SentryLevel.INFO, "Uncaught exception received.");
+    logIfNotNull(options.getLogger(), SentryLevel.INFO, "Uncaught exception received.");
 
     try {
       // TODO: Set Thread info to the scope?
       this.hub.captureException(thrown);
     } catch (Exception e) {
-      log(options.getLogger(), SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
+      logIfNotNull(
+          options.getLogger(), SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
     }
 
     if (defaultExceptionHandler != null) {

@@ -4,13 +4,15 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 /** The Sentry Exception interface. */
-public class SentryException implements IUnknownPropertiesConsumer {
+public final class SentryException implements IUnknownPropertiesConsumer {
   private String type;
   private String value;
   private String module;
   private Integer threadId;
   private SentryStackTrace stacktrace;
   private Mechanism mechanism;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   /**

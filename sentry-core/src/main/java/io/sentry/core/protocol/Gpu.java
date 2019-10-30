@@ -3,7 +3,7 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Gpu implements IUnknownPropertiesConsumer {
+public final class Gpu implements IUnknownPropertiesConsumer {
   static final String TYPE = "gpu";
 
   private String name;
@@ -15,6 +15,8 @@ public class Gpu implements IUnknownPropertiesConsumer {
   private Boolean multiThreadedRendering;
   private String version;
   private String npotSupport;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getName() {

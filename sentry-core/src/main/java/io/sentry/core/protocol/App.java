@@ -4,7 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Date;
 import java.util.Map;
 
-public class App implements IUnknownPropertiesConsumer {
+public final class App implements IUnknownPropertiesConsumer {
   static final String TYPE = "app";
 
   private String appIdentifier;
@@ -14,6 +14,8 @@ public class App implements IUnknownPropertiesConsumer {
   private String appName;
   private String appVersion;
   private String appBuild;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getAppIdentifier() {

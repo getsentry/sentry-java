@@ -3,7 +3,7 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
-public class Request implements IUnknownPropertiesConsumer {
+public final class Request implements IUnknownPropertiesConsumer {
   private String url;
   private String method;
   private String queryString;
@@ -12,6 +12,8 @@ public class Request implements IUnknownPropertiesConsumer {
   private Map<String, String> headers;
   private Map<String, String> env;
   private Map<String, String> other;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getUrl() {

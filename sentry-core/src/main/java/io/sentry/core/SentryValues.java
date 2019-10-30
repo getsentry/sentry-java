@@ -3,7 +3,7 @@ package io.sentry.core;
 import java.util.ArrayList;
 import java.util.List;
 
-class SentryValues<T> {
+final class SentryValues<T> {
   private List<T> values;
 
   public SentryValues(List<T> values) {
