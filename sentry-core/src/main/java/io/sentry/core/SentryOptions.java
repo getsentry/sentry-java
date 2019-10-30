@@ -29,6 +29,8 @@ public final class SentryOptions {
   private String environment;
   private Proxy proxy;
   private Double sampling;
+  private List<String> inAppExcludes;
+  private List<String> inAppIncludes;
 
   public void addEventProcessor(EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -188,6 +190,22 @@ public final class SentryOptions {
     this.sampling = sampling;
   }
 
+  public List<String> getInAppExcludes() {
+    return inAppExcludes;
+  }
+
+  public void setInAppExcludes(List<String> inAppExcludes) {
+    this.inAppExcludes = inAppExcludes;
+  }
+
+  public List<String> getInAppIncludes() {
+    return inAppIncludes;
+  }
+
+  public void setInAppIncludes(List<String> inAppIncludes) {
+    this.inAppIncludes = inAppIncludes;
+  }
+
   public interface BeforeSendCallback {
     SentryEvent execute(SentryEvent event);
   }
@@ -197,6 +215,9 @@ public final class SentryOptions {
   }
 
   public SentryOptions() {
+    inAppExcludes = new ArrayList<>();
+    inAppExcludes.add("io.sentry");
+
     eventProcessors.add(new MainEventProcessor(this));
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }

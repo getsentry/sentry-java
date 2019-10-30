@@ -3,12 +3,20 @@ package io.sentry.core;
 import io.sentry.core.protocol.SentryStackFrame;
 import io.sentry.core.protocol.SentryStackTrace;
 import io.sentry.core.protocol.SentryThread;
+import io.sentry.core.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 final class SentryThreadFactory {
+
+  private final SentryStackTraceFactory sentryStackTraceFactory;
+
+  public SentryThreadFactory(SentryStackTraceFactory sentryStackTraceFactory) {
+    this.sentryStackTraceFactory =
+        Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
+  }
 
   // Assumes its being called from the crashed thread.
   List<SentryThread> getCurrentThreadsForCrash() {
@@ -49,7 +57,6 @@ final class SentryThreadFactory {
     }
     sentryThread.setCurrent(thread == currentThread);
 
-    SentryStackTraceFactory sentryStackTraceFactory = new SentryStackTraceFactory();
     List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stackFramesElements);
 
     if (frames.size() > 0) {
