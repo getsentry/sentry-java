@@ -18,7 +18,7 @@ final class SentryExceptionFactory {
 
   private final SentryStackTraceFactory sentryStackTraceFactory;
 
-  public SentryExceptionFactory(SentryStackTraceFactory sentryStackTraceFactory) {
+  public SentryExceptionFactory(final SentryStackTraceFactory sentryStackTraceFactory) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
   }
