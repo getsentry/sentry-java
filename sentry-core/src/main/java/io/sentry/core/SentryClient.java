@@ -4,12 +4,12 @@ import static io.sentry.core.ILogger.log;
 
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.AsyncConnection;
-import io.sentry.core.util.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.jetbrains.annotations.Nullable;
 
 public class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";

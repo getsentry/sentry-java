@@ -5,14 +5,14 @@ import static io.sentry.core.ILogger.log;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
-import io.sentry.core.util.NonNull;
-import io.sentry.core.util.VisibleForTesting;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /** A connection to Sentry that sends the events asynchronously. */
 public class AsyncConnection implements Closeable {
@@ -38,7 +38,7 @@ public class AsyncConnection implements Closeable {
         options);
   }
 
-  @VisibleForTesting
+  @TestOnly
   AsyncConnection(
       ITransport transport,
       ITransportGate transportGate,
@@ -110,7 +110,7 @@ public class AsyncConnection implements Closeable {
     private int cnt;
 
     @Override
-    public Thread newThread(@NonNull Runnable r) {
+    public Thread newThread(@NotNull Runnable r) {
       Thread ret = new Thread(r, "SentryAsyncConnection-" + cnt++);
       ret.setDaemon(true);
       return ret;

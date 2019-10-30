@@ -1,7 +1,7 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
-import io.sentry.core.util.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 /** Sentry SDK main API entry point */
 public final class Sentry {
@@ -28,15 +28,13 @@ public final class Sentry {
     init(new SentryOptions());
   }
 
-  public static void init(@NonNull OptionsConfiguration optionsConfiguration) {
+  public static void init(@NotNull OptionsConfiguration optionsConfiguration) {
     SentryOptions options = new SentryOptions();
-    if (optionsConfiguration != null) {
-      optionsConfiguration.configure(options);
-    }
+    optionsConfiguration.configure(options);
     init(options);
   }
 
-  static synchronized void init(@NonNull SentryOptions options) {
+  static synchronized void init(@NotNull SentryOptions options) {
     String dsn = options.getDsn();
     if (dsn == null || dsn.isEmpty()) {
       close();
@@ -46,9 +44,7 @@ public final class Sentry {
     Dsn parsedDsn = new Dsn(dsn);
 
     ILogger logger = options.getLogger();
-    if (logger != null) {
-      logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
-    }
+    logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
 
     IHub hub = getCurrentHub();
     mainHub = new Hub(options);

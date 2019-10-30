@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import io.sentry.core.util.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK internal logging interface. */
 public interface ILogger {

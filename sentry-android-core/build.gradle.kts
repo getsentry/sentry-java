@@ -77,6 +77,8 @@ dependencies {
     // libs
     implementation(Config.Libs.gson)
 
+    compileOnly(Config.CompileOnly.annotations)
+
     // tests
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.robolectric)
