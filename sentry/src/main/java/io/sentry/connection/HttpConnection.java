@@ -53,7 +53,7 @@ public class HttpConnection extends AbstractConnection {
     private static final HostnameVerifier NAIVE_VERIFIER = new HostnameVerifier() {
         @Override
         public boolean verify(String hostname, SSLSession sslSession) {
-            return true;
+            return HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, sslSession);
         }
     };
     /**
