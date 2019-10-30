@@ -90,7 +90,9 @@ public class DefaultAndroidEventProcessor implements EventProcessor {
     sdkVersion.setVersion(version);
     sdkVersion.addPackage("sentry-core", version);
     sdkVersion.addPackage("sentry-android-core", version);
-    // TODO: sentry-android-ndk, integrations...
+    if (options.isEnableNdk()) {
+      sdkVersion.addPackage("sentry-android-ndk", version);
+    }
 
     return sdkVersion;
   }
