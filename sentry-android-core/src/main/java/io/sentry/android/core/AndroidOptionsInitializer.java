@@ -17,8 +17,7 @@ class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
-    // TODO this needs to fetch the data from somewhere - defined at build time?
-    options.setSentryClientName("sentry.java.android/0.0.1");
+    options.setSentryClientName(BuildConfig.SENTRY_CLIENT_NAME + "/" + BuildConfig.VERSION_NAME);
 
     ManifestMetadataReader.applyMetadata(context, options);
     initializeCacheDirs(context, options);

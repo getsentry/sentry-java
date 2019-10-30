@@ -46,4 +46,8 @@ object Config {
     object CompileOnly {
         val annotations = "org.jetbrains:annotations:17.0.0"
     }
+
+    object Sentry {
+        val SENTRY_CLIENT_NAME = "sentry.java.android"
+    }
 }
