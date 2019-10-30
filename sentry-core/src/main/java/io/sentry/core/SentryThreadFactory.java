@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
-class SentryThreadFactory {
+final class SentryThreadFactory {
 
   // Assumes its being called from the crashed thread.
   List<SentryThread> getCurrentThreadsForCrash() {

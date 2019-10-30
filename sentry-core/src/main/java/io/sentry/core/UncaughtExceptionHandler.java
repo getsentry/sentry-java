@@ -6,7 +6,7 @@ interface UncaughtExceptionHandler {
 
   void setDefaultUncaughtExceptionHandler(Thread.UncaughtExceptionHandler handler);
 
-  class Adapter implements UncaughtExceptionHandler {
+  final class Adapter implements UncaughtExceptionHandler {
 
     UncaughtExceptionHandler getInstance() {
       return Adapter.INSTANCE;

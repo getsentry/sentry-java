@@ -4,7 +4,7 @@ import io.sentry.core.transport.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-class AsyncConnectionFactory {
+final class AsyncConnectionFactory {
   public static AsyncConnection create(SentryOptions options) {
     try {
       Dsn parsedDsn = new Dsn(options.getDsn());

@@ -27,7 +27,7 @@ import java.util.Queue;
  * @param <E> the type of the elements in the collection
  * @since 4.2
  */
-class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Queue<E> {
+final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Queue<E> {
 
   /** Serialization version */
   private static final long serialVersionUID = 1L;
@@ -83,6 +83,7 @@ class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Queue<E>
     }
   }
 
+  @SuppressWarnings("UndefinedEquals") // TODO: https://errorprone.info/bugpattern/UndefinedEquals
   @Override
   public boolean equals(final Object object) {
     if (object == this) {

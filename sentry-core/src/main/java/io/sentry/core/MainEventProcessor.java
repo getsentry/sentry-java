@@ -2,7 +2,7 @@ package io.sentry.core;
 
 import io.sentry.core.util.Objects;
 
-public class MainEventProcessor implements EventProcessor {
+public final class MainEventProcessor implements EventProcessor {
 
   private final SentryOptions options;
   private final SentryThreadFactory sentryThreadFactory = new SentryThreadFactory();

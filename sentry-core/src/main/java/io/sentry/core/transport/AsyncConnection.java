@@ -1,6 +1,6 @@
 package io.sentry.core.transport;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 /** A connection to Sentry that sends the events asynchronously. */
-public class AsyncConnection implements Closeable {
+public final class AsyncConnection implements Closeable {
   private final ITransport transport;
   private final ITransportGate transportGate;
   private final ExecutorService executor;
@@ -80,6 +80,8 @@ public class AsyncConnection implements Closeable {
    * @param event the event to send
    * @throws IOException on error
    */
+  @SuppressWarnings("FutureReturnValueIgnored") // TODO:
+  // https://errorprone.info/bugpattern/FutureReturnValueIgnored
   public void send(SentryEvent event) throws IOException {
     executor.submit(new EventSender(event));
   }
@@ -89,7 +91,7 @@ public class AsyncConnection implements Closeable {
     executor.shutdown();
     try {
       if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
-        log(
+        logIfNotNull(
             options.getLogger(),
             SentryLevel.WARNING,
             "Failed to shutdown the async connection async sender within 1 minute. Trying to force it now.");
@@ -98,7 +100,7 @@ public class AsyncConnection implements Closeable {
       transport.close();
     } catch (InterruptedException e) {
       // ok, just give up then...
-      log(
+      logIfNotNull(
           options.getLogger(),
           SentryLevel.DEBUG,
           "Thread interrupted while closing the connection.");

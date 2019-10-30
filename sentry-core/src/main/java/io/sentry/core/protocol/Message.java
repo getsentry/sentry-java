@@ -6,10 +6,12 @@ import java.util.Map;
 
 // https://docs.sentry.io/development/sdk-dev/event-payloads/message/
 
-public class Message implements IUnknownPropertiesConsumer {
+public final class Message implements IUnknownPropertiesConsumer {
   private String formatted;
   private String message;
   private List<String> params;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getFormatted() {

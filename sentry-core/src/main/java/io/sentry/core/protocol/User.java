@@ -4,12 +4,14 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 /** The user affected by an event. */
-public class User implements IUnknownPropertiesConsumer {
+public final class User implements IUnknownPropertiesConsumer {
   private String email;
   private String id;
   private String username;
   private String ipAddress;
   private Map<String, String> other;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   /**

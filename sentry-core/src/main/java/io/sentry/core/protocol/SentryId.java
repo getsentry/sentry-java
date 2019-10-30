@@ -35,7 +35,7 @@ public final class SentryId {
     if (sentryIdString.length() == 32) {
       // expected format, SentryId is a UUID without dashes
       sentryIdString =
-          new StringBuffer(sentryIdString)
+          new StringBuilder(sentryIdString)
               .insert(8, "-")
               .insert(13, "-")
               .insert(18, "-")

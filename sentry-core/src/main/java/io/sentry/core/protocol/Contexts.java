@@ -2,7 +2,7 @@ package io.sentry.core.protocol;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Contexts extends ConcurrentHashMap<String, Object> {
+public final class Contexts extends ConcurrentHashMap<String, Object> {
   private static final long serialVersionUID = 252445813254943011L;
 
   <T> T toContextType(String key, Class<T> clazz) {
@@ -42,12 +42,12 @@ public class Contexts extends ConcurrentHashMap<String, Object> {
     this.put(OperatingSystem.TYPE, operatingSystem);
   }
 
-  public Runtime getRuntime() {
-    return toContextType(Runtime.TYPE, Runtime.class);
+  public SentryRuntime getRuntime() {
+    return toContextType(SentryRuntime.TYPE, SentryRuntime.class);
   }
 
-  public void setRuntime(Runtime runtime) {
-    this.put(Runtime.TYPE, runtime);
+  public void setRuntime(SentryRuntime runtime) {
+    this.put(SentryRuntime.TYPE, runtime);
   }
 
   public Gpu getGpu() {

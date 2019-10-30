@@ -8,7 +8,9 @@ import io.sentry.core.SentryOptions;
 import java.io.File;
 import java.lang.reflect.Method;
 
-class AndroidOptionsInitializer {
+final class AndroidOptionsInitializer {
+  private AndroidOptionsInitializer() {}
+
   static void init(SentryOptions options, Context context) {
     init(options, context, new AndroidLogger());
   }
@@ -48,7 +50,7 @@ class AndroidOptionsInitializer {
     File cacheDir = new File(context.getCacheDir(), "sentry");
     cacheDir.mkdirs();
     options.setCacheDirPath(cacheDir.getAbsolutePath());
-    (new File(options.getOutboxPath())).mkdirs();
+    new File(options.getOutboxPath()).mkdirs();
   }
 
   private static boolean isNdkAvailable() {

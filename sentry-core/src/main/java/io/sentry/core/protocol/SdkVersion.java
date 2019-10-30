@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SdkVersion implements IUnknownPropertiesConsumer {
+public final class SdkVersion implements IUnknownPropertiesConsumer {
   private String name;
   private String version;
-  private List<Package> packages;
+  private List<SentryPackage> packages;
   private List<String> integrations;
+
+  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   public String getVersion() {
@@ -29,7 +31,7 @@ public class SdkVersion implements IUnknownPropertiesConsumer {
   }
 
   public void addPackage(String name, String version) {
-    Package newPackage = new Package();
+    SentryPackage newPackage = new SentryPackage();
     newPackage.setName(name);
     newPackage.setVersion(version);
     if (packages == null) {

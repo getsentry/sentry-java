@@ -4,7 +4,7 @@ import android.util.Log;
 import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 
-class AndroidLogger implements ILogger {
+final class AndroidLogger implements ILogger {
 
   private static final String tag = "Sentry";
 

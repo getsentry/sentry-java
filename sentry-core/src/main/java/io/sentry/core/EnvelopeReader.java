@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
-public class EnvelopeReader {
+public final class EnvelopeReader {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
   private final Gson gson =
@@ -144,8 +144,11 @@ public class EnvelopeReader {
   }
 
   private static final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelopeHeader> {
+
+    @Override
     public void write(JsonWriter out, SentryEnvelopeHeader value) {}
 
+    @Override
     public SentryEnvelopeHeader read(JsonReader reader) throws IOException {
       SentryId sentryId = SentryId.EMPTY_ID;
       String auth = null;

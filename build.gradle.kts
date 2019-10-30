@@ -21,6 +21,7 @@ buildscript {
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
+        classpath(Config.QualityPlugins.errorpronePlugin)
     }
 }
 

@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.log;
+import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.AsyncConnection;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Random;
 import org.jetbrains.annotations.Nullable;
 
-public class SentryClient implements ISentryClient {
+public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
   private boolean isEnabled;
@@ -20,6 +20,7 @@ public class SentryClient implements ISentryClient {
   private final AsyncConnection connection;
   private final Random random;
 
+  @Override
   public boolean isEnabled() {
     return isEnabled;
   }
@@ -38,9 +39,10 @@ public class SentryClient implements ISentryClient {
     random = options.getSampling() == null ? null : new Random();
   }
 
+  @Override
   public SentryId captureEvent(SentryEvent event, @Nullable Scope scope) {
     if (!sample()) {
-      log(
+      logIfNotNull(
           options.getLogger(),
           SentryLevel.DEBUG,
           "Event %s was dropped due to sampling decision.",
@@ -48,7 +50,7 @@ public class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    log(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
+    logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (scope != null) {
       if (event.getTransaction() == null) {
@@ -105,7 +107,7 @@ public class SentryClient implements ISentryClient {
     try {
       connection.send(event);
     } catch (IOException e) {
-      log(
+      logIfNotNull(
           options.getLogger(),
           SentryLevel.WARNING,
           "Capturing event " + event.getEventId() + " failed.",
@@ -120,14 +122,15 @@ public class SentryClient implements ISentryClient {
     return captureEvent(event, null);
   }
 
+  @Override
   public void close() {
-    log(options.getLogger(), SentryLevel.INFO, "Closing SDK.");
+    logIfNotNull(options.getLogger(), SentryLevel.INFO, "Closing SDK.");
 
     try {
       flush(options.getShutdownTimeout());
       connection.close();
     } catch (IOException e) {
-      log(
+      logIfNotNull(
           options.getLogger(),
           SentryLevel.WARNING,
           "Failed to close the connection to the Sentry Server.",

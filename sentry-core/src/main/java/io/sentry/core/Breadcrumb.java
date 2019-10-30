@@ -3,13 +3,15 @@ package io.sentry.core;
 import java.util.Date;
 import java.util.Map;
 
-public class Breadcrumb implements IUnknownPropertiesConsumer {
+public final class Breadcrumb implements IUnknownPropertiesConsumer {
   private Date timestamp;
   private String message;
   private String type;
   private Map<String, String> data;
   private String category;
   private SentryLevel level;
+
+  @SuppressWarnings("UnusedVariable")
   private Map<String, Object> unknown;
 
   public Date getTimestamp() {

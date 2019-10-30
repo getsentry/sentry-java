@@ -5,7 +5,9 @@ import android.content.pm.PackageManager;
 import android.os.Process;
 import io.sentry.core.util.Objects;
 
-public class Permissions {
+public final class Permissions {
+
+  private Permissions() {}
 
   public static boolean hasPermission(Context context, String permission) {
     Objects.requireNonNull(context, "The application context is required.");
