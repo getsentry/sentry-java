@@ -19,9 +19,9 @@ object Config {
 
     object Libs {
         val appCompat = "androidx.appcompat:appcompat:1.1.0"
-        val constraintLayout = "androidx.constraintlayout:constraintlayout:1.1.3"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val gson = "com.google.code.gson:gson:2.8.6"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.0-beta-3"
     }
 
     object TestLibs {
