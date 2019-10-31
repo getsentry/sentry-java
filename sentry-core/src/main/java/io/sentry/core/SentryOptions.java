@@ -194,16 +194,22 @@ public final class SentryOptions {
     return inAppExcludes;
   }
 
-  public void setInAppExcludes(List<String> inAppExcludes) {
-    this.inAppExcludes = inAppExcludes;
+  public void addInAppExclude(String exclude) {
+    if (inAppExcludes == null) {
+      inAppExcludes = new ArrayList<>();
+    }
+    inAppExcludes.add(exclude);
   }
 
   public List<String> getInAppIncludes() {
     return inAppIncludes;
   }
 
-  public void setInAppIncludes(List<String> inAppIncludes) {
-    this.inAppIncludes = inAppIncludes;
+  public void addInAppInclude(String include) {
+    if (inAppIncludes == null) {
+      inAppIncludes = new ArrayList<>();
+    }
+    inAppIncludes.add(include);
   }
 
   public interface BeforeSendCallback {
@@ -216,7 +222,13 @@ public final class SentryOptions {
 
   public SentryOptions() {
     inAppExcludes = new ArrayList<>();
-    inAppExcludes.add("io.sentry");
+    inAppExcludes.add("io.sentry.");
+    inAppExcludes.add("java.");
+    inAppExcludes.add("javax.");
+    inAppExcludes.add("sun.");
+    inAppExcludes.add("com.oracle.");
+    inAppExcludes.add("oracle.");
+    inAppExcludes.add("org.jetbrains.");
 
     eventProcessors.add(new MainEventProcessor(this));
     integrations.add(new UncaughtExceptionHandlerIntegration());

@@ -72,6 +72,32 @@ class AndroidOptionsInitializerTest {
         assertTrue(sentryOptions.cacheDirPath.endsWith("${File.separator}cache${File.separator}sentry"))
     }
 
+    @Test
+    fun `init should set context package name as appInclude`() {
+        val sentryOptions = SentryOptions()
+        val mockContext = mock<ApplicationStub> {
+            on { applicationContext } doReturn context
+        }
+        whenever(mockContext.cacheDir).thenReturn(File("${File.separator}cache"))
+        whenever(mockContext.packageName).thenReturn("io.sentry.app")
+        val mockLogger = mock<ILogger>()
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
+
+        assertTrue(sentryOptions.inAppIncludes.contains("io.sentry.app"))
+    }
+
+    @Test
+    fun `init should set android as inAppExclude`() {
+        val sentryOptions = SentryOptions()
+        val mockContext = createMockContext()
+        val mockLogger = mock<ILogger>()
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
+
+        assertTrue(sentryOptions.inAppExcludes.contains("android."))
+    }
+
     private fun createMockContext(): Context {
         val mockContext = mock<Context> {
             on { applicationContext } doReturn context
