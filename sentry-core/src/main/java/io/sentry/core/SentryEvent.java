@@ -33,6 +33,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   private Map<String, Object> extra;
   private Map<String, Object> unknown;
   private Map<String, String> modules;
+  private DebugMeta debugMeta;
 
   SentryEvent(SentryId eventId, Date timestamp) {
     this.eventId = eventId;
@@ -265,5 +266,13 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
 
   public void setModules(Map<String, String> modules) {
     this.modules = modules;
+  }
+
+  public DebugMeta getDebugMeta() {
+    return debugMeta;
+  }
+
+  public void setDebugMeta(DebugMeta debugMeta) {
+    this.debugMeta = debugMeta;
   }
 }

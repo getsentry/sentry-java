@@ -22,6 +22,7 @@ buildscript {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
         classpath(Config.QualityPlugins.errorpronePlugin)
+//        classpath("io.sentry:sentry-android-gradle-plugin:$version") how to add sentry gradle plugin
     }
 }
 

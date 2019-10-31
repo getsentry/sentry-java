@@ -66,7 +66,9 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     setAppExtras(event);
 
-    // TODO: proguard UUIDs and debug-meta
+    if (event.getDebugMeta() == null) {
+      event.setDebugMeta(getDebugMeta());
+    }
 
     if (event.getContexts().getDevice() == null) {
       event.getContexts().setDevice(getDevice());
@@ -76,6 +78,37 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     return event;
+  }
+
+  private List<DebugImage> getDebugImages() {
+    String[] uuids = getProGuardUuids();
+
+    if (uuids == null || uuids.length == 0) {
+      return null;
+    }
+
+    List<DebugImage> images = new ArrayList<>();
+
+    for (String item : uuids) {
+      DebugImage debugImage = new DebugImage();
+      debugImage.setType("proguard");
+      debugImage.setUuid(item);
+      images.add(debugImage);
+    }
+
+    return images;
+  }
+
+  private DebugMeta getDebugMeta() {
+    List<DebugImage> debugImages = getDebugImages();
+
+    if (debugImages == null) {
+      return null;
+    }
+
+    DebugMeta debugMeta = new DebugMeta();
+    debugMeta.setImages(debugImages);
+    return debugMeta;
   }
 
   private void setAppExtras(SentryEvent event) {
@@ -714,7 +747,6 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
   }
 
-  @SuppressWarnings("UnusedMethod")
   private String[] getProGuardUuids() {
     InputStream is = null;
     try {
