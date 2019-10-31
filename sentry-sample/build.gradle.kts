@@ -22,11 +22,21 @@ android {
         )
     }
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         getByName("debug")
         getByName("release") {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
         }
     }
 
@@ -61,8 +71,11 @@ dependencies {
     implementation(project(":sentry-android"))
 
     implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.constraintLayout)
+
+    // debugging purpose
     implementation(Config.Libs.timber)
+    debugImplementation(Config.Libs.leakCanary)
+
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.junit)
