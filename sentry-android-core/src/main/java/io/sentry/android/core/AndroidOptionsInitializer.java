@@ -23,6 +23,7 @@ final class AndroidOptionsInitializer {
 
     ManifestMetadataReader.applyMetadata(context, options);
     initializeCacheDirs(context, options);
+    setDefaultInApp(context, options);
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
     options.setSerializer(new AndroidSerializer(options.getLogger()));
@@ -44,6 +45,17 @@ final class AndroidOptionsInitializer {
         options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
       }
     }
+  }
+
+  private static void setDefaultInApp(Context context, SentryOptions options) {
+    String packageName = context.getPackageName();
+    if (packageName != null && !packageName.startsWith("android.")) {
+      options.addInAppInclude(packageName);
+    }
+    options.addInAppExclude("android.");
+    options.addInAppExclude("com.android.");
+    options.addInAppExclude("androidx.");
+    options.addInAppExclude("kotlin.");
   }
 
   private static void initializeCacheDirs(Context context, SentryOptions options) {
