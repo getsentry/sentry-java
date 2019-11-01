@@ -144,6 +144,18 @@ public final class Sentry {
     }
 
     /**
+     * Returns {@code true} if the Sentry object has been already initialized.
+     * <p>
+     * Note that this method will return true even when {@link SentryClient} was disabled passing an empty value
+     * as {@link Dsn}
+     *
+     * @return {@code true} if stored {@link SentryClient} is not null
+     */
+    public static boolean isInitialized() {
+        return storedClient != null;
+    }
+
+    /**
      * Returns the last statically stored {@link SentryClient} instance. If no instance
      * is already stored, an attempt will be made to create a {@link SentryClient} from the configuration
      * found in the environment.
@@ -152,7 +164,7 @@ public final class Sentry {
      */
     public static SentryClient getStoredClient() {
         synchronized (STORED_CLIENT_ACCESS) {
-            if (storedClient != null) {
+            if (isInitialized()) {
                 return storedClient;
             }
 
@@ -197,7 +209,7 @@ public final class Sentry {
      */
     public static void setStoredClient(SentryClient client) {
         synchronized (STORED_CLIENT_ACCESS) {
-            if (storedClient != null) {
+            if (isInitialized()) {
                 logger.warn("Overwriting statically stored SentryClient instance {} with {}.",
                         storedClient, client);
             }
@@ -274,7 +286,7 @@ public final class Sentry {
      */
     public static void close() {
         synchronized (STORED_CLIENT_ACCESS) {
-            if (storedClient == null) {
+            if (!isInitialized()) {
                 return;
             }
 
