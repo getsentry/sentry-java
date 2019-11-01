@@ -1,8 +1,6 @@
 package io.sentry.config;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -72,8 +70,12 @@ public final class Lookup {
      */
     public static Lookup getDefault() {
         return new Lookup(
-                new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders(Collections.<ConfigurationProvider>emptyList())),
-                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders(Collections.<ConfigurationProvider>emptyList()))
+                new CompoundConfigurationProvider(
+                        getDefaultHighPriorityConfigurationProviders(Collections.<ConfigurationProvider>emptyList())
+                ),
+                new CompoundConfigurationProvider(
+                        getDefaultLowPriorityConfigurationProviders(Collections.<ConfigurationProvider>emptyList())
+                )
         );
     }
 
@@ -97,8 +99,10 @@ public final class Lookup {
      */
     public static Lookup getDefaultWithAdditionalProviders(Collection<ConfigurationProvider> highPriorityProviders,
                                                            Collection<ConfigurationProvider> lowPriorityProviders) {
-        return new Lookup(new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders(highPriorityProviders)),
-                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders(lowPriorityProviders)));
+        return new Lookup(
+                new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders(highPriorityProviders)),
+                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders(lowPriorityProviders))
+        );
     }
 
     private static List<ConfigurationResourceLocator> getDefaultResourceLocators() {
