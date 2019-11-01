@@ -14,6 +14,7 @@ import java.util.TimeZone
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class AndroidSerializerTest {
 
@@ -226,6 +227,13 @@ class AndroidSerializerTest {
         val actual = serializer.deserializeEvent(jsonEvent)
 
         assertEquals(SentryLevel.DEBUG, actual.level)
+    }
+
+    @Test
+    fun `when theres a null value, gson wont blow up`() {
+        val json = FileFromResources.invoke("event.json")
+        val event = serializer.deserializeEvent(json)
+        assertNull(event.user)
     }
 
     private fun generateEmptySentryEvent(): SentryEvent {
