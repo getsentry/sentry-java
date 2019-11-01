@@ -55,5 +55,11 @@ public class MainActivity extends AppCompatActivity {
                   });
               Sentry.captureException(new Exception("Some exception with scope."));
             });
+
+    findViewById(R.id.native_crash)
+        .setOnClickListener(
+            view -> {
+              NativeSample.crash();
+            });
   }
 }
