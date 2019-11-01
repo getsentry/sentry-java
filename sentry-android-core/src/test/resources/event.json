@@ -1,0 +1,31 @@
+{
+  "contexts": {},
+  "debug_meta": {
+    "images": [
+      {
+        "code_file": "/system/bin/linker",
+        "code_id": "d0eff4c95d54375b45a236f201d6f485",
+        "debug_id": "d0eff4c9-5d54-375b-45a2-36f201d6f485",
+        "image_addr": "0xec1da000",
+        "image_size": 1378124,
+        "type": "elf"
+      }
+    ]
+  },
+  "event_id": "087be0b0-f5de-424f-62fc-21adbf8d8dcf",
+  "extra": {},
+  "level": "error",
+  "sdk": {
+    "name": "sentry-native",
+    "packages": [
+      {
+        "name": "github:getsentry/sentry-native",
+        "version": "0.1.2"
+      }
+    ],
+    "version": "0.1.2"
+  },
+  "tags": {},
+  "timestamp": "2019-11-01T00:41:06Z",
+  "user": null
+}
