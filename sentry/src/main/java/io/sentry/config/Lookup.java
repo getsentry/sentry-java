@@ -114,9 +114,9 @@ public final class Lookup {
     ) {
         boolean jndiPresent = JndiSupport.isAvailable();
 
+        @SuppressWarnings("checkstyle:MagicNumber")
         int providersCount = jndiPresent ? 3 + additionalProviders.size() : 2 + additionalProviders.size();
 
-        @SuppressWarnings("checkstyle:MagicNumber")
         List<ConfigurationProvider> providers = new ArrayList<>(providersCount);
         providers.addAll(additionalProviders);
 
