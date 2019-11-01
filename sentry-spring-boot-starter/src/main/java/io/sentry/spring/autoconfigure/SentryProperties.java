@@ -26,10 +26,6 @@ import java.util.Set;
  *     mdc-tags: [mdcTagA, mdcTagB]
  *     extra:
  *         extraTag: extra
- *     options:
- *         stacktrace.app.packages: com.mycompany,com.other.name
- *         sample.rate: 0.75
- *         uncaught.handler.enabled: false
  * </pre>
  */
 @ConfigurationProperties("sentry")
@@ -90,9 +86,40 @@ public class SentryProperties {
     private Map<String, Object> extra = new LinkedHashMap<>();
 
     /**
-     * Additional options, check the <a href="https://docs.sentry.io/clients/java/config/">documentation</a>.
+     * By default the content sent to Sentry is compressed before being sent. However, compressing and encoding the
+     * data adds a small CPU and memory hit which might not be useful if the connection to Sentry is fast and reliable.
+     * Depending on the limitations of the project (e.g. a mobile application with a limited connection, Sentry hosted
+     * on an external network), it can be useful to compress the data beforehand or not.
      */
-    private Map<String, String> options = new LinkedHashMap<>();
+    private Boolean compression;
+
+    /**
+     * By default only the first 1000 characters of a message will be sent to the server.
+     */
+    private Integer maxMessageLength;
+
+    /**
+     * A timeout is set to avoid blocking Sentry threads because establishing a connection is taking too long.
+     */
+    private Integer timeout;
+
+    /**
+     * Sentry can be configured to sample events.
+     * This option takes a number from 0.0 to 1.0, representing the percent of events to allow through to server
+     * (from 0% to 100%). By default all events will be sent to the Sentry server.
+     */
+    private Double sampleRate;
+
+    /**
+     * By default, an UncaughtExceptionHandler is configured that will attempt to send exceptions to Sentry.
+     * Exceptions are sent asynchronously by default, and there is no guarantee they will be sent before the JVM exits.
+     * This option is best used in conjunction with the disk buffering system.
+     */
+    private Boolean uncaughtHandlerEnabled;
+
+    private final Stacktrace stacktrace = new Stacktrace();
+    private final Buffer buffer = new Buffer();
+    private final Async async = new Async();
 
     public boolean isEnabled() {
         return enabled;
@@ -174,12 +201,266 @@ public class SentryProperties {
         this.extra = extra;
     }
 
-    public Map<String, String> getOptions() {
-        return options;
+    public Boolean getCompression() {
+        return compression;
     }
 
-    public void setOptions(Map<String, String> options) {
-        this.options = options;
+    public void setCompression(Boolean compression) {
+        this.compression = compression;
+    }
+
+    public Integer getMaxMessageLength() {
+        return maxMessageLength;
+    }
+
+    public void setMaxMessageLength(Integer maxMessageLength) {
+        this.maxMessageLength = maxMessageLength;
+    }
+
+    public Integer getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(Integer timeout) {
+        this.timeout = timeout;
+    }
+
+    public Double getSampleRate() {
+        return sampleRate;
+    }
+
+    public void setSampleRate(Double sampleRate) {
+        this.sampleRate = sampleRate;
+    }
+
+    public Boolean getUncaughtHandlerEnabled() {
+        return uncaughtHandlerEnabled;
+    }
+
+    public void setUncaughtHandlerEnabled(Boolean uncaughtHandlerEnabled) {
+        this.uncaughtHandlerEnabled = uncaughtHandlerEnabled;
+    }
+
+    public Stacktrace getStacktrace() {
+        return stacktrace;
+    }
+
+    public Buffer getBuffer() {
+        return buffer;
+    }
+
+    public Async getAsync() {
+        return async;
+    }
+
+    public static class Stacktrace {
+
+        /**
+         * Some frames are replaced by the ... N more line as they are the same frames as in the enclosing exception.
+         * <p>
+         * Similar behaviour is enabled by default in Sentry.
+         */
+        private Boolean hideCommon;
+
+        /**
+         * Configure which package prefixes your application uses.
+         */
+        private Set<String> appPackages;
+
+        public Boolean getHideCommon() {
+            return hideCommon;
+        }
+
+        public void setHideCommon(Boolean hideCommon) {
+            this.hideCommon = hideCommon;
+        }
+
+        public Set<String> getAppPackages() {
+            return appPackages;
+        }
+
+        public void setAppPackages(Set<String> appPackages) {
+            this.appPackages = appPackages;
+        }
+
+    }
+
+    public static class Buffer {
+
+        /**
+         * Sentry can be configured to write events to a specified directory on disk anytime communication with the Sentry
+         * server fails. If the directory doesn’t exist, Sentry will attempt to create it on startup and may therefore
+         * need write permission on the parent directory. Sentry always requires write permission on the buffer
+         * directory itself.
+         */
+        private String dir;
+
+        /**
+         * The maximum number of events that will be stored on disk defaults to 10.
+         */
+        private Integer size;
+
+        /**
+         * If a buffer directory is provided, a background thread will periodically attempt to re-send the events that
+         * are found on disk. By default it will attempt to send events every 60 seconds.
+         */
+        private Integer flushTime;
+
+        /**
+         * In order to shutdown the buffer flushing thread gracefully, a ShutdownHook is created. By default, the buffer
+         * flushing thread is given 1 second to shutdown gracefully.
+         * The special value -1 can be used to disable the timeout and wait indefinitely for the executor to terminate.
+         */
+        private Integer shutdownTimeout;
+
+        /**
+         * The ShutdownHook could lead to memory leaks in an environment where the life cycle of Sentry doesn’t match
+         * the life cycle of the JVM.
+         * An example would be in a JEE environment where the application using Sentry could be deployed and undeployed
+         * regularly.
+         * To avoid this behaviour, it is possible to disable the graceful shutdown.
+         */
+        private Boolean gracefulShutdown;
+
+        public String getDir() {
+            return dir;
+        }
+
+        public void setDir(String dir) {
+            this.dir = dir;
+        }
+
+        public Integer getSize() {
+            return size;
+        }
+
+        public void setSize(Integer size) {
+            this.size = size;
+        }
+
+        public Integer getFlushTime() {
+            return flushTime;
+        }
+
+        public void setFlushTime(Integer flushTime) {
+            this.flushTime = flushTime;
+        }
+
+        public Integer getShutdownTimeout() {
+            return shutdownTimeout;
+        }
+
+        public void setShutdownTimeout(Integer shutdownTimeout) {
+            this.shutdownTimeout = shutdownTimeout;
+        }
+
+        public Boolean getGracefulShutdown() {
+            return gracefulShutdown;
+        }
+
+        public void setGracefulShutdown(Boolean gracefulShutdown) {
+            this.gracefulShutdown = gracefulShutdown;
+        }
+
+    }
+
+    public static class Async {
+
+        /**
+         * In order to avoid performance issues due to a large amount of logs being generated or a slow connection to
+         * the Sentry server, an asynchronous connection is set up, using a low priority thread pool to submit events
+         * to Sentry.
+         */
+        private Boolean enabled;
+
+        /**
+         * In order to shutdown the asynchronous connection gracefully, a ShutdownHook is created. By default, the
+         * asynchronous connection is given 1 second to shutdown gracefully.
+         * The special value -1 can be used to disable the timeout and wait indefinitely for the executor to terminate.
+         */
+        private Integer shutdownTimeout;
+
+        /**
+         * The ShutdownHook could lead to memory leaks in an environment where the life cycle of Sentry doesn’t match
+         * the life cycle of the JVM.
+         * An example would be in a JEE environment where the application using Sentry could be deployed and undeployed
+         * regularly.
+         * To avoid this behaviour, it is possible to disable the graceful shutdown. This might lead to some log entries
+         * being lost if the log application doesn’t shut down the SentryClient instance nicely.
+         */
+        private Boolean gracefulShutdown;
+
+        /**
+         * The default queue used to store unprocessed events is limited to 50 items. Additional items added once the
+         * queue is full are dropped and never sent to the Sentry server. Depending on the environment (if the memory
+         * is sparse) it is important to be able to control the size of that queue to avoid memory issues.
+         * This means that if the connection to the Sentry server is down, only the 100 most recent events will be
+         * stored and processed as soon as the server is back up.
+         * The special value -1 can be used to enable an unlimited queue. Beware that network connectivity or Sentry
+         * server issues could mean your process will run out of memory.
+         */
+        private Integer queueSize;
+
+        /**
+         * By default the thread pool used by the async connection contains one thread per processor available to the JVM.
+         * It’s possible to manually set the number of threads.
+         */
+        private Integer threads;
+
+        /**
+         * In most cases sending logs to Sentry isn’t as important as an application running smoothly, so the threads
+         * have a minimal priority: https://docs.oracle.com/javase/6/docs/api/java/lang/Thread.html#MIN_PRIORITY.
+         */
+        private Integer priority;
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Integer getShutdownTimeout() {
+            return shutdownTimeout;
+        }
+
+        public void setShutdownTimeout(Integer shutdownTimeout) {
+            this.shutdownTimeout = shutdownTimeout;
+        }
+
+        public Boolean getGracefulShutdown() {
+            return gracefulShutdown;
+        }
+
+        public void setGracefulShutdown(Boolean gracefulShutdown) {
+            this.gracefulShutdown = gracefulShutdown;
+        }
+
+        public Integer getQueueSize() {
+            return queueSize;
+        }
+
+        public void setQueueSize(Integer queueSize) {
+            this.queueSize = queueSize;
+        }
+
+        public Integer getThreads() {
+            return threads;
+        }
+
+        public void setThreads(Integer threads) {
+            this.threads = threads;
+        }
+
+        public Integer getPriority() {
+            return priority;
+        }
+
+        public void setPriority(Integer priority) {
+            this.priority = priority;
+        }
+
     }
 
 }
