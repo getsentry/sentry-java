@@ -3,7 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    java
+    `java-library`
     id("com.diffplug.gradle.spotless") version Config.QualityPlugins.spotlessVersion apply true
     jacoco
 }

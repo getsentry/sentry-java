@@ -1,5 +1,5 @@
 plugins {
-    java
+    `java-library`
     kotlin("jvm")
     jacoco
     id("net.ltgt.errorprone")
