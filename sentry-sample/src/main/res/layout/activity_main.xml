@@ -29,5 +29,5 @@
   <Button android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:id="@+id/native_crash"
-          android:text="Crash from native (segfault)"/>
+          android:text="@string/crash_from_native"/>
 </LinearLayout>

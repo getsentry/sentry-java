@@ -56,7 +56,7 @@ final class NoOpHub implements IHub {
   public void configureScope(ScopeCallback callback) {}
 
   @Override
-  public void bindClient(SentryClient client) {}
+  public void bindClient(ISentryClient client) {}
 
   @Override
   public void flush(long timeoutMills) {}

@@ -26,7 +26,7 @@ public interface IHub {
 
   void configureScope(ScopeCallback callback);
 
-  void bindClient(SentryClient client);
+  void bindClient(ISentryClient client);
 
   void flush(long timeoutMills);
 
