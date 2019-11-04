@@ -5,6 +5,8 @@ import static io.sentry.core.ILogger.logIfNotNull;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.AsyncConnection;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,13 +97,11 @@ public final class SentryClient implements ISentryClient {
       processor.process(event);
     }
 
-    SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
-    if (beforeSend != null) {
-      event = beforeSend.execute(event);
-      if (event == null) {
-        // Event dropped by the beforeSend callback
-        return SentryId.EMPTY_ID;
-      }
+    event = executeBeforeSend(event);
+
+    if (event == null) {
+      // Event dropped by the beforeSend callback
+      return SentryId.EMPTY_ID;
     }
 
     try {
@@ -115,6 +115,34 @@ public final class SentryClient implements ISentryClient {
     }
 
     return event.getEventId();
+  }
+
+  private SentryEvent executeBeforeSend(SentryEvent event) {
+    SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
+    if (beforeSend != null) {
+      try {
+        event = beforeSend.execute(event);
+      } catch (Exception e) {
+        logIfNotNull(
+            options.getLogger(),
+            SentryLevel.ERROR,
+            "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
+            e);
+
+        Breadcrumb breadcrumb = new Breadcrumb();
+        breadcrumb.setMessage("BeforeSend callback failed.");
+        breadcrumb.setCategory("SentryClient");
+        Map<String, String> data = new HashMap<>();
+        data.put("sentry:message", e.getMessage());
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        data.put("sentry:stacktrace", sw.toString()); // might be obfuscated
+        breadcrumb.setLevel(SentryLevel.ERROR);
+        breadcrumb.setData(data);
+        event.addBreadcrumb(breadcrumb);
+      }
+    }
+    return event;
   }
 
   @Override
