@@ -7,6 +7,8 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.Queue
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -136,6 +138,25 @@ class HubTest {
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         assertEquals(expected, breadcrumbs!!.single())
+    }
+
+    @Test
+    fun `when beforeSend throws an exception, breadcrumb adds an entry to the data field with exception message and stacktrace`() {
+        val exception = Exception("test")
+        val sw = StringWriter()
+        exception.printStackTrace(PrintWriter(sw))
+        val stacktrace = sw.toString()
+
+        val options = SentryOptions()
+        options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { throw exception }
+        options.dsn = "https://key@sentry.io/proj"
+        val sut = Hub(options)
+
+        val actual = Breadcrumb()
+        sut.addBreadcrumb(actual)
+
+        assertEquals("test", actual.data["sentry:message"])
+        assertEquals(stacktrace, actual.data["sentry:stacktrace"])
     }
 
     @Test

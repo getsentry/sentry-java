@@ -7,6 +7,8 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.protocol.User
 import io.sentry.core.transport.AsyncConnection
+import java.io.PrintWriter
+import java.io.StringWriter
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -99,6 +101,28 @@ class SentryClientTest {
         sut.captureEvent(actual)
         verify(fixture.connection, never()).send(actual)
         verify(fixture.connection, times(1)).send(expected)
+    }
+
+    @Test
+    fun `when beforeSend throws an exception, breadcrumb is added and event is sent`() {
+        val exception = Exception("test")
+        val sw = StringWriter()
+        exception.printStackTrace(PrintWriter(sw))
+        val stacktrace = sw.toString()
+
+        exception.stackTrace.toString()
+        fixture.sentryOptions.setBeforeSend { throw exception }
+        val sut = fixture.getSut()
+        val actual = SentryEvent()
+        sut.captureEvent(actual)
+
+        assertEquals("test", actual.breadcrumbs.first().data["sentry:message"])
+        assertEquals(stacktrace, actual.breadcrumbs.first().data["sentry:stacktrace"])
+        assertEquals("SentryClient", actual.breadcrumbs.first().category)
+        assertEquals(SentryLevel.ERROR, actual.breadcrumbs.first().level)
+        assertEquals("BeforeSend callback failed.", actual.breadcrumbs.first().message)
+
+        verify(fixture.connection, times(1)).send(actual)
     }
 
     @Test
