@@ -6,13 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 
 public final class Scope implements Cloneable {
   private SentryLevel level;
   private String transaction;
   private User user;
   private List<String> fingerprint = new ArrayList<>();
-  private final Queue<Breadcrumb> breadcrumbs;
+  private Queue<Breadcrumb> breadcrumbs;
   private Map<String, String> tags = new ConcurrentHashMap<>();
   private Map<String, Object> extra = new ConcurrentHashMap<>();
 
@@ -56,10 +57,7 @@ public final class Scope implements Cloneable {
     return breadcrumbs;
   }
 
-  public void addBreadcrumb(Breadcrumb breadcrumb) {
-    if (breadcrumb == null) {
-      return;
-    }
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
     this.breadcrumbs.add(breadcrumb);
   }
 
