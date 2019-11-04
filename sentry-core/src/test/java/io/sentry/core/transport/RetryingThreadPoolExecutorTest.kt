@@ -12,6 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class RetryingThreadPoolExecutorTest {
     private val maxRetries = 5
@@ -157,13 +158,23 @@ class RetryingThreadPoolExecutorTest {
         synchronized(jobBlocker) { jobBlocker.notify() }
         atLeastOneFinished.await()
 
+        var waitCount = 0
+        // wait for the thread pool to realize that the job indeed finished
+        while (threadPool?.completedTaskCount == 0L) {
+            waitCount++
+            if (waitCount == 10) {
+                fail()
+            }
+            Thread.sleep(100)
+        }
+
         // now try to test that the above actually made room in the queue again
         val jobBlocker2 = CountDownLatch(1)
         val sync2 = CountDownLatch(1)
 
         f = threadPool?.submit { sync2.countDown(); jobBlocker2.await() }
-        sync2.await()
         assertFalse(f != null && f.isCancelled, "A task should be successfully enqueued after making a place in the queue")
+        sync2.await()
 
         synchronized(jobBlocker) { jobBlocker.notifyAll() }
         jobBlocker2.countDown()
