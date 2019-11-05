@@ -183,7 +183,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(Breadcrumb breadcrumb) {
+  public void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
     if (!isEnabled()) {
       logIfNotNull(
           options.getLogger(),
@@ -197,7 +197,7 @@ public final class Hub implements IHub {
       if (item != null) {
         SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
         if (callback != null) {
-          breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb);
+          breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
         }
         if (breadcrumb != null) {
           item.scope.addBreadcrumb(breadcrumb);
@@ -210,9 +210,11 @@ public final class Hub implements IHub {
   }
 
   private Breadcrumb executeBeforeBreadcrumb(
-      SentryOptions.BeforeBreadcrumbCallback callback, Breadcrumb breadcrumb) {
+      SentryOptions.BeforeBreadcrumbCallback callback,
+      Breadcrumb breadcrumb,
+      @Nullable Object hint) {
     try {
-      breadcrumb = callback.execute(breadcrumb);
+      breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Exception e) {
       logIfNotNull(
           options.getLogger(),

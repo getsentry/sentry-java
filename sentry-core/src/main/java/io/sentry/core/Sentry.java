@@ -2,6 +2,7 @@ package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK main API entry point */
 public final class Sentry {
@@ -71,8 +72,8 @@ public final class Sentry {
     return getCurrentHub().captureException(throwable);
   }
 
-  public static void addBreadcrumb(Breadcrumb breadcrumb) {
-    getCurrentHub().addBreadcrumb(breadcrumb);
+  public static void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
+    getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 
   public static SentryId getLastEventId() {
