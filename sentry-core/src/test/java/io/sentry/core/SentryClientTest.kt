@@ -74,10 +74,7 @@ class SentryClientTest {
     @Test
     fun `when beforeSend is set, callback is invoked`() {
         var invoked = false
-        fixture.sentryOptions.setBeforeSend { e ->
-            invoked = true
-            e
-        }
+        fixture.sentryOptions.setBeforeSend { e, _ -> invoked = true; e }
         val sut = fixture.getSut()
         sut.captureEvent(SentryEvent())
         assertTrue(invoked)
@@ -85,7 +82,7 @@ class SentryClientTest {
 
     @Test
     fun `when beforeSend is returns null, event is dropped`() {
-        fixture.sentryOptions.setBeforeSend { null }
+        fixture.sentryOptions.setBeforeSend { _: SentryEvent, _: Any? -> null }
         val sut = fixture.getSut()
         val event = SentryEvent()
         sut.captureEvent(event)
@@ -95,7 +92,7 @@ class SentryClientTest {
     @Test
     fun `when beforeSend is returns new instance, new instance is sent`() {
         val expected = SentryEvent()
-        fixture.sentryOptions.setBeforeSend { expected }
+        fixture.sentryOptions.setBeforeSend { _, _ -> expected }
         val sut = fixture.getSut()
         val actual = SentryEvent()
         sut.captureEvent(actual)
@@ -111,7 +108,7 @@ class SentryClientTest {
         val stacktrace = sw.toString()
 
         exception.stackTrace.toString()
-        fixture.sentryOptions.setBeforeSend { throw exception }
+        fixture.sentryOptions.setBeforeSend { _, _ -> throw exception }
         val sut = fixture.getSut()
         val actual = SentryEvent()
         sut.captureEvent(actual)
@@ -128,10 +125,7 @@ class SentryClientTest {
     @Test
     fun `when captureMessage is called, sentry event contains formatted message`() {
         var sentEvent: SentryEvent? = null
-        fixture.sentryOptions.setBeforeSend { e ->
-            sentEvent = e
-            e
-        }
+        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
         val sut = fixture.getSut()
         val actual = "actual message"
         sut.captureMessage(actual)
