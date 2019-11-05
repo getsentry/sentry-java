@@ -18,7 +18,7 @@ public final class InvalidDsnException extends RuntimeException {
     this.dsn = dsn;
   }
 
-  public InvalidDsnException(String dsn, Throwable cause) {
+  InvalidDsnException(String dsn, Throwable cause) {
     super(cause);
     this.dsn = dsn;
   }

@@ -9,7 +9,7 @@ final class NoOpLogger implements ILogger {
     return instance;
   }
 
-  NoOpLogger() {}
+  private NoOpLogger() {}
 
   @Override
   public void log(SentryLevel level, String message, Object... args) {}

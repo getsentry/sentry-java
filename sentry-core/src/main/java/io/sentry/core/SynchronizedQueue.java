@@ -40,7 +40,7 @@ final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Qu
    * @return a new synchronized Queue
    * @throws NullPointerException if queue is null
    */
-  public static <E> SynchronizedQueue<E> synchronizedQueue(final Queue<E> queue) {
+  static <E> SynchronizedQueue<E> synchronizedQueue(final Queue<E> queue) {
     return new SynchronizedQueue<>(queue);
   }
 
@@ -51,7 +51,7 @@ final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Qu
    * @param queue the queue to decorate, must not be null
    * @throws NullPointerException if queue is null
    */
-  protected SynchronizedQueue(final Queue<E> queue) {
+  private SynchronizedQueue(final Queue<E> queue) {
     super(queue);
   }
 

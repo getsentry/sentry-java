@@ -6,7 +6,7 @@ import java.util.List;
 final class SentryValues<T> {
   private List<T> values;
 
-  public SentryValues(List<T> values) {
+  SentryValues(List<T> values) {
     if (values == null) {
       values = new ArrayList<>(0);
     }

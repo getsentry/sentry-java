@@ -7,7 +7,7 @@ public final class SentryEnvelopeHeader {
   private final SentryId eventId;
   private final String auth;
 
-  public SentryEnvelopeHeader(SentryId sentryId, @Nullable String auth) {
+  SentryEnvelopeHeader(SentryId sentryId, @Nullable String auth) {
     this.eventId = sentryId;
     this.auth = auth;
   }

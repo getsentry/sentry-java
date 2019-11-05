@@ -48,7 +48,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
   /** The collection to decorate */
   private final Collection<E> collection;
   /** The object to lock on, needed for List/SortedSet views */
-  protected final Object lock;
+  final Object lock;
 
   /**
    * Factory method to create a synchronized collection.
@@ -70,7 +70,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
    * @param collection the collection to decorate, must not be null
    * @throws NullPointerException if the collection is null
    */
-  protected SynchronizedCollection(final Collection<E> collection) {
+  SynchronizedCollection(final Collection<E> collection) {
     if (collection == null) {
       throw new NullPointerException("Collection must not be null.");
     }
@@ -85,7 +85,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
    * @param lock the lock object to use, must not be null
    * @throws NullPointerException if the collection or lock is null
    */
-  protected SynchronizedCollection(final Collection<E> collection, final Object lock) {
+  SynchronizedCollection(final Collection<E> collection, final Object lock) {
     if (collection == null) {
       throw new NullPointerException("Collection must not be null.");
     }

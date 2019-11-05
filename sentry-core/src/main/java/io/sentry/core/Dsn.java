@@ -44,7 +44,7 @@ final class Dsn {
     return sentryUri;
   }
 
-  public Dsn(String dsn) throws InvalidDsnException {
+  Dsn(String dsn) throws InvalidDsnException {
     try {
       URI uri = new URI(dsn);
       String userInfo = uri.getUserInfo();

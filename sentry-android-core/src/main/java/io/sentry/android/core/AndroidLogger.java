@@ -52,7 +52,7 @@ final class AndroidLogger implements ILogger {
     }
   }
 
-  int toLogcatLevel(SentryLevel sentryLevel) {
+  private int toLogcatLevel(SentryLevel sentryLevel) {
     switch (sentryLevel) {
       case DEBUG:
         return Log.DEBUG;

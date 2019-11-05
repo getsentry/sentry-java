@@ -12,7 +12,7 @@ public final class Sentry {
 
   private static volatile IHub mainHub = NoOpHub.getInstance();
 
-  static IHub getCurrentHub() {
+  private static IHub getCurrentHub() {
     IHub hub = currentHub.get();
     if (hub == null) {
       currentHub.set(mainHub.clone());
@@ -34,7 +34,7 @@ public final class Sentry {
     init(options);
   }
 
-  static synchronized void init(@NotNull SentryOptions options) {
+  private static synchronized void init(@NotNull SentryOptions options) {
     String dsn = options.getDsn();
     if (dsn == null || dsn.isEmpty()) {
       close();
