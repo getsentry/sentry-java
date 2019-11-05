@@ -1,6 +1,8 @@
 package io.sentry.core;
 
+import io.sentry.core.protocol.SentryException;
 import io.sentry.core.util.Objects;
+import java.util.List;
 
 public final class MainEventProcessor implements EventProcessor {
 
@@ -31,10 +33,6 @@ public final class MainEventProcessor implements EventProcessor {
 
   @Override
   public SentryEvent process(SentryEvent event) {
-    if (event.getThreads() == null) {
-      event.setThreads(sentryThreadFactory.getCurrentThreads());
-    }
-
     if (event.getRelease() == null) {
       event.setRelease(options.getRelease());
     }
@@ -45,6 +43,24 @@ public final class MainEventProcessor implements EventProcessor {
     Throwable throwable = event.getThrowable();
     if (throwable != null) {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
+    }
+
+    if (event.getThreads() == null) {
+      Long crashedThreadId = null;
+      List<SentryException> exceptions = event.getExceptions();
+      if (event.getExceptions() != null && !exceptions.isEmpty()) {
+        for (SentryException exception : exceptions) {
+          if (exception != null
+              && exception.getMechanism() != null
+              // If mechanism is set to handled=false, this will crash the app.
+              // Provide the thread-id if available to mark the thread-list with the crashed one.
+              && Boolean.FALSE.equals(exception.getMechanism().getHandled())) {
+            crashedThreadId = exception.getThreadId();
+            break;
+          }
+        }
+      }
+      event.setThreads(sentryThreadFactory.getCurrentThreads(crashedThreadId));
     }
 
     return event;

@@ -2,7 +2,11 @@ package io.sentry.core;
 
 import static io.sentry.core.ILogger.logIfNotNull;
 
+import io.sentry.core.exception.ExceptionMechanismThrowable;
+import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Sends any uncaught exception to Sentry, then passes the exception on to the pre-existing uncaught
@@ -58,8 +62,10 @@ public final class UncaughtExceptionHandlerIntegration
     logIfNotNull(options.getLogger(), SentryLevel.INFO, "Uncaught exception received.");
 
     try {
-      // TODO: Set Thread info to the scope?
-      this.hub.captureException(thrown);
+      Throwable throwable = getUnhandledThrowable(thread, thrown);
+      this.hub.captureException(throwable);
+      // Close the SDK to flush the event to disk before shutting down.
+      this.hub.close();
     } catch (Exception e) {
       logIfNotNull(
           options.getLogger(), SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
@@ -68,5 +74,14 @@ public final class UncaughtExceptionHandlerIntegration
     if (defaultExceptionHandler != null) {
       defaultExceptionHandler.uncaughtException(thread, thrown);
     }
+  }
+
+  @NotNull
+  @TestOnly
+  static Throwable getUnhandledThrowable(Thread thread, Throwable thrown) {
+    Mechanism mechanism = new Mechanism();
+    mechanism.setHandled(false);
+    mechanism.setType("UncaughtExceptionHandler");
+    return new ExceptionMechanismThrowable(mechanism, thrown, thread);
   }
 }

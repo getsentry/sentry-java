@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public final class Mechanism implements IUnknownPropertiesConsumer {
   private String type;
@@ -10,6 +11,15 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
   private Boolean handled;
   private Map<String, Object> meta;
   private Map<String, Object> data;
+  private final transient Thread thread;
+
+  public Mechanism() {
+    this(null);
+  }
+
+  public Mechanism(@Nullable Thread thread) {
+    this.thread = thread;
+  }
 
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
@@ -60,6 +70,10 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
 
   public void setData(Map<String, Object> data) {
     this.data = data;
+  }
+
+  Thread getThread() {
+    return thread;
   }
 
   @Override

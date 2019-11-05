@@ -38,7 +38,7 @@ class SentryExceptionFactoryTest {
 
         val error = Exception("Exception")
 
-        val throwable = ExceptionMechanismThrowable(mechanism, error)
+        val throwable = ExceptionMechanismThrowable(mechanism, error, null)
 
         val sentryExceptions = sut.getSentryExceptions(throwable)
         assertEquals("anr", sentryExceptions[0].mechanism.type)
