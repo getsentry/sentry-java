@@ -3,7 +3,7 @@ package io.sentry.core;
 import java.util.Date;
 import java.util.Map;
 
-public final class Breadcrumb implements IUnknownPropertiesConsumer {
+public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   private Date timestamp;
   private String message;
   private String type;

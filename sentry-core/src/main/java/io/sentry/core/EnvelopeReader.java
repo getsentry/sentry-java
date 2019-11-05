@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public final class EnvelopeReader {
 
@@ -25,7 +25,7 @@ public final class EnvelopeReader {
               SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
           .create();
 
-  public @Nullable SentryEnvelope read(InputStream stream) throws IOException {
+  public @NotNull SentryEnvelope read(InputStream stream) throws IOException {
     byte[] buffer = new byte[1024];
     int currentLength;
     int streamOffset = 0;
@@ -133,12 +133,13 @@ public final class EnvelopeReader {
     return new SentryEnvelope(header, items);
   }
 
-  SentryEnvelopeHeader deserializeEnvelopeHeader(byte[] buffer, int offset, int length) {
+  private SentryEnvelopeHeader deserializeEnvelopeHeader(byte[] buffer, int offset, int length) {
     String json = new String(buffer, offset, length, UTF_8);
     return gson.fromJson(json, SentryEnvelopeHeader.class);
   }
 
-  SentryEnvelopeItemHeader deserializeEnvelopeItemHeader(byte[] buffer, int offset, int length) {
+  private SentryEnvelopeItemHeader deserializeEnvelopeItemHeader(
+      byte[] buffer, int offset, int length) {
     String json = new String(buffer, offset, length, UTF_8);
     return gson.fromJson(json, SentryEnvelopeItemHeader.class);
   }

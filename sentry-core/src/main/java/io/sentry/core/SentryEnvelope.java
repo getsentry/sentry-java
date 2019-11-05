@@ -16,7 +16,7 @@ public final class SentryEnvelope {
     return header;
   }
 
-  public SentryEnvelope(SentryEnvelopeHeader header, Iterable<SentryEnvelopeItem> items) {
+  SentryEnvelope(SentryEnvelopeHeader header, Iterable<SentryEnvelopeItem> items) {
     this.header = header;
     this.items = items;
   }

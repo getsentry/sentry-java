@@ -29,7 +29,7 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   final Context context;
-  final SentryOptions options;
+  private final SentryOptions options;
 
   // it could also be a parameter and get from Sentry.init(...)
   private static final Date appStartTime = DateUtils.getCurrentDateTime();
@@ -792,14 +792,14 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void log(SentryLevel level, String message, Throwable throwable) {
     ILogger logger = options.getLogger();
-    if (logger != null && options.isDebug()) {
+    if (options.isDebug()) {
       logger.log(level, message, throwable);
     }
   }
 
   private void log(SentryLevel level, String message, Object... args) {
     ILogger logger = options.getLogger();
-    if (logger != null && options.isDebug()) {
+    if (options.isDebug()) {
       logger.log(level, message, args);
     }
   }

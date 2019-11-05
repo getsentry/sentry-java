@@ -19,7 +19,7 @@ final class ManifestMetadataReader {
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String ENABLE_NDK = "io.sentry.ndk";
 
-  public static void applyMetadata(Context context, SentryOptions options) {
+  static void applyMetadata(Context context, SentryOptions options) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
 
     try {
@@ -53,7 +53,7 @@ final class ManifestMetadataReader {
     }
   }
 
-  public static boolean isAutoInit(Context context, ILogger logger) {
+  static boolean isAutoInit(Context context, ILogger logger) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
 
     boolean autoInit = true;

@@ -19,7 +19,7 @@ public final class UncaughtExceptionHandlerIntegration
   private boolean isRegistered = false;
   private UncaughtExceptionHandler threadAdapter;
 
-  public UncaughtExceptionHandlerIntegration() {
+  UncaughtExceptionHandlerIntegration() {
     this(UncaughtExceptionHandler.Adapter.INSTANCE);
   }
 

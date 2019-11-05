@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Contexts extends ConcurrentHashMap<String, Object> {
   private static final long serialVersionUID = 252445813254943011L;
 
-  <T> T toContextType(String key, Class<T> clazz) {
+  private <T> T toContextType(String key, Class<T> clazz) {
     Object item = get(key);
     return clazz.isInstance(item) ? clazz.cast(item) : null;
   }

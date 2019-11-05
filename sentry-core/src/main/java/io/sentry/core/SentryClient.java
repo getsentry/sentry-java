@@ -27,7 +27,7 @@ public final class SentryClient implements ISentryClient {
     return isEnabled;
   }
 
-  public SentryClient(SentryOptions options) {
+  SentryClient(SentryOptions options) {
     this(options, null);
   }
 

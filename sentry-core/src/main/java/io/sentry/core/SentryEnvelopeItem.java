@@ -5,7 +5,7 @@ public final class SentryEnvelopeItem {
   // TODO: Can we have a slice or a reader here instead?
   private final byte[] data;
 
-  public SentryEnvelopeItem(SentryEnvelopeItemHeader header, byte[] data) {
+  SentryEnvelopeItem(SentryEnvelopeItemHeader header, byte[] data) {
     this.header = header;
     this.data = data;
   }

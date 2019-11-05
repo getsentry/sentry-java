@@ -12,6 +12,8 @@ public final class DateUtils {
   private static final String UTC = "UTC";
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
+  private DateUtils() {}
+
   /**
    * Get date formatted as expected by Sentry.
    *
