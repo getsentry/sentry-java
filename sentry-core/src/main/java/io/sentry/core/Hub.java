@@ -39,11 +39,15 @@ public final class Hub implements IHub, Cloneable {
     if (rootStackItem != null) {
       this.stack.push(rootStackItem);
     }
+    this.lastEventId = SentryId.EMPTY_ID;
+
+    // Integrations will use this Hub instance once registered.
+    // Make sure Hub ready to be used then.
+    this.isEnabled = true;
+
     for (Integration integration : options.getIntegrations()) {
       integration.register(this, options);
     }
-    this.isEnabled = true;
-    this.lastEventId = SentryId.EMPTY_ID;
   }
 
   static StackItem createRootStackItem(@NotNull SentryOptions options) {

@@ -1,10 +1,13 @@
 package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
 import java.io.PrintWriter
@@ -400,4 +403,19 @@ class HubTest {
         verify(scopeCallback, times(1)).run(any())
     }
     //endregion
+
+    @Test
+    fun `when integration is registered, hub is enabled`() {
+        val mock = mock<Integration>()
+        val options = SentryOptions().apply {
+            addIntegration(mock)
+            dsn = "https://key@sentry.io/proj"
+        }
+        doAnswer {
+            val hub = it.arguments[0] as IHub
+            assertTrue(hub.isEnabled)
+        }.whenever(mock).register(any(), eq(options))
+        Hub(options)
+        verify(mock, times(1)).register(any(), eq(options))
+    }
 }
