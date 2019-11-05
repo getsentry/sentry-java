@@ -122,7 +122,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   }
 
   public List<SentryException> getExceptions() {
-    return exception.getValues();
+    return exception == null ? null : exception.getValues();
   }
 
   public void setExceptions(List<SentryException> exception) {

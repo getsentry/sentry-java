@@ -20,7 +20,7 @@ final class SentryThreadFactory {
 
   // Assumes its being called from the crashed thread.
   List<SentryThread> getCurrentThreadsForCrash() {
-    return getCurrentThreads(Thread.currentThread());
+    return getCurrentThreads(Thread.currentThread().getId());
   }
 
   // Doesn't mark a thread either crashed or not.
@@ -28,20 +28,20 @@ final class SentryThreadFactory {
     return getCurrentThreads(null);
   }
 
-  private List<SentryThread> getCurrentThreads(@Nullable final Thread crashedThread) {
+  List<SentryThread> getCurrentThreads(@Nullable final Long crashedThreadId) {
     Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
     List<SentryThread> result = new ArrayList<>();
 
     for (Map.Entry<Thread, StackTraceElement[]> item : threads.entrySet()) {
       result.add(
-          getSentryThread(crashedThread, Thread.currentThread(), item.getValue(), item.getKey()));
+          getSentryThread(crashedThreadId, Thread.currentThread(), item.getValue(), item.getKey()));
     }
 
     return result;
   }
 
   private SentryThread getSentryThread(
-      @Nullable final Thread crashedThread,
+      @Nullable final Long crashedThreadId,
       final Thread currentThread,
       final StackTraceElement[] stackFramesElements,
       final Thread thread) {
@@ -52,8 +52,8 @@ final class SentryThreadFactory {
     sentryThread.setId(thread.getId());
     sentryThread.setDaemon(thread.isDaemon());
     sentryThread.setState(thread.getState().name());
-    if (crashedThread != null) {
-      sentryThread.setCrashed(crashedThread == thread);
+    if (crashedThreadId != null) {
+      sentryThread.setCrashed(crashedThreadId == thread.getId());
     }
     sentryThread.setCurrent(thread == currentThread);
 
