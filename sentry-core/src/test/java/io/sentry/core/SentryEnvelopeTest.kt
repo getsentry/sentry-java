@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import java.io.InputStream
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -58,12 +59,31 @@ class SentryEnvelopeTest {
         assertEquals("Envelope contains no header.", exception.message)
     }
 
+    @Ignore("Until sentry-native write it")
     @Test
     fun `when envelope header has no event_id, reader throws illegal argument`() {
         val envelopeReader = EnvelopeReader()
         val stream = "{}\n{\"item_header\":\"value\",\"length\":\"2\"}\n{}".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
         assertEquals("Envelope header is missing required 'event_id'.", exception.message)
+    }
+
+    @Test
+    fun `when envelope terminates with line break, envelope parsed correctly`() {
+        val envelopeReader = EnvelopeReader()
+        val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":15,\"type\":\"event\"}\n{\"contexts\":{}}\n".toInputStream()
+
+        val envelope = envelopeReader.read(stream)
+
+        assertNotNull(envelope)
+        assertEquals("9ec79c33ec9942ab8353589fcb2e04dc", envelope.header.eventId.toString())
+        assertEquals(1, envelope.items.count())
+        val firstItem = envelope.items.first()
+        assertEquals("event", firstItem.header.type)
+        assertNull(firstItem.header.contentType)
+        assertEquals(15, firstItem.header.length)
+        assertEquals(15, firstItem.data.size)
+        assertNull(firstItem.header.fileName)
     }
 
     @Test

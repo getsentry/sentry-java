@@ -9,6 +9,7 @@ import io.sentry.core.SentryEvent
 import io.sentry.core.SentryLevel
 import io.sentry.core.protocol.Contexts
 import io.sentry.core.protocol.Device
+import java.io.StringReader
 import java.io.StringWriter
 import java.util.TimeZone
 import java.util.UUID
@@ -43,7 +44,7 @@ class AndroidSerializerTest {
         val expected = UUID.randomUUID().toString().replace("-", "")
         val jsonEvent = "{\"event_id\":\"$expected\"}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         assertEquals(expected, actual.eventId.toString())
     }
@@ -72,7 +73,7 @@ class AndroidSerializerTest {
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         assertEquals(expected, actual.timestamp)
     }
@@ -85,7 +86,7 @@ class AndroidSerializerTest {
 
         val jsonEvent = "{\"string\":\"test\",\"int\":1,\"boolean\":true}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         assertEquals("test", (actual.unknown["string"] as JsonPrimitive).asString)
         assertEquals(1, (actual.unknown["int"] as JsonPrimitive).asInt)
@@ -108,7 +109,7 @@ class AndroidSerializerTest {
 
         val jsonEvent = "{\"object\":{\"int\":1,\"boolean\":true}}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         val hashMapActual = actual.unknown["object"] as JsonObject // gson creates it as JsonObject
 
@@ -164,7 +165,7 @@ class AndroidSerializerTest {
 
         val jsonEvent = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         assertEquals("Europe/Vienna", (actual.contexts["device"] as LinkedTreeMap<*, *>)["timezone"]) // TODO: fix it when casting is being done proerly
     }
@@ -195,7 +196,7 @@ class AndroidSerializerTest {
 
         val jsonEvent = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         val orientation = (actual.contexts["device"] as LinkedTreeMap<*, *>)["orientation"] as String // TODO: fix it when casting is being done proerly
 
@@ -224,7 +225,7 @@ class AndroidSerializerTest {
 
         val jsonEvent = "{\"level\":\"debug\"}"
 
-        val actual = serializer.deserializeEvent(jsonEvent)
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         assertEquals(SentryLevel.DEBUG, actual.level)
     }
@@ -232,7 +233,7 @@ class AndroidSerializerTest {
     @Test
     fun `when theres a null value, gson wont blow up`() {
         val json = FileFromResources.invoke("event.json")
-        val event = serializer.deserializeEvent(json)
+        val event = serializer.deserializeEvent(StringReader(json))
         assertNull(event.user)
     }
 
