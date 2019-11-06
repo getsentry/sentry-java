@@ -35,7 +35,11 @@ final class SentryStackTraceFactory {
           sentryStackFrame.setModule(item.getClassName());
           sentryStackFrame.setFunction(item.getMethodName());
           sentryStackFrame.setFilename(item.getFileName());
-          sentryStackFrame.setLineno(item.getLineNumber());
+          // Protocol doesn't accept negative line numbers.
+          // The runtime seem to use -2 as a way to signal a native method
+          if (item.getLineNumber() >= 0) {
+            sentryStackFrame.setLineno(item.getLineNumber());
+          }
           sentryStackFrame.setNative(item.isNativeMethod());
           sentryStackFrames.add(sentryStackFrame);
         }
