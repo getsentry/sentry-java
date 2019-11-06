@@ -12,7 +12,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   private SentryId eventId;
   private Date timestamp;
   private transient Throwable throwable;
-  private Message message;
+  //  private Message message;
   private String serverName;
   private String platform;
   private String release;
@@ -61,13 +61,14 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     return throwable;
   }
 
-  public Message getMessage() {
-    return message;
-  }
-
-  public void setMessage(Message message) {
-    this.message = message;
-  }
+  // TODO: remove comment when we define data structure for message
+  //  public Message getMessage() {
+  //    return message;
+  //  }
+  //
+  //  public void setMessage(Message message) {
+  //    this.message = message;
+  //  }
 
   public String getServerName() {
     return serverName;

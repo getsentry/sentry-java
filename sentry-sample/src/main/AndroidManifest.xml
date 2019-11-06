@@ -26,7 +26,6 @@
     <meta-data android:name="io.sentry.debug" android:value="true" />
 
 <!--    <meta-data android:name="io.sentry.auto-init" android:value="false" /> // how to disable the auto-init-->
-
 <!--    <meta-data android:name="io.sentry.ndk" android:value="false" /> // how to disable the NDK-->
   </application>
 </manifest>

@@ -1,12 +1,9 @@
 package io.sentry.android.core;
 
 import android.content.Context;
-import android.os.Build;
 import io.sentry.core.ILogger;
-import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import java.io.File;
-import java.lang.reflect.Method;
 
 final class AndroidOptionsInitializer {
   private AndroidOptionsInitializer() {}
@@ -25,26 +22,13 @@ final class AndroidOptionsInitializer {
     initializeCacheDirs(context, options);
     setDefaultInApp(context, options);
 
+    // Integrations are registered in the same order. Watch outbox before adding NDK:
+    options.addIntegration(EnvelopeFileObserverIntegration.getCachedEnvelopeFileObserver());
+    options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver());
+    options.addIntegration(new NdkIntegration());
+
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
     options.setSerializer(new AndroidSerializer(options.getLogger()));
-
-    if (options.isEnableNdk() && isNdkAvailable()) {
-      try {
-        // TODO: Create Integrations interface and use that to initialize NDK
-        Class<?> cls = Class.forName("io.sentry.android.ndk.SentryNdk");
-
-        Method method = cls.getMethod("init", SentryOptions.class);
-        Object[] args = new Object[1];
-        args[0] = options;
-        method.invoke(null, args);
-      } catch (ClassNotFoundException e) {
-        options.setEnableNdk(false);
-        options.getLogger().log(SentryLevel.ERROR, "Failed to load SentryNdk.", e);
-      } catch (Exception e) {
-        options.setEnableNdk(false);
-        options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
-      }
-    }
   }
 
   private static void setDefaultInApp(Context context, SentryOptions options) {
@@ -63,9 +47,5 @@ final class AndroidOptionsInitializer {
     cacheDir.mkdirs();
     options.setCacheDirPath(cacheDir.getAbsolutePath());
     new File(options.getOutboxPath()).mkdirs();
-  }
-
-  private static boolean isNdkAvailable() {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
   }
 }
