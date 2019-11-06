@@ -30,5 +30,11 @@ public class MyApplication extends Application {
 
       StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build());
     }
+
+    //    SentryAndroid.init(
+    //        this,
+    //        options -> {
+    //          options.setAnrTimeoutIntervalMills(2000);
+    //        });
   }
 }

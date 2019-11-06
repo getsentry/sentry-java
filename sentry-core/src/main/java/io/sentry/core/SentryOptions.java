@@ -1,5 +1,6 @@
 package io.sentry.core;
 
+import com.jakewharton.nopen.annotation.Open;
 import java.io.File;
 import java.net.Proxy;
 import java.util.ArrayList;
@@ -7,7 +8,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryOptions {
+@Open
+public class SentryOptions {
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
   private List<EventProcessor> eventProcessors = new ArrayList<>();

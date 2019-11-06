@@ -27,11 +27,11 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `logger set to AndroidLogger`() {
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val logger = sentryOptions.javaClass.declaredFields.first { it.name == "logger" }
+        val logger = SentryOptions::class.java.declaredFields.first { it.name == "logger" }
         logger.isAccessible = true
         val loggerField = logger.get(sentryOptions)
         val innerLogger = loggerField.javaClass.declaredFields.first { it.name == "logger" }
@@ -41,7 +41,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `AndroidEventProcessor added to processors list`() {
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
         val mockLogger = mock<ILogger>()
 
@@ -52,7 +52,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `MainEventProcessor added to processors list and its the 1st`() {
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
         val mockLogger = mock<ILogger>()
 
@@ -63,7 +63,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `envelopesDir should be created at initialization`() {
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
         val mockLogger = mock<ILogger>()
 
@@ -74,7 +74,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `init should set context package name as appInclude`() {
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryAndroidOptions()
         val mockContext = mock<ApplicationStub> {
             on { applicationContext } doReturn context
         }
@@ -89,7 +89,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `init should set android as inAppExclude`() {
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
         val mockLogger = mock<ILogger>()
 

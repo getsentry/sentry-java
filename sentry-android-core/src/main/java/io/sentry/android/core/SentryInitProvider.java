@@ -14,7 +14,7 @@ public final class SentryInitProvider extends ContentProvider {
   public boolean onCreate() {
     AndroidLogger logger = new AndroidLogger();
     if (ManifestMetadataReader.isAutoInit(getContext(), logger)) {
-      Sentry.init(o -> AndroidOptionsInitializer.init(o, getContext(), logger));
+      SentryAndroid.init(getContext(), logger);
     }
     return true;
   }

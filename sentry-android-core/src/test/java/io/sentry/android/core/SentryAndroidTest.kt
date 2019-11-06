@@ -9,10 +9,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.ILogger
 import io.sentry.core.Sentry
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
@@ -28,7 +30,7 @@ class SentryAndroidTest {
     }
 
     @Test
-    fun `when applicationId is defined, dsn in meta-data, SDK initializes`() {
+    fun `when auto-init is disabled and user calls init manually, SDK initializes`() {
         assertFalse(Sentry.isEnabled())
 
         val mockContext = createMockContext()
@@ -36,8 +38,49 @@ class SentryAndroidTest {
         mockMetaData(mockContext, metaData)
 
         metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
 
         SentryAndroid.init(mockContext)
+
+        assertTrue(Sentry.isEnabled())
+    }
+
+    @Test
+    fun `when auto-init is disabled and user calls init manually with a logger, SDK initializes`() {
+        assertFalse(Sentry.isEnabled())
+
+        val mockContext = createMockContext()
+        val metaData = Bundle()
+        mockMetaData(mockContext, metaData)
+
+        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
+
+        val logger = mock<ILogger>()
+
+        SentryAndroid.init(mockContext, logger)
+
+        assertTrue(Sentry.isEnabled())
+    }
+
+    @Test
+    fun `when auto-init is disabled and user calls init manually with configuration handler, options should be set`() {
+        assertFalse(Sentry.isEnabled())
+
+        val mockContext = createMockContext()
+        val metaData = Bundle()
+        mockMetaData(mockContext, metaData)
+
+        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
+
+        var refOptions: SentryAndroidOptions? = null
+        SentryAndroid.init(mockContext) {
+            options -> options.anrTimeoutIntervalMills = 3000
+            refOptions = options
+        }
+
+        assertEquals(3000, refOptions!!.anrTimeoutIntervalMills)
 
         assertTrue(Sentry.isEnabled())
     }
