@@ -3,6 +3,7 @@ package io.sentry.core
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryStackTraceFactoryTest {
@@ -10,9 +11,23 @@ class SentryStackTraceFactoryTest {
 
     @Test
     fun `when getStackFrames is called passing a valid Array, not empty result`() {
-        val stacktraces = Thread.currentThread().stackTrace
-        val count = stacktraces.size
-        assertEquals(count, sut.getStackFrames(stacktraces).count())
+        val stacktrace = Thread.currentThread().stackTrace
+        val count = stacktrace.size
+        assertEquals(count, sut.getStackFrames(stacktrace).count())
+    }
+
+    @Test
+    fun `when line number is negative, not added to sentry stacktrace`() {
+        val stacktrace = StackTraceElement("class", "method", "fileName", -2)
+        val actual = sut.getStackFrames(arrayOf(stacktrace))
+        assertNull(actual[0].lineno)
+    }
+
+    @Test
+    fun `when line number is positive, gets added to sentry stacktrace`() {
+        val stacktrace = StackTraceElement("class", "method", "fileName", 1)
+        val actual = sut.getStackFrames(arrayOf(stacktrace))
+        assertEquals(stacktrace.lineNumber, actual[0].lineno)
     }
 
     @Test
@@ -23,13 +38,13 @@ class SentryStackTraceFactoryTest {
     @Test
     fun `when getStackFrames is called passing a valid array, fields should be set`() {
         val element = generateStackTrace("class")
-        val stacktraces = arrayOf(element)
-        val stackFrames = sut.getStackFrames(stacktraces)
+        val stacktrace = arrayOf(element)
+        val stackFrames = sut.getStackFrames(stacktrace)
         assertEquals("class", stackFrames[0].module)
         assertEquals("method", stackFrames[0].function)
         assertEquals("fileName", stackFrames[0].filename)
-        assertEquals(-2, stackFrames[0].lineno)
-        assertEquals(true, stackFrames[0].isNative)
+        assertEquals(10, stackFrames[0].lineno)
+        assertEquals(false, stackFrames[0].isNative)
     }
 
     //region inAppExcludes
@@ -107,5 +122,5 @@ class SentryStackTraceFactoryTest {
     }
 
     private fun generateStackTrace(className: String?) =
-        StackTraceElement(className, "method", "fileName", -2)
+        StackTraceElement(className, "method", "fileName", 10)
 }
