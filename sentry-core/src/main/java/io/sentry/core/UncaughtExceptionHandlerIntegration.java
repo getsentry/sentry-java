@@ -63,9 +63,8 @@ public final class UncaughtExceptionHandlerIntegration
 
     try {
       Throwable throwable = getUnhandledThrowable(thread, thrown);
+      // SDK is expected to write to disk synchronously events that crash the process
       this.hub.captureException(throwable);
-      // Close the SDK to flush the event to disk before shutting down.
-      this.hub.close();
     } catch (Exception e) {
       logIfNotNull(
           options.getLogger(), SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);

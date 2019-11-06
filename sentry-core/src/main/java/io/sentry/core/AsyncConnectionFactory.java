@@ -5,7 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 final class AsyncConnectionFactory {
-  public static AsyncConnection create(SentryOptions options) {
+  public static AsyncConnection create(SentryOptions options, IEventCache eventCache) {
     try {
       Dsn parsedDsn = new Dsn(options.getDsn());
       IConnectionConfigurator setCredentials =
@@ -22,19 +22,9 @@ final class AsyncConnectionFactory {
 
       IBackOffIntervalStrategy linearBackoff = attempt -> attempt * 500;
 
-      // TODO this is obviously provisional and should be constructed based on the config in options
-      IEventCache blackHole =
-          new IEventCache() {
-            @Override
-            public void store(SentryEvent event) {}
-
-            @Override
-            public void discard(SentryEvent event) {}
-          };
-
       // the connection doesn't do any retries of failed sends and can hold at most 10
       // pending events. The rest is dropped.
-      return new AsyncConnection(transport, alwaysOn, linearBackoff, blackHole, 0, 10, options);
+      return new AsyncConnection(transport, alwaysOn, linearBackoff, eventCache, 0, 10, options);
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(
           "Failed to compose the connection to the Sentry server.", e);

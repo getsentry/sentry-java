@@ -3,7 +3,9 @@ package io.sentry.core;
 import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.protocol.SentryId;
-import io.sentry.core.transport.AsyncConnection;
+import io.sentry.core.transport.Connection;
+import io.sentry.core.transport.CrashedEventStore;
+import io.sentry.core.transport.IEventCache;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -19,7 +21,7 @@ public final class SentryClient implements ISentryClient {
   private boolean isEnabled;
 
   private final SentryOptions options;
-  private final AsyncConnection connection;
+  private final Connection connection;
   private final Random random;
 
   @Override
@@ -31,11 +33,23 @@ public final class SentryClient implements ISentryClient {
     this(options, null);
   }
 
-  public SentryClient(SentryOptions options, @Nullable AsyncConnection connection) {
+  public SentryClient(SentryOptions options, @Nullable Connection connection) {
     this.options = options;
     this.isEnabled = true;
     if (connection == null) {
-      connection = AsyncConnectionFactory.create(options);
+
+      // TODO this is obviously provisional and should be constructed based on the config in options
+      IEventCache blackHole =
+          new IEventCache() {
+            @Override
+            public void store(SentryEvent event) {}
+
+            @Override
+            public void discard(SentryEvent event) {}
+          };
+
+      connection =
+          new CrashedEventStore(AsyncConnectionFactory.create(options, blackHole), blackHole);
     }
     this.connection = connection;
     random = options.getSampling() == null ? null : new Random();
