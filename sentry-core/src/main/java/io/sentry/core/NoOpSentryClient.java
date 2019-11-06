@@ -19,32 +19,7 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureEvent(SentryEvent event) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
-  public SentryId captureEvent(SentryEvent event, Scope scope) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
-  public SentryId captureMessage(String message) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
-  public SentryId captureMessage(String message, @Nullable Scope scope) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
-  public SentryId captureException(Throwable throwable, @Nullable Scope scope) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
-  public SentryId captureException(Throwable throwable) {
+  public SentryId captureEvent(SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 

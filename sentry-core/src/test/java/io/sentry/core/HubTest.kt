@@ -239,8 +239,10 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureEvent(SentryEvent())
-        verify(mockClient, times(1)).captureEvent(any(), any())
+        val event = SentryEvent()
+        val hint = { }
+        sut.captureEvent(event, hint)
+        verify(mockClient, times(1)).captureEvent(eq(event), any(), eq(hint))
     }
     //endregion
 

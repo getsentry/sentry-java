@@ -42,7 +42,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureEvent(SentryEvent event, @Nullable Scope scope) {
+  public SentryId captureEvent(SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
     if (!sample()) {
       logIfNotNull(
           options.getLogger(),
@@ -94,11 +94,10 @@ public final class SentryClient implements ISentryClient {
     }
 
     for (EventProcessor processor : options.getEventProcessors()) {
-      processor.process(event);
+      processor.process(event, hint);
     }
 
-    // TODO: captureEvent now takes Hint too?
-    event = executeBeforeSend(event, null);
+    event = executeBeforeSend(event, hint);
 
     if (event == null) {
       // Event dropped by the beforeSend callback
@@ -144,11 +143,6 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
-  }
-
-  @Override
-  public SentryId captureEvent(SentryEvent event) {
-    return captureEvent(event, null);
   }
 
   @Override
