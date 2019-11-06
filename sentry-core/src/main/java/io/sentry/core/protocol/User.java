@@ -1,17 +1,18 @@
 package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.TestOnly;
 
 /** The user affected by an event. */
-public final class User implements IUnknownPropertiesConsumer {
+public final class User implements Cloneable, IUnknownPropertiesConsumer {
   private String email;
   private String id;
   private String username;
   private String ipAddress;
   private Map<String, String> other;
-
-  @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
   /**
@@ -107,5 +108,45 @@ public final class User implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  @TestOnly
+  Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public User clone() throws CloneNotSupportedException {
+    User clone = (User) super.clone();
+
+    if (other != null) {
+      Map<String, String> otherClone = new ConcurrentHashMap<>();
+
+      for (Map.Entry<String, String> item : other.entrySet()) {
+        if (item != null) {
+          otherClone.put(item.getKey(), item.getValue());
+        }
+      }
+
+      clone.other = otherClone;
+    } else {
+      clone.other = null;
+    }
+
+    if (unknown != null) {
+      Map<String, Object> unknownClone = new HashMap<>();
+
+      for (Map.Entry<String, Object> item : unknown.entrySet()) {
+        if (item != null) {
+          unknownClone.put(item.getKey(), item.getValue());
+        }
+      }
+
+      clone.unknown = unknownClone;
+    } else {
+      clone.unknown = null;
+    }
+
+    return clone;
   }
 }
