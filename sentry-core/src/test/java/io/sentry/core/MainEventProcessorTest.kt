@@ -24,7 +24,7 @@ class MainEventProcessorTest {
         val mockThrowable = mock<Throwable>()
         val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(crashedThread, mockThrowable)
         val event = SentryEvent().apply { throwable = actualThrowable }
-        sut.process(event)
+        sut.process(event, null)
 
         assertSame(crashedThread.id, event.exceptions.first().threadId)
         assertTrue(event.threads.first { t -> t.id == crashedThread.id }.crashed)

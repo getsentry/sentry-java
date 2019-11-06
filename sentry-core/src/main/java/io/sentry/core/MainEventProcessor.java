@@ -3,6 +3,7 @@ package io.sentry.core;
 import io.sentry.core.protocol.SentryException;
 import io.sentry.core.util.Objects;
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 public final class MainEventProcessor implements EventProcessor {
 
@@ -32,7 +33,7 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(SentryEvent event) {
+  public SentryEvent process(SentryEvent event, @Nullable Object hint) {
     if (event.getRelease() == null) {
       event.setRelease(options.getRelease());
     }

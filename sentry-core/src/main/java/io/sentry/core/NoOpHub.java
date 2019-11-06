@@ -19,7 +19,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryId captureEvent(SentryEvent event) {
+  public SentryId captureEvent(SentryEvent event, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -29,7 +29,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryId captureException(Throwable throwable) {
+  public SentryId captureException(Throwable throwable, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 

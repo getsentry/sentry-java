@@ -23,6 +23,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
+import org.jetbrains.annotations.Nullable;
 
 public final class DefaultAndroidEventProcessor implements EventProcessor {
 
@@ -43,7 +44,7 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(SentryEvent event) {
+  public SentryEvent process(SentryEvent event, @Nullable Object hint) {
     if (event.getSdk() == null) {
       event.setSdk(getSdkVersion());
     }

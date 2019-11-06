@@ -64,12 +64,20 @@ public final class Sentry {
     return getCurrentHub().captureEvent(event);
   }
 
+  public static SentryId captureEvent(SentryEvent event, @Nullable Object hint) {
+    return getCurrentHub().captureEvent(event, hint);
+  }
+
   public static SentryId captureMessage(String message) {
     return getCurrentHub().captureMessage(message);
   }
 
   public static SentryId captureException(Throwable throwable) {
     return getCurrentHub().captureException(throwable);
+  }
+
+  public static SentryId captureException(Throwable throwable, @Nullable Object hint) {
+    return getCurrentHub().captureException(throwable, hint);
   }
 
   public static void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
