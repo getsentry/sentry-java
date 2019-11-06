@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 /** A connection to Sentry that sends the events asynchronously. */
-public final class AsyncConnection implements Closeable {
+public final class AsyncConnection implements Closeable, Connection {
   private final ITransport transport;
   private final ITransportGate transportGate;
   private final ExecutorService executor;
@@ -82,6 +82,7 @@ public final class AsyncConnection implements Closeable {
    */
   @SuppressWarnings("FutureReturnValueIgnored") // TODO:
   // https://errorprone.info/bugpattern/FutureReturnValueIgnored
+  @Override
   public void send(SentryEvent event) throws IOException {
     executor.submit(new EventSender(event));
   }
