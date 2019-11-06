@@ -9,75 +9,14 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
-import io.sentry.core.protocol.User
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.Queue
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 
 class HubTest {
-
-    //region clone tests
-    @Test
-    fun `when cloning Scope it returns the same values`() {
-        val scope = Scope(10)
-        scope.setExtra("extra", "extra")
-        val breadcrumb = Breadcrumb()
-        breadcrumb.message = "message"
-        scope.addBreadcrumb(breadcrumb)
-        scope.level = SentryLevel.DEBUG
-        scope.transaction = "transaction"
-        scope.fingerprint.add("fingerprint")
-        scope.tags["tags"] = "tags"
-        val user = User()
-        user.email = "a@a.com"
-        scope.user = user
-
-        val clone = scope.clone()
-        assertNotNull(clone)
-        assertNotSame(scope, clone)
-        assertEquals("extra", clone.extras["extra"])
-        assertEquals("message", clone.breadcrumbs.first().message)
-        assertEquals("transaction", clone.transaction)
-        assertEquals("fingerprint", clone.fingerprint.first())
-        assertEquals("tags", clone.tags["tags"])
-        assertEquals("a@a.com", clone.user.email)
-    }
-
-    @Test
-    @Ignore("it's a shallow copy and we need a deep-copy") // TODO: https://www.baeldung.com/java-deep-copy
-    fun `when cloning Scope it returns different instances`() {
-        val scope = Scope(10)
-        scope.setExtra("extra", "extra")
-        val breadcrumb = Breadcrumb()
-        breadcrumb.message = "message"
-        scope.addBreadcrumb(breadcrumb)
-        scope.level = SentryLevel.DEBUG
-        scope.transaction = "transaction"
-        scope.fingerprint.add("fingerprint")
-        scope.tags["tags"] = "tags"
-        val user = User()
-        user.email = "a@a.com"
-        scope.user = user
-
-        val clone = scope.clone()
-        assertNotNull(clone)
-        assertNotSame(scope, clone)
-        assertNotSame(scope.extras, clone.extras)
-        assertNotSame(scope.breadcrumbs, clone.breadcrumbs)
-        assertNotSame(scope.breadcrumbs.first(), clone.breadcrumbs.first())
-        assertNotSame(scope.transaction, clone.transaction)
-        assertNotSame(scope.fingerprint, clone.fingerprint)
-        assertNotSame(scope.fingerprint.first(), clone.fingerprint.first())
-        assertNotSame(scope.tags, clone.tags)
-        assertNotSame(scope.user, clone.user)
-    }
-    //endregion
 
     @Test
     fun `when hub is initialized, integrations are registered`() {
