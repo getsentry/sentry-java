@@ -115,7 +115,7 @@ public final class Sentry {
     getCurrentHub().configureScope(callback);
   }
 
-  public static void bindClient(SentryClient client) {
+  public static void bindClient(ISentryClient client) {
     getCurrentHub().bindClient(client);
   }
 

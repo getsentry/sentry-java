@@ -5,6 +5,7 @@ import static io.sentry.core.ILogger.logIfNotNull;
 import io.sentry.core.exception.ExceptionMechanismThrowable;
 import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.util.Objects;
+import java.io.Closeable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.TestOnly;
  * exception handler.
  */
 public final class UncaughtExceptionHandlerIntegration
-    implements Integration, Thread.UncaughtExceptionHandler {
+    implements Integration, Thread.UncaughtExceptionHandler, Closeable {
   /** Reference to the pre-existing uncaught exception handler. */
   private Thread.UncaughtExceptionHandler defaultExceptionHandler;
 
@@ -24,7 +25,7 @@ public final class UncaughtExceptionHandlerIntegration
   private UncaughtExceptionHandler threadAdapter;
 
   UncaughtExceptionHandlerIntegration() {
-    this(UncaughtExceptionHandler.Adapter.INSTANCE);
+    this(UncaughtExceptionHandler.Adapter.getInstance());
   }
 
   UncaughtExceptionHandlerIntegration(UncaughtExceptionHandler threadAdapter) {
@@ -82,5 +83,13 @@ public final class UncaughtExceptionHandlerIntegration
     mechanism.setHandled(false);
     mechanism.setType("UncaughtExceptionHandler");
     return new ExceptionMechanismThrowable(mechanism, thrown, thread);
+  }
+
+  @Override
+  public void close() {
+    if (defaultExceptionHandler != null
+        && this == threadAdapter.getDefaultUncaughtExceptionHandler()) {
+      threadAdapter.setDefaultUncaughtExceptionHandler(defaultExceptionHandler);
+    }
   }
 }

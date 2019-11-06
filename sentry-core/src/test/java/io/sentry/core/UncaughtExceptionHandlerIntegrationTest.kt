@@ -2,6 +2,7 @@ package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
@@ -65,5 +66,17 @@ class UncaughtExceptionHandlerIntegrationTest {
         sut.register(hubMock, options)
         sut.uncaughtException(threadMock, throwableMock)
         verify(hubMock).captureException(any())
+    }
+
+    @Test
+    fun `when hub is closed, integrations should be closed`() {
+        val integrationMock = mock<UncaughtExceptionHandlerIntegration>()
+        val options = SentryOptions()
+        options.dsn = "https://key@sentry.io/proj"
+        options.addIntegration(integrationMock)
+        val hub = Hub(options)
+        verify(integrationMock).register(hub, options)
+        hub.close()
+        verify(integrationMock, times(1)).close()
     }
 }
