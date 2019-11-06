@@ -1,11 +1,12 @@
 package io.sentry.android.core;
 
 import io.sentry.core.*;
+import java.io.Closeable;
 import java.io.File;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-abstract class EnvelopeFileObserverIntegration implements Integration {
+abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
   private @Nullable EnvelopeFileObserver observer;
 
   protected EnvelopeFileObserverIntegration() {}
@@ -25,6 +26,13 @@ abstract class EnvelopeFileObserverIntegration implements Integration {
 
       observer = new EnvelopeFileObserver(path, envelopeSender, logger);
       observer.startWatching();
+    }
+  }
+
+  @Override
+  public void close() {
+    if (observer != null) {
+      observer.stopWatching();
     }
   }
 

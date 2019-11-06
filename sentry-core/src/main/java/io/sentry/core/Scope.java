@@ -18,7 +18,7 @@ public final class Scope implements Cloneable {
   private Queue<Breadcrumb> breadcrumbs;
   private Map<String, String> tags = new ConcurrentHashMap<>();
   private Map<String, Object> extra = new ConcurrentHashMap<>();
-  private transient int maxBreadcrumb;
+  private int maxBreadcrumb;
 
   public Scope(int maxBreadcrumb) {
     this.maxBreadcrumb = maxBreadcrumb;

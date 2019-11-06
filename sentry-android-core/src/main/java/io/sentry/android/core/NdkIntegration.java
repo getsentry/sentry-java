@@ -8,7 +8,7 @@ import io.sentry.core.SentryOptions;
 import java.lang.reflect.Method;
 
 final class NdkIntegration implements Integration {
-  private static boolean isNdkAvailable() {
+  private boolean isNdkAvailable() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
   }
 

@@ -4,6 +4,7 @@ import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.util.Objects;
+import java.io.Closeable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Deque;
@@ -167,6 +168,12 @@ public final class Hub implements IHub {
           "Instance is disabled and this 'close' call is a no-op.");
     } else {
       try {
+        for (Integration integration : options.getIntegrations()) {
+          if (integration instanceof Closeable) {
+            ((Closeable) integration).close();
+          }
+        }
+
         // Close the top-most client
         StackItem item = stack.peek();
         if (item != null) {
