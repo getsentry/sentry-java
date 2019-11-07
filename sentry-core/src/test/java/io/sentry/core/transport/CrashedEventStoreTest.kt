@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.SentryEvent
+import io.sentry.core.cache.IEventCache
 import io.sentry.core.protocol.SentryThread
 import kotlin.test.Test
 

@@ -8,11 +8,28 @@ import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.exception.ExceptionMechanismThrowable
 import io.sentry.core.protocol.SentryId
+import java.io.File
+import java.nio.file.Files
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UncaughtExceptionHandlerIntegrationTest {
+
+    private lateinit var file: File
+
+    @BeforeTest
+    fun `set up`() {
+        file = Files.createTempDirectory("sentry-disk-cache-test").toAbsolutePath().toFile()
+    }
+
+    @AfterTest
+    fun shutdown() {
+        Files.delete(file.toPath())
+    }
+
     @Test
     fun `when UncaughtExceptionHandlerIntegration is initialized, uncaught handler is unchanged`() {
         val handlerMock = mock<UncaughtExceptionHandler>()
@@ -74,6 +91,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         val options = SentryOptions()
         options.dsn = "https://key@sentry.io/proj"
         options.addIntegration(integrationMock)
+        options.cacheDirPath = file.absolutePath
         val hub = Hub(options)
         verify(integrationMock).register(hub, options)
         hub.close()

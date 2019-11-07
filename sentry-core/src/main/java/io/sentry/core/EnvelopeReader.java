@@ -18,7 +18,9 @@ import org.jetbrains.annotations.Nullable;
 
 public final class EnvelopeReader implements IEnvelopeReader {
 
+  @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   private final Gson gson =
       new GsonBuilder()
           .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())

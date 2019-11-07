@@ -1,5 +1,6 @@
 package io.sentry.core;
 
+import io.sentry.core.cache.IEventCache;
 import io.sentry.core.transport.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,9 +23,18 @@ final class AsyncConnectionFactory {
 
       IBackOffIntervalStrategy linearBackoff = attempt -> attempt * 500;
 
-      // the connection doesn't do any retries of failed sends and can hold at most 10
-      // pending events. The rest is dropped.
-      return new AsyncConnection(transport, alwaysOn, linearBackoff, eventCache, 0, 10, options);
+      // the connection doesn't do any retries of failed sends and can hold at most the same number
+      // of
+      // pending events as there are being cached. The rest is dropped.
+      return new AsyncConnection(
+          transport,
+          alwaysOn,
+          linearBackoff,
+          eventCache,
+          0,
+          options.getCacheDirSize(),
+          true,
+          options);
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(
           "Failed to compose the connection to the Sentry server.", e);

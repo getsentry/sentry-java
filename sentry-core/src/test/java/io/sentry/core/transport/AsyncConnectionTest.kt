@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
+import io.sentry.core.cache.IEventCache
 import io.sentry.core.dsnString
 import java.io.IOException
 import java.util.concurrent.ExecutorService
@@ -34,7 +35,7 @@ class AsyncConnectionTest {
         }
 
         fun getSUT(): AsyncConnection {
-            return AsyncConnection(transport, transportGate, eventCache, executor, sentryOptions)
+            return AsyncConnection(transport, transportGate, eventCache, executor, true, sentryOptions)
         }
     }
 
@@ -52,9 +53,12 @@ class AsyncConnectionTest {
 
         // then
         val order = inOrder(fixture.transport, fixture.eventCache)
+
+        // because storeBeforeSend is enabled by default
+        order.verify(fixture.eventCache).store(eq(ev))
+
         order.verify(fixture.transport).send(eq(ev))
         order.verify(fixture.eventCache).discard(eq(ev))
-        verify(fixture.eventCache, never()).store(any())
     }
 
     @Test
@@ -87,8 +91,11 @@ class AsyncConnectionTest {
 
         // then
         val order = inOrder(fixture.transport, fixture.eventCache)
-        order.verify(fixture.transport).send(eq(ev))
+
+        // because storeBeforeSend is enabled by default
         order.verify(fixture.eventCache).store(eq(ev))
+
+        order.verify(fixture.transport).send(eq(ev))
         verify(fixture.eventCache, never()).discard(any())
     }
 
