@@ -5,4 +5,5 @@
   <string name="capture_exception">Capture Exception</string>
   <string name="breadcrumb">Breadcrumb</string>
     <string name="crash_from_native">Crash from native (segfault)</string>
+    <string name="anr">ANR</string>
 </resources>

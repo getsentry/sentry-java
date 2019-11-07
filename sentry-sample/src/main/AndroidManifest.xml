@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="io.sentry.sample">
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+  <uses-sdk
+    tools:overrideLibrary="io.sentry.android, io.sentry.android.ndk"/>
+
   <application
     android:name=".MyApplication"
     android:allowBackup="false"

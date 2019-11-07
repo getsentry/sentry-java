@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersionNdk)
+        minSdkVersion(Config.Android.minSdkVersionNdk) // NDK requires a higher API level than core.
 
         javaCompileOptions {
             annotationProcessorOptions {
