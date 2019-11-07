@@ -4,7 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 public final class SentryRuntime implements IUnknownPropertiesConsumer {
-  static final String TYPE = "runtime";
+  public static final String TYPE = "runtime";
 
   private String name;
   private String version;

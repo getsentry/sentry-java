@@ -8,6 +8,7 @@ import io.sentry.core.ILogger;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
+import io.sentry.core.protocol.Contexts;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.SentryId;
 import java.io.IOException;
@@ -42,6 +43,7 @@ public final class AndroidSerializer implements ISerializer {
             Device.DeviceOrientation.class, new OrientationDeserializerAdapter(logger))
         .registerTypeAdapter(SentryLevel.class, new SentryLevelSerializerAdapter(logger))
         .registerTypeAdapter(SentryLevel.class, new SentryLevelDeserializerAdapter(logger))
+        .registerTypeAdapter(Contexts.class, new ContextsDeserializerAdapter(logger))
         .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
         .create();
   }

@@ -88,7 +88,7 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
       // process
       JsonElement jsonElement = JsonParser.parseReader(in);
 
-      if (jsonElement.isJsonNull()) {
+      if (jsonElement == null || jsonElement.isJsonNull()) {
         return null;
       }
 

@@ -4,7 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 public final class Gpu implements IUnknownPropertiesConsumer {
-  static final String TYPE = "gpu";
+  public static final String TYPE = "gpu";
 
   private String name;
   private Integer id;

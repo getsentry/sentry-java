@@ -4,7 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 public final class OperatingSystem implements IUnknownPropertiesConsumer {
-  static final String TYPE = "os";
+  public static final String TYPE = "os";
 
   private String name;
   private String version;

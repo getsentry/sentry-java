@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 public final class Device implements IUnknownPropertiesConsumer {
-  static final String TYPE = "device";
+  public static final String TYPE = "device";
 
   private String name;
   private String manufacturer;
