@@ -1,6 +1,11 @@
 package io.sentry.android.core;
 
-import io.sentry.core.*;
+import io.sentry.core.EnvelopeSender;
+import io.sentry.core.IHub;
+import io.sentry.core.ILogger;
+import io.sentry.core.Integration;
+import io.sentry.core.SentryLevel;
+import io.sentry.core.SentryOptions;
 import java.io.Closeable;
 import java.io.File;
 import org.jetbrains.annotations.Nullable;

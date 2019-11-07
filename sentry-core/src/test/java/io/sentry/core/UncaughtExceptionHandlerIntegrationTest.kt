@@ -92,6 +92,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         options.dsn = "https://key@sentry.io/proj"
         options.addIntegration(integrationMock)
         options.cacheDirPath = file.absolutePath
+        options.serializer = mock()
         val hub = Hub(options)
         verify(integrationMock).register(hub, options)
         hub.close()
