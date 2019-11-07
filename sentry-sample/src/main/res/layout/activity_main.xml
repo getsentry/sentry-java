@@ -29,7 +29,7 @@
   <Button android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:id="@+id/anr"
-          android:text="ANR"/>
+          android:text="@string/anr"/>
 
   <Button android:layout_width="wrap_content"
           android:layout_height="wrap_content"

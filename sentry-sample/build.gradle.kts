@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.sample"
-        minSdkVersion(Config.Android.minSdkVersionNdk) // NDK requires a higher API level than core.
+        minSdkVersion(Config.Android.minSdkVersion)
         targetSdkVersion(Config.Android.targetSdkVersion)
         versionCode = 1
         versionName = "1.0"

@@ -32,6 +32,8 @@ final class NdkIntegration implements Integration {
         options.setEnableNdk(false);
         options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
       }
+    } else {
+      options.setEnableNdk(false);
     }
   }
 }
