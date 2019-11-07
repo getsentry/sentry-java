@@ -27,7 +27,7 @@ public final class App implements IUnknownPropertiesConsumer {
   }
 
   public Date getAppStartTime() {
-    return appStartTime;
+    return appStartTime != null ? (Date) appStartTime.clone() : null;
   }
 
   public void setAppStartTime(Date appStartTime) {
