@@ -98,4 +98,10 @@ class BreadcrumbTest {
         assertEquals("category", clone.category)
         assertEquals(dateIso, DateUtils.getTimestamp(clone.timestamp))
     }
+
+    @Test
+    fun `breadcrumb has timestamp when created`() {
+        val breadcrumb = Breadcrumb()
+        assertNotNull(breadcrumb.timestamp)
+    }
 }
