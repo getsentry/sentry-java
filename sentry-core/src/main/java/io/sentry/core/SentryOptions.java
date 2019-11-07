@@ -16,7 +16,7 @@ public class SentryOptions {
   private List<Integration> integrations = new ArrayList<>();
 
   private String dsn;
-  private long shutdownTimeoutMills;
+  private long shutdownTimeoutMills = 5000;
   private boolean debug;
   private boolean enableNdk = true;
   private @NotNull ILogger logger = NoOpLogger.getInstance();
@@ -26,6 +26,7 @@ public class SentryOptions {
   private BeforeSendCallback beforeSend;
   private BeforeBreadcrumbCallback beforeBreadcrumb;
   private String cacheDirPath;
+  private int cacheDirSize = 10;
   private int maxBreadcrumbs = 100;
   private String release;
   private String environment;
@@ -143,6 +144,14 @@ public class SentryOptions {
 
   public void setCacheDirPath(String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
+  }
+
+  public int getCacheDirSize() {
+    return cacheDirSize;
+  }
+
+  public void setCacheDirSize(int cacheDirSize) {
+    this.cacheDirSize = cacheDirSize;
   }
 
   public int getMaxBreadcrumbs() {

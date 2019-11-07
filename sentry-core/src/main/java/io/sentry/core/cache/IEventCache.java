@@ -1,4 +1,4 @@
-package io.sentry.core.transport;
+package io.sentry.core.cache;
 
 import io.sentry.core.SentryEvent;
 
@@ -10,7 +10,7 @@ import io.sentry.core.SentryEvent;
  * crash. While that is surely one of the main usecases for the persistent storage of events, the
  * re-initialization is out of scope of the event transport logic.
  */
-public interface IEventCache {
+public interface IEventCache extends Iterable<SentryEvent> {
 
   /**
    * Stores the event so that it can be sent later.

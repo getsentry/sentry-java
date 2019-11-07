@@ -19,10 +19,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
     private lateinit var context: Context
+    private lateinit var file: File
 
     @BeforeTest
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
+        file = context.cacheDir
     }
 
     @Test
@@ -102,7 +104,7 @@ class AndroidOptionsInitializerTest {
         val mockContext = mock<Context> {
             on { applicationContext } doReturn context
         }
-        whenever(mockContext.cacheDir).thenReturn(File("${File.separator}cache"))
+        whenever(mockContext.cacheDir).thenReturn(file)
         return mockContext
     }
 }

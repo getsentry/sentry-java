@@ -2,10 +2,11 @@ package io.sentry.core;
 
 import static io.sentry.core.ILogger.logIfNotNull;
 
+import io.sentry.core.cache.DiskCache;
+import io.sentry.core.cache.IEventCache;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.Connection;
 import io.sentry.core.transport.CrashedEventStore;
-import io.sentry.core.transport.IEventCache;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,14 +40,7 @@ public final class SentryClient implements ISentryClient {
     if (connection == null) {
 
       // TODO this is obviously provisional and should be constructed based on the config in options
-      IEventCache blackHole =
-          new IEventCache() {
-            @Override
-            public void store(SentryEvent event) {}
-
-            @Override
-            public void discard(SentryEvent event) {}
-          };
+      IEventCache blackHole = new DiskCache(options);
 
       connection =
           new CrashedEventStore(AsyncConnectionFactory.create(options, blackHole), blackHole);

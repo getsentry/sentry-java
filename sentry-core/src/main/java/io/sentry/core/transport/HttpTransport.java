@@ -21,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @Open // TODO: make it final and disable nopen check for testing
 public class HttpTransport implements ITransport {
+
+  @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @Nullable private final Proxy proxy;

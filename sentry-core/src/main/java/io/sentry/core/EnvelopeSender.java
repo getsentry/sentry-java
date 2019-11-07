@@ -12,6 +12,8 @@ import java.nio.charset.Charset;
 import org.jetbrains.annotations.NotNull;
 
 public final class EnvelopeSender implements IEnvelopeSender {
+
+  @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final IHub hub;

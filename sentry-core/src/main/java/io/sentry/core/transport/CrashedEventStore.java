@@ -1,6 +1,7 @@
 package io.sentry.core.transport;
 
 import io.sentry.core.SentryEvent;
+import io.sentry.core.cache.IEventCache;
 import io.sentry.core.protocol.SentryThread;
 import io.sentry.core.util.Objects;
 import java.io.IOException;
