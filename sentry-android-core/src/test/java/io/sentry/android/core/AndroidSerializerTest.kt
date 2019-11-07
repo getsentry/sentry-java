@@ -2,7 +2,6 @@ package io.sentry.android.core
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import com.google.gson.internal.LinkedTreeMap
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.core.DateUtils
 import io.sentry.core.SentryEvent
@@ -167,7 +166,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals("Europe/Vienna", (actual.contexts["device"] as LinkedTreeMap<*, *>)["timezone"]) // TODO: fix it when casting is being done proerly
+        assertEquals("Europe/Vienna", actual.contexts.device.timezone.id)
     }
 
     @Test
@@ -198,9 +197,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        val orientation = (actual.contexts["device"] as LinkedTreeMap<*, *>)["orientation"] as String // TODO: fix it when casting is being done proerly
-
-        assertEquals(Device.DeviceOrientation.LANDSCAPE, Device.DeviceOrientation.valueOf(orientation.toUpperCase())) // here too
+        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual.contexts.device.orientation)
     }
 
     @Test

@@ -4,7 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
 
 public final class Browser implements IUnknownPropertiesConsumer {
-  static final String TYPE = "browser";
+  public static final String TYPE = "browser";
   private String name;
   private String version;
 

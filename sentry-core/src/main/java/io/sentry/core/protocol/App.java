@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.Map;
 
 public final class App implements IUnknownPropertiesConsumer {
-  static final String TYPE = "app";
+  public static final String TYPE = "app";
 
   private String appIdentifier;
   private Date appStartTime;
