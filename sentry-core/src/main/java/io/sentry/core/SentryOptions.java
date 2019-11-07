@@ -242,6 +242,9 @@ public class SentryOptions {
     inAppExcludes.add("org.jetbrains.");
 
     eventProcessors.add(new MainEventProcessor(this));
+
+    // Start off sending any cached event.
+    integrations.add(new SendCachedEventFireAndForgetIntegration());
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }
 }
