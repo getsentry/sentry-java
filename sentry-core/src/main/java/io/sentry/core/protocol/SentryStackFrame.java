@@ -1,5 +1,6 @@
 package io.sentry.core.protocol;
 
+import com.google.gson.annotations.SerializedName;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +19,13 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
   private String absPath;
   private String contextLine;
   private Boolean inApp;
-  private String _package; // TODO: _package as its a reserverd word
-  private Boolean _native; // TODO: _native as its a reserverd word
+
+  @SerializedName(value = "package")
+  private String _package;
+
+  @SerializedName(value = "native")
+  private Boolean _native;
+
   private String platform;
   private Long imageAddr;
   private Long symbolAddr;
@@ -126,11 +132,11 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
     this.inApp = inApp;
   }
 
-  public String get_package() {
+  public String getPackage() {
     return _package;
   }
 
-  public void set_package(String _package) {
+  public void setPackage(String _package) {
     this._package = _package;
   }
 
