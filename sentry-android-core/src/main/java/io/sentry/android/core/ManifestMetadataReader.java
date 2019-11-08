@@ -19,7 +19,7 @@ final class ManifestMetadataReader {
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
   static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
   static final String AUTO_INIT = "io.sentry.auto-init";
-  static final String ENABLE_NDK = "io.sentry.ndk";
+  static final String ENABLE_NDK = "io.sentry.ndk.enable";
 
   static void applyMetadata(Context context, SentryAndroidOptions options) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
