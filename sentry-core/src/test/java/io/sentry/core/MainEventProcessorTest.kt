@@ -27,7 +27,7 @@ class MainEventProcessorTest {
         sut.process(event, null)
 
         assertSame(crashedThread.id, event.exceptions.first().threadId)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.crashed)
-        assertFalse(event.exceptions.first().mechanism.handled)
+        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+        assertFalse(event.exceptions.first().mechanism.isHandled)
     }
 }

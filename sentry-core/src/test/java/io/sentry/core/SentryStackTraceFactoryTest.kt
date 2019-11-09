@@ -55,7 +55,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements.first().inApp)
+        assertFalse(sentryElements.first().isInApp)
     }
 
     @Test
@@ -65,7 +65,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().inApp)
+        assertTrue(sentryElements.first().isInApp)
     }
 
     @Test
@@ -75,7 +75,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().inApp)
+        assertTrue(sentryElements.first().isInApp)
     }
     //endregion
 
@@ -87,7 +87,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.sentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().inApp)
+        assertTrue(sentryElements.first().isInApp)
     }
 
     @Test
@@ -97,7 +97,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.sentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().inApp)
+        assertTrue(sentryElements.first().isInApp)
     }
 
     @Test
@@ -107,7 +107,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().inApp)
+        assertTrue(sentryElements.first().isInApp)
     }
     //endregion
 
@@ -118,7 +118,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), listOf("io.sentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().inApp)
+        assertTrue(sentryElements.first().isInApp)
     }
 
     private fun generateStackTrace(className: String?) =

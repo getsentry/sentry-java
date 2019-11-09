@@ -21,7 +21,7 @@ public final class UncaughtExceptionHandlerIntegration
   private IHub hub;
   private SentryOptions options;
 
-  private boolean isRegistered = false;
+  private boolean registered = false;
   private UncaughtExceptionHandler threadAdapter;
 
   UncaughtExceptionHandlerIntegration() {
@@ -34,14 +34,14 @@ public final class UncaughtExceptionHandlerIntegration
 
   @Override
   public void register(IHub hub, SentryOptions options) {
-    if (isRegistered) {
+    if (registered) {
       logIfNotNull(
           options.getLogger(),
           SentryLevel.ERROR,
           "Attempt to register a UncaughtExceptionHandlerIntegration twice. ");
       return;
     }
-    isRegistered = true;
+    registered = true;
 
     this.hub = hub;
     this.options = options;

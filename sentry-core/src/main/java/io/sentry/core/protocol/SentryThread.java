@@ -11,8 +11,9 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
   private String state;
   private Boolean crashed;
   private Boolean current;
-  private Boolean isDaemon;
+  private Boolean daemon;
   private SentryStackTrace stacktrace;
+  private Boolean errored;
 
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
@@ -58,7 +59,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return whether it was the crashed thread.
    */
-  public Boolean getCrashed() {
+  public Boolean isCrashed() {
     return crashed;
   }
 
@@ -76,7 +77,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return whether the thread was in the foreground.
    */
-  public Boolean getCurrent() {
+  public Boolean isCurrent() {
     return current;
   }
 
@@ -130,8 +131,8 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return if this is a daemon thread.
    */
-  public Boolean getDaemon() {
-    return isDaemon;
+  public Boolean isDaemon() {
+    return daemon;
   }
 
   /**
@@ -140,7 +141,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    * @param daemon true if the thread is daemon thread. Otherwise false.
    */
   public void setDaemon(Boolean daemon) {
-    isDaemon = daemon;
+    this.daemon = daemon;
   }
 
   /**
@@ -164,5 +165,13 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  public Boolean isErrored() {
+    return errored;
+  }
+
+  public void setErrored(Boolean errored) {
+    this.errored = errored;
   }
 }

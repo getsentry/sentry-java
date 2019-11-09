@@ -23,7 +23,7 @@ class CrashedEventStoreTest {
     fun `when event includes a crashed thread, event is persisted`() {
         val sut = fixture.getSut()
         val actual = SentryEvent().apply {
-            threads = listOf(SentryThread().apply { crashed = true })
+            threads = listOf(SentryThread().apply { isCrashed = true })
         }
         sut.send(actual)
         verify(fixture.eventCache).store(actual)
@@ -34,7 +34,7 @@ class CrashedEventStoreTest {
     fun `when event doesn't include a crashed thread, event is passed to inner connection`() {
         val sut = fixture.getSut()
         val actual = SentryEvent().apply {
-            threads = listOf(SentryThread().apply { crashed = false })
+            threads = listOf(SentryThread().apply { isCrashed = false })
         }
         sut.send(actual)
         verify(fixture.connection).send(actual)

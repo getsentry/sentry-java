@@ -2,6 +2,7 @@ package io.sentry.core;
 
 import io.sentry.core.protocol.SentryStackFrame;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,6 +46,7 @@ final class SentryStackTraceFactory {
         }
       }
     }
+    Collections.reverse(sentryStackFrames);
 
     return sentryStackFrames;
   }

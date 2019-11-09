@@ -32,9 +32,9 @@ final class SentryThreadFactory {
     Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
     List<SentryThread> result = new ArrayList<>();
 
+    Thread currentThread = Thread.currentThread();
     for (Map.Entry<Thread, StackTraceElement[]> item : threads.entrySet()) {
-      result.add(
-          getSentryThread(crashedThreadId, Thread.currentThread(), item.getValue(), item.getKey()));
+      result.add(getSentryThread(crashedThreadId, currentThread, item.getValue(), item.getKey()));
     }
 
     return result;
@@ -55,7 +55,7 @@ final class SentryThreadFactory {
     if (crashedThreadId != null) {
       sentryThread.setCrashed(crashedThreadId == thread.getId());
     }
-    sentryThread.setCurrent(thread == currentThread);
+    sentryThread.setErrored(thread == currentThread);
 
     List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stackFramesElements);
 
