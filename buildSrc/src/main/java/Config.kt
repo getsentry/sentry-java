@@ -31,7 +31,7 @@ object Config {
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
         val androidxJunit = "androidx.test.ext:junit:1.1.1"
-        val robolectric = "org.robolectric:robolectric:4.3"
+        val robolectric = "org.robolectric:robolectric:4.3.1"
         val junit = "junit:junit:4.12"
         val espressoCore = "androidx.test.espresso:espresso-core:3.2.0"
         val androidxOrchestrator = "androidx.test:orchestrator:$androidxTestVersion"
@@ -39,7 +39,7 @@ object Config {
     }
 
     object QualityPlugins {
-        val jacocoVersion = "0.8.4"
+        val jacocoVersion = "0.8.5"
         val spotlessVersion = "3.25.0"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
     }
@@ -51,7 +51,7 @@ object Config {
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val annotations = "org.jetbrains:annotations:17.0.0"
+        val annotations = "org.jetbrains:annotations:18.0.0"
         val noopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val noopenProne = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.3.3"

@@ -287,7 +287,7 @@ public final class Hub implements IHub {
           "Instance is disabled and this 'popScope' call is a no-op.");
     } else {
       // Don't drop the root scope
-      synchronized (stack) { // TODO: is it necessary? we should never sync a concurrent object
+      synchronized (stack) {
         if (stack.size() != 1) {
           stack.pop();
         } else {
