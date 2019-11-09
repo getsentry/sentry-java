@@ -67,7 +67,7 @@ public final class Gpu implements IUnknownPropertiesConsumer {
     this.apiType = apiType;
   }
 
-  public Boolean getMultiThreadedRendering() {
+  public Boolean isMultiThreadedRendering() {
     return multiThreadedRendering;
   }
 

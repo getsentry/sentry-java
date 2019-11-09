@@ -41,6 +41,11 @@ public final class MainEventProcessor implements EventProcessor {
       event.setEnvironment(options.getEnvironment());
     }
 
+    if (event.getPlatform() == null) {
+      // this actually means JVM related.
+      event.setPlatform("java");
+    }
+
     Throwable throwable = event.getThrowable();
     if (throwable != null) {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
@@ -55,7 +60,7 @@ public final class MainEventProcessor implements EventProcessor {
               && exception.getMechanism() != null
               // If mechanism is set to handled=false, this will crash the app.
               // Provide the thread-id if available to mark the thread-list with the crashed one.
-              && Boolean.FALSE.equals(exception.getMechanism().getHandled())) {
+              && Boolean.FALSE.equals(exception.getMechanism().isHandled())) {
             crashedThreadId = exception.getThreadId();
             break;
           }

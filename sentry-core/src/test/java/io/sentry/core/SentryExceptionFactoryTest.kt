@@ -34,7 +34,7 @@ class SentryExceptionFactoryTest {
     fun `when getSentryExceptions is called passing a ExceptionMechanism, it should set its fields`() {
         val mechanism = Mechanism()
         mechanism.type = "anr"
-        mechanism.handled = false
+        mechanism.isHandled = false
 
         val error = Exception("Exception")
 
@@ -42,7 +42,7 @@ class SentryExceptionFactoryTest {
 
         val sentryExceptions = sut.getSentryExceptions(throwable)
         assertEquals("anr", sentryExceptions[0].mechanism.type)
-        assertEquals(false, sentryExceptions[0].mechanism.handled)
+        assertEquals(false, sentryExceptions[0].mechanism.isHandled)
     }
 
     @Test

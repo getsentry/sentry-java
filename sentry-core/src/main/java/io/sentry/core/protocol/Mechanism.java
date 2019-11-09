@@ -48,7 +48,7 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
     this.helpLink = helpLink;
   }
 
-  public Boolean getHandled() {
+  public Boolean isHandled() {
     return handled;
   }
 

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
-  private boolean isEnabled;
+  private boolean enabled;
 
   private final SentryOptions options;
   private final Connection connection;
@@ -27,7 +27,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public boolean isEnabled() {
-    return isEnabled;
+    return enabled;
   }
 
   SentryClient(SentryOptions options) {
@@ -36,7 +36,7 @@ public final class SentryClient implements ISentryClient {
 
   public SentryClient(SentryOptions options, @Nullable Connection connection) {
     this.options = options;
-    this.isEnabled = true;
+    this.enabled = true;
     if (connection == null) {
 
       // TODO this is obviously provisional and should be constructed based on the config in options
@@ -167,7 +167,7 @@ public final class SentryClient implements ISentryClient {
           "Failed to close the connection to the Sentry Server.",
           e);
     }
-    isEnabled = false;
+    enabled = false;
   }
 
   @Override

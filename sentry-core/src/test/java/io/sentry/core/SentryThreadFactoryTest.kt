@@ -19,14 +19,14 @@ class SentryThreadFactoryTest {
         val threads = sut.currentThreadsForCrash
         val currentThread = Thread.currentThread()
         val currentSentryThread = threads.first { it.id == currentThread.id }
-        assertTrue(currentSentryThread.crashed)
-        assertTrue(currentSentryThread.current)
-        assertTrue(threads.filter { it.id != currentThread.id }.all { !it.crashed && !it.current })
+        assertTrue(currentSentryThread.isCrashed)
+        assertTrue(currentSentryThread.isErrored)
+        assertTrue(threads.filter { it.id != currentThread.id }.all { !it.isCrashed && !it.isErrored })
     }
 
     @Test
     fun `when currentThreads is called, no thread is marked either crashed or not`() =
-        assertTrue(sut.currentThreads.all { it.crashed == null })
+        assertTrue(sut.currentThreads.all { it.isCrashed == null })
 
     @Test
     fun `when currentThreads is called, thread state is captured`() =

@@ -33,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
     findViewById(R.id.capture_exception)
         .setOnClickListener(
             view -> {
-              Sentry.captureException(new Exception("Some exception."));
+              Sentry.captureException(
+                  new Exception(new Exception(new Exception("Some exception."))));
             });
 
     findViewById(R.id.breadcrumb)

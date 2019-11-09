@@ -34,7 +34,7 @@
     <meta-data android:name="io.sentry.anr.timeout-interval-mills" android:value="2000" />
 
     <!-- Raise ANR events even if the debugger is attached -->
-    <meta-data android:name="io.sentry.anr.report-debug" android:value="true" />
+<!--    <meta-data android:name="io.sentry.anr.report-debug" android:value="true" />-->
 
 <!--    how to disable ANR-->
 <!--    <meta-data android:name="io.sentry.anr.enable" android:value="false" />-->

@@ -24,7 +24,7 @@ public final class CrashedEventStore implements Connection {
     List<SentryThread> threads = event.getThreads();
     if (threads != null) {
       for (SentryThread thread : threads) {
-        if (Boolean.TRUE.equals(thread.getCrashed())) {
+        if (Boolean.TRUE.equals(thread.isCrashed())) {
           eventCache.store(event);
           return;
         }
