@@ -18,7 +18,7 @@ cache:
   - "%USERPROFILE%\\.gradle\\wrapper"
   - "%USERPROFILE%\\.m2\\repository"
 build_script:
-  - cmd: gradlew.bat assemble check
+  - cmd: gradlew.bat build
 artifacts:
   - path: '**\libs\*sentry*.jar'
   - path: '**\outputs\aar\*sentry*.aar'
