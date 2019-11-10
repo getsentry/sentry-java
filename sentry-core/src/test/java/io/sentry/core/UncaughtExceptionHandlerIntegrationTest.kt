@@ -6,7 +6,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.exception.ExceptionMechanismThrowable
+import io.sentry.core.exception.ExceptionMechanismException
 import io.sentry.core.protocol.SentryId
 import java.io.File
 import java.nio.file.Files
@@ -72,7 +72,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         val throwableMock = mock<Throwable>()
         val hubMock = mock<IHub>()
         whenever(hubMock.captureException(any())).thenAnswer { invocation ->
-            val e = (invocation.arguments[1] as ExceptionMechanismThrowable)
+            val e = (invocation.arguments[1] as ExceptionMechanismException)
             assertNotNull(e)
             assertNotNull(e.exceptionMechanism)
             assertTrue(e.exceptionMechanism.isHandled)

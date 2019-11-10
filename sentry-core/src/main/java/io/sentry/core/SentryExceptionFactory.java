@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import io.sentry.core.exception.ExceptionMechanismThrowable;
+import io.sentry.core.exception.ExceptionMechanismException;
 import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.protocol.SentryException;
 import io.sentry.core.protocol.SentryStackTrace;
@@ -106,10 +106,10 @@ final class SentryExceptionFactory {
 
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
-      if (currentThrowable instanceof ExceptionMechanismThrowable) {
+      if (currentThrowable instanceof ExceptionMechanismException) {
         // this is for ANR I believe
-        ExceptionMechanismThrowable exceptionMechanismThrowable =
-            (ExceptionMechanismThrowable) currentThrowable;
+        ExceptionMechanismException exceptionMechanismThrowable =
+            (ExceptionMechanismException) currentThrowable;
         exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
         currentThrowable = exceptionMechanismThrowable.getThrowable();
         thread = exceptionMechanismThrowable.getThread();

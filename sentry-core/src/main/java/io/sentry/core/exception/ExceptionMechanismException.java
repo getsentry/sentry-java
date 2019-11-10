@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * A throwable decorator that holds an {@link io.sentry.core.protocol.Mechanism} related to the
  * decorated {@link Throwable}.
  */
-public final class ExceptionMechanismThrowable extends Throwable {
+public final class ExceptionMechanismException extends RuntimeException {
   private static final long serialVersionUID = 142345454265713915L;
 
   private final Mechanism exceptionMechanism;
@@ -21,7 +21,7 @@ public final class ExceptionMechanismThrowable extends Throwable {
    * @param throwable The {@link java.lang.Throwable}.
    * @param thread The {@link java.lang.Thread}.
    */
-  public ExceptionMechanismThrowable(
+  public ExceptionMechanismException(
       @Nullable Mechanism mechanism, @Nullable Throwable throwable, @Nullable Thread thread) {
     this.exceptionMechanism = mechanism;
     this.throwable = throwable;
