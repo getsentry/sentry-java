@@ -23,6 +23,7 @@ class SentryProguardConfigTask extends DefaultTask {
                 "-dontwarn com.facebook.fbui.**\n" +
                 "-dontwarn org.slf4j.**\n" +
                 "-dontwarn javax.**\n" +
+                "-keep public class * extends java.lang.Exception\n" +
                 "-keep class io.sentry.event.Event { *; }\n")
         f.close()
         applicationVariant.getBuildType().buildType.proguardFiles(file)
