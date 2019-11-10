@@ -1,13 +1,13 @@
 package io.sentry.config;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import io.sentry.Sentry;
@@ -69,19 +69,56 @@ public final class Lookup {
      * @return the default lookup instance
      */
     public static Lookup getDefault() {
-        return new Lookup(new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders()),
-                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders()));
+        return new Lookup(
+                new CompoundConfigurationProvider(
+                        getDefaultHighPriorityConfigurationProviders(Collections.<ConfigurationProvider>emptyList())
+                ),
+                new CompoundConfigurationProvider(
+                        getDefaultLowPriorityConfigurationProviders(Collections.<ConfigurationProvider>emptyList())
+                )
+        );
+    }
+
+    /**
+     * In the default lookup returned from this method, the configuration properties are looked up in the sources in the
+     * following order.
+     *
+     * <ol>
+     * <li>Additional high priority providers</li>
+     * <li>JNDI, if available
+     * <li>Java System Properties
+     * <li>System Environment Variables
+     * <li>Additional low priority providers</li>
+     * <li>DSN options, if a non-null DSN is provided
+     * <li>Sentry properties file found in resources
+     * </ol>
+     *
+     * @param highPriorityProviders the list of providers with high priority
+     * @param lowPriorityProviders the list of providers with low priority
+     * @return the default lookup instance
+     */
+    public static Lookup getDefaultWithAdditionalProviders(Collection<ConfigurationProvider> highPriorityProviders,
+                                                           Collection<ConfigurationProvider> lowPriorityProviders) {
+        return new Lookup(
+                new CompoundConfigurationProvider(getDefaultHighPriorityConfigurationProviders(highPriorityProviders)),
+                new CompoundConfigurationProvider(getDefaultLowPriorityConfigurationProviders(lowPriorityProviders))
+        );
     }
 
     private static List<ConfigurationResourceLocator> getDefaultResourceLocators() {
         return asList(new SystemPropertiesBasedLocator(), new EnvironmentBasedLocator(), new StaticFileLocator());
     }
 
-    private static List<ConfigurationProvider> getDefaultHighPriorityConfigurationProviders() {
+    private static List<ConfigurationProvider> getDefaultHighPriorityConfigurationProviders(
+            Collection<ConfigurationProvider> additionalProviders
+    ) {
         boolean jndiPresent = JndiSupport.isAvailable();
 
         @SuppressWarnings("checkstyle:MagicNumber")
-        List<ConfigurationProvider> providers = new ArrayList<>(jndiPresent ? 3 : 2);
+        int providersCount = jndiPresent ? 3 + additionalProviders.size() : 2 + additionalProviders.size();
+
+        List<ConfigurationProvider> providers = new ArrayList<>(providersCount);
+        providers.addAll(additionalProviders);
 
         if (jndiPresent) {
             providers.add(new JndiConfigurationProvider());
@@ -101,15 +138,20 @@ public final class Lookup {
                 : Arrays.asList(new FileResourceLoader(), sentryLoader, new ContextClassLoaderResourceLoader());
     }
 
-    private static List<ConfigurationProvider> getDefaultLowPriorityConfigurationProviders() {
+    private static List<ConfigurationProvider> getDefaultLowPriorityConfigurationProviders(
+            Collection<ConfigurationProvider> additionalProviders
+    ) {
+
+        List<ConfigurationProvider> providers = new ArrayList<>(additionalProviders.size());
+        providers.addAll(additionalProviders);
+
         try {
-            return singletonList((ConfigurationProvider)
-                    new LocatorBasedConfigurationProvider(new CompoundResourceLoader(getDefaultResourceLoaders()),
+            providers.add(new LocatorBasedConfigurationProvider(new CompoundResourceLoader(getDefaultResourceLoaders()),
                             new CompoundResourceLocator(getDefaultResourceLocators()), Charset.defaultCharset()));
         } catch (IOException e) {
             logger.debug("Failed to instantiate resource locator-based configuration provider.", e);
-            return emptyList();
         }
+        return providers;
     }
 
 

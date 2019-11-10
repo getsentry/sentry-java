@@ -9,10 +9,16 @@ import java.util.Properties;
 import io.sentry.config.ResourceLoader;
 import io.sentry.util.Nullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A configuration provider that loads the properties from a {@link ResourceLoader}.
  */
 public class ResourceLoaderConfigurationProvider implements ConfigurationProvider {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceLoaderConfigurationProvider.class);
+
     @Nullable
     private final Properties properties;
 
@@ -50,6 +56,17 @@ public class ResourceLoaderConfigurationProvider implements ConfigurationProvide
 
     @Override
     public String getProperty(String key) {
-        return properties == null ? null : properties.getProperty(key);
+        if (properties == null) {
+            return null;
+        }
+
+        String ret = properties.getProperty(key);
+
+        if (ret != null) {
+            logger.debug("Found {}={} in properties file.", key, ret);
+        }
+
+        return ret;
     }
+
 }
