@@ -13,12 +13,12 @@ import org.jetbrains.annotations.NotNull;
  * really the cause of the exception. Each "Caused by" is the stack trace of a running thread. Note
  * that the main thread always comes first.
  */
-final class ApplicationNotResponding extends Throwable {
+final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
   private Thread.State state;
 
-  public ApplicationNotResponding(@NotNull String message, @NotNull Thread thread) {
+  ApplicationNotResponding(@NotNull String message, @NotNull Thread thread) {
     super(message);
     thread = Objects.requireNonNull(thread, "Thread must be provided.");
     setStackTrace(thread.getStackTrace());

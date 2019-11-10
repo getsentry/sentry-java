@@ -2,7 +2,7 @@ package io.sentry.core;
 
 import static io.sentry.core.ILogger.logIfNotNull;
 
-import io.sentry.core.exception.ExceptionMechanismThrowable;
+import io.sentry.core.exception.ExceptionMechanismException;
 import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.util.Objects;
 import java.io.Closeable;
@@ -82,7 +82,7 @@ public final class UncaughtExceptionHandlerIntegration
     Mechanism mechanism = new Mechanism();
     mechanism.setHandled(false);
     mechanism.setType("UncaughtExceptionHandler");
-    return new ExceptionMechanismThrowable(mechanism, thrown, thread);
+    return new ExceptionMechanismException(mechanism, thrown, thread);
   }
 
   @Override
