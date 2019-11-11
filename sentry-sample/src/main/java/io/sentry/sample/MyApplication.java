@@ -16,8 +16,16 @@ public class MyApplication extends Application {
 
     Timber.plant(new Timber.DebugTree());
 
-    // how to init. Sentry manually
-    // SentryAndroid.init(this);
+    // Example how to initialize the SDK manually which allows access to SentryOptions callbacks.
+    // Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false
+    // SentryAndroid.init(
+    // this,
+    // options -> {
+    //   options.setBeforeSend(event -> {
+    //     event.setTag("sample-key", "before-send");
+    //   });
+    //   options.setAnrTimeoutIntervalMills(2000);
+    // });
   }
 
   private void districtMode() {
@@ -30,11 +38,5 @@ public class MyApplication extends Application {
 
       StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build());
     }
-
-    //    SentryAndroid.init(
-    //        this,
-    //        options -> {
-    //          options.setAnrTimeoutIntervalMills(2000);
-    //        });
   }
 }

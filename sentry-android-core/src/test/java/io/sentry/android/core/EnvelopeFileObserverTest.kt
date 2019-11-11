@@ -1,10 +1,12 @@
 package io.sentry.android.core
 
+import android.os.FileObserver
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import io.sentry.core.IEnvelopeSender
 import io.sentry.core.ILogger
 import io.sentry.core.SentryOptions
@@ -39,8 +41,15 @@ class EnvelopeFileObserverTest {
     fun `envelope sender is called with fully qualified path`() {
         val sut = fixture.getSut()
         val param = "file-name.txt"
-        sut.onEvent(0, param)
+        sut.onEvent(FileObserver.CLOSE_WRITE, param)
         verify(fixture.envelopeSender).processEnvelopeFile(fixture.path + File.separator + param)
+    }
+
+    @Test
+    fun `when event type is not close write, envelope sender is not called`() {
+        val sut = fixture.getSut()
+        sut.onEvent(FileObserver.CLOSE_WRITE.inv(), "file-name.txt")
+        verifyZeroInteractions(fixture.envelopeSender)
     }
 
     @Test

@@ -23,7 +23,7 @@ final class EnvelopeFileObserver extends FileObserver {
 
   @Override
   public void onEvent(int eventType, @Nullable String relativePath) {
-    if (relativePath == null) {
+    if (relativePath == null || eventType != FileObserver.CLOSE_WRITE) {
       return;
     }
 
