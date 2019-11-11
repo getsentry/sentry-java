@@ -97,6 +97,8 @@ android {
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         isCheckReleaseBuilds = false
     }
+
+    ndkVersion = "20.1.5948944"
 }
 
 dependencies {
