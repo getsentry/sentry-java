@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
 import java.io.File
@@ -42,7 +43,7 @@ class HubTest {
     }
 
     @Test
-    fun `when hub is initialized, integrations are registered`() {
+    fun `when a root hub is initialized, integrations are registered`() {
         val integrationMock = mock<Integration>()
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
@@ -51,6 +52,20 @@ class HubTest {
         options.addIntegration(integrationMock)
         val expected = Hub(options)
         verify(integrationMock).register(expected, options)
+    }
+
+    @Test
+    fun `when hub is cloned, integrations are not registered`() {
+        val integrationMock = mock<Integration>()
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.serializer = mock()
+        options.addIntegration(integrationMock)
+        val expected = Hub(options)
+        verify(integrationMock).register(expected, options)
+        expected.clone()
+        verifyNoMoreInteractions(integrationMock)
     }
 
     @Test

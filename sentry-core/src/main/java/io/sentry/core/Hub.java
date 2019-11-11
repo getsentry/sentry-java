@@ -33,6 +33,11 @@ public final class Hub implements IHub {
 
   public Hub(@NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
+
+    // Register integrations against a root Hub
+    for (Integration integration : options.getIntegrations()) {
+      integration.register(this, options);
+    }
   }
 
   private Hub(@NotNull SentryOptions options, @Nullable StackItem rootStackItem) {
@@ -47,10 +52,6 @@ public final class Hub implements IHub {
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
-
-    for (Integration integration : options.getIntegrations()) {
-      integration.register(this, options);
-    }
   }
 
   private static void validateOptions(@NotNull SentryOptions options) {
