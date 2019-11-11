@@ -13,7 +13,13 @@ public class SentryNdk {
 
   private static native void initSentryNative(SentryOptions options);
 
+  private static native void verificationEventNative();
+
   public static void init(SentryOptions options) {
     initSentryNative(options);
+  }
+
+  public static void verificationEvent() {
+    verificationEventNative();
   }
 }
