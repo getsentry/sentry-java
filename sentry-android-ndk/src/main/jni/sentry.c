@@ -5,7 +5,6 @@
 #include <android/log.h>
 
 struct transport_options {
-    jmethodID notify_envelope_mid;
     jclass cls;
     JNIEnv *env;
     char outbox_path[4096];
@@ -25,11 +24,6 @@ static void send_envelope(const sentry_envelope_t *envelope, void *data) {
     strcat(outbox_path, "/");
     strcat(outbox_path, envelope_id_str);
     sentry_envelope_write_to_file(envelope, outbox_path);
-
-    jstring jevent_path = (*g_transport_options.env)->NewStringUTF(g_transport_options.env, outbox_path);
-    (*g_transport_options.env)->CallStaticVoidMethod(
-            g_transport_options.env, g_transport_options.cls,
-            g_transport_options.notify_envelope_mid, jevent_path);
 }
 
 JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls, jobject sentry_sdk_options) {
@@ -47,7 +41,6 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
 
     g_transport_options.env = env;
     g_transport_options.cls = cls;
-    g_transport_options.notify_envelope_mid = (*env)->GetStaticMethodID(env, cls, "notifyNewSerializedEnvelope", "(Ljava/lang/String;)V");
 
     sentry_options_t *options = sentry_options_new();
     sentry_options_set_transport(options, send_envelope, NULL);
