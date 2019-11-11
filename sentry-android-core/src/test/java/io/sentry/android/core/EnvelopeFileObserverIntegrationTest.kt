@@ -39,15 +39,6 @@ class EnvelopeFileObserverIntegrationTest {
     }
 
     @Test
-    fun `when instance from getCachedEnvelopeFileObserver, options getCacheDirPath + cache dir is used`() {
-        val options = SentryOptions()
-        options.cacheDirPath = "some_dir"
-
-        val sut = EnvelopeFileObserverIntegration.getCachedEnvelopeFileObserver()
-        assertEquals(options.cacheDirPath + File.separator + "cached", sut.getPath(options))
-    }
-
-    @Test
     fun `when hub is closed, integrations should be closed`() {
         val integrationMock = mock<EnvelopeFileObserverIntegration>()
         val options = SentryOptions()
