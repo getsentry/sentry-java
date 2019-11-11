@@ -56,7 +56,8 @@ public final class Hub implements IHub {
   private static void validateOptions(@NotNull SentryOptions options) {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {
-      throw new IllegalArgumentException("Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
+      throw new IllegalArgumentException(
+          "Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
     }
   }
 
