@@ -7,7 +7,6 @@ import io.sentry.core.Integration;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import java.io.Closeable;
-import java.io.File;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
@@ -45,10 +44,6 @@ abstract class EnvelopeFileObserverIntegration implements Integration, Closeable
     return new OutboxEnvelopeFileObserverIntegration();
   }
 
-  public static EnvelopeFileObserverIntegration getCachedEnvelopeFileObserver() {
-    return new JavaCachedEnvelopeFileObserverIntegration();
-  }
-
   @TestOnly
   abstract String getPath(SentryOptions options);
 
@@ -57,15 +52,6 @@ abstract class EnvelopeFileObserverIntegration implements Integration, Closeable
     @Override
     protected String getPath(final SentryOptions options) {
       return options.getOutboxPath();
-    }
-  }
-
-  private static final class JavaCachedEnvelopeFileObserverIntegration
-      extends EnvelopeFileObserverIntegration {
-    @Override
-    protected String getPath(final SentryOptions options) {
-      // TODO: Wherever we're caching events from the Java layer
-      return options.getCacheDirPath() + File.separator + "cached";
     }
   }
 }
