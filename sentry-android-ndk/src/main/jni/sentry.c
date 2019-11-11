@@ -54,14 +54,5 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
     sentry_options_set_debug(options, g_transport_options.debug);
     sentry_options_set_dsn(options, (*env)->GetStringUTFChars(env, dsn, 0));
     sentry_init(options);
-
-    sentry_value_t event = sentry_value_new_event();
-    sentry_value_set_by_key(event, "message",
-                            sentry_value_new_string("Hello World!"));
-
-    sentry_capture_event(event);
-
-    sentry_shutdown();
-
 }
 
