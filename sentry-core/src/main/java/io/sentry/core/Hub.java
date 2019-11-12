@@ -153,7 +153,7 @@ public final class Hub implements IHub {
       try {
         StackItem item = stack.peek();
         if (item != null) {
-          sentryId = item.client.captureException(throwable, item.scope);
+          sentryId = item.client.captureException(throwable, item.scope, hint);
         } else {
           logIfNotNull(
               options.getLogger(), SentryLevel.FATAL, "Stack peek was null when captureException");

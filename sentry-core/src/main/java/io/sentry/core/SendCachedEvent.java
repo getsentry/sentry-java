@@ -3,6 +3,8 @@ package io.sentry.core;
 import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.cache.DiskCache;
+import io.sentry.core.hints.Cached;
+import io.sentry.core.hints.Retryable;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -51,7 +53,13 @@ final class SendCachedEvent {
         directory.length(),
         directory.getAbsolutePath());
 
-    for (File file : directory.listFiles()) {
+    File[] listFiles = directory.listFiles();
+    if (listFiles == null) {
+      logIfNotNull(logger, SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
+      return;
+    }
+
+    for (File file : listFiles) {
       if (!file.getName().endsWith(DiskCache.FILE_SUFFIX)) {
         logIfNotNull(
             logger,
@@ -75,7 +83,7 @@ final class SendCachedEvent {
         continue;
       }
 
-      CachedEvent hint = new CachedEvent();
+      Retryable hint = new SendCachedEventHint();
       try (Reader reader =
           new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_8))) {
         SentryEvent event = serializer.deserializeEvent(reader);
@@ -87,10 +95,10 @@ final class SendCachedEvent {
       } catch (Exception e) {
         logIfNotNull(
             logger, SentryLevel.ERROR, "Failed to capture cached event.", file.getName(), e);
-        hint.setResend(false);
+        hint.setRetry(false);
       } finally {
         // Unless the transport marked this to be retried, it'll be deleted.
-        if (!hint.isResend()) {
+        if (!hint.getRetry()) {
           safeDelete(file, "after trying to capture it");
         }
       }
@@ -107,6 +115,20 @@ final class SendCachedEvent {
           "Failed to delete '%s' " + errorMessageSuffix,
           file.getName(),
           e);
+    }
+  }
+
+  private static final class SendCachedEventHint implements Cached, Retryable {
+    boolean retry = false;
+
+    @Override
+    public boolean getRetry() {
+      return retry;
+    }
+
+    @Override
+    public void setRetry(boolean retry) {
+      this.retry = retry;
     }
   }
 }

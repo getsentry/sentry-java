@@ -3,6 +3,7 @@ package io.sentry.core
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
@@ -319,7 +320,21 @@ class HubTest {
     }
 
     @Test
-    fun `when captureException is called with a valid argument, captureException on the client should be called`() {
+    fun `when captureException is called with a valid argument and hint, captureException on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.serializer = mock()
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.captureException(Throwable(), Object())
+        verify(mockClient, times(1)).captureException(any(), any(), any())
+    }
+
+    @Test
+    fun `when captureException is called with a valid argument but no hint, captureException on the client should be called`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
@@ -329,7 +344,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.captureException(Throwable())
-        verify(mockClient, times(1)).captureException(any(), any())
+        verify(mockClient, times(1)).captureException(any(), any(), isNull())
     }
     //endregion
 

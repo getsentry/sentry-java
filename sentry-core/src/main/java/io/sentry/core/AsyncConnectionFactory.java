@@ -27,14 +27,7 @@ final class AsyncConnectionFactory {
       // of
       // pending events as there are being cached. The rest is dropped.
       return new AsyncConnection(
-          transport,
-          alwaysOn,
-          linearBackoff,
-          eventCache,
-          0,
-          options.getCacheDirSize(),
-          true,
-          options);
+          transport, alwaysOn, linearBackoff, eventCache, 0, options.getCacheDirSize(), options);
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(
           "Failed to compose the connection to the Sentry server.", e);

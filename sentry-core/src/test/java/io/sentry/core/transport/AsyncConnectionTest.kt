@@ -35,7 +35,7 @@ class AsyncConnectionTest {
         }
 
         fun getSUT(): AsyncConnection {
-            return AsyncConnection(transport, transportGate, eventCache, executor, true, sentryOptions)
+            return AsyncConnection(transport, transportGate, eventCache, executor, sentryOptions)
         }
     }
 
