@@ -85,7 +85,7 @@ final class SendCachedEvent {
         continue;
       }
 
-      Retryable hint = new SendCachedEventHint();
+      SendCachedEventHint hint = new SendCachedEventHint();
       try (Reader reader =
           new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_8))) {
         SentryEvent event = serializer.deserializeEvent(reader);

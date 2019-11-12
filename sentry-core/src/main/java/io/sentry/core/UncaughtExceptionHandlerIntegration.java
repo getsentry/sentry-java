@@ -119,7 +119,7 @@ public final class UncaughtExceptionHandlerIntegration
       try {
         latch.await(timeoutMills, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
-        logIfNotNull(logger, ERROR, "Exception while flushing UncaughtExceptionHint", e);
+        logIfNotNull(logger, ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);
       }
     }
 
