@@ -46,21 +46,23 @@ final class SendCachedEvent {
       return;
     }
 
-    logIfNotNull(
-        logger,
-        SentryLevel.DEBUG,
-        "Processing %d items from cache dir %s",
-        directory.length(),
-        directory.getAbsolutePath());
-
     File[] listFiles = directory.listFiles();
     if (listFiles == null) {
       logIfNotNull(logger, SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
       return;
     }
 
+    File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
+
+    logIfNotNull(
+        logger,
+        SentryLevel.DEBUG,
+        "Processing %d items from cache dir %s",
+        filteredListFiles != null ? filteredListFiles.length : 0,
+        directory.getAbsolutePath());
+
     for (File file : listFiles) {
-      if (!file.getName().endsWith(DiskCache.FILE_SUFFIX)) {
+      if (!isRelevantFileName(file.getName())) {
         logIfNotNull(
             logger,
             SentryLevel.DEBUG,
@@ -103,6 +105,10 @@ final class SendCachedEvent {
         }
       }
     }
+  }
+
+  private boolean isRelevantFileName(String fileName) {
+    return fileName.endsWith(DiskCache.FILE_SUFFIX);
   }
 
   private void safeDelete(File file, String errorMessageSuffix) {
