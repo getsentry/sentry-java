@@ -81,7 +81,7 @@ public final class AsyncConnection implements Closeable, Connection {
    * @param event the event to send
    * @throws IOException on error
    */
-  @SuppressWarnings("FutureReturnValueIgnored") // TODO:
+  @SuppressWarnings("FutureReturnValueIgnored")
   // https://errorprone.info/bugpattern/FutureReturnValueIgnored
   @Override
   public void send(SentryEvent event, @Nullable Object hint) throws IOException {

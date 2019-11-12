@@ -8,8 +8,8 @@
 
   <Button android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:id="@+id/crash"
-          android:text="@string/crash_me"/>
+          android:id="@+id/crash_from_java"
+          android:text="@string/crash_from_java"/>
 
   <Button android:layout_width="wrap_content"
           android:layout_height="wrap_content"

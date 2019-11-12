@@ -18,10 +18,10 @@ public class MainActivity extends AppCompatActivity {
 
     Timber.i("Sentry.isEnabled() = %s", Sentry.isEnabled());
 
-    findViewById(R.id.crash)
+    findViewById(R.id.crash_from_java)
         .setOnClickListener(
             view -> {
-              throw new RuntimeException("Some runtime exception.");
+              throw new RuntimeException("Uncaught Exception from Java.");
             });
 
     findViewById(R.id.send_message)
