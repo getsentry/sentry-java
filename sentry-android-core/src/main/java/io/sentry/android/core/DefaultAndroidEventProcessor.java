@@ -17,6 +17,7 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.android.core.util.Permissions;
 import io.sentry.core.*;
+import io.sentry.core.hints.*;
 import io.sentry.core.protocol.*;
 import io.sentry.core.util.Objects;
 import java.io.*;

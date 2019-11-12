@@ -6,14 +6,14 @@ import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.cache.IEventCache;
+import io.sentry.core.hints.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.TestOnly;
+import org.jetbrains.annotations.*;
 
 /** A connection to Sentry that sends the events asynchronously. */
 public final class AsyncConnection implements Closeable, Connection {
@@ -22,7 +22,6 @@ public final class AsyncConnection implements Closeable, Connection {
   private final ExecutorService executor;
   private final IEventCache eventCache;
   private final SentryOptions options;
-  private final boolean storeBeforeSend;
 
   public AsyncConnection(
       ITransport transport,
@@ -31,14 +30,12 @@ public final class AsyncConnection implements Closeable, Connection {
       IEventCache eventCache,
       int maxRetries,
       int maxQueueSize,
-      boolean storeBeforeSend,
       SentryOptions options) {
     this(
         transport,
         transportGate,
         eventCache,
         initExecutor(maxRetries, maxQueueSize, backOffIntervalStrategy, eventCache),
-        storeBeforeSend,
         options);
   }
 
@@ -48,14 +45,12 @@ public final class AsyncConnection implements Closeable, Connection {
       ITransportGate transportGate,
       IEventCache eventCache,
       ExecutorService executorService,
-      boolean storeBeforeSend,
       SentryOptions options) {
     this.transport = transport;
     this.transportGate = transportGate;
     this.eventCache = eventCache;
     this.options = options;
     this.executor = executorService;
-    this.storeBeforeSend = storeBeforeSend;
   }
 
   private static RetryingThreadPoolExecutor initExecutor(
@@ -89,8 +84,12 @@ public final class AsyncConnection implements Closeable, Connection {
   @SuppressWarnings("FutureReturnValueIgnored") // TODO:
   // https://errorprone.info/bugpattern/FutureReturnValueIgnored
   @Override
-  public void send(SentryEvent event) throws IOException {
-    executor.submit(new EventSender(event));
+  public void send(SentryEvent event, @Nullable Object hint) throws IOException {
+    IEventCache currentEventCache = eventCache;
+    if (hint instanceof Cached) {
+      currentEventCache = NoOpEventCache.getInstance();
+    }
+    executor.submit(new EventSender(event, hint, currentEventCache));
   }
 
   @Override
@@ -128,27 +127,36 @@ public final class AsyncConnection implements Closeable, Connection {
 
   private final class EventSender implements Retryable {
     final SentryEvent event;
+    private Object hint;
+    private IEventCache eventCache;
     long suggestedRetryDelay;
 
-    EventSender(SentryEvent event) {
+    EventSender(SentryEvent event, Object hint, IEventCache eventCache) {
       this.event = event;
+      this.hint = hint;
+      this.eventCache = eventCache;
     }
 
     @Override
     public void run() {
+      try {
+        flush();
+      } finally {
+        if (hint instanceof Flushable) {
+          ((Flushable) hint).flushed();
+        }
+      }
+    }
+
+    private void flush() {
       if (transportGate.isSendingAllowed()) {
         try {
-          if (storeBeforeSend) {
-            eventCache.store(event);
-          }
+          eventCache.store(event);
 
           TransportResult result = transport.send(event);
           if (result.isSuccess()) {
             eventCache.discard(event);
           } else {
-            if (!storeBeforeSend) {
-              eventCache.store(event);
-            }
             suggestedRetryDelay = result.getRetryMillis();
 
             String message =
@@ -159,17 +167,25 @@ public final class AsyncConnection implements Closeable, Connection {
                     + "ms.";
 
             if (options.isDebug()) {
-              options.getLogger().log(SentryLevel.DEBUG, message);
+              options.getLogger().log(SentryLevel.ERROR, message);
             }
 
             throw new IllegalStateException(message);
           }
         } catch (IOException e) {
           eventCache.store(event);
+          // Failure due to IO is allowed to retry the event
+          if (hint instanceof io.sentry.core.hints.Retryable) {
+            ((io.sentry.core.hints.Retryable) hint).setRetry(true);
+          }
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
         eventCache.store(event);
+        // If transportGate is blocking from sending, allowed to retry
+        if (hint instanceof io.sentry.core.hints.Retryable) {
+          ((io.sentry.core.hints.Retryable) hint).setRetry(true);
+        }
       }
     }
 

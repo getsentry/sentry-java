@@ -4,9 +4,9 @@ import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.cache.DiskCache;
 import io.sentry.core.cache.IEventCache;
+import io.sentry.core.hints.Cached;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.Connection;
-import io.sentry.core.transport.CrashedEventStore;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -40,10 +40,9 @@ public final class SentryClient implements ISentryClient {
     if (connection == null) {
 
       // TODO this is obviously provisional and should be constructed based on the config in options
-      IEventCache blackHole = new DiskCache(options);
+      IEventCache cache = new DiskCache(options);
 
-      connection =
-          new CrashedEventStore(AsyncConnectionFactory.create(options, blackHole), blackHole);
+      connection = AsyncConnectionFactory.create(options, cache);
     }
     this.connection = connection;
     random = options.getSampling() == null ? null : new Random();
@@ -62,6 +61,38 @@ public final class SentryClient implements ISentryClient {
 
     logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
+    if (!(hint instanceof Cached)) {
+      // Event has already passed through here before it was cached
+      // Going through again could be reading data that is no longer relevant
+      // i.e proguard id, app version, threads
+      ApplyScope(event, scope);
+
+      for (EventProcessor processor : options.getEventProcessors()) {
+        processor.process(event, hint);
+      }
+    }
+
+    event = executeBeforeSend(event, hint);
+
+    if (event == null) {
+      // Event dropped by the beforeSend callback
+      return SentryId.EMPTY_ID;
+    }
+
+    try {
+      connection.send(event, hint);
+    } catch (IOException e) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Capturing event " + event.getEventId() + " failed.",
+          e);
+    }
+
+    return event.getEventId();
+  }
+
+  private void ApplyScope(SentryEvent event, @Nullable Scope scope) {
     if (scope != null) {
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransaction());
@@ -89,7 +120,7 @@ public final class SentryClient implements ISentryClient {
       if (event.getExtras() == null) {
         event.setExtras(new HashMap<>(scope.getExtras()));
       } else {
-        for (Map.Entry<String, java.lang.Object> item : scope.getExtras().entrySet()) {
+        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
           if (!event.getExtras().containsKey(item.getKey())) {
             event.getExtras().put(item.getKey(), item.getValue());
           }
@@ -100,29 +131,6 @@ public final class SentryClient implements ISentryClient {
         event.setLevel(scope.getLevel());
       }
     }
-
-    for (EventProcessor processor : options.getEventProcessors()) {
-      processor.process(event, hint);
-    }
-
-    event = executeBeforeSend(event, hint);
-
-    if (event == null) {
-      // Event dropped by the beforeSend callback
-      return SentryId.EMPTY_ID;
-    }
-
-    try {
-      connection.send(event);
-    } catch (IOException e) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.WARNING,
-          "Capturing event " + event.getEventId() + " failed.",
-          e);
-    }
-
-    return event.getEventId();
   }
 
   private SentryEvent executeBeforeSend(SentryEvent event, @Nullable Object hint) {
