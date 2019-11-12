@@ -241,6 +241,9 @@ public class SentryOptions {
     inAppExcludes.add("oracle.");
     inAppExcludes.add("org.jetbrains.");
 
+    inAppIncludes =
+        new ArrayList<>(); // make the list available so processor below can take the reference
+
     eventProcessors.add(new MainEventProcessor(this));
 
     // Start off sending any cached event.
