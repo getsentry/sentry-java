@@ -122,16 +122,15 @@ class SentryClientTest {
         verify(fixture.connection, times(1)).send(actual)
     }
 
-    // TODO: Sentry-native write message
-//    @Test
-//    fun `when captureMessage is called, sentry event contains formatted message`() {
-//        var sentEvent: SentryEvent? = null
-//        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
-//        val sut = fixture.getSut()
-//        val actual = "actual message"
-//        sut.captureMessage(actual)
-//        assertEquals(actual, sentEvent!!.message.formatted)
-//    }
+    @Test
+    fun `when captureMessage is called, sentry event contains formatted message`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
+        val sut = fixture.getSut()
+        val actual = "actual message"
+        sut.captureMessage(actual)
+        assertEquals(actual, sentEvent!!.message.formatted)
+    }
 
     @Test
     fun `when event has release, value from options not applied`() {

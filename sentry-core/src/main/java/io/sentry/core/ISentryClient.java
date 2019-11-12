@@ -33,8 +33,7 @@ public interface ISentryClient {
     SentryEvent event = new SentryEvent();
     Message sentryMessage = new Message();
     sentryMessage.setFormatted(message);
-    // TODO: remove comment when we define data structure for message
-    //    event.setMessage(sentryMessage);
+    event.setMessage(sentryMessage);
     return captureEvent(event, scope);
   }
 
