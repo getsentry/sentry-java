@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java StackTraceElements to SentryStackFrames */
 final class SentryStackTraceFactory {
@@ -51,7 +52,8 @@ final class SentryStackTraceFactory {
     return sentryStackFrames;
   }
 
-  private boolean isInApp(String className) {
+  @TestOnly
+  boolean isInApp(String className) {
     if (className == null || className.isEmpty()) {
       return true;
     }
@@ -70,6 +72,6 @@ final class SentryStackTraceFactory {
         }
       }
     }
-    return true;
+    return false;
   }
 }
