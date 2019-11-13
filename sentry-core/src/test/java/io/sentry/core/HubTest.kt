@@ -70,6 +70,28 @@ class HubTest {
     }
 
     @Test
+    fun `when hub is cloned, scope changes are isolated`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.serializer = mock()
+        val hub = Hub(options)
+        var firstScope: Scope? = null
+        hub.configureScope {
+            firstScope = it
+            it.setTag("hub", "a")
+        }
+        var cloneScope: Scope? = null
+        val clone = hub.clone()
+        clone.configureScope {
+            cloneScope = it
+            it.setTag("hub", "b")
+        }
+        assertEquals("a", firstScope!!.tags["hub"])
+        assertEquals("b", cloneScope!!.tags["hub"])
+    }
+
+    @Test
     fun `when hub is initialized, breadcrumbs are capped as per options`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
