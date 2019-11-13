@@ -232,11 +232,14 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
     // check the use of https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
-    StatFs internalStorageStat = getInternalStorageStat();
-    device.setStorageSize(getTotalInternalStorage(internalStorageStat));
-    device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
+    File internalStorageFile = context.getExternalFilesDir(null);
+    if (internalStorageFile != null) {
+      StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
+      device.setStorageSize(getTotalInternalStorage(internalStorageStat));
+      device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
+    }
 
-    StatFs externalStorageStat = getExternalStorageStat();
+    StatFs externalStorageStat = getExternalStorageStat(internalStorageFile);
     if (externalStorageStat != null) {
       device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
       device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
@@ -532,17 +535,9 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private StatFs getInternalStorageStat() {
-    File path = Environment.getDataDirectory(); // /data
-    return new StatFs(path.getPath());
-  }
-
-  private StatFs getExternalStorageStat() {
+  private StatFs getExternalStorageStat(File internalStorage) {
     if (!isExternalStorageMounted()) {
-      File path = getExternalStorageDep(); // /storage/sdcard0 or /storage/emulated/0
-      // context.getExternalFilesDir(null); /storage/sdcard0/Android/data/package/files or
-      // /storage/emulated/0/Android/data/io.sentry.sample/files
-
+      File path = getExternalStorageDep(internalStorage);
       if (path != null) { // && path.canRead()) { canRead() will read return false
         return new StatFs(path.getPath());
       }
@@ -553,9 +548,41 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  @SuppressWarnings("deprecation")
-  private File getExternalStorageDep() {
-    return Environment.getExternalStorageDirectory();
+  @SuppressWarnings("ObsoleteSdkInt")
+  public File[] getExternalFilesDirs(String type) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      return context.getExternalFilesDirs(type);
+    } else {
+      File single = context.getExternalFilesDir(type);
+      if (single != null) {
+        return new File[] {single};
+      }
+    }
+    return null;
+  }
+
+  private File getExternalStorageDep(File internalStorage) {
+    File[] externalFilesDirs = getExternalFilesDirs(null);
+
+    if (externalFilesDirs != null) {
+      // return the 1st file which is not the emulated internal storage
+      String internalStoragePath =
+          internalStorage != null ? internalStorage.getAbsolutePath() : null;
+      for (File file : externalFilesDirs) {
+        // return the 1st file if you cannot compare with the internal one
+        if (internalStoragePath == null || internalStoragePath.isEmpty()) {
+          return file;
+        }
+        // if we are looking to the same directory, let's check the next one or no external storage
+        if (file.getAbsolutePath().contains(internalStoragePath)) {
+          continue;
+        }
+        return file;
+      }
+    } else {
+      log(SentryLevel.INFO, "Not possible to read getExternalFilesDirs");
+    }
+    return null;
   }
 
   /**
