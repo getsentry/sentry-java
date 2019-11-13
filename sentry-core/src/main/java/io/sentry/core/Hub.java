@@ -408,7 +408,16 @@ public final class Hub implements IHub {
     // Clone will be invoked in parallel
     Hub clone = new Hub(this.options, null);
     for (StackItem item : this.stack) {
-      clone.stack.push(item);
+      Scope clonedScope = null;
+      try {
+        clonedScope = item.scope.clone();
+      } catch (CloneNotSupportedException e) {
+        // TODO: Why do we need to deal with this? We must guarantee clone is possible here!
+        logIfNotNull(options.getLogger(), SentryLevel.ERROR, "Clone not supported");
+        clonedScope = new Scope(options.getMaxBreadcrumbs());
+      }
+      StackItem cloneItem = new StackItem(item.client, clonedScope);
+      clone.stack.push(cloneItem);
     }
     return clone;
   }
