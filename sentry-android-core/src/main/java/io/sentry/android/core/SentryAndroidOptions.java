@@ -4,7 +4,7 @@ import io.sentry.core.SentryOptions;
 
 public final class SentryAndroidOptions extends SentryOptions {
   private boolean anrEnabled = true;
-  private int anrTimeoutIntervalMills = 5000;
+  private int anrTimeoutIntervalMills = 4000;
   private boolean anrReportInDebug = false;
 
   public boolean isAnrEnabled() {

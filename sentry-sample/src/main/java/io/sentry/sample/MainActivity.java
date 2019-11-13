@@ -64,9 +64,13 @@ public class MainActivity extends AppCompatActivity {
     findViewById(R.id.anr)
         .setOnClickListener(
             view -> {
-              // Try cause ANR (triggers after 1 second as configured via meta-data)
+              // Try cause ANR by blocking for 2.5 seconds.
+              // By default the SDK sends an event if blocked by at least 5 seconds.
+              // The time was configurable (see manifest) to 1 second for demo purposes.
+              // NOTE: By default it doesn't raise if the debugger is attached. That can also be
+              // configured.
               try {
-                Thread.sleep(2000);
+                Thread.sleep(2500);
               } catch (InterruptedException e) {
                 return;
               }
