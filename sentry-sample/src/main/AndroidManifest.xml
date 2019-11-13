@@ -28,10 +28,11 @@
     <!--  NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
     <meta-data android:name="io.sentry.dsn" android:value="https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954" />
 
+<!--    how to enable Sentry's debug mode-->
     <meta-data android:name="io.sentry.debug" android:value="true" />
 
-    <!-- Raise a ANR event if UI thread blocked for over 2 seconds -->
-    <meta-data android:name="io.sentry.anr.timeout-interval-mills" android:value="2000" />
+    <!-- To change the time used to watch for ANR. By default it's 4 seconds (4000 below as it's in milliseconds) -->
+    <meta-data android:name="io.sentry.anr.timeout-interval-mills" android:value="1000" />
 
     <!-- Raise ANR events even if the debugger is attached -->
 <!--    <meta-data android:name="io.sentry.anr.report-debug" android:value="true" />-->
