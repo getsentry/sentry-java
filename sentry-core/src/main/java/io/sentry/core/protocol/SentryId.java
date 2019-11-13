@@ -1,9 +1,10 @@
 package io.sentry.core.protocol;
 
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 
 public final class SentryId {
-  private final UUID uuid;
+  private final @NotNull UUID uuid;
 
   public static final SentryId EMPTY_ID = new SentryId(new UUID(0, 0));
 
@@ -25,6 +26,19 @@ public final class SentryId {
   @Override
   public String toString() {
     return uuid.toString().replace("-", "");
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SentryId sentryId = (SentryId) o;
+    return uuid.compareTo(sentryId.uuid) == 0;
+  }
+
+  @Override
+  public int hashCode() {
+    return uuid.hashCode();
   }
 
   private UUID fromStringSentryId(String sentryIdString) {

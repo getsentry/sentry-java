@@ -81,17 +81,15 @@ public final class EnvelopeSender implements IEnvelopeSender {
                 items,
                 item.getHeader().getType());
           } else {
-            // TODO: Until sentry-native sends event_id in the header
-            //            if (envelope.getHeader().getEventId() != event.getEventId()) {
-            //              logger.log(
-            //                  SentryLevel.ERROR,
-            //                  "Item %d of has a different event id (%s) to the envelope header
-            // (s)",
-            //                  items,
-            //                  envelope.getHeader().getEventId(),
-            //                  event.getEventId());
-            //              continue;
-            //            }
+            if (!envelope.getHeader().getEventId().equals(event.getEventId())) {
+              logger.log(
+                  SentryLevel.ERROR,
+                  "Item %d of has a different event id (%s) to the envelope header (%s)",
+                  items,
+                  envelope.getHeader().getEventId(),
+                  event.getEventId());
+              continue;
+            }
             hub.captureEvent(event);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
           }

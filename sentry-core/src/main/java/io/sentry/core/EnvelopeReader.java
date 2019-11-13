@@ -57,11 +57,9 @@ public final class EnvelopeReader implements IEnvelopeReader {
 
     SentryEnvelopeHeader header =
         deserializeEnvelopeHeader(envelopeBytes, 0, envelopeEndHeaderOffset);
-    // TODO: until sentry-native writes envelopes header containing event_id
-    // TODO: Remove @Ignore of unit test
-    // if (header.getEventId() == null || header.getEventId() == SentryId.EMPTY_ID) {
-    //   throw new IllegalArgumentException("Envelope header is missing required 'event_id'.");
-    // }
+    if (header.getEventId() == null || header.getEventId().equals(SentryId.EMPTY_ID)) {
+      throw new IllegalArgumentException("Envelope header is missing required 'event_id'.");
+    }
 
     int itemHeaderStartOffset = envelopeEndHeaderOffset + 1;
 
