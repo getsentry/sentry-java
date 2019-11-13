@@ -8,11 +8,14 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.protocol.SentryId
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.Reader
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.Date
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -62,7 +65,7 @@ class EnvelopeSenderTest {
     @Test
     fun `when parser is EnvelopeReader and serializer returns instance, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
-        val expected = SentryEvent()
+        val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
         whenever(fixture.serializer!!.deserializeEvent(any<Reader>())).thenReturn(expected)
         val sut = fixture.getSut()
         val path = getTempEnvelope()

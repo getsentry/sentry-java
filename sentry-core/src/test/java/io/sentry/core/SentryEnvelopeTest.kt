@@ -4,7 +4,6 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import java.io.InputStream
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -59,7 +58,6 @@ class SentryEnvelopeTest {
         assertEquals("Envelope contains no header.", exception.message)
     }
 
-    @Ignore("Until sentry-native write it")
     @Test
     fun `when envelope header has no event_id, reader throws illegal argument`() {
         val envelopeReader = EnvelopeReader()
