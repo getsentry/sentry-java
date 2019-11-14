@@ -13,7 +13,7 @@ git config core.hooksPath hooks/
 To run the build and tests:
 
 ```shell
-./gradlew build
+./gradlew clean build
 ```
 
 Build and tests are automatically run against branches and pull requests

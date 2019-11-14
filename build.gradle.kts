@@ -4,7 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    id("com.diffplug.gradle.spotless") version Config.QualityPlugins.spotlessVersion apply true
+    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
     jacoco
 }
 
@@ -15,6 +15,7 @@ configure<JavaPluginConvention> {
 
 buildscript {
     repositories {
+        mavenLocal()
         google()
         jcenter()
     }
@@ -22,18 +23,20 @@ buildscript {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
         classpath(Config.QualityPlugins.errorpronePlugin)
-//        classpath("io.sentry:sentry-android-gradle-plugin:$version") how to add sentry gradle plugin
+        classpath(Config.Deploy.novodaBintray)
     }
 }
 
 allprojects {
     repositories {
+        mavenLocal()
         google()
         jcenter()
         mavenCentral()
     }
-    group = "io.sentry"
-    version = "2.0.0-SNAPSHOT"
+    group = Config.Sentry.group
+    version = Config.Sentry.version
+    description = Config.Sentry.description
     tasks {
         withType<Test> {
             testLogging.showStandardStreams = true

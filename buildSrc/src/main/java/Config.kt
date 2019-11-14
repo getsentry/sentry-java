@@ -40,21 +40,47 @@ object Config {
 
     object QualityPlugins {
         val jacocoVersion = "0.8.5"
+        val spotless = "com.diffplug.gradle.spotless"
         val spotlessVersion = "3.25.0"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
     }
 
     object Sentry {
         val SENTRY_CLIENT_NAME = "sentry.java.android"
+        val group = "io.sentry"
+//        TODO: change version to publish new version
+        val version = "2.0.0-alpha04"
+        val description = "SDK for sentry.io"
+//        TODO: change version code to publish new version, follow the pattern of `version`
+        val buildVersionCode = 20004
+        val website = "https://sentry.io"
+        val userOrg = "getsentry"
+        val repoName = "sentry-android"
+        val licence = "MIT"
+        val issueTracker = "https://github.com/getsentry/sentry-android/issues"
+        val repository = "https://github.com/getsentry/sentry-android"
+        val devName = "Sentry Team and Contributers"
+        val devEmail = "accounts@sentry.io"
+        val devUser = "getsentry"
     }
 
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val annotations = "org.jetbrains:annotations:18.0.0"
-        val noopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
-        val noopenProne = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
+        val jetbrainsAnnotations = "org.jetbrains:annotations:18.0.0"
+        val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
+        val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.3.3"
-        val errorProneJavac = "com.google.errorprone:javac:9+181-r4173-1"
+        val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
+    }
+
+    object Deploy {
+//        TODO: change version to 0.9.2 to publish new version, which supports `sign` field
+//        lets wait a bit for PR to be reviewed or we publish ourselves https://github.com/novoda/bintray-release/issues/301
+        val novodaBintray = "com.novoda:bintray-release:0.9.1"
+        val novodaBintrayId = "com.novoda.bintray-release"
+        val dryRun = true // If set to true this will run everything but it won't upload the package to bintray. If false then it will upload normally.
+        val override = true
+        val sign = true
     }
 }
