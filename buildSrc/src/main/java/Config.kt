@@ -59,7 +59,7 @@ object Config {
         val licence = "MIT"
         val issueTracker = "https://github.com/getsentry/sentry-android/issues"
         val repository = "https://github.com/getsentry/sentry-android"
-        val devName = "Sentry Team and Contributers"
+        val devName = "Sentry Team and Contributors"
         val devEmail = "accounts@sentry.io"
         val devUser = "getsentry"
     }
