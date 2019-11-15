@@ -12,9 +12,10 @@
 #-keep class com.google.gson.stream.** { *; }
 
 # Application classes that will be serialized/deserialized over Gson
--keep class io.sentry.core.** { <fields>; }
--keep class io.sentry.core.protocol.** { <fields>; }
+-keep class io.sentry.core.** { *; }
+-keep class io.sentry.core.protocol.** { *; }
 -keepclassmembers enum * { *; }
+-keep class io.sentry.android.core.** { *; }
 
 # Prevent proguard from stripping interface information from TypeAdapter, TypeAdapterFactory,
 # JsonSerializer, JsonDeserializer instances (so they can be used in @JsonAdapter)
