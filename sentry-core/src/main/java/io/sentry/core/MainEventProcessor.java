@@ -1,5 +1,8 @@
 package io.sentry.core;
 
+import static io.sentry.core.ILogger.logIfNotNull;
+
+import io.sentry.core.hints.Cached;
 import io.sentry.core.protocol.SentryException;
 import io.sentry.core.util.Objects;
 import java.util.List;
@@ -52,21 +55,29 @@ public final class MainEventProcessor implements EventProcessor {
     }
 
     if (event.getThreads() == null) {
-      Long crashedThreadId = null;
-      List<SentryException> exceptions = event.getExceptions();
-      if (event.getExceptions() != null && !exceptions.isEmpty()) {
-        for (SentryException exception : exceptions) {
-          if (exception != null
-              && exception.getMechanism() != null
-              // If mechanism is set to handled=false, this will crash the app.
-              // Provide the thread-id if available to mark the thread-list with the crashed one.
-              && Boolean.FALSE.equals(exception.getMechanism().isHandled())) {
-            crashedThreadId = exception.getThreadId();
-            break;
+      if (!(hint instanceof Cached)) {
+        Long crashedThreadId = null;
+        List<SentryException> exceptions = event.getExceptions();
+        if (event.getExceptions() != null && !exceptions.isEmpty()) {
+          for (SentryException exception : exceptions) {
+            if (exception != null
+                && exception.getMechanism() != null
+                // If mechanism is set to handled=false, this will crash the app.
+                // Provide the thread-id if available to mark the thread-list with the crashed one.
+                && Boolean.FALSE.equals(exception.getMechanism().isHandled())) {
+              crashedThreadId = exception.getThreadId();
+              break;
+            }
           }
         }
+        event.setThreads(sentryThreadFactory.getCurrentThreads(crashedThreadId));
+      } else {
+        logIfNotNull(
+            options.getLogger(),
+            SentryLevel.DEBUG,
+            "Event was cached so not applying threads: %s",
+            event.getEventId());
       }
-      event.setThreads(sentryThreadFactory.getCurrentThreads(crashedThreadId));
     }
 
     return event;
