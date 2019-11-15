@@ -11,6 +11,7 @@ class SendCachedEventFireAndForgetIntegrationTest {
         var hub: IHub? = mock()
         var logger: ILogger? = mock()
         var options = SentryOptions()
+        var callback = mock<SendCachedEventFireAndForgetIntegration.SendFireAndForgetFactory>()
 
         init {
             options.isDebug = true
@@ -18,7 +19,7 @@ class SendCachedEventFireAndForgetIntegrationTest {
         }
 
         fun getSut(): SendCachedEventFireAndForgetIntegration {
-            return SendCachedEventFireAndForgetIntegration()
+            return SendCachedEventFireAndForgetIntegration(callback)
         }
     }
 

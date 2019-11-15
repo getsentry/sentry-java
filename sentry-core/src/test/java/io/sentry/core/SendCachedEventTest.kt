@@ -47,41 +47,41 @@ class SendCachedEventTest {
     }
 
     @Test
-    fun `when directory doesn't exist, sendCachedFiles logs and returns`() {
+    fun `when directory doesn't exist, processDirectory logs and returns`() {
         val sut = fixture.getSut()
-        sut.sendCachedFiles(File("i don't exist"))
+        sut.processDirectory(File("i don't exist"))
         verify(fixture.logger)!!.log(eq(SentryLevel.WARNING), eq("Directory '%s' doesn't exist. No cached events to send."), any<Any>())
         verifyNoMoreInteractions(fixture.hub)
     }
 
     @Test
-    fun `when directory is actually a file, sendCachedFiles logs and returns`() {
+    fun `when directory is actually a file, processDirectory logs and returns`() {
         val sut = fixture.getSut()
-        val testFile = File(Files.createTempFile("send-cached-event-test", "").toUri())
+        val testFile = File(Files.createTempFile("send-cached-event-test", DiskCache.FILE_SUFFIX).toUri())
         testFile.deleteOnExit()
-        sut.sendCachedFiles(testFile)
+        sut.processDirectory(testFile)
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq("Cache dir %s is not a directory."), any<Any>())
         verifyNoMoreInteractions(fixture.hub)
     }
 
     @Test
-    fun `when directory has non event files, sendCachedFiles logs that`() {
+    fun `when directory has non event files, processDirectory logs that`() {
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", ".not-right-suffix").toUri())
         testFile.deleteOnExit()
-        sut.sendCachedFiles(File(tempDirectory.toUri()))
+        sut.processDirectory(File(tempDirectory.toUri()))
         verify(fixture.logger)!!.log(eq(SentryLevel.DEBUG), eq("File '%s' doesn't match extension expected."), any<Any>())
         verifyNoMoreInteractions(fixture.hub)
     }
 
     @Test
-    fun `when directory has event files, sendCachedFiles captures with hub`() {
+    fun `when directory has event files, processDirectory captures with hub`() {
         val expected = SentryEvent()
         whenever(fixture.serializer!!.deserializeEvent(any())).thenReturn(expected)
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", DiskCache.FILE_SUFFIX).toUri())
         testFile.deleteOnExit()
-        sut.sendCachedFiles(File(tempDirectory.toUri()))
+        sut.processDirectory(File(tempDirectory.toUri()))
         verify(fixture.hub)!!.captureEvent(eq(expected), any())
     }
 
@@ -92,7 +92,7 @@ class SendCachedEventTest {
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", DiskCache.FILE_SUFFIX).toUri())
         testFile.deleteOnExit()
-        sut.sendCachedFiles(File(tempDirectory.toUri()))
+        sut.processFile(testFile)
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq("Failed to capture cached event."), any<Any>())
         verifyNoMoreInteractions(fixture.hub)
         assertFalse(testFile.exists())
@@ -106,7 +106,7 @@ class SendCachedEventTest {
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", DiskCache.FILE_SUFFIX).toUri())
         testFile.deleteOnExit()
-        sut.sendCachedFiles(File(tempDirectory.toUri()))
+        sut.processFile(testFile)
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq("Failed to capture cached event."), any<Any>())
         verifyNoMoreInteractions(fixture.hub)
     }

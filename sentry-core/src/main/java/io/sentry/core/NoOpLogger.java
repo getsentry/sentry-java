@@ -16,4 +16,7 @@ final class NoOpLogger implements ILogger {
 
   @Override
   public void log(SentryLevel level, String message, Throwable throwable) {}
+
+  @Override
+  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {}
 }

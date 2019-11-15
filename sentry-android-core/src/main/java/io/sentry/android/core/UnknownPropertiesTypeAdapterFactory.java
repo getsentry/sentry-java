@@ -104,8 +104,10 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
       }
       // First convert the above JSON tree to an object
       final T object = typeAdapter.fromJsonTree(jsonObjectToParse);
-      // And do the post-processing
-      object.acceptUnknownProperties(unknownProperties);
+      if (!unknownProperties.isEmpty()) {
+        // And do the post-processing
+        object.acceptUnknownProperties(unknownProperties);
+      }
       return object;
     }
 

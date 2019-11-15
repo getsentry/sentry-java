@@ -116,7 +116,6 @@ class AsyncConnectionTest {
         // then
         val order = inOrder(fixture.transport, fixture.eventCache)
         order.verify(fixture.transport).send(eq(ev))
-        order.verify(fixture.eventCache).store(eq(ev))
         verify(fixture.eventCache, never()).discard(any())
     }
 }

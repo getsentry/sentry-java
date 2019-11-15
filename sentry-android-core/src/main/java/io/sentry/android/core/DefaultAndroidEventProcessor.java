@@ -47,6 +47,7 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public SentryEvent process(SentryEvent event, @Nullable Object hint) {
+    // TODO: Split by data to apply to cached events and
     if (event.getSdk() == null) {
       event.setSdk(getSdkVersion());
     }
