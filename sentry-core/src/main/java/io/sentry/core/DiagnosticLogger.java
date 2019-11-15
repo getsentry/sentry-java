@@ -60,4 +60,19 @@ public final class DiagnosticLogger implements ILogger {
       logger.log(level, message, throwable);
     }
   }
+
+  /**
+   * Logs a message with the specified level, throwable, message and optional arguments.
+   *
+   * @param level The SentryLevel.
+   * @param throwable The throwable to log.
+   * @param message The message.
+   * @param args The optional arguments to format the message.
+   */
+  @Override
+  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+    if (logger != null && isEnabled(level)) {
+      logger.log(level, throwable, message, args);
+    }
+  }
 }

@@ -14,6 +14,11 @@ final class AndroidLogger implements ILogger {
   }
 
   @Override
+  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+    log(level, String.format(message, args), throwable);
+  }
+
+  @Override
   public void log(SentryLevel level, String message, Throwable throwable) {
 
     switch (level) {

@@ -4,7 +4,7 @@ import static io.sentry.core.ILogger.logIfNotNull;
 import static io.sentry.core.SentryLevel.ERROR;
 
 import io.sentry.core.exception.ExceptionMechanismException;
-import io.sentry.core.hints.Flushable;
+import io.sentry.core.hints.DiskFlushNotification;
 import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.util.Objects;
 import java.io.Closeable;
@@ -75,13 +75,21 @@ public final class UncaughtExceptionHandlerIntegration
       event.setLevel(SentryLevel.FATAL);
       this.hub.captureEvent(event, hint);
       // Block until the event is flushed to disk
-      hint.waitFlush();
+      if (!hint.waitFlush()) {
+        logIfNotNull(
+            options.getLogger(),
+            SentryLevel.WARNING,
+            "Timed out waiting to flush event to disk before crashing. Event: %s",
+            event.getEventId());
+      }
     } catch (Exception e) {
       logIfNotNull(
           options.getLogger(), SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
     }
 
     if (defaultExceptionHandler != null) {
+      logIfNotNull(
+          options.getLogger(), SentryLevel.INFO, "Invoking inner uncaught exception handler.");
       defaultExceptionHandler.uncaughtException(thread, thrown);
     }
   }
@@ -103,7 +111,7 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
-  private static class UncaughtExceptionHint implements Flushable {
+  private static class UncaughtExceptionHint implements DiskFlushNotification {
 
     private final CountDownLatch latch;
     private final long timeoutMills;
@@ -115,17 +123,18 @@ public final class UncaughtExceptionHandlerIntegration
       this.logger = logger;
     }
 
-    void waitFlush() {
+    boolean waitFlush() {
       try {
-        latch.await(timeoutMills, TimeUnit.MILLISECONDS);
+        return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         logIfNotNull(
             logger, ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);
       }
+      return false;
     }
 
     @Override
-    public void flushed() {
+    public void markFlushed() {
       latch.countDown();
     }
   }

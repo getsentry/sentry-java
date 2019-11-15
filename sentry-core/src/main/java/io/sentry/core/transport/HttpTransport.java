@@ -99,6 +99,7 @@ public class HttpTransport implements ITransport {
 
       // need to also close the input stream of the connection
       connection.getInputStream().close();
+      logIfNotNull(options.getLogger(), DEBUG, "Event sent %s successfully.", event.getEventId());
       return TransportResult.success();
     } catch (IOException e) {
       long retryAfterMs = 1000; // the default is 1s

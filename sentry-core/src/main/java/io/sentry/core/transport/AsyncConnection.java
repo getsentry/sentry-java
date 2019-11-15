@@ -6,14 +6,18 @@ import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.cache.IEventCache;
-import io.sentry.core.hints.*;
+import io.sentry.core.hints.Cached;
+import io.sentry.core.hints.DiskFlushNotification;
+import io.sentry.core.hints.SubmissionResult;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** A connection to Sentry that sends the events asynchronously. */
 public final class AsyncConnection implements Closeable, Connection {
@@ -95,6 +99,7 @@ public final class AsyncConnection implements Closeable, Connection {
   @Override
   public void close() throws IOException {
     executor.shutdown();
+    logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "Shutting down");
     try {
       if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
         logIfNotNull(
@@ -130,6 +135,7 @@ public final class AsyncConnection implements Closeable, Connection {
     private Object hint;
     private IEventCache eventCache;
     long suggestedRetryDelay;
+    TransportResult failedResult = TransportResult.error(5000, -1);
 
     EventSender(SentryEvent event, Object hint, IEventCache eventCache) {
       this.event = event;
@@ -139,21 +145,46 @@ public final class AsyncConnection implements Closeable, Connection {
 
     @Override
     public void run() {
+      TransportResult result = this.failedResult;
       try {
-        flush();
+        result = flush();
+        logIfNotNull(
+            options.getLogger(), SentryLevel.DEBUG, "Event flushed: %s", event.getEventId());
+      } catch (Exception e) {
+        logIfNotNull(
+            options.getLogger(),
+            SentryLevel.ERROR,
+            e,
+            "Event submission failed: %s",
+            event.getEventId());
+        throw e;
       } finally {
-        if (hint instanceof Flushable) {
-          ((Flushable) hint).flushed();
+        if (hint instanceof SubmissionResult) {
+          logIfNotNull(
+              options.getLogger(),
+              SentryLevel.DEBUG,
+              "Marking event submission result: %s",
+              result.isSuccess());
+          ((SubmissionResult) hint).setResult(result.isSuccess());
         }
       }
     }
 
-    private void flush() {
+    private TransportResult flush() {
+      TransportResult result = this.failedResult;
+      eventCache.store(event);
+      if (hint instanceof DiskFlushNotification) {
+        ((DiskFlushNotification) hint).markFlushed();
+        logIfNotNull(
+            options.getLogger(),
+            SentryLevel.DEBUG,
+            "Disk flush event fired: %s",
+            event.getEventId());
+      }
+
       if (transportGate.isSendingAllowed()) {
         try {
-          eventCache.store(event);
-
-          TransportResult result = transport.send(event);
+          result = transport.send(event);
           if (result.isSuccess()) {
             eventCache.discard(event);
           } else {
@@ -173,7 +204,6 @@ public final class AsyncConnection implements Closeable, Connection {
             throw new IllegalStateException(message);
           }
         } catch (IOException e) {
-          eventCache.store(event);
           // Failure due to IO is allowed to retry the event
           if (hint instanceof io.sentry.core.hints.Retryable) {
             ((io.sentry.core.hints.Retryable) hint).setRetry(true);
@@ -181,12 +211,12 @@ public final class AsyncConnection implements Closeable, Connection {
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
-        eventCache.store(event);
         // If transportGate is blocking from sending, allowed to retry
         if (hint instanceof io.sentry.core.hints.Retryable) {
           ((io.sentry.core.hints.Retryable) hint).setRetry(true);
         }
       }
+      return result;
     }
 
     @Override

@@ -27,9 +27,9 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
   private Boolean _native;
 
   private String platform;
-  private Long imageAddr;
-  private Long symbolAddr;
-  private Long instructionAddr;
+  private String imageAddr;
+  private String symbolAddr;
+  private String instructionAddr;
 
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
@@ -148,27 +148,27 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
     this.platform = platform;
   }
 
-  public Long getImageAddr() {
+  public String getImageAddr() {
     return imageAddr;
   }
 
-  public void setImageAddr(Long imageAddr) {
+  public void setImageAddr(String imageAddr) {
     this.imageAddr = imageAddr;
   }
 
-  public Long getSymbolAddr() {
+  public String getSymbolAddr() {
     return symbolAddr;
   }
 
-  public void setSymbolAddr(Long symbolAddr) {
+  public void setSymbolAddr(String symbolAddr) {
     this.symbolAddr = symbolAddr;
   }
 
-  public Long getInstructionAddr() {
+  public String getInstructionAddr() {
     return instructionAddr;
   }
 
-  public void setInstructionAddr(Long instructionAddr) {
+  public void setInstructionAddr(String instructionAddr) {
     this.instructionAddr = instructionAddr;
   }
 

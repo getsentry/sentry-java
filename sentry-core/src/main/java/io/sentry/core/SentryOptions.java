@@ -247,7 +247,24 @@ public class SentryOptions {
     eventProcessors.add(new MainEventProcessor(this));
 
     // Start off sending any cached event.
-    integrations.add(new SendCachedEventFireAndForgetIntegration());
+    integrations.add(
+        new SendCachedEventFireAndForgetIntegration(
+            (hub, options) -> {
+              SendCachedEvent sender =
+                  new SendCachedEvent(options.getSerializer(), hub, options.getLogger());
+              File cacheDir = new File(options.getCacheDirPath());
+              return () -> sender.processDirectory(cacheDir);
+            }));
+    // Send cache envelopes from NDK
+    integrations.add(
+        new SendCachedEventFireAndForgetIntegration(
+            (hub, options) -> {
+              EnvelopeSender envelopeSender =
+                  new EnvelopeSender(
+                      hub, new io.sentry.core.EnvelopeReader(), options.getSerializer(), logger);
+              File outbox = new File(options.getOutboxPath());
+              return () -> envelopeSender.processDirectory(outbox);
+            }));
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }
 }
