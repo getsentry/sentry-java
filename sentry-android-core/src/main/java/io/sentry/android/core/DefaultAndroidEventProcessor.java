@@ -792,16 +792,23 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     InputStream is = null;
     try {
       AssetManager assets = context.getAssets();
-      is = assets.open("sentry-debug-meta.properties");
-      Properties properties = new Properties();
-      properties.load(is);
-      is.close();
+      String[] files = assets.list("/");
 
-      String uuid = properties.getProperty("io.sentry.ProguardUuids");
-      if (uuid != null && !uuid.isEmpty()) {
-        return uuid.split("\\|");
+      List<String> listFiles = Arrays.asList(files != null ? files : new String[0]);
+      if (listFiles.contains("sentry-debug-meta.properties")) {
+        is = assets.open("sentry-debug-meta.properties");
+        Properties properties = new Properties();
+        properties.load(is);
+        is.close();
+
+        String uuid = properties.getProperty("io.sentry.ProguardUuids");
+        if (uuid != null && !uuid.isEmpty()) {
+          return uuid.split("\\|");
+        }
+        log(SentryLevel.INFO, "io.sentry.ProguardUuids property was not found.");
+      } else {
+        log(SentryLevel.INFO, "Proguard UUIDs file not found.");
       }
-      log(SentryLevel.INFO, "io.sentry.ProguardUuids property was not found.");
     } catch (FileNotFoundException e) {
       log(SentryLevel.ERROR, "Proguard UUIDs file not found.", e);
     } catch (Exception e) {
