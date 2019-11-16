@@ -141,7 +141,7 @@ configure<PublishExtension> {
 
 gradle.taskGraph.whenReady {
     allTasks.find {
-        it.path == ":${project.name}::generatePomFileForReleasePublication"
+        it.path == ":${project.name}:generatePomFileForReleasePublication"
     }?.doLast {
         println("delete file: " + file("build/publications/release/pom-default.xml").delete())
         println("Overriding pom-file to make sure we can sync to maven central!")
