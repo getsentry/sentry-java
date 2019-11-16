@@ -8,7 +8,7 @@
 
 [![Travis](https://travis-ci.org/getsentry/sentry-java.svg?branch=master)](https://travis-ci.org/getsentry/sentry-java)
 
-> Looking for Android? This repo has the stable, long term support Android SDK. Please note that Sentry has been working on a new [Sentry unified SDK](https://blog.sentry.io/2018/09/19/new-sdks-unified-python-javascript-dotnet-rust) SDK with features like NDK support and much more. The first [preview is out, in a separate GitHub repository](https://github.com/getsentry/sentry-android/releases) and we're looking for feedback.
+> Looking for Android? This repo has the stable, long term support Android SDK. Please note that Sentry has been working on a new [Sentry unified SDK](https://blog.sentry.io/2018/09/19/new-sdks-unified-python-javascript-dotnet-rust) with things like NDK support and much more. The first [preview is out, in a separate GitHub repository](https://github.com/getsentry/sentry-android/releases), published to bintray, jcenter and we're looking for feedback.
 
 This is the Java SDK for [Sentry](https://sentry.io/). It provides out-of-the-box support for
 many popular JVM based frameworks and libraries, including Android, Log4j, Logback, and more.
