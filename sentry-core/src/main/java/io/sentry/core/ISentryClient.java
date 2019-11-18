@@ -25,16 +25,18 @@ public interface ISentryClient {
     return captureEvent(event, null, hint);
   }
 
-  default SentryId captureMessage(String message) {
-    return captureMessage(message, null);
-  }
-
-  default SentryId captureMessage(String message, @Nullable Scope scope) {
+  default SentryId captureMessage(String message, SentryLevel level, @Nullable Scope scope) {
     SentryEvent event = new SentryEvent();
     Message sentryMessage = new Message();
     sentryMessage.setFormatted(message);
     event.setMessage(sentryMessage);
+    event.setLevel(level);
+
     return captureEvent(event, scope);
+  }
+
+  default SentryId captureMessage(String message, SentryLevel level) {
+    return captureMessage(message, level, null);
   }
 
   default SentryId captureException(Throwable throwable) {

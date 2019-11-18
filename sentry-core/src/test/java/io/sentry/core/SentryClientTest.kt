@@ -141,8 +141,17 @@ class SentryClientTest {
         fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
         val sut = fixture.getSut()
         val actual = "actual message"
-        sut.captureMessage(actual)
+        sut.captureMessage(actual, null)
         assertEquals(actual, sentEvent!!.message.formatted)
+    }
+
+    @Test
+    fun `when captureMessage is called, sentry event contains level`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
+        val sut = fixture.getSut()
+        sut.captureMessage(null, SentryLevel.DEBUG)
+        assertEquals(SentryLevel.DEBUG, sentEvent!!.level)
     }
 
     @Test

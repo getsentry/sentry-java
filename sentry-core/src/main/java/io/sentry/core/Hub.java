@@ -109,7 +109,7 @@ public final class Hub implements IHub {
 
   @NotNull
   @Override
-  public SentryId captureMessage(String message) {
+  public SentryId captureMessage(String message, SentryLevel level) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       logIfNotNull(
@@ -123,7 +123,7 @@ public final class Hub implements IHub {
       try {
         StackItem item = stack.peek();
         if (item != null) {
-          sentryId = item.client.captureMessage(message, item.scope);
+          sentryId = item.client.captureMessage(message, level, item.scope);
         } else {
           logIfNotNull(
               options.getLogger(), SentryLevel.FATAL, "Stack peek was null when captureMessage");
