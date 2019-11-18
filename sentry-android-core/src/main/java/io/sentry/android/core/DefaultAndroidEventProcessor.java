@@ -792,7 +792,7 @@ public final class DefaultAndroidEventProcessor implements EventProcessor {
     InputStream is = null;
     try {
       AssetManager assets = context.getAssets();
-      String[] files = assets.list("/");
+      String[] files = assets.list("");
 
       List<String> listFiles = Arrays.asList(files != null ? files : new String[0]);
       if (listFiles.contains("sentry-debug-meta.properties")) {
