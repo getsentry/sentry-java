@@ -1,6 +1,8 @@
 package io.sentry.logback;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.BasicStatusManager;
 import ch.qos.logback.core.Context;
@@ -41,7 +43,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
     @Before
     public void setUp() throws Exception {
         mockSentryClient = mock(SentryClient.class);
-        mockContext = mock(Context.class);
+        mockContext = mock(LoggerContext.class);
 
         Sentry.setStoredClient(mockSentryClient);
         sentryAppender = new SentryAppender();
@@ -205,6 +207,22 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(mdcKey, mdcValue));
         assertNoErrorsInStatusManager();
     }
+    
+    @Test
+    public void testGLobalAddedToExtra() throws Exception {
+        final String extraKey = "10e09b11-546f-4c57-99b2-cf3c627c8737";
+        final String extraValue = "5f7a53b1-4354-4120-a368-78a615705540";
+
+        
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null,
+                null, null, null, 0, Collections.singletonMap(extraKey, extraValue)));
+
+        ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
+        Event event = eventBuilderArgumentCaptor.getValue().build();
+        assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(extraKey, extraValue));
+        assertNoErrorsInStatusManager();
+    }
 
     @Test
     public void testSourceUsedAsStacktrace() throws Exception {
@@ -242,6 +260,49 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         assertThat(event.getTags(), hasEntry(mockExtraTag, "47008f35-50c8-4e40-94ca-c8c1a3ddb729"));
         assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
         assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196"));
+        assertNoErrorsInStatusManager();
+    }
+    
+    @Test
+    public void testExtraTagObtainedFromGlobal() throws Exception {
+        Map<String, String> propertyMap = new HashMap<>();
+        propertyMap.put(mockExtraTag, "47008f35-50c8-4e40-94ca-c8c1a3ddb729");
+        propertyMap.put("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196");
+
+        when(mockSentryClient.getMdcTags()).thenReturn(extraTags);
+        
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null, null, null,
+                null, 0, propertyMap));
+
+        ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
+        Event event = eventBuilderArgumentCaptor.getValue().build();
+        assertThat(event.getTags().entrySet(), hasSize(1));
+        assertThat(event.getTags(), hasEntry(mockExtraTag, "47008f35-50c8-4e40-94ca-c8c1a3ddb729"));
+        assertThat(event.getExtra(), not(hasKey(mockExtraTag)));
+        assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196"));
+        assertNoErrorsInStatusManager();
+    }
+    
+    @Test
+    public void testSetEncoder() throws Exception {
+        when(mockSentryClient.getMdcTags()).thenReturn(extraTags);
+        
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setPattern("%-5level : %message");
+        encoder.setContext(mockContext);
+        encoder.start();
+        sentryAppender.setEncoder(encoder);
+        sentryAppender.start();
+
+        String expectedMessage = "some message";
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, expectedMessage, null, null, null, null,
+                null, 0));
+
+        ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
+        Event event = eventBuilderArgumentCaptor.getValue().build();
+        assertThat(event.getMessage(), is("INFO  : " + expectedMessage));
         assertNoErrorsInStatusManager();
     }
 }
