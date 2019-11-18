@@ -24,7 +24,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryId captureMessage(String message) {
+  public SentryId captureMessage(String message, SentryLevel level) {
     return SentryId.EMPTY_ID;
   }
 

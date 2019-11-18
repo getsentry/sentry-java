@@ -13,7 +13,11 @@ public interface IHub {
     return captureEvent(event, null);
   }
 
-  SentryId captureMessage(String message);
+  default SentryId captureMessage(String message) {
+    return captureMessage(message, SentryLevel.INFO);
+  }
+
+  SentryId captureMessage(String message, SentryLevel level);
 
   SentryId captureException(Throwable throwable, @Nullable Object hint);
 

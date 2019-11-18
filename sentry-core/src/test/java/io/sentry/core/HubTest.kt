@@ -310,7 +310,20 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.captureMessage("test")
-        verify(mockClient, times(1)).captureMessage(any(), any())
+        verify(mockClient, times(1)).captureMessage(any(), any(), any())
+    }
+
+    @Test
+    fun `when captureMessage is called, level is INFO by default`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.serializer = mock()
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.captureMessage("test")
+        verify(mockClient, times(1)).captureMessage(eq("test"), eq(SentryLevel.INFO), any())
     }
     //endregion
 

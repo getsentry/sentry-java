@@ -83,6 +83,10 @@ public final class Sentry {
     return getCurrentHub().captureMessage(message);
   }
 
+  public static SentryId captureMessage(String message, SentryLevel level) {
+    return getCurrentHub().captureMessage(message, level);
+  }
+
   public static SentryId captureException(Throwable throwable) {
     return getCurrentHub().captureException(throwable);
   }
@@ -93,6 +97,10 @@ public final class Sentry {
 
   public static void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
     getCurrentHub().addBreadcrumb(breadcrumb, hint);
+  }
+
+  public static void addBreadcrumb(Breadcrumb breadcrumb) {
+    getCurrentHub().addBreadcrumb(breadcrumb);
   }
 
   public static SentryId getLastEventId() {
