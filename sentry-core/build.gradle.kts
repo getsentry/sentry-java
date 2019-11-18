@@ -5,7 +5,6 @@ plugins {
     kotlin("jvm")
     jacoco
     id("net.ltgt.errorprone")
-    maven
     id(Config.Deploy.novodaBintrayId)
 }
 
@@ -71,46 +70,4 @@ configure<PublishExtension> {
     // TODO: uncomment it to publish new version, waiting PR to be merged
 //    sign = Config.Deploy.sign
     artifactId = "sentry-core"
-}
-
-gradle.taskGraph.whenReady {
-    allTasks.find {
-        it.path == ":${project.name}:generatePomFileForMavenPublication"
-    }?.doLast {
-        println("delete file: " + file("build/publications/maven/pom-default.xml").delete())
-        println("Overriding pom-file to make sure we can sync to maven central!")
-
-        maven.pom {
-            withGroovyBuilder {
-                "project" {
-                    "name"(project.name)
-                    "artifactId"("sentry-core")
-                    "packaging"("jar")
-                    "description"(Config.Sentry.description)
-                    "url"(Config.Sentry.website)
-                    "version"(project.version.toString())
-
-                    "scm" {
-                        "url"(Config.Sentry.repository)
-                        "connection"(Config.Sentry.repository)
-                        "developerConnection"(Config.Sentry.repository)
-                    }
-
-                    "licenses" {
-                        "license" {
-                            "name"(Config.Sentry.licence)
-                        }
-                    }
-
-                    "developers" {
-                        "developer" {
-                            "id"(Config.Sentry.devUser)
-                            "name"(Config.Sentry.devName)
-                            "email"(Config.Sentry.devEmail)
-                        }
-                    }
-                }
-            }
-        }.writeTo("build/publications/maven/pom-default.xml")
-    }
 }
