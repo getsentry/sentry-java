@@ -1,2 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="io.sentry.android" />
+<manifest package="io.sentry.android"
+          xmlns:tools="http://schemas.android.com/tools">
+  <uses-sdk
+    tools:overrideLibrary="io.sentry.android.ndk"/>
+</manifest>
