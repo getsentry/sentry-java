@@ -1,6 +1,8 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.User;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,10 +21,17 @@ public final class Scope implements Cloneable {
   private Map<String, String> tags = new ConcurrentHashMap<>();
   private Map<String, Object> extra = new ConcurrentHashMap<>();
   private int maxBreadcrumb;
+  private final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback;
+
+  public Scope(
+      int maxBreadcrumb, final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback) {
+    this.maxBreadcrumb = maxBreadcrumb;
+    this.beforeBreadcrumbCallback = beforeBreadcrumbCallback;
+    this.breadcrumbs = createBreadcrumbsList(this.maxBreadcrumb);
+  }
 
   public Scope(int maxBreadcrumb) {
-    this.maxBreadcrumb = maxBreadcrumb;
-    this.breadcrumbs = createBreadcrumbsList(this.maxBreadcrumb);
+    this(maxBreadcrumb, null);
   }
 
   public SentryLevel getLevel() {
@@ -62,6 +71,33 @@ public final class Scope implements Cloneable {
   }
 
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
+    addBreadcrumb(breadcrumb, true);
+  }
+
+  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, boolean executeBeforeBreadcrumb) {
+    if (executeBeforeBreadcrumb && beforeBreadcrumbCallback != null) {
+      try {
+        breadcrumb =
+            beforeBreadcrumbCallback.execute(breadcrumb, null); // TODO: whats about hint here?
+      } catch (Exception e) {
+        // TODO: log it
+
+        Map<String, String> data = breadcrumb.getData();
+        if (breadcrumb.getData() == null) {
+          data = new HashMap<>();
+        }
+        data.put("sentry:message", e.getMessage());
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        data.put("sentry:stacktrace", sw.toString());
+        breadcrumb.setData(data);
+      }
+
+      if (breadcrumb == null) {
+        return;
+      }
+    }
+
     this.breadcrumbs.add(breadcrumb);
   }
 

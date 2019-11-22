@@ -64,7 +64,7 @@ public final class Hub implements IHub {
 
   private static StackItem createRootStackItem(@NotNull SentryOptions options) {
     validateOptions(options);
-    Scope scope = new Scope(options.getMaxBreadcrumbs());
+    Scope scope = new Scope(options.getMaxBreadcrumbs(), options.getBeforeBreadcrumb());
     ISentryClient client = new SentryClient(options);
     return new StackItem(client, scope);
   }
@@ -218,7 +218,7 @@ public final class Hub implements IHub {
           breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
         }
         if (breadcrumb != null) {
-          item.scope.addBreadcrumb(breadcrumb);
+          item.scope.addBreadcrumb(breadcrumb, false);
         }
       } else {
         logIfNotNull(
@@ -414,7 +414,7 @@ public final class Hub implements IHub {
       } catch (CloneNotSupportedException e) {
         // TODO: Why do we need to deal with this? We must guarantee clone is possible here!
         logIfNotNull(options.getLogger(), SentryLevel.ERROR, "Clone not supported");
-        clonedScope = new Scope(options.getMaxBreadcrumbs());
+        clonedScope = new Scope(options.getMaxBreadcrumbs(), options.getBeforeBreadcrumb());
       }
       StackItem cloneItem = new StackItem(item.client, clonedScope);
       clone.stack.push(cloneItem);
