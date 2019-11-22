@@ -12,6 +12,13 @@ Android SDK for Sentry
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-android/master?compact_message)](https://ci.appveyor.com/project/sentry/sentry-android/branch/master/tests)
 [![codecov](https://codecov.io/gh/getsentry/sentry-android/branch/master/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-android)
 
+|      Packages          | bintray |
+| ---------------------- | ------- |
+| sentry-android | ![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android) |
+| sentry-android-core | ![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android-core) |
+| sentry-android-ndk | ![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android-ndk) |
+| sentry-core | ![sentry-core](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-core) |
+
 # Note
 
 This SDK is under development and will be published as version 2.0 which will be released by the end of 2019. It includes many new features including NDK support.
