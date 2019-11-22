@@ -1,6 +1,8 @@
 package io.sentry.core
 
 import io.sentry.core.protocol.User
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -146,5 +148,55 @@ class ScopeTest {
         assertEquals(1, clone.tags.size)
         assertEquals("extra", clone.extras["extra"])
         assertEquals(1, clone.extras.size)
+    }
+
+    @Test
+    fun `when adding breadcrumb, executeBreadcrumb will be executed and breadcrumb will be added`() {
+        val options = SentryOptions().apply {
+            setBeforeBreadcrumb { breadcrumb, _ -> breadcrumb }
+        }
+
+        val scope = Scope(1, options.beforeBreadcrumb)
+        scope.addBreadcrumb(Breadcrumb())
+        assertEquals(1, scope.breadcrumbs.count())
+    }
+
+    @Test
+    fun `when adding breadcrumb, executeBreadcrumb will be executed and breadcrumb will be discarded`() {
+        val options = SentryOptions().apply {
+            setBeforeBreadcrumb { _, _ -> null }
+        }
+
+        val scope = Scope(1, options.beforeBreadcrumb)
+        scope.addBreadcrumb(Breadcrumb())
+        assertEquals(0, scope.breadcrumbs.count())
+    }
+
+    @Test
+    fun `when adding breadcrumb, executeBreadcrumb will be executed and throw, but breadcrumb will be added`() {
+        val exception = Exception("test")
+        val sw = StringWriter()
+        exception.printStackTrace(PrintWriter(sw))
+        val stacktrace = sw.toString()
+
+        val options = SentryOptions().apply {
+            setBeforeBreadcrumb { _, _ -> throw exception }
+        }
+
+        val scope = Scope(1, options.beforeBreadcrumb)
+        val actual = Breadcrumb()
+        scope.addBreadcrumb(actual)
+
+        assertEquals("test", actual.data["sentry:message"])
+        assertEquals(stacktrace, actual.data["sentry:stacktrace"])
+    }
+
+    @Test
+    fun `when adding breadcrumb, executeBreadcrumb wont be executed as its not set, but it will be added`() {
+        val options = SentryOptions()
+
+        val scope = Scope(1, options.beforeBreadcrumb)
+        scope.addBreadcrumb(Breadcrumb())
+        assertEquals(1, scope.breadcrumbs.count())
     }
 }
