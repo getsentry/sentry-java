@@ -1,6 +1,20 @@
 {
   "frames": [
     {
+      "filename":"File.java",
+      "module":"inAppModule.Blacklisted$$EnhancerByGuice$$3e9263f5.CGLIB$",
+      "in_app":false,
+      "function":"blacklisted",
+      "lineno":7
+    },
+    {
+      "filename":"File.java",
+      "module":"inAppModule.Blacklisted$$EnhancerByGuice$$3e9263f5$$FastClassByGuice$$19497ba4",
+      "in_app":false,
+      "function":"blacklisted",
+      "lineno":6
+    },
+    {
       "filename": "File.java",
       "module": "inAppModule.Blacklisted$$EnhancerBySpringCGLIB$$",
       "in_app": false,
