@@ -58,8 +58,15 @@ final class Dsn {
       }
       secretKey = keys.length > 1 ? keys[1] : null;
       String uriPath = uri.getPath();
+      if (uriPath.endsWith("/")) {
+        uriPath = uriPath.substring(0, uriPath.length() - 1);
+      }
       int projectIdStart = uriPath.lastIndexOf("/") + 1;
-      path = uriPath.substring(0, projectIdStart);
+      String path = uriPath.substring(0, projectIdStart);
+      if (!path.endsWith("/")) {
+        path += "/";
+      }
+      this.path = path;
       projectId = uriPath.substring(projectIdStart);
       if (projectId.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: A Project Id is required.");
@@ -70,7 +77,7 @@ final class Dsn {
               null,
               uri.getHost(),
               uri.getPort(),
-              path + "/api/" + projectId + "/store/",
+              path + "api/" + projectId + "/store/",
               null,
               null);
     } catch (Exception e) {
