@@ -89,9 +89,9 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     private boolean classIsBlacklisted(String className) {
-        return (className.contains("$$EnhancerBy") ||
-                className.contains("$$FastClassBy") ||
-                className.contains("$Hibernate"))
+        return (className.contains("$$EnhancerBy")
+                || className.contains("$$FastClassBy")
+                || className.contains("$Hibernate"))
             && IN_APP_BLACKLIST.matcher(className).find();
     }
 
