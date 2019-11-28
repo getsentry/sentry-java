@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ch.qos.logback.core.encoder.Encoder;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import io.sentry.Sentry;
@@ -16,6 +17,7 @@ import io.sentry.event.interfaces.MessageInterface;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.StackTraceInterface;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,6 +40,12 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
      * Name of the {@link Event#extra} property containing the Thread name.
      */
     public static final String THREAD_NAME = "Sentry-Threadname";
+
+    /**
+     * Appender encoder.
+     */
+    protected Encoder<ILoggingEvent> encoder;
+
     /**
      * If set, only events with level = minLevel and up will be recorded.
      *
@@ -91,6 +99,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
+
         // Do not log the event if the current thread is managed by sentry
         if (isNotLoggable(iLoggingEvent) || SentryEnvironment.isManagingThread()) {
             return;
@@ -122,10 +131,19 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
      * @return EventBuilder containing details provided by the logging system.
      */
     protected EventBuilder createEventBuilder(ILoggingEvent iLoggingEvent) {
+        final String formattedMessage;
+
+        if (this.encoder != null) {
+            byte[] byteArray = this.encoder.encode(iLoggingEvent);
+            formattedMessage = new String(byteArray, StandardCharsets.UTF_8);
+        } else {
+            formattedMessage = iLoggingEvent.getFormattedMessage();
+        }
+
         EventBuilder eventBuilder = new EventBuilder()
             .withSdkIntegration("logback")
             .withTimestamp(new Date(iLoggingEvent.getTimeStamp()))
-            .withMessage(iLoggingEvent.getFormattedMessage())
+            .withMessage(formattedMessage)
             .withLogger(iLoggingEvent.getLoggerName())
             .withLevel(formatLevel(iLoggingEvent.getLevel()))
             .withExtra(THREAD_NAME, iLoggingEvent.getThreadName());
@@ -144,7 +162,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
 
         for (Map.Entry<String, String> contextEntry : iLoggingEvent.getLoggerContextVO().getPropertyMap().entrySet()) {
-            eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
+            if (Sentry.getStoredClient().getMdcTags().contains(contextEntry.getKey())) {
+                eventBuilder.withTag(contextEntry.getKey(), contextEntry.getValue());
+            } else {
+                eventBuilder.withExtra(contextEntry.getKey(), contextEntry.getValue());
+            }
         }
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
@@ -286,6 +308,19 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
     }
 
+    public Encoder<ILoggingEvent> getEncoder() {
+        return encoder;
+    }
+
+    /**
+     * Set logback encoder.
+     *
+     * @param encoder logback encoder.
+     */
+    public void setEncoder(Encoder<ILoggingEvent> encoder) {
+        this.encoder = encoder;
+    }
+
     private class DropSentryFilter extends Filter<ILoggingEvent> {
         @Override
         public FilterReply decide(ILoggingEvent event) {
@@ -296,4 +331,5 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             return FilterReply.NEUTRAL;
         }
     }
+
 }
