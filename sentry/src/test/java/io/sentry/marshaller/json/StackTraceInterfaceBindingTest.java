@@ -91,7 +91,13 @@ public class StackTraceInterfaceBindingTest extends BaseTest {
                 "File.java", 4, null, null, null, null),
             new SentryStackTraceElement(
                 "inAppModule.Blacklisted$$EnhancerBySpringCGLIB$$", "blacklisted",
-                "File.java", 5, null, null, null, null)
+                "File.java", 5, null, null, null, null),
+            new SentryStackTraceElement(
+                "inAppModule.Blacklisted$$EnhancerByGuice$$3e9263f5$$FastClassByGuice$$19497ba4", "blacklisted",
+                "File.java", 6, null, null, null, null),
+            new SentryStackTraceElement(
+                "inAppModule.Blacklisted$$EnhancerByGuice$$3e9263f5.CGLIB$", "blacklisted",
+                "File.java", 7, null, null, null, null)
         );
 
         when(mockStackTraceInterface.getStackTrace())

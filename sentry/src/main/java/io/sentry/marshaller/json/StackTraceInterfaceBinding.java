@@ -27,7 +27,8 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String PLATFORM_PARAMTER = "platform";
     private static final Pattern IN_APP_BLACKLIST = Pattern.compile("\\$+" // match $ (one or more)
         + "(?:" // start outer group
-        + "(?:(?:FastClass|Enhancer)[a-zA-Z]*CGLIB)" // Match Spring's FastClass and Enhancer classes
+        + "(?:EnhancerBy[a-zA-Z]*)"  // Match Enhancer classes
+        + "|(?:FastClassBy[a-zA-Z]*)" // Match FastClass
         + "|(?:HibernateProxy)" // match Hibernate proxies
         + ")\\$+"); // end outer group and match $ (one or more)
     private Collection<String> inAppFrames = Collections.emptyList();
@@ -88,7 +89,9 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     private boolean classIsBlacklisted(String className) {
-        return (className.contains("CGLIB") || className.contains("Hibernate"))
+        return (className.contains("$$EnhancerBy")
+                || className.contains("$$FastClassBy")
+                || className.contains("$Hibernate"))
             && IN_APP_BLACKLIST.matcher(className).find();
     }
 
