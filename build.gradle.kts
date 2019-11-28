@@ -18,6 +18,7 @@ buildscript {
         mavenLocal()
         google()
         jcenter()
+        maven { setUrl("https://dl.bintray.com/novoda-oss/snapshots/") }
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)

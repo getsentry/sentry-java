@@ -75,9 +75,7 @@ object Config {
     }
 
     object Deploy {
-//        TODO: change version to 0.9.2 to publish new version, which supports `sign` field
-//        lets wait a bit for PR to be reviewed or we publish ourselves https://github.com/novoda/bintray-release/issues/301
-        val novodaBintray = "com.novoda:bintray-release:0.9.1"
+        val novodaBintray = "com.novoda:bintray-release:develop-38" // will become 0.9.2 soon
         val novodaBintrayId = "com.novoda.bintray-release"
         val dryRun = true // If set to true this will run everything but it won't upload the package to bintray. If false then it will upload normally.
         val override = true
