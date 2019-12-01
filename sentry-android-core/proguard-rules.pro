@@ -9,7 +9,7 @@
 # Gson specific classes
 -dontwarn sun.misc.**
 -keep class com.google.gson.** { *; }
-#-keep class com.google.gson.stream.** { *; }
+-keep class sun.misc.Unsafe { *; }
 
 # Application classes that will be serialized/deserialized over Gson
 -keep class io.sentry.core.** { *; }
@@ -29,5 +29,10 @@
 -keepclassmembers,allowobfuscation class * {
   @com.google.gson.annotations.SerializedName <fields>;
 }
+
+# Keep jetbrains annotations
+-keep @interface com.jakewharton.nopen.annotation.** { *; }
+-keep @interface org.jetbrains.annotations.** { *; }
+
 
 ##---------------End: proguard configuration for Gson  ----------

@@ -1,5 +1,5 @@
 object Config {
-    val kotlinVersion = "1.3.60"
+    val kotlinVersion = "1.3.61"
     val kotlinStdLib = "stdlib-jdk8"
 
     object BuildPlugins {
@@ -20,7 +20,8 @@ object Config {
     object Libs {
         val appCompat = "androidx.appcompat:appcompat:1.1.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
-        val gson = "com.google.code.gson:gson:2.8.6"
+        // only bump gson if https://github.com/google/gson/issues/1597 is fixed
+        val gson = "com.google.code.gson:gson:2.8.5"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.0-beta-4"
     }
 

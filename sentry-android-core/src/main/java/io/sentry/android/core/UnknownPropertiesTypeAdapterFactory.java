@@ -86,7 +86,8 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
     public T read(final JsonReader in) {
       // In its simplest solution, we can just collect a JSON tree because its much easier to
       // process
-      JsonElement jsonElement = JsonParser.parseReader(in);
+      JsonParser parser = new JsonParser();
+      JsonElement jsonElement = parser.parse(in);
 
       if (jsonElement == null || jsonElement.isJsonNull()) {
         return null;
