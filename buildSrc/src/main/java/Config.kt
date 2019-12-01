@@ -82,4 +82,8 @@ object Config {
         val override = true
         val sign = true
     }
+
+    object NativePlugins {
+        val nativeBundle = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.3"
+    }
 }
