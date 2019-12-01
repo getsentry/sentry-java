@@ -25,7 +25,6 @@ android {
         externalNativeBuild {
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
-                arguments.add(0, "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON")
             }
         }
 
@@ -72,15 +71,6 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
-
-    // if travis ci hangs again on this task, remove comments
-//    tasks.all {
-//        if (this.name == "signingConfigWriterDebugAndroidTest") {
-//            this.enabled = false
-//            println("${this.name} is SKIPPED")
-//        }
-//    }
-
 }
 
 dependencies {
