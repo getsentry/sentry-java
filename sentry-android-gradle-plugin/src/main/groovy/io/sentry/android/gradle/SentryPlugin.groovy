@@ -27,37 +27,47 @@ class SentryPlugin implements Plugin<Project> {
     static String getSentryCli(Project project) {
         // if a path is provided explicitly use that first
         def propertiesFile = "${project.rootDir.toPath()}/sentry.properties"
+        project.logger.info("propertiesFile: ${propertiesFile}")
+
         Properties sentryProps = new Properties()
         try {
             sentryProps.load(new FileInputStream(propertiesFile))
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException ignored) {
+            project.logger.error(ignored.getMessage())
             // it's okay, we can ignore it.
         }
 
         def rv = sentryProps.getProperty("cli.executable")
         if (rv != null) {
             return rv
+        } else {
+            project.logger.info("cli.executable is null")
         }
 
         // in case there is a version from npm right around the corner use that one.  This
         // is the case for react-native-sentry for instance
         def possibleExePaths = [
-            "${project.rootDir.toPath()}/../node_modules/@sentry/cli/bin/sentry-cli",
-            "${project.rootDir.toPath()}/../node_modules/sentry-cli-binary/bin/sentry-cli"
+                "${project.rootDir.toPath()}/../node_modules/@sentry/cli/bin/sentry-cli",
+                "${project.rootDir.toPath()}/../node_modules/sentry-cli-binary/bin/sentry-cli"
         ]
 
         possibleExePaths.each {
             if ((new File(it)).exists()) {
+                project.logger.info("possibleExePaths: ${it}")
                 return it
             }
             if ((new File(it + ".exe")).exists()) {
+                project.logger.info("possibleExePaths: ${it}.exe")
                 return it + ".exe"
             }
+            project.logger.info("possibleExePaths files dont exist")
         }
 
         // next up try a packaged version of sentry-cli
         def cliSuffix
         def osName = System.getProperty("os.name").toLowerCase()
+        project.logger.info("osName: ${osName}")
+
         if (osName.indexOf("mac") >= 0) {
             cliSuffix = "Darwin-x86_64"
         } else if (osName.indexOf("linux") >= 0) {
@@ -68,20 +78,30 @@ class SentryPlugin implements Plugin<Project> {
             cliSuffix = "Linux-" + arch
         } else if (osName.indexOf("win") >= 0) {
             cliSuffix = "Windows-i686.exe"
+        } else {
+            project.logger.info("cliSuffix not assigned")
         }
 
         if (cliSuffix != null) {
             def resPath = "/bin/sentry-cli-${cliSuffix}"
             def fsPath = SentryPlugin.class.getResource(resPath).getFile()
+            project.logger.info("fsPath: ${fsPath}")
 
             // if we are not in a jar, we can use the file directly
             if ((new File(fsPath)).exists()) {
+                project.logger.info("fsPath: ${fsPath}")
                 return fsPath
+            } else {
+                project.logger.info("fsPath doesnt exist")
             }
 
             // otherwise we need to unpack into a file
             def resStream = SentryPlugin.class.getResourceAsStream(resPath)
             File tempFile = File.createTempFile(".sentry-cli", ".exe")
+            if (tempFile != null) {
+                project.logger.info("tempFile: ${tempFile.path}")
+            }
+
             tempFile.deleteOnExit()
             def out = new FileOutputStream(tempFile)
             try {
@@ -122,9 +142,9 @@ class SentryPlugin implements Plugin<Project> {
      */
     static Task getDexTask(Project project, ApplicationVariant variant) {
         def names = [
-            "transformClassesWithDexFor${variant.name.capitalize()}",
-            "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
-            "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
+                "transformClassesWithDexFor${variant.name.capitalize()}",
+                "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
+                "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
         ]
 
         return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
@@ -150,40 +170,74 @@ class SentryPlugin implements Plugin<Project> {
      */
     static String getDebugMetaPropPath(Project project, ApplicationVariant variant) {
         try {
-            return variant.mergeAssets.outputDir.get().file("sentry-debug-meta.properties").getAsFile().path
-        } catch (Throwable ignored) {
-            return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
+            return variant.mergeAssetsProvider.get().outputDir.get().file("sentry-debug-meta.properties").getAsFile().path
+        } catch (Exception ignored) {
+            project.logger.error("getDebugMetaPropPath 1: ${ignored.getMessage()}")
         }
 
+        try {
+            return variant.mergeAssets.outputDir.get().file("sentry-debug-meta.properties").getAsFile().path
+        } catch (Exception ignored) {
+            project.logger.error("getDebugMetaPropPath 2: ${ignored.getMessage()}")
+        }
+
+        try {
+            return "${variant.mergeAssets.outputDir.get().asFile.path}/sentry-debug-meta.properties"
+        } catch (Exception ignored) {
+            project.logger.error("getDebugMetaPropPath 3: ${ignored.getMessage()}")
+        }
+
+        try {
+            return "${variant.mergeAssets.outputDir}/sentry-debug-meta.properties"
+        } catch (Exception ignored) {
+            project.logger.error("getDebugMetaPropPath 4: ${ignored.getMessage()}")
+        }
     }
 
     void apply(Project project) {
         SentryPluginExtension extension = project.extensions.create("sentry", SentryPluginExtension)
 
         project.afterEvaluate {
-            if(!project.plugins.hasPlugin(AppPlugin) && !project.getPlugins().hasPlugin(LibraryPlugin)) {
+            if (!project.plugins.hasPlugin(AppPlugin) && !project.getPlugins().hasPlugin(LibraryPlugin)) {
                 throw new IllegalStateException('Must apply \'com.android.application\' first!')
             }
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 variant.outputs.each { variantOutput ->
                     def manifestPath = extension.manifestPath
+                    project.logger.info("manifestPath: ${manifestPath}")
 
                     if (manifestPath == null) {
-                        def dir = findAndroidManifestFileDir(variantOutput)
+                        def dir = findAndroidManifestFileDir(project, variantOutput)
+                        if (dir != null) {
+                            project.logger.info("manifestDir: ${dir.path}")
+                        }
+
                         manifestPath = new File(new File(dir, variantOutput.dirName), "AndroidManifest.xml")
+                        project.logger.info("inner manifestPath: ${manifestPath}")
                     }
 
                     def mappingFile = variant.getMappingFile()
                     def proguardTask = getProguardTask(project, variant)
-                    def dexTask = getDexTask(project, variant)
-                    def bundleTask = getBundleTask(project, variant)
 
-                    if (proguardTask == null) {
-                        return
+                    def dexTask = getDexTask(project, variant)
+                    if (dexTask != null) {
+                        project.logger.info("dexTask ${dexTask.path}")
                     }
 
-                    // create a task to configure proguard automatically unless the user disabled it.
+                    def bundleTask = getBundleTask(project, variant)
+                    if (bundleTask != null) {
+                        project.logger.info("bundleTask ${bundleTask.path}")
+                    }
+
+                    if (proguardTask == null) {
+                        project.logger.info("proguardTask is null")
+                        return
+                    } else {
+                        project.logger.info("proguardTask ${proguardTask.path}")
+                    }
+
+//                     create a task to configure proguard automatically unless the user disabled it.
                     if (extension.autoProguardConfig) {
                         def addProguardSettingsTaskName = "addSentryProguardSettingsFor${variant.name.capitalize()}"
                         if (!project.tasks.findByName(addProguardSettingsTaskName)) {
@@ -243,7 +297,12 @@ class SentryPlugin implements Plugin<Project> {
 
                         if (propsFile != null) {
                             environment("SENTRY_PROPERTIES", propsFile)
+                        } else {
+                            project.logger.info("propsFile is null")
                         }
+
+                        def debugMetaPropPath = getDebugMetaPropPath(project, variant)
+                        project.logger.info("debugMetaPropPath: ${debugMetaPropPath}")
 
                         def args = [
                                 cli,
@@ -251,7 +310,7 @@ class SentryPlugin implements Plugin<Project> {
                                 "--android-manifest",
                                 manifestPath,
                                 "--write-properties",
-                                getDebugMetaPropPath(project, variant),
+                                debugMetaPropPath,
                                 mappingFile
                         ]
 
@@ -296,7 +355,7 @@ class SentryPlugin implements Plugin<Project> {
         }
     }
 
-    static File findAndroidManifestFileDir(BaseVariantOutput variantOutput) {
+    static File findAndroidManifestFileDir(Project project, BaseVariantOutput variantOutput) {
         // Gradle 4.7 introduced the lazy task API and AGP 3.3+ adopts that,
         // so we apparently have a Provider<File> here instead
         // TODO: This will let us depend on the configuration of each flavor's
@@ -307,14 +366,34 @@ class SentryPlugin implements Plugin<Project> {
 
         try { // Android Gradle Plugin >= 3.3.0
             return variantOutput.processManifestProvider.get().manifestOutputDirectory.get().asFile
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            project.logger.error("findAndroidManifestFileDir 1: ${ignored.getMessage()}")
+        }
 
         try { // Android Gradle Plugin >= 3.0.0
             return variantOutput.processManifest.manifestOutputDirectory.get().asFile
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            project.logger.error("findAndroidManifestFileDir 2: ${ignored.getMessage()}")
+        }
 
-        try { // Android Gradle Plugin < 3.0.0
+        // Android Gradle Plugin < 3.0.0
+        try {
             return new File(variantOutput.processManifest.manifestOutputFile).parentFile
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            project.logger.error("findAndroidManifestFileDir 3: ${ignored.getMessage()}")
+        }
+
+        // https://github.com/Tencent/tinker/pull/620/files
+        try {
+            return variantOutput.processResourcesProvider.get().manifestFile.parentFile
+        } catch (Exception ignored) {
+            project.logger.error("findAndroidManifestFileDir 4: ${ignored.getMessage()}")
+        }
+
+        try {
+            return variantOutput.processResources.manifestFile.parentFile
+        } catch (Exception ignored) {
+            project.logger.error("findAndroidManifestFileDir 5: ${ignored.getMessage()}")
+        }
     }
 }
