@@ -45,7 +45,7 @@ class EnvelopeFileObserverIntegrationTest {
         options.dsn = "https://key@sentry.io/proj"
         options.cacheDirPath = file.absolutePath
         options.addIntegration(integrationMock)
-        options.serializer = mock()
+        options.setSerializer(mock())
         val hub = Hub(options)
         verify(integrationMock).register(hub, options)
         hub.close()

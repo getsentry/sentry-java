@@ -37,7 +37,7 @@ class HttpTransportTest {
 
         fun getSUT(): HttpTransport {
             val options = SentryOptions()
-            options.serializer = serializer
+            options.setSerializer(serializer)
             options.proxy = proxy
 
             return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn) {

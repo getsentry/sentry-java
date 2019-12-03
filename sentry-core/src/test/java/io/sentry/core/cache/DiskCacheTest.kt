@@ -42,7 +42,7 @@ class DiskCacheTest {
                 ret
             }
 
-            options.serializer = serializer
+            options.setSerializer(serializer)
 
             return DiskCache(options)
         }

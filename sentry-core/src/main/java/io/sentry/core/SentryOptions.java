@@ -12,50 +12,50 @@ import org.jetbrains.annotations.Nullable;
 public class SentryOptions {
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
-  private List<EventProcessor> eventProcessors = new ArrayList<>();
-  private List<Integration> integrations = new ArrayList<>();
+  private @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
+  private @NotNull List<Integration> integrations = new ArrayList<>();
 
-  private String dsn;
+  private @Nullable String dsn;
   private long shutdownTimeoutMills = 5000;
   private boolean debug;
   private boolean enableNdk = true;
   private @NotNull ILogger logger = NoOpLogger.getInstance();
-  private SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
-  private ISerializer serializer;
-  private String sentryClientName;
-  private BeforeSendCallback beforeSend;
-  private BeforeBreadcrumbCallback beforeBreadcrumb;
-  private String cacheDirPath;
+  private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
+  private @NotNull ISerializer serializer = NoOpSerializer.getInstance();
+  private @Nullable String sentryClientName;
+  private @Nullable BeforeSendCallback beforeSend;
+  private @Nullable BeforeBreadcrumbCallback beforeBreadcrumb;
+  private @Nullable String cacheDirPath;
   private int cacheDirSize = 10;
   private int maxBreadcrumbs = 100;
-  private String release;
-  private String environment;
-  private Proxy proxy;
-  private Double sampling;
-  private List<String> inAppExcludes;
-  private List<String> inAppIncludes;
+  private @Nullable String release;
+  private @Nullable String environment;
+  private @Nullable Proxy proxy;
+  private @Nullable Double sampling;
+  private @NotNull List<String> inAppExcludes;
+  private @NotNull List<String> inAppIncludes;
 
-  public void addEventProcessor(EventProcessor eventProcessor) {
+  public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
   }
 
-  public List<EventProcessor> getEventProcessors() {
+  public @NotNull List<EventProcessor> getEventProcessors() {
     return eventProcessors;
   }
 
-  public void addIntegration(Integration integration) {
+  public void addIntegration(@NotNull Integration integration) {
     integrations.add(integration);
   }
 
-  public List<Integration> getIntegrations() {
+  public @NotNull List<Integration> getIntegrations() {
     return integrations;
   }
 
-  public String getDsn() {
+  public @Nullable String getDsn() {
     return dsn;
   }
 
-  public void setDsn(String dsn) {
+  public void setDsn(@Nullable String dsn) {
     this.dsn = dsn;
   }
 
@@ -75,23 +75,23 @@ public class SentryOptions {
     this.logger = logger == null ? NoOpLogger.getInstance() : new DiagnosticLogger(this, logger);
   }
 
-  public SentryLevel getDiagnosticLevel() {
+  public @NotNull SentryLevel getDiagnosticLevel() {
     return diagnosticLevel;
   }
 
-  public void setDiagnosticLevel(SentryLevel diagnosticLevel) {
+  public void setDiagnosticLevel(@Nullable SentryLevel diagnosticLevel) {
     if (diagnosticLevel == null) {
       diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
     }
     this.diagnosticLevel = diagnosticLevel;
   }
 
-  public ISerializer getSerializer() {
+  public @NotNull ISerializer getSerializer() {
     return serializer;
   }
 
-  public void setSerializer(ISerializer serializer) {
-    this.serializer = serializer;
+  public void setSerializer(@Nullable ISerializer serializer) {
+    this.serializer = serializer != null ? serializer : NoOpSerializer.getInstance();
   }
 
   public boolean isEnableNdk() {
@@ -110,39 +110,42 @@ public class SentryOptions {
     this.shutdownTimeoutMills = shutdownTimeoutMills;
   }
 
-  public String getSentryClientName() {
+  public @Nullable String getSentryClientName() {
     return sentryClientName;
   }
 
-  public void setSentryClientName(String sentryClientName) {
+  public void setSentryClientName(@Nullable String sentryClientName) {
     this.sentryClientName = sentryClientName;
   }
 
-  public BeforeSendCallback getBeforeSend() {
+  public @Nullable BeforeSendCallback getBeforeSend() {
     return beforeSend;
   }
 
-  public void setBeforeSend(BeforeSendCallback beforeSend) {
+  public void setBeforeSend(@Nullable BeforeSendCallback beforeSend) {
     this.beforeSend = beforeSend;
   }
 
-  public BeforeBreadcrumbCallback getBeforeBreadcrumb() {
+  public @Nullable BeforeBreadcrumbCallback getBeforeBreadcrumb() {
     return beforeBreadcrumb;
   }
 
-  public void setBeforeBreadcrumb(BeforeBreadcrumbCallback beforeBreadcrumb) {
+  public void setBeforeBreadcrumb(@Nullable BeforeBreadcrumbCallback beforeBreadcrumb) {
     this.beforeBreadcrumb = beforeBreadcrumb;
   }
 
-  public String getCacheDirPath() {
+  public @Nullable String getCacheDirPath() {
     return cacheDirPath;
   }
 
-  public String getOutboxPath() {
+  public @Nullable String getOutboxPath() {
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
     return cacheDirPath + File.separator + "outbox";
   }
 
-  public void setCacheDirPath(String cacheDirPath) {
+  public void setCacheDirPath(@Nullable String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
   }
 
@@ -162,31 +165,31 @@ public class SentryOptions {
     this.maxBreadcrumbs = maxBreadcrumbs;
   }
 
-  public String getRelease() {
+  public @Nullable String getRelease() {
     return release;
   }
 
-  public void setRelease(String release) {
+  public void setRelease(@Nullable String release) {
     this.release = release;
   }
 
-  public String getEnvironment() {
+  public @Nullable String getEnvironment() {
     return environment;
   }
 
-  public void setEnvironment(String environment) {
+  public void setEnvironment(@Nullable String environment) {
     this.environment = environment;
   }
 
-  public Proxy getProxy() {
+  public @Nullable Proxy getProxy() {
     return proxy;
   }
 
-  public void setProxy(Proxy proxy) {
+  public void setProxy(@Nullable Proxy proxy) {
     this.proxy = proxy;
   }
 
-  public Double getSampling() {
+  public @Nullable Double getSampling() {
     return sampling;
   }
 
@@ -201,22 +204,22 @@ public class SentryOptions {
     this.sampling = sampling;
   }
 
-  public List<String> getInAppExcludes() {
+  public @NotNull List<String> getInAppExcludes() {
     return inAppExcludes;
   }
 
-  public void addInAppExclude(String exclude) {
+  public void addInAppExclude(@NotNull String exclude) {
     if (inAppExcludes == null) {
       inAppExcludes = new ArrayList<>();
     }
     inAppExcludes.add(exclude);
   }
 
-  public List<String> getInAppIncludes() {
+  public @NotNull List<String> getInAppIncludes() {
     return inAppIncludes;
   }
 
-  public void addInAppInclude(String include) {
+  public void addInAppInclude(@NotNull String include) {
     if (inAppIncludes == null) {
       inAppIncludes = new ArrayList<>();
     }
@@ -224,11 +227,13 @@ public class SentryOptions {
   }
 
   public interface BeforeSendCallback {
-    SentryEvent execute(SentryEvent event, @Nullable Object hint);
+    @Nullable
+    SentryEvent execute(@NotNull SentryEvent event, @Nullable Object hint);
   }
 
   public interface BeforeBreadcrumbCallback {
-    Breadcrumb execute(Breadcrumb breadcrumb, @Nullable Object hint);
+    @Nullable
+    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
   }
 
   public SentryOptions() {
