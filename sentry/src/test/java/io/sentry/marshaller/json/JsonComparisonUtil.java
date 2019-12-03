@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 public final class JsonComparisonUtil {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -40,7 +42,7 @@ public final class JsonComparisonUtil {
             closeStream();
             try {
                 return outputStream.toString("UTF-8");
-            } catch (Exception e) {
+            } catch (UnsupportedEncodingException | RuntimeException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -63,7 +65,7 @@ public final class JsonComparisonUtil {
             try {
                 jsonGenerator.close();
                 outputStream.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -79,7 +81,7 @@ public final class JsonComparisonUtil {
         protected void closeStream() {
             try {
                 outputStream.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }

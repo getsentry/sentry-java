@@ -566,6 +566,9 @@ public class EventBuilder {
                 new Thread(futureTask).start();
                 futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 expirationTimestamp = clock.millis() + TimeUnit.SECONDS.toMillis(1);
                 logger.debug("Localhost hostname lookup failed, keeping the value '{}'."
                     + " If this persists it may mean your DNS is incorrectly configured and"

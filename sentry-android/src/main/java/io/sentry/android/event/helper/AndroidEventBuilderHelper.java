@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -168,7 +169,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             }
         } catch (FileNotFoundException e) {
             Log.d(TAG, "Proguard UUIDs file not found.");
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             Log.e(TAG, "Error getting Proguard UUIDs.", e);
         }
 
@@ -185,7 +186,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     protected static PackageInfo getPackageInfo(Context ctx) {
         try {
             return ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
-        } catch (Exception e) {
+        } catch (PackageManager.NameNotFoundException | RuntimeException e) {
             Log.e(TAG, "Error getting package info.", e);
             return null;
         }
@@ -200,7 +201,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     protected static String getFamily() {
         try {
             return Build.MODEL.split(" ")[0];
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting device family.", e);
             return null;
         }
@@ -221,7 +222,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 || Build.MANUFACTURER.contains("Genymotion")
                 || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
                 || "google_sdk".equals(Build.PRODUCT);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error checking whether application is running in an emulator.", e);
             return null;
         }
@@ -239,7 +240,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
             actManager.getMemoryInfo(memInfo);
             return memInfo;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting MemoryInfo.", e);
             return null;
         }
@@ -266,7 +267,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                     break;
             }
             return o;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting device orientation.", e);
             return null;
         }
@@ -297,7 +298,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             // CHECKSTYLE.ON: MagicNumber
 
             return ((float) level / (float) scale) * percentMultiplier;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting device battery level.", e);
             return null;
         }
@@ -318,7 +319,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
             int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
             return plugged == BatteryManager.BATTERY_PLUGGED_AC || plugged == BatteryManager.BATTERY_PLUGGED_USB;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting device charging state.", e);
             return null;
         }
@@ -343,7 +344,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
             br = new BufferedReader(new FileReader(file));
             return br.readLine();
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             Log.e(TAG, errorMsg, e);
         } finally {
             if (br != null) {
@@ -392,7 +393,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 if (new File(probableRootPath).exists()) {
                     return true;
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 Log.e(TAG, "Exception while attempting to detect whether the device is rooted", e);
             }
         }
@@ -417,7 +418,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             long blockSize = stat.getBlockSize();
             long availableBlocks = stat.getAvailableBlocks();
             return availableBlocks * blockSize;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting unused internal storage amount.", e);
             return null;
         }
@@ -435,7 +436,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             long blockSize = stat.getBlockSize();
             long totalBlocks = stat.getBlockCount();
             return totalBlocks * blockSize;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting total internal storage amount.", e);
             return null;
         }
@@ -457,7 +458,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 long availableBlocks = stat.getAvailableBlocks();
                 return availableBlocks * blockSize;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting unused external storage amount.", e);
         }
 
@@ -480,7 +481,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
                 long totalBlocks = stat.getBlockCount();
                 return totalBlocks * blockSize;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting total external storage amount.", e);
         }
 
@@ -496,7 +497,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
     protected static DisplayMetrics getDisplayMetrics(Context ctx) {
         try {
             return ctx.getResources().getDisplayMetrics();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting DisplayMetrics.", e);
             return null;
         }
@@ -530,7 +531,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
             } else {
                 return ctx.getString(stringId);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, "Error getting application name.", e);
         }
 

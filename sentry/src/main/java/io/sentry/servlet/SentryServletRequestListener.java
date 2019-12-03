@@ -33,7 +33,7 @@ public class SentryServletRequestListener implements ServletRequestListener {
             if (sentryClient != null) {
                 sentryClient.clearContext();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error clearing Context state.", e);
         }
     }

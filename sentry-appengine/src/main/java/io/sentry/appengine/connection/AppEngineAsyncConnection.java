@@ -151,7 +151,7 @@ public class AppEngineAsyncConnection implements Connection {
                     return;
                 }
                 connection.actualConnection.send(event);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
                 SentryEnvironment.stopManagingThread();
