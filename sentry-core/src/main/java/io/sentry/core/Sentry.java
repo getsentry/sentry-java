@@ -1,7 +1,9 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.protocol.User;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,11 +12,11 @@ public final class Sentry {
 
   private Sentry() {}
 
-  private static final ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+  private static final @NotNull ThreadLocal<IHub> currentHub = new ThreadLocal<>();
 
-  private static volatile IHub mainHub = NoOpHub.getInstance();
+  private static volatile @NotNull IHub mainHub = NoOpHub.getInstance();
 
-  private static IHub getCurrentHub() {
+  private static @NotNull IHub getCurrentHub() {
     IHub hub = currentHub.get();
     if (hub == null) {
       currentHub.set(mainHub.clone());
@@ -71,39 +73,69 @@ public final class Sentry {
     hub.close();
   }
 
-  public static SentryId captureEvent(SentryEvent event) {
+  public static @NotNull SentryId captureEvent(@NotNull SentryEvent event) {
     return getCurrentHub().captureEvent(event);
   }
 
-  public static SentryId captureEvent(SentryEvent event, @Nullable Object hint) {
+  public static @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
     return getCurrentHub().captureEvent(event, hint);
   }
 
-  public static SentryId captureMessage(String message) {
+  public static @NotNull SentryId captureMessage(@NotNull String message) {
     return getCurrentHub().captureMessage(message);
   }
 
-  public static SentryId captureMessage(String message, SentryLevel level) {
+  public static @NotNull SentryId captureMessage(
+      @NotNull String message, @NotNull SentryLevel level) {
     return getCurrentHub().captureMessage(message, level);
   }
 
-  public static SentryId captureException(Throwable throwable) {
+  public static @NotNull SentryId captureException(@NotNull Throwable throwable) {
     return getCurrentHub().captureException(throwable);
   }
 
-  public static SentryId captureException(Throwable throwable, @Nullable Object hint) {
+  public static @NotNull SentryId captureException(
+      @NotNull Throwable throwable, @Nullable Object hint) {
     return getCurrentHub().captureException(throwable, hint);
   }
 
-  public static void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
+  public static void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {
     getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 
-  public static void addBreadcrumb(Breadcrumb breadcrumb) {
+  public static void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
     getCurrentHub().addBreadcrumb(breadcrumb);
   }
 
-  public static SentryId getLastEventId() {
+  public static void setLevel(@Nullable SentryLevel level) {
+    getCurrentHub().setLevel(level);
+  }
+
+  public static void setTransaction(@Nullable String transaction) {
+    getCurrentHub().setTransaction(transaction);
+  }
+
+  public static void setUser(@Nullable User user) {
+    getCurrentHub().setUser(user);
+  }
+
+  public static void setFingerprint(@NotNull List<String> fingerprint) {
+    getCurrentHub().setFingerprint(fingerprint);
+  }
+
+  public static void clearBreadcrumbs() {
+    getCurrentHub().clearBreadcrumbs();
+  }
+
+  public static void setTag(@NotNull String key, @NotNull String value) {
+    getCurrentHub().setTag(key, value);
+  }
+
+  public static void setExtra(@NotNull String key, @NotNull String value) {
+    getCurrentHub().setExtra(key, value);
+  }
+
+  public static @NotNull SentryId getLastEventId() {
     return getCurrentHub().getLastEventId();
   }
 
@@ -115,15 +147,15 @@ public final class Sentry {
     getCurrentHub().popScope();
   }
 
-  public static void withScope(ScopeCallback callback) {
+  public static void withScope(@NotNull ScopeCallback callback) {
     getCurrentHub().withScope(callback);
   }
 
-  public static void configureScope(ScopeCallback callback) {
+  public static void configureScope(@NotNull ScopeCallback callback) {
     getCurrentHub().configureScope(callback);
   }
 
-  public static void bindClient(ISentryClient client) {
+  public static void bindClient(@NotNull ISentryClient client) {
     getCurrentHub().bindClient(client);
   }
 
@@ -132,6 +164,6 @@ public final class Sentry {
   }
 
   public interface OptionsConfiguration<T extends SentryOptions> {
-    void configure(T options);
+    void configure(@NotNull T options);
   }
 }

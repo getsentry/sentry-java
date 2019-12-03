@@ -21,9 +21,8 @@ final class NoOpEventCache implements IEventCache {
   @Override
   public void discard(SentryEvent event) {}
 
-  @NotNull
   @Override
-  public Iterator<SentryEvent> iterator() {
+  public @NotNull Iterator<SentryEvent> iterator() {
     return new ArrayList<SentryEvent>(0).iterator();
   }
 }

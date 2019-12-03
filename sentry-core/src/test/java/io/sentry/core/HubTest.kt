@@ -11,6 +11,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
+import io.sentry.core.protocol.User
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -21,6 +22,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HubTest {
@@ -499,5 +501,247 @@ class HubTest {
         }.whenever(mock).register(any(), eq(options))
         Hub(options)
         verify(mock, times(1)).register(any(), eq(options))
+    }
+
+    //region setLevel tests
+    @Test
+    fun `when setLevel is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.close()
+
+        hub.setLevel(SentryLevel.INFO)
+        assertNull(scope?.level)
+    }
+
+    @Test
+    fun `when setLevel is called, level is set`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setLevel(SentryLevel.INFO)
+        assertEquals(SentryLevel.INFO, scope?.level)
+    }
+    //endregion
+
+    //region setTransaction tests
+    @Test
+    fun `when setTransaction is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.close()
+
+        hub.setTransaction("test")
+        assertNull(scope?.transaction)
+    }
+
+    @Test
+    fun `when setTransaction is called, transaction is set`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setTransaction("test")
+        assertEquals("test", scope?.transaction)
+    }
+    //endregion
+
+    //region setUser tests
+    @Test
+    fun `when setUser is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.close()
+
+        hub.setUser(User())
+        assertNull(scope?.user)
+    }
+
+    @Test
+    fun `when setUser is called, user is set`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        val user = User()
+        hub.setUser(user)
+        assertEquals(user, scope?.user)
+    }
+    //endregion
+
+    //region setFingerprint tests
+    @Test
+    fun `when setFingerprint is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.close()
+
+        val fingerprint = listOf("abc")
+        hub.setFingerprint(fingerprint)
+        assertEquals(0, scope?.fingerprint?.count())
+    }
+
+    @Test
+    fun `when setFingerprint is called with null parameter, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setFingerprint(null)
+        assertEquals(0, scope?.fingerprint?.count())
+    }
+
+    @Test
+    fun `when setFingerprint is called, fingerprint is set`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        val fingerprint = listOf("abc")
+        hub.setFingerprint(fingerprint)
+        assertEquals(1, scope?.fingerprint?.count())
+    }
+    //endregion
+
+    //region clearBreadcrumbs tests
+    @Test
+    fun `when clearBreadcrumbs is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.addBreadcrumb(Breadcrumb())
+        assertEquals(1, scope?.breadcrumbs?.count())
+
+        hub.close()
+
+        hub.clearBreadcrumbs()
+        assertEquals(1, scope?.breadcrumbs?.count())
+    }
+
+    @Test
+    fun `when clearBreadcrumbs is called, clear breadcrumbs`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.addBreadcrumb(Breadcrumb())
+        assertEquals(1, scope?.breadcrumbs?.count())
+        hub.clearBreadcrumbs()
+        assertEquals(0, scope?.breadcrumbs?.count())
+    }
+    //endregion
+
+    //region setTag tests
+    @Test
+    fun `when setTag is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.close()
+
+        hub.setTag("test", "test")
+        assertEquals(0, scope?.tags?.count())
+    }
+
+    @Test
+    fun `when setTag is called with null parameters, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setTag(null, null)
+        assertEquals(0, scope?.tags?.count())
+    }
+
+    @Test
+    fun `when setTag is called, tag is set`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setTag("test", "test")
+        assertEquals(1, scope?.tags?.count())
+    }
+    //endregion
+
+    //region setExtra tests
+    @Test
+    fun `when setExtra is called on disabled client, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+        hub.close()
+
+        hub.setExtra("test", "test")
+        assertEquals(0, scope?.extras?.count())
+    }
+
+    @Test
+    fun `when setExtra is called with null parameters, do nothing`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setExtra(null, null)
+        assertEquals(0, scope?.extras?.count())
+    }
+
+    @Test
+    fun `when setExtra is called, extra is set`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.setExtra("test", "test")
+        assertEquals(1, scope?.extras?.count())
+    }
+    //endregion
+
+    private fun generateHub(): IHub {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            cacheDirPath = file.absolutePath
+            setSerializer(mock())
+        }
+        return Hub(options)
     }
 }

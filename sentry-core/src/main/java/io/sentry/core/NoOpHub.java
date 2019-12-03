@@ -1,6 +1,8 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.protocol.User;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 final class NoOpHub implements IHub {
@@ -38,6 +40,27 @@ final class NoOpHub implements IHub {
 
   @Override
   public void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {}
+
+  @Override
+  public void setLevel(SentryLevel level) {}
+
+  @Override
+  public void setTransaction(String transaction) {}
+
+  @Override
+  public void setUser(User user) {}
+
+  @Override
+  public void setFingerprint(List<String> fingerprint) {}
+
+  @Override
+  public void clearBreadcrumbs() {}
+
+  @Override
+  public void setTag(String key, String value) {}
+
+  @Override
+  public void setExtra(String key, String value) {}
 
   @Override
   public SentryId getLastEventId() {
