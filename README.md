@@ -14,10 +14,14 @@ Android SDK for Sentry
 
 |      Packages          | bintray |
 | ---------------------- | ------- |
-| sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android)](https://bintray.com/beta/#/getsentry/sentry-android/sentry-android?tab=overview) |
-| sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android-core)](https://bintray.com/beta/#/getsentry/sentry-android/sentry-android-core?tab=overview) |
-| sentry-android-ndk | [![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android-ndk)](https://bintray.com/beta/#/getsentry/sentry-android/sentry-android-ndk?tab=overview) |
-| sentry-core | [![sentry-core](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-core)](https://bintray.com/beta/#/getsentry/sentry-android/sentry-core?tab=overview) |
+| sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android)](https://bintray.com/getsentry/sentry-android/sentry-android?tab=overview) |
+| sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android-core)](https://bintray.com/getsentry/sentry-android/sentry-android-core?tab=overview) |
+| sentry-android-ndk | [![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android-ndk)](https://bintray.com/getsentry/sentry-android/sentry-android-ndk?tab=overview) |
+| sentry-core | [![sentry-core](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-core)](https://bintray.com/getsentry/sentry-android/sentry-core?tab=overview) |
+
+# Docs
+
+That's the initial page of the release [2.x and its docs](https://docs.sentry.io/platforms/android).
 
 # Note
 
