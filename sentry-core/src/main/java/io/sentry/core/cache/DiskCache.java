@@ -127,9 +127,8 @@ public final class DiskCache implements IEventCache {
     return new File(directory.getAbsolutePath(), event.getEventId().toString() + FILE_SUFFIX);
   }
 
-  @NotNull
   @Override
-  public Iterator<SentryEvent> iterator() {
+  public @NotNull Iterator<SentryEvent> iterator() {
     File[] allCachedEvents = allEventFiles();
 
     List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);

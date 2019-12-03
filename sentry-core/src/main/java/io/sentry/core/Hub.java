@@ -3,12 +3,14 @@ package io.sentry.core;
 import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.protocol.User;
 import io.sentry.core.util.Objects;
 import java.io.Closeable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +31,7 @@ public final class Hub implements IHub {
   private volatile @NotNull SentryId lastEventId;
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
-  private final Deque<StackItem> stack = new LinkedBlockingDeque<>();
+  private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
 
   public Hub(@NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -74,9 +76,8 @@ public final class Hub implements IHub {
     return isEnabled;
   }
 
-  @NotNull
   @Override
-  public SentryId captureEvent(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       logIfNotNull(
@@ -107,9 +108,8 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
-  @NotNull
   @Override
-  public SentryId captureMessage(String message, SentryLevel level) {
+  public @NotNull SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       logIfNotNull(
@@ -137,9 +137,8 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
-  @NotNull
   @Override
-  public SentryId captureException(Throwable throwable, @Nullable Object hint) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       logIfNotNull(
@@ -201,7 +200,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {
     if (!isEnabled()) {
       logIfNotNull(
           options.getLogger(),
@@ -227,9 +226,139 @@ public final class Hub implements IHub {
     }
   }
 
-  private Breadcrumb executeBeforeBreadcrumb(
-      SentryOptions.BeforeBreadcrumbCallback callback,
-      Breadcrumb breadcrumb,
+  @Override
+  public void setLevel(@Nullable SentryLevel level) {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'setLevel' call is a no-op.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.setLevel(level);
+      } else {
+        logIfNotNull(options.getLogger(), SentryLevel.FATAL, "Stack peek was null when setLevel");
+      }
+    }
+  }
+
+  @Override
+  public void setTransaction(@Nullable String transaction) {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'setTransaction' call is a no-op.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.setTransaction(transaction);
+      } else {
+        logIfNotNull(
+            options.getLogger(), SentryLevel.FATAL, "Stack peek was null when setTransaction");
+      }
+    }
+  }
+
+  @Override
+  public void setUser(@Nullable User user) {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'setUser' call is a no-op.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.setUser(user);
+      } else {
+        logIfNotNull(options.getLogger(), SentryLevel.FATAL, "Stack peek was null when setUser");
+      }
+    }
+  }
+
+  @Override
+  public void setFingerprint(@NotNull List<String> fingerprint) {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'setFingerprint' call is a no-op.");
+    } else if (fingerprint == null) {
+      logIfNotNull(
+          options.getLogger(), SentryLevel.WARNING, "setFingerprint called with null parameter.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.setFingerprint(fingerprint);
+      } else {
+        logIfNotNull(
+            options.getLogger(), SentryLevel.FATAL, "Stack peek was null when setFingerprint");
+      }
+    }
+  }
+
+  @Override
+  public void clearBreadcrumbs() {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.clearBreadcrumbs();
+      } else {
+        logIfNotNull(
+            options.getLogger(), SentryLevel.FATAL, "Stack peek was null when clearBreadcrumbs");
+      }
+    }
+  }
+
+  @Override
+  public void setTag(@NotNull String key, @NotNull String value) {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'setTag' call is a no-op.");
+    } else if (key == null || value == null) {
+      logIfNotNull(options.getLogger(), SentryLevel.WARNING, "setTag called with null parameter.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.setTag(key, value);
+      } else {
+        logIfNotNull(options.getLogger(), SentryLevel.FATAL, "Stack peek was null when setTag");
+      }
+    }
+  }
+
+  @Override
+  public void setExtra(@NotNull String key, @NotNull String value) {
+    if (!isEnabled()) {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'setExtra' call is a no-op.");
+    } else if (key == null || value == null) {
+      logIfNotNull(
+          options.getLogger(), SentryLevel.WARNING, "setExtra called with null parameter.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.setExtra(key, value);
+      } else {
+        logIfNotNull(options.getLogger(), SentryLevel.FATAL, "Stack peek was null when setExtra");
+      }
+    }
+  }
+
+  private @Nullable Breadcrumb executeBeforeBreadcrumb(
+      @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
+      @NotNull Breadcrumb breadcrumb,
       @Nullable Object hint) {
     try {
       breadcrumb = callback.execute(breadcrumb, hint);
@@ -253,9 +382,8 @@ public final class Hub implements IHub {
     return breadcrumb;
   }
 
-  @NotNull
   @Override
-  public SentryId getLastEventId() {
+  public @NotNull SentryId getLastEventId() {
     return lastEventId;
   }
 
@@ -356,7 +484,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void bindClient(ISentryClient client) {
+  public void bindClient(@NotNull ISentryClient client) {
     if (!isEnabled()) {
       logIfNotNull(
           options.getLogger(),
@@ -399,9 +527,8 @@ public final class Hub implements IHub {
     }
   }
 
-  @NotNull
   @Override
-  public IHub clone() {
+  public @NotNull IHub clone() {
     if (!isEnabled()) {
       logIfNotNull(options.getLogger(), SentryLevel.WARNING, "Disabled Hub cloned.");
     }

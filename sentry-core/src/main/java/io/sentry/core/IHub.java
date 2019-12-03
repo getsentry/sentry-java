@@ -1,6 +1,8 @@
 package io.sentry.core;
 
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.protocol.User;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public interface IHub {
@@ -32,6 +34,20 @@ public interface IHub {
   default void addBreadcrumb(Breadcrumb breadcrumb) {
     addBreadcrumb(breadcrumb, null);
   }
+
+  void setLevel(SentryLevel level);
+
+  void setTransaction(String transaction);
+
+  void setUser(User user);
+
+  void setFingerprint(List<String> fingerprint);
+
+  void clearBreadcrumbs();
+
+  void setTag(String key, String value);
+
+  void setExtra(String key, String value);
 
   SentryId getLastEventId();
 

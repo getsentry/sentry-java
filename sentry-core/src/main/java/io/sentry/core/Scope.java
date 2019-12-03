@@ -11,20 +11,22 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class Scope implements Cloneable {
-  private SentryLevel level;
-  private String transaction;
-  private User user;
-  private List<String> fingerprint = new ArrayList<>();
-  private Queue<Breadcrumb> breadcrumbs;
-  private Map<String, String> tags = new ConcurrentHashMap<>();
-  private Map<String, Object> extra = new ConcurrentHashMap<>();
+  private @Nullable SentryLevel level;
+  private @Nullable String transaction;
+  private @Nullable User user;
+  private @NotNull List<String> fingerprint = new ArrayList<>();
+  private @NotNull Queue<Breadcrumb> breadcrumbs;
+  private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+  private @NotNull Map<String, Object> extra = new ConcurrentHashMap<>();
   private int maxBreadcrumb;
-  private final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback;
+  private @Nullable final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback;
 
   public Scope(
-      int maxBreadcrumb, final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback) {
+      int maxBreadcrumb,
+      @Nullable final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback) {
     this.maxBreadcrumb = maxBreadcrumb;
     this.beforeBreadcrumbCallback = beforeBreadcrumbCallback;
     this.breadcrumbs = createBreadcrumbsList(this.maxBreadcrumb);
@@ -34,38 +36,39 @@ public final class Scope implements Cloneable {
     this(maxBreadcrumb, null);
   }
 
-  public SentryLevel getLevel() {
+  public @Nullable SentryLevel getLevel() {
     return level;
   }
 
-  public void setLevel(SentryLevel level) {
+  public void setLevel(@Nullable SentryLevel level) {
     this.level = level;
   }
 
-  public String getTransaction() {
+  public @Nullable String getTransaction() {
     return transaction;
   }
 
-  public void setTransaction(String transaction) {
+  public void setTransaction(@Nullable String transaction) {
     this.transaction = transaction;
   }
 
-  public User getUser() {
+  public @Nullable User getUser() {
     return user;
   }
 
-  public void setUser(User user) {
+  public void setUser(@Nullable User user) {
     this.user = user;
   }
 
-  public List<String> getFingerprint() {
+  public @NotNull List<String> getFingerprint() {
     return fingerprint;
   }
 
-  public void setFingerprint(List<String> fingerprint) {
+  public void setFingerprint(@NotNull List<String> fingerprint) {
     this.fingerprint = fingerprint;
   }
 
+  @NotNull
   Queue<Breadcrumb> getBreadcrumbs() {
     return breadcrumbs;
   }
@@ -105,23 +108,23 @@ public final class Scope implements Cloneable {
     breadcrumbs.clear();
   }
 
-  public Map<String, String> getTags() {
+  public @NotNull Map<String, String> getTags() {
     return tags;
   }
 
-  public void setTag(String key, String value) {
+  public void setTag(@NotNull String key, @NotNull String value) {
     this.tags.put(key, value);
   }
 
-  public Map<String, Object> getExtras() {
+  public @NotNull Map<String, Object> getExtras() {
     return extra;
   }
 
-  public void setExtra(String key, String value) {
+  public void setExtra(@NotNull String key, @NotNull String value) {
     this.extra.put(key, value);
   }
 
-  private Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
+  private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
     return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
   }
 

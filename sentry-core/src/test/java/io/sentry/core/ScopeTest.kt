@@ -83,7 +83,7 @@ class ScopeTest {
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("transaction", clone.transaction)
 
-        assertEquals("123", clone.user.id)
+        assertEquals("123", clone.user?.id)
 
         assertEquals("abc", clone.fingerprint.first())
 
@@ -136,7 +136,7 @@ class ScopeTest {
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("transaction", clone.transaction)
 
-        assertEquals("123", clone.user.id)
+        assertEquals("123", clone.user?.id)
 
         assertEquals("abc", clone.fingerprint.first())
         assertEquals(1, clone.fingerprint.size)
