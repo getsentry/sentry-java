@@ -85,7 +85,6 @@ class SentryPlugin implements Plugin<Project> {
         if (cliSuffix != null) {
             def resPath = "/bin/sentry-cli-${cliSuffix}"
             def fsPath = SentryPlugin.class.getResource(resPath).getFile()
-            project.logger.info("fsPath: ${fsPath}")
 
             // if we are not in a jar, we can use the file directly
             if ((new File(fsPath)).exists()) {
@@ -100,6 +99,8 @@ class SentryPlugin implements Plugin<Project> {
             File tempFile = File.createTempFile(".sentry-cli", ".exe")
             if (tempFile != null) {
                 project.logger.info("tempFile: ${tempFile.path}")
+            } else {
+                project.logger.info("tempFile is null")
             }
 
             tempFile.deleteOnExit()
@@ -205,16 +206,18 @@ class SentryPlugin implements Plugin<Project> {
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 variant.outputs.each { variantOutput ->
                     def manifestPath = extension.manifestPath
-                    project.logger.info("manifestPath: ${manifestPath}")
-
                     if (manifestPath == null) {
                         def dir = findAndroidManifestFileDir(project, variantOutput)
                         if (dir != null) {
                             project.logger.info("manifestDir: ${dir.path}")
+                        } else {
+                            project.logger.info("manifestDir is null")
                         }
 
                         manifestPath = new File(new File(dir, variantOutput.dirName), "AndroidManifest.xml")
-                        project.logger.info("inner manifestPath: ${manifestPath}")
+                        project.logger.info("manifestPath: ${manifestPath}")
+                    } else {
+                        project.logger.info("manifestPath: ${manifestPath}")
                     }
 
                     def mappingFile = variant.getMappingFile()
@@ -223,11 +226,15 @@ class SentryPlugin implements Plugin<Project> {
                     def dexTask = getDexTask(project, variant)
                     if (dexTask != null) {
                         project.logger.info("dexTask ${dexTask.path}")
+                    } else {
+                        project.logger.info("dexTask is null")
                     }
 
                     def bundleTask = getBundleTask(project, variant)
                     if (bundleTask != null) {
                         project.logger.info("bundleTask ${bundleTask.path}")
+                    } else {
+                        project.logger.info("bundleTask is null")
                     }
 
                     if (proguardTask == null) {
