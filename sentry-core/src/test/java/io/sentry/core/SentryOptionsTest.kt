@@ -1,5 +1,6 @@
 package io.sentry.core
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -29,7 +30,7 @@ class SentryOptionsTest {
     @Test
     fun `when diagnostic is set to null, diagnostic getter returns no default`() {
         val options = SentryOptions()
-        options.diagnosticLevel = null
+        options.setDiagnosticLevel(null)
         assertEquals(SentryOptions.DEFAULT_DIAGNOSTIC_LEVEL, SentryOptions().diagnosticLevel)
     }
 
@@ -85,5 +86,18 @@ class SentryOptionsTest {
     @Test
     fun `when setSampling is set to exactly 0, setter throws`() {
         assertFailsWith<IllegalArgumentException> { SentryOptions().sampling = 0.0 }
+    }
+
+    @Test
+    fun `when there's no cacheDirPath, outboxPath returns null`() {
+        val options = SentryOptions()
+        assertNull(options.outboxPath)
+    }
+
+    @Test
+    fun `when cacheDirPath is set, outboxPath concatenate outbox path`() {
+        val options = SentryOptions()
+        options.cacheDirPath = "${File.separator}test"
+        assertEquals("${File.separator}test${File.separator}outbox", options.outboxPath)
     }
 }

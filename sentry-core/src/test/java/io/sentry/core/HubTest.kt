@@ -49,7 +49,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val expected = Hub(options)
         verify(integrationMock).register(expected, options)
@@ -61,7 +61,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val expected = Hub(options)
         verify(integrationMock).register(expected, options)
@@ -74,7 +74,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val hub = Hub(options)
         var firstScope: Scope? = null
         hub.configureScope {
@@ -97,7 +97,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.maxBreadcrumbs = 5
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         (1..10).forEach { _ -> sut.addBreadcrumb(Breadcrumb(), null) }
         var actual = 0
@@ -114,7 +114,7 @@ class HubTest {
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback {
             _: Breadcrumb, _: Any? -> null }
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         sut.addBreadcrumb(Breadcrumb(), null)
         var breadcrumbs: Queue<Breadcrumb>? = null
@@ -129,7 +129,7 @@ class HubTest {
         val expected = "expected"
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb: Breadcrumb, _: Any? -> breadcrumb.message = expected; breadcrumb; }
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val crumb = Breadcrumb()
         crumb.message = "original"
@@ -145,7 +145,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.beforeBreadcrumb = null
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val expected = Breadcrumb()
         sut.addBreadcrumb(expected)
@@ -165,7 +165,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> throw exception }
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
 
         val actual = Breadcrumb()
@@ -180,7 +180,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
@@ -190,7 +190,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
@@ -204,7 +204,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -219,7 +219,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -234,7 +234,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         sut.captureEvent(null)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
@@ -245,7 +245,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -260,7 +260,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -278,7 +278,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         sut.captureMessage(null)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
@@ -289,7 +289,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -304,7 +304,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -318,7 +318,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -333,7 +333,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         sut.captureException(null)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
@@ -344,7 +344,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -359,7 +359,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -373,7 +373,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -389,7 +389,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -404,7 +404,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -420,7 +420,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -437,7 +437,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -455,7 +455,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -472,7 +472,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
-        options.serializer = mock()
+        options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
@@ -491,7 +491,7 @@ class HubTest {
             addIntegration(mock)
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
-            serializer = mock()
+            setSerializer(mock())
         }
         doAnswer {
             val hub = it.arguments[0] as IHub
