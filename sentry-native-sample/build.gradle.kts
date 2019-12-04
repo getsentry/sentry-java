@@ -1,6 +1,12 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+
+    // apply androidNativeBundle plugin
+    id("com.ydq.android.gradle.native-aar.import")
+
+    // apply sentry android gradle plugin
+//    id("io.sentry.android.gradle")
 }
 
 android {
@@ -8,7 +14,7 @@ android {
     buildToolsVersion(Config.Android.buildToolsVersion)
 
     defaultConfig {
-        applicationId = "io.sentry.sample"
+        applicationId = "io.sentry.nativesample"
         minSdkVersion(Config.Android.minSdkVersion)
         targetSdkVersion(Config.Android.targetSdkVersion)
         versionCode = 1
@@ -64,7 +70,7 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
-    implementation(project(":sentry-android"))
+    implementation("io.sentry:sentry-android:2.0.0-alpha09")
 
     implementation(Config.Libs.appCompat)
 
