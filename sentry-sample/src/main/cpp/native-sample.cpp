@@ -1,7 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
 
-#define TAG "sentry-android-sample"
+#define TAG "sentry-sample"
 
 extern "C" {
 
