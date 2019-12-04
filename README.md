@@ -11,6 +11,7 @@ Android SDK for Sentry
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/kr49snupeb1dsgwa/branch/master?svg=true)](https://ci.appveyor.com/project/sentry/sentry-android/branch/master)
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-android/master?compact_message)](https://ci.appveyor.com/project/sentry/sentry-android/branch/master/tests)
 [![codecov](https://codecov.io/gh/getsentry/sentry-android/branch/master/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-android)
+[![Discord Chat](https://img.shields.io/discord/621778831602221064.svg)](https://discordapp.com/channels/621778831602221064/621783562739384331)  
 
 |      Packages          | bintray |
 | ---------------------- | ------- |
