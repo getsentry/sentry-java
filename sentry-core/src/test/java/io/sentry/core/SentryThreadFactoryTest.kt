@@ -1,6 +1,7 @@
 package io.sentry.core
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 
@@ -15,18 +16,8 @@ class SentryThreadFactoryTest {
     }
 
     @Test
-    fun `when currentThreadsForCrash is called, current thread is crashed not the others`() {
-        val threads = sut.currentThreadsForCrash
-        val currentThread = Thread.currentThread()
-        val currentSentryThread = threads.first { it.id == currentThread.id }
-        assertTrue(currentSentryThread.isCrashed)
-        assertTrue(currentSentryThread.isErrored)
-        assertTrue(threads.filter { it.id != currentThread.id }.all { !it.isCrashed && !it.isErrored })
-    }
-
-    @Test
-    fun `when currentThreads is called, no thread is marked either crashed or not`() =
-        assertTrue(sut.currentThreads.all { it.isCrashed == null })
+    fun `when currentThreads is called, current thread is marked crashed`() =
+        assertEquals(1, sut.currentThreads.filter { it.isCrashed }.count())
 
     @Test
     fun `when currentThreads is called, thread state is captured`() =

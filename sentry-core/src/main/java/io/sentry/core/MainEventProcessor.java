@@ -3,7 +3,6 @@ package io.sentry.core;
 import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.hints.Cached;
-import io.sentry.core.protocol.SentryException;
 import io.sentry.core.util.Objects;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -58,21 +57,7 @@ public final class MainEventProcessor implements EventProcessor {
 
     if (event.getThreads() == null) {
       if (!(hint instanceof Cached)) {
-        Long crashedThreadId = null;
-        List<SentryException> exceptions = event.getExceptions();
-        if (event.getExceptions() != null && !exceptions.isEmpty()) {
-          for (SentryException exception : exceptions) {
-            if (exception != null
-                && exception.getMechanism() != null
-                // If mechanism is set to handled=false, this will crash the app.
-                // Provide the thread-id if available to mark the thread-list with the crashed one.
-                && Boolean.FALSE.equals(exception.getMechanism().isHandled())) {
-              crashedThreadId = exception.getThreadId();
-              break;
-            }
-          }
-        }
-        event.setThreads(sentryThreadFactory.getCurrentThreads(crashedThreadId));
+        event.setThreads(sentryThreadFactory.getCurrentThreads());
       } else {
         logIfNotNull(
             options.getLogger(),

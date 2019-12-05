@@ -14,7 +14,6 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
   private Boolean current;
   private Boolean daemon;
   private SentryStackTrace stacktrace;
-  private Boolean errored;
 
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
@@ -167,13 +166,5 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
-  }
-
-  public Boolean isErrored() {
-    return errored;
-  }
-
-  public void setErrored(Boolean errored) {
-    this.errored = errored;
   }
 }
