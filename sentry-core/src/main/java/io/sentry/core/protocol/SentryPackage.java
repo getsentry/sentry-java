@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class SentryPackage implements IUnknownPropertiesConsumer {
   private String name;
@@ -26,6 +27,7 @@ public final class SentryPackage implements IUnknownPropertiesConsumer {
     this.version = version;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

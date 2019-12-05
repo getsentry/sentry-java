@@ -13,24 +13,13 @@ import org.jetbrains.annotations.TestOnly;
 @SuppressWarnings("UnusedReturnValue")
 final class ANRWatchDog extends Thread {
 
-  public interface ANRListener {
-    /**
-     * Called when an ANR is detected.
-     *
-     * @param error The error describing the ANR.
-     */
-    void onAppNotResponding(ApplicationNotResponding error);
-  }
-
-  private boolean reportInDebug;
-  private ANRListener anrListener;
+  private final boolean reportInDebug;
+  private final ANRListener anrListener;
   private final IHandler uiHandler;
   private final long timeoutIntervalMills;
-  private ILogger logger;
-
+  private final ILogger logger;
   private AtomicLong tick = new AtomicLong(0);
   private volatile boolean reported = false;
-
   private final Runnable ticker =
       () -> {
         tick = new AtomicLong(0);
@@ -102,5 +91,14 @@ final class ANRWatchDog extends Thread {
         reported = true;
       }
     }
+  }
+
+  public interface ANRListener {
+    /**
+     * Called when an ANR is detected.
+     *
+     * @param error The error describing the ANR.
+     */
+    void onAppNotResponding(ApplicationNotResponding error);
   }
 }

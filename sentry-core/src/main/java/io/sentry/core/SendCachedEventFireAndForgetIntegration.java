@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 final class SendCachedEventFireAndForgetIntegration implements Integration {
 
-  private SendFireAndForgetFactory factory;
+  private final SendFireAndForgetFactory factory;
 
   interface SendFireAndForget {
     void send();

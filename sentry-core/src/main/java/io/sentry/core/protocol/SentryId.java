@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class SentryId {
   private final @NotNull UUID uuid;
@@ -12,7 +13,7 @@ public final class SentryId {
     this((UUID) null);
   }
 
-  public SentryId(UUID uuid) {
+  public SentryId(@Nullable UUID uuid) {
     if (uuid == null) {
       uuid = UUID.randomUUID();
     }

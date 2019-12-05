@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 /** The Sentry stack frame. */
 public final class SentryStackFrame implements IUnknownPropertiesConsumer {
@@ -180,6 +181,7 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
     this._native = _native;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

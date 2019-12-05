@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 abstract class DirectoryProcessor {
 
-  private ILogger logger;
+  private final ILogger logger;
 
   protected DirectoryProcessor(@NotNull ILogger logger) {
     this.logger = logger;

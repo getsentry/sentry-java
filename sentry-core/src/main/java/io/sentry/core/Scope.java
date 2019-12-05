@@ -21,7 +21,7 @@ public final class Scope implements Cloneable {
   private @NotNull Queue<Breadcrumb> breadcrumbs;
   private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
   private @NotNull Map<String, Object> extra = new ConcurrentHashMap<>();
-  private int maxBreadcrumb;
+  private final int maxBreadcrumb;
   private @Nullable final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback;
 
   public Scope(

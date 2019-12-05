@@ -10,7 +10,9 @@ import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.TimeZone;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZone> {
 
   private final ILogger logger;

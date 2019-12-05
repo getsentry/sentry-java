@@ -535,7 +535,7 @@ public final class Hub implements IHub {
     // Clone will be invoked in parallel
     Hub clone = new Hub(this.options, null);
     for (StackItem item : this.stack) {
-      Scope clonedScope = null;
+      Scope clonedScope;
       try {
         clonedScope = item.scope.clone();
       } catch (CloneNotSupportedException e) {

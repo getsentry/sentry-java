@@ -1,7 +1,10 @@
 package io.sentry.android.core;
 
+import static io.sentry.core.ILogger.logIfNotNull;
+
 import android.content.Context;
 import io.sentry.core.ILogger;
+import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import java.io.File;
 
@@ -47,6 +50,11 @@ final class AndroidOptionsInitializer {
     File cacheDir = new File(context.getCacheDir(), "sentry");
     cacheDir.mkdirs();
     options.setCacheDirPath(cacheDir.getAbsolutePath());
-    new File(options.getOutboxPath()).mkdirs();
+    if (options.getOutboxPath() != null) {
+      new File(options.getOutboxPath()).mkdirs();
+    } else {
+      logIfNotNull(
+          options.getLogger(), SentryLevel.WARNING, "No outbox dir path is defined in options.");
+    }
   }
 }

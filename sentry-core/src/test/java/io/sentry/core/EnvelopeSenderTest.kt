@@ -11,7 +11,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.Reader
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Date
@@ -66,7 +65,7 @@ class EnvelopeSenderTest {
     fun `when parser is EnvelopeReader and serializer returns instance, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
         val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
-        whenever(fixture.serializer!!.deserializeEvent(any<Reader>())).thenReturn(expected)
+        whenever(fixture.serializer!!.deserializeEvent(any())).thenReturn(expected)
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
@@ -82,7 +81,7 @@ class EnvelopeSenderTest {
     @Test
     fun `when parser is EnvelopeReader and serializer returns null, file error logged, no event captured `() {
         fixture.envelopeReader = EnvelopeReader()
-        whenever(fixture.serializer!!.deserializeEvent(any<Reader>())).thenReturn(null)
+        whenever(fixture.serializer!!.deserializeEvent(any())).thenReturn(null)
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check

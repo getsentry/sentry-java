@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class DebugImage implements IUnknownPropertiesConsumer {
 
@@ -90,6 +91,7 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
     this.codeId = codeId;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

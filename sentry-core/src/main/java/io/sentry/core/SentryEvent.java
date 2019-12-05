@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.TestOnly;
 
 public final class SentryEvent implements IUnknownPropertiesConsumer {
@@ -250,6 +251,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this.contexts = contexts;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

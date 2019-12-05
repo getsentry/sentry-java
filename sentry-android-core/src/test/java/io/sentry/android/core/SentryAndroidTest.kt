@@ -77,8 +77,8 @@ class SentryAndroidTest {
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
 
         var refOptions: SentryAndroidOptions? = null
-        SentryAndroid.init(mockContext) {
-            options -> options.anrTimeoutIntervalMills = 3000
+        SentryAndroid.init(mockContext) { options ->
+            options.anrTimeoutIntervalMills = 3000
             refOptions = options
         }
 

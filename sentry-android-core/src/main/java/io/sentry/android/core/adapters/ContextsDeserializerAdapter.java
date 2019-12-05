@@ -17,7 +17,9 @@ import io.sentry.core.protocol.Gpu;
 import io.sentry.core.protocol.OperatingSystem;
 import io.sentry.core.protocol.SentryRuntime;
 import java.lang.reflect.Type;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class ContextsDeserializerAdapter implements JsonDeserializer<Contexts> {
 
   private final ILogger logger;

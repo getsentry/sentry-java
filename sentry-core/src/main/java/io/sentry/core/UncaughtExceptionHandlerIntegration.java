@@ -18,7 +18,7 @@ import org.jetbrains.annotations.TestOnly;
  * Sends any uncaught exception to Sentry, then passes the exception on to the pre-existing uncaught
  * exception handler.
  */
-public final class UncaughtExceptionHandlerIntegration
+final class UncaughtExceptionHandlerIntegration
     implements Integration, Thread.UncaughtExceptionHandler, Closeable {
   /** Reference to the pre-existing uncaught exception handler. */
   private Thread.UncaughtExceptionHandler defaultExceptionHandler;
@@ -27,7 +27,7 @@ public final class UncaughtExceptionHandlerIntegration
   private SentryOptions options;
 
   private boolean registered = false;
-  private UncaughtExceptionHandler threadAdapter;
+  private final UncaughtExceptionHandler threadAdapter;
 
   UncaughtExceptionHandlerIntegration() {
     this(UncaughtExceptionHandler.Adapter.getInstance());
@@ -111,7 +111,7 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
-  private static class UncaughtExceptionHint implements DiskFlushNotification {
+  private static final class UncaughtExceptionHint implements DiskFlushNotification {
 
     private final CountDownLatch latch;
     private final long timeoutMills;

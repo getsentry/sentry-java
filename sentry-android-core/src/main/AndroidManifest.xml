@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="io.sentry.android.core"
-          xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="io.sentry.android.core">
   <uses-permission android:name="android.permission.INTERNET"/>
   <application>
     <!-- 'android:authorities' must be unique in the device, across all apps -->

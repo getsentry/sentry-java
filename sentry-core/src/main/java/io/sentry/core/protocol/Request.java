@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class Request implements IUnknownPropertiesConsumer {
   private String url;
@@ -80,6 +81,7 @@ public final class Request implements IUnknownPropertiesConsumer {
     this.other = other;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

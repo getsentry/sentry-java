@@ -11,6 +11,7 @@ import io.sentry.core.protocol.SentryId
 import java.io.Reader
 import java.io.Writer
 import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,7 +19,7 @@ import kotlin.test.assertEquals
 class DiskCacheTest {
     private class Fixture {
         val maxSize = 5
-        val dir = Files.createTempDirectory("sentry-disk-cache-test")
+        val dir: Path = Files.createTempDirectory("sentry-disk-cache-test")
 
         fun getSUT(): DiskCache {
             val options = SentryOptions()
@@ -77,7 +78,7 @@ class DiskCacheTest {
 
         assertEquals(0, nofFiles())
 
-        (1..fixture.maxSize + 1).forEach {
+        (1..fixture.maxSize + 1).forEach { _ ->
             cache.store(SentryEvent(Exception()))
         }
 

@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class Gpu implements IUnknownPropertiesConsumer {
   public static final String TYPE = "gpu";
@@ -91,6 +92,7 @@ public final class Gpu implements IUnknownPropertiesConsumer {
     this.npotSupport = npotSupport;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

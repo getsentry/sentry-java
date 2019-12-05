@@ -36,7 +36,7 @@ dependencies {
     api(project(":sentry-android-ndk"))
 }
 
-//TODO: move thse blocks to parent gradle file, DRY
+//TODO: move these blocks to parent gradle file, DRY
 configure<PublishExtension> {
     userOrg = Config.Sentry.userOrg
     groupId = project.group.toString()

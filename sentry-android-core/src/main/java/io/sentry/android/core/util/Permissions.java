@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Process;
 import io.sentry.core.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class Permissions {
 
   private Permissions() {}

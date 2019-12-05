@@ -11,7 +11,9 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.protocol.Device;
 import java.lang.reflect.Type;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class OrientationSerializerAdapter
     implements JsonSerializer<Device.DeviceOrientation> {
 

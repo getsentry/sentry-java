@@ -52,11 +52,10 @@ class ANRWatchDogTest {
         var anr: ApplicationNotResponding? = null
         val handler = mock<IHandler>()
         val thread = mock<Thread>()
-        var invoked: Boolean = false
-        whenever(handler.post(any())).then {
-            i ->
-                invoked = true
-                (i.getArgument(0) as Runnable).run()
+        var invoked = false
+        whenever(handler.post(any())).then { i ->
+            invoked = true
+            (i.getArgument(0) as Runnable).run()
         }
         whenever(handler.thread).thenReturn(thread)
         val interval = 1L

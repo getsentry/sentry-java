@@ -3,6 +3,7 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Date;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class App implements IUnknownPropertiesConsumer {
   public static final String TYPE = "app";
@@ -74,6 +75,7 @@ public final class App implements IUnknownPropertiesConsumer {
     this.appBuild = appBuild;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

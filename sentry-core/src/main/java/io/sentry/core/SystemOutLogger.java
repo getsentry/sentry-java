@@ -1,7 +1,7 @@
 package io.sentry.core;
 
 /** ILogger implementation to System.out. */
-final class SystemOutLogger implements ILogger {
+public final class SystemOutLogger implements ILogger {
 
   /**
    * Logs to console a message with the specified level, message and optional arguments.

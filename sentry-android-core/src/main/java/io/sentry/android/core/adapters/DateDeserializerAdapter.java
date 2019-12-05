@@ -11,7 +11,9 @@ import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.Date;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
 
   private final ILogger logger;

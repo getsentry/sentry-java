@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 /** The Sentry Exception interface. */
 public final class SentryException implements IUnknownPropertiesConsumer {
@@ -119,6 +120,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
     this.mechanism = mechanism;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

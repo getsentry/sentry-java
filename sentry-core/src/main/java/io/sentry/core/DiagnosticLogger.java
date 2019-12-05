@@ -11,8 +11,8 @@ public final class DiagnosticLogger implements ILogger {
   /**
    * Creates a new instance of DiagnosticLogger with the wrapped ILogger.
    *
-   * @param options
-   * @param logger
+   * @param options a SentryOptions instance
+   * @param logger a ILogger instance
    */
   public DiagnosticLogger(SentryOptions options, @Nullable ILogger logger) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");

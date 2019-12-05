@@ -10,7 +10,9 @@ import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class SentryLevelDeserializerAdapter implements JsonDeserializer<SentryLevel> {
 
   private final ILogger logger;

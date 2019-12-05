@@ -9,7 +9,7 @@ import io.sentry.core.SentryOptions;
 import io.sentry.core.exception.ExceptionMechanismException;
 import io.sentry.core.protocol.Mechanism;
 
-public final class AnrIntegration implements Integration {
+final class AnrIntegration implements Integration {
   private static ANRWatchDog anrWatchDog;
 
   @Override

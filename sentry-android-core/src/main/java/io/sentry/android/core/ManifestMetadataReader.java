@@ -11,8 +11,6 @@ import io.sentry.core.SentryLevel;
 
 final class ManifestMetadataReader {
 
-  private ManifestMetadataReader() {}
-
   static final String DSN_KEY = "io.sentry.dsn";
   static final String DEBUG_KEY = "io.sentry.debug";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
@@ -20,6 +18,8 @@ final class ManifestMetadataReader {
   static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String ENABLE_NDK = "io.sentry.ndk.enable";
+
+  private ManifestMetadataReader() {}
 
   static void applyMetadata(Context context, SentryAndroidOptions options) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");

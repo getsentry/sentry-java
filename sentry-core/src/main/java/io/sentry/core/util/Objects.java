@@ -1,5 +1,8 @@
 package io.sentry.core.util;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class Objects {
   private Objects() {}
 

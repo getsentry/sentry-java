@@ -4,6 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.TestOnly;
 
 /** The user affected by an event. */
@@ -105,6 +106,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
     this.other = other;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

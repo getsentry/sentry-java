@@ -1,5 +1,7 @@
 package io.sentry.core;
 
+import static io.sentry.core.ILogger.logIfNotNull;
+
 import com.jakewharton.nopen.annotation.Open;
 import java.io.File;
 import java.net.Proxy;
@@ -12,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
 public class SentryOptions {
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
-  private @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
-  private @NotNull List<Integration> integrations = new ArrayList<>();
+  private final @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
+  private final @NotNull List<Integration> integrations = new ArrayList<>();
 
   private @Nullable String dsn;
   private long shutdownTimeoutMills = 5000;
@@ -257,8 +259,16 @@ public class SentryOptions {
             (hub, options) -> {
               SendCachedEvent sender =
                   new SendCachedEvent(options.getSerializer(), hub, options.getLogger());
-              File cacheDir = new File(options.getCacheDirPath());
-              return () -> sender.processDirectory(cacheDir);
+              if (options.getCacheDirPath() != null) {
+                File cacheDir = new File(options.getCacheDirPath());
+                return () -> sender.processDirectory(cacheDir);
+              } else {
+                logIfNotNull(
+                    getLogger(),
+                    SentryLevel.WARNING,
+                    "No cache dir path is defined in options, discarding SendCachedEvent.");
+                return null;
+              }
             }));
     // Send cache envelopes from NDK
     integrations.add(
@@ -267,8 +277,16 @@ public class SentryOptions {
               EnvelopeSender envelopeSender =
                   new EnvelopeSender(
                       hub, new io.sentry.core.EnvelopeReader(), options.getSerializer(), logger);
-              File outbox = new File(options.getOutboxPath());
-              return () -> envelopeSender.processDirectory(outbox);
+              if (options.getOutboxPath() != null) {
+                File outbox = new File(options.getOutboxPath());
+                return () -> envelopeSender.processDirectory(outbox);
+              } else {
+                logIfNotNull(
+                    getLogger(),
+                    SentryLevel.WARNING,
+                    "No outbox dir path is defined in options, discarding EnvelopeSender.");
+                return null;
+              }
             }));
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }

@@ -77,6 +77,27 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
       return new UnknownPropertiesTypeAdapter<>(typeAdapter, propertyNames);
     }
 
+    private static Collection<String> getPropertyNames(
+        final Class<?> clazz,
+        final Excluder excluder,
+        final FieldNamingStrategy fieldNamingStrategy) {
+      final Collection<String> propertyNames = new ArrayList<>();
+      // Class fields are declared per class so we have to traverse the whole hierarchy
+      for (Class<?> i = clazz;
+          i.getSuperclass() != null && i != Object.class;
+          i = i.getSuperclass()) {
+        for (final Field declaredField : i.getDeclaredFields()) {
+          // If the class field is not excluded
+          if (!excluder.excludeField(declaredField, false)) {
+            // We can translate the field name to its property name counter-part
+            final String propertyName = fieldNamingStrategy.translateName(declaredField);
+            propertyNames.add(propertyName);
+          }
+        }
+      }
+      return propertyNames;
+    }
+
     @Override
     public void write(final JsonWriter out, final T value) throws IOException {
       typeAdapter.write(out, value);
@@ -110,27 +131,6 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
         object.acceptUnknownProperties(unknownProperties);
       }
       return object;
-    }
-
-    private static Collection<String> getPropertyNames(
-        final Class<?> clazz,
-        final Excluder excluder,
-        final FieldNamingStrategy fieldNamingStrategy) {
-      final Collection<String> propertyNames = new ArrayList<>();
-      // Class fields are declared per class so we have to traverse the whole hierarchy
-      for (Class<?> i = clazz;
-          i.getSuperclass() != null && i != Object.class;
-          i = i.getSuperclass()) {
-        for (final Field declaredField : i.getDeclaredFields()) {
-          // If the class field is not excluded
-          if (!excluder.excludeField(declaredField, false)) {
-            // We can translate the field name to its property name counter-part
-            final String propertyName = fieldNamingStrategy.translateName(declaredField);
-            propertyNames.add(propertyName);
-          }
-        }
-      }
-      return propertyNames;
     }
   }
 }

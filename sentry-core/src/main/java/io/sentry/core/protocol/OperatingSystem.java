@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class OperatingSystem implements IUnknownPropertiesConsumer {
   public static final String TYPE = "os";
@@ -64,6 +65,7 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer {
     this.rooted = rooted;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

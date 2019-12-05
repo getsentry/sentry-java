@@ -4,6 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class Device implements IUnknownPropertiesConsumer {
   public static final String TYPE = "device";
@@ -294,6 +295,7 @@ public final class Device implements IUnknownPropertiesConsumer {
     LANDSCAPE
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

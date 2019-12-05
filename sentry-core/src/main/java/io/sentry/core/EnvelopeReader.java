@@ -13,9 +13,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class EnvelopeReader implements IEnvelopeReader {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
