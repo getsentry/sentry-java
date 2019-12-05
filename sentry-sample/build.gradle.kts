@@ -9,14 +9,21 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.sample"
-        minSdkVersion(Config.Android.minSdkVersion)
+        minSdkVersion(Config.Android.minSdkVersionNdk)
         targetSdkVersion(Config.Android.targetSdkVersion)
         versionCode = 1
         versionName = "1.0"
 
         externalNativeBuild {
+            val sentryNativeSrc = if (File("../sentry-android-ndk/sentry-native-local").exists()) {
+                "sentry-native-local"
+            } else {
+                "sentry-native"
+            }
+
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
+                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
             }
         }
 

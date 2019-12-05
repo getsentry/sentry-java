@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     findViewById(R.id.native_crash).setOnClickListener(view -> NativeSample.crash());
 
-    findViewById(R.id.native_capture).setOnClickListener(view -> NativeSample.verificationEvent());
+    findViewById(R.id.native_capture).setOnClickListener(view -> NativeSample.message());
 
     findViewById(R.id.anr)
         .setOnClickListener(
