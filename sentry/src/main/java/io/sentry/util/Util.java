@@ -1,6 +1,7 @@
 package io.sentry.util;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -204,7 +205,7 @@ public final class Util {
         if (closeable != null) {
             try {
                 closeable.close();
-            } catch (Exception ignored) {
+            } catch (IOException | RuntimeException ignored) {
             }
         }
         // CHECKSTYLE.ON: EmptyCatchBlock

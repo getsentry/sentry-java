@@ -233,7 +233,7 @@ public class HttpConnection extends AbstractConnection {
                 sb.append(line);
                 first = false;
             }
-        } catch (Exception e2) {
+        } catch (IOException | RuntimeException e2) {
             logger.error("Exception while reading the error message from the connection.", e2);
         }
         return sb.toString();
