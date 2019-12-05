@@ -4,6 +4,7 @@ import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class SdkVersion implements IUnknownPropertiesConsumer {
   private String name;
@@ -47,6 +48,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
     integrations.add(integration);
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

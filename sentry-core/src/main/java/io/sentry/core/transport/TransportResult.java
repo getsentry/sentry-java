@@ -7,7 +7,7 @@ import io.sentry.core.SentryEvent;
  * subclassable and has only two factory methods to capture the 2 possible states - success or
  * error.
  */
-public abstract class TransportResult {
+abstract class TransportResult {
 
   /**
    * Use this method to announce success of sending the event.

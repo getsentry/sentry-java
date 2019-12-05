@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-public final class SentryEnvelopeItem {
+final class SentryEnvelopeItem {
   private final SentryEnvelopeItemHeader header;
   // TODO: Can we have a slice or a reader here instead?
   private final byte[] data;

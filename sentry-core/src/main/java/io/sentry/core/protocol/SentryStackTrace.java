@@ -3,6 +3,7 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 /** The Sentry stacktrace. */
 public final class SentryStackTrace implements IUnknownPropertiesConsumer {
@@ -35,6 +36,7 @@ public final class SentryStackTrace implements IUnknownPropertiesConsumer {
     this.frames = frames;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

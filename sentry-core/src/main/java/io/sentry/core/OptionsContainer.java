@@ -1,7 +1,9 @@
 package io.sentry.core;
 
 import java.lang.reflect.InvocationTargetException;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class OptionsContainer<T> {
 
   public static <T> OptionsContainer<T> create(final Class<T> clazz) {

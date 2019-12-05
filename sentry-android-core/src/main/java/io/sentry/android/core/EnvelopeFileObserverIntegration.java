@@ -15,6 +15,10 @@ abstract class EnvelopeFileObserverIntegration implements Integration, Closeable
 
   protected EnvelopeFileObserverIntegration() {}
 
+  public static EnvelopeFileObserverIntegration getOutboxFileObserver() {
+    return new OutboxEnvelopeFileObserverIntegration();
+  }
+
   @Override
   public void register(IHub hub, SentryOptions options) {
     ILogger logger = options.getLogger();
@@ -38,10 +42,6 @@ abstract class EnvelopeFileObserverIntegration implements Integration, Closeable
     if (observer != null) {
       observer.stopWatching();
     }
-  }
-
-  public static EnvelopeFileObserverIntegration getOutboxFileObserver() {
-    return new OutboxEnvelopeFileObserverIntegration();
   }
 
   @TestOnly

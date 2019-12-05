@@ -3,7 +3,7 @@ package io.sentry.core;
 import io.sentry.core.protocol.SentryId;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryEnvelopeHeader {
+final class SentryEnvelopeHeader {
   private final SentryId eventId;
   private final String auth;
 

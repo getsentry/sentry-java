@@ -3,6 +3,7 @@ package io.sentry.core.protocol;
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class DebugMeta implements IUnknownPropertiesConsumer {
   private SdkInfo sdkInfo;
@@ -27,6 +28,7 @@ public final class DebugMeta implements IUnknownPropertiesConsumer {
     this.sdkInfo = sdkInfo;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

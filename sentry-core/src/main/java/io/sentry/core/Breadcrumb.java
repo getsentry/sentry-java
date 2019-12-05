@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.TestOnly;
 
 public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
@@ -73,6 +74,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     this.level = level;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

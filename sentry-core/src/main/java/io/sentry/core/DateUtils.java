@@ -6,8 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+import org.jetbrains.annotations.ApiStatus;
 
 /** Utilities to deal with dates */
+@ApiStatus.Internal
 public final class DateUtils {
   private static final String UTC = "UTC";
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";

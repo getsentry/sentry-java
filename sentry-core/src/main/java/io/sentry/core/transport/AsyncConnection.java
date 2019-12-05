@@ -15,11 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** A connection to Sentry that sends the events asynchronously. */
+@ApiStatus.Internal
 public final class AsyncConnection implements Closeable, Connection {
   private final ITransport transport;
   private final ITransportGate transportGate;
@@ -132,10 +134,10 @@ public final class AsyncConnection implements Closeable, Connection {
 
   private final class EventSender implements Retryable {
     final SentryEvent event;
-    private Object hint;
-    private IEventCache eventCache;
+    private final Object hint;
+    private final IEventCache eventCache;
     long suggestedRetryDelay;
-    TransportResult failedResult = TransportResult.error(5000, -1);
+    final TransportResult failedResult = TransportResult.error(5000, -1);
 
     EventSender(SentryEvent event, Object hint, IEventCache eventCache) {
       this.event = event;

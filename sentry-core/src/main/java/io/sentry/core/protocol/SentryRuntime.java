@@ -2,6 +2,7 @@ package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class SentryRuntime implements IUnknownPropertiesConsumer {
   public static final String TYPE = "runtime";
@@ -37,6 +38,7 @@ public final class SentryRuntime implements IUnknownPropertiesConsumer {
     this.rawDescription = rawDescription;
   }
 
+  @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class SentryValues<T> {
-  private List<T> values;
+  private final List<T> values;
 
   SentryValues(List<T> values) {
     if (values == null) {

@@ -3,7 +3,17 @@ package io.sentry.android.core;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.sentry.android.core.adapters.*;
+import io.sentry.android.core.adapters.ContextsDeserializerAdapter;
+import io.sentry.android.core.adapters.DateDeserializerAdapter;
+import io.sentry.android.core.adapters.DateSerializerAdapter;
+import io.sentry.android.core.adapters.OrientationDeserializerAdapter;
+import io.sentry.android.core.adapters.OrientationSerializerAdapter;
+import io.sentry.android.core.adapters.SentryIdDeserializerAdapter;
+import io.sentry.android.core.adapters.SentryIdSerializerAdapter;
+import io.sentry.android.core.adapters.SentryLevelDeserializerAdapter;
+import io.sentry.android.core.adapters.SentryLevelSerializerAdapter;
+import io.sentry.android.core.adapters.TimeZoneDeserializerAdapter;
+import io.sentry.android.core.adapters.TimeZoneSerializerAdapter;
 import io.sentry.core.ILogger;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
@@ -17,7 +27,7 @@ import java.io.Writer;
 import java.util.Date;
 import java.util.TimeZone;
 
-public final class AndroidSerializer implements ISerializer {
+final class AndroidSerializer implements ISerializer {
 
   private final ILogger logger;
   private final Gson gson;

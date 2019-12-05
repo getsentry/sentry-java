@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import com.novoda.gradle.release.PublishExtension
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
     id("com.android.library")

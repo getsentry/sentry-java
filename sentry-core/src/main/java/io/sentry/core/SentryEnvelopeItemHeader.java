@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-public final class SentryEnvelopeItemHeader {
+final class SentryEnvelopeItemHeader {
   private final String contentType;
   private final String fileName;
   private final String type;

@@ -5,10 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.core.DiagnosticLogger
 import io.sentry.core.ILogger
 import io.sentry.core.SentryOptions
-import java.lang.IllegalArgumentException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,10 +26,6 @@ class DefaultAndroidEventProcessorTest {
             options.isDebug = true
             options.setLogger(logger)
             this.options = options
-        }
-
-        fun getSut(): DiagnosticLogger {
-            return DiagnosticLogger(options, logger)
         }
     }
 

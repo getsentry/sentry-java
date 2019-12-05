@@ -13,13 +13,16 @@ import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.Charset;
 import javax.net.ssl.HttpsURLConnection;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * An implementation of the {@link ITransport} interface that sends the events to the Sentry server
  * over HTTP(S) in UTF-8 encoding.
  */
-@Open // TODO: make it final and disable nopen check for testing
+@Open
+@ApiStatus.NonExtendable // only not final because of testing
+@ApiStatus.Internal
 public class HttpTransport implements ITransport {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
@@ -65,7 +68,7 @@ public class HttpTransport implements ITransport {
 
   // giving up on testing this method is probably the simplest way of having the rest of the class
   // testable...
-  protected HttpURLConnection open(URL url, Proxy proxy) throws IOException {
+  protected HttpURLConnection open(Proxy proxy) throws IOException {
     // why do we need url here? its not used
     return (HttpURLConnection)
         (proxy == null ? sentryUrl.openConnection() : sentryUrl.openConnection(proxy));
@@ -73,7 +76,7 @@ public class HttpTransport implements ITransport {
 
   @Override
   public TransportResult send(SentryEvent event) throws IOException {
-    HttpURLConnection connection = open(sentryUrl, proxy);
+    HttpURLConnection connection = open(proxy);
     connectionConfigurator.configure(connection);
 
     connection.setRequestMethod("POST");

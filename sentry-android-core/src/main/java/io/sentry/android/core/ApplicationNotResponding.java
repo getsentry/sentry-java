@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
-  private Thread.State state;
+  private final Thread.State state;
 
   ApplicationNotResponding(@NotNull String message, @NotNull Thread thread) {
     super(message);

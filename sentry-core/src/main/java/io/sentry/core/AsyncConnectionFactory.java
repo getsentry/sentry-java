@@ -6,6 +6,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 final class AsyncConnectionFactory {
+  private AsyncConnectionFactory() {}
+
   public static AsyncConnection create(SentryOptions options, IEventCache eventCache) {
     try {
       Dsn parsedDsn = new Dsn(options.getDsn());
