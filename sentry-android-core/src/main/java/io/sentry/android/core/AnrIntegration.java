@@ -40,7 +40,6 @@ public final class AnrIntegration implements Integration {
 
                 Mechanism mechanism = new Mechanism();
                 mechanism.setType("ANR");
-                mechanism.setHandled(false);
                 ExceptionMechanismException throwable =
                     new ExceptionMechanismException(mechanism, error, Thread.currentThread());
 
