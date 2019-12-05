@@ -78,8 +78,6 @@ object Config {
     object Deploy {
         val novodaBintray = "com.novoda:bintray-release:0.9.2"
         val novodaBintrayId = "com.novoda.bintray-release"
-        val dryRun = true // If set to true this will run everything but it won't upload the package to bintray. If false then it will upload normally.
-        val override = true
         val sign = true
     }
 
