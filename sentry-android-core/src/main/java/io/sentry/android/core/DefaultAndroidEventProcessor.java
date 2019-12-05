@@ -810,7 +810,23 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private String getAndroidId() {
     // Android 29 has changed and -> Avoid using hardware identifiers, find another way in the
     // future
-    return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+    String androidId =
+        Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+
+    //    https://android-developers.googleblog.com/2011/03/identifying-app-installations.html
+    if (androidId == null
+        || androidId.isEmpty()
+        || androidId.toLowerCase(Locale.ROOT).contentEquals("9774d56d682e549c")) {
+      try {
+        androidId = Installation.id(context);
+      } catch (RuntimeException e) {
+        log(SentryLevel.ERROR, "Could not generate device Id.", e);
+
+        return null;
+      }
+    }
+
+    return androidId;
   }
 
   private String[] getProGuardUuids() {
