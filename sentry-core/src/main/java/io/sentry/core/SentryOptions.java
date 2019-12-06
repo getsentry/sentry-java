@@ -33,7 +33,7 @@ public class SentryOptions {
   private @Nullable String release;
   private @Nullable String environment;
   private @Nullable Proxy proxy;
-  private @Nullable Double sampling;
+  private @Nullable Double sampleRate;
   private @NotNull List<String> inAppExcludes;
   private @NotNull List<String> inAppIncludes;
 
@@ -191,19 +191,19 @@ public class SentryOptions {
     this.proxy = proxy;
   }
 
-  public @Nullable Double getSampling() {
-    return sampling;
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
   }
 
   // Can be anything between 0.01 (1%) and 1.0 (99.9%) or null (default), to disable it.
-  public void setSampling(Double sampling) {
-    if (sampling != null && (sampling > 1.0 || sampling <= 0.0)) {
+  public void setSampleRate(Double sampleRate) {
+    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
       throw new IllegalArgumentException(
           "The value "
-              + sampling
+              + sampleRate
               + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
     }
-    this.sampling = sampling;
+    this.sampleRate = sampleRate;
   }
 
   public @NotNull List<String> getInAppExcludes() {
