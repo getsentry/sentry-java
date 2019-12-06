@@ -22,7 +22,7 @@ public class FrameCacheTest extends BaseTest {
 
         try {
             throw new RuntimeException("foo");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             t = e;
 
             // throwable shouldn't exist in the cache at all, so we expect true

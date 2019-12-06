@@ -275,7 +275,7 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
             }
             sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
             return configureSentryClient(sentryClient, dsn);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Failed to initialize sentry, falling back to no-op client", e);
             return new SentryClient(new NoopConnection(), new ThreadLocalContextManager());
         }

@@ -186,7 +186,7 @@ public class BufferedConnection implements Connection {
                 try {
                     // buffer before we attempt to send
                     buffer.add(event);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     logger.error("Exception occurred while attempting to add Event to buffer: ", e);
                 }
 
@@ -249,7 +249,7 @@ public class BufferedConnection implements Connection {
                         logger.trace("Flusher attempting to send Event: " + event.getId());
                         send(event);
                         logger.trace("Flusher successfully sent Event: " + event.getId());
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         logger.debug("Flusher failed to send Event: " + event.getId(), e);
 
                         // Connectivity issues, give up until next Flusher run.
@@ -258,7 +258,7 @@ public class BufferedConnection implements Connection {
                     }
                 }
                 logger.trace("Flusher run exiting, no more events to send.");
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 logger.error("Error running Flusher: ", e);
             } finally {
                 SentryEnvironment.stopManagingThread();
@@ -283,7 +283,7 @@ public class BufferedConnection implements Connection {
             try {
                 // The current thread is managed by sentry
                 BufferedConnection.this.close();
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 logger.error("An exception occurred while closing the connection.", e);
             } finally {
                 SentryEnvironment.stopManagingThread();

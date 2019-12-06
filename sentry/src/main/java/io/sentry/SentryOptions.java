@@ -207,7 +207,7 @@ public final class SentryOptions {
             }
 
             return dsn;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error creating valid DSN from: '{}'.", dsn, e);
             throw e;
         }

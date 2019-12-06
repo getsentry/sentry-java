@@ -83,7 +83,7 @@ public class SentryAppender extends AppenderSkeleton {
         try {
             EventBuilder eventBuilder = createEventBuilder(loggingEvent);
             Sentry.capture(eventBuilder);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             getErrorHandler().error("An exception occurred while creating a new event in Sentry", e,
                     ErrorCode.WRITE_FAILURE);
         } finally {
@@ -151,7 +151,7 @@ public class SentryAppender extends AppenderSkeleton {
             }
             this.closed = true;
             Sentry.close();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             getErrorHandler().error("An exception occurred while closing the Sentry connection", e,
                     ErrorCode.CLOSE_FAILURE);
         } finally {

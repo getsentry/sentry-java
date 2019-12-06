@@ -53,7 +53,7 @@ public class SentryUncaughtExceptionHandler implements Thread.UncaughtExceptionH
 
             try {
                 Sentry.capture(eventBuilder);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 logger.error("Error sending uncaught exception to Sentry.", e);
             }
         }

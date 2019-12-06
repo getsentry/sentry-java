@@ -113,7 +113,7 @@ public class AppEngineAsyncConnectionTest {
                 TaskOptions taskOptions = invocation.getArgument(0);
                 try {
                     extractDeferredTask(taskOptions).run();
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     throw new RuntimeException("Couldn't extract the task", e);
                 }
                 return null;

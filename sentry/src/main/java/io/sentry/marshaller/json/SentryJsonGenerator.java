@@ -115,7 +115,7 @@ public class SentryJsonGenerator extends JsonGenerator {
                         value, value.getClass());
                 try {
                     generator.writeString(Util.trimString(value.toString(), maxLengthString));
-                } catch (Exception innerE) {
+                } catch (IOException | RuntimeException innerE) {
                     generator.writeString("<exception calling toString on object>");
                 }
             }

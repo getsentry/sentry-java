@@ -13,8 +13,10 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
@@ -565,13 +567,20 @@ public class EventBuilder {
                 FutureTask<Void> futureTask = new FutureTask<>(hostRetriever);
                 new Thread(futureTask).start();
                 futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                expirationTimestamp = clock.millis() + TimeUnit.SECONDS.toMillis(1);
-                logger.debug("Localhost hostname lookup failed, keeping the value '{}'."
-                    + " If this persists it may mean your DNS is incorrectly configured and"
-                    + " you may want to hardcode your server name: https://docs.sentry.io/clients/java/config/",
-                    hostname, e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                handleCacheUpdateFailure(e);
+            } catch (ExecutionException | TimeoutException | RuntimeException e) {
+                handleCacheUpdateFailure(e);
             }
+        }
+
+        private void handleCacheUpdateFailure(Exception failure) {
+            expirationTimestamp = clock.millis() + TimeUnit.SECONDS.toMillis(1);
+            logger.debug("Localhost hostname lookup failed, keeping the value '{}'."
+                + " If this persists it may mean your DNS is incorrectly configured and"
+                + " you may want to hardcode your server name: https://docs.sentry.io/clients/java/config/",
+                hostname, failure);
         }
 
         /**

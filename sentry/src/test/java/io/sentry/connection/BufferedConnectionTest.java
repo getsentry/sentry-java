@@ -177,7 +177,7 @@ public class BufferedConnectionTest extends BaseTest {
                 .when(mockConnection).send(any(Event.class));
         try {
             bufferedConnection.send(event);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
 
         }
         assertThat(bufferedEvents.size(), equalTo(0));
@@ -190,7 +190,7 @@ public class BufferedConnectionTest extends BaseTest {
                 .when(mockConnection).send(any(Event.class));
         try {
             bufferedConnection.send(event);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
 
         }
         assertThat(bufferedEvents.size(), equalTo(1));

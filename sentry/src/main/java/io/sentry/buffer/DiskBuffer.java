@@ -43,7 +43,7 @@ public class DiskBuffer implements Buffer {
             if (!bufferDir.isDirectory() || !bufferDir.canWrite()) {
                 throw new RuntimeException(errMsg);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException(errMsg, e);
         }
 
@@ -78,7 +78,7 @@ public class DiskBuffer implements Buffer {
         try (FileOutputStream fileOutputStream = new FileOutputStream(eventFile);
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             objectOutputStream.writeObject(event);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("Error writing Event to offline storage: " + event.getId(), e);
         }
 
@@ -118,7 +118,7 @@ public class DiskBuffer implements Buffer {
         } catch (FileNotFoundException e) {
             // event was deleted while we were iterating the array of files
             return null;
-        } catch (Exception e) {
+        } catch (IOException | ClassNotFoundException | RuntimeException e) {
             logger.error("Error reading Event file: " + eventFile.getAbsolutePath(), e);
             if (!eventFile.delete()) {
                 logger.warn("Failed to delete Event: " + eventFile.getAbsolutePath());
@@ -128,7 +128,7 @@ public class DiskBuffer implements Buffer {
 
         try {
             return (Event) eventObj;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error casting Object to Event: " + eventFile.getAbsolutePath(), e);
             if (!eventFile.delete()) {
                 logger.warn("Failed to delete Event: " + eventFile.getAbsolutePath());

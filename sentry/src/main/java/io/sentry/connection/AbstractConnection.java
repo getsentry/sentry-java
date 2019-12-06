@@ -93,7 +93,7 @@ public abstract class AbstractConnection implements Connection {
             for (EventSendCallback eventSendCallback : eventSendCallbacks) {
                 try {
                     eventSendCallback.onSuccess(event);
-                } catch (Exception exc) {
+                } catch (RuntimeException exc) {
                     logger.warn("An exception occurred while running an EventSendCallback.onSuccess: "
                         + eventSendCallback.getClass().getName(), exc);
                 }
@@ -102,7 +102,7 @@ public abstract class AbstractConnection implements Connection {
             for (EventSendCallback eventSendCallback : eventSendCallbacks) {
                 try {
                     eventSendCallback.onFailure(event, e);
-                } catch (Exception exc) {
+                } catch (RuntimeException exc) {
                     logger.warn("An exception occurred while running an EventSendCallback.onFailure: "
                         + eventSendCallback.getClass().getName(), exc);
                 }

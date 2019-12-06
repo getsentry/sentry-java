@@ -139,7 +139,7 @@ public class SentryClient {
             connection.send(event);
         } catch (LockedDownException | TooManyRequestsException e) {
             logger.debug("Dropping an Event due to lockdown: " + event);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("An exception occurred while sending the event to Sentry.", e);
         } finally {
             getContext().setLastEventId(event.getId());

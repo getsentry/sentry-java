@@ -64,7 +64,7 @@ public class JsonDecoder {
                 parser.nextToken();
             } while (parser.hasCurrentToken());
             valid = true;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.log(Level.FINE, "An exception occurred while trying to parse an allegedly JSON document", e);
         }
 

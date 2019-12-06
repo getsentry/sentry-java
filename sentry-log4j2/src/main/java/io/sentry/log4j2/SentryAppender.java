@@ -131,7 +131,7 @@ public class SentryAppender extends AbstractAppender {
         try {
             EventBuilder eventBuilder = createEventBuilder(logEvent);
             Sentry.capture(eventBuilder);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             error("An exception occurred while creating a new event in Sentry", logEvent, e);
         } finally {
             SentryEnvironment.stopManagingThread();
@@ -201,7 +201,7 @@ public class SentryAppender extends AbstractAppender {
             }
             super.stop();
             Sentry.close();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             error("An exception occurred while closing the Sentry connection", e);
         } finally {
             SentryEnvironment.stopManagingThread();

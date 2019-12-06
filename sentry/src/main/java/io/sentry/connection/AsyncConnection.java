@@ -187,7 +187,7 @@ public class AsyncConnection implements Connection {
                 actualConnection.send(event);
             } catch (LockedDownException | TooManyRequestsException e) {
                 logger.debug("Dropping an Event due to lockdown: " + event);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 logger.error("An exception occurred while sending the event to Sentry.", e);
             } finally {
                 if (previous == null) {
@@ -218,7 +218,7 @@ public class AsyncConnection implements Connection {
             try {
                 // The current thread is managed by sentry
                 AsyncConnection.this.doClose();
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 logger.error("An exception occurred while closing the connection.", e);
             } finally {
                 SentryEnvironment.stopManagingThread();

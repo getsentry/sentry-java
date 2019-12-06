@@ -113,7 +113,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
             EventBuilder eventBuilder = createEventBuilder(iLoggingEvent);
             Sentry.capture(eventBuilder);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             addError("An exception occurred while creating a new event in Sentry", e);
         } finally {
             SentryEnvironment.stopManagingThread();
@@ -301,7 +301,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             }
             super.stop();
             Sentry.close();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             addError("An exception occurred while closing the Sentry connection", e);
         } finally {
             SentryEnvironment.stopManagingThread();

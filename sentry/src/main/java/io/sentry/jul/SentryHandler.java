@@ -87,7 +87,7 @@ public class SentryHandler extends Handler {
     private Level parseLevelOrDefault(String levelName) {
         try {
             return Level.parse(levelName.trim());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Level.WARNING;
         }
     }
@@ -103,7 +103,7 @@ public class SentryHandler extends Handler {
         try {
             EventBuilder eventBuilder = createEventBuilder(record);
             Sentry.capture(eventBuilder);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             reportError("An exception occurred while creating a new event in Sentry", e, ErrorManager.WRITE_FAILURE);
         } finally {
             SentryEnvironment.stopManagingThread();
@@ -137,7 +137,7 @@ public class SentryHandler extends Handler {
             try {
                 formatted = formatMessage(message, record.getParameters());
                 topLevelMessage = formatted; // write out formatted as Event's message key
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 // local formatting failed, send message and parameters without formatted string
                 formatted = null;
             }
@@ -193,7 +193,7 @@ public class SentryHandler extends Handler {
         SentryEnvironment.startManagingThread();
         try {
             Sentry.close();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             reportError("An exception occurred while closing the Sentry connection", e, ErrorManager.CLOSE_FAILURE);
         } finally {
             SentryEnvironment.stopManagingThread();
