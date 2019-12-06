@@ -43,7 +43,11 @@ public final class SentryException implements IUnknownPropertiesConsumer {
     return value;
   }
 
-  /** The exception value. */
+  /**
+   * The exception value
+   *
+   * @param value The exception message
+   */
   public void setValue(String value) {
     this.value = value;
   }

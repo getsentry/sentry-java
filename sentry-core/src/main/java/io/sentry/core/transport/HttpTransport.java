@@ -48,6 +48,7 @@ public class HttpTransport implements ITransport {
    * @param connectionTimeoutMills connection timeout in milliseconds
    * @param readTimeoutMills read timeout in milliseconds
    * @param bypassSecurity whether to ignore TLS errors
+   * @param sentryUrl sentryUrl which is the parsed DSN
    */
   public HttpTransport(
       SentryOptions options,
