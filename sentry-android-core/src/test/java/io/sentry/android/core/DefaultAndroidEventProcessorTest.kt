@@ -6,11 +6,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.core.ILogger
+import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -54,5 +57,35 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `when null options is provided, invalid argument is thrown`() {
         assertFailsWith<IllegalArgumentException> { DefaultAndroidEventProcessor(context, null) }
+    }
+
+    @Test
+    fun `When hint is not Cached, data should be applied`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        var event = SentryEvent().apply {
+        }
+        // refactor and mock data later on
+        event = processor.process(event, null)
+        assertNotNull(event.user)
+        assertNotNull(event.contexts.app)
+//        assertNotNull(event.debugMeta) file doesnt exist
+        assertNotNull(event.sdk)
+        assertNotNull(event.release)
+        assertNotNull(event.dist)
+    }
+
+    @Test
+    fun `When hint is Cached, data should not be applied`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        var event = SentryEvent().apply {
+        }
+        // refactor and mock data later on
+        event = processor.process(event, CachedEvent())
+        assertNull(event.user)
+        assertNull(event.contexts.app)
+        assertNull(event.debugMeta)
+        assertNull(event.sdk)
+        assertNull(event.release)
+        assertNull(event.dist)
     }
 }
