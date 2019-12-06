@@ -47,7 +47,7 @@ public final class SentryClient implements ISentryClient {
       connection = AsyncConnectionFactory.create(options, cache);
     }
     this.connection = connection;
-    random = options.getSampling() == null ? null : new Random();
+    random = options.getSampleRate() == null ? null : new Random();
   }
 
   @Override
@@ -193,8 +193,8 @@ public final class SentryClient implements ISentryClient {
 
   private boolean sample() {
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
-    if (options.getSampling() != null && random != null) {
-      double sampling = options.getSampling();
+    if (options.getSampleRate() != null && random != null) {
+      double sampling = options.getSampleRate();
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;

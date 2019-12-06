@@ -279,7 +279,7 @@ class SentryClientTest {
 
     @Test
     fun `when captureEvent with sampling, some events not captured`() {
-        fixture.sentryOptions.sampling = 0.000000001
+        fixture.sentryOptions.sampleRate = 0.000000001
         val sut = fixture.getSut()
 
         val allEvents = 10
@@ -289,7 +289,7 @@ class SentryClientTest {
 
     @Test
     fun `when captureEvent without sampling, all events are captured`() {
-        fixture.sentryOptions.sampling = null
+        fixture.sentryOptions.sampleRate = null
         val sut = fixture.getSut()
 
         val allEvents = 10

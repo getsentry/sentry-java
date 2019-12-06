@@ -57,35 +57,35 @@ class SentryOptionsTest {
 
     @Test
     fun `when options is initialized, default sampling is null`() =
-        assertNull(SentryOptions().sampling)
+        assertNull(SentryOptions().sampleRate)
 
     @Test
     fun `when setSampling is called, overrides default`() {
         val options = SentryOptions()
-        options.sampling = 0.5
-        assertEquals(0.5, options.sampling)
+        options.sampleRate = 0.5
+        assertEquals(0.5, options.sampleRate)
     }
 
     @Test
     fun `when setSampling is called with null, disables it`() {
         val options = SentryOptions()
-        options.sampling = null
-        assertNull(options.sampling)
+        options.sampleRate = null
+        assertNull(options.sampleRate)
     }
 
     @Test
     fun `when setSampling is set to higher than 1_0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().sampling = 1.0000000000001 }
+        assertFailsWith<IllegalArgumentException> { SentryOptions().sampleRate = 1.0000000000001 }
     }
 
     @Test
     fun `when setSampling is set to lower than 0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().sampling = -0.0000000000001 }
+        assertFailsWith<IllegalArgumentException> { SentryOptions().sampleRate = -0.0000000000001 }
     }
 
     @Test
     fun `when setSampling is set to exactly 0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().sampling = 0.0 }
+        assertFailsWith<IllegalArgumentException> { SentryOptions().sampleRate = 0.0 }
     }
 
     @Test
