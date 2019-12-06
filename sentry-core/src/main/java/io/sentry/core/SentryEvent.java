@@ -134,6 +134,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this.eventId = eventId;
   }
 
+  @TestOnly
   public void setTimestamp(Date timestamp) {
     this.timestamp = timestamp;
   }
