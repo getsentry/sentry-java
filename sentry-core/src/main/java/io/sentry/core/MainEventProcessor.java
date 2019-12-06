@@ -37,13 +37,6 @@ public final class MainEventProcessor implements EventProcessor {
 
   @Override
   public SentryEvent process(SentryEvent event, @Nullable Object hint) {
-    if (event.getRelease() == null) {
-      event.setRelease(options.getRelease());
-    }
-    if (event.getEnvironment() == null) {
-      event.setEnvironment(options.getEnvironment());
-    }
-
     if (event.getPlatform() == null) {
       // this actually means JVM related.
       event.setPlatform("java");
@@ -54,18 +47,29 @@ public final class MainEventProcessor implements EventProcessor {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
 
-    if (event.getThreads() == null) {
-      if (!(hint instanceof Cached)) {
-        event.setThreads(sentryThreadFactory.getCurrentThreads());
-      } else {
-        logIfNotNull(
-            options.getLogger(),
-            SentryLevel.DEBUG,
-            "Event was cached so not applying threads: %s",
-            event.getEventId());
-      }
+    if (!(hint instanceof Cached)) {
+      processNonCachedEvent(event);
+    } else {
+      logIfNotNull(
+          options.getLogger(),
+          SentryLevel.DEBUG,
+          "Event was cached so not applying data relevant to the current app execution/version: %s",
+          event.getEventId());
     }
 
     return event;
+  }
+
+  private void processNonCachedEvent(SentryEvent event) {
+    if (event.getRelease() == null) {
+      event.setRelease(options.getRelease());
+    }
+    if (event.getEnvironment() == null) {
+      event.setEnvironment(options.getEnvironment());
+    }
+
+    if (event.getThreads() == null) {
+      event.setThreads(sentryThreadFactory.getCurrentThreads());
+    }
   }
 }
