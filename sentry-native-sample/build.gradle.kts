@@ -70,7 +70,7 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
-    implementation("io.sentry:sentry-android:2.0.0-alpha09")
+    implementation("io.sentry:sentry-android:2.0.0-beta01")
 
     implementation(Config.Libs.appCompat)
 
