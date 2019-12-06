@@ -30,7 +30,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     return (Date) timestamp.clone();
   }
 
-  public void setTimestamp(Date timestamp) {
+  void setTimestamp(Date timestamp) {
     this.timestamp = timestamp;
   }
 
