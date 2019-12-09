@@ -7,6 +7,7 @@ import io.sentry.core.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.TestOnly;
 
 final class SentryThreadFactory {
 
@@ -17,12 +18,23 @@ final class SentryThreadFactory {
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
   }
 
-  // Assumes its being called from the crashed (errored) thread.
+  // Assumes its being called from the crashed thread.
   List<SentryThread> getCurrentThreads() {
-    Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+    return getCurrentThreads(Thread.getAllStackTraces());
+  }
+
+  // Assumes its being called from the crashed thread.
+  @TestOnly
+  List<SentryThread> getCurrentThreads(Map<Thread, StackTraceElement[]> threads) {
     List<SentryThread> result = new ArrayList<>();
 
     Thread currentThread = Thread.currentThread();
+
+    // https://issuetracker.google.com/issues/64122757
+    if (!threads.containsKey(currentThread)) {
+      threads.put(currentThread, currentThread.getStackTrace());
+    }
+
     for (Map.Entry<Thread, StackTraceElement[]> item : threads.entrySet()) {
       result.add(getSentryThread(currentThread, item.getValue(), item.getKey()));
     }

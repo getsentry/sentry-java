@@ -2,6 +2,7 @@ package io.sentry.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 
@@ -26,4 +27,15 @@ class SentryThreadFactoryTest {
     @Test
     fun `when currentThreads is called, some thread stack frames are captured`() =
         assertTrue(sut.currentThreads.filter { it.stacktrace != null }.any { it.stacktrace.frames.count() > 0 })
+
+    @Test
+    fun `when getAllStackTraces don't return the current thread, add it manually`() {
+        val stackTraces = Thread.getAllStackTraces()
+        val currentThread = Thread.currentThread()
+        stackTraces.remove(currentThread)
+
+        val threads = sut.getCurrentThreads(stackTraces)
+
+        assertNotNull(threads.firstOrNull { it.id == currentThread.id })
+    }
 }
