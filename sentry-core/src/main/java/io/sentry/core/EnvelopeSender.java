@@ -43,11 +43,9 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
 
   @Override
   protected void processFile(@NotNull File file) {
-    InputStream stream = null;
     CachedEnvelopeHint hint =
         new CachedEnvelopeHint(15000, logger); // TODO: Take timeout from options
-    try {
-      stream = new FileInputStream(file);
+    try (InputStream stream = new FileInputStream(file)) {
       SentryEnvelope envelope = envelopeReader.read(stream);
       if (envelope == null) {
         logger.log(
@@ -57,18 +55,13 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       } else {
         processEnvelope(envelope, hint);
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
     } finally {
-      try {
-        if (stream != null) stream.close();
-      } catch (IOException ex) {
-        logger.log(SentryLevel.ERROR, "Error closing envelope.", ex);
-      }
       if (file != null && !hint.getRetry()) {
         try {
           file.delete();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
           logger.log(SentryLevel.ERROR, "Failed to delete.", e);
         }
       }
