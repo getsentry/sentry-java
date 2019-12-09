@@ -104,4 +104,10 @@ class BreadcrumbTest {
         val breadcrumb = Breadcrumb()
         assertNotNull(breadcrumb.timestamp)
     }
+
+    @Test
+    fun `breadcrumb takes message on ctor`() {
+        val breadcrumb = Breadcrumb("this is a test")
+        assertEquals("this is a test", breadcrumb.message)
+    }
 }
