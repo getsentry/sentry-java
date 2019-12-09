@@ -26,6 +26,11 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     this(DateUtils.getCurrentDateTime());
   }
 
+  public Breadcrumb(String message) {
+    this();
+    this.message = message;
+  }
+
   public Date getTimestamp() {
     return (Date) timestamp.clone();
   }
