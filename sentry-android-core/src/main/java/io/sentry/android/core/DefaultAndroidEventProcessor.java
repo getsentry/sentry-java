@@ -39,12 +39,9 @@ import io.sentry.core.protocol.User;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -57,8 +54,6 @@ import org.jetbrains.annotations.Nullable;
 
 final class DefaultAndroidEventProcessor implements EventProcessor {
 
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
   // it could also be a parameter and get from Sentry.init(...)
   private static final Date appStartTime = DateUtils.getCurrentDateTime();
   final Context context;
@@ -713,29 +708,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     String errorMsg = "Exception while attempting to read kernel information";
     String defaultVersion = System.getProperty("os.version");
 
-    BufferedReader br = null;
-    try {
-      File file = new File("/proc/version");
-      if (!file.canRead()) {
-        return defaultVersion;
-      }
-
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        br = Files.newBufferedReader(file.toPath(), UTF_8);
-      } else {
-        br = new BufferedReader(new FileReader(file));
-      }
+    File file = new File("/proc/version");
+    if (!file.canRead()) {
+      return defaultVersion;
+    }
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
       return br.readLine();
-    } catch (Exception e) {
+    } catch (IOException e) {
       log(SentryLevel.ERROR, errorMsg, e);
-    } finally {
-      if (br != null) {
-        try {
-          br.close();
-        } catch (IOException ioe) {
-          log(SentryLevel.ERROR, errorMsg, ioe);
-        }
-      }
     }
 
     return defaultVersion;
@@ -843,42 +823,32 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private String[] getProGuardUuids() {
-    InputStream is = null;
+    AssetManager assets = context.getAssets();
     try {
-      AssetManager assets = context.getAssets();
       String[] files = assets.list("");
 
       List<String> listFiles = Arrays.asList(files != null ? files : new String[0]);
       if (listFiles.contains("sentry-debug-meta.properties")) {
-        is = assets.open("sentry-debug-meta.properties");
-        Properties properties = new Properties();
-        properties.load(is);
-        is.close();
+        try (InputStream is = assets.open("sentry-debug-meta.properties")) {
+          Properties properties = new Properties();
+          properties.load(is);
 
-        String uuid = properties.getProperty("io.sentry.ProguardUuids");
-        if (uuid != null && !uuid.isEmpty()) {
-          return uuid.split("\\|");
+          String uuid = properties.getProperty("io.sentry.ProguardUuids");
+          if (uuid != null && !uuid.isEmpty()) {
+            return uuid.split("\\|");
+          }
+          log(SentryLevel.INFO, "io.sentry.ProguardUuids property was not found.");
+        } catch (IOException e) {
+          log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
         }
         log(SentryLevel.INFO, "io.sentry.ProguardUuids property was not found.");
       } else {
         log(SentryLevel.INFO, "Proguard UUIDs file not found.");
       }
-    } catch (FileNotFoundException e) {
-      log(SentryLevel.ERROR, "Proguard UUIDs file not found.", e);
-    } catch (Exception e) {
-      log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException e) {
-          log(
-              SentryLevel.ERROR,
-              "InputStream of sentry-debug-meta.properties didn't close correctly.",
-              e);
-        }
-      }
+    } catch (IOException e) {
+      log(SentryLevel.ERROR, "Error listing Proguard files.", e);
     }
+
     return null;
   }
 
