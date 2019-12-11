@@ -3,6 +3,7 @@ package io.sentry.core;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface IHub {
@@ -33,6 +34,16 @@ public interface IHub {
 
   default void addBreadcrumb(Breadcrumb breadcrumb) {
     addBreadcrumb(breadcrumb, null);
+  }
+
+  default void addBreadcrumb(@NotNull String message) {
+    addBreadcrumb(new Breadcrumb(message));
+  }
+
+  default void addBreadcrumb(@NotNull String message, @NotNull String category) {
+    Breadcrumb breadcrumb = new Breadcrumb(message);
+    breadcrumb.setCategory(category);
+    addBreadcrumb(breadcrumb);
   }
 
   void setLevel(SentryLevel level);

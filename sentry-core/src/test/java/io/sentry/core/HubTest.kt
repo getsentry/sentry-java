@@ -202,6 +202,34 @@ class HubTest {
     }
 
     @Test
+    fun `when addBreadcrumb is called with message and category, breadcrumb object has values`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        var breadcrumbs: Queue<Breadcrumb>? = null
+        sut.configureScope { breadcrumbs = it.breadcrumbs }
+        sut.addBreadcrumb("message", "category")
+        assertEquals("message", breadcrumbs!!.single().message)
+        assertEquals("category", breadcrumbs!!.single().category)
+    }
+
+    @Test
+    fun `when addBreadcrumb is called with message, breadcrumb object has value`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        var breadcrumbs: Queue<Breadcrumb>? = null
+        sut.configureScope { breadcrumbs = it.breadcrumbs }
+        sut.addBreadcrumb("message", "category")
+        assertEquals("message", breadcrumbs!!.single().message)
+        assertEquals("category", breadcrumbs!!.single().category)
+    }
+
+    @Test
     fun `when flush is called on disabled client, no-op`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
