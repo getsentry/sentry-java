@@ -107,6 +107,14 @@ public final class Sentry {
     getCurrentHub().addBreadcrumb(breadcrumb);
   }
 
+  public static void addBreadcrumb(@NotNull String message) {
+    getCurrentHub().addBreadcrumb(message);
+  }
+
+  public static void addBreadcrumb(@NotNull String message, @NotNull String category) {
+    getCurrentHub().addBreadcrumb(message, category);
+  }
+
   public static void setLevel(@Nullable SentryLevel level) {
     getCurrentHub().setLevel(level);
   }
