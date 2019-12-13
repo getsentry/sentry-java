@@ -50,7 +50,9 @@ public final class Sentry {
 
   private static synchronized <T extends SentryOptions> void init(@NotNull T options) {
     String dsn = options.getDsn();
-    if (dsn == null || dsn.isEmpty()) {
+    if (dsn == null) {
+      throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");
+    } else if (dsn.isEmpty()) {
       close();
       return;
     }

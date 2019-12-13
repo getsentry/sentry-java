@@ -55,10 +55,15 @@ final class ManifestMetadataReader {
         options.setAnrTimeoutIntervalMills(anrTimeoutIntervalMills);
 
         String dsn = metadata.getString(DSN_KEY, null);
-        if (dsn != null) {
+        if (dsn == null) {
+          logIfNotNull(options.getLogger(), SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
+        } else if (dsn.isEmpty()) {
+          logIfNotNull(
+              options.getLogger(), SentryLevel.DEBUG, "DSN is empty, disabling sentry-android");
+        } else {
           logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "DSN read: %s", dsn);
-          options.setDsn(dsn);
         }
+        options.setDsn(dsn);
 
         boolean ndk = metadata.getBoolean(ENABLE_NDK, options.isEnableNdk());
         logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "NDK read: %s", ndk);
