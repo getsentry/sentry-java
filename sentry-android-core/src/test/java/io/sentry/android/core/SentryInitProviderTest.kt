@@ -80,7 +80,7 @@ class SentryInitProviderTest {
     }
 
     @Test
-    fun `when applicationId is defined, dsn in meta-data is not set or null, SDK doesnt initialize`() {
+    fun `when applicationId is defined, dsn in meta-data is not set or null, SDK throws exception`() {
         val providerInfo = ProviderInfo()
 
         assertFalse(Sentry.isEnabled())
@@ -92,9 +92,7 @@ class SentryInitProviderTest {
 
         metaData.putString(ManifestMetadataReader.DSN_KEY, null)
 
-        sentryInitProvider.attachInfo(mockContext, providerInfo)
-
-        assertFalse(Sentry.isEnabled())
+        assertFailsWith<IllegalArgumentException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
 
     @Test
