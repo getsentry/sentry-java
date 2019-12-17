@@ -46,18 +46,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 final class DefaultAndroidEventProcessor implements EventProcessor {
 
+  @TestOnly static final String PROGUARD_UUID = "proGuardUuids";
+  @TestOnly static final String ROOTED = "rooted";
+  @TestOnly static final String ANDROID_ID = "androidId";
+  @TestOnly static final String KERNEL_VERSION = "kernelVersion";
+  @TestOnly static final String EMULATOR = "emulator";
+
   // it could also be a parameter and get from Sentry.init(...)
   private static final Date appStartTime = DateUtils.getCurrentDateTime();
-  final Context context;
+
+  @TestOnly final Context context;
+
   private final SentryOptions options;
+
+  @TestOnly final Future<Map<String, Object>> contextData;
 
   public DefaultAndroidEventProcessor(Context context, SentryOptions options) {
     this.context =
@@ -65,6 +81,36 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
             context != null ? context.getApplicationContext() : null,
             "The application context is required.");
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    contextData = executorService.submit(() -> loadContextData());
+
+    executorService.shutdown();
+  }
+
+  private Map<String, Object> loadContextData() {
+    Map<String, Object> map = new HashMap<>();
+    String[] proGuardUuids = getProGuardUuids();
+    if (proGuardUuids != null) {
+      map.put(PROGUARD_UUID, proGuardUuids);
+    }
+
+    map.put(ROOTED, isRooted());
+
+    String androidId = getAndroidId();
+    if (androidId != null) {
+      map.put(ANDROID_ID, androidId);
+    }
+
+    String kernelVersion = getKernelVersion();
+    if (kernelVersion != null) {
+      map.put(KERNEL_VERSION, kernelVersion);
+    }
+
+    // its not IO, but it has been cached in the old version as well
+    map.put(EMULATOR, isEmulator());
+
+    return map;
   }
 
   @Override
@@ -118,7 +164,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private List<DebugImage> getDebugImages() {
-    String[] uuids = getProGuardUuids();
+    String[] uuids = null;
+    try {
+      Object proGuardUuids = contextData.get().get(PROGUARD_UUID);
+      if (proGuardUuids != null) {
+        uuids = (String[]) proGuardUuids;
+      }
+    } catch (Exception e) {
+      log(SentryLevel.ERROR, "Error getting proGuardUuids.", e);
+      return null;
+    }
 
     if (uuids == null || uuids.length == 0) {
       return null;
@@ -252,7 +307,15 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     device.setOnline(isConnected());
     device.setOrientation(getOrientation());
-    device.setSimulator(isEmulator());
+
+    try {
+      Object emulator = contextData.get().get(EMULATOR);
+      if (emulator != null) {
+        device.setSimulator((Boolean) emulator);
+      }
+    } catch (Exception e) {
+      log(SentryLevel.ERROR, "Error getting emulator.", e);
+    }
 
     ActivityManager.MemoryInfo memInfo = getMemInfo();
     if (memInfo != null) {
@@ -583,11 +646,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  public File[] getExternalFilesDirs(String type) {
+  private File[] getExternalFilesDirs() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      return context.getExternalFilesDirs(type);
+      return context.getExternalFilesDirs(null);
     } else {
-      File single = context.getExternalFilesDir(type);
+      File single = context.getExternalFilesDir(null);
       if (single != null) {
         return new File[] {single};
       }
@@ -596,7 +659,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private File getExternalStorageDep(File internalStorage) {
-    File[] externalFilesDirs = getExternalFilesDirs(null);
+    File[] externalFilesDirs = getExternalFilesDirs();
 
     if (externalFilesDirs != null) {
       // return the 1st file which is not the emulated internal storage
@@ -677,8 +740,20 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     os.setName("Android");
     os.setVersion(Build.VERSION.RELEASE);
     os.setBuild(Build.DISPLAY);
-    os.setKernelVersion(getKernelVersion());
-    os.setRooted(isRooted());
+
+    try {
+      Object kernelVersion = contextData.get().get(KERNEL_VERSION);
+      if (kernelVersion != null) {
+        os.setKernelVersion((String) kernelVersion);
+      }
+
+      Object rooted = contextData.get().get(ROOTED);
+      if (rooted != null) {
+        os.setRooted((Boolean) rooted);
+      }
+    } catch (Exception e) {
+      log(SentryLevel.ERROR, "Error getting OperatingSystem.", e);
+    }
 
     return os;
   }
@@ -794,7 +869,15 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   public User getUser() {
     User user = new User();
 
-    user.setId(getAndroidId());
+    try {
+      Object androidId = contextData.get().get(ANDROID_ID);
+
+      if (androidId != null) {
+        user.setId((String) androidId);
+      }
+    } catch (Exception e) {
+      log(SentryLevel.ERROR, "Error getting androidId.", e);
+    }
 
     return user;
   }
