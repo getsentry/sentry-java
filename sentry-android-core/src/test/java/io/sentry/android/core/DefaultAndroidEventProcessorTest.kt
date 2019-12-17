@@ -5,6 +5,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.android.core.DefaultAndroidEventProcessor.ANDROID_ID
+import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
+import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
+import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
+import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
 import io.sentry.core.ILogger
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
@@ -68,7 +73,7 @@ class DefaultAndroidEventProcessorTest {
         event = processor.process(event, null)
         assertNotNull(event.user)
         assertNotNull(event.contexts.app)
-//        assertNotNull(event.debugMeta) file doesnt exist
+        assertEquals("test", event.debugMeta.images[0].uuid)
         assertNotNull(event.sdk)
         assertNotNull(event.release)
         assertNotNull(event.dist)
@@ -87,5 +92,17 @@ class DefaultAndroidEventProcessorTest {
         assertNull(event.sdk)
         assertNull(event.release)
         assertNull(event.dist)
+    }
+
+    @Test
+    fun `Executor service should be called on ctor`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val contextData = processor.contextData.get()
+        assertNotNull(contextData)
+        assertEquals("test", (contextData[PROGUARD_UUID] as Array<*>)[0])
+        assertNotNull(contextData[ROOTED])
+        assertNotNull(contextData[ANDROID_ID])
+        assertNotNull(contextData[KERNEL_VERSION])
+        assertNotNull(contextData[EMULATOR])
     }
 }
