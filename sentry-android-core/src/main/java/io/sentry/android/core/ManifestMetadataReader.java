@@ -56,7 +56,10 @@ final class ManifestMetadataReader {
 
         String dsn = metadata.getString(DSN_KEY, null);
         if (dsn == null) {
-          logIfNotNull(options.getLogger(), SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
+          logIfNotNull(
+              options.getLogger(),
+              SentryLevel.FATAL,
+              "DSN is required. Use empty string to disable SDK.");
         } else if (dsn.isEmpty()) {
           logIfNotNull(
               options.getLogger(), SentryLevel.DEBUG, "DSN is empty, disabling sentry-android");
