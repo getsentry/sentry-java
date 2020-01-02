@@ -151,6 +151,10 @@ class SentryPlugin implements Plugin<Project> {
         return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
     }
 
+    static Task getPackaging(Project project, ApplicationVariant variant) {
+        return project.tasks.findByName("package${variant.name.capitalize()}")
+    }
+
     /**
      * Returns the bundle task for the given project and variant.
      *
@@ -235,6 +239,13 @@ class SentryPlugin implements Plugin<Project> {
                         project.logger.info("bundleTask ${bundleTask.path}")
                     } else {
                         project.logger.info("bundleTask is null")
+                    }
+
+                    def packageTask = getPackaging(project, variant)
+                    if (packageTask != null) {
+                        project.logger.info("packageTask ${packageTask.path}")
+                    } else {
+                        packageTask.logger.info("packageTask is null")
                     }
 
                     if (proguardTask == null) {
@@ -347,16 +358,25 @@ class SentryPlugin implements Plugin<Project> {
                     // and run before dex transformation.  If we managed to find the dex task
                     // we set ourselves as dependency, otherwise we just hack outselves into
                     // the proguard task's doLast.
-                    if (dexTask != null) {
-                        dexTask.dependsOn persistIdsTask
-                    } else {
-                        proguardTask.finalizedBy(persistIdsTask)
-                    }
+//                    if (dexTask != null) {
+//                        dexTask.dependsOn persistIdsTask
+//                    } else {
+//                        proguardTask.finalizedBy(persistIdsTask)
+//                    }
+
                     // To include proguard uuid file into aab, run before bundle task.
-                    if (bundleTask != null) {
-                        bundleTask.dependsOn persistIdsTask
+//                    if (bundleTask != null) {
+//                        bundleTask.dependsOn persistIdsTask
+//                    }
+
+                    if (proguardTask != null) {
+                        persistIdsTask.dependsOn proguardTask
                     }
-                    persistIdsTask.dependsOn proguardTask
+
+//                    TODO: do we need to care about dynamic-feature/aka App bundles if we always use the packaging task?
+                    if (packageTask != null) {
+                        packageTask.dependsOn persistIdsTask
+                    }
                 }
             }
         }
