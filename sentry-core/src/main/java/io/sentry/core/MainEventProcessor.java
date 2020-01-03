@@ -68,6 +68,10 @@ public final class MainEventProcessor implements EventProcessor {
       event.setEnvironment(options.getEnvironment());
     }
 
+    if (event.getDist() == null) {
+      event.setDist(options.getDist());
+    }
+
     if (event.getThreads() == null) {
       event.setThreads(sentryThreadFactory.getCurrentThreads());
     }

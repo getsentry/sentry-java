@@ -14,6 +14,7 @@ class MainEventProcessorTest {
             dsn = dsnString
             release = "release"
             environment = "environment"
+            dist = "dist"
         }
         fun getSut() = MainEventProcessor(sentryOptions)
     }
@@ -21,7 +22,7 @@ class MainEventProcessorTest {
     private val fixture = Fixture()
 
     @Test
-    fun `when processing an event from UncaughtExceptionHandlerIntegration, crashed thread is flaged, mechanism added`() {
+    fun `when processing an event from UncaughtExceptionHandlerIntegration, crashed thread is flagged, mechanism added`() {
         val sut = fixture.getSut()
 
         val crashedThread = Thread.currentThread()
@@ -42,7 +43,23 @@ class MainEventProcessorTest {
 
         assertEquals("release", event.release)
         assertEquals("environment", event.environment)
+        assertEquals("dist", event.dist)
         assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+    }
+
+    @Test
+    fun `data should be applied only if event doesn't have them`() {
+        val sut = fixture.getSut()
+        var event = generateCrashedEvent()
+        event.dist = "eventDist"
+        event.environment = "eventEnvironment"
+        event.release = "eventRelease"
+
+        event = sut.process(event, null)
+
+        assertEquals("eventRelease", event.release)
+        assertEquals("eventEnvironment", event.environment)
+        assertEquals("eventDist", event.dist)
     }
 
     @Test

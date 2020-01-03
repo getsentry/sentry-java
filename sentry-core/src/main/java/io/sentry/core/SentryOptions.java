@@ -36,6 +36,7 @@ public class SentryOptions {
   private @Nullable Double sampleRate;
   private @NotNull List<String> inAppExcludes;
   private @NotNull List<String> inAppIncludes;
+  private @Nullable String dist;
 
   public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
@@ -226,6 +227,14 @@ public class SentryOptions {
       inAppIncludes = new ArrayList<>();
     }
     inAppIncludes.add(include);
+  }
+
+  public @Nullable String getDist() {
+    return dist;
+  }
+
+  public void setDist(@Nullable String dist) {
+    this.dist = dist;
   }
 
   public interface BeforeSendCallback {
