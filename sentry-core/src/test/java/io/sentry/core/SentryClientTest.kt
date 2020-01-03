@@ -11,8 +11,10 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import io.sentry.core.hints.Cached
 import io.sentry.core.protocol.User
 import io.sentry.core.transport.AsyncConnection
+import io.sentry.core.transport.HttpTransport
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.URL
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -319,6 +321,26 @@ class SentryClientTest {
         sut.captureEvent(event, scope, Object())
 
         assertEquals(scope.level, event.level)
+    }
+
+    @Test
+    fun `when transport is NoOp, it should initialize it`() {
+        fixture.getSut()
+        assertTrue(fixture.sentryOptions.transport is HttpTransport)
+    }
+
+    @Test
+    fun `when transport is set on options, it should use the custom transport`() {
+        val sentryOptions: SentryOptions = SentryOptions().apply {
+            dsn = dsnString
+        }
+        val transport = HttpTransport(sentryOptions, mock(), 500, 500, false, URL("https://key@sentry.io/proj"))
+        sentryOptions.transport = transport
+
+        val connection = mock<AsyncConnection>()
+        SentryClient(sentryOptions, connection)
+
+        assertEquals(transport, sentryOptions.transport)
     }
 
     private fun createScope(): Scope {
