@@ -7,6 +7,7 @@ import io.sentry.core.cache.IEventCache;
 import io.sentry.core.hints.Cached;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.Connection;
+import io.sentry.core.transport.ITransport;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -15,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
@@ -35,10 +35,16 @@ public final class SentryClient implements ISentryClient {
     this(options, null);
   }
 
-  @TestOnly
   public SentryClient(SentryOptions options, @Nullable Connection connection) {
     this.options = options;
     this.enabled = true;
+
+    ITransport transport = options.getTransport();
+    if (transport == null) {
+      transport = HttpTransportFactory.create(options);
+      options.setTransport(transport);
+    }
+
     if (connection == null) {
 
       // TODO this is obviously provisional and should be constructed based on the config in options
