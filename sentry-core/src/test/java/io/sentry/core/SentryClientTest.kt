@@ -12,6 +12,7 @@ import io.sentry.core.hints.Cached
 import io.sentry.core.protocol.User
 import io.sentry.core.transport.AsyncConnection
 import io.sentry.core.transport.HttpTransport
+import io.sentry.core.transport.ITransportGate
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.URL
@@ -20,6 +21,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryClientTest {
@@ -343,6 +345,33 @@ class SentryClientTest {
         assertEquals(transport, sentryOptions.transport)
     }
 
+    @Test
+    fun `when transport gate is set on options, it should use the custom transport gate`() {
+        val sentryOptions: SentryOptions = SentryOptions().apply {
+            dsn = dsnString
+        }
+        val transportGate = CustomTransportGate()
+        sentryOptions.transportGate = transportGate
+
+        val connection = mock<AsyncConnection>()
+        SentryClient(sentryOptions, connection)
+
+        assertEquals(transportGate, sentryOptions.transportGate)
+    }
+
+    @Test
+    fun `when transport gate is null, it should init an always on transport gate`() {
+        val sentryOptions: SentryOptions = SentryOptions().apply {
+            dsn = dsnString
+        }
+
+        val connection = mock<AsyncConnection>()
+        SentryClient(sentryOptions, connection)
+
+        assertNotNull(sentryOptions.transportGate)
+        assertTrue(sentryOptions.transportGate!!.isSendingAllowed)
+    }
+
     private fun createScope(): Scope {
         return Scope(fixture.sentryOptions.maxBreadcrumbs).apply {
             addBreadcrumb(Breadcrumb().apply {
@@ -373,5 +402,9 @@ class SentryClientTest {
                 id = "eventId"
             }
         }
+    }
+
+    internal class CustomTransportGate : ITransportGate {
+        override fun isSendingAllowed(): Boolean = false
     }
 }

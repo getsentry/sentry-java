@@ -32,6 +32,8 @@ final class AndroidOptionsInitializer {
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
     options.setSerializer(new AndroidSerializer(options.getLogger()));
+
+    options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
   }
 
   private static void setDefaultInApp(Context context, SentryOptions options) {
