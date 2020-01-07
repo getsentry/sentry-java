@@ -10,11 +10,7 @@ import io.sentry.event.helper.EventBuilderHelper;
 import io.sentry.event.helper.ShouldSendEventCallback;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryServletContextInitializer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -59,6 +55,39 @@ public class SentryAutoConfiguration {
     }
 
     /**
+     * Initializes a {@link List<EventBuilderHelper>}.
+     *
+     * @return a new instance of {@link List<EventBuilderHelper>}.
+     */
+    @Bean
+    @ConditionalOnMissingBean(EventBuilderHelper.class)
+    public List<EventBuilderHelper> defaultEventBuilderHelpers() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Initializes a {@link List<EventSendCallback>}.
+     *
+     * @return a new instance of {@link List<EventSendCallback>}.
+     */
+    @Bean
+    @ConditionalOnMissingBean(EventSendCallback.class)
+    public List<EventSendCallback> defaultEventSendCallbacks() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Initializes a {@link List<ShouldSendEventCallback>}.
+     *
+     * @return a new instance of {@link List<ShouldSendEventCallback>}.
+     */
+    @Bean
+    @ConditionalOnMissingBean(ShouldSendEventCallback.class)
+    public List<ShouldSendEventCallback> defaultShouldSendEventCallbacks() {
+        return Collections.emptyList();
+    }
+
+    /**
      * Initializes a {@link SentryClient}.
      *
      * @return a new instance of {@link SentryClient}.
@@ -67,9 +96,9 @@ public class SentryAutoConfiguration {
     @ConditionalOnMissingBean(SentryClient.class)
     @ConditionalOnProperty(name = "sentry.init-default-client", havingValue = "true", matchIfMissing = true)
     public SentryClient sentryClient(SentryProperties properties,
-                                     @Autowired(required = false) List<EventBuilderHelper> eventBuilderHelpers,
-                                     @Autowired(required = false) List<EventSendCallback> eventSendCallbacks,
-                                     @Autowired(required = false) List<ShouldSendEventCallback> shouldSendEventCallbacks) {
+                                     List<EventBuilderHelper> eventBuilderHelpers,
+                                     List<EventSendCallback> eventSendCallbacks,
+                                     List<ShouldSendEventCallback> shouldSendEventCallbacks) {
         String dsn = properties.getDsn() != null ? properties.getDsn().toString() : null;
 
         SentryOptions sentryOptions = SentryOptions.from(createLookup(properties), dsn, null);
