@@ -8,6 +8,7 @@ import io.sentry.core.hints.Cached;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.Connection;
 import io.sentry.core.transport.ITransport;
+import io.sentry.core.transport.ITransportGate;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -45,8 +46,13 @@ public final class SentryClient implements ISentryClient {
       options.setTransport(transport);
     }
 
-    if (connection == null) {
+    ITransportGate transportGate = options.getTransportGate();
+    if (transportGate == null) {
+      transportGate = () -> true;
+      options.setTransportGate(transportGate);
+    }
 
+    if (connection == null) {
       // TODO this is obviously provisional and should be constructed based on the config in options
       IEventCache cache = new DiskCache(options);
 

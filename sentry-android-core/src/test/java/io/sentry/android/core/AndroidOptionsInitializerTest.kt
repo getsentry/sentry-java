@@ -100,6 +100,18 @@ class AndroidOptionsInitializerTest {
         assertTrue(sentryOptions.inAppExcludes.contains("android."))
     }
 
+    @Test
+    fun `init should set Android transport gate`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = createMockContext()
+        val mockLogger = mock<ILogger>()
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
+
+        assertNotNull(sentryOptions.transportGate)
+        assertTrue(sentryOptions.transportGate is AndroidTransportGate)
+    }
+
     private fun createMockContext(): Context {
         val mockContext = mock<Context> {
             on { applicationContext } doReturn context

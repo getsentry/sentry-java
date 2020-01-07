@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import static android.content.Context.ACTIVITY_SERVICE;
 import static io.sentry.core.ILogger.logIfNotNull;
 
-import android.Manifest;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +11,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
-import android.net.ConnectivityManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -21,7 +19,7 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import io.sentry.android.core.util.Permissions;
+import io.sentry.android.core.util.ConnectivityChecker;
 import io.sentry.core.DateUtils;
 import io.sentry.core.EventProcessor;
 import io.sentry.core.ILogger;
@@ -305,7 +303,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setBatteryLevel(getBatteryLevel(batteryIntent));
       device.setCharging(isCharging(batteryIntent));
     }
-    device.setOnline(isConnected());
+    device.setOnline(ConnectivityChecker.isConnected(context, options.getLogger()));
     device.setOrientation(getOrientation());
 
     try {
@@ -470,43 +468,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       log(SentryLevel.ERROR, "Error getting device charging state.", e);
       return null;
     }
-  }
-
-  /**
-   * Check whether the application has internet access at a point in time.
-   *
-   * @return true if the application has internet access
-   */
-  private Boolean isConnected() {
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    if (connectivityManager == null) {
-      log(SentryLevel.INFO, "ConnectivityManager is null and cannot check network status");
-      return null;
-    }
-    return getActiveNetworkInfo(connectivityManager);
-    // getActiveNetworkInfo might return null if VPN doesn't specify its
-    // underlying network
-
-    // when min. API 24, use:
-    // connectivityManager.registerDefaultNetworkCallback(...)
-  }
-
-  @SuppressWarnings({"deprecation", "MissingPermission"})
-  private Boolean getActiveNetworkInfo(ConnectivityManager connectivityManager) {
-    if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
-      log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
-      return null;
-    }
-
-    // do not import class or deprecation lint will throw
-    android.net.NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-
-    if (activeNetwork != null) {
-      return activeNetwork.isConnected();
-    }
-    log(SentryLevel.INFO, "NetworkInfo is null and cannot check network status");
-    return null;
   }
 
   /**
