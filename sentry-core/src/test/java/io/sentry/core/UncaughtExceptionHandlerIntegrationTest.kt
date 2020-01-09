@@ -2,7 +2,6 @@ package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
@@ -96,6 +95,6 @@ class UncaughtExceptionHandlerIntegrationTest {
         val hub = Hub(options)
         verify(integrationMock).register(hub, options)
         hub.close()
-        verify(integrationMock, times(1)).close()
+        verify(integrationMock).close()
     }
 }

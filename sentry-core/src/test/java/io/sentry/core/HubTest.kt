@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
@@ -298,7 +297,7 @@ class HubTest {
         val event = SentryEvent()
         val hint = { }
         sut.captureEvent(event, hint)
-        verify(mockClient, times(1)).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
     }
     //endregion
 
@@ -340,7 +339,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.captureMessage("test")
-        verify(mockClient, times(1)).captureMessage(any(), any(), any())
+        verify(mockClient).captureMessage(any(), any(), any())
     }
 
     @Test
@@ -353,7 +352,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
         sut.captureMessage("test")
-        verify(mockClient, times(1)).captureMessage(eq("test"), eq(SentryLevel.INFO), any())
+        verify(mockClient).captureMessage(eq("test"), eq(SentryLevel.INFO), any())
     }
     //endregion
 
@@ -395,7 +394,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.captureException(Throwable(), Object())
-        verify(mockClient, times(1)).captureException(any(), any(), any())
+        verify(mockClient).captureException(any(), any(), any())
     }
 
     @Test
@@ -409,7 +408,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.captureException(Throwable())
-        verify(mockClient, times(1)).captureException(any(), any(), isNull())
+        verify(mockClient).captureException(any(), any(), isNull())
     }
     //endregion
 
@@ -426,7 +425,7 @@ class HubTest {
         sut.close()
 
         sut.close()
-        verify(mockClient, times(1)).close() // 1 to close, but next one wont be recorded
+        verify(mockClient).close() // 1 to close, but next one wont be recorded
     }
 
     @Test
@@ -440,7 +439,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.close()
-        verify(mockClient, times(1)).close()
+        verify(mockClient).close()
     }
     //endregion
 
@@ -475,7 +474,7 @@ class HubTest {
         val scopeCallback = mock<ScopeCallback>()
 
         sut.withScope(scopeCallback)
-        verify(scopeCallback, times(1)).run(any())
+        verify(scopeCallback).run(any())
     }
     //endregion
 
@@ -510,7 +509,7 @@ class HubTest {
         val scopeCallback = mock<ScopeCallback>()
 
         sut.configureScope(scopeCallback)
-        verify(scopeCallback, times(1)).run(any())
+        verify(scopeCallback).run(any())
     }
     //endregion
 
@@ -528,7 +527,7 @@ class HubTest {
             assertTrue(hub.isEnabled)
         }.whenever(mock).register(any(), eq(options))
         Hub(options)
-        verify(mock, times(1)).register(any(), eq(options))
+        verify(mock).register(any(), eq(options))
     }
 
     //region setLevel tests
