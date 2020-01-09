@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
@@ -71,7 +70,7 @@ class EnvelopeSenderTest {
         assertTrue(File(path).exists()) // sanity check
         sut.processEnvelopeFile(path)
 
-        verify(fixture.hub, times(1))!!.captureEvent(eq(expected), any())
+        verify(fixture.hub)!!.captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never())!!.log(eq(SentryLevel.ERROR), any(), any<Any>())
