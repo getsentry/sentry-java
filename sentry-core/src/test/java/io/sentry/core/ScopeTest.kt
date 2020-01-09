@@ -45,6 +45,9 @@ class ScopeTest {
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
 
+        val processor = CustomEventProcessor()
+        scope.addEventProcessor(processor)
+
         val clone = scope.clone()
 
         assertNotNull(clone)
@@ -54,6 +57,7 @@ class ScopeTest {
         assertNotSame(scope.breadcrumbs, clone.breadcrumbs)
         assertNotSame(scope.tags, clone.tags)
         assertNotSame(scope.extras, clone.extras)
+        assertNotSame(scope.eventProcessors, clone.eventProcessors)
     }
 
     @Test
@@ -115,6 +119,9 @@ class ScopeTest {
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
 
+        val processor = CustomEventProcessor()
+        scope.addEventProcessor(processor)
+
         val clone = scope.clone()
 
         scope.level = SentryLevel.FATAL
@@ -133,6 +140,8 @@ class ScopeTest {
         scope.setExtra("extra", "newExtra")
         scope.setExtra("otherExtra", "otherExtra")
 
+        scope.addEventProcessor(processor)
+
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("transaction", clone.transaction)
 
@@ -148,6 +157,7 @@ class ScopeTest {
         assertEquals(1, clone.tags.size)
         assertEquals("extra", clone.extras["extra"])
         assertEquals(1, clone.extras.size)
+        assertEquals(1, clone.eventProcessors.size)
     }
 
     @Test
@@ -198,5 +208,13 @@ class ScopeTest {
         val scope = Scope(1, options.beforeBreadcrumb)
         scope.addBreadcrumb(Breadcrumb())
         assertEquals(1, scope.breadcrumbs.count())
+    }
+
+    @Test
+    fun `when adding eventProcessor, eventProcessor should be in the list`() {
+        val processor = CustomEventProcessor()
+        val scope = Scope(1)
+        scope.addEventProcessor(processor)
+        assertEquals(processor, scope.eventProcessors.first())
     }
 }

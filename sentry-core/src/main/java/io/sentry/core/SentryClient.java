@@ -79,7 +79,12 @@ public final class SentryClient implements ISentryClient {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
       // i.e proguard id, app version, threads
-      applyScope(event, scope);
+      event = applyScope(event, scope, hint);
+
+      if (event == null) {
+        // event dropped by the scope event processors
+        return SentryId.EMPTY_ID;
+      }
     } else {
       logIfNotNull(
           options.getLogger(),
@@ -112,7 +117,7 @@ public final class SentryClient implements ISentryClient {
     return event.getEventId();
   }
 
-  private void applyScope(SentryEvent event, @Nullable Scope scope) {
+  private SentryEvent applyScope(SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
     if (scope != null) {
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransaction());
@@ -150,7 +155,16 @@ public final class SentryClient implements ISentryClient {
       if (scope.getLevel() != null) {
         event.setLevel(scope.getLevel());
       }
+
+      for (EventProcessor processor : scope.getEventProcessors()) {
+        event = processor.process(event, hint);
+
+        if (event == null) {
+          break;
+        }
+      }
     }
+    return event;
   }
 
   private SentryEvent executeBeforeSend(SentryEvent event, @Nullable Object hint) {
