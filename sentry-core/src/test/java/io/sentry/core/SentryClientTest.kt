@@ -1,5 +1,6 @@
 package io.sentry.core
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
@@ -369,6 +370,30 @@ class SentryClientTest {
 
         assertNotNull(sentryOptions.transportGate)
         assertTrue(sentryOptions.transportGate!!.isSendingAllowed)
+    }
+
+    @Test
+    fun `when scope has event processors, they should be applied`() {
+        val event = SentryEvent()
+        val scope = createScope()
+        val processor = mock<EventProcessor>()
+        scope.addEventProcessor(processor)
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+        verify(processor).process(eq(event), anyOrNull())
+    }
+
+    @Test
+    fun `when options have event processors, they should be applied`() {
+        val processor = mock<EventProcessor>()
+        fixture.sentryOptions.addEventProcessor(processor)
+
+        val event = SentryEvent()
+
+        fixture.getSut().captureEvent(event)
+        verify(processor).process(eq(event), anyOrNull())
     }
 
     private fun createScope(): Scope {

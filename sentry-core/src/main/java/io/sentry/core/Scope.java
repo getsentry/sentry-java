@@ -23,6 +23,7 @@ public final class Scope implements Cloneable {
   private @NotNull Map<String, Object> extra = new ConcurrentHashMap<>();
   private final int maxBreadcrumb;
   private @Nullable final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback;
+  private @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
 
   public Scope(
       int maxBreadcrumb,
@@ -134,6 +135,7 @@ public final class Scope implements Cloneable {
     clone.level = level != null ? SentryLevel.valueOf(level.name().toUpperCase(Locale.ROOT)) : null;
     clone.user = user != null ? user.clone() : null;
     clone.fingerprint = fingerprint != null ? new ArrayList<>(fingerprint) : null;
+    clone.eventProcessors = eventProcessors != null ? new ArrayList<>(eventProcessors) : null;
 
     if (breadcrumbs != null) {
       Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(maxBreadcrumb);
@@ -176,5 +178,14 @@ public final class Scope implements Cloneable {
     }
 
     return clone;
+  }
+
+  @NotNull
+  List<EventProcessor> getEventProcessors() {
+    return eventProcessors;
+  }
+
+  public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
+    eventProcessors.add(eventProcessor);
   }
 }
