@@ -3,13 +3,18 @@ package io.sentry.android.core;
 import static io.sentry.core.ILogger.logIfNotNull;
 
 import io.sentry.core.IHub;
+import io.sentry.core.ILogger;
 import io.sentry.core.Integration;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.exception.ExceptionMechanismException;
 import io.sentry.core.protocol.Mechanism;
+import java.io.Closeable;
+import java.io.IOException;
+import org.jetbrains.annotations.TestOnly;
 
-final class AnrIntegration implements Integration {
+final class AnrIntegration implements Integration, Closeable {
+
   private static ANRWatchDog anrWatchDog;
 
   @Override
@@ -31,22 +36,34 @@ final class AnrIntegration implements Integration {
           new ANRWatchDog(
               options.getAnrTimeoutIntervalMills(),
               options.isAnrReportInDebug(),
-              error -> {
-                logIfNotNull(
-                    options.getLogger(),
-                    SentryLevel.INFO,
-                    "ANR triggered with message: %s",
-                    error.getMessage());
-
-                Mechanism mechanism = new Mechanism();
-                mechanism.setType("ANR");
-                ExceptionMechanismException throwable =
-                    new ExceptionMechanismException(mechanism, error, Thread.currentThread());
-
-                hub.captureException(throwable);
-              },
+              error -> reportANR(hub, options.getLogger(), error),
               options.getLogger());
       anrWatchDog.start();
+    }
+  }
+
+  @TestOnly
+  void reportANR(IHub hub, ILogger logger, ApplicationNotResponding error) {
+    logIfNotNull(logger, SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
+
+    Mechanism mechanism = new Mechanism();
+    mechanism.setType("ANR");
+    ExceptionMechanismException throwable =
+        new ExceptionMechanismException(mechanism, error, Thread.currentThread());
+
+    hub.captureException(throwable);
+  }
+
+  @TestOnly
+  ANRWatchDog getANRWatchDog() {
+    return anrWatchDog;
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (anrWatchDog != null) {
+      anrWatchDog.interrupt();
+      anrWatchDog = null;
     }
   }
 }

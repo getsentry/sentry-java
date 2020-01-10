@@ -9,7 +9,7 @@ abstract class DirectoryProcessor {
 
   private final ILogger logger;
 
-  protected DirectoryProcessor(@NotNull ILogger logger) {
+  DirectoryProcessor(@NotNull ILogger logger) {
     this.logger = logger;
   }
 

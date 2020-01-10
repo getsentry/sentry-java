@@ -10,6 +10,7 @@ import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
+import io.sentry.core.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,6 +45,7 @@ public final class DiskCache implements IEventCache {
   private final SentryOptions options;
 
   public DiskCache(SentryOptions options) {
+    Objects.requireNonNull(options.getCacheDirPath(), "Cache dir. path is required.");
     this.directory = new File(options.getCacheDirPath());
     this.maxSize = options.getCacheDirSize();
     this.serializer = options.getSerializer();
