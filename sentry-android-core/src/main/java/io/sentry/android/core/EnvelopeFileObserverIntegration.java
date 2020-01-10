@@ -13,7 +13,7 @@ import org.jetbrains.annotations.TestOnly;
 abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
   private @Nullable EnvelopeFileObserver observer;
 
-  protected EnvelopeFileObserverIntegration() {}
+  EnvelopeFileObserverIntegration() {}
 
   public static EnvelopeFileObserverIntegration getOutboxFileObserver() {
     return new OutboxEnvelopeFileObserverIntegration();
