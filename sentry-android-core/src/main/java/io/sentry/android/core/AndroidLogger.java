@@ -8,11 +8,13 @@ final class AndroidLogger implements ILogger {
 
   private static final String tag = "Sentry";
 
+  @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(SentryLevel level, String message, Object... args) {
     Log.println(toLogcatLevel(level), tag, String.format(message, args));
   }
 
+  @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
     log(level, String.format(message, args), throwable);

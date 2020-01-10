@@ -10,6 +10,7 @@ public final class SystemOutLogger implements ILogger {
    * @param message The message.
    * @param args The optional arguments to format the message.
    */
+  @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(SentryLevel level, String message, Object... args) {
     System.out.println(String.format("%s: %s", level, String.format(message, args)));
@@ -22,6 +23,7 @@ public final class SystemOutLogger implements ILogger {
    * @param message The message.
    * @param throwable The throwable to log.
    */
+  @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(SentryLevel level, String message, Throwable throwable) {
     System.out.println(
@@ -36,6 +38,7 @@ public final class SystemOutLogger implements ILogger {
    * @param message The message.
    * @param args The optional arguments to format the message.
    */
+  @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
     System.out.println(

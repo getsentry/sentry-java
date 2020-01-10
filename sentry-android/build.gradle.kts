@@ -3,7 +3,8 @@ import com.novoda.gradle.release.PublishExtension
 plugins {
     id("com.android.library")
     kotlin("android")
-    id(Config.Deploy.novodaBintrayId)
+    id(Config.Deploy.novodaBintray)
+    id(Config.QualityPlugins.gradleVersions)
 }
 
 android {

@@ -5,8 +5,9 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id("net.ltgt.errorprone")
-    id(Config.Deploy.novodaBintrayId)
+    id(Config.QualityPlugins.errorProne)
+    id(Config.Deploy.novodaBintray)
+    id(Config.QualityPlugins.gradleVersions)
 }
 
 android {

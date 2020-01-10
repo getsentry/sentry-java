@@ -12,7 +12,6 @@
 
 # Application classes that will be serialized/deserialized over Gson
 -keep class io.sentry.core.** { *; }
--keep class io.sentry.core.protocol.** { *; }
 -keepclassmembers enum * { *; }
 -keep class io.sentry.android.core.** { *; }
 

@@ -33,9 +33,6 @@ object Config {
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
         val androidxJunit = "androidx.test.ext:junit:1.1.1"
         val robolectric = "org.robolectric:robolectric:4.3.1"
-        val junit = "junit:junit:4.12"
-        val espressoCore = "androidx.test.espresso:espresso-core:3.2.0"
-        val androidxOrchestrator = "androidx.test:orchestrator:$androidxTestVersion"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
     }
 
@@ -43,7 +40,10 @@ object Config {
         val jacocoVersion = "0.8.5"
         val spotless = "com.diffplug.gradle.spotless"
         val spotlessVersion = "3.25.0"
+        val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.27.0"
+        val gradleVersions = "com.github.ben-manes.versions"
     }
 
     object Sentry {
@@ -71,17 +71,18 @@ object Config {
         val jetbrainsAnnotations = "org.jetbrains:annotations:18.0.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.3.3"
+        val errorprone = "com.google.errorprone:error_prone_core:2.3.4"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
     }
 
     object Deploy {
-        val novodaBintray = "com.novoda:bintray-release:0.9.2"
-        val novodaBintrayId = "com.novoda.bintray-release"
+        val novodaBintrayPlugin = "com.novoda:bintray-release:0.9.2"
+        val novodaBintray = "com.novoda.bintray-release"
         val sign = true
     }
 
     object NativePlugins {
-        val nativeBundle = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.3"
+        val nativeBundlePlugin = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.4"
+        val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
     }
 }
