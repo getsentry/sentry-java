@@ -4,8 +4,9 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id(Config.Deploy.novodaBintrayId)
-    id("com.ydq.android.gradle.native-aar.export")
+    id(Config.Deploy.novodaBintray)
+    id(Config.NativePlugins.nativeBundleExport)
+    id(Config.QualityPlugins.gradleVersions)
 }
 
 android {

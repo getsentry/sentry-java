@@ -7,10 +7,4 @@
     native <methods>;
 }
 
-# if issues with proguard, disable it
-#-dontshrink
-#-dontoptimize
-#-dontobfuscate
-#-dontpreverify
-
 ##---------------End: proguard configuration for NDK  ----------

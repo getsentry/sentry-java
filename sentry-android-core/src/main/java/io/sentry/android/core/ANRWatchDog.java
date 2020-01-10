@@ -20,6 +20,8 @@ final class ANRWatchDog extends Thread {
   private final ILogger logger;
   private AtomicLong tick = new AtomicLong(0);
   private volatile boolean reported = false;
+
+  @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker =
       () -> {
         tick = new AtomicLong(0);
