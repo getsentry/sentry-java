@@ -1,6 +1,7 @@
 package io.sentry;
 
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -8,9 +9,8 @@ import java.lang.reflect.InvocationTargetException;
 import io.sentry.config.Lookup;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Nullable;
+import io.sentry.util.Objects;
 import io.sentry.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Factory in charge of creating {@link SentryClient} instances. The implementations should have a constructor with a
@@ -32,7 +32,7 @@ public abstract class SentryClientFactory {
      * @param lookup the lookup to use
      */
     protected SentryClientFactory(Lookup lookup) {
-        this.lookup = requireNonNull(lookup);
+        this.lookup = Objects.requireNonNull(lookup);
     }
 
     /**

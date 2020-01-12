@@ -1,11 +1,10 @@
 package io.sentry;
 
-import static java.util.Objects.requireNonNull;
-
 import io.sentry.config.Lookup;
 import io.sentry.config.ResourceLoader;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Nullable;
+import io.sentry.util.Objects;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ public final class SentryOptions {
      * @throws NullPointerException if lookup is null
      */
     public SentryOptions(Lookup lookup, @Nullable String dsn, @Nullable SentryClientFactory sentryClientFactory) {
-        this.lookup = requireNonNull(lookup, "lookup");
+        this.lookup = Objects.requireNonNull(lookup, "lookup");
         this.dsn = resolveDsn(lookup, dsn);
         this.sentryClientFactory = sentryClientFactory == null
                 ? SentryClientFactory.instantiateFrom(this.lookup, this.dsn)
@@ -164,7 +163,7 @@ public final class SentryOptions {
      * @param lookup the lookup to use
      */
     public void setLookup(Lookup lookup) {
-        this.lookup = requireNonNull(lookup);
+        this.lookup = Objects.requireNonNull(lookup);
     }
 
     /**
