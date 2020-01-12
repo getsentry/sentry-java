@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
+import org.jetbrains.annotations.TestOnly;
 
 final class Installation {
-  private static String deviceId = null;
+  @TestOnly static String deviceId = null;
+
   private static final String INSTALLATION = "INSTALLATION";
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -31,7 +33,8 @@ final class Installation {
     return deviceId;
   }
 
-  private static String readInstallationFile(File installation) throws IOException {
+  @TestOnly
+  static String readInstallationFile(File installation) throws IOException {
     RandomAccessFile f = new RandomAccessFile(installation, "r");
     byte[] bytes = new byte[(int) f.length()];
     f.readFully(bytes);
@@ -39,7 +42,8 @@ final class Installation {
     return new String(bytes, UTF_8);
   }
 
-  private static String writeInstallationFile(File installation) throws IOException {
+  @TestOnly
+  static String writeInstallationFile(File installation) throws IOException {
     FileOutputStream out = new FileOutputStream(installation);
     String id = UUID.randomUUID().toString();
     out.write(id.getBytes(UTF_8));

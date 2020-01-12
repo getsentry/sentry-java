@@ -2,6 +2,7 @@ package io.sentry.core;
 
 import io.sentry.core.util.Objects;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK internal diagnostic logger. */
 public final class DiagnosticLogger implements ILogger {
@@ -74,5 +75,10 @@ public final class DiagnosticLogger implements ILogger {
     if (logger != null && isEnabled(level)) {
       logger.log(level, throwable, message, args);
     }
+  }
+
+  @TestOnly
+  public ILogger getLogger() {
+    return logger;
   }
 }
