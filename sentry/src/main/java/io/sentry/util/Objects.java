@@ -4,7 +4,9 @@ package io.sentry.util;
  * backport of Objects Utils which is not available on Android yet.
  */
 public final class Objects {
-    private Objects() {}
+    private Objects() {
+
+    }
 
     /**
      * backport of Objects.requireNonNull which is not available on Android yet.
