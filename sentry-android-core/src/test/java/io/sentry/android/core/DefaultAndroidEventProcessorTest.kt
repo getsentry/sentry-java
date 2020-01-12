@@ -3,15 +3,20 @@ package io.sentry.android.core
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.android.core.DefaultAndroidEventProcessor.ANDROID_ID
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
-import io.sentry.core.ILogger
+import io.sentry.core.DiagnosticLogger
 import io.sentry.core.SentryEvent
+import io.sentry.core.SentryLevel
 import io.sentry.core.SentryOptions
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -26,14 +31,9 @@ class DefaultAndroidEventProcessorTest {
     private lateinit var context: Context
 
     private class Fixture {
-        var options: SentryOptions?
-        var logger: ILogger? = mock()
-
-        init {
-            val options = SentryOptions()
-            options.isDebug = true
-            options.setLogger(logger)
-            this.options = options
+        val options = SentryOptions().apply {
+            isDebug = true
+            setLogger(mock())
         }
     }
 
@@ -104,5 +104,19 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(contextData[ANDROID_ID])
         assertNotNull(contextData[KERNEL_VERSION])
         assertNotNull(contextData[EMULATOR])
+    }
+
+    @Test
+    fun `Processor won't throw exception`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        processor.process(SentryEvent(), null)
+        verify((fixture.options.logger as DiagnosticLogger).logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `Processor won't throw exception when theres a hint`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        processor.process(SentryEvent(), CachedEvent())
+        verify((fixture.options.logger as DiagnosticLogger).logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 }

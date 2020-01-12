@@ -6,11 +6,16 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.ILogger
 import io.sentry.core.Sentry
+import io.sentry.core.SentryLevel
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -85,6 +90,18 @@ class SentryAndroidTest {
         assertEquals(3000, refOptions!!.anrTimeoutIntervalMills)
 
         assertTrue(Sentry.isEnabled())
+    }
+
+    @Test
+    fun `init won't throw exception`() {
+        val mockContext = createMockContext()
+        val metaData = Bundle()
+        mockMetaData(mockContext, metaData)
+        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+
+        val logger = mock<ILogger>()
+        SentryAndroid.init(mockContext, logger)
+        verify(logger, never()).log(eq(SentryLevel.FATAL), any<String>(), any())
     }
 
     private fun createMockContext(): Context {
