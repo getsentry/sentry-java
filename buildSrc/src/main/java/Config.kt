@@ -22,7 +22,7 @@ object Config {
         val timber = "com.jakewharton.timber:timber:4.7.1"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
         val gson = "com.google.code.gson:gson:2.8.5"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.0"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.1"
     }
 
     object TestLibs {
@@ -39,7 +39,7 @@ object Config {
     object QualityPlugins {
         val jacocoVersion = "0.8.5"
         val spotless = "com.diffplug.gradle.spotless"
-        val spotlessVersion = "3.25.0"
+        val spotlessVersion = "3.27.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.27.0"
