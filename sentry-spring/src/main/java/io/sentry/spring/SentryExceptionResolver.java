@@ -1,9 +1,16 @@
 package io.sentry.spring;
 
 import io.sentry.Sentry;
+import io.sentry.event.Event;
+import io.sentry.event.EventBuilder;
+import io.sentry.event.helper.BasicRemoteAddressResolver;
+import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.HttpInterface;
 import org.springframework.core.Ordered;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.util.ContentCachingRequestWrapper;
+import org.springframework.web.util.WebUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,9 +27,18 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
                                          HttpServletResponse response,
                                          Object handler,
                                          Exception ex) {
-
-        Sentry.capture(ex);
-
+        ContentCachingRequestWrapper cacheRequest = WebUtils.getNativeRequest(request, ContentCachingRequestWrapper.class);
+        if (cacheRequest == null) {
+            Sentry.capture(ex);
+            return null;
+        }
+        String requestBody =  new String(cacheRequest.getContentAsByteArray());
+        EventBuilder eventBuilder = new EventBuilder()
+                .withMessage(ex.getMessage())
+                .withLevel(Event.Level.ERROR)
+                .withSentryInterface(new ExceptionInterface(ex))
+                .withSentryInterface(new HttpInterface(request, new BasicRemoteAddressResolver(), requestBody), false);
+        Sentry.capture(eventBuilder);
         // null = run other HandlerExceptionResolvers to actually handle the exception
         return null;
     }
