@@ -1,7 +1,5 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -11,13 +9,14 @@ import io.sentry.core.SentryLevel;
 import java.lang.reflect.Type;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZone> {
 
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
-  public TimeZoneDeserializerAdapter(ILogger logger) {
+  public TimeZoneDeserializerAdapter(final @NotNull ILogger logger) {
     this.logger = logger;
   }
 
@@ -27,7 +26,7 @@ public final class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZ
     try {
       return json == null ? null : TimeZone.getTimeZone(json.getAsString());
     } catch (Exception e) {
-      logIfNotNull(logger, SentryLevel.ERROR, "Error when deserializing TimeZone", e);
+      logger.log(SentryLevel.ERROR, "Error when deserializing TimeZone", e);
     }
     return null;
   }

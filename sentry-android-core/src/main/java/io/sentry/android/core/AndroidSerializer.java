@@ -26,13 +26,14 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Date;
 import java.util.TimeZone;
+import org.jetbrains.annotations.NotNull;
 
 final class AndroidSerializer implements ISerializer {
 
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
   private final Gson gson;
 
-  public AndroidSerializer(ILogger logger) {
+  public AndroidSerializer(final @NotNull ILogger logger) {
     this.logger = logger;
 
     gson = provideGson();

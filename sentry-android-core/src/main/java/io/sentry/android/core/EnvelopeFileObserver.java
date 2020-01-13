@@ -6,17 +6,18 @@ import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.util.Objects;
 import java.io.File;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class EnvelopeFileObserver extends FileObserver {
 
   private final String rootPath;
   private final IEnvelopeSender envelopeSender;
-  private final ILogger logger;
+  private @NotNull final ILogger logger;
 
   // The preferred overload (Taking File instead of String) is only available from API 29
   @SuppressWarnings("deprecation")
-  EnvelopeFileObserver(String path, IEnvelopeSender envelopeSender, ILogger logger) {
+  EnvelopeFileObserver(String path, IEnvelopeSender envelopeSender, @NotNull ILogger logger) {
     super(path);
     this.rootPath = Objects.requireNonNull(path, "File path is required.");
     this.envelopeSender = Objects.requireNonNull(envelopeSender, "Envelope sender is required.");

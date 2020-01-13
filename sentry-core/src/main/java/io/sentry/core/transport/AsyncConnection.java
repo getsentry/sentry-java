@@ -1,7 +1,5 @@
 package io.sentry.core.transport;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
@@ -101,22 +99,22 @@ public final class AsyncConnection implements Closeable, Connection {
   @Override
   public void close() throws IOException {
     executor.shutdown();
-    logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "Shutting down");
+    options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
       if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
-        logIfNotNull(
-            options.getLogger(),
-            SentryLevel.WARNING,
-            "Failed to shutdown the async connection async sender within 1 minute. Trying to force it now.");
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to shutdown the async connection async sender within 1 minute. Trying to force it now.");
         executor.shutdownNow();
       }
       transport.close();
     } catch (InterruptedException e) {
       // ok, just give up then...
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.DEBUG,
-          "Thread interrupted while closing the connection.");
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Thread interrupted while closing the connection.");
       Thread.currentThread().interrupt();
     }
   }
@@ -150,23 +148,17 @@ public final class AsyncConnection implements Closeable, Connection {
       TransportResult result = this.failedResult;
       try {
         result = flush();
-        logIfNotNull(
-            options.getLogger(), SentryLevel.DEBUG, "Event flushed: %s", event.getEventId());
+        options.getLogger().log(SentryLevel.DEBUG, "Event flushed: %s", event.getEventId());
       } catch (Exception e) {
-        logIfNotNull(
-            options.getLogger(),
-            SentryLevel.ERROR,
-            e,
-            "Event submission failed: %s",
-            event.getEventId());
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, e, "Event submission failed: %s", event.getEventId());
         throw e;
       } finally {
         if (hint instanceof SubmissionResult) {
-          logIfNotNull(
-              options.getLogger(),
-              SentryLevel.DEBUG,
-              "Marking event submission result: %s",
-              result.isSuccess());
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Marking event submission result: %s", result.isSuccess());
           ((SubmissionResult) hint).setResult(result.isSuccess());
         }
       }
@@ -177,11 +169,9 @@ public final class AsyncConnection implements Closeable, Connection {
       eventCache.store(event);
       if (hint instanceof DiskFlushNotification) {
         ((DiskFlushNotification) hint).markFlushed();
-        logIfNotNull(
-            options.getLogger(),
-            SentryLevel.DEBUG,
-            "Disk flush event fired: %s",
-            event.getEventId());
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Disk flush event fired: %s", event.getEventId());
       }
 
       if (transportGate.isSendingAllowed()) {

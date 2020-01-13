@@ -31,6 +31,9 @@
 <!--    how to enable Sentry's debug mode-->
     <meta-data android:name="io.sentry.debug" android:value="true" />
 
+    <!--    how to set custom debug level-->
+<!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
+
     <!-- To change the time used to watch for ANR. By default it's 4 seconds (4000 below as it's in milliseconds) -->
     <meta-data android:name="io.sentry.anr.timeout-interval-mills" android:value="1000" />
 

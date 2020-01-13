@@ -1,7 +1,5 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
@@ -12,14 +10,15 @@ import io.sentry.core.protocol.Device;
 import java.lang.reflect.Type;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class OrientationSerializerAdapter
     implements JsonSerializer<Device.DeviceOrientation> {
 
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
-  public OrientationSerializerAdapter(ILogger logger) {
+  public OrientationSerializerAdapter(final @NotNull ILogger logger) {
     this.logger = logger;
   }
 
@@ -29,7 +28,7 @@ public final class OrientationSerializerAdapter
     try {
       return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
     } catch (Exception e) {
-      logIfNotNull(logger, SentryLevel.ERROR, "Error when serializing DeviceOrientation", e);
+      logger.log(SentryLevel.ERROR, "Error when serializing DeviceOrientation", e);
     }
     return null;
   }

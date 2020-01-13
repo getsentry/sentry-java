@@ -7,7 +7,7 @@ import org.jetbrains.annotations.TestOnly;
 /** Sentry SDK internal diagnostic logger. */
 public final class DiagnosticLogger implements ILogger {
   private final SentryOptions options;
-  private final ILogger logger;
+  private final @Nullable ILogger logger;
 
   /**
    * Creates a new instance of DiagnosticLogger with the wrapped ILogger.
@@ -15,7 +15,7 @@ public final class DiagnosticLogger implements ILogger {
    * @param options a SentryOptions instance
    * @param logger a ILogger instance
    */
-  public DiagnosticLogger(SentryOptions options, @Nullable ILogger logger) {
+  public DiagnosticLogger(final SentryOptions options, final @Nullable ILogger logger) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.logger = logger;
   }
@@ -26,7 +26,7 @@ public final class DiagnosticLogger implements ILogger {
    * @param level The SentryLevel to test against.
    * @return True if a log message would be recorded for the level. Otherwise false.
    */
-  public boolean isEnabled(SentryLevel level) {
+  public boolean isEnabled(final @Nullable SentryLevel level) {
     SentryLevel diagLevel = options.getDiagnosticLevel();
     if (level == null || diagLevel == null) {
       return false;
@@ -42,7 +42,10 @@ public final class DiagnosticLogger implements ILogger {
    * @param args The optional arguments to format the message.
    */
   @Override
-  public void log(SentryLevel level, String message, Object... args) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable String message,
+      final @Nullable Object... args) {
     if (logger != null && isEnabled(level)) {
       logger.log(level, message, args);
     }
@@ -56,7 +59,10 @@ public final class DiagnosticLogger implements ILogger {
    * @param throwable The throwable to log.
    */
   @Override
-  public void log(SentryLevel level, String message, Throwable throwable) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable String message,
+      final @Nullable Throwable throwable) {
     if (logger != null && isEnabled(level)) {
       logger.log(level, message, throwable);
     }
@@ -71,14 +77,18 @@ public final class DiagnosticLogger implements ILogger {
    * @param args The optional arguments to format the message.
    */
   @Override
-  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable Throwable throwable,
+      final @Nullable String message,
+      final @Nullable Object... args) {
     if (logger != null && isEnabled(level)) {
       logger.log(level, throwable, message, args);
     }
   }
 
   @TestOnly
-  public ILogger getLogger() {
+  public @Nullable ILogger getLogger() {
     return logger;
   }
 }

@@ -1,7 +1,5 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import io.sentry.core.cache.DiskCache;
 import io.sentry.core.cache.IEventCache;
 import io.sentry.core.hints.Cached;
@@ -65,15 +63,16 @@ public final class SentryClient implements ISentryClient {
   @Override
   public SentryId captureEvent(SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
     if (!sample()) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.DEBUG,
-          "Event %s was dropped due to sampling decision.",
-          event.getEventId());
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Event %s was dropped due to sampling decision.",
+              event.getEventId());
       return SentryId.EMPTY_ID;
     }
 
-    logIfNotNull(options.getLogger(), SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (!(hint instanceof Cached)) {
       // Event has already passed through here before it was cached
@@ -86,11 +85,9 @@ public final class SentryClient implements ISentryClient {
         return SentryId.EMPTY_ID;
       }
     } else {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.DEBUG,
-          "Event was cached so not applying scope: %s",
-          event.getEventId());
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
     for (EventProcessor processor : options.getEventProcessors()) {
@@ -107,11 +104,9 @@ public final class SentryClient implements ISentryClient {
     try {
       connection.send(event, hint);
     } catch (IOException e) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.WARNING,
-          "Capturing event " + event.getEventId() + " failed.",
-          e);
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Capturing event " + event.getEventId() + " failed.", e);
     }
 
     return event.getEventId();
@@ -173,11 +168,12 @@ public final class SentryClient implements ISentryClient {
       try {
         event = beforeSend.execute(event, hint);
       } catch (Exception e) {
-        logIfNotNull(
-            options.getLogger(),
-            SentryLevel.ERROR,
-            "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
-            e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
 
         Breadcrumb breadcrumb = new Breadcrumb();
         breadcrumb.setMessage("BeforeSend callback failed.");
@@ -197,17 +193,15 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void close() {
-    logIfNotNull(options.getLogger(), SentryLevel.INFO, "Closing SDK.");
+    options.getLogger().log(SentryLevel.INFO, "Closing SDK.");
 
     try {
       flush(options.getShutdownTimeout());
       connection.close();
     } catch (IOException e) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.WARNING,
-          "Failed to close the connection to the Sentry Server.",
-          e);
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Failed to close the connection to the Sentry Server.", e);
     }
     enabled = false;
   }
