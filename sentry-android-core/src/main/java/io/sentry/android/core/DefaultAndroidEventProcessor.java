@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import static android.content.Context.ACTIVITY_SERVICE;
-import static io.sentry.core.ILogger.logIfNotNull;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -81,6 +80,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
+    // dont ref. to method reference, theres a bug on it
     contextData = executorService.submit(() -> loadContextData());
 
     executorService.shutdown();
@@ -116,11 +116,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (!(hint instanceof Cached)) {
       processNonCachedEvent(event);
     } else {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.DEBUG,
-          "Event was cached so not applying data relevant to the current app execution/version: %s",
-          event.getEventId());
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Event was cached so not applying data relevant to the current app execution/version: %s",
+              event.getEventId());
     }
 
     if (event.getContexts().getDevice() == null) {

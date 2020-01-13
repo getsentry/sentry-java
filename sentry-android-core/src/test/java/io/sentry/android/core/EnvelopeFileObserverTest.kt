@@ -22,7 +22,7 @@ class EnvelopeFileObserverTest {
     private class Fixture {
         var path: String? = "."
         var envelopeSender: IEnvelopeSender = mock()
-        var logger: ILogger? = mock()
+        var logger: ILogger = mock()
 
         init {
             val options = SentryOptions()

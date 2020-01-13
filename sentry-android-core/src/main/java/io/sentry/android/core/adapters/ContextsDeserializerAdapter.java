@@ -1,7 +1,5 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -18,13 +16,14 @@ import io.sentry.core.protocol.OperatingSystem;
 import io.sentry.core.protocol.SentryRuntime;
 import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class ContextsDeserializerAdapter implements JsonDeserializer<Contexts> {
 
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
-  public ContextsDeserializerAdapter(ILogger logger) {
+  public ContextsDeserializerAdapter(@NotNull final ILogger logger) {
     this.logger = logger;
   }
 
@@ -78,7 +77,7 @@ public final class ContextsDeserializerAdapter implements JsonDeserializer<Conte
         return contexts;
       }
     } catch (Exception e) {
-      logIfNotNull(logger, SentryLevel.ERROR, "Error when deserializing Contexts", e);
+      logger.log(SentryLevel.ERROR, "Error when deserializing Contexts", e);
     }
     return null;
   }

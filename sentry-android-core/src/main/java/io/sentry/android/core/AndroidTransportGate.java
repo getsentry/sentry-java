@@ -10,7 +10,7 @@ import org.jetbrains.annotations.TestOnly;
 final class AndroidTransportGate implements ITransportGate {
 
   private final Context context;
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
   AndroidTransportGate(@NotNull Context context, @NotNull ILogger logger) {
     this.context = context;

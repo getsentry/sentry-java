@@ -1,6 +1,5 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
 import static io.sentry.core.SentryLevel.ERROR;
 
 import io.sentry.core.exception.ExceptionMechanismException;
@@ -11,7 +10,6 @@ import java.io.Closeable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -40,10 +38,11 @@ final class UncaughtExceptionHandlerIntegration
   @Override
   public void register(IHub hub, SentryOptions options) {
     if (registered) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.ERROR,
-          "Attempt to register a UncaughtExceptionHandlerIntegration twice.");
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Attempt to register a UncaughtExceptionHandlerIntegration twice.");
       return;
     }
     registered = true;
@@ -53,10 +52,13 @@ final class UncaughtExceptionHandlerIntegration
     Thread.UncaughtExceptionHandler currentHandler =
         threadAdapter.getDefaultUncaughtExceptionHandler();
     if (currentHandler != null) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.DEBUG,
-          "default UncaughtExceptionHandler class='" + currentHandler.getClass().getName() + "'");
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "default UncaughtExceptionHandler class='"
+                  + currentHandler.getClass().getName()
+                  + "'");
       defaultExceptionHandler = currentHandler;
     }
 
@@ -65,7 +67,7 @@ final class UncaughtExceptionHandlerIntegration
 
   @Override
   public void uncaughtException(Thread thread, Throwable thrown) {
-    logIfNotNull(options.getLogger(), SentryLevel.INFO, "Uncaught exception received.");
+    options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
     try {
       UncaughtExceptionHint hint =
@@ -76,20 +78,19 @@ final class UncaughtExceptionHandlerIntegration
       this.hub.captureEvent(event, hint);
       // Block until the event is flushed to disk
       if (!hint.waitFlush()) {
-        logIfNotNull(
-            options.getLogger(),
-            SentryLevel.WARNING,
-            "Timed out waiting to flush event to disk before crashing. Event: %s",
-            event.getEventId());
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Timed out waiting to flush event to disk before crashing. Event: %s",
+                event.getEventId());
       }
     } catch (Exception e) {
-      logIfNotNull(
-          options.getLogger(), SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
     }
 
     if (defaultExceptionHandler != null) {
-      logIfNotNull(
-          options.getLogger(), SentryLevel.INFO, "Invoking inner uncaught exception handler.");
+      options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
       defaultExceptionHandler.uncaughtException(thread, thrown);
     }
   }
@@ -115,9 +116,9 @@ final class UncaughtExceptionHandlerIntegration
 
     private final CountDownLatch latch;
     private final long timeoutMills;
-    private final @Nullable ILogger logger;
+    private final @NotNull ILogger logger;
 
-    UncaughtExceptionHint(final long timeoutMills, final @Nullable ILogger logger) {
+    UncaughtExceptionHint(final long timeoutMills, final @NotNull ILogger logger) {
       this.timeoutMills = timeoutMills;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
@@ -127,8 +128,7 @@ final class UncaughtExceptionHandlerIntegration
       try {
         return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
-        logIfNotNull(
-            logger, ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);
+        logger.log(ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);
       }
       return false;
     }

@@ -1,48 +1,40 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
 
 abstract class DirectoryProcessor {
 
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
-  DirectoryProcessor(@NotNull ILogger logger) {
+  DirectoryProcessor(final @NotNull ILogger logger) {
     this.logger = logger;
   }
 
   void processDirectory(@NotNull File directory) {
     try {
       if (!directory.exists()) {
-        logIfNotNull(
-            logger,
+        logger.log(
             SentryLevel.WARNING,
             "Directory '%s' doesn't exist. No cached events to send.",
             directory.getAbsolutePath());
         return;
       }
       if (!directory.isDirectory()) {
-        logIfNotNull(
-            logger,
-            SentryLevel.ERROR,
-            "Cache dir %s is not a directory.",
-            directory.getAbsolutePath());
+        logger.log(
+            SentryLevel.ERROR, "Cache dir %s is not a directory.", directory.getAbsolutePath());
         return;
       }
 
       File[] listFiles = directory.listFiles();
       if (listFiles == null) {
-        logIfNotNull(
-            logger, SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
+        logger.log(SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
         return;
       }
 
       File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
 
-      logIfNotNull(
-          logger,
+      logger.log(
           SentryLevel.DEBUG,
           "Processing %d items from cache dir %s",
           filteredListFiles != null ? filteredListFiles.length : 0,
@@ -52,8 +44,7 @@ abstract class DirectoryProcessor {
         processFile(file);
       }
     } catch (Exception e) {
-      logIfNotNull(
-          logger, SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
+      logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }
 

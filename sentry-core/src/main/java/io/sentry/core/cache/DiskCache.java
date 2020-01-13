@@ -1,6 +1,5 @@
 package io.sentry.core.cache;
 
-import static io.sentry.core.ILogger.logIfNotNull;
 import static io.sentry.core.SentryLevel.DEBUG;
 import static io.sentry.core.SentryLevel.ERROR;
 import static io.sentry.core.SentryLevel.WARNING;
@@ -55,39 +54,37 @@ public final class DiskCache implements IEventCache {
   @Override
   public void store(SentryEvent event) {
     if (getNumberOfStoredEvents() >= maxSize) {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.WARNING,
-          "Disk cache full (respecting maxSize). Not storing event {}",
-          event);
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Disk cache full (respecting maxSize). Not storing event {}",
+              event);
       return;
     }
 
     File eventFile = getEventFile(event);
     if (eventFile.exists()) {
-      logIfNotNull(
-          options.getLogger(),
-          WARNING,
-          "Not adding Event to offline storage because it already exists: %s",
-          eventFile.getAbsolutePath());
+      options
+          .getLogger()
+          .log(
+              WARNING,
+              "Not adding Event to offline storage because it already exists: %s",
+              eventFile.getAbsolutePath());
       return;
     } else {
-      logIfNotNull(
-          options.getLogger(),
-          DEBUG,
-          "Adding Event to offline storage: %s",
-          eventFile.getAbsolutePath());
+      options
+          .getLogger()
+          .log(DEBUG, "Adding Event to offline storage: %s", eventFile.getAbsolutePath());
     }
 
     try (FileOutputStream fileOutputStream = new FileOutputStream(eventFile);
         Writer wrt = new OutputStreamWriter(fileOutputStream, UTF8)) {
       serializer.serialize(event, wrt);
     } catch (Exception e) {
-      logIfNotNull(
-          options.getLogger(),
-          ERROR,
-          "Error writing Event to offline storage: %s",
-          event.getEventId());
+      options
+          .getLogger()
+          .log(ERROR, "Error writing Event to offline storage: %s", event.getEventId());
     }
   }
 
@@ -95,19 +92,15 @@ public final class DiskCache implements IEventCache {
   public void discard(SentryEvent event) {
     File eventFile = getEventFile(event);
     if (eventFile.exists()) {
-      logIfNotNull(
-          options.getLogger(),
-          DEBUG,
-          "Discarding event from cache: %s",
-          eventFile.getAbsolutePath());
+      options
+          .getLogger()
+          .log(DEBUG, "Discarding event from cache: %s", eventFile.getAbsolutePath());
 
       if (!eventFile.delete()) {
-        logIfNotNull(
-            options.getLogger(), ERROR, "Failed to delete Event: %s", eventFile.getAbsolutePath());
+        options.getLogger().log(ERROR, "Failed to delete Event: %s", eventFile.getAbsolutePath());
       }
     } else {
-      logIfNotNull(
-          options.getLogger(), DEBUG, "Event was not cached: %s", eventFile.getAbsolutePath());
+      options.getLogger().log(DEBUG, "Event was not cached: %s", eventFile.getAbsolutePath());
     }
   }
 
@@ -117,11 +110,12 @@ public final class DiskCache implements IEventCache {
 
   private boolean isDirectoryValid() {
     if (!directory.isDirectory() || !directory.canWrite() || !directory.canRead()) {
-      logIfNotNull(
-          options.getLogger(),
-          ERROR,
-          "The directory for caching Sentry events is inaccessible.: %s",
-          directory.getAbsolutePath());
+      options
+          .getLogger()
+          .log(
+              ERROR,
+              "The directory for caching Sentry events is inaccessible.: %s",
+              directory.getAbsolutePath());
       return false;
     }
     return true;
@@ -143,17 +137,19 @@ public final class DiskCache implements IEventCache {
 
         ret.add(serializer.deserializeEvent(rdr));
       } catch (FileNotFoundException e) {
-        logIfNotNull(
-            options.getLogger(),
-            DEBUG,
-            "Event file '%s' disappeared while converting all cached files to events.",
-            f.getAbsolutePath());
+        options
+            .getLogger()
+            .log(
+                DEBUG,
+                "Event file '%s' disappeared while converting all cached files to events.",
+                f.getAbsolutePath());
       } catch (IOException e) {
-        logIfNotNull(
-            options.getLogger(),
-            ERROR,
-            format("Error while reading cached event from file %s", f.getAbsolutePath()),
-            e);
+        options
+            .getLogger()
+            .log(
+                ERROR,
+                format("Error while reading cached event from file %s", f.getAbsolutePath()),
+                e);
       }
     }
 

@@ -17,7 +17,7 @@ final class ANRWatchDog extends Thread {
   private final ANRListener anrListener;
   private final IHandler uiHandler;
   private final long timeoutIntervalMills;
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
   private AtomicLong tick = new AtomicLong(0);
   private volatile boolean reported = false;
 

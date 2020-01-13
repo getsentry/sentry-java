@@ -1,7 +1,5 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.transport.ITransport;
 import io.sentry.core.transport.ITransportGate;
@@ -78,19 +76,16 @@ public class SentryOptions {
     return logger;
   }
 
-  public void setLogger(@Nullable ILogger logger) {
-    this.logger = logger == null ? NoOpLogger.getInstance() : new DiagnosticLogger(this, logger);
+  public void setLogger(final @Nullable ILogger logger) {
+    this.logger = (logger == null) ? NoOpLogger.getInstance() : new DiagnosticLogger(this, logger);
   }
 
   public @NotNull SentryLevel getDiagnosticLevel() {
     return diagnosticLevel;
   }
 
-  public void setDiagnosticLevel(@Nullable SentryLevel diagnosticLevel) {
-    if (diagnosticLevel == null) {
-      diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
-    }
-    this.diagnosticLevel = diagnosticLevel;
+  public void setDiagnosticLevel(@Nullable final SentryLevel diagnosticLevel) {
+    this.diagnosticLevel = (diagnosticLevel != null) ? diagnosticLevel : DEFAULT_DIAGNOSTIC_LEVEL;
   }
 
   public @NotNull ISerializer getSerializer() {
@@ -292,10 +287,11 @@ public class SentryOptions {
                 File cacheDir = new File(options.getCacheDirPath());
                 return () -> sender.processDirectory(cacheDir);
               } else {
-                logIfNotNull(
-                    getLogger(),
-                    SentryLevel.WARNING,
-                    "No cache dir path is defined in options, discarding SendCachedEvent.");
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING,
+                        "No cache dir path is defined in options, discarding SendCachedEvent.");
                 return null;
               }
             }));
@@ -310,10 +306,11 @@ public class SentryOptions {
                 File outbox = new File(options.getOutboxPath());
                 return () -> envelopeSender.processDirectory(outbox);
               } else {
-                logIfNotNull(
-                    getLogger(),
-                    SentryLevel.WARNING,
-                    "No outbox dir path is defined in options, discarding EnvelopeSender.");
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING,
+                        "No outbox dir path is defined in options, discarding EnvelopeSender.");
                 return null;
               }
             }));

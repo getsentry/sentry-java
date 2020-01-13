@@ -1,6 +1,5 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
 import static io.sentry.core.SentryLevel.ERROR;
 
 import io.sentry.core.hints.Cached;
@@ -19,7 +18,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class EnvelopeSender extends DirectoryProcessor implements IEnvelopeSender {
@@ -30,10 +28,13 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   private final IHub hub;
   private final IEnvelopeReader envelopeReader;
   private final ISerializer serializer;
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
   public EnvelopeSender(
-      IHub hub, IEnvelopeReader envelopeReader, ISerializer serializer, ILogger logger) {
+      IHub hub,
+      IEnvelopeReader envelopeReader,
+      ISerializer serializer,
+      final @NotNull ILogger logger) {
     super(logger);
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
@@ -112,8 +113,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             hub.captureEvent(event, hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
             if (!hint.waitFlush()) {
-              logIfNotNull(
-                  logger,
+              logger.log(
                   SentryLevel.WARNING,
                   "Timed out waiting for event submission: %s",
                   event.getEventId());
@@ -147,9 +147,9 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
 
     private CountDownLatch latch;
     private final long timeoutMills;
-    private final @Nullable ILogger logger;
+    private final @NotNull ILogger logger;
 
-    CachedEnvelopeHint(final long timeoutMills, final @Nullable ILogger logger) {
+    CachedEnvelopeHint(final long timeoutMills, final @NotNull ILogger logger) {
       this.timeoutMills = timeoutMills;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
@@ -159,7 +159,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       try {
         return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
-        logIfNotNull(logger, ERROR, "Exception while awaiting on lock.", e);
+        logger.log(ERROR, "Exception while awaiting on lock.", e);
       }
       return false;
     }

@@ -1,12 +1,11 @@
 package io.sentry.android.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import android.content.Context;
 import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import java.io.File;
+import org.jetbrains.annotations.NotNull;
 
 final class AndroidOptionsInitializer {
   private AndroidOptionsInitializer() {}
@@ -15,7 +14,7 @@ final class AndroidOptionsInitializer {
     init(options, context, new AndroidLogger());
   }
 
-  static void init(SentryAndroidOptions options, Context context, ILogger logger) {
+  static void init(SentryAndroidOptions options, Context context, final @NotNull ILogger logger) {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
@@ -36,7 +35,7 @@ final class AndroidOptionsInitializer {
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
   }
 
-  private static void setDefaultInApp(Context context, SentryOptions options) {
+  private static void setDefaultInApp(Context context, final @NotNull SentryOptions options) {
     String packageName = context.getPackageName();
     if (packageName != null && !packageName.startsWith("android.")) {
       options.addInAppInclude(packageName);
@@ -55,8 +54,7 @@ final class AndroidOptionsInitializer {
     if (options.getOutboxPath() != null) {
       new File(options.getOutboxPath()).mkdirs();
     } else {
-      logIfNotNull(
-          options.getLogger(), SentryLevel.WARNING, "No outbox dir path is defined in options.");
+      options.getLogger().log(SentryLevel.WARNING, "No outbox dir path is defined in options.");
     }
   }
 }

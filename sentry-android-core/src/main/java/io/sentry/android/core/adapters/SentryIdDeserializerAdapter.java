@@ -1,7 +1,5 @@
 package io.sentry.android.core.adapters;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -11,13 +9,14 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.protocol.SentryId;
 import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class SentryIdDeserializerAdapter implements JsonDeserializer<SentryId> {
 
-  private final ILogger logger;
+  private final @NotNull ILogger logger;
 
-  public SentryIdDeserializerAdapter(ILogger logger) {
+  public SentryIdDeserializerAdapter(final @NotNull ILogger logger) {
     this.logger = logger;
   }
 
@@ -27,7 +26,7 @@ public final class SentryIdDeserializerAdapter implements JsonDeserializer<Sentr
     try {
       return json == null ? null : new SentryId(json.getAsString());
     } catch (Exception e) {
-      logIfNotNull(logger, SentryLevel.ERROR, "Error when deserializing SentryId", e);
+      logger.log(SentryLevel.ERROR, "Error when deserializing SentryId", e);
     }
     return null;
   }

@@ -1,7 +1,5 @@
 package io.sentry.core;
 
-import static io.sentry.core.ILogger.logIfNotNull;
-
 import io.sentry.core.hints.Cached;
 import io.sentry.core.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
@@ -50,11 +48,12 @@ public final class MainEventProcessor implements EventProcessor {
     if (!(hint instanceof Cached)) {
       processNonCachedEvent(event);
     } else {
-      logIfNotNull(
-          options.getLogger(),
-          SentryLevel.DEBUG,
-          "Event was cached so not applying data relevant to the current app execution/version: %s",
-          event.getEventId());
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Event was cached so not applying data relevant to the current app execution/version: %s",
+              event.getEventId());
     }
 
     return event;

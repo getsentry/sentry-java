@@ -34,7 +34,7 @@ class EnvelopeSenderTest {
         }
 
         fun getSut(): EnvelopeSender {
-            return EnvelopeSender(hub, envelopeReader, serializer, logger)
+            return EnvelopeSender(hub, envelopeReader, serializer, logger!!)
         }
     }
 
@@ -120,6 +120,7 @@ class EnvelopeSenderTest {
     @Test
     fun `when logger is null, ctor throws`() {
         fixture.logger = null
-        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
+        // TODO: check how to assert IllegalArgumentException if param is @NotNull and you are calling from kotlin
+        assertFailsWith<KotlinNullPointerException> { fixture.getSut() }
     }
 }

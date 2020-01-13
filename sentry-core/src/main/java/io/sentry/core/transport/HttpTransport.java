@@ -1,6 +1,5 @@
 package io.sentry.core.transport;
 
-import static io.sentry.core.ILogger.logIfNotNull;
 import static io.sentry.core.SentryLevel.*;
 
 import com.jakewharton.nopen.annotation.Open;
@@ -104,7 +103,7 @@ public class HttpTransport implements ITransport {
 
       // need to also close the input stream of the connection
       connection.getInputStream().close();
-      logIfNotNull(options.getLogger(), DEBUG, "Event sent %s successfully.", event.getEventId());
+      options.getLogger().log(DEBUG, "Event sent %s successfully.", event.getEventId());
       return TransportResult.success();
     } catch (IOException e) {
       long retryAfterMs = 1000; // the default is 1s
@@ -123,23 +122,22 @@ public class HttpTransport implements ITransport {
         responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
           if (options.isDebug()) {
-            logIfNotNull(
-                options.getLogger(),
-                DEBUG,
-                "Event '"
-                    + event.getEventId()
-                    + "' was rejected by the Sentry server due to a filter.");
+            options
+                .getLogger()
+                .log(
+                    DEBUG,
+                    "Event '"
+                        + event.getEventId()
+                        + "' was rejected by the Sentry server due to a filter.");
           }
         }
         logErrorInPayload(connection);
         return TransportResult.error(retryAfterMs, responseCode);
       } catch (IOException responseCodeException) {
         // this should not stop us from continuing. We'll just use -1 as response code.
-        logIfNotNull(
-            options.getLogger(),
-            WARNING,
-            "Failed to obtain response code while analyzing event send failure.",
-            e);
+        options
+            .getLogger()
+            .log(WARNING, "Failed to obtain response code while analyzing event send failure.", e);
       }
 
       logErrorInPayload(connection);
@@ -160,7 +158,7 @@ public class HttpTransport implements ITransport {
         errorMessage = "An exception occurred while submitting the event to the Sentry server.";
       }
 
-      logIfNotNull(options.getLogger(), DEBUG, errorMessage);
+      options.getLogger().log(DEBUG, errorMessage);
     }
   }
 
@@ -179,10 +177,11 @@ public class HttpTransport implements ITransport {
         first = false;
       }
     } catch (Exception e2) {
-      logIfNotNull(
-          options.getLogger(),
-          ERROR,
-          "Exception while reading the error message from the connection: " + e2.getMessage());
+      options
+          .getLogger()
+          .log(
+              ERROR,
+              "Exception while reading the error message from the connection: " + e2.getMessage());
     }
     return sb.toString();
   }
