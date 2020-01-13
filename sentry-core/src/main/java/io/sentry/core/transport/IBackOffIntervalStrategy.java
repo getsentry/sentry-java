@@ -15,5 +15,5 @@ public interface IBackOffIntervalStrategy {
    * @param attempt the number of attempts made so far
    * @return the suggested delay in milliseconds
    */
-  long nextDelayMillis(int attempt);
+  long nextDelayMillis(long attempt);
 }

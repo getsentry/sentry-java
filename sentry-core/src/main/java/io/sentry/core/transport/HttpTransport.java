@@ -98,8 +98,9 @@ public class HttpTransport implements ITransport {
 
     connection.connect();
 
-    try (OutputStream outputStream = connection.getOutputStream()) {
-      serializer.serialize(event, new OutputStreamWriter(outputStream, UTF_8));
+    try (OutputStream outputStream = connection.getOutputStream();
+        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, UTF_8)) {
+      serializer.serialize(event, outputStreamWriter);
 
       // need to also close the input stream of the connection
       connection.getInputStream().close();
