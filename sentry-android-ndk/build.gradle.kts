@@ -103,7 +103,7 @@ android {
         isCheckReleaseBuilds = false
     }
 
-    ndkVersion = "20.1.5948944"
+    ndkVersion = "21.0.6113669"
 
     nativeBundleExport {
         headerDir = "${project.projectDir}/$sentryNativeSrc/include"
