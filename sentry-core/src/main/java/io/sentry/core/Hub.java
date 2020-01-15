@@ -4,8 +4,6 @@ import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
 import io.sentry.core.util.Objects;
 import java.io.Closeable;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -356,9 +354,6 @@ public final class Hub implements IHub {
         data = new HashMap<>();
       }
       data.put("sentry:message", e.getMessage());
-      StringWriter sw = new StringWriter();
-      e.printStackTrace(new PrintWriter(sw));
-      data.put("sentry:stacktrace", sw.toString());
       breadcrumb.setData(data);
     }
     return breadcrumb;
