@@ -18,6 +18,7 @@ public final class Sentry {
 
   /**
    * Returns the current (thread’s) hub, if none, clones the mainHub and returns it.
+   *
    * @return the hub
    */
   private static @NotNull IHub getCurrentHub() {
@@ -30,22 +31,21 @@ public final class Sentry {
 
   /**
    * Check if the current Hub is enabled/active.
+   *
    * @return true if its enabled or false otherwise.
    */
   public static boolean isEnabled() {
     return getCurrentHub().isEnabled();
   }
 
-  /**
-   * Initializes the SDK
-   */
+  /** Initializes the SDK */
   public static void init() {
     init(new SentryOptions());
   }
 
   /**
-   * Initializes the SDK
-   * Used by integrations that define their own SentryOptions
+   * Initializes the SDK Used by integrations that define their own SentryOptions
+   *
    * @param clazz class OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
    * @throws IllegalAccessException the IllegalAccessException
@@ -64,6 +64,7 @@ public final class Sentry {
 
   /**
    * Initializes the SDK with an optional configuration options callback.
+   *
    * @param optionsConfiguration configuration options callback
    */
   public static void init(@NotNull OptionsConfiguration<SentryOptions> optionsConfiguration) {
@@ -93,9 +94,7 @@ public final class Sentry {
     hub.close();
   }
 
-  /**
-   * Close the SDK
-   */
+  /** Close the SDK */
   public static synchronized void close() {
     IHub hub = getCurrentHub();
     mainHub = NoOpHub.getInstance();
@@ -104,6 +103,7 @@ public final class Sentry {
 
   /**
    * Captures the event.
+   *
    * @param event the event
    * @return The Id (SentryId object) of the event
    */
@@ -113,6 +113,7 @@ public final class Sentry {
 
   /**
    * Captures the event.
+   *
    * @param event the event
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
@@ -123,6 +124,7 @@ public final class Sentry {
 
   /**
    * Captures the message.
+   *
    * @param message The message to send.
    * @return The Id (SentryId object) of the event
    */
@@ -132,6 +134,7 @@ public final class Sentry {
 
   /**
    * Captures the message.
+   *
    * @param message The message to send.
    * @param level The message level.
    * @return The Id (SentryId object) of the event
@@ -143,6 +146,7 @@ public final class Sentry {
 
   /**
    * Captures the exception.
+   *
    * @param throwable The exception.
    * @return The Id (SentryId object) of the event
    */
@@ -152,6 +156,7 @@ public final class Sentry {
 
   /**
    * Captures the exception.
+   *
    * @param throwable The exception.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
@@ -163,6 +168,7 @@ public final class Sentry {
 
   /**
    * Adds a breadcrumb to the current Scope
+   *
    * @param breadcrumb the breadcrumb
    * @param hint SDK specific but provides high level information about the origin of the event
    */
@@ -172,6 +178,7 @@ public final class Sentry {
 
   /**
    * Adds a breadcrumb to the current Scope
+   *
    * @param breadcrumb the breadcrumb
    */
   public static void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
@@ -180,6 +187,7 @@ public final class Sentry {
 
   /**
    * Adds a breadcrumb to the current Scope
+   *
    * @param message rendered as text and the whitespace is preserved.
    */
   public static void addBreadcrumb(@NotNull String message) {
@@ -188,8 +196,10 @@ public final class Sentry {
 
   /**
    * Adds a breadcrumb to the current Scope
+   *
    * @param message rendered as text and the whitespace is preserved.
-   * @param category Categories are dotted strings that indicate what the crumb is or where it comes from.
+   * @param category Categories are dotted strings that indicate what the crumb is or where it comes
+   *     from.
    */
   public static void addBreadcrumb(@NotNull String message, @NotNull String category) {
     getCurrentHub().addBreadcrumb(message, category);
@@ -197,6 +207,7 @@ public final class Sentry {
 
   /**
    * Sets the level of all events sent within current Scope
+   *
    * @param level the Sentry level
    */
   public static void setLevel(@Nullable SentryLevel level) {
@@ -205,6 +216,7 @@ public final class Sentry {
 
   /**
    * Sets the name of the current transaction to the current Scope.
+   *
    * @param transaction the transaction
    */
   public static void setTransaction(@Nullable String transaction) {
@@ -213,6 +225,7 @@ public final class Sentry {
 
   /**
    * Shallow merges user configuration (email, username, …) to the current Scope.
+   *
    * @param user the user
    */
   public static void setUser(@Nullable User user) {
@@ -221,21 +234,21 @@ public final class Sentry {
 
   /**
    * Sets the fingerprint to group specific events together to the current Scope.
+   *
    * @param fingerprint the fingerprints
    */
   public static void setFingerprint(@NotNull List<String> fingerprint) {
     getCurrentHub().setFingerprint(fingerprint);
   }
 
-  /**
-   * Deletes current breadcrumbs from the current scope.
-   */
+  /** Deletes current breadcrumbs from the current scope. */
   public static void clearBreadcrumbs() {
     getCurrentHub().clearBreadcrumbs();
   }
 
   /**
    * Sets the tag to a string value to the current Scope, overwriting a potential previous value
+   *
    * @param key the key
    * @param value the value
    */
@@ -244,7 +257,9 @@ public final class Sentry {
   }
 
   /**
-   * Sets the extra key to an arbitrary value to the current Scope, overwriting a potential previous value
+   * Sets the extra key to an arbitrary value to the current Scope, overwriting a potential previous
+   * value
+   *
    * @param key the key
    * @param value the value
    */
@@ -254,28 +269,26 @@ public final class Sentry {
 
   /**
    * Last event id recorded in the current scope
+   *
    * @return last SentryId
    */
   public static @NotNull SentryId getLastEventId() {
     return getCurrentHub().getLastEventId();
   }
 
-  /**
-   * Pushes a new scope while inheriting the current scope's data.
-   */
+  /** Pushes a new scope while inheriting the current scope's data. */
   public static void pushScope() {
     getCurrentHub().pushScope();
   }
 
-  /**
-   * Removes the first scope
-   */
+  /** Removes the first scope */
   public static void popScope() {
     getCurrentHub().popScope();
   }
 
   /**
    * Runs the callback with a new scope which gets dropped at the end
+   *
    * @param callback the callback
    */
   public static void withScope(@NotNull ScopeCallback callback) {
@@ -284,6 +297,7 @@ public final class Sentry {
 
   /**
    * Configures the scope through the callback.
+   *
    * @param callback The configure scope callback.
    */
   public static void configureScope(@NotNull ScopeCallback callback) {
@@ -292,6 +306,7 @@ public final class Sentry {
 
   /**
    * Binds a different client to the current hub
+   *
    * @param client the client.
    */
   public static void bindClient(@NotNull ISentryClient client) {
@@ -299,8 +314,8 @@ public final class Sentry {
   }
 
   /**
-   * Flushes events queued up to the current hub.
-   * Not implemented yet.
+   * Flushes events queued up to the current hub. Not implemented yet.
+   *
    * @param timeoutMills time in milliseconds
    */
   public static void flush(int timeoutMills) {
@@ -309,6 +324,7 @@ public final class Sentry {
 
   /**
    * Configuration options callback
+   *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.
    */
   public interface OptionsConfiguration<T extends SentryOptions> {
