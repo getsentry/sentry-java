@@ -188,7 +188,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void close() {
-    options.getLogger().log(SentryLevel.INFO, "Closing SDK.");
+    options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
 
     try {
       flush(options.getShutdownTimeout());
