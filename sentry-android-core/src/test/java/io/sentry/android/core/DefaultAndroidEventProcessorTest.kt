@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
@@ -18,12 +19,15 @@ import io.sentry.core.DiagnosticLogger
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryLevel
 import io.sentry.core.SentryOptions
+import io.sentry.core.protocol.SentryThread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -77,6 +81,34 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(event.sdk)
         assertNotNull(event.release)
         assertNotNull(event.dist)
+    }
+
+    @Test
+    fun `Current should be true if it comes from main thread`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val sentryThread = SentryThread().apply {
+            id = Looper.getMainLooper().thread.id
+        }
+        var event = SentryEvent().apply {
+            threads = mutableListOf(sentryThread)
+        }
+        // refactor and mock data later on
+        event = processor.process(event, null)
+        assertTrue(event.threads.first().isCurrent)
+    }
+
+    @Test
+    fun `Current should be false if it its not the main thread`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val sentryThread = SentryThread().apply {
+            id = 10L
+        }
+        var event = SentryEvent().apply {
+            threads = mutableListOf(sentryThread)
+        }
+        // refactor and mock data later on
+        event = processor.process(event, null)
+        assertFalse(event.threads.first().isCurrent)
     }
 
     @Test

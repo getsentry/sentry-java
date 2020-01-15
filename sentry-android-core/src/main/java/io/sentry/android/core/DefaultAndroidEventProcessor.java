@@ -14,6 +14,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.LocaleList;
+import android.os.Looper;
 import android.os.StatFs;
 import android.os.SystemClock;
 import android.provider.Settings;
@@ -32,6 +33,7 @@ import io.sentry.core.protocol.DebugMeta;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.OperatingSystem;
 import io.sentry.core.protocol.SdkVersion;
+import io.sentry.core.protocol.SentryThread;
 import io.sentry.core.protocol.User;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
@@ -158,6 +160,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       }
       if (event.getContexts().getApp() == null) {
         event.getContexts().setApp(getApp(packageInfo));
+      }
+    }
+
+    if (event.getThreads() != null) {
+      for (SentryThread thread : event.getThreads()) {
+        thread.setCurrent(Looper.getMainLooper().getThread().getId() == thread.getId());
       }
     }
   }
