@@ -4,19 +4,19 @@ import io.sentry.core.protocol.Message;
 import io.sentry.core.protocol.SentryId;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Sentry Client interface
- */
+/** Sentry Client interface */
 public interface ISentryClient {
 
   /**
    * Whether the client is enabled or not
+   *
    * @return true if its enabled or false otherwise.
    */
   boolean isEnabled();
 
   /**
    * Capture the event
+   *
    * @param event the event
    * @param scope An optional scope to be applied to the event.
    * @param hint SDK specific but provides high level information about the origin of the event.
@@ -24,20 +24,19 @@ public interface ISentryClient {
    */
   SentryId captureEvent(SentryEvent event, @Nullable Scope scope, @Nullable Object hint);
 
-  /**
-   * Flushes out the queue for up to timeout seconds and disable the client.
-   */
+  /** Flushes out the queue for up to timeout seconds and disable the client. */
   void close();
 
   /**
-   * Flushes events queued up, but keeps the client enabled.
-   * Not implemented yet.
+   * Flushes events queued up, but keeps the client enabled. Not implemented yet.
+   *
    * @param timeoutMills time in milliseconds
    */
   void flush(long timeoutMills);
 
   /**
    * Captures the event.
+   *
    * @param event the event
    * @return The Id (SentryId object) of the event
    */
@@ -47,6 +46,7 @@ public interface ISentryClient {
 
   /**
    * Captures the event.
+   *
    * @param event the event
    * @param scope An optional scope to be applied to the event.
    * @return The Id (SentryId object) of the event
@@ -57,6 +57,7 @@ public interface ISentryClient {
 
   /**
    * Capture the event
+   *
    * @param event the event
    * @param hint SDK specific but provides high level information about the origin of the event.
    * @return The Id (SentryId object) of the event.
@@ -67,6 +68,7 @@ public interface ISentryClient {
 
   /**
    * Captures the message.
+   *
    * @param message The message to send.
    * @param level The message level.
    * @param scope An optional scope to be applied to the event.
@@ -84,6 +86,7 @@ public interface ISentryClient {
 
   /**
    * Captures the message.
+   *
    * @param message The message to send.
    * @param level The message level.
    * @return The Id (SentryId object) of the event
@@ -94,6 +97,7 @@ public interface ISentryClient {
 
   /**
    * Captures the exception.
+   *
    * @param throwable The exception.
    * @return The Id (SentryId object) of the event
    */
@@ -103,6 +107,7 @@ public interface ISentryClient {
 
   /**
    * Captures the exception.
+   *
    * @param throwable The exception.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @param scope An optional scope to be applied to the event.
@@ -116,6 +121,7 @@ public interface ISentryClient {
 
   /**
    * Captures the exception.
+   *
    * @param throwable The exception.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
@@ -126,6 +132,7 @@ public interface ISentryClient {
 
   /**
    * Captures the exception.
+   *
    * @param throwable The exception.
    * @param scope An optional scope to be applied to the event.
    * @return The Id (SentryId object) of the event
