@@ -12,8 +12,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
 import java.io.File
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.nio.file.Files
 import java.util.Queue
 import kotlin.test.AfterTest
@@ -156,11 +154,8 @@ class HubTest {
     }
 
     @Test
-    fun `when beforeSend throws an exception, breadcrumb adds an entry to the data field with exception message and stacktrace`() {
+    fun `when beforeSend throws an exception, breadcrumb adds an entry to the data field with exception message`() {
         val exception = Exception("test")
-        val sw = StringWriter()
-        exception.printStackTrace(PrintWriter(sw))
-        val stacktrace = sw.toString()
 
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
@@ -173,7 +168,6 @@ class HubTest {
         sut.addBreadcrumb(actual)
 
         assertEquals("test", actual.data["sentry:message"])
-        assertEquals(stacktrace, actual.data["sentry:stacktrace"])
     }
 
     @Test
