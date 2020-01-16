@@ -361,6 +361,17 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     device.setBootTime(getBootTime());
     device.setTimezone(getTimeZone());
 
+    if (device.getId() == null) {
+      device.setId(getDeviceId());
+    }
+    if (device.getLanguage() == null) {
+      device.setLanguage(Locale.getDefault().toString()); // eg en_US
+    }
+    if (device.getConnectionType() == null) {
+      // wifi, ethernet or cellular, null if none
+      device.setConnectionType(ConnectivityChecker.getConnectionType(context, options.getLogger()));
+    }
+
     return device;
   }
 
@@ -838,18 +849,22 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   public User getUser() {
     User user = new User();
+    user.setId(getDeviceId());
 
+    return user;
+  }
+
+  private String getDeviceId() {
     try {
       Object androidId = contextData.get().get(ANDROID_ID);
 
       if (androidId != null) {
-        user.setId((String) androidId);
+        return (String) androidId;
       }
     } catch (Exception e) {
-      log(SentryLevel.ERROR, "Error getting androidId.", e);
+      log(SentryLevel.ERROR, "Error getting deviceId.", e);
     }
-
-    return user;
+    return null;
   }
 
   @SuppressWarnings("HardwareIds")

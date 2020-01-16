@@ -23,4 +23,9 @@ class ConnectivityCheckerTest {
     fun `isConnected won't throw exception`() {
         ConnectivityChecker.isConnected(context, mock())
     }
+
+    @Test
+    fun `getConnectionType won't throw exception`() {
+        ConnectivityChecker.getConnectionType(context, mock())
+    }
 }
