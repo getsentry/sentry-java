@@ -159,6 +159,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       try {
         return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         logger.log(ERROR, "Exception while awaiting on lock.", e);
       }
       return false;

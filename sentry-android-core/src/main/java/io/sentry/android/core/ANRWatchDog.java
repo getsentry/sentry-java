@@ -67,6 +67,7 @@ final class ANRWatchDog extends Thread {
       try {
         Thread.sleep(interval);
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         logger.log(SentryLevel.WARNING, "Interrupted: %s", e.getMessage());
         return;
       }
