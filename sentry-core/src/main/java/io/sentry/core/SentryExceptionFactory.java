@@ -11,15 +11,22 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java Throwable to SentryExceptions */
 final class SentryExceptionFactory {
 
-  private final SentryStackTraceFactory sentryStackTraceFactory;
+  /** the SentryStackTraceFactory */
+  private final @NotNull SentryStackTraceFactory sentryStackTraceFactory;
 
-  public SentryExceptionFactory(final SentryStackTraceFactory sentryStackTraceFactory) {
+  /**
+   * ctor SentryExceptionFactory
+   *
+   * @param sentryStackTraceFactory the sentryStackTraceFactory
+   */
+  public SentryExceptionFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
   }
@@ -29,7 +36,8 @@ final class SentryExceptionFactory {
    *
    * @param throwable the {@link Throwable} to build this instance from
    */
-  List<SentryException> getSentryExceptions(final Throwable throwable) {
+  @NotNull
+  List<SentryException> getSentryExceptions(final @NotNull Throwable throwable) {
     return getSentryExceptions(extractExceptionQueue(throwable));
   }
 
@@ -38,7 +46,8 @@ final class SentryExceptionFactory {
    *
    * @param exceptions a {@link Deque} of {@link SentryException} to build this instance from
    */
-  private List<SentryException> getSentryExceptions(final Deque<SentryException> exceptions) {
+  private @NotNull List<SentryException> getSentryExceptions(
+      final @NotNull Deque<SentryException> exceptions) {
     return new ArrayList<>(exceptions);
   }
 
@@ -53,26 +62,27 @@ final class SentryExceptionFactory {
    *     none exist.
    * @param thread The optional {@link Thread} which the exception originated. Or null if not known.
    */
-  private SentryException getSentryException(
-      final Throwable throwable,
+  private @NotNull SentryException getSentryException(
+      @NotNull final Throwable throwable,
       @Nullable final Mechanism exceptionMechanism,
       @Nullable final Thread thread) {
 
-    Package exceptionPackage = throwable.getClass().getPackage();
-    String fullClassName = throwable.getClass().getName();
+    final Package exceptionPackage = throwable.getClass().getPackage();
+    final String fullClassName = throwable.getClass().getName();
 
-    SentryException exception = new SentryException();
+    final SentryException exception = new SentryException();
 
-    String exceptionMessage = throwable.getMessage();
+    final String exceptionMessage = throwable.getMessage();
 
-    String exceptionClassName =
+    final String exceptionClassName =
         exceptionPackage != null
             ? fullClassName.replace(exceptionPackage.getName() + ".", "")
             : fullClassName;
 
-    String exceptionPackageName = exceptionPackage != null ? exceptionPackage.getName() : null;
+    final String exceptionPackageName =
+        exceptionPackage != null ? exceptionPackage.getName() : null;
 
-    SentryStackTrace sentryStackTrace = new SentryStackTrace();
+    final SentryStackTrace sentryStackTrace = new SentryStackTrace();
     sentryStackTrace.setFrames(sentryStackTraceFactory.getStackFrames(throwable.getStackTrace()));
 
     if (thread != null) {
@@ -96,9 +106,10 @@ final class SentryExceptionFactory {
    * @return a queue of exception with StackTrace.
    */
   @TestOnly
-  Deque<SentryException> extractExceptionQueue(final Throwable throwable) {
-    Deque<SentryException> exceptions = new ArrayDeque<>();
-    Set<Throwable> circularityDetector = new HashSet<>();
+  @NotNull
+  Deque<SentryException> extractExceptionQueue(final @NotNull Throwable throwable) {
+    final Deque<SentryException> exceptions = new ArrayDeque<>();
+    final Set<Throwable> circularityDetector = new HashSet<>();
     Mechanism exceptionMechanism;
     Thread thread;
 
