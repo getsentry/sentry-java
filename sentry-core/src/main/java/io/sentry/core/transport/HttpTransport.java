@@ -121,15 +121,13 @@ public class HttpTransport implements ITransport {
       try {
         responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
-          if (options.isDebug()) {
-            options
-                .getLogger()
-                .log(
-                    DEBUG,
-                    "Event '"
-                        + event.getEventId()
-                        + "' was rejected by the Sentry server due to a filter.");
-          }
+          options
+              .getLogger()
+              .log(
+                  DEBUG,
+                  "Event '"
+                      + event.getEventId()
+                      + "' was rejected by the Sentry server due to a filter.");
         }
         logErrorInPayload(connection);
         return TransportResult.error(retryAfterMs, responseCode);
@@ -148,7 +146,9 @@ public class HttpTransport implements ITransport {
   }
 
   private void logErrorInPayload(HttpURLConnection connection) {
-    if (options.isDebug()) {
+    if (options
+        .isDebug()) { // just because its expensive, but internally isDebug is already checked when
+      // .log() is called
       String errorMessage = null;
       final InputStream errorStream = connection.getErrorStream();
       if (errorStream != null) {
