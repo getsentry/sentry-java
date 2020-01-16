@@ -189,9 +189,7 @@ public final class AsyncConnection implements Closeable, Connection {
                     + suggestedRetryDelay
                     + "ms.";
 
-            if (options.isDebug()) {
-              options.getLogger().log(SentryLevel.ERROR, message);
-            }
+            options.getLogger().log(SentryLevel.ERROR, message);
 
             throw new IllegalStateException(message);
           }
