@@ -13,26 +13,31 @@ class SentryStackTraceFactoryTest {
     fun `when getStackFrames is called passing a valid Array, not empty result`() {
         val stacktrace = Thread.currentThread().stackTrace
         val count = stacktrace.size
-        assertEquals(count, sut.getStackFrames(stacktrace).count())
+        assertEquals(count, sut.getStackFrames(stacktrace)!!.count())
     }
 
     @Test
     fun `when line number is negative, not added to sentry stacktrace`() {
         val stacktrace = StackTraceElement("class", "method", "fileName", -2)
         val actual = sut.getStackFrames(arrayOf(stacktrace))
-        assertNull(actual[0].lineno)
+        assertNull(actual!![0].lineno)
     }
 
     @Test
     fun `when line number is positive, gets added to sentry stacktrace`() {
         val stacktrace = StackTraceElement("class", "method", "fileName", 1)
         val actual = sut.getStackFrames(arrayOf(stacktrace))
-        assertEquals(stacktrace.lineNumber, actual[0].lineno)
+        assertEquals(stacktrace.lineNumber, actual!![0].lineno)
     }
 
     @Test
-    fun `when getStackFrames is called passing null, empty result`() {
-        assertEquals(0, sut.getStackFrames(null).count())
+    fun `when getStackFrames is called passing empty elements, return null`() {
+        assertNull(sut.getStackFrames(arrayOf()))
+    }
+
+    @Test
+    fun `when getStackFrames is called passing null, return null`() {
+        assertNull(sut.getStackFrames(null))
     }
 
     @Test
@@ -40,7 +45,7 @@ class SentryStackTraceFactoryTest {
         val element = generateStackTrace("class")
         val stacktrace = arrayOf(element)
         val stackFrames = sut.getStackFrames(stacktrace)
-        assertEquals("class", stackFrames[0].module)
+        assertEquals("class", stackFrames!![0].module)
         assertEquals("method", stackFrames[0].function)
         assertEquals("fileName", stackFrames[0].filename)
         assertEquals(10, stackFrames[0].lineno)
@@ -55,7 +60,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements.first().isInApp)
+        assertFalse(sentryElements!!.first().isInApp)
     }
 
     @Test
@@ -65,7 +70,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements.first().isInApp)
+        assertFalse(sentryElements!!.first().isInApp)
     }
 
     @Test
@@ -75,7 +80,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements.first().isInApp)
+        assertFalse(sentryElements!!.first().isInApp)
     }
     //endregion
 
@@ -87,7 +92,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.sentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().isInApp)
+        assertTrue(sentryElements!!.first().isInApp)
     }
 
     @Test
@@ -97,7 +102,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.sentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements.first().isInApp)
+        assertFalse(sentryElements!!.first().isInApp)
     }
 
     @Test
@@ -107,7 +112,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements.first().isInApp)
+        assertFalse(sentryElements!!.first().isInApp)
     }
     //endregion
 
@@ -118,7 +123,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), listOf("io.sentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertTrue(sentryElements.first().isInApp)
+        assertTrue(sentryElements!!.first().isInApp)
     }
 
     @Test

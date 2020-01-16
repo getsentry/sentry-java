@@ -16,11 +16,6 @@ class SentryExceptionFactoryTest {
     }
 
     @Test
-    fun `when getSentryExceptions is called passing null, empty result`() {
-        assertEquals(0, sut.getSentryExceptions(null).size)
-    }
-
-    @Test
     fun `when getSentryExceptions is called passing an Exception, it should set its fields`() {
         val exception = Exception("Exception")
         val sentryExceptions = sut.getSentryExceptions(exception)

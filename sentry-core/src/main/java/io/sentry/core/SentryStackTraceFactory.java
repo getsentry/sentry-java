@@ -10,8 +10,11 @@ import org.jetbrains.annotations.TestOnly;
 /** class responsible for converting Java StackTraceElements to SentryStackFrames */
 final class SentryStackTraceFactory {
 
-  private final List<String> inAppExcludes;
-  private final List<String> inAppIncludes;
+  /** list of inApp excludes */
+  private final @Nullable List<String> inAppExcludes;
+
+  /** list of inApp includes */
+  private final @Nullable List<String> inAppIncludes;
 
   public SentryStackTraceFactory(
       @Nullable final List<String> inAppExcludes, @Nullable List<String> inAppIncludes) {
@@ -23,15 +26,17 @@ final class SentryStackTraceFactory {
    * convert an Array of Java StackTraceElements to a list of SentryStackFrames
    *
    * @param elements Array of Java StackTraceElements
-   * @return list of SentryStackFrames
+   * @return list of SentryStackFrames or null if none
    */
+  @Nullable
   List<SentryStackFrame> getStackFrames(@Nullable final StackTraceElement[] elements) {
-    List<SentryStackFrame> sentryStackFrames = new ArrayList<>();
+    List<SentryStackFrame> sentryStackFrames = null;
 
-    if (elements != null) {
+    if (elements != null && elements.length > 0) {
+      sentryStackFrames = new ArrayList<>();
       for (StackTraceElement item : elements) {
         if (item != null) {
-          SentryStackFrame sentryStackFrame = new SentryStackFrame();
+          final SentryStackFrame sentryStackFrame = new SentryStackFrame();
           // https://docs.sentry.io/development/sdk-dev/features/#in-app-frames
           sentryStackFrame.setInApp(isInApp(item.getClassName()));
           sentryStackFrame.setModule(item.getClassName());
@@ -46,14 +51,20 @@ final class SentryStackTraceFactory {
           sentryStackFrames.add(sentryStackFrame);
         }
       }
+      Collections.reverse(sentryStackFrames);
     }
-    Collections.reverse(sentryStackFrames);
 
     return sentryStackFrames;
   }
 
+  /**
+   * Returns if the className is InApp or not.
+   *
+   * @param className the className
+   * @return true if it is or false otherwise
+   */
   @TestOnly
-  boolean isInApp(String className) {
+  boolean isInApp(final @Nullable String className) {
     if (className == null || className.isEmpty()) {
       return true;
     }
