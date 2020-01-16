@@ -1,6 +1,7 @@
 package io.sentry.core;
 
 import java.net.URI;
+import org.jetbrains.annotations.Nullable;
 
 final class Dsn {
   private final String projectId;
@@ -44,7 +45,7 @@ final class Dsn {
     return sentryUri;
   }
 
-  Dsn(String dsn) throws InvalidDsnException {
+  Dsn(@Nullable String dsn) throws InvalidDsnException {
     try {
       URI uri = new URI(dsn);
       String userInfo = uri.getUserInfo();

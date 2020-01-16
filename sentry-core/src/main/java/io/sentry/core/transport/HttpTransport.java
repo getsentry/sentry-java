@@ -106,7 +106,7 @@ public class HttpTransport implements ITransport {
       options.getLogger().log(DEBUG, "Event sent %s successfully.", event.getEventId());
       return TransportResult.success();
     } catch (IOException e) {
-      long retryAfterMs = 1000; // the default is 1s
+      long retryAfterMs = 60000; // the default is 60s
       String retryAfterHeader = connection.getHeaderField("Retry-After");
       if (retryAfterHeader != null) {
         try {

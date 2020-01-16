@@ -204,6 +204,8 @@ public final class Hub implements IHub {
         }
         if (breadcrumb != null) {
           item.scope.addBreadcrumb(breadcrumb, false);
+        } else {
+          options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
         }
       } else {
         options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when addBreadcrumb");

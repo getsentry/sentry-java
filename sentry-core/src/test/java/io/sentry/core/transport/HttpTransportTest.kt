@@ -106,7 +106,7 @@ class HttpTransportTest {
 
         verify(fixture.serializer).serialize(eq(event), any())
         assertFalse(result.isSuccess)
-        assertEquals(1000, result.retryMillis)
+        assertEquals(60000, result.retryMillis)
     }
 
     @Test
@@ -122,7 +122,7 @@ class HttpTransportTest {
 
         verify(fixture.serializer).serialize(eq(event), any())
         assertFalse(result.isSuccess)
-        assertEquals(1000, result.retryMillis)
+        assertEquals(60000, result.retryMillis)
         assertEquals(-1, result.responseCode)
     }
 }
