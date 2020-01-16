@@ -59,7 +59,8 @@ public final class Scope implements Cloneable {
     this.user = user;
   }
 
-  public @NotNull List<String> getFingerprint() {
+  @NotNull
+  List<String> getFingerprint() {
     return fingerprint;
   }
 
@@ -93,6 +94,8 @@ public final class Scope implements Cloneable {
       }
 
       if (breadcrumb == null) {
+        //        options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by scope
+        // beforeBreadcrumb");
         return;
       }
     }
@@ -104,7 +107,19 @@ public final class Scope implements Cloneable {
     breadcrumbs.clear();
   }
 
-  public @NotNull Map<String, String> getTags() {
+  public void clear() {
+    level = null;
+    transaction = null;
+    user = null;
+    fingerprint.clear();
+    breadcrumbs.clear();
+    tags.clear();
+    extra.clear();
+    eventProcessors.clear();
+  }
+
+  @NotNull
+  Map<String, String> getTags() {
     return tags;
   }
 
@@ -112,12 +127,21 @@ public final class Scope implements Cloneable {
     this.tags.put(key, value);
   }
 
-  public @NotNull Map<String, Object> getExtras() {
+  public void removeTag(@NotNull String key) {
+    this.tags.remove(key);
+  }
+
+  @NotNull
+  Map<String, Object> getExtras() {
     return extra;
   }
 
   public void setExtra(@NotNull String key, @NotNull String value) {
     this.extra.put(key, value);
+  }
+
+  public void removeExtra(@NotNull String key) {
+    this.extra.remove(key);
   }
 
   private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {

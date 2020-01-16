@@ -79,7 +79,6 @@ public final class SentryClient implements ISentryClient {
       event = applyScope(event, scope, hint);
 
       if (event == null) {
-        // event dropped by the scope event processors
         return SentryId.EMPTY_ID;
       }
     } else {
@@ -90,12 +89,26 @@ public final class SentryClient implements ISentryClient {
 
     for (EventProcessor processor : options.getEventProcessors()) {
       event = processor.process(event, hint);
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped by processor: %s",
+                processor.getClass().getName());
+        break;
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
     }
 
     event = executeBeforeSend(event, hint);
 
     if (event == null) {
-      // Event dropped by the beforeSend callback
+      options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
       return SentryId.EMPTY_ID;
     }
 
@@ -153,6 +166,12 @@ public final class SentryClient implements ISentryClient {
         event = processor.process(event, hint);
 
         if (event == null) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Event was dropped by scope processor: %s",
+                  processor.getClass().getName());
           break;
         }
       }

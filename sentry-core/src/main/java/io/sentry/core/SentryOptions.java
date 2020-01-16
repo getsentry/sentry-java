@@ -18,7 +18,7 @@ public class SentryOptions {
   private final @NotNull List<Integration> integrations = new ArrayList<>();
 
   private @Nullable String dsn;
-  private long shutdownTimeoutMills = 5000;
+  private long shutdownTimeoutMills = 2000; // default 2s
   private boolean debug;
   private boolean enableNdk = true;
   private @NotNull ILogger logger = NoOpLogger.getInstance();
