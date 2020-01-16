@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
               try {
                 Thread.sleep(2500);
               } catch (InterruptedException e) {
-                return;
+                Thread.currentThread().interrupt();
               }
             });
   }

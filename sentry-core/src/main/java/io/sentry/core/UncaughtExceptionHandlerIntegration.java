@@ -128,6 +128,7 @@ final class UncaughtExceptionHandlerIntegration
       try {
         return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         logger.log(ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);
       }
       return false;
