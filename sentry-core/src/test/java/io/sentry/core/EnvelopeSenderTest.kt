@@ -119,8 +119,9 @@ class EnvelopeSenderTest {
 
     @Test
     fun `when logger is null, ctor throws`() {
-        fixture.logger = null
-        // TODO: check how to assert IllegalArgumentException if param is @NotNull and you are calling from kotlin
-        assertFailsWith<KotlinNullPointerException> { fixture.getSut() }
+        val clazz = Class.forName("io.sentry.core.EnvelopeSender")
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
+        val params = arrayOf({ mock<IHub>(); mock<IEnvelopeReader>(); mock<ISerializer>(); null })
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 }
