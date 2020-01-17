@@ -1,6 +1,7 @@
 package io.sentry.core.transport;
 
 import static io.sentry.core.SentryLevel.*;
+import static io.sentry.core.transport.RetryingThreadPoolExecutor.HTTP_RETRY_AFTER_DEFAULT_DELAY_MS;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.ISerializer;
@@ -50,12 +51,12 @@ public class HttpTransport implements ITransport {
    * @param sentryUrl sentryUrl which is the parsed DSN
    */
   public HttpTransport(
-      SentryOptions options,
-      IConnectionConfigurator connectionConfigurator,
-      int connectionTimeoutMills,
-      int readTimeoutMills,
-      boolean bypassSecurity,
-      URL sentryUrl) {
+      final SentryOptions options,
+      final IConnectionConfigurator connectionConfigurator,
+      final int connectionTimeoutMills,
+      final int readTimeoutMills,
+      final boolean bypassSecurity,
+      final URL sentryUrl) {
     this.proxy = options.getProxy();
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
@@ -68,15 +69,15 @@ public class HttpTransport implements ITransport {
 
   // giving up on testing this method is probably the simplest way of having the rest of the class
   // testable...
-  protected HttpURLConnection open(Proxy proxy) throws IOException {
+  protected HttpURLConnection open(final Proxy proxy) throws IOException {
     // why do we need url here? its not used
     return (HttpURLConnection)
         (proxy == null ? sentryUrl.openConnection() : sentryUrl.openConnection(proxy));
   }
 
   @Override
-  public TransportResult send(SentryEvent event) throws IOException {
-    HttpURLConnection connection = open(proxy);
+  public TransportResult send(final SentryEvent event) throws IOException {
+    final HttpURLConnection connection = open(proxy);
     connectionConfigurator.configure(connection);
 
     connection.setRequestMethod("POST");
@@ -97,17 +98,18 @@ public class HttpTransport implements ITransport {
 
     connection.connect();
 
-    try (OutputStream outputStream = connection.getOutputStream();
-        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, UTF_8)) {
+    try (final OutputStream outputStream = connection.getOutputStream();
+        final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, UTF_8)) {
       serializer.serialize(event, outputStreamWriter);
 
       // need to also close the input stream of the connection
       connection.getInputStream().close();
       options.getLogger().log(DEBUG, "Event sent %s successfully.", event.getEventId());
       return TransportResult.success();
+      //      throw new IOException();
     } catch (IOException e) {
-      long retryAfterMs = 60000; // the default is 60s
-      String retryAfterHeader = connection.getHeaderField("Retry-After");
+      long retryAfterMs = HTTP_RETRY_AFTER_DEFAULT_DELAY_MS;
+      final String retryAfterHeader = connection.getHeaderField("Retry-After");
       if (retryAfterHeader != null) {
         try {
           retryAfterMs =
@@ -120,6 +122,7 @@ public class HttpTransport implements ITransport {
       int responseCode = -1;
       try {
         responseCode = connection.getResponseCode();
+
         if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
           options
               .getLogger()
@@ -145,7 +148,7 @@ public class HttpTransport implements ITransport {
     }
   }
 
-  private void logErrorInPayload(HttpURLConnection connection) {
+  private void logErrorInPayload(final HttpURLConnection connection) {
     if (options
         .isDebug()) { // just because its expensive, but internally isDebug is already checked when
       // .log() is called
@@ -162,8 +165,8 @@ public class HttpTransport implements ITransport {
     }
   }
 
-  private String getErrorMessageFromStream(InputStream errorStream) {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8));
+  private String getErrorMessageFromStream(final InputStream errorStream) {
+    final BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8));
     StringBuilder sb = new StringBuilder();
     try {
       String line;
