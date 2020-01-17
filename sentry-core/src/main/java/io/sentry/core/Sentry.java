@@ -17,7 +17,7 @@ public final class Sentry {
   private static volatile @NotNull IHub mainHub = NoOpHub.getInstance();
 
   /**
-   * Returns the current (thread’s) hub, if none, clones the mainHub and returns it.
+   * Returns the current (threads) hub, if none, clones the mainHub and returns it.
    *
    * @return the hub
    */
@@ -223,7 +223,7 @@ public final class Sentry {
   }
 
   /**
-   * Shallow merges user configuration (email, username, …) to the current Scope.
+   * Shallow merges user configuration (email, username, etc) to the current Scope.
    *
    * @param user the user
    */
