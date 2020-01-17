@@ -11,4 +11,6 @@ interface Retryable extends Runnable {
    * delay before the next retry.
    */
   long getSuggestedRetryDelayMillis();
+
+  int getResponseCode();
 }

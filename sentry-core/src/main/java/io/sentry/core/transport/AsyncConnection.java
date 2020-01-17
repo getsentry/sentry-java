@@ -1,5 +1,7 @@
 package io.sentry.core.transport;
 
+import static io.sentry.core.transport.RetryingThreadPoolExecutor.HTTP_RETRY_AFTER_DEFAULT_DELAY_MS;
+
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
@@ -28,28 +30,22 @@ public final class AsyncConnection implements Closeable, Connection {
   private final SentryOptions options;
 
   public AsyncConnection(
-      ITransport transport,
-      ITransportGate transportGate,
-      IBackOffIntervalStrategy backOffIntervalStrategy,
-      IEventCache eventCache,
-      int maxRetries,
-      int maxQueueSize,
-      SentryOptions options) {
-    this(
-        transport,
-        transportGate,
-        eventCache,
-        initExecutor(maxRetries, maxQueueSize, backOffIntervalStrategy, eventCache),
-        options);
+      final ITransport transport,
+      final ITransportGate transportGate,
+      final IEventCache eventCache,
+      final int maxQueueSize,
+      final SentryOptions options) {
+    this(transport, transportGate, eventCache, initExecutor(maxQueueSize, eventCache), options);
   }
 
   @TestOnly
   AsyncConnection(
-      ITransport transport,
-      ITransportGate transportGate,
-      IEventCache eventCache,
-      ExecutorService executorService,
-      SentryOptions options) {
+      final ITransport transport,
+      final ITransportGate transportGate,
+      final IEventCache eventCache,
+      final ExecutorService executorService,
+      final SentryOptions options) {
+
     this.transport = transport;
     this.transportGate = transportGate;
     this.eventCache = eventCache;
@@ -58,12 +54,9 @@ public final class AsyncConnection implements Closeable, Connection {
   }
 
   private static RetryingThreadPoolExecutor initExecutor(
-      int maxRetries,
-      int maxQueueSize,
-      IBackOffIntervalStrategy backOffIntervalStrategy,
-      IEventCache eventCache) {
+      final int maxQueueSize, final IEventCache eventCache) {
 
-    RejectedExecutionHandler storeEvents =
+    final RejectedExecutionHandler storeEvents =
         (r, executor) -> {
           if (r instanceof EventSender) {
             eventCache.store(((EventSender) r).event);
@@ -71,12 +64,7 @@ public final class AsyncConnection implements Closeable, Connection {
         };
 
     return new RetryingThreadPoolExecutor(
-        1,
-        maxRetries,
-        maxQueueSize,
-        new AsyncConnectionThreadFactory(),
-        backOffIntervalStrategy,
-        storeEvents);
+        1, maxQueueSize, new AsyncConnectionThreadFactory(), storeEvents);
   }
 
   /**
@@ -86,9 +74,8 @@ public final class AsyncConnection implements Closeable, Connection {
    * @throws IOException on error
    */
   @SuppressWarnings("FutureReturnValueIgnored")
-  // https://errorprone.info/bugpattern/FutureReturnValueIgnored
   @Override
-  public void send(SentryEvent event, @Nullable Object hint) throws IOException {
+  public void send(final SentryEvent event, final @Nullable Object hint) throws IOException {
     IEventCache currentEventCache = eventCache;
     if (hint instanceof Cached) {
       currentEventCache = NoOpEventCache.getInstance();
@@ -123,21 +110,23 @@ public final class AsyncConnection implements Closeable, Connection {
     private int cnt;
 
     @Override
-    public Thread newThread(@NotNull Runnable r) {
-      Thread ret = new Thread(r, "SentryAsyncConnection-" + cnt++);
+    public Thread newThread(final @NotNull Runnable r) {
+      final Thread ret = new Thread(r, "SentryAsyncConnection-" + cnt++);
       ret.setDaemon(true);
       return ret;
     }
   }
 
   private final class EventSender implements Retryable {
-    final SentryEvent event;
+    private final SentryEvent event;
     private final Object hint;
     private final IEventCache eventCache;
-    long suggestedRetryDelay;
-    final TransportResult failedResult = TransportResult.error(5000, -1);
+    private long suggestedRetryDelay;
+    private int responseCode;
+    private final TransportResult failedResult =
+        TransportResult.error(HTTP_RETRY_AFTER_DEFAULT_DELAY_MS, -1);
 
-    EventSender(SentryEvent event, Object hint, IEventCache eventCache) {
+    EventSender(final SentryEvent event, final Object hint, final IEventCache eventCache) {
       this.event = event;
       this.hint = hint;
       this.eventCache = eventCache;
@@ -181,8 +170,9 @@ public final class AsyncConnection implements Closeable, Connection {
             eventCache.discard(event);
           } else {
             suggestedRetryDelay = result.getRetryMillis();
+            responseCode = result.getResponseCode();
 
-            String message =
+            final String message =
                 "The transport failed to send the event with response code "
                     + result.getResponseCode()
                     + ". Retrying in "
@@ -212,6 +202,11 @@ public final class AsyncConnection implements Closeable, Connection {
     @Override
     public long getSuggestedRetryDelayMillis() {
       return suggestedRetryDelay;
+    }
+
+    @Override
+    public int getResponseCode() {
+      return responseCode;
     }
   }
 }

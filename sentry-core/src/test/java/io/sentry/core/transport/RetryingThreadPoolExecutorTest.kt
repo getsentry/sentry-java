@@ -15,7 +15,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class RetryingThreadPoolExecutorTest {
-    private val maxRetries = 5
     private val maxQueueSize = 5
     private var threadPool: RetryingThreadPoolExecutor? = null
 
@@ -26,14 +25,13 @@ class RetryingThreadPoolExecutorTest {
             t.isDaemon = true
             t
         }
-        val rerunImmediately = io.sentry.core.transport.IBackOffIntervalStrategy { 0L }
 
         // make sure we have enough threads to handle more than the maximum number of enqueued operations
         // in reality this would not be a problem but the test code needs to synchronize the main thread
         // with a number of jobs. If there weren't enough threads, the main thread could block indefinitely
         // because there wouldn't be enough worker threads to handle all jobs in the queue (because the test
         // code blocks the worker threads).
-        threadPool = RetryingThreadPoolExecutor(maxQueueSize + 1, maxRetries, maxQueueSize, threadFactory, rerunImmediately, DiscardPolicy())
+        threadPool = RetryingThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy())
     }
 
     @AfterTest
@@ -58,29 +56,8 @@ class RetryingThreadPoolExecutorTest {
     }
 
     @Test
-    fun `retries while failing`() {
-        val counter = CountDownLatch(3)
-        val actualTimes = AtomicInteger()
-
-        threadPool?.submit {
-            actualTimes.incrementAndGet()
-            counter.countDown()
-            if (counter.count > 0) {
-                throw RuntimeException()
-            }
-        }
-
-        val threeTimes = counter.await(1, TimeUnit.MINUTES)
-        // wait to see if there are any more attempts
-        Thread.sleep(1000)
-
-        assertTrue(threeTimes, "Should have retried 3 times but didn't in 1 minute.")
-        assertEquals(3, actualTimes.get(), "Shouldn't see any more attempts after 3 failures, but saw some")
-    }
-
-    @Test
-    fun `retries at most maxRetries-times`() {
-        val counter = CountDownLatch(maxRetries)
+    fun `do not retry failed tasks`() {
+        val counter = CountDownLatch(1)
         val actualTimes = AtomicInteger()
 
         threadPool?.submit {
@@ -89,35 +66,80 @@ class RetryingThreadPoolExecutorTest {
             throw RuntimeException()
         }
 
-        counter.await(1, TimeUnit.MINUTES)
+        counter.await()
         Thread.sleep(1000)
 
-        assertEquals(0, counter.count, "Should have retried max retry times but didn't in 1 minute.")
-        assertEquals(maxRetries, actualTimes.get(), "Shouldn't see any more attempts after max retries, but saw some")
+        assertEquals(1, actualTimes.get(), "Shouldn't see any more attempts, but saw some")
     }
 
     @Test
-    fun `honors suggested delay on error`() {
-        val counter = CountDownLatch(maxRetries)
-        val now = System.currentTimeMillis()
-        val delay = 40L
+    fun `honors suggested delay on error and do not accept new tasks`() {
+        val counter = CountDownLatch(1)
+        val actualTimes = AtomicInteger()
+        val delay = 100L
 
         threadPool?.submit(object : Retryable {
             override fun run() {
                 counter.countDown()
+                actualTimes.incrementAndGet()
                 throw RuntimeException()
             }
 
             override fun getSuggestedRetryDelayMillis(): Long {
                 return delay
             }
+
+            override fun getResponseCode(): Int {
+                return 429
+            }
         })
 
-        counter.await()
+        threadPool?.submit {
+            actualTimes.incrementAndGet()
+        }
 
-        val actualDelay = System.currentTimeMillis() - now
+        counter.await(1, TimeUnit.MINUTES)
+        Thread.sleep(1000)
 
-        assertTrue(actualDelay >= (maxRetries - 1) * delay, "Should have waited between invocations based on the suggested failure delay.")
+        assertEquals(1, actualTimes.get())
+        assertEquals(0, counter.count, "Should not have retried, but it did.")
+    }
+
+    @Test
+    fun `honors suggested delay on error, but accept new tasks after delay has passed`() {
+        var counter = CountDownLatch(1)
+        val actualTimes = AtomicInteger()
+        val delay = 100L
+
+        threadPool?.submit(object : Retryable {
+            override fun run() {
+                counter.countDown()
+                actualTimes.incrementAndGet()
+                throw RuntimeException()
+            }
+
+            override fun getSuggestedRetryDelayMillis(): Long {
+                return delay
+            }
+
+            override fun getResponseCode(): Int {
+                return 429
+            }
+        })
+
+        counter.await(1, TimeUnit.MINUTES)
+        Thread.sleep(1000)
+
+        counter = CountDownLatch(1)
+        threadPool?.submit {
+            counter.countDown()
+            actualTimes.incrementAndGet()
+        }
+
+        counter.await(1, TimeUnit.MINUTES)
+        Thread.sleep(1000)
+
+        assertEquals(2, actualTimes.get())
     }
 
     @Test
