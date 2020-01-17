@@ -44,10 +44,9 @@ public final class Sentry {
   }
 
   /**
-   * Initializes the SDK Used by integrations that define their own SentryOptions
-   *
-   * @param clazz class OptionsContainer for SentryOptions
+   * @param clazz OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
+   * @param <T> class that extends SentryOptions
    * @throws IllegalAccessException the IllegalAccessException
    * @throws InstantiationException the InstantiationException
    * @throws NoSuchMethodException the NoSuchMethodException
