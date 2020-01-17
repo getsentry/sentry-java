@@ -130,7 +130,7 @@ public interface IHub {
   void setTransaction(String transaction);
 
   /**
-   * Shallow merges user configuration (email, username, …) to the current Scope.
+   * Shallow merges user configuration (email, username, etc) to the current Scope.
    *
    * @param user the user
    */
