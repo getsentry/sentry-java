@@ -300,7 +300,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = Scope(10)
+        val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
         sut.captureEvent(event, scope, mock<Cached>())
 
@@ -312,7 +312,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = Scope(10)
+        val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
         sut.captureEvent(event, scope, Object())
 
@@ -391,7 +391,7 @@ class SentryClientTest {
     }
 
     private fun createScope(): Scope {
-        return Scope(fixture.sentryOptions.maxBreadcrumbs).apply {
+        return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
                 message = "message"
             })

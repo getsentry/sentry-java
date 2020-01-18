@@ -19,20 +19,12 @@ public final class Scope implements Cloneable {
   private @NotNull Queue<Breadcrumb> breadcrumbs;
   private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
   private @NotNull Map<String, Object> extra = new ConcurrentHashMap<>();
-  private final int maxBreadcrumb;
-  private @Nullable final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback;
   private @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
+  private final @NotNull SentryOptions options;
 
-  public Scope(
-      int maxBreadcrumb,
-      @Nullable final SentryOptions.BeforeBreadcrumbCallback beforeBreadcrumbCallback) {
-    this.maxBreadcrumb = maxBreadcrumb;
-    this.beforeBreadcrumbCallback = beforeBreadcrumbCallback;
-    this.breadcrumbs = createBreadcrumbsList(this.maxBreadcrumb);
-  }
-
-  public Scope(int maxBreadcrumb) {
-    this(maxBreadcrumb, null);
+  public Scope(final @NotNull SentryOptions options) {
+    this.options = options;
+    this.breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
   }
 
   public @Nullable SentryLevel getLevel() {
@@ -73,34 +65,48 @@ public final class Scope implements Cloneable {
     return breadcrumbs;
   }
 
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
-    addBreadcrumb(breadcrumb, true);
+  private @Nullable Breadcrumb executeBeforeBreadcrumb(
+      final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
+      @NotNull Breadcrumb breadcrumb,
+      final @Nullable Object hint) {
+    try {
+      breadcrumb = callback.execute(breadcrumb, hint);
+    } catch (Exception e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "The BeforeBreadcrumbCallback callback threw an exception. It will be added as breadcrumb and continue.",
+              e);
+
+      Map<String, String> data = breadcrumb.getData();
+      if (breadcrumb.getData() == null) {
+        data = new HashMap<>();
+      }
+      data.put("sentry:message", e.getMessage());
+      breadcrumb.setData(data);
+    }
+    return breadcrumb;
   }
 
-  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, boolean executeBeforeBreadcrumb) {
-    if (executeBeforeBreadcrumb && beforeBreadcrumbCallback != null) {
-      try {
-        breadcrumb =
-            beforeBreadcrumbCallback.execute(breadcrumb, null); // TODO: whats about hint here?
-      } catch (Exception e) {
-        // TODO: log it
-
-        Map<String, String> data = breadcrumb.getData();
-        if (breadcrumb.getData() == null) {
-          data = new HashMap<>();
-        }
-        data.put("sentry:message", e.getMessage());
-        breadcrumb.setData(data);
-      }
-
-      if (breadcrumb == null) {
-        //        options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by scope
-        // beforeBreadcrumb");
-        return;
-      }
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+    if (breadcrumb == null) {
+      return;
     }
 
-    this.breadcrumbs.add(breadcrumb);
+    SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
+    if (callback != null) {
+      breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
+    }
+    if (breadcrumb != null) {
+      this.breadcrumbs.add(breadcrumb);
+    } else {
+      options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
+    }
+  }
+
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
+    addBreadcrumb(breadcrumb, null);
   }
 
   public void clearBreadcrumbs() {
@@ -157,7 +163,7 @@ public final class Scope implements Cloneable {
     clone.eventProcessors = eventProcessors != null ? new ArrayList<>(eventProcessors) : null;
 
     if (breadcrumbs != null) {
-      Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(maxBreadcrumb);
+      Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(options.getMaxBreadcrumbs());
 
       for (Breadcrumb item : breadcrumbs) {
         Breadcrumb breadcrumbClone = item.clone();
