@@ -1,7 +1,6 @@
 package io.sentry.core
 
 import io.sentry.core.protocol.User
-import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -30,11 +29,8 @@ class ScopeTest {
 
         val breadcrumb = Breadcrumb()
         breadcrumb.message = "message"
-        val data = mutableMapOf(Pair("data", "data"))
-        breadcrumb.data = data
+        breadcrumb.setData("data", "data")
 
-        val date = Date()
-        breadcrumb.timestamp = date
         breadcrumb.type = "type"
         breadcrumb.level = SentryLevel.DEBUG
         breadcrumb.category = "category"

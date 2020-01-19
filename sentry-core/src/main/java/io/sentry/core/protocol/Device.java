@@ -254,7 +254,8 @@ public final class Device implements IUnknownPropertiesConsumer {
   }
 
   public Date getBootTime() {
-    return bootTime != null ? (Date) bootTime.clone() : null;
+    final Date bootTimeRef = bootTime;
+    return bootTimeRef != null ? (Date) bootTimeRef.clone() : null;
   }
 
   public void setBootTime(Date bootTime) {

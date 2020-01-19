@@ -195,10 +195,8 @@ public final class SentryClient implements ISentryClient {
         Breadcrumb breadcrumb = new Breadcrumb();
         breadcrumb.setMessage("BeforeSend callback failed.");
         breadcrumb.setCategory("SentryClient");
-        Map<String, String> data = new HashMap<>();
-        data.put("sentry:message", e.getMessage());
         breadcrumb.setLevel(SentryLevel.ERROR);
-        breadcrumb.setData(data);
+        breadcrumb.setData("sentry:message", e.getMessage());
         event.addBreadcrumb(breadcrumb);
       }
     }

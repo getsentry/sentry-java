@@ -119,12 +119,13 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
 
   @Override
   public User clone() throws CloneNotSupportedException {
-    User clone = (User) super.clone();
+    final User clone = (User) super.clone();
 
-    if (other != null) {
-      Map<String, String> otherClone = new ConcurrentHashMap<>();
+    final Map<String, String> otherRef = other;
+    if (otherRef != null) {
+      final Map<String, String> otherClone = new ConcurrentHashMap<>();
 
-      for (Map.Entry<String, String> item : other.entrySet()) {
+      for (Map.Entry<String, String> item : otherRef.entrySet()) {
         if (item != null) {
           otherClone.put(item.getKey(), item.getValue());
         }
@@ -135,10 +136,11 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
       clone.other = null;
     }
 
-    if (unknown != null) {
-      Map<String, Object> unknownClone = new HashMap<>();
+    final Map<String, Object> unknownRef = unknown;
+    if (unknownRef != null) {
+      final Map<String, Object> unknownClone = new HashMap<>();
 
-      for (Map.Entry<String, Object> item : unknown.entrySet()) {
+      for (Map.Entry<String, Object> item : unknownRef.entrySet()) {
         if (item != null) {
           unknownClone.put(item.getKey(), item.getValue());
         }
