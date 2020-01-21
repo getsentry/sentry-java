@@ -15,7 +15,7 @@ android {
         versionName = "1.0"
 
         externalNativeBuild {
-            val sentryNativeSrc = if (File("../sentry-android-ndk/sentry-native-local").exists()) {
+            val sentryNativeSrc = if (File("${project.projectDir}/../sentry-android-ndk/sentry-native-local").exists()) {
                 "sentry-native-local"
             } else {
                 "sentry-native"
