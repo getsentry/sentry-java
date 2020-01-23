@@ -310,6 +310,24 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void removeTag(@NotNull String key) {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'removeTag' call is a no-op.");
+    } else if (key == null) {
+      options.getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.removeTag(key);
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when removeTag");
+      }
+    }
+  }
+
+  @Override
   public void setExtra(@NotNull String key, @NotNull String value) {
     if (!isEnabled()) {
       options
@@ -323,6 +341,24 @@ public final class Hub implements IHub {
         item.scope.setExtra(key, value);
       } else {
         options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");
+      }
+    }
+  }
+
+  @Override
+  public void removeExtra(@NotNull String key) {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'removeExtra' call is a no-op.");
+    } else if (key == null) {
+      options.getLogger().log(SentryLevel.WARNING, "removeExtra called with null parameter.");
+    } else {
+      StackItem item = stack.peek();
+      if (item != null) {
+        item.scope.removeExtra(key);
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when removeExtra");
       }
     }
   }

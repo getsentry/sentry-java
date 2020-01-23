@@ -155,6 +155,13 @@ public interface IHub {
   void setTag(String key, String value);
 
   /**
+   * Removes the tag to a string value to the current Scope
+   *
+   * @param key the key
+   */
+  void removeTag(String key);
+
+  /**
    * Sets the extra key to an arbitrary value to the current Scope, overwriting a potential previous
    * value
    *
@@ -162,6 +169,13 @@ public interface IHub {
    * @param value the value
    */
   void setExtra(String key, String value);
+
+  /**
+   * Removes the extra key to an arbitrary value to the current Scope
+   *
+   * @param key the key
+   */
+  void removeExtra(String key);
 
   /**
    * Last event id recorded in the current scope
