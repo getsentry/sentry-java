@@ -90,17 +90,6 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `init should set android as inAppExclude`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-        val mockLogger = mock<ILogger>()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
-
-        assertTrue(sentryOptions.inAppExcludes.contains("android."))
-    }
-
-    @Test
     fun `init should set Android transport gate`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()

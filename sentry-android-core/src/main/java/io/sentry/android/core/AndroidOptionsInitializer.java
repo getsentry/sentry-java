@@ -40,11 +40,6 @@ final class AndroidOptionsInitializer {
     if (packageName != null && !packageName.startsWith("android.")) {
       options.addInAppInclude(packageName);
     }
-    options.addInAppExclude("android.");
-    options.addInAppExclude("com.android.");
-    options.addInAppExclude("androidx.");
-    options.addInAppExclude("kotlin.");
-    options.addInAppExclude("dalvik.");
   }
 
   private static void initializeCacheDirs(Context context, SentryOptions options) {
