@@ -60,7 +60,13 @@ final class NoOpHub implements IHub {
   public void setTag(String key, String value) {}
 
   @Override
+  public void removeTag(String key) {}
+
+  @Override
   public void setExtra(String key, String value) {}
+
+  @Override
+  public void removeExtra(String key) {}
 
   @Override
   public SentryId getLastEventId() {

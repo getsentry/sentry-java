@@ -256,6 +256,15 @@ public final class Sentry {
   }
 
   /**
+   * Removes the tag to a string value to the current Scope
+   *
+   * @param key the key
+   */
+  public static void removeTag(@NotNull String key) {
+    getCurrentHub().removeTag(key);
+  }
+
+  /**
    * Sets the extra key to an arbitrary value to the current Scope, overwriting a potential previous
    * value
    *
@@ -264,6 +273,15 @@ public final class Sentry {
    */
   public static void setExtra(@NotNull String key, @NotNull String value) {
     getCurrentHub().setExtra(key, value);
+  }
+
+  /**
+   * Removes the extra key to an arbitrary value to the current Scope
+   *
+   * @param key the key
+   */
+  public void removeExtra(@NotNull String key) {
+    getCurrentHub().removeExtra(key);
   }
 
   /**
