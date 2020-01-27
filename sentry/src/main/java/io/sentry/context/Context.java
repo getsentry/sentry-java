@@ -102,7 +102,7 @@ public class Context implements Serializable {
             return Collections.emptyMap();
         }
 
-        return Collections.unmodifiableMap(tags);
+        return new HashMap<>(tags);
     }
 
     /**
@@ -115,7 +115,7 @@ public class Context implements Serializable {
             return Collections.emptyMap();
         }
 
-        return Collections.unmodifiableMap(extra);
+        return new HashMap<>(extra);
     }
 
     /**
