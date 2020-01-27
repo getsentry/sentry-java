@@ -7,7 +7,9 @@ import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import io.sentry.core.Sentry;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class SentryInitProvider extends ContentProvider {
 
   @Override

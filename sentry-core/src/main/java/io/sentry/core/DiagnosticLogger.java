@@ -1,10 +1,12 @@
 package io.sentry.core;
 
 import io.sentry.core.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK internal diagnostic logger. */
+@ApiStatus.Internal
 public final class DiagnosticLogger implements ILogger {
   private final SentryOptions options;
   private final @Nullable ILogger logger;

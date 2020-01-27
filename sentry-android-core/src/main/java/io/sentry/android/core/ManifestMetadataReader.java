@@ -51,8 +51,8 @@ final class ManifestMetadataReader {
             .log(SentryLevel.DEBUG, "isAnrReportInDebug read: %s", isAnrReportInDebug);
         options.setAnrReportInDebug(isAnrReportInDebug);
 
-        int anrTimeoutIntervalMills =
-            metadata.getInt(ANR_TIMEOUT_INTERVAL_MILLS, options.getAnrTimeoutIntervalMills());
+        long anrTimeoutIntervalMills =
+            metadata.getLong(ANR_TIMEOUT_INTERVAL_MILLS, options.getAnrTimeoutIntervalMills());
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "anrTimeoutIntervalMills read: %d", anrTimeoutIntervalMills);
