@@ -151,11 +151,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     PackageInfo packageInfo = getPackageInfo();
     if (packageInfo != null) {
+      String versionCode = getVersionCode(packageInfo);
+
       if (event.getRelease() == null) {
-        event.setRelease(packageInfo.packageName + "-" + packageInfo.versionName);
+        event.setRelease(
+            packageInfo.packageName + "@" + packageInfo.versionName + "+" + versionCode);
       }
       if (event.getDist() == null) {
-        event.setDist(getVersionCode(packageInfo));
+        event.setDist(versionCode);
       }
       if (event.getContexts().getApp() == null) {
         event.getContexts().setApp(getApp(packageInfo));
