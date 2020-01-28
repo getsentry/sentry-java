@@ -115,14 +115,11 @@ public final class Sentry {
     /**
      * Initializes a new Sentry client from the provided context.
      *
-     * <p>The canonical way of using this method is:
-     * <p></p>
-     * <pre>
+     * The canonical way of using this method is:
      * {@link Lookup} lookup = ... obtain or construct the instance of this class to be able to locate Sentry config
      * String dsn = ... obtain the Sentry data source name or leave null for lookup in the configuration
      * SentryClient client =
      *   Sentry.init({@link SentryOptions}.{@link SentryOptions#from(Lookup, String) from(lookup, dsn))};
-     * </pre>
      * If you want to rely on the default mechanisms to obtain the configuration, you can also use the
      * {@link SentryOptions#defaults()} method which will use the default way of obtaining the configuration and DSN
      * obtained from the configuration.

@@ -194,7 +194,7 @@ public class AndroidEventBuilderHelper implements EventBuilderHelper {
 
     /**
      * Fake the device family by using the first word in the Build.MODEL. Works
-     * well in most cases... "Nexus 6P" -> "Nexus", "Galaxy S7" -> "Galaxy".
+     * well in most cases... "Nexus 6P" - "Nexus", "Galaxy S7" - "Galaxy".
      *
      * @return family name of the device, as best we can tell
      */

@@ -85,7 +85,7 @@ public class BreadcrumbBuilder {
     }
 
     /**
-     * Adds to the related data for the {@link breadcrumb}.
+     * Adds to the related data.
      *
      * @param name Name of the data
      * @param value Value of the data

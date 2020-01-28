@@ -35,9 +35,9 @@ public final class Frame {
     }
 
     /**
-     * Converts the locals array to a Map of variable-name -> variable-value.
+     * Converts the locals array to a Map of variable-name - variable-value.
      *
-     * @return Map of variable-name -> variable-value.
+     * @return Map of variable-name - variable-value.
      */
     public Map<String, Object> getLocals() {
         if (locals == null || locals.length == 0) {
