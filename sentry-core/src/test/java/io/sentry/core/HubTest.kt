@@ -34,6 +34,7 @@ class HubTest {
     @AfterTest
     fun shutdown() {
         Files.delete(file.toPath())
+        Sentry.close()
     }
 
     @Test
@@ -50,7 +51,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
-        val expected = Hub(options)
+        val expected = HubAdapter.getInstance()
+        Hub(options)
         verify(integrationMock).register(expected, options)
     }
 
@@ -62,9 +64,10 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
-        val expected = Hub(options)
+        val expected = HubAdapter.getInstance()
+        val hub = Hub(options)
         verify(integrationMock).register(expected, options)
-        expected.clone()
+        hub.clone()
         verifyNoMoreInteractions(integrationMock)
     }
 
@@ -510,17 +513,22 @@ class HubTest {
     @Test
     fun `when integration is registered, hub is enabled`() {
         val mock = mock<Integration>()
-        val options = SentryOptions().apply {
-            addIntegration(mock)
-            dsn = "https://key@sentry.io/proj"
-            cacheDirPath = file.absolutePath
-            setSerializer(mock())
+
+        var options: SentryOptions? = null
+        // init main hub and make it enabled
+        Sentry.init {
+            it.addIntegration(mock)
+            it.dsn = "https://key@sentry.io/proj"
+            it.cacheDirPath = file.absolutePath
+            it.setSerializer(mock())
+            options = it
         }
+
         doAnswer {
             val hub = it.arguments[0] as IHub
             assertTrue(hub.isEnabled)
         }.whenever(mock).register(any(), eq(options))
-        Hub(options)
+
         verify(mock).register(any(), eq(options))
     }
 

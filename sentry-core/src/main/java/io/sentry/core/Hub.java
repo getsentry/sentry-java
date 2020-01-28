@@ -32,7 +32,7 @@ public final class Hub implements IHub {
 
     // Register integrations against a root Hub
     for (Integration integration : options.getIntegrations()) {
-      integration.register(this, options);
+      integration.register(HubAdapter.getInstance(), options);
     }
   }
 
