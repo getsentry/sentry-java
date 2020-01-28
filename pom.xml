@@ -10,7 +10,7 @@
 
     <groupId>io.sentry</groupId>
     <artifactId>sentry-all</artifactId>
-    <version>1.7.30</version>
+    <version>1.7.31-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Sentry-Java</name>
