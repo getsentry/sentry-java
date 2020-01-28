@@ -1,4 +1,4 @@
--e Version 1.7.31
+Version 1.7.31
 --------------
 
 -
@@ -6,7 +6,8 @@
 Version 1.7.30
 --------------
 
-- 
+- fixed context returns new Maps (#814) 
+- added requireNonNull utils (#810) 
 
 Version 1.7.29
 --------------
