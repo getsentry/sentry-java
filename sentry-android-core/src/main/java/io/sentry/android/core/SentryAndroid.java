@@ -61,7 +61,8 @@ public final class SentryAndroid {
           options -> {
             AndroidOptionsInitializer.init(options, context, logger);
             configuration.configure(options);
-          });
+          },
+          true);
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
