@@ -7,92 +7,197 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+/** Series of application events */
 public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
 
-  private final Date timestamp;
-  private String message;
-  private String type;
-  private Map<String, String> data = new ConcurrentHashMap<>();
-  private String category;
-  private SentryLevel level;
-  private Map<String, Object> unknown;
+  /** A timestamp representing when the breadcrumb occurred. */
+  private final @NotNull Date timestamp;
 
-  Breadcrumb(final Date timestamp) {
+  /** If a message is provided, it’s rendered as text and the whitespace is preserved. */
+  private @Nullable String message;
+
+  /** The type of breadcrumb. */
+  private @Nullable String type;
+
+  /** Data associated with this breadcrumb. */
+  private @NotNull Map<String, String> data = new ConcurrentHashMap<>();
+
+  /** Dotted strings that indicate what the crumb is or where it comes from. */
+  private @Nullable String category;
+
+  /** The level of the event. */
+  private @Nullable SentryLevel level;
+
+  /** the unknown fields of breadcrumbs, internal usage only */
+  private @Nullable Map<String, Object> unknown;
+
+  /**
+   * Breadcrumb ctor
+   *
+   * @param timestamp the timestamp
+   */
+  Breadcrumb(final @NotNull Date timestamp) {
     this.timestamp = timestamp;
   }
 
+  /** Breadcrumb ctor */
   public Breadcrumb() {
     this(DateUtils.getCurrentDateTime());
   }
 
-  public Breadcrumb(String message) {
+  /**
+   * Breadcrumb ctor
+   *
+   * @param message the message
+   */
+  public Breadcrumb(@Nullable String message) {
     this();
     this.message = message;
   }
 
-  public Date getTimestamp() {
+  /**
+   * Returns the Breadcrumb's timestamp
+   *
+   * @return the timestamp
+   */
+  public @NotNull Date getTimestamp() {
     return (Date) timestamp.clone();
   }
 
-  public String getMessage() {
+  /**
+   * Returns the message
+   *
+   * @return the message
+   */
+  public @Nullable String getMessage() {
     return message;
   }
 
-  public void setMessage(String message) {
+  /**
+   * Sets the message
+   *
+   * @param message the message
+   */
+  public void setMessage(@Nullable String message) {
     this.message = message;
   }
 
-  public String getType() {
+  /**
+   * Returns the type
+   *
+   * @return the type
+   */
+  public @Nullable String getType() {
     return type;
   }
 
-  public void setType(String type) {
+  /**
+   * Sets the type
+   *
+   * @param type the type
+   */
+  public void setType(@Nullable String type) {
     this.type = type;
   }
 
+  /**
+   * Returns the data map
+   *
+   * @return the data map
+   */
+  @NotNull
   Map<String, String> getData() {
     return data;
   }
 
+  /**
+   * Sets an entry to the data's map
+   *
+   * @param key the key
+   * @param value the value
+   */
   public void setData(@NotNull String key, @NotNull String value) {
     data.put(key, value);
   }
 
+  /**
+   * Removes an entry from the data's map
+   *
+   * @param key
+   */
   public void removeData(@NotNull String key) {
     data.remove(key);
   }
 
-  public String getCategory() {
+  /**
+   * Returns the category
+   *
+   * @return the category
+   */
+  public @Nullable String getCategory() {
     return category;
   }
 
-  public void setCategory(String category) {
+  /**
+   * Sets the category
+   *
+   * @param category the category
+   */
+  public void setCategory(@Nullable String category) {
     this.category = category;
   }
 
-  public SentryLevel getLevel() {
+  /**
+   * Returns the SentryLevel
+   *
+   * @return the level
+   */
+  public @Nullable SentryLevel getLevel() {
     return level;
   }
 
-  public void setLevel(SentryLevel level) {
+  /**
+   * Sets the level
+   *
+   * @param level the level
+   */
+  public void setLevel(@Nullable SentryLevel level) {
     this.level = level;
   }
 
+  /**
+   * Sets the unknown fields, internal usage only
+   *
+   * @param unknown the unknown's map
+   */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(@Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
+  /**
+   * Returns the unknown's map, internal usage only
+   *
+   * @return
+   */
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
+  /**
+   * Clones the breadcrumb aka deep copy
+   *
+   * @return the cloned breadcrumb
+   * @throws CloneNotSupportedException if a breadcrumb is not cloneable
+   */
   @Override
-  public Breadcrumb clone() throws CloneNotSupportedException {
+  public @NotNull Breadcrumb clone() throws CloneNotSupportedException {
     final Breadcrumb clone = (Breadcrumb) super.clone();
 
     final Map<String, String> dataRef = data;
@@ -101,7 +206,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
 
       for (Map.Entry<String, String> item : dataRef.entrySet()) {
         if (item != null) {
-          dataClone.put(item.getKey(), item.getValue());
+          dataClone.put(item.getKey(), item.getValue()); // shallow copy
         }
       }
 
