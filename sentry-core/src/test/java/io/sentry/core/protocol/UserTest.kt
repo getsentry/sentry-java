@@ -46,7 +46,7 @@ class UserTest {
         assertEquals("123", clone.id)
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
-        assertEquals("others", clone.others["others"])
+        assertEquals("others", clone.others!!["others"])
         assertEquals("unknown", clone.unknown["unknown"])
     }
 
@@ -68,8 +68,8 @@ class UserTest {
         user.id = "456"
         user.ipAddress = "456.x"
         user.username = "newUserName"
-        user.others["others"] = "newOthers"
-        user.others["anotherOne"] = "anotherOne"
+        user.others!!["others"] = "newOthers"
+        user.others!!["anotherOne"] = "anotherOne"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
         user.acceptUnknownProperties(newUnknown)
 
@@ -77,8 +77,8 @@ class UserTest {
         assertEquals("123", clone.id)
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
-        assertEquals("others", clone.others["others"])
-        assertEquals(1, clone.others.size)
+        assertEquals("others", clone.others!!["others"])
+        assertEquals(1, clone.others!!.size)
         assertEquals("unknown", clone.unknown["unknown"])
         assertEquals(1, clone.unknown.size)
     }

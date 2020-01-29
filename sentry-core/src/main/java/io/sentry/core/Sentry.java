@@ -403,6 +403,12 @@ public final class Sentry {
    * @param <T> a class that extends SentryOptions or SentryOptions itself.
    */
   public interface OptionsConfiguration<T extends SentryOptions> {
+
+    /**
+     * configure the options
+     *
+     * @param options the options
+     */
     void configure(@NotNull T options);
   }
 }

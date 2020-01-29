@@ -5,23 +5,37 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** The user affected by an event. */
 public final class User implements Cloneable, IUnknownPropertiesConsumer {
-  private String email;
-  private String id;
-  private String username;
-  private String ipAddress;
-  private Map<String, String> other;
-  private Map<String, Object> unknown;
+
+  /** User's email */
+  private @Nullable String email;
+
+  /** User's id */
+  private @Nullable String id;
+
+  /** User's username */
+  private @Nullable String username;
+
+  /** User's ipAddress */
+  private @Nullable String ipAddress;
+
+  /** User's others map */
+  private @Nullable Map<String, String> other;
+
+  /** unknown fields, only internal usage. */
+  private @Nullable Map<String, Object> unknown;
 
   /**
    * Gets the e-mail address of the user.
    *
    * @return the e-mail.
    */
-  public String getEmail() {
+  public @Nullable String getEmail() {
     return email;
   }
 
@@ -30,7 +44,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param email the e-mail.
    */
-  public void setEmail(String email) {
+  public void setEmail(@Nullable String email) {
     this.email = email;
   }
 
@@ -39,7 +53,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the id.
    */
-  public String getId() {
+  public @Nullable String getId() {
     return id;
   }
 
@@ -48,7 +62,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param id the user id.
    */
-  public void setId(String id) {
+  public void setId(@Nullable String id) {
     this.id = id;
   }
 
@@ -57,7 +71,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the username.
    */
-  public String getUsername() {
+  public @Nullable String getUsername() {
     return username;
   }
 
@@ -66,7 +80,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param username the username.
    */
-  public void setUsername(String username) {
+  public void setUsername(@Nullable String username) {
     this.username = username;
   }
 
@@ -75,7 +89,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the IP address of the user.
    */
-  public String getIpAddress() {
+  public @Nullable String getIpAddress() {
     return ipAddress;
   }
 
@@ -84,7 +98,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param ipAddress the IP address of the user.
    */
-  public void setIpAddress(String ipAddress) {
+  public void setIpAddress(@Nullable String ipAddress) {
     this.ipAddress = ipAddress;
   }
 
@@ -93,7 +107,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the other user data.
    */
-  public Map<String, String> getOthers() {
+  public @Nullable Map<String, String> getOthers() {
     return other;
   }
 
@@ -102,23 +116,39 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param other the other user related data..
    */
-  public void setOthers(Map<String, String> other) {
+  public void setOthers(@Nullable Map<String, String> other) {
     this.other = other;
   }
 
+  /**
+   * User's unknown fields, only internal usage
+   *
+   * @param unknown the unknown fields
+   */
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
+  /**
+   * the User's unknown fields
+   *
+   * @return
+   */
   @TestOnly
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
+  /**
+   * Clones an User aka deep copy
+   *
+   * @return the cloned User
+   * @throws CloneNotSupportedException if the User is not cloneable
+   */
   @Override
-  public User clone() throws CloneNotSupportedException {
+  public @NotNull User clone() throws CloneNotSupportedException {
     final User clone = (User) super.clone();
 
     final Map<String, String> otherRef = other;
@@ -127,7 +157,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
 
       for (Map.Entry<String, String> item : otherRef.entrySet()) {
         if (item != null) {
-          otherClone.put(item.getKey(), item.getValue());
+          otherClone.put(item.getKey(), item.getValue()); // shallow copy
         }
       }
 
@@ -142,7 +172,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
 
       for (Map.Entry<String, Object> item : unknownRef.entrySet()) {
         if (item != null) {
-          unknownClone.put(item.getKey(), item.getValue());
+          unknownClone.put(item.getKey(), item.getValue()); // shallow copy
         }
       }
 
