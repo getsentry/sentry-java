@@ -16,7 +16,7 @@ before_install:
   - yes | sdkmanager --update
 install:
   - echo y | sdkmanager "ndk-bundle" >/dev/null
-  - echo y | sdkmanager "cmake;3.6.4111459" >/dev/null
+  - echo y | sdkmanager "cmake;3.10.2.4988404" >/dev/null
 before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 android:
@@ -27,33 +27,6 @@ android:
 os: linux
 dist: trusty
 language: android
-env:
-  matrix:
-    - API=android-14 ABI=armeabi-v7a
-# Keeping only lowest/higher API level per ABI temporarily
-#    - API=android-15 ABI=armeabi-v7a
-#    - API=android-16 ABI=armeabi-v7a
-#    - API=android-17 ABI=armeabi-v7a
-#    - API=android-18 ABI=armeabi-v7a
-#    - API=android-19 ABI=armeabi-v7a
-#    - API=android-21 ABI=armeabi-v7aq
-#    - API=android-22 ABI=armeabi-v7a
-#    - API=android-23 ABI=armeabi-v7a
-#    - API=android-24 ABI=armeabi-v7a
-#    - API=android-25 ABI=armeabi-v7a
-#    - API=android-26 ABI=armeabi-v7a
-#    - API=android-27 ABI=armeabi-v7a
-#    - API=android-28 ABI=armeabi-v7a
-    - API=android-29 ABI=armeabi-v7a
-    - API=android-21 ABI=arm64-v8a
-#    - API=android-22 ABI=arm64-v8a
-#    - API=android-23 ABI=arm64-v8a
-#    - API=android-24 ABI=arm64-v8a
-#    - API=android-25 ABI=arm64-v8a
-#    - API=android-26 ABI=arm64-v8a
-#    - API=android-27 ABI=arm64-v8a
-#    - API=android-28 ABI=arm64-v8a
-    - API=android-29 ABI=arm64-v8a
 matrix:
   include:
     - jdk: openjdk8

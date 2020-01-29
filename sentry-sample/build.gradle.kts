@@ -28,12 +28,7 @@ android {
         }
 
         ndk {
-            val platform = System.getenv("ABI")
-            if (platform == null || platform.toLowerCase() == "all") {
-                abiFilters("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
-            } else {
-                abiFilters(platform)
-            }
+            abiFilters("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
         }
     }
 
