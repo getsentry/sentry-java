@@ -10,7 +10,7 @@ object Config {
     object Android {
         private val sdkVersion = 29
 
-        val buildToolsVersion = "29.0.2"
+        val buildToolsVersion = "29.0.3"
         val minSdkVersion = 14
         val minSdkVersionNdk = 21
         val targetSdkVersion = sdkVersion
