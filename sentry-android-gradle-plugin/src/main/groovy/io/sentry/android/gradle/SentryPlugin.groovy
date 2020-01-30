@@ -321,6 +321,11 @@ class SentryPlugin implements Plugin<Project> {
                                 mappingFile
                         ]
 
+                        def nativeArgs = [
+                                cli,
+                                "upload-dif",
+                        ]
+
                         if (!extension.autoUpload) {
                             args << "--no-upload"
                         }
@@ -329,17 +334,43 @@ class SentryPlugin implements Plugin<Project> {
                         if (buildTypeProperties.has(SENTRY_ORG_PARAMETER)) {
                             args.add("--org")
                             args.add(buildTypeProperties.get(SENTRY_ORG_PARAMETER).toString())
+
+                            nativeArgs.add("-o")
+                            nativeArgs.add(buildTypeProperties.get(SENTRY_ORG_PARAMETER).toString())
                         }
                         if (buildTypeProperties.has(SENTRY_PROJECT_PARAMETER)) {
                             args.add("--project")
                             args.add(buildTypeProperties.get(SENTRY_PROJECT_PARAMETER).toString())
+
+                            nativeArgs.add("-p")
+                            nativeArgs.add(buildTypeProperties.get(SENTRY_PROJECT_PARAMETER).toString())
                         }
+
+                        nativeArgs.add("${project.projectDir}/build")
+
+                        if (extension.includeNativeSource) {
+                            nativeArgs.add("--include-sources")
+                        }
+
+                        project.logger.info("cli args: ${args.toString()}")
+
+                        project.logger.info("nativeArgs args: ${nativeArgs.toString()}")
 
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                             commandLine("cmd", "/c", *args)
                         } else {
                             commandLine(*args)
                         }
+
+                        project.logger.info("args executed.")
+
+                        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                            commandLine("cmd", "/c", *nativeArgs)
+                        } else {
+                            commandLine(*nativeArgs)
+                        }
+
+                        project.logger.info("nativeArgs executed.")
 
                         enabled true
                     }
