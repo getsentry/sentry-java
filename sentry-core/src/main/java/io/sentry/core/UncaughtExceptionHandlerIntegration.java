@@ -16,7 +16,7 @@ import org.jetbrains.annotations.TestOnly;
  * Sends any uncaught exception to Sentry, then passes the exception on to the pre-existing uncaught
  * exception handler.
  */
-final class UncaughtExceptionHandlerIntegration
+public final class UncaughtExceptionHandlerIntegration
     implements Integration, Thread.UncaughtExceptionHandler, Closeable {
   /** Reference to the pre-existing uncaught exception handler. */
   private Thread.UncaughtExceptionHandler defaultExceptionHandler;
@@ -36,7 +36,7 @@ final class UncaughtExceptionHandlerIntegration
   }
 
   @Override
-  public void register(IHub hub, SentryOptions options) {
+  public final void register(IHub hub, SentryOptions options) {
     if (registered) {
       options
           .getLogger()

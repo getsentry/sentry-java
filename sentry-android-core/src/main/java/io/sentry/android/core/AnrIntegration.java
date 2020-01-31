@@ -12,12 +12,16 @@ import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
-final class AnrIntegration implements Integration, Closeable {
+/**
+ * When the UI thread of an Android app is blocked for too long, an "Application Not Responding"
+ * (ANR) error is triggered. Sends an event if an ANR happens
+ */
+public final class AnrIntegration implements Integration, Closeable {
 
   private static ANRWatchDog anrWatchDog;
 
   @Override
-  public void register(IHub hub, SentryOptions options) {
+  public final void register(IHub hub, SentryOptions options) {
     register(hub, (SentryAndroidOptions) options);
   }
 

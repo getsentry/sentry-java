@@ -4,7 +4,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.jetbrains.annotations.NotNull;
 
-final class SendCachedEventFireAndForgetIntegration implements Integration {
+/** Sends cached events over when your App. is starting. */
+public final class SendCachedEventFireAndForgetIntegration implements Integration {
 
   private final SendFireAndForgetFactory factory;
 
@@ -22,7 +23,7 @@ final class SendCachedEventFireAndForgetIntegration implements Integration {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public final void register(@NotNull IHub hub, @NotNull SentryOptions options) {
     String cachedDir = options.getCacheDirPath();
     if (cachedDir == null) {
       options.getLogger().log(SentryLevel.WARNING, "No cache dir path is defined in options.");
