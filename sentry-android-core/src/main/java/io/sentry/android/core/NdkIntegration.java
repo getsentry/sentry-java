@@ -7,13 +7,14 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import java.lang.reflect.Method;
 
-final class NdkIntegration implements Integration {
+/** Enables the NDK error reporting for Android */
+public final class NdkIntegration implements Integration {
   private boolean isNdkAvailable() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
   }
 
   @Override
-  public void register(IHub hub, SentryOptions options) {
+  public final void register(IHub hub, SentryOptions options) {
     // Note: `hub` isn't used here because the NDK integration writes files to disk which are picked
     // up by another
     // integration. The NDK directory watching must happen before this integration runs.

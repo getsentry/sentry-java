@@ -10,7 +10,8 @@ import java.io.Closeable;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
+/** Watches the envelope dir. and send them (events) over. */
+public abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
   private @Nullable EnvelopeFileObserver observer;
 
   EnvelopeFileObserverIntegration() {}
@@ -20,7 +21,7 @@ abstract class EnvelopeFileObserverIntegration implements Integration, Closeable
   }
 
   @Override
-  public void register(IHub hub, SentryOptions options) {
+  public final void register(IHub hub, SentryOptions options) {
     ILogger logger = options.getLogger();
     String path = getPath(options);
     if (path == null) {
