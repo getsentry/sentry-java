@@ -10,7 +10,7 @@ import java.lang.reflect.Method;
 /** Enables the NDK error reporting for Android */
 public final class NdkIntegration implements Integration {
   private boolean isNdkAvailable() {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
   }
 
   @Override

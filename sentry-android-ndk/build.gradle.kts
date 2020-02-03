@@ -18,6 +18,7 @@ android {
     } else {
         "sentry-native"
     }
+    println("sentry-android-ndk: $sentryNativeSrc")
 
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)

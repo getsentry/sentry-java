@@ -20,6 +20,7 @@ android {
             } else {
                 "sentry-native"
             }
+            println("sentry-sample: $sentryNativeSrc")
 
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
