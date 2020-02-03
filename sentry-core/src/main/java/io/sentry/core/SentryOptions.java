@@ -18,8 +18,8 @@ public class SentryOptions {
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
   /**
-   * Are callbacks that run for every event. They can either return a “new” event which in most
-   * cases means just adding data OR return null in case the event will be dropped and not sent.
+   * Are callbacks that run for every event. They can either return a new event which in most cases
+   * means just adding data OR return null in case the event will be dropped and not sent.
    */
   private final @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
 
@@ -293,7 +293,7 @@ public class SentryOptions {
   /**
    * Sets the shutdown timeout in Mills Default is 2000 = 2s
    *
-   * @param shutdownTimeoutMills
+   * @param shutdownTimeoutMills the shutdown timeout in mills
    */
   public void setShutdownTimeout(long shutdownTimeoutMills) {
     this.shutdownTimeoutMills = shutdownTimeoutMills;

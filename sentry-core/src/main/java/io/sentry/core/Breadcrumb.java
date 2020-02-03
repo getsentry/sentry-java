@@ -16,7 +16,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
 
-  /** If a message is provided, it’s rendered as text and the whitespace is preserved. */
+  /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
 
   /** The type of breadcrumb. */
@@ -126,7 +126,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   /**
    * Removes an entry from the data's map
    *
-   * @param key
+   * @param key the key
    */
   public void removeData(@NotNull String key) {
     data.remove(key);
