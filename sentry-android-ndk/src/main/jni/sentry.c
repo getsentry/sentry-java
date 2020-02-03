@@ -13,7 +13,7 @@ struct transport_options {
 
 struct transport_options g_transport_options;
 
-static void send_envelope(const sentry_envelope_t *envelope, void *data) {
+static void send_envelope(sentry_envelope_t *envelope, void *data) {
     char envelope_id_str[40];
     char outbox_path[4096];
 
@@ -43,7 +43,10 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
     g_transport_options.cls = cls;
 
     sentry_options_t *options = sentry_options_new();
-    sentry_options_set_transport(options, send_envelope, NULL);
+
+    sentry_options_set_database_path(options, g_transport_options.outbox_path);
+    sentry_options_set_transport(
+            options, sentry_new_function_transport(send_envelope, NULL));
     sentry_options_set_debug(options, g_transport_options.debug);
     sentry_options_set_dsn(options, (*env)->GetStringUTFChars(env, dsn, 0));
     sentry_init(options);
