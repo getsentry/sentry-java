@@ -658,6 +658,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       String internalStoragePath =
           internalStorage != null ? internalStorage.getAbsolutePath() : null;
       for (File file : externalFilesDirs) {
+        // externalFilesDirs may contain null values :(
+        if (file == null) {
+          continue;
+        }
+
         // return the 1st file if you cannot compare with the internal one
         if (internalStoragePath == null || internalStoragePath.isEmpty()) {
           return file;
