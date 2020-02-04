@@ -11,7 +11,7 @@ public class MyApplication extends Application {
 
   @Override
   public void onCreate() {
-    districtMode();
+    strictMode();
     super.onCreate();
 
     Timber.plant(new Timber.DebugTree());
@@ -28,7 +28,7 @@ public class MyApplication extends Application {
     // });
   }
 
-  private void districtMode() {
+  private void strictMode() {
     //    https://developer.android.com/reference/android/os/StrictMode
     //    StrictMode is a developer tool which detects things you might be doing by accident and
     //    brings them to your attention so you can fix them.
