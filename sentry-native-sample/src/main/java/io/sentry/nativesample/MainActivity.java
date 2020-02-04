@@ -10,7 +10,7 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    districtMode();
+    strictMode();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     findViewById(R.id.native_capture).setOnClickListener(view -> NativeSample.message());
   }
 
-  private void districtMode() {
+  private void strictMode() {
     //    https://developer.android.com/reference/android/os/StrictMode
     //    StrictMode is a developer tool which detects things you might be doing by accident and
     //    brings them to your attention so you can fix them.
