@@ -24,22 +24,6 @@ matrix:
       cache:
         directories:
           - $HOME/.m2
-    - language: cpp
-      dist: trusty
-      jdk: oraclejdk7
-      env: TARGET=x86_64
-      before_install: .ci/agent-install.sh
-      script: .ci/agent-build.sh
-      cache: false
-      after_success: true
-    - language: cpp
-      dist: trusty
-      jdk: oraclejdk7
-      env: TARGET=i686
-      before_install: .ci/agent-install.sh
-      script: .ci/agent-build.sh
-      cache: false
-      after_success: true
 
 deploy:
   provider: script
