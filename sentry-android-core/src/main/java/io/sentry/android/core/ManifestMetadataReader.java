@@ -9,42 +9,52 @@ import io.sentry.core.SentryLevel;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
+/** Class responsible for reading values from manifest and setting them to the options */
 final class ManifestMetadataReader {
 
-  static final String DSN_KEY = "io.sentry.dsn";
-  static final String DEBUG_KEY = "io.sentry.debug";
+  static final String DSN = "io.sentry.dsn";
+  static final String DEBUG = "io.sentry.debug";
   static final String DEBUG_LEVEL = "io.sentry.debug.level";
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
   static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
   static final String AUTO_INIT = "io.sentry.auto-init";
-  static final String ENABLE_NDK = "io.sentry.ndk.enable";
+  static final String NDK_ENABLE = "io.sentry.ndk.enable";
+  static final String RELEASE = "io.sentry.release";
 
+  /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
-  static void applyMetadata(@NotNull Context context, @NotNull SentryAndroidOptions options) {
+  /**
+   * Reads configurations from Manifest and sets it to the options
+   *
+   * @param context the application context
+   * @param options the SentryAndroidOptions
+   */
+  static void applyMetadata(
+      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
     if (options == null) throw new IllegalArgumentException("The options object is required.");
 
     try {
-      Bundle metadata = getMetadata(context);
+      final Bundle metadata = getMetadata(context);
 
       if (metadata != null) {
-        boolean debug = metadata.getBoolean(DEBUG_KEY, options.isDebug());
+        final boolean debug = metadata.getBoolean(DEBUG, options.isDebug());
         options.setDebug(debug);
         options.getLogger().log(SentryLevel.DEBUG, "debug read: %s", debug);
 
         if (options.isDebug()) {
-          String level =
+          final String level =
               metadata.getString(
                   DEBUG_LEVEL, options.getDiagnosticLevel().name().toLowerCase(Locale.ROOT));
           options.setDiagnosticLevel(SentryLevel.valueOf(level.toUpperCase(Locale.ROOT)));
         }
 
-        boolean isAnrEnabled = metadata.getBoolean(ANR_ENABLE, options.isAnrEnabled());
-        options.getLogger().log(SentryLevel.DEBUG, "isAnrEnabled read: %s", isAnrEnabled);
-        options.setAnrEnabled(isAnrEnabled);
+        final boolean anrEnabled = metadata.getBoolean(ANR_ENABLE, options.isAnrEnabled());
+        options.getLogger().log(SentryLevel.DEBUG, "anrEnabled read: %s", anrEnabled);
+        options.setAnrEnabled(anrEnabled);
 
         if (options.getSampleRate() == null) {
           Double sampleRate = metadata.getDouble(SAMPLE_RATE, -1);
@@ -54,21 +64,19 @@ final class ManifestMetadataReader {
           }
         }
 
-        boolean isAnrReportInDebug =
+        boolean anrReportInDebug =
             metadata.getBoolean(ANR_REPORT_DEBUG, options.isAnrReportInDebug());
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "isAnrReportInDebug read: %s", isAnrReportInDebug);
-        options.setAnrReportInDebug(isAnrReportInDebug);
+        options.getLogger().log(SentryLevel.DEBUG, "anrReportInDebug read: %s", anrReportInDebug);
+        options.setAnrReportInDebug(anrReportInDebug);
 
-        long anrTimeoutIntervalMills =
+        final long anrTimeoutIntervalMills =
             metadata.getInt(ANR_TIMEOUT_INTERVAL_MILLS, (int) options.getAnrTimeoutIntervalMills());
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "anrTimeoutIntervalMills read: %d", anrTimeoutIntervalMills);
         options.setAnrTimeoutIntervalMills(anrTimeoutIntervalMills);
 
-        String dsn = metadata.getString(DSN_KEY, null);
+        final String dsn = metadata.getString(DSN, null);
         if (dsn == null) {
           options
               .getLogger()
@@ -80,9 +88,13 @@ final class ManifestMetadataReader {
         }
         options.setDsn(dsn);
 
-        boolean ndk = metadata.getBoolean(ENABLE_NDK, options.isEnableNdk());
+        final boolean ndk = metadata.getBoolean(NDK_ENABLE, options.isEnableNdk());
         options.getLogger().log(SentryLevel.DEBUG, "NDK read: %s", ndk);
         options.setEnableNdk(ndk);
+
+        final String release = metadata.getString(RELEASE, options.getRelease());
+        options.getLogger().log(SentryLevel.DEBUG, "release read: %s", release);
+        options.setRelease(release);
       }
       options
           .getLogger()
@@ -95,12 +107,19 @@ final class ManifestMetadataReader {
     }
   }
 
-  static boolean isAutoInit(Context context, final @NotNull ILogger logger) {
+  /**
+   * Checks if auto init is enabled or disabled
+   *
+   * @param context the application context
+   * @param logger the Logger interface
+   * @return true if auto init is enabled or false otherwise
+   */
+  static boolean isAutoInit(final Context context, final @NotNull ILogger logger) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
 
     boolean autoInit = true;
     try {
-      Bundle metadata = getMetadata(context);
+      final Bundle metadata = getMetadata(context);
       if (metadata != null) {
         autoInit = metadata.getBoolean(AUTO_INIT, true);
         logger.log(SentryLevel.DEBUG, "Auto-init: %s", autoInit);
@@ -112,8 +131,16 @@ final class ManifestMetadataReader {
     return autoInit;
   }
 
-  private static Bundle getMetadata(Context context) throws PackageManager.NameNotFoundException {
-    ApplicationInfo app =
+  /**
+   * Returns the Bundle attached from the given Context
+   *
+   * @param context the application context
+   * @return the Bundle attached to the PackageManager
+   * @throws PackageManager.NameNotFoundException if the package name is non-existent
+   */
+  private static Bundle getMetadata(final Context context)
+      throws PackageManager.NameNotFoundException {
+    final ApplicationInfo app =
         context
             .getPackageManager()
             .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);

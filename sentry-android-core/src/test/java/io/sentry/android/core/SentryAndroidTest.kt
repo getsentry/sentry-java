@@ -44,7 +44,7 @@ class SentryAndroidTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
 
         SentryAndroid.init(mockContext)
@@ -60,7 +60,7 @@ class SentryAndroidTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
 
         val logger = mock<ILogger>()
@@ -78,7 +78,7 @@ class SentryAndroidTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
 
         var refOptions: SentryAndroidOptions? = null
@@ -97,7 +97,7 @@ class SentryAndroidTest {
         val mockContext = createMockContext()
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
 
         val logger = mock<ILogger>()
         SentryAndroid.init(mockContext, logger)

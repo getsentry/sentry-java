@@ -54,7 +54,7 @@ class SentryInitProviderTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "https://key@sentry.io/123")
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
 
         sentryInitProvider.attachInfo(mockContext, providerInfo)
 
@@ -72,7 +72,7 @@ class SentryInitProviderTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "")
+        metaData.putString(ManifestMetadataReader.DSN, "")
 
         sentryInitProvider.attachInfo(mockContext, providerInfo)
 
@@ -90,7 +90,7 @@ class SentryInitProviderTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, null)
+        metaData.putString(ManifestMetadataReader.DSN, null)
 
         assertFailsWith<IllegalArgumentException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
@@ -106,7 +106,7 @@ class SentryInitProviderTest {
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
 
-        metaData.putString(ManifestMetadataReader.DSN_KEY, "invalid dsn")
+        metaData.putString(ManifestMetadataReader.DSN, "invalid dsn")
 
         assertFailsWith<InvalidDsnException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
@@ -138,7 +138,7 @@ class SentryInitProviderTest {
 
         val metaData = Bundle()
         mockMetaData(mockContext, metaData)
-        metaData.putBoolean(ManifestMetadataReader.ENABLE_NDK, false)
+        metaData.putBoolean(ManifestMetadataReader.NDK_ENABLE, false)
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
 
