@@ -74,6 +74,30 @@ class AndroidSerializerTest {
     }
 
     @Test
+    fun `when deserializing mills timestamp, it should become a SentryEvent-Date`() {
+        val dateIsoFormat = "1581410911"
+        val expected = DateUtils.getDateTimeWithMillsPrecision(dateIsoFormat)
+
+        val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
+
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+
+        assertEquals(expected, actual.timestamp)
+    }
+
+    @Test
+    fun `when deserializing mills timestamp with mills precision, it should become a SentryEvent-Date`() {
+        val dateIsoFormat = "1581410911.988"
+        val expected = DateUtils.getDateTimeWithMillsPrecision(dateIsoFormat)
+
+        val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
+
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+
+        assertEquals(expected, actual.timestamp)
+    }
+
+    @Test
     fun `when deserializing unknown properties, it should be added to unknown field`() {
         val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
