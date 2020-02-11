@@ -63,6 +63,8 @@ public final class UncaughtExceptionHandlerIntegration
     }
 
     threadAdapter.setDefaultUncaughtExceptionHandler(this);
+
+    options.getLogger().log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
   }
 
   @Override

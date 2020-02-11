@@ -26,7 +26,9 @@ public final class AnrIntegration implements Integration, Closeable {
   }
 
   private void register(IHub hub, SentryAndroidOptions options) {
-    options.getLogger().log(SentryLevel.DEBUG, "ANR enabled: %s", options.isAnrEnabled());
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
 
     if (options.isAnrEnabled() && anrWatchDog == null) {
       options
@@ -43,6 +45,8 @@ public final class AnrIntegration implements Integration, Closeable {
               error -> reportANR(hub, options.getLogger(), error),
               options.getLogger());
       anrWatchDog.start();
+
+      options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
     }
   }
 

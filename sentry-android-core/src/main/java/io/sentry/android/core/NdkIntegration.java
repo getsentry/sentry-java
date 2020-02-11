@@ -15,10 +15,13 @@ public final class NdkIntegration implements Integration {
 
   @Override
   public final void register(IHub hub, SentryOptions options) {
+    boolean enabled = options.isEnableNdk() && isNdkAvailable();
+    options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
+
     // Note: `hub` isn't used here because the NDK integration writes files to disk which are picked
     // up by another
     // integration. The NDK directory watching must happen before this integration runs.
-    if (options.isEnableNdk() && isNdkAvailable()) {
+    if (enabled) {
       try {
         Class<?> cls = Class.forName("io.sentry.android.ndk.SentryNdk");
 
@@ -26,6 +29,8 @@ public final class NdkIntegration implements Integration {
         Object[] args = new Object[1];
         args[0] = options;
         method.invoke(null, args);
+
+        options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
       } catch (ClassNotFoundException e) {
         options.setEnableNdk(false);
         options.getLogger().log(SentryLevel.ERROR, "Failed to load SentryNdk.", e);
