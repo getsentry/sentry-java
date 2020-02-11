@@ -14,6 +14,7 @@ final class ManifestMetadataReader {
   static final String DSN_KEY = "io.sentry.dsn";
   static final String DEBUG_KEY = "io.sentry.debug";
   static final String DEBUG_LEVEL = "io.sentry.debug.level";
+  static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
   static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
@@ -22,8 +23,9 @@ final class ManifestMetadataReader {
 
   private ManifestMetadataReader() {}
 
-  static void applyMetadata(Context context, SentryAndroidOptions options) {
+  static void applyMetadata(@NotNull Context context, @NotNull SentryAndroidOptions options) {
     if (context == null) throw new IllegalArgumentException("The application context is required.");
+    if (options == null) throw new IllegalArgumentException("The options object is required.");
 
     try {
       Bundle metadata = getMetadata(context);
@@ -43,6 +45,14 @@ final class ManifestMetadataReader {
         boolean isAnrEnabled = metadata.getBoolean(ANR_ENABLE, options.isAnrEnabled());
         options.getLogger().log(SentryLevel.DEBUG, "isAnrEnabled read: %s", isAnrEnabled);
         options.setAnrEnabled(isAnrEnabled);
+
+        if (options.getSampleRate() == null) {
+          Double sampleRate = metadata.getDouble(SAMPLE_RATE, -1);
+          options.getLogger().log(SentryLevel.DEBUG, "sampleRate read: %s", sampleRate);
+          if (sampleRate != -1) {
+            options.setSampleRate(sampleRate);
+          }
+        }
 
         boolean isAnrReportInDebug =
             metadata.getBoolean(ANR_REPORT_DEBUG, options.isAnrReportInDebug());
