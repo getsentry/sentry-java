@@ -27,7 +27,15 @@ public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
     try {
       return json == null ? null : DateUtils.getDateTime(json.getAsString());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing Date", e);
+      logger.log(
+          SentryLevel.DEBUG,
+          "Error when deserializing UTC timestamp format, it might be mills timestamp format.",
+          e);
+    }
+    try {
+      return DateUtils.getDateTimeWithMillsPrecision(json.getAsString());
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when deserializing mills timestamp format.", e);
     }
     return null;
   }
