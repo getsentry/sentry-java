@@ -25,9 +25,12 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
     ILogger logger = options.getLogger();
     String path = getPath(options);
     if (path == null) {
-      logger.log(SentryLevel.WARNING, "Null given as a path to %s. Nothing will be registered.");
+      logger.log(
+          SentryLevel.WARNING,
+          "Null given as a path to EnvelopeFileObserverIntegration. Nothing will be registered.");
     } else {
-      logger.log(SentryLevel.DEBUG, "Registering CachedEventReaderIntegration for path: %s", path);
+      logger.log(
+          SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
       EnvelopeSender envelopeSender =
           new EnvelopeSender(
@@ -35,6 +38,8 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
       observer = new EnvelopeFileObserver(path, envelopeSender, logger);
       observer.startWatching();
+
+      options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
     }
   }
 

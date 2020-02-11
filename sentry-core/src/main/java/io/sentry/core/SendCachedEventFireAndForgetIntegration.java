@@ -26,7 +26,11 @@ public final class SendCachedEventFireAndForgetIntegration implements Integratio
   public final void register(@NotNull IHub hub, @NotNull SentryOptions options) {
     String cachedDir = options.getCacheDirPath();
     if (cachedDir == null) {
-      options.getLogger().log(SentryLevel.WARNING, "No cache dir path is defined in options.");
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "No cache dir path is defined in options to SendCachedEventFireAndForgetIntegration.");
       return;
     }
 
@@ -49,6 +53,10 @@ public final class SendCachedEventFireAndForgetIntegration implements Integratio
           .getLogger()
           .log(SentryLevel.DEBUG, "Scheduled sending cached files from %s", cachedDir);
       es.shutdown();
+
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
     } catch (Exception e) {
       options
           .getLogger()
