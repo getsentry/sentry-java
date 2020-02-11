@@ -239,6 +239,15 @@ class AndroidSerializerTest {
     }
 
     @Test
+    fun `when deserializing a event with breadcrumbs containing data, it should become have breadcrumbs`() {
+        val jsonEvent = FileFromResources.invoke("event_breadcrumb_data.json")
+
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+
+        assertEquals(2, actual.breadcrumbs.size)
+    }
+
+    @Test
     fun `when theres a null value, gson wont blow up`() {
         val json = FileFromResources.invoke("event.json")
         val event = serializer.deserializeEvent(StringReader(json))

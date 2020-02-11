@@ -23,7 +23,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   private @Nullable String type;
 
   /** Data associated with this breadcrumb. */
-  private @NotNull Map<String, String> data = new ConcurrentHashMap<>();
+  private @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
   /** Dotted strings that indicate what the crumb is or where it comes from. */
   private @Nullable String category;
@@ -109,7 +109,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    * @return the data map
    */
   @NotNull
-  Map<String, String> getData() {
+  Map<String, Object> getData() {
     return data;
   }
 
@@ -119,7 +119,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    * @param key the key
    * @param value the value
    */
-  public void setData(@NotNull String key, @NotNull String value) {
+  public void setData(@NotNull String key, @NotNull Object value) {
     data.put(key, value);
   }
 
@@ -200,11 +200,11 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   public @NotNull Breadcrumb clone() throws CloneNotSupportedException {
     final Breadcrumb clone = (Breadcrumb) super.clone();
 
-    final Map<String, String> dataRef = data;
+    final Map<String, Object> dataRef = data;
     if (dataRef != null) {
-      final Map<String, String> dataClone = new ConcurrentHashMap<>();
+      final Map<String, Object> dataClone = new ConcurrentHashMap<>();
 
-      for (Map.Entry<String, String> item : dataRef.entrySet()) {
+      for (Map.Entry<String, Object> item : dataRef.entrySet()) {
         if (item != null) {
           dataClone.put(item.getKey(), item.getValue()); // shallow copy
         }

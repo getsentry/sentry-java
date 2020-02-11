@@ -24,9 +24,6 @@ final class AndroidLogger implements ILogger {
   public void log(SentryLevel level, String message, Throwable throwable) {
 
     switch (level) {
-      case DEBUG:
-        Log.d(tag, message, throwable);
-        break;
       case INFO:
         Log.i(tag, message, throwable);
         break;
@@ -39,39 +36,26 @@ final class AndroidLogger implements ILogger {
       case FATAL:
         Log.wtf(tag, message, throwable);
         break;
-    }
-  }
-
-  SentryLevel toSentryLevel(int logcatLevel) {
-    switch (logcatLevel) {
-      case Log.VERBOSE:
-      case Log.DEBUG:
-        return SentryLevel.DEBUG;
-      case Log.INFO:
-        return SentryLevel.INFO;
-      case Log.WARN:
-        return SentryLevel.WARNING;
-      case Log.ERROR:
-        return SentryLevel.ERROR;
-      case Log.ASSERT:
+      case LOG:
+      case DEBUG:
       default:
-        return SentryLevel.FATAL;
+        Log.d(tag, message, throwable);
+        break;
     }
   }
 
   private int toLogcatLevel(SentryLevel sentryLevel) {
     switch (sentryLevel) {
-      case DEBUG:
-        return Log.DEBUG;
       case INFO:
         return Log.INFO;
       case WARNING:
         return Log.WARN;
       case FATAL:
         return Log.ASSERT;
-      case ERROR:
+      case LOG:
+      case DEBUG:
       default:
-        return Log.ERROR;
+        return Log.DEBUG;
     }
   }
 }
