@@ -50,10 +50,10 @@ object Config {
         val SENTRY_CLIENT_NAME = "sentry.java.android"
         val group = "io.sentry"
 //        TODO: change version to publish new version
-        val version = "2.0.0-rc03"
+        val version = "2.0.0-rc04"
         val description = "SDK for sentry.io"
 //        TODO: change version code to publish new version, follow the pattern of `version`
-        val buildVersionCode = 20014
+        val buildVersionCode = 20015
         val website = "https://sentry.io"
         val userOrg = "getsentry"
         val repoName = "sentry-android"
