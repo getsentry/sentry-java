@@ -8,6 +8,7 @@ import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.tasks.AbstractExecTask
 import org.gradle.api.tasks.Exec
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -267,40 +268,7 @@ class SentryPlugin implements Plugin<Project> {
                         description "Write references to proguard UUIDs to the android assets."
                         workingDir project.rootDir
 
-                        def buildTypeName = variant.buildType.name
-                        def flavorName = variant.flavorName
-                        // When flavor is used in combination with dimensions, variant.flavorName will be a concatenation
-                        // of flavors of different dimensions
-                        def propName = "sentry.properties"
-                        // current flavor name takes priority
-                        def possibleProps = []
-                        variant.productFlavors.each {
-                            // flavors used with dimension come in second
-                            possibleProps.push("${project.projectDir}/src/${it.name}/${propName}")
-                        }
-
-                        possibleProps = [
-                                "${project.projectDir}/src/${buildTypeName}/${propName}",
-                                "${project.projectDir}/src/${buildTypeName}/${flavorName}/${propName}",
-                                "${project.projectDir}/src/${flavorName}/${buildTypeName}/${propName}",
-                                "${project.projectDir}/src/${flavorName}/${propName}",
-                                "${project.rootDir.toPath()}/src/${flavorName}/${propName}",
-                        ] + possibleProps + [
-                                "${project.rootDir.toPath()}/src/${buildTypeName}/${propName}",
-                                "${project.rootDir.toPath()}/src/${buildTypeName}/${flavorName}/${propName}",
-                                "${project.rootDir.toPath()}/src/${flavorName}/${buildTypeName}/${propName}",
-                                // Root sentry.properties is the last to be looked up
-                                "${project.rootDir.toPath()}/${propName}"
-                        ]
-
-                        def propsFile = null
-                        possibleProps.each {
-                            project.logger.info("Looking for Sentry properties at: $it")
-                            if (propsFile == null && new File(it).isFile()) {
-                                propsFile = it
-                                project.logger.info("Found Sentry properties in: $it")
-                            }
-                        }
+                        def propsFile = getPropsString(project, variant)
 
                         if (propsFile != null) {
                             environment("SENTRY_PROPERTIES", propsFile)
@@ -321,11 +289,6 @@ class SentryPlugin implements Plugin<Project> {
                                 mappingFile
                         ]
 
-                        def nativeArgs = [
-                                cli,
-                                "upload-dif",
-                        ]
-
                         if (!extension.autoUpload) {
                             args << "--no-upload"
                         }
@@ -334,27 +297,13 @@ class SentryPlugin implements Plugin<Project> {
                         if (buildTypeProperties.has(SENTRY_ORG_PARAMETER)) {
                             args.add("--org")
                             args.add(buildTypeProperties.get(SENTRY_ORG_PARAMETER).toString())
-
-                            nativeArgs.add("-o")
-                            nativeArgs.add(buildTypeProperties.get(SENTRY_ORG_PARAMETER).toString())
                         }
                         if (buildTypeProperties.has(SENTRY_PROJECT_PARAMETER)) {
                             args.add("--project")
                             args.add(buildTypeProperties.get(SENTRY_PROJECT_PARAMETER).toString())
-
-                            nativeArgs.add("-p")
-                            nativeArgs.add(buildTypeProperties.get(SENTRY_PROJECT_PARAMETER).toString())
-                        }
-
-                        nativeArgs.add("${project.projectDir}/build")
-
-                        if (extension.includeNativeSource) {
-                            nativeArgs.add("--include-sources")
                         }
 
                         project.logger.info("cli args: ${args.toString()}")
-
-                        project.logger.info("nativeArgs args: ${nativeArgs.toString()}")
 
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                             commandLine("cmd", "/c", *args)
@@ -363,6 +312,54 @@ class SentryPlugin implements Plugin<Project> {
                         }
 
                         project.logger.info("args executed.")
+
+                        enabled true
+                    }
+
+                    // create and hooks the upload native symbols task after the packaging task
+                    def variantOutputName = "${variant.name.capitalize()}${variantOutput.name.capitalize()}"
+                    def uploadNativeSymbolsTaskName = "uploadNativeSymbolsFor${variantOutputName}"
+                    def uploadNativeSymbolsTask = project.tasks.create(
+                            name: uploadNativeSymbolsTaskName,
+                            type: Exec) {
+                        description "Uploads Native symbols."
+                        workingDir project.rootDir
+
+                        def propsFile = getPropsString(project, variant)
+
+                        if (propsFile != null) {
+                            environment("SENTRY_PROPERTIES", propsFile)
+                        } else {
+                            project.logger.info("propsFile is null")
+                        }
+
+                        def nativeArgs = [
+                                cli,
+                                "upload-dif",
+                        ]
+
+                        def buildTypeProperties = variant.buildType.ext
+                        if (buildTypeProperties.has(SENTRY_ORG_PARAMETER)) {
+                            nativeArgs.add("-o")
+                            nativeArgs.add(buildTypeProperties.get(SENTRY_ORG_PARAMETER).toString())
+                        }
+                        if (buildTypeProperties.has(SENTRY_PROJECT_PARAMETER)) {
+                            nativeArgs.add("-p")
+                            nativeArgs.add(buildTypeProperties.get(SENTRY_PROJECT_PARAMETER).toString())
+                        }
+
+                        // eg absoluteProjectFolderPath/build/intermediates/merged_native_libs/{variant} where {variant} could be debug/release...
+                        def symbolsPath = "${project.projectDir}${File.separator}build${File.separator}intermediates${File.separator}merged_native_libs${File.separator}${variant.name}"
+                        project.logger.info("symbolsPath: ${symbolsPath}")
+
+                        nativeArgs.add("${symbolsPath}")
+
+                        // only include sources if includeNativeSources is enabled, this is opt-in feature
+                        if (extension.includeNativeSources) {
+                            nativeArgs.add("--include-sources")
+                        }
+
+                        project.logger.info("nativeArgs args: ${nativeArgs.toString()}")
 
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                             commandLine("cmd", "/c", *nativeArgs)
@@ -381,13 +378,29 @@ class SentryPlugin implements Plugin<Project> {
                     if (dexTask != null) {
                         dexTask.dependsOn persistIdsTask
                     } else {
-                        proguardTask.finalizedBy(persistIdsTask)
+                        proguardTask.finalizedBy persistIdsTask
                     }
                     // To include proguard uuid file into aab, run before bundle task.
                     if (bundleTask != null) {
                         bundleTask.dependsOn persistIdsTask
                     }
                     persistIdsTask.dependsOn proguardTask
+
+                    // find packaging task eg package{Variant} where {Variant} could be Debug/Release
+                    def packageTask = getPackaging(project, variant)
+                    if (packageTask != null) {
+                        project.logger.info("packageTask ${packageTask.path}")
+                    } else {
+                        packageTask.logger.info("packageTask is null")
+                    }
+
+                    // uploadNativeSymbolsTask only will be executed after the packageTask
+                    // and only if uploadNativeSymbols is enabled, this is opt-in feature
+                    if (packageTask != null && extension.uploadNativeSymbols) {
+                        packageTask.finalizedBy uploadNativeSymbolsTask
+                    } else {
+                        packageTask.logger.info("uploadNativeSymbolsTask won't be executed")
+                    }
                 }
             }
         }
@@ -433,5 +446,60 @@ class SentryPlugin implements Plugin<Project> {
         } catch (Exception ignored) {
             project.logger.error("findAndroidManifestFileDir 5: ${ignored.getMessage()}")
         }
+    }
+
+    /**
+     * Returns the packaging task
+     * @param project the given project
+     * @param variant the given variant
+     * @return the task if found or null otherwise
+     */
+    static Task getPackaging(Project project, ApplicationVariant variant) {
+        return project.tasks.findByName("package${variant.name.capitalize()}")
+    }
+
+    /**
+     * Returns the GString with the current read'ed properties
+     * @param project the given project
+     * @param variant the given variant
+     * @return the GString if found or null otherwise
+     */
+    static GString getPropsString(Project project, ApplicationVariant variant) {
+        def buildTypeName = variant.buildType.name
+        def flavorName = variant.flavorName
+        // When flavor is used in combination with dimensions, variant.flavorName will be a concatenation
+        // of flavors of different dimensions
+        def propName = "sentry.properties"
+        // current flavor name takes priority
+        def possibleProps = []
+        variant.productFlavors.each {
+            // flavors used with dimension come in second
+            possibleProps.push("${project.projectDir}/src/${it.name}/${propName}")
+        }
+
+        possibleProps = [
+                "${project.projectDir}/src/${buildTypeName}/${propName}",
+                "${project.projectDir}/src/${buildTypeName}/${flavorName}/${propName}",
+                "${project.projectDir}/src/${flavorName}/${buildTypeName}/${propName}",
+                "${project.projectDir}/src/${flavorName}/${propName}",
+                "${project.rootDir.toPath()}/src/${flavorName}/${propName}",
+        ] + possibleProps + [
+                "${project.rootDir.toPath()}/src/${buildTypeName}/${propName}",
+                "${project.rootDir.toPath()}/src/${buildTypeName}/${flavorName}/${propName}",
+                "${project.rootDir.toPath()}/src/${flavorName}/${buildTypeName}/${propName}",
+                // Root sentry.properties is the last to be looked up
+                "${project.rootDir.toPath()}/${propName}"
+        ]
+
+        def propsFile = null
+        possibleProps.each {
+            project.logger.info("Looking for Sentry properties at: $it")
+            if (propsFile == null && new File(it).isFile()) {
+                propsFile = it
+                project.logger.info("Found Sentry properties in: $it")
+            }
+        }
+
+        return propsFile
     }
 }
