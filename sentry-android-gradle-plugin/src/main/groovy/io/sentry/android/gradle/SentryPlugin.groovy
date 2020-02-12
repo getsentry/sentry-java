@@ -315,7 +315,7 @@ class SentryPlugin implements Plugin<Project> {
                         enabled true
                     }
 
-                    // create and hooks the upload native symbols task after the packaging task
+                    // create and hooks the uploading of native symbols task after the assembling task
                     def variantOutputName = "${variant.name.capitalize()}${variantOutput.name.capitalize()}"
                     def uploadNativeSymbolsTaskName = "uploadNativeSymbolsFor${variantOutputName}"
                     def uploadNativeSymbolsTask = project.tasks.create(
@@ -385,20 +385,20 @@ class SentryPlugin implements Plugin<Project> {
                     }
                     persistIdsTask.dependsOn proguardTask
 
-                    // find packaging task eg package{Variant} where {Variant} could be Debug/Release
-                    def packageTask = getPackaging(project, variant)
-                    if (packageTask != null) {
-                        project.logger.info("packageTask ${packageTask.path}")
+                    // find the assemble task
+                    def assembleTask = findAssembleTask(variant)
+                    if (assembleTask != null) {
+                        project.logger.info("assembleTask ${assembleTask.path}")
                     } else {
-                        packageTask.logger.info("packageTask is null")
+                        assembleTask.logger.info("assembleTask is null")
                     }
 
-                    // uploadNativeSymbolsTask only will be executed after the packageTask
-                    // and only if uploadNativeSymbols is enabled, this is opt-in feature
-                    if (packageTask != null && extension.uploadNativeSymbols) {
-                        packageTask.finalizedBy uploadNativeSymbolsTask
+                    // uploadNativeSymbolsTask only will be executed after the assemble task
+                    // and also only if uploadNativeSymbols is enabled, this is opt-in feature
+                    if (assembleTask != null && extension.uploadNativeSymbols) {
+                        assembleTask.finalizedBy uploadNativeSymbolsTask
                     } else {
-                        packageTask.logger.info("uploadNativeSymbolsTask won't be executed")
+                        assembleTask.logger.info("uploadNativeSymbolsTask won't be executed")
                     }
                 }
             }
@@ -448,13 +448,17 @@ class SentryPlugin implements Plugin<Project> {
     }
 
     /**
-     * Returns the packaging task
+     * Returns the assemble task
      * @param project the given project
      * @param variant the given variant
      * @return the task if found or null otherwise
      */
-    static Task getPackaging(Project project, ApplicationVariant variant) {
-        return project.tasks.findByName("package${variant.name.capitalize()}")
+    static Task findAssembleTask(ApplicationVariant variant) {
+        try {
+            return variant.assembleProvider.get()
+        } catch (Exception ignored) {
+            return variant.assemble
+        }
     }
 
     /**
