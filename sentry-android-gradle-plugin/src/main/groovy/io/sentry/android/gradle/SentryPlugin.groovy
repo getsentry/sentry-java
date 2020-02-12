@@ -8,7 +8,6 @@ import org.apache.commons.compress.utils.IOUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.tasks.AbstractExecTask
 import org.gradle.api.tasks.Exec
 import org.apache.tools.ant.taskdefs.condition.Os
 
