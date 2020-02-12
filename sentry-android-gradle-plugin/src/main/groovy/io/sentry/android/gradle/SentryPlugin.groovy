@@ -134,33 +134,33 @@ class SentryPlugin implements Plugin<Project> {
         return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("proguard${names[1]}")
     }
 
-    /**
-     * Returns the dex task for the given project and variant.
-     *
-     * @param project
-     * @param variant
-     * @return
-     */
-    static Task getDexTask(Project project, ApplicationVariant variant) {
-        def names = [
-                "transformClassesWithDexFor${variant.name.capitalize()}",
-                "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
-                "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
-        ]
+//    /**
+//     * Returns the dex task for the given project and variant.
+//     *
+//     * @param project
+//     * @param variant
+//     * @return
+//     */
+//    static Task getDexTask(Project project, ApplicationVariant variant) {
+//        def names = [
+//                "transformClassesWithDexFor${variant.name.capitalize()}",
+//                "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
+//                "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
+//        ]
+//
+//        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
+//    }
 
-        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
-    }
-
-    /**
-     * Returns the bundle task for the given project and variant.
-     *
-     * @param project
-     * @param variant
-     * @return
-     */
-    static Task getBundleTask(Project project, ApplicationVariant variant) {
-        return project.tasks.findByName("build${variant.name.capitalize()}PreBundle")
-    }
+//    /**
+//     * Returns the bundle task for the given project and variant.
+//     *
+//     * @param project
+//     * @param variant
+//     * @return
+//     */
+//    static Task getBundleTask(Project project, ApplicationVariant variant) {
+//        return project.tasks.findByName("build${variant.name.capitalize()}PreBundle")
+//    }
 
     /**
      * Returns the path to the debug meta properties file for the given variant.
@@ -223,19 +223,19 @@ class SentryPlugin implements Plugin<Project> {
                     def mappingFile = variant.getMappingFile()
                     def proguardTask = getProguardTask(project, variant)
 
-                    def dexTask = getDexTask(project, variant)
-                    if (dexTask != null) {
-                        project.logger.info("dexTask ${dexTask.path}")
-                    } else {
-                        project.logger.info("dexTask is null")
-                    }
+//                    def dexTask = getDexTask(project, variant)
+//                    if (dexTask != null) {
+//                        project.logger.info("dexTask ${dexTask.path}")
+//                    } else {
+//                        project.logger.info("dexTask is null")
+//                    }
 
-                    def bundleTask = getBundleTask(project, variant)
-                    if (bundleTask != null) {
-                        project.logger.info("bundleTask ${bundleTask.path}")
-                    } else {
-                        project.logger.info("bundleTask is null")
-                    }
+//                    def bundleTask = getBundleTask(project, variant)
+//                    if (bundleTask != null) {
+//                        project.logger.info("bundleTask ${bundleTask.path}")
+//                    } else {
+//                        project.logger.info("bundleTask is null")
+//                    }
 
                     if (proguardTask == null) {
                         project.logger.info("proguardTask is null")
@@ -371,19 +371,33 @@ class SentryPlugin implements Plugin<Project> {
                         enabled true
                     }
 
+
                     // and run before dex transformation.  If we managed to find the dex task
                     // we set ourselves as dependency, otherwise we just hack outselves into
                     // the proguard task's doLast.
-                    if (dexTask != null) {
-                        dexTask.dependsOn persistIdsTask
-                    } else {
-                        proguardTask.finalizedBy persistIdsTask
-                    }
+//                    if (dexTask != null) {
+//                        dexTask.dependsOn persistIdsTask
+//                    } else {
+//                        proguardTask.finalizedBy persistIdsTask
+//                    }
                     // To include proguard uuid file into aab, run before bundle task.
-                    if (bundleTask != null) {
-                        bundleTask.dependsOn persistIdsTask
+//                    if (bundleTask != null) {
+//                        bundleTask.dependsOn persistIdsTask
+//                    }
+//                    persistIdsTask.dependsOn proguardTask
+
+                    // find the package task
+                    def packageTask = getPackageTask(project, variant)
+                    if (packageTask != null) {
+                        project.logger.info("packageTask ${packageTask.path}")
+                    } else {
+                        packageTask.logger.info("packageTask is null")
                     }
-                    persistIdsTask.dependsOn proguardTask
+
+                    // the package task will only be executed if the persistIdsTask has already been executed.
+                    if (packageTask != null) {
+                        packageTask.dependsOn persistIdsTask
+                    }
 
                     // find the assemble task
                     def assembleTask = findAssembleTask(variant)
@@ -504,5 +518,15 @@ class SentryPlugin implements Plugin<Project> {
         }
 
         return propsFile
+    }
+
+    /**
+     * Returns the package task
+     * @param project the given project
+     * @param variant the given variant
+     * @return the package task or null if not found
+     */
+    static Task getPackageTask(Project project, ApplicationVariant variant) {
+        return project.tasks.findByName("package${variant.name.capitalize()}")
     }
 }
