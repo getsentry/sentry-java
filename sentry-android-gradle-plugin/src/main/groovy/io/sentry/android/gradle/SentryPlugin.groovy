@@ -118,49 +118,62 @@ class SentryPlugin implements Plugin<Project> {
     }
 
     /**
-     * Returns the proguard task for the given project and variant.
+     * Returns the transformer task for the given project and variant.
+     * It could be either ProGuard or R8
      *
-     * @param project
-     * @param variant
-     * @return
+     * @param project the given project
+     * @param variant the given variant
+     * @return the task or null otherwise
      */
-    static Task getProguardTask(Project project, ApplicationVariant variant) {
+    static Task getTransformerTask(Project project, ApplicationVariant variant) {
         def names = [
                 // Android Studio 3.3 includes the R8 shrinker.
                 "transformClassesAndResourcesWithR8For${variant.name.capitalize()}",
-                "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}"
+                "transformClassesAndResourcesWithProguardFor${variant.name.capitalize()}",
+                "minify${variant.name.capitalize()}WithR8"
         ]
 
         return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("proguard${names[1]}")
     }
 
-//    /**
-//     * Returns the dex task for the given project and variant.
-//     *
-//     * @param project
-//     * @param variant
-//     * @return
-//     */
-//    static Task getDexTask(Project project, ApplicationVariant variant) {
-//        def names = [
-//                "transformClassesWithDexFor${variant.name.capitalize()}",
-//                "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
-//                "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
-//        ]
-//
-//        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
-//    }
+    /**
+     * Returns the dex task for the given project and variant.
+     *
+     * @param project
+     * @param variant
+     * @return
+     */
+    static Task getDexTask(Project project, ApplicationVariant variant) {
+        def names = [
+                "transformClassesWithDexFor${variant.name.capitalize()}",
+                "transformClassesWithDexBuilderFor${variant.name.capitalize()}",
+                "transformClassesAndDexWithShrinkResFor${variant.name.capitalize()}"
+        ]
 
-//    /**
-//     * Returns the bundle task for the given project and variant.
-//     *
-//     * @param project
-//     * @param variant
-//     * @return
-//     */
-//    static Task getBundleTask(Project project, ApplicationVariant variant) {
-//        return project.tasks.findByName("build${variant.name.capitalize()}PreBundle")
-//    }
+        return names.findResult { project.tasks.findByName(it) } ?: project.tasks.findByName("dex${names[0]}")
+    }
+
+    /**
+     * Returns the pre bundle task for the given project and variant.
+     *
+     * @param project
+     * @param variant
+     * @return
+     */
+    static Task getPreBundleTask(Project project, ApplicationVariant variant) {
+        return project.tasks.findByName("build${variant.name.capitalize()}PreBundle")
+    }
+
+    /**
+     * Returns the pre bundle task for the given project and variant.
+     *
+     * @param project
+     * @param variant
+     * @return
+     */
+    static Task getBundleTask(Project project, ApplicationVariant variant) {
+        return project.tasks.findByName("bundle${variant.name.capitalize()}")
+    }
 
     /**
      * Returns the path to the debug meta properties file for the given variant.
@@ -221,27 +234,34 @@ class SentryPlugin implements Plugin<Project> {
                     }
 
                     def mappingFile = variant.getMappingFile()
-                    def proguardTask = getProguardTask(project, variant)
+                    def transformerTask = getTransformerTask(project, variant)
 
-//                    def dexTask = getDexTask(project, variant)
-//                    if (dexTask != null) {
-//                        project.logger.info("dexTask ${dexTask.path}")
-//                    } else {
-//                        project.logger.info("dexTask is null")
-//                    }
+                    def dexTask = getDexTask(project, variant)
+                    if (dexTask != null) {
+                        project.logger.info("dexTask ${dexTask.path}")
+                    } else {
+                        project.logger.info("dexTask is null")
+                    }
 
-//                    def bundleTask = getBundleTask(project, variant)
-//                    if (bundleTask != null) {
-//                        project.logger.info("bundleTask ${bundleTask.path}")
-//                    } else {
-//                        project.logger.info("bundleTask is null")
-//                    }
+                    def preBundleTask = getPreBundleTask(project, variant)
+                    if (preBundleTask != null) {
+                        project.logger.info("preBundleTask ${preBundleTask.path}")
+                    } else {
+                        project.logger.info("preBundleTask is null")
+                    }
 
-                    if (proguardTask == null) {
-                        project.logger.info("proguardTask is null")
+                    def bundleTask = getBundleTask(project, variant)
+                    if (bundleTask != null) {
+                        project.logger.info("bundleTask ${bundleTask.path}")
+                    } else {
+                        project.logger.info("bundleTask is null")
+                    }
+
+                    if (transformerTask == null) {
+                        project.logger.info("transformerTask is null")
                         return
                     } else {
-                        project.logger.info("proguardTask ${proguardTask.path}")
+                        project.logger.info("transformerTask ${transformerTask.path}")
                     }
 
 //                     create a task to configure proguard automatically unless the user disabled it.
@@ -253,7 +273,7 @@ class SentryPlugin implements Plugin<Project> {
                                     SentryProguardConfigTask)
                             proguardConfigTask.group = GROUP_NAME
                             proguardConfigTask.applicationVariant = variant
-                            proguardTask.dependsOn proguardConfigTask
+                            transformerTask.dependsOn proguardConfigTask
                         }
                     }
 
@@ -375,16 +395,18 @@ class SentryPlugin implements Plugin<Project> {
                     // and run before dex transformation.  If we managed to find the dex task
                     // we set ourselves as dependency, otherwise we just hack outselves into
                     // the proguard task's doLast.
-//                    if (dexTask != null) {
-//                        dexTask.dependsOn persistIdsTask
-//                    } else {
-//                        proguardTask.finalizedBy persistIdsTask
-//                    }
+                    if (dexTask != null) {
+                        dexTask.dependsOn persistIdsTask
+                    }
+
+                    if (transformerTask != null) {
+                        transformerTask.finalizedBy persistIdsTask
+                    }
+
                     // To include proguard uuid file into aab, run before bundle task.
-//                    if (bundleTask != null) {
-//                        bundleTask.dependsOn persistIdsTask
-//                    }
-//                    persistIdsTask.dependsOn proguardTask
+                    if (preBundleTask != null) {
+                        preBundleTask.dependsOn persistIdsTask
+                    }
 
                     // find the package task
                     def packageTask = getPackageTask(project, variant)
@@ -409,10 +431,17 @@ class SentryPlugin implements Plugin<Project> {
 
                     // uploadNativeSymbolsTask only will be executed after the assemble task
                     // and also only if uploadNativeSymbols is enabled, this is opt-in feature
-                    if (assembleTask != null && extension.uploadNativeSymbols) {
-                        assembleTask.finalizedBy uploadNativeSymbolsTask
-                    } else {
-                        assembleTask.logger.info("uploadNativeSymbolsTask won't be executed")
+                    if (assembleTask != null) {
+                        if (extension.uploadNativeSymbols) {
+                            assembleTask.finalizedBy uploadNativeSymbolsTask
+
+                            // if its a bundle aab, assemble might not be executed, so we hook into bundle task
+                            if (bundleTask != null) {
+                                bundleTask.finalizedBy uploadNativeSymbolsTask
+                            }
+                        } else {
+                            assembleTask.logger.info("uploadNativeSymbolsTask won't be executed")
+                        }
                     }
                 }
             }
@@ -527,6 +556,11 @@ class SentryPlugin implements Plugin<Project> {
      * @return the package task or null if not found
      */
     static Task getPackageTask(Project project, ApplicationVariant variant) {
-        return project.tasks.findByName("package${variant.name.capitalize()}")
+        def names = [
+                "package${variant.name.capitalize()}",
+                "package${variant.name.capitalize()}Bundle"
+        ]
+
+        return names.findResult { project.tasks.findByName(it) }
     }
 }
