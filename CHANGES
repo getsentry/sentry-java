@@ -8,6 +8,7 @@ Version 1.7.30
 
 - fixed context returns new Maps (#814) 
 - added requireNonNull utils (#810) 
+- Android Gradle Plugin: Uploading native symbols and sources
 
 Version 1.7.29
 --------------
