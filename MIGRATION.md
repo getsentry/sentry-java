@@ -1,5 +1,9 @@
 # Migrating from `sentry-java` to `sentry-android`
 
+#### Docs
+
+Migration page from [sentry-android 1.x to sentry-android 2.0](https://docs.sentry.io/platforms/android/migrate).
+
 #### Installation
 
 _Old_:

@@ -26,17 +26,13 @@ Android SDK for Sentry
 
 That's the initial page of the release [2.x and its docs](https://docs.sentry.io/platforms/android).
 
+Migration page from [sentry-android 1.x to sentry-android 2.0](https://docs.sentry.io/platforms/android/migrate).
+
 # Blog posts
 
 [New Android SDK How-to](https://blog.sentry.io/2019/12/10/new-android-sdk-how-to).
 
 [Adding Native support to our Android SDK](https://blog.sentry.io/2019/11/25/adding-native-support-to-our-android-sdk).
-
-# Note
-
-This SDK is under development and will be published as version 2.0 which will be released by the end of 2019. It includes many new features including NDK support.
-
-Sentry has been offering an official SDK for Android for years now. If you are looking for the stable, LTS support of Sentry, please refer to the [1.x and its docs](https://docs.sentry.io/clients/java/integrations/#android).
 
 # Development
 
