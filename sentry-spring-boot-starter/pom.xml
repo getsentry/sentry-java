@@ -43,6 +43,7 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
 
   <dependencyManagement>
@@ -50,7 +51,7 @@
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
-        <version>1.5.17.RELEASE</version>
+        <version>1.5.1.RELEASE</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
