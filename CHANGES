@@ -1,7 +1,14 @@
-Version 1.7.31
+Version 1.7.32
 --------------
 
 -
+
+Version 1.7.31
+--------------
+
+- Android Gradle Plugin: Support App Bundles (aab) #818
+- Android Gradle Plugin: Support AGP 3.6.x
+- Android Gradle Plugin: Bug fixing #740
 
 Version 1.7.30
 --------------
