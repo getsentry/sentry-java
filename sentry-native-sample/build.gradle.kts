@@ -65,7 +65,7 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
-    implementation("io.sentry:sentry-android:2.0.0-rc04")
+    implementation("io.sentry:sentry-android:2.0.0")
 
     implementation(Config.Libs.appCompat)
 
