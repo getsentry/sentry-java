@@ -17,6 +17,9 @@ In most cases using one of the existing integrations is preferred, but Sentry ad
 a low level client for manually building and sending events to Sentry that can be used in any JVM
 based application.
 
+> The package [sentry-android-gradle-plugin was moved to its own repository.](https://github.com/getsentry/sentry-android-gradle-plugin).
+
+
 ## Resources
 
 * [Documentation](https://docs.sentry.io/clients/java/)
