@@ -17,7 +17,7 @@ Android SDK for Sentry
 
 |      Packages          | bintray |
 | ---------------------- | ------- |
-| sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/sentry-android)](https://bintray.com/getsentry/sentry-android/sentry-android?tab=overview) |
+| sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android?tab=overview) |
 | sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-core)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-core?tab=overview) |
 | sentry-android-ndk | [![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-ndk)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-ndk?tab=overview) |
 | sentry-core | [![sentry-core](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-core)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-core?tab=overview) |
