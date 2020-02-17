@@ -19,7 +19,8 @@ public final class MainEventProcessor implements EventProcessor {
         new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
-    sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory);
+    sentryThreadFactory =
+        new SentryThreadFactory(sentryStackTraceFactory, this.options.isAttachStacktrace());
   }
 
   MainEventProcessor(
@@ -71,7 +72,7 @@ public final class MainEventProcessor implements EventProcessor {
       event.setDist(options.getDist());
     }
 
-    if (event.getThreads() == null) {
+    if (event.getThreads() == null && options.isAttachThreads()) {
       event.setThreads(sentryThreadFactory.getCurrentThreads());
     }
   }

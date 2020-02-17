@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -16,7 +17,10 @@ class MainEventProcessorTest {
             environment = "environment"
             dist = "dist"
         }
-        fun getSut() = MainEventProcessor(sentryOptions)
+        fun getSut(attachThreads: Boolean = true): MainEventProcessor {
+            sentryOptions.isAttachThreads = attachThreads
+            return MainEventProcessor(sentryOptions)
+        }
     }
 
     private val fixture = Fixture()
@@ -72,6 +76,26 @@ class MainEventProcessorTest {
         assertNull(event.release)
         assertNull(event.environment)
         assertNull(event.threads)
+    }
+
+    @Test
+    fun `when processing an event and attach threads is disabled, threads should not be set`() {
+        val sut = fixture.getSut(false)
+
+        var event = SentryEvent()
+        event = sut.process(event, null)
+
+        assertNull(event.threads)
+    }
+
+    @Test
+    fun `when processing an event and attach threads is enabled, threads should be set`() {
+        val sut = fixture.getSut()
+
+        var event = SentryEvent()
+        event = sut.process(event, null)
+
+        assertNotNull(event.threads)
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {

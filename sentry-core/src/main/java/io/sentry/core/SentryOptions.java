@@ -137,6 +137,15 @@ public class SentryOptions {
   /** Sets the distribution. Think about it together with release and environment */
   private @Nullable String dist;
 
+  /** When enabled, threads are automatically attached to all logged events. */
+  private boolean attachThreads = true;
+
+  /**
+   * When enabled, stack traces are automatically attached to all threads logged. Stack traces are
+   * always attached to exceptions but when this is set stack traces are also sent with threads
+   */
+  private boolean attachStacktrace;
+
   /**
    * Adds an event processor
    *
@@ -585,6 +594,42 @@ public class SentryOptions {
    */
   public void setTransportGate(@Nullable ITransportGate transportGate) {
     this.transportGate = transportGate;
+  }
+
+  /**
+   * Checks if the AttachStacktrace is enabled or not
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isAttachStacktrace() {
+    return attachStacktrace;
+  }
+
+  /**
+   * Sets the attachStacktrace to enabled or disabled
+   *
+   * @param attachStacktrace true if enabled or false otherwise
+   */
+  public void setAttachStacktrace(boolean attachStacktrace) {
+    this.attachStacktrace = attachStacktrace;
+  }
+
+  /**
+   * Checks if the AttachThreads is enabled or not
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isAttachThreads() {
+    return attachThreads;
+  }
+
+  /**
+   * Sets the attachThreads to enabled or disabled
+   *
+   * @param attachThreads true if enabled or false otherwise
+   */
+  public void setAttachThreads(boolean attachThreads) {
+    this.attachThreads = attachThreads;
   }
 
   /** The BeforeSend callback */
