@@ -227,10 +227,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     sdkVersion.setName("sentry.java.android");
     String version = BuildConfig.VERSION_NAME;
     sdkVersion.setVersion(version);
-    sdkVersion.addPackage("sentry-core", version);
-    sdkVersion.addPackage("sentry-android-core", version);
+    sdkVersion.addPackage("maven:sentry-core", version);
+    sdkVersion.addPackage("maven:sentry-android-core", version);
     if (options.isEnableNdk()) {
-      sdkVersion.addPackage("sentry-android-ndk", version);
+      sdkVersion.addPackage("maven:sentry-android-ndk", version);
     }
 
     return sdkVersion;
