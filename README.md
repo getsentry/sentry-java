@@ -44,3 +44,11 @@ For example, if you had `sentry-native` checked-out in a sibling directory to th
 
 which will be picked up by `gradle` and used instead of the git submodule.
 This directory is also included in `.gitignore` not to be shown as pending changes.
+
+# Resources
+
+* [![Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg)](https://docs.sentry.io/platforms/android/)
+* [![Forum](https://img.shields.io/badge/forum-sentry-green.svg)](https://forum.sentry.io/c/sdks)
+* [![Discord](https://img.shields.io/discord/621778831602221064)](https://discord.gg/Ww9hbqr)
+* [![Stack Overflow](https://img.shields.io/badge/stack%20overflow-sentry-green.svg)](http://stackoverflow.com/questions/tagged/sentry)
+* ![Twitter Follow](https://img.shields.io/twitter/follow/getsentry?label=@getsentry&style=social)
