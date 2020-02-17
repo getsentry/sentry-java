@@ -76,7 +76,7 @@ class RetryingThreadPoolExecutorTest {
     fun `honors suggested delay on error and do not accept new tasks`() {
         val counter = CountDownLatch(1)
         val actualTimes = AtomicInteger()
-        val delay = 100L
+        val delay = 5000L
 
         threadPool?.submit(object : Retryable {
             override fun run() {
@@ -93,6 +93,10 @@ class RetryingThreadPoolExecutorTest {
                 return 429
             }
         })
+
+        threadPool?.submit {
+            actualTimes.incrementAndGet()
+        }
 
         threadPool?.submit {
             actualTimes.incrementAndGet()
