@@ -154,14 +154,13 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
         }
 
         if (responseCode == HTTP_TOO_MANY_REQUESTS) {
-          getQueue().clear();
-
           // just a check for sanity
           if (delayMillis <= 0) {
             delayMillis = HTTP_RETRY_AFTER_DEFAULT_DELAY_MS;
           }
 
           scheduleRetryAfterDelay(delayMillis);
+          getQueue().clear();
         }
       }
     } finally {
