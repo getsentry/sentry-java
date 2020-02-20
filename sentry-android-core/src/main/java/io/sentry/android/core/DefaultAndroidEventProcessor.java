@@ -497,6 +497,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return the device's current screen orientation, or null if unknown
    */
+  @SuppressWarnings("deprecation")
   private Device.DeviceOrientation getOrientation() {
     try {
       switch (context.getResources().getConfiguration().orientation) {
@@ -504,10 +505,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           return Device.DeviceOrientation.LANDSCAPE;
         case Configuration.ORIENTATION_PORTRAIT:
           return Device.DeviceOrientation.PORTRAIT;
+        case Configuration.ORIENTATION_SQUARE:
+        case Configuration.ORIENTATION_UNDEFINED:
         default:
           options
               .getLogger()
-              .log(SentryLevel.INFO, "No device orientation available (ORIENTATION_UNDEFINED)");
+              .log(
+                  SentryLevel.INFO,
+                  "No device orientation available (ORIENTATION_SQUARE|ORIENTATION_UNDEFINED)");
           return null;
       }
     } catch (Exception e) {
