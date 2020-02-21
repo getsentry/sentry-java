@@ -126,7 +126,7 @@ final class SentryExceptionFactory {
         thread = exceptionMechanismThrowable.getThread();
       } else {
         exceptionMechanism = null;
-        thread = null;
+        thread = Thread.currentThread();
       }
 
       SentryException exception = getSentryException(currentThrowable, exceptionMechanism, thread);
