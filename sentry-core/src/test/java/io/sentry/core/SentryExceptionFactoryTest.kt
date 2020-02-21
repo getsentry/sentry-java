@@ -56,5 +56,27 @@ class SentryExceptionFactoryTest {
         assertEquals("SentryExceptionFactoryTest\$InnerClassThrowable", queue.first.type)
     }
 
+    @Test
+    fun `when exception has no mechanism, it should get and set the current threadId`() {
+        val threadId = Thread.currentThread().id
+        val exception = Exception("message", Exception("cause"))
+        val queue = sut.extractExceptionQueue(exception)
+
+        assertEquals(threadId, queue.first.threadId)
+    }
+
+    @Test
+    fun `when exception has a mechanism, it should get and set the mechanism's threadId`() {
+        val exception = Exception("message")
+        val mechanism = Mechanism()
+        mechanism.type = "ANR"
+        val thread = Thread()
+        val throwable = ExceptionMechanismException(mechanism, exception, thread)
+
+        val queue = sut.extractExceptionQueue(throwable)
+
+        assertEquals(thread.id, queue.first.threadId)
+    }
+
     private inner class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)
 }
