@@ -146,6 +146,14 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
+  // TODO: So far docs say 'auto-session-tracking' but this would be defined at the integration level
+  // but not really at the sentry-core level since it assumes it's possible to have an auto session.
+  // Unless we default to SDK init/close as session in that case which is sub-optimal and makes harder
+  // to create the integrations
+
+  /** When enabled, threads are automatically attached to all logged events. */
+  private boolean enableSessionTracking = false;
+
   /**
    * Adds an event processor
    *
@@ -630,6 +638,14 @@ public class SentryOptions {
    */
   public void setAttachThreads(boolean attachThreads) {
     this.attachThreads = attachThreads;
+  }
+
+  public boolean isEnableSessionTracking() {
+    return enableSessionTracking;
+  }
+
+  public void setEnableSessionTracking(boolean enableSessionTracking) {
+    this.enableSessionTracking = enableSessionTracking;
   }
 
   /** The BeforeSend callback */
