@@ -146,6 +146,9 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
+  /** The server name used in the Sentry messages. */
+  private String serverName;
+
   /**
    * Adds an event processor
    *
@@ -630,6 +633,24 @@ public class SentryOptions {
    */
   public void setAttachThreads(boolean attachThreads) {
     this.attachThreads = attachThreads;
+  }
+
+  /**
+   * Gets the default server name to be used in Sentry events.
+   *
+   * @return the default server name or null if none set
+   */
+  public @Nullable String getServerName() {
+    return serverName;
+  }
+
+  /**
+   * Sets the default server name to be used in Sentry events.
+   *
+   * @param serverName the default server name or null if none should be used
+   */
+  public void setServerName(@Nullable String serverName) {
+    this.serverName = serverName;
   }
 
   /** The BeforeSend callback */

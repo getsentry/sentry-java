@@ -16,6 +16,7 @@ class MainEventProcessorTest {
             release = "release"
             environment = "environment"
             dist = "dist"
+            serverName = "server"
         }
         fun getSut(attachThreads: Boolean = true): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
@@ -48,6 +49,7 @@ class MainEventProcessorTest {
         assertEquals("release", event.release)
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
+        assertEquals("server", event.serverName)
         assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
     }
 
@@ -58,12 +60,14 @@ class MainEventProcessorTest {
         event.dist = "eventDist"
         event.environment = "eventEnvironment"
         event.release = "eventRelease"
+        event.serverName = "eventServerName"
 
         event = sut.process(event, null)
 
         assertEquals("eventRelease", event.release)
         assertEquals("eventEnvironment", event.environment)
         assertEquals("eventDist", event.dist)
+        assertEquals("eventServerName", event.serverName)
     }
 
     @Test
@@ -75,6 +79,8 @@ class MainEventProcessorTest {
 
         assertNull(event.release)
         assertNull(event.environment)
+        assertNull(event.dist)
+        assertNull(event.serverName)
         assertNull(event.threads)
     }
 
