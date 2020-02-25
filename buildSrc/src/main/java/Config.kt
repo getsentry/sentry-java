@@ -58,11 +58,14 @@ object Config {
         val userOrg = "getsentry"
         val repoName = "sentry-android"
         val licence = "MIT"
+        val licenceUrl = "http://www.opensource.org/licenses/mit-license.php"
         val issueTracker = "https://github.com/getsentry/sentry-android/issues"
         val repository = "https://github.com/getsentry/sentry-android"
         val devName = "Sentry Team and Contributors"
         val devEmail = "accounts@sentry.io"
-        val devUser = "getsentry"
+        val scmConnection = "scm:git:git://github.com/getsentry/sentry-android.git"
+        val scmDevConnection = "scm:git:ssh://github.com:getsentry/sentry-android.git"
+        val scmUrl = "https://github.com/getsentry/sentry-android/tree/master"
     }
 
     object CompileOnly {
@@ -76,9 +79,10 @@ object Config {
     }
 
     object Deploy {
-        val novodaBintrayPlugin = "com.novoda:bintray-release:0.9.2"
+        val novodaBintrayPlugin = "com.novoda:bintray-release:develop-39"
         val novodaBintray = "com.novoda.bintray-release"
         val sign = true
+        val mavenCentralSync = true
     }
 
     object NativePlugins {

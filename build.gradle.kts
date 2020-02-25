@@ -31,7 +31,7 @@ buildscript {
         classpath(Config.NativePlugins.nativeBundlePlugin)
 
         // add classpath of sentry android gradle plugin
-//        classpath("io.sentry:sentry-android-gradle-plugin:{version}}")
+        // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
     }
 }
 
@@ -39,9 +39,6 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven {
-            setUrl("https://dl.bintray.com/getsentry/sentry-android")
-        }
         mavenCentral()
     }
     group = Config.Sentry.group
