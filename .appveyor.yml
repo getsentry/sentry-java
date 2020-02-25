@@ -4,7 +4,7 @@ environment:
   ANDROID_HOME: "C:\\android-sdk-windows"
   ANDROID_NDK_HOME: "C:\\android-sdk-windows\\ndk-bundle"
   ANDROID_BUILD_VERSION: 29
-  ANDROID_TOOLS_VERSION: 29.0.2
+  ANDROID_TOOLS_VERSION: 29.0.3
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   SDK_TOOLS_URL: https://dl.google.com/android/repository/sdk-tools-windows-4333796.zip
 install:
@@ -19,10 +19,11 @@ cache:
   - "%USERPROFILE%\\.gradle\\wrapper"
   - "%USERPROFILE%\\.m2\\repository"
 build_script:
-  - cmd: gradlew.bat build
+  - cmd: gradlew.bat build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PmavenCentralUser=MAVEN_USER -PmavenCentralPassword=MAVEN_PASS
 artifacts:
   - path: '**\libs\*sentry*.jar'
   - path: '**\outputs\aar\*sentry*.aar'
+  - path: '**\outputs\aar\*sentry*.pom'
 on_finish:
   - ps: |
       $wc = New-Object 'System.Net.WebClient'
