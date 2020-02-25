@@ -42,7 +42,7 @@ object Config {
         val spotlessVersion = "3.27.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.27.0"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.28.0"
         val gradleVersions = "com.github.ben-manes.versions"
     }
 
@@ -71,7 +71,7 @@ object Config {
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val jetbrainsAnnotations = "org.jetbrains:annotations:18.0.0"
+        val jetbrainsAnnotations = "org.jetbrains:annotations:19.0.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.3.4"
