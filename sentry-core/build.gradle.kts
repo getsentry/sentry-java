@@ -64,36 +64,18 @@ configure<PublishExtension> {
     website = Config.Sentry.website
     repoName = Config.Sentry.repoName
     setLicences(Config.Sentry.licence)
+    setLicenceUrls(Config.Sentry.licenceUrl)
     issueTracker = Config.Sentry.issueTracker
     repository = Config.Sentry.repository
     sign = Config.Deploy.sign
     mavenCentralSync = Config.Deploy.mavenCentralSync
     artifactId = project.name
+    uploadName = "${project.group}:${project.name}"
+    devId = Config.Sentry.userOrg
+    devName = Config.Sentry.devName
+    devEmail = Config.Sentry.devEmail
+    scmConnection = Config.Sentry.scmConnection
+    scmDevConnection = Config.Sentry.scmDevConnection
+    scmUrl  = Config.Sentry.scmUrl
 }
 
-afterEvaluate {
-    (publishing.publications.all {
-        (this as MavenPublication).apply {
-            pom {
-                licenses {
-                    license {
-                        name.set(Config.Sentry.licence)
-                        url.set(Config.Sentry.licenceUrl)
-                    }
-                }
-                developers {
-                    developer {
-                        id.set(Config.Sentry.userOrg)
-                        name.set(Config.Sentry.devName)
-                        email.set(Config.Sentry.devEmail)
-                    }
-                }
-                scm {
-                    connection.set(Config.Sentry.scmConnection)
-                    developerConnection.set(Config.Sentry.scmDevConnection)
-                    url.set(Config.Sentry.scmUrl)
-                }
-            }
-        }
-    })
-}

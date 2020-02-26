@@ -17,7 +17,7 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { setUrl("https://dl.bintray.com/novoda-oss/snapshots/") }
+        maven { setUrl("https://dl.bintray.com/maranda/maven/") }
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
