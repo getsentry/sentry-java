@@ -79,7 +79,7 @@ object Config {
     }
 
     object Deploy {
-        val novodaBintrayPlugin = "com.novoda:bintray-release:1.0.0"
+        val novodaBintrayPlugin = "com.novoda:bintray-release:1.0.1"
         val novodaBintray = "com.novoda.bintray-release"
         val sign = true
         val mavenCentralSync = true
