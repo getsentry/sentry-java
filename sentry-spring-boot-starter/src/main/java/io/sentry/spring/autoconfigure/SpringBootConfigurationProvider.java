@@ -5,6 +5,9 @@ import io.sentry.config.provider.ConfigurationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
+import java.util.Set;
+
 public class SpringBootConfigurationProvider implements ConfigurationProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBootConfigurationProvider.class);
@@ -31,7 +34,7 @@ public class SpringBootConfigurationProvider implements ConfigurationProvider {
             case DefaultSentryClientFactory.HIDE_COMMON_FRAMES_OPTION:
                 return logAndReturnIfSet(key, sentryProperties.getStacktrace().getHideCommon());
             case DefaultSentryClientFactory.IN_APP_FRAMES_OPTION:
-                return logAndReturnIfSet(key, sentryProperties.getStacktrace().getAppPackages());
+                return logAndReturnIfSet(key, join(sentryProperties.getStacktrace().getAppPackages()));
             case DefaultSentryClientFactory.BUFFER_DIR_OPTION:
                 return logAndReturnIfSet(key, sentryProperties.getBuffer().getDir());
             case DefaultSentryClientFactory.BUFFER_SIZE_OPTION:
@@ -58,6 +61,20 @@ public class SpringBootConfigurationProvider implements ConfigurationProvider {
                 logger.debug("Unsupported option: {}", key);
                 return null;
         }
+    }
+
+    private String join(Set<String> set) {
+        if (set == null || set.isEmpty()) {
+            return null;
+        }
+        // Java 7 has no built-in string join
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> it = set.iterator();
+        sb.append(it.next());
+        while (it.hasNext()) {
+            sb.append(',').append(it.next());
+        }
+        return sb.toString();
     }
 
     private String logAndReturnIfSet(String key, Object value) {
