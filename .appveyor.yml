@@ -5,6 +5,8 @@ environment:
   ANDROID_NDK_HOME: "C:\\android-sdk-windows\\ndk-bundle"
   ANDROID_BUILD_VERSION: 29
   ANDROID_TOOLS_VERSION: 29.0.3
+  ANDROID_NDK_VERSION: 20.0.5594570
+  ANDROID_CMAKE_VERSION: 3.10.2.4988404
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   SDK_TOOLS_URL: https://dl.google.com/android/repository/sdk-tools-windows-4333796.zip
 install:
@@ -13,7 +15,9 @@ install:
   - 7z x "%TMP%/sdk-tools.zip" -o"%ANDROID_HOME%" > nul
   - set PATH=%PATH%;"%ANDROID_HOME%\tools\bin"
   - yes 2> nul | sdkmanager --licenses > nul
-  - yes 2> nul | sdkmanager "platform-tools" "platforms;android-%ANDROID_BUILD_VERSION%"
+  - yes 2> nul | sdkmanager "platform-tools" "platforms;android-%ANDROID_BUILD_VERSION%" > nul
+  - yes 2> nul | sdkmanager "ndk;%ANDROID_NDK_VERSION%" > nul
+  - yes 2> nul | sdkmanager "cmake;%ANDROID_CMAKE_VERSION%" > nul
 cache:
   - "%USERPROFILE%\\.gradle\\caches"
   - "%USERPROFILE%\\.gradle\\wrapper"
@@ -22,8 +26,9 @@ build_script:
   - cmd: gradlew.bat build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PmavenCentralUser=MAVEN_USER -PmavenCentralPassword=MAVEN_PASS
 artifacts:
   - path: '**\libs\*sentry*.jar'
-  - path: '**\outputs\aar\*sentry*.aar'
-  - path: '**\outputs\aar\*sentry*.pom'
+  - path: '**\outputs\aar\*sentry*release*.aar'
+  - path: '**\publications\**\pom-default.xml'
+  - path: '**\publications\**\module.json'
 on_finish:
   - ps: |
       $wc = New-Object 'System.Net.WebClient'

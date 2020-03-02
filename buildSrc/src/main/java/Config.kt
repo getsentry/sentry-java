@@ -3,7 +3,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:3.5.3"
+        val androidGradle = "com.android.tools.build:gradle:3.6.1"
         val kotlinGradlePlugin = "gradle-plugin"
     }
 
