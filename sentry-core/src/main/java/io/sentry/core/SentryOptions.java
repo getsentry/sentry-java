@@ -146,13 +146,18 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
-  // TODO: So far docs say 'auto-session-tracking' but this would be defined at the integration level
+  // TODO: So far docs say 'auto-session-tracking' but this would be defined at the integration
+  // level
   // but not really at the sentry-core level since it assumes it's possible to have an auto session.
-  // Unless we default to SDK init/close as session in that case which is sub-optimal and makes harder
+  // Unless we default to SDK init/close as session in that case which is sub-optimal and makes
+  // harder
   // to create the integrations
 
   /** When enabled, threads are automatically attached to all logged events. */
-  private boolean enableSessionTracking = false;
+  private boolean enableSessionTracking;
+
+  /** The server name used in the Sentry messages. */
+  private String serverName;
 
   /**
    * Adds an event processor
@@ -646,6 +651,24 @@ public class SentryOptions {
 
   public void setEnableSessionTracking(boolean enableSessionTracking) {
     this.enableSessionTracking = enableSessionTracking;
+  }
+
+  /**
+   * Gets the default server name to be used in Sentry events.
+   *
+   * @return the default server name or null if none set
+   */
+  public @Nullable String getServerName() {
+    return serverName;
+  }
+
+  /**
+   * Sets the default server name to be used in Sentry events.
+   *
+   * @param serverName the default server name or null if none should be used
+   */
+  public void setServerName(@Nullable String serverName) {
+    this.serverName = serverName;
   }
 
   /** The BeforeSend callback */

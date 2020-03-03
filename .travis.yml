@@ -15,14 +15,17 @@ before_install:
   - touch $HOME/.android/repositories.cfg
   - yes | sdkmanager --update
 install:
-  - echo y | sdkmanager "ndk-bundle" >/dev/null
+  - echo y | sdkmanager "ndk;20.0.5594570" >/dev/null
   - echo y | sdkmanager "cmake;3.10.2.4988404" >/dev/null
 before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
+  - chmod +x ./gradlew
+script:
+- ./gradlew build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PmavenCentralUser=MAVEN_USER -PmavenCentralPassword=MAVEN_PASS
 android:
   components:
     - platform-tools
-    - build-tools-29.0.2
+    - build-tools-29.0.3
     - android-29
 os: linux
 dist: trusty
