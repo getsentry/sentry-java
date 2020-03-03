@@ -131,8 +131,17 @@ configure<PublishExtension> {
     website = Config.Sentry.website
     repoName = Config.Sentry.repoName
     setLicences(Config.Sentry.licence)
+    setLicenceUrls(Config.Sentry.licenceUrl)
     issueTracker = Config.Sentry.issueTracker
     repository = Config.Sentry.repository
     sign = Config.Deploy.sign
-    artifactId = "sentry-android-ndk"
+    mavenCentralSync = Config.Deploy.mavenCentralSync
+    artifactId = project.name
+    uploadName = "${project.group}:${project.name}"
+    devId = Config.Sentry.userOrg
+    devName = Config.Sentry.devName
+    devEmail = Config.Sentry.devEmail
+    scmConnection = Config.Sentry.scmConnection
+    scmDevConnection = Config.Sentry.scmDevConnection
+    scmUrl  = Config.Sentry.scmUrl
 }

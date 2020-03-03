@@ -67,7 +67,9 @@ public final class MainEventProcessor implements EventProcessor {
     if (event.getEnvironment() == null) {
       event.setEnvironment(options.getEnvironment());
     }
-
+    if (event.getServerName() == null) {
+      event.setServerName(options.getServerName());
+    }
     if (event.getDist() == null) {
       event.setDist(options.getDist());
     }
