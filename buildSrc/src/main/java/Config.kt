@@ -1,5 +1,5 @@
 object Config {
-    val kotlinVersion = "1.3.61"
+    val kotlinVersion = "1.3.70"
     val kotlinStdLib = "stdlib-jdk8"
 
     object BuildPlugins {
@@ -50,10 +50,10 @@ object Config {
         val SENTRY_CLIENT_NAME = "sentry.java.android"
         val group = "io.sentry"
 //        TODO: change version to publish new version
-        val version = "2.0.1"
+        val version = "2.0.2"
         val description = "SDK for sentry.io"
 //        TODO: change version code to publish new version, follow the pattern of `version`
-        val buildVersionCode = 20017
+        val buildVersionCode = 20018
         val website = "https://sentry.io"
         val userOrg = "getsentry"
         val repoName = "sentry-android"
