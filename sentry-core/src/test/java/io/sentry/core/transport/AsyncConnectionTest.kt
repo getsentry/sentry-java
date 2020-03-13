@@ -11,6 +11,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
 import io.sentry.core.cache.IEventCache
+import io.sentry.core.cache.ISessionCache
 import io.sentry.core.dsnString
 import java.io.IOException
 import java.util.concurrent.ExecutorService
@@ -22,6 +23,7 @@ class AsyncConnectionTest {
         var transport = mock<ITransport>()
         var transportGate = mock<ITransportGate>()
         var eventCache = mock<IEventCache>()
+        var sessionCache = mock<ISessionCache>()
         var executor = mock<ExecutorService>()
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -35,7 +37,7 @@ class AsyncConnectionTest {
         }
 
         fun getSUT(): AsyncConnection {
-            return AsyncConnection(transport, transportGate, eventCache, executor, sentryOptions)
+            return AsyncConnection(transport, transportGate, eventCache, sessionCache, executor, sentryOptions)
         }
     }
 
@@ -46,7 +48,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
-        whenever(fixture.transport.send(any())).thenReturn(TransportResult.success())
+        whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.success())
 
         // when
         fixture.getSUT().send(ev)
@@ -80,7 +82,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
-        whenever(fixture.transport.send(any())).thenReturn(TransportResult.error(4, 2))
+        whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.error(4, 2))
 
         // when
         try {
@@ -104,7 +106,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
-        whenever(fixture.transport.send(any())).thenThrow(IOException())
+        whenever(fixture.transport.send(any<SentryEvent>())).thenThrow(IOException())
 
         // when
         try {

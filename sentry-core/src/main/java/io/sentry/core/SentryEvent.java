@@ -304,4 +304,24 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   public void setDebugMeta(DebugMeta debugMeta) {
     this.debugMeta = debugMeta;
   }
+
+  // Level is Fatal or any exception was unhandled by the user.
+  public boolean isCrashed() {
+    if (level == SentryLevel.FATAL) {
+      return true;
+    }
+    if (exception != null) {
+      for (SentryException e : exception.getValues()) {
+        if (e.getMechanism() != null && !e.getMechanism().isHandled()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  public boolean isErrored() {
+    return exception != null && !exception.getValues().isEmpty();
+  }
 }

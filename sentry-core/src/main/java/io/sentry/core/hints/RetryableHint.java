@@ -1,6 +1,6 @@
 package io.sentry.core.hints;
 
-public interface Retryable {
+public interface RetryableHint {
   boolean getRetry();
 
   void setRetry(boolean retry);

@@ -31,9 +31,18 @@ final class NoOpHub implements IHub {
   }
 
   @Override
+  public void captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {}
+
+  @Override
   public SentryId captureException(Throwable throwable, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
+
+  @Override
+  public void startSession() {}
+
+  @Override
+  public void endSession() {}
 
   @Override
   public void close() {}

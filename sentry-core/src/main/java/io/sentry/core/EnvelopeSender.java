@@ -1,9 +1,10 @@
 package io.sentry.core;
 
 import static io.sentry.core.SentryLevel.ERROR;
+import static io.sentry.core.cache.SessionCache.PREFIX_CURRENT_FILE;
 
 import io.sentry.core.hints.Cached;
-import io.sentry.core.hints.Retryable;
+import io.sentry.core.hints.RetryableHint;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
 import java.io.ByteArrayInputStream;
@@ -44,6 +45,11 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
 
   @Override
   protected void processFile(@NotNull File file) {
+    if (!isRelevantFileName(file.getName())) {
+      logger.log(SentryLevel.DEBUG, "File '%s' should be ignored.", file.getName());
+      return;
+    }
+
     CachedEnvelopeHint hint =
         new CachedEnvelopeHint(15000, logger); // TODO: Take timeout from options
     try (InputStream stream = new FileInputStream(file)) {
@@ -71,7 +77,9 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
 
   @Override
   protected boolean isRelevantFileName(String fileName) {
-    return true; // TODO: Use an extension to filter out relevant files
+    // ignore current.envelope
+    return !fileName.startsWith(PREFIX_CURRENT_FILE);
+    // TODO: Use an extension to filter out relevant files
   }
 
   @Override
@@ -120,6 +128,33 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
               break;
             }
           }
+        } catch (Exception e) {
+          logger.log(ERROR, "Item failed to process.", e);
+        }
+      } else if ("session".equals(item.getHeader().getType())) {
+        try (Reader reader =
+            new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
+          Session session = serializer.deserializeSession(reader);
+          if (session == null) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Item %d of type %s returned null by the parser.",
+                items,
+                item.getHeader().getType());
+          } else {
+            // capture 1 per 1 to be easier for now
+            hub.captureEnvelope(SentryEnvelope.fromSession(serializer, session), hint);
+            logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
+            if (!hint.waitFlush()) {
+              logger.log(
+                  SentryLevel.WARNING,
+                  "Timed out waiting for item submission: %s",
+                  session.getSessionId());
+              break;
+            }
+          }
+        } catch (Exception e) {
+          logger.log(ERROR, "Item failed to process.", e);
         }
       } else {
         // TODO: Handle attachments and other types
@@ -141,7 +176,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     }
   }
 
-  private static final class CachedEnvelopeHint implements Cached, Retryable, SubmissionResult {
+  private static final class CachedEnvelopeHint implements Cached, RetryableHint, SubmissionResult {
     boolean retry = false;
     boolean succeeded = false;
 

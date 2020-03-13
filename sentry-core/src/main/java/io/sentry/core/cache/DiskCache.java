@@ -17,7 +17,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -78,7 +80,7 @@ public final class DiskCache implements IEventCache {
           .log(DEBUG, "Adding Event to offline storage: %s", eventFile.getAbsolutePath());
     }
 
-    try (FileOutputStream fileOutputStream = new FileOutputStream(eventFile);
+    try (OutputStream fileOutputStream = new FileOutputStream(eventFile);
         Writer wrt = new OutputStreamWriter(fileOutputStream, UTF8)) {
       serializer.serialize(event, wrt);
     } catch (Exception e) {
@@ -132,7 +134,7 @@ public final class DiskCache implements IEventCache {
     List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);
 
     for (File f : allCachedEvents) {
-      try (InputStreamReader rdr =
+      try (Reader rdr =
           new InputStreamReader(new BufferedInputStream(new FileInputStream(f)), UTF8)) {
 
         ret.add(serializer.deserializeEvent(rdr));

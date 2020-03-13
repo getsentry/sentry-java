@@ -15,7 +15,9 @@
     android:roundIcon="@mipmap/ic_launcher_round"
     android:supportsRtl="true"
     android:theme="@style/AppTheme"
-      tools:ignore="GoogleAppIndexingWarning">
+    tools:ignore="GoogleAppIndexingWarning, UnusedAttribute"
+    android:usesCleartextTraffic="true" >
+<!--    TODO: needed or Android 8: Cleartext HTTP traffic not permitted-->
 
     <activity android:name=".MainActivity">
       <intent-filter>
@@ -26,7 +28,7 @@
     </activity>
 
     <!--  NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
-    <meta-data android:name="io.sentry.dsn" android:value="https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954" />
+    <meta-data android:name="io.sentry.dsn" android:value="http://1511aad18ebc4bc1a30fa8291a884314@marandaneto.ngrok.io/1" />
 
 <!--    how to enable Sentry's debug mode-->
     <meta-data android:name="io.sentry.debug" android:value="true" />
@@ -48,5 +50,9 @@
 
 <!--    how to disable the NDK-->
 <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
+
+    <meta-data android:name="io.sentry.release" android:value="io.sentry.android@1.0+1" />
+    <meta-data android:name="io.sentry.session-tracking.enable" android:value="true" />
+    <meta-data android:name="io.sentry.environment" android:value="debug" />
   </application>
 </manifest>

@@ -54,6 +54,12 @@ public interface IHub {
    */
   SentryId captureMessage(String message, SentryLevel level);
 
+  void captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+
+  default void captureEnvelope(SentryEnvelope envelope) {
+    captureEnvelope(envelope, null);
+  }
+
   /**
    * Captures the exception.
    *
@@ -72,6 +78,10 @@ public interface IHub {
   default SentryId captureException(Throwable throwable) {
     return captureException(throwable, null);
   }
+
+  void startSession();
+
+  void endSession();
 
   /** Flushes out the queue for up to timeout seconds and disable the Hub. */
   void close();

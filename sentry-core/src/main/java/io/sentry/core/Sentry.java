@@ -397,6 +397,14 @@ public final class Sentry {
     getCurrentHub().flush(timeoutMills);
   }
 
+  public static void startSession() {
+    getCurrentHub().startSession();
+  }
+
+  public static void endSession() {
+    getCurrentHub().endSession();
+  }
+
   /**
    * Configuration options callback
    *

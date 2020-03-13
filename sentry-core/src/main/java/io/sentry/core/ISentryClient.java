@@ -140,4 +140,16 @@ public interface ISentryClient {
   default SentryId captureException(Throwable throwable, @Nullable Scope scope) {
     return captureException(throwable, scope, null);
   }
+
+  void captureSession(Session session, @Nullable Object hint);
+
+  default void captureSession(Session session) {
+    captureSession(session, null);
+  }
+
+  SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+
+  default SentryId captureEnvelope(SentryEnvelope envelope) {
+    return captureEnvelope(envelope, null);
+  }
 }

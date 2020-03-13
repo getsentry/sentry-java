@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import io.sentry.core.EnvelopeReader;
 import io.sentry.core.EnvelopeSender;
 import io.sentry.core.IHub;
 import io.sentry.core.ILogger;
@@ -33,8 +34,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
           SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
       EnvelopeSender envelopeSender =
-          new EnvelopeSender(
-              hub, new io.sentry.core.EnvelopeReader(), options.getSerializer(), logger);
+          new EnvelopeSender(hub, new EnvelopeReader(), options.getSerializer(), logger);
 
       observer = new EnvelopeFileObserver(path, envelopeSender, logger);
       observer.startWatching();

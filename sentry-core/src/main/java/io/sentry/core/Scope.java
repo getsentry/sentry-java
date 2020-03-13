@@ -42,6 +42,10 @@ public final class Scope implements Cloneable {
   /** Scope's SentryOptions */
   private final @NotNull SentryOptions options;
 
+  // TODO Consider: Scope clone doesn't clone sessions
+  private volatile @Nullable Session session;
+  private final @NotNull Object sessionLock = new Object();
+
   /**
    * Scope's ctor
    *
@@ -354,5 +358,69 @@ public final class Scope implements Cloneable {
    */
   public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
+  }
+
+  // Atomic operations on session
+  void withSession(@NotNull IWithSession sessionCallback) {
+    synchronized (sessionLock) {
+      sessionCallback.accept(session);
+    }
+  }
+
+  interface IWithSession {
+    // Called with a null Session if none exists
+    void accept(@Nullable Session session);
+  }
+
+  // Returns a previous session (now closed) bound to this scope together with the newly created one
+  @NotNull
+  SessionPair startSession() {
+    Session previousSession;
+    SessionPair pair;
+    synchronized (sessionLock) {
+      if (session != null) {
+        // Assumes session will NOT flush itself (Not passing any hub to it)
+        session.end();
+      }
+      previousSession = session;
+
+      session = new Session();
+      session.start(options.getRelease(), options.getEnvironment(), user);
+
+      pair = new SessionPair(session, previousSession);
+    }
+    return pair;
+  }
+
+  static final class SessionPair {
+    private final Session previous;
+    private final Session current;
+
+    public SessionPair(@NotNull Session current, @Nullable Session previous) {
+      this.current = current;
+      this.previous = previous;
+    }
+
+    public Session getPrevious() {
+      return previous;
+    }
+
+    public Session getCurrent() {
+      return current;
+    }
+  }
+
+  // ends a session, unbinds it from the scope and returns it.
+  @Nullable
+  Session endSession() {
+    Session previousSession = null;
+    synchronized (sessionLock) {
+      if (session != null) {
+        session.end();
+        previousSession = session;
+        session = null;
+      }
+    }
+    return previousSession;
   }
 }
