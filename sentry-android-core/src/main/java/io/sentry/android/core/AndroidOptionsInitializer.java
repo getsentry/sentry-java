@@ -46,10 +46,16 @@ final class AndroidOptionsInitializer {
     File cacheDir = new File(context.getCacheDir(), "sentry");
     cacheDir.mkdirs();
     options.setCacheDirPath(cacheDir.getAbsolutePath());
+
     if (options.getOutboxPath() != null) {
       new File(options.getOutboxPath()).mkdirs();
     } else {
       options.getLogger().log(SentryLevel.WARNING, "No outbox dir path is defined in options.");
+    }
+    if (options.getSessionsPath() != null) {
+      new File(options.getSessionsPath()).mkdirs();
+    } else {
+      options.getLogger().log(SentryLevel.WARNING, "No session dir path is defined in options.");
     }
   }
 }

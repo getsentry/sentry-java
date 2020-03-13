@@ -4,7 +4,7 @@ import static io.sentry.core.SentryLevel.ERROR;
 
 import io.sentry.core.cache.DiskCache;
 import io.sentry.core.hints.Cached;
-import io.sentry.core.hints.Retryable;
+import io.sentry.core.hints.RetryableHint;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
@@ -98,7 +98,8 @@ final class SendCachedEvent extends DirectoryProcessor {
     }
   }
 
-  private static final class SendCachedEventHint implements Cached, Retryable, SubmissionResult {
+  private static final class SendCachedEventHint
+      implements Cached, RetryableHint, SubmissionResult {
     boolean retry = false;
     private final CountDownLatch latch;
     private final long timeoutMills;

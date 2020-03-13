@@ -84,6 +84,8 @@ public class SentryOptions {
   /** The cache dir. size for capping the number of events Default is 10 */
   private int cacheDirSize = 10;
 
+  private int sessionsDirSize = 100;
+
   /**
    * This variable controls the total amount of breadcrumbs that should be captured Default is 100
    */
@@ -396,6 +398,13 @@ public class SentryOptions {
     return cacheDirPath + File.separator + "outbox";
   }
 
+  public @Nullable String getSessionsPath() {
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+    return cacheDirPath + File.separator + "sessions";
+  }
+
   /**
    * Sets the cache dir. path
    *
@@ -671,6 +680,14 @@ public class SentryOptions {
     this.serverName = serverName;
   }
 
+  public int getSessionsDirSize() {
+    return sessionsDirSize;
+  }
+
+  public void setSessionsDirSize(int sessionsDirSize) {
+    this.sessionsDirSize = sessionsDirSize;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -726,8 +743,7 @@ public class SentryOptions {
         new SendCachedEventFireAndForgetIntegration(
             (hub, options) -> {
               EnvelopeSender envelopeSender =
-                  new EnvelopeSender(
-                      hub, new io.sentry.core.EnvelopeReader(), options.getSerializer(), logger);
+                  new EnvelopeSender(hub, new EnvelopeReader(), options.getSerializer(), logger);
               if (options.getOutboxPath() != null) {
                 File outbox = new File(options.getOutboxPath());
                 return () -> envelopeSender.processDirectory(outbox);
@@ -740,6 +756,26 @@ public class SentryOptions {
                 return null;
               }
             }));
+
+    //     send cached sessions
+    integrations.add(
+        new SendCachedEventFireAndForgetIntegration(
+            (hub, options) -> {
+              EnvelopeSender envelopeSender =
+                  new EnvelopeSender(hub, new EnvelopeReader(), options.getSerializer(), logger);
+              if (options.getSessionsPath() != null) {
+                File outbox = new File(options.getSessionsPath());
+                return () -> envelopeSender.processDirectory(outbox);
+              } else {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING,
+                        "No sessions dir path is defined in options, discarding EnvelopeSender.");
+                return null;
+              }
+            }));
+
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }
 }

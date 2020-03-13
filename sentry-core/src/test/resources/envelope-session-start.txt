@@ -1,0 +1,3 @@
+{}
+{"type":"session","length":unknown-fix-it}
+{"sid":"8333339f-5675-4f89-a9a0-1c935255ab58","did":"foobarbaz","seq":42,"init":true,"timestamp":"2020-02-07T15:17:00Z","started":"2020-02-07T14:16:00Z","duration":1947.49,"status":"exited","errors":0,"attrs":{"release":"sentry-test@1.0.0","environment":"production","ip_address":"::1","user_agent":"Firefox/72.0"}}

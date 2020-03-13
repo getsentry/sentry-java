@@ -32,7 +32,7 @@ class DiskCacheTest {
                 val writer = it.arguments[1] as Writer
 
                 writer.write(event.eventId.toString())
-            }.whenever(serializer).serialize(any(), any())
+            }.whenever(serializer).serialize(any<SentryEvent>(), any())
 
             whenever(serializer.deserializeEvent(any())).thenAnswer {
                 val reader = it.arguments[0] as Reader

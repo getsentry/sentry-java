@@ -1,5 +1,9 @@
 package io.sentry.core;
 
+import io.sentry.core.hints.DiskFlushNotification;
+import io.sentry.core.hints.SessionEnd;
+import io.sentry.core.hints.SessionStart;
+import io.sentry.core.hints.SessionUpdate;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
 import io.sentry.core.util.Objects;
@@ -85,6 +89,18 @@ public final class Hub implements IHub {
         StackItem item = stack.peek();
         if (item != null) {
           sentryId = item.client.captureEvent(event, item.scope, hint);
+
+          if (options.isEnableSessionTracking()) {
+            item.scope.withSession(
+                session -> {
+                  if (session != null) {
+                    // if we do that on the client, session start will call also a session update
+                    item.client.captureSession(
+                        session,
+                        (hint instanceof DiskFlushNotification) ? hint : new SessionUpdateHint());
+                  }
+                });
+          }
         } else {
           options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureEvent");
         }
@@ -127,6 +143,30 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureEnvelope' call is a no-op.");
+    } else if (envelope == null) {
+      options.getLogger().log(SentryLevel.WARNING, "captureEnvelope called with null parameter.");
+    } else {
+      try {
+        StackItem item = stack.peek();
+        if (item != null) {
+          item.client.captureEnvelope(envelope, hint);
+        } else {
+          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureEnvelope");
+        }
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
+      }
+    }
+  }
+
+  @Override
   public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
@@ -148,11 +188,66 @@ public final class Hub implements IHub {
       } catch (Exception e) {
         options
             .getLogger()
-            .log(SentryLevel.ERROR, "Error while capturing message: " + throwable.getMessage(), e);
+            .log(
+                SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
       }
     }
     this.lastEventId = sentryId;
     return sentryId;
+  }
+
+  @Override
+  public void startSession() {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'startSession' call is a no-op.");
+    } else if (!options.isEnableSessionTracking()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "Session tracking is disabled and this 'startSession' call is a no-op.");
+    } else {
+      StackItem item = this.stack.peek();
+      if (item != null) {
+        Scope.SessionPair pair = item.scope.startSession();
+
+        if (pair.getPrevious() != null) {
+          item.client.captureSession(pair.getPrevious(), new SessionEndHint());
+        }
+
+        item.client.captureSession(pair.getCurrent(), new SessionStartHint());
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startSession");
+      }
+    }
+  }
+
+  @Override
+  public void endSession() {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
+    } else if (!options.isEnableSessionTracking()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "Session tracking is disabled and this 'endSession' call is a no-op.");
+    } else {
+      StackItem item = this.stack.peek();
+      if (item != null) {
+        Session previousSession = item.scope.endSession();
+        if (previousSession != null) {
+          item.client.captureSession(previousSession, new SessionEndHint());
+        }
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when endSession");
+      }
+    }
   }
 
   @Override
@@ -520,4 +615,10 @@ public final class Hub implements IHub {
     }
     return clone;
   }
+
+  private static final class SessionStartHint implements SessionStart {}
+
+  private static final class SessionEndHint implements SessionEnd {}
+
+  private static final class SessionUpdateHint implements SessionUpdate {}
 }

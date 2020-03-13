@@ -4,6 +4,7 @@ import static io.sentry.core.SentryLevel.ERROR;
 
 import io.sentry.core.exception.ExceptionMechanismException;
 import io.sentry.core.hints.DiskFlushNotification;
+import io.sentry.core.hints.SessionUpdate;
 import io.sentry.core.protocol.Mechanism;
 import io.sentry.core.util.Objects;
 import java.io.Closeable;
@@ -72,8 +73,14 @@ public final class UncaughtExceptionHandlerIntegration
     options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
     try {
+      boolean sessionTracking = options.isEnableSessionTracking();
+      long shutdownTime =
+          !sessionTracking
+              ? options.getShutdownTimeout()
+              : (options.getShutdownTimeout() * 5); // should we set a default value on options too?
+
       UncaughtExceptionHint hint =
-          new UncaughtExceptionHint(options.getShutdownTimeout(), options.getLogger());
+          new UncaughtExceptionHint(shutdownTime, options.getLogger(), sessionTracking);
       Throwable throwable = getUnhandledThrowable(thread, thrown);
       SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);
@@ -114,15 +121,16 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
-  private static final class UncaughtExceptionHint implements DiskFlushNotification {
+  private static final class UncaughtExceptionHint implements DiskFlushNotification, SessionUpdate {
 
     private final CountDownLatch latch;
     private final long timeoutMills;
     private final @NotNull ILogger logger;
 
-    UncaughtExceptionHint(final long timeoutMills, final @NotNull ILogger logger) {
+    UncaughtExceptionHint(
+        final long timeoutMills, final @NotNull ILogger logger, boolean sessionTracking) {
       this.timeoutMills = timeoutMills;
-      this.latch = new CountDownLatch(1);
+      this.latch = new CountDownLatch(sessionTracking ? 2 : 1);
       this.logger = logger;
     }
 

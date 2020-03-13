@@ -2,6 +2,8 @@ package io.sentry.sample;
 
 import android.app.Application;
 import android.os.StrictMode;
+import io.sentry.core.Sentry;
+import io.sentry.core.protocol.User;
 import timber.log.Timber;
 
 // import io.sentry.android.core.SentryAndroid;
@@ -26,6 +28,19 @@ public class MyApplication extends Application {
     //   });
     //   options.setAnrTimeoutIntervalMills(2000);
     // });
+
+    User user = new User();
+    user.setId("fake-id");
+    Sentry.setUser(user);
+    Sentry.startSession();
+    //    Sentry.captureMessage("test");
+    //    Sentry.captureException(new RuntimeException("1"));
+    //    Sentry.captureEvent(new SentryEvent());
+    //    Sentry.captureException(new RuntimeException("2"));
+    //    SentryEvent event = new SentryEvent();
+    //    event.setLevel(SentryLevel.FATAL);
+    //    Sentry.captureEvent(event);
+    //    Sentry.endSession();
   }
 
   private void strictMode() {
