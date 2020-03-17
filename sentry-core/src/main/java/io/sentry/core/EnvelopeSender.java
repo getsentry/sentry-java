@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class EnvelopeSender extends DirectoryProcessor implements IEnvelopeSender {
@@ -26,15 +27,15 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private final IHub hub;
-  private final IEnvelopeReader envelopeReader;
-  private final ISerializer serializer;
+  private final @NotNull IHub hub;
+  private final @NotNull IEnvelopeReader envelopeReader;
+  private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
 
   public EnvelopeSender(
-      IHub hub,
-      IEnvelopeReader envelopeReader,
-      ISerializer serializer,
+      final @NotNull IHub hub,
+      final @NotNull IEnvelopeReader envelopeReader,
+      final @NotNull ISerializer serializer,
       final @NotNull ILogger logger) {
     super(logger);
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
@@ -44,16 +45,18 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  protected void processFile(@NotNull File file) {
+  protected void processFile(final @NotNull File file) {
+    Objects.requireNonNull(file, "File is required.");
+
     if (!isRelevantFileName(file.getName())) {
       logger.log(SentryLevel.DEBUG, "File '%s' should be ignored.", file.getName());
       return;
     }
 
-    CachedEnvelopeHint hint =
+    final CachedEnvelopeHint hint =
         new CachedEnvelopeHint(15000, logger); // TODO: Take timeout from options
     try (InputStream stream = new FileInputStream(file)) {
-      SentryEnvelope envelope = envelopeReader.read(stream);
+      final SentryEnvelope envelope = envelopeReader.read(stream);
       if (envelope == null) {
         logger.log(
             SentryLevel.ERROR,
@@ -65,7 +68,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
     } finally {
-      if (file != null && !hint.getRetry()) {
+      if (!hint.getRetry()) {
         try {
           file.delete();
         } catch (RuntimeException e) {
@@ -76,22 +79,25 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  protected boolean isRelevantFileName(String fileName) {
+  protected boolean isRelevantFileName(final @Nullable String fileName) {
     // ignore current.envelope
-    return !fileName.startsWith(PREFIX_CURRENT_FILE);
+    return fileName != null && !fileName.startsWith(PREFIX_CURRENT_FILE);
     // TODO: Use an extension to filter out relevant files
   }
 
   @Override
   public void processEnvelopeFile(@NotNull String path) {
+    Objects.requireNonNull(path, "Path is required.");
+
     processFile(new File(path));
   }
 
-  private void processEnvelope(@NotNull SentryEnvelope envelope, @NotNull CachedEnvelopeHint hint)
+  private void processEnvelope(
+      final @NotNull SentryEnvelope envelope, final @NotNull CachedEnvelopeHint hint)
       throws IOException {
     logger.log(SentryLevel.DEBUG, "Envelope for event Id: %s", envelope.getHeader().getEventId());
     int items = 0;
-    for (SentryEnvelopeItem item : envelope.getItems()) {
+    for (final SentryEnvelopeItem item : envelope.getItems()) {
       items++;
 
       if (item.getHeader() == null) {
@@ -99,7 +105,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         continue;
       }
       if ("event".equals(item.getHeader().getType())) {
-        try (Reader eventReader =
+        try (final Reader eventReader =
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
           SentryEvent event = serializer.deserializeEvent(eventReader);
           if (event == null) {
@@ -132,9 +138,9 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else if ("session".equals(item.getHeader().getType())) {
-        try (Reader reader =
+        try (final Reader reader =
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
-          Session session = serializer.deserializeSession(reader);
+          final Session session = serializer.deserializeSession(reader);
           if (session == null) {
             logger.log(
                 SentryLevel.ERROR,
@@ -180,14 +186,14 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     boolean retry = false;
     boolean succeeded = false;
 
-    private CountDownLatch latch;
+    private @NotNull CountDownLatch latch;
     private final long timeoutMills;
     private final @NotNull ILogger logger;
 
     CachedEnvelopeHint(final long timeoutMills, final @NotNull ILogger logger) {
       this.timeoutMills = timeoutMills;
       this.latch = new CountDownLatch(1);
-      this.logger = logger;
+      this.logger = Objects.requireNonNull(logger, "ILogger is required.");
     }
 
     boolean waitFlush() {

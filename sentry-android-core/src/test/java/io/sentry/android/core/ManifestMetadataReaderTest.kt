@@ -1,24 +1,17 @@
 package io.sentry.android.core
 
-import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyVararg
-import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.ILogger
 import io.sentry.core.SentryLevel
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
@@ -26,17 +19,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ManifestMetadataReaderTest {
 
-    private lateinit var context: Context
-
-    @BeforeTest
-    fun `set up`() {
-        context = ApplicationProvider.getApplicationContext()
-    }
-
     @Test
     fun `isAutoInit won't throw exception`() {
         // tests for the returned boolean are in SentryInitProviderTest
         val logger = mock<ILogger>()
+        val context = ContextUtils.mockMetaData(metaData = Bundle())
         assertTrue(ManifestMetadataReader.isAutoInit(context, logger))
         verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
@@ -46,6 +33,7 @@ class ManifestMetadataReaderTest {
         // tests for the returned boolean are in SentryInitProviderTest
         val options = SentryAndroidOptions()
 
+        val context = ContextUtils.createMockContext()
         ManifestMetadataReader.applyMetadata(context, options)
         val logger = mock<ILogger>()
         options.setLogger(logger)
@@ -56,20 +44,14 @@ class ManifestMetadataReaderTest {
     fun `applyMetadata reads sampleRate from metadata`() {
         // Arrange
         val options = SentryAndroidOptions()
-        val expectedPackageName = "io.sentry.test"
         val expectedSampleRate = 0.99
-        val contextMock: Context = mock()
-        whenever(contextMock.packageName).thenReturn(expectedPackageName)
-        val bundle: Bundle = mock()
-        whenever(bundle.getDouble(eq(ManifestMetadataReader.SAMPLE_RATE), anyVararg())).thenReturn(expectedSampleRate)
-        val packageManagerMock: PackageManager = mock()
-        val applicationInfo: ApplicationInfo = mock()
-        applicationInfo.metaData = bundle
-        whenever(packageManagerMock.getApplicationInfo(argWhere { it == expectedPackageName }, eq(PackageManager.GET_META_DATA))).thenReturn(applicationInfo)
-        whenever(contextMock.packageManager).thenReturn(packageManagerMock)
+
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        bundle.putDouble(ManifestMetadataReader.SAMPLE_RATE, expectedSampleRate)
 
         // Act
-        ManifestMetadataReader.applyMetadata(contextMock, options)
+        ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
         assertEquals(expectedSampleRate, options.sampleRate)
@@ -81,19 +63,13 @@ class ManifestMetadataReaderTest {
         val expectedSampleRate = 0.99
         val options = SentryAndroidOptions()
         options.sampleRate = expectedSampleRate
-        val expectedPackageName = "io.sentry.test"
-        val contextMock: Context = mock()
-        whenever(contextMock.packageName).thenReturn(expectedPackageName)
-        val bundle: Bundle = mock()
-        whenever(bundle.getDouble(eq(ManifestMetadataReader.SAMPLE_RATE), anyVararg())).thenReturn(0.1)
-        val packageManagerMock: PackageManager = mock()
-        val applicationInfo: ApplicationInfo = mock()
-        applicationInfo.metaData = bundle
-        whenever(packageManagerMock.getApplicationInfo(argWhere { it == expectedPackageName }, eq(PackageManager.GET_META_DATA))).thenReturn(applicationInfo)
-        whenever(contextMock.packageManager).thenReturn(packageManagerMock)
+
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        bundle.putDouble(ManifestMetadataReader.SAMPLE_RATE, 0.1)
 
         // Act
-        ManifestMetadataReader.applyMetadata(contextMock, options)
+        ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
         assertEquals(expectedSampleRate, options.sampleRate)
@@ -103,20 +79,71 @@ class ManifestMetadataReaderTest {
     fun `applyMetadata without specifying sampleRate, stays null`() {
         // Arrange
         val options = SentryAndroidOptions()
-        val expectedPackageName = "io.sentry.test"
-        val contextMock: Context = mock()
-        whenever(contextMock.packageName).thenReturn(expectedPackageName)
-        val bundle: Bundle = mock()
-        val packageManagerMock: PackageManager = mock()
-        val applicationInfo: ApplicationInfo = mock()
-        applicationInfo.metaData = bundle
-        whenever(packageManagerMock.getApplicationInfo(argWhere { it == expectedPackageName }, eq(PackageManager.GET_META_DATA))).thenReturn(applicationInfo)
-        whenever(contextMock.packageManager).thenReturn(packageManagerMock)
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(contextMock, options)
+        ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
         assertNull(options.sampleRate)
+    }
+
+    @Test
+    fun `applyMetadata reads session tracking to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.SESSION_TRACKING_ENABLE, true)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isEnableSessionTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads session tracking and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isEnableSessionTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads environment to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        bundle.putString(ManifestMetadataReader.ENVIRONMENT, "env")
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertEquals("env", options.environment)
+    }
+
+    @Test
+    fun `applyMetadata reads environment and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertNull(options.environment)
     }
 }

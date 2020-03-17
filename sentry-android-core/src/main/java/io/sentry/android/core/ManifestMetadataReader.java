@@ -128,7 +128,7 @@ final class ManifestMetadataReader {
    * @param logger the Logger interface
    * @return true if auto init is enabled or false otherwise
    */
-  static boolean isAutoInit(final Context context, final @NotNull ILogger logger) {
+  static boolean isAutoInit(final @NotNull Context context, final @NotNull ILogger logger) {
     Objects.requireNonNull(context, "The application context is required.");
 
     boolean autoInit = true;
@@ -152,7 +152,7 @@ final class ManifestMetadataReader {
    * @return the Bundle attached to the PackageManager
    * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
-  private static Bundle getMetadata(final Context context)
+  private static Bundle getMetadata(final @NotNull Context context)
       throws PackageManager.NameNotFoundException {
     final ApplicationInfo app =
         context

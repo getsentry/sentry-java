@@ -393,19 +393,19 @@ public final class Scope implements Cloneable {
   }
 
   static final class SessionPair {
-    private final Session previous;
-    private final Session current;
+    private final @Nullable Session previous;
+    private final @NotNull Session current;
 
-    public SessionPair(@NotNull Session current, @Nullable Session previous) {
+    public SessionPair(final @NotNull Session current, final @Nullable Session previous) {
       this.current = current;
       this.previous = previous;
     }
 
-    public Session getPrevious() {
+    public @Nullable Session getPrevious() {
       return previous;
     }
 
-    public Session getCurrent() {
+    public @NotNull Session getCurrent() {
       return current;
     }
   }

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SessionAdapter extends TypeAdapter<Session> {
@@ -171,7 +172,8 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     return session;
   }
 
-  private String capitalize(String str) {
+  @TestOnly
+  String capitalize(String str) {
     if (str == null || str.isEmpty()) {
       return str;
     }
