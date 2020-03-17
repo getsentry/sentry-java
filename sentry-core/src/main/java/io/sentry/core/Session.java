@@ -227,16 +227,4 @@ public final class Session {
       sequence = System.currentTimeMillis();
     }
   }
-
-  public void endBrokenSession() {
-    synchronized (sessionLock) {
-      updateStatus();
-
-      timestamp = DateUtils.getCurrentDateTime();
-
-      if (!init) {
-        sequence = System.currentTimeMillis();
-      }
-    }
-  }
 }

@@ -38,7 +38,7 @@ public final class DiskCache implements IEventCache {
   public static final String FILE_SUFFIX = ".sentry-event";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF8 = Charset.forName("UTF-8");
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final File directory;
   private final int maxSize;
@@ -81,7 +81,7 @@ public final class DiskCache implements IEventCache {
     }
 
     try (OutputStream fileOutputStream = new FileOutputStream(eventFile);
-        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF8)) {
+        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
       serializer.serialize(event, wrt);
     } catch (Exception e) {
       options
@@ -135,7 +135,7 @@ public final class DiskCache implements IEventCache {
 
     for (File f : allCachedEvents) {
       try (Reader rdr =
-          new InputStreamReader(new BufferedInputStream(new FileInputStream(f)), UTF8)) {
+          new InputStreamReader(new BufferedInputStream(new FileInputStream(f)), UTF_8)) {
 
         ret.add(serializer.deserializeEvent(rdr));
       } catch (FileNotFoundException e) {

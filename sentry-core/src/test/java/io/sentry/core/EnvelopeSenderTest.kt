@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.cache.SessionCache
 import io.sentry.core.protocol.SentryId
 import java.io.File
 import java.io.FileNotFoundException
@@ -22,10 +23,10 @@ import kotlin.test.assertTrue
 class EnvelopeSenderTest {
     private class Fixture {
 
-        var hub: IHub? = mock()
-        var envelopeReader: IEnvelopeReader? = mock()
-        var serializer: ISerializer? = mock()
-        var logger: ILogger? = mock()
+        var hub: IHub = mock()
+        var envelopeReader: IEnvelopeReader = mock()
+        var serializer: ISerializer = mock()
+        var logger: ILogger = mock()
 
         init {
             val options = SentryOptions()
@@ -34,14 +35,14 @@ class EnvelopeSenderTest {
         }
 
         fun getSut(): EnvelopeSender {
-            return EnvelopeSender(hub, envelopeReader, serializer, logger!!)
+            return EnvelopeSender(hub, envelopeReader, serializer, logger)
         }
     }
 
     private val fixture = Fixture()
 
-    private fun getTempEnvelope(): String {
-        val testFile = this::class.java.classLoader.getResource("envelope-event-attachment.txt")
+    private fun getTempEnvelope(fileName: String): String {
+        val testFile = this::class.java.classLoader.getResource(fileName)
         val testFileBytes = testFile!!.readBytes()
         val targetFile = File.createTempFile("temp-envelope", ".tmp")
         Files.write(Paths.get(targetFile.toURI()), testFileBytes)
@@ -50,45 +51,80 @@ class EnvelopeSenderTest {
 
     @Test
     fun `when envelopeReader returns null, file is deleted `() {
-        whenever(fixture.envelopeReader!!.read(any())).thenReturn(null)
+        whenever(fixture.envelopeReader.read(any())).thenReturn(null)
         val sut = fixture.getSut()
-        val path = getTempEnvelope()
+        val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
         sut.processEnvelopeFile(path)
         assertFalse(File(path).exists())
         // Additionally make sure we have a error logged
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
     }
 
     @Test
-    fun `when parser is EnvelopeReader and serializer returns instance, event captured, file is deleted `() {
+    fun `when parser is EnvelopeReader and serializer returns SentryEvent, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
         val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
-        whenever(fixture.serializer!!.deserializeEvent(any())).thenReturn(expected)
+        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(expected)
         val sut = fixture.getSut()
-        val path = getTempEnvelope()
+        val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
         sut.processEnvelopeFile(path)
 
-        verify(fixture.hub)!!.captureEvent(eq(expected), any())
+        verify(fixture.hub).captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
-        verify(fixture.logger, never())!!.log(eq(SentryLevel.ERROR), any(), any<Any>())
-        verify(fixture.logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
-    fun `when parser is EnvelopeReader and serializer returns null, file error logged, no event captured `() {
+    fun `when parser is EnvelopeReader and serializer returns SentryEnvelope, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
-        whenever(fixture.serializer!!.deserializeEvent(any())).thenReturn(null)
+        val session = Session()
+        val expected = SentryEnvelope(SentryId("3067d54967f84f20a2adfab5119156ce"), emptySet())
+        whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(expected)
+        whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         val sut = fixture.getSut()
-        val path = getTempEnvelope()
+        val path = getTempEnvelope("envelope-session-start.txt")
+        assertTrue(File(path).exists()) // sanity check
+        sut.processEnvelopeFile(path)
+
+        verify(fixture.hub).captureEnvelope(any(), any())
+        assertFalse(File(path).exists())
+        // Additionally make sure we have no errors logged
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `when parser is EnvelopeReader and serializer returns a null event, file error logged, no event captured `() {
+        fixture.envelopeReader = EnvelopeReader()
+        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(null)
+        val sut = fixture.getSut()
+        val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
         sut.processEnvelopeFile(path)
 
         // Additionally make sure we have no errors logged
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), any(), any<Any>())
-        verify(fixture.hub, never())!!.captureEvent(any())
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.hub, never()).captureEvent(any())
+        assertFalse(File(path).exists())
+    }
+
+    @Test
+    fun `when parser is EnvelopeReader and serializer returns a null envelope, file error logged, no event captured `() {
+        fixture.envelopeReader = EnvelopeReader()
+        whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(null)
+        whenever(fixture.serializer.deserializeSession(any())).thenReturn(null)
+        val sut = fixture.getSut()
+        val path = getTempEnvelope("envelope-session-start.txt")
+        assertTrue(File(path).exists()) // sanity check
+        sut.processEnvelopeFile(path)
+
+        // Additionally make sure we have no errors logged
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.hub, never()).captureEvent(any())
         assertFalse(File(path).exists())
     }
 
@@ -96,25 +132,31 @@ class EnvelopeSenderTest {
     fun `when processEnvelopeFile is called with a invalid path, logs error`() {
         val sut = fixture.getSut()
         sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt")
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
     }
 
     @Test
     fun `when hub is null, ctor throws`() {
-        fixture.hub = null
-        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
+        val clazz = Class.forName("io.sentry.core.EnvelopeSender")
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
+        val params = arrayOf({ null; mock<IEnvelopeReader>(); mock<ISerializer>(); mock<ILogger>() })
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when envelopeReader is null, ctor throws`() {
-        fixture.envelopeReader = null
-        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
+        val clazz = Class.forName("io.sentry.core.EnvelopeSender")
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
+        val params = arrayOf({ mock<IHub>(); null; mock<ISerializer>(); mock<ILogger>() })
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when serializer is null, ctor throws`() {
-        fixture.serializer = null
-        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
+        val clazz = Class.forName("io.sentry.core.EnvelopeSender")
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
+        val params = arrayOf({ mock<IHub>(); mock<IEnvelopeReader>(); null; mock<ILogger>() })
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
@@ -123,5 +165,20 @@ class EnvelopeSenderTest {
         val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
         val params = arrayOf({ mock<IHub>(); mock<IEnvelopeReader>(); mock<ISerializer>(); null })
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
+    }
+
+    @Test
+    fun `when file name is null, should not be relevant`() {
+        assertFalse(fixture.getSut().isRelevantFileName(null))
+    }
+
+    @Test
+    fun `when file name is current prefix, should be ignored`() {
+        assertFalse(fixture.getSut().isRelevantFileName(SessionCache.PREFIX_CURRENT_FILE))
+    }
+
+    @Test
+    fun `when file name is relevant, should return true`() {
+        assertTrue(fixture.getSut().isRelevantFileName("123.envelope"))
     }
 }

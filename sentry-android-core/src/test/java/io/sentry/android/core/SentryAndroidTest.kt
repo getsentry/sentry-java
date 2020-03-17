@@ -1,22 +1,15 @@
 package io.sentry.android.core
 
-import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.ILogger
 import io.sentry.core.Sentry
 import io.sentry.core.SentryLevel
-import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,13 +19,9 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SentryAndroidTest {
-    private lateinit var context: Context
-    private lateinit var file: File
 
     @BeforeTest
     fun `set up`() {
-        context = ApplicationProvider.getApplicationContext()
-        file = context.cacheDir
         Sentry.close()
     }
 
@@ -40,9 +29,8 @@ class SentryAndroidTest {
     fun `when auto-init is disabled and user calls init manually, SDK initializes`() {
         assertFalse(Sentry.isEnabled())
 
-        val mockContext = createMockContext()
         val metaData = Bundle()
-        mockMetaData(mockContext, metaData)
+        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
@@ -56,9 +44,8 @@ class SentryAndroidTest {
     fun `when auto-init is disabled and user calls init manually with a logger, SDK initializes`() {
         assertFalse(Sentry.isEnabled())
 
-        val mockContext = createMockContext()
         val metaData = Bundle()
-        mockMetaData(mockContext, metaData)
+        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
@@ -74,9 +61,8 @@ class SentryAndroidTest {
     fun `when auto-init is disabled and user calls init manually with configuration handler, options should be set`() {
         assertFalse(Sentry.isEnabled())
 
-        val mockContext = createMockContext()
         val metaData = Bundle()
-        mockMetaData(mockContext, metaData)
+        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
@@ -94,32 +80,12 @@ class SentryAndroidTest {
 
     @Test
     fun `init won't throw exception`() {
-        val mockContext = createMockContext()
         val metaData = Bundle()
-        mockMetaData(mockContext, metaData)
+        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
 
         val logger = mock<ILogger>()
         SentryAndroid.init(mockContext, logger)
         verify(logger, never()).log(eq(SentryLevel.FATAL), any<String>(), any())
-    }
-
-    private fun createMockContext(): Context {
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
-        whenever(mockContext.cacheDir).thenReturn(file)
-        return mockContext
-    }
-
-    private fun mockMetaData(mockContext: Context, metaData: Bundle) {
-        val mockPackageManager: PackageManager = mock()
-        val mockApplicationInfo: ApplicationInfo = mock()
-
-        whenever(mockContext.packageName).thenReturn("io.sentry.sample.test")
-        whenever(mockContext.packageManager).thenReturn(mockPackageManager)
-        whenever(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA)).thenReturn(mockApplicationInfo)
-
-        mockApplicationInfo.metaData = metaData
     }
 }

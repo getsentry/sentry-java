@@ -3,6 +3,7 @@ package io.sentry.core;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 public final class HubAdapter implements IHub {
@@ -30,10 +31,10 @@ public final class HubAdapter implements IHub {
     return Sentry.captureMessage(message, level);
   }
 
+  @ApiStatus.Internal
   @Override
-  public void captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
-    // should we add to Sentry static method too?
-    Sentry.getCurrentHub().captureEnvelope(envelope, hint);
+  public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+    return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
   }
 
   @Override

@@ -54,10 +54,10 @@ public interface IHub {
    */
   SentryId captureMessage(String message, SentryLevel level);
 
-  void captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+  SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
 
-  default void captureEnvelope(SentryEnvelope envelope) {
-    captureEnvelope(envelope, null);
+  default SentryId captureEnvelope(SentryEnvelope envelope) {
+    return captureEnvelope(envelope, null);
   }
 
   /**

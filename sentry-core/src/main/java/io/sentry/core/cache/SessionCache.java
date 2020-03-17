@@ -46,7 +46,7 @@ public final class SessionCache implements ISessionCache {
   public static final String PREFIX_CURRENT_FILE = "current";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF8 = Charset.forName("UTF-8");
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final File directory;
   private final int maxSize;
@@ -101,7 +101,7 @@ public final class SessionCache implements ISessionCache {
             int items = 0;
             for (SentryEnvelopeItem item : currentEnvelope.getItems()) {
               try (Reader reader =
-                  new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF8)) {
+                  new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
                 items++;
                 Session session = serializer.deserializeSession(reader);
                 if (session == null) {
@@ -115,7 +115,7 @@ public final class SessionCache implements ISessionCache {
                 } else {
                   // we're ending a left over session from other runs and writing a proper envelope
                   // for it.
-                  session.endBrokenSession();
+                  session.end();
                   SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
                   File fileFromSession = getEnvelopeFile(fromSession);
                   writeEnvelopeToDisk(fileFromSession, fromSession);
@@ -169,7 +169,7 @@ public final class SessionCache implements ISessionCache {
     }
 
     try (OutputStream fileOutputStream = new FileOutputStream(file);
-        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF8)) {
+        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
       serializer.serialize(envelope, wrt);
     } catch (Exception e) {
       options
