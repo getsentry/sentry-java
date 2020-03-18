@@ -1,6 +1,5 @@
 package io.sentry.core;
 
-import io.sentry.core.hints.DiskFlushNotification;
 import io.sentry.core.hints.SessionEnd;
 import io.sentry.core.hints.SessionStart;
 import io.sentry.core.hints.SessionUpdate;
@@ -90,21 +89,6 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         if (item != null) {
           sentryId = item.client.captureEvent(event, item.scope, hint);
-
-          if (options.isEnableSessionTracking()) {
-            item.scope.withSession(
-                session -> {
-                  if (session != null) {
-                    // if we do that on the client, session start will call also a session update
-                    // but I guess this should be in the client anyway, otherlise it will trigger
-                    // captureSession even if
-                    // its a normal event
-                    item.client.captureSession(
-                        session,
-                        (hint instanceof DiskFlushNotification) ? hint : new SessionUpdateHint());
-                  }
-                });
-          }
         } else {
           options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureEvent");
         }

@@ -12,7 +12,6 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.hints.DiskFlushNotification
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
 import java.io.File
@@ -303,26 +302,6 @@ class HubTest {
     }
 
     @Test
-    fun `when captureEvent is called and session tracking is enabled, it should capture a session`() {
-        val options = SentryOptions()
-        options.isEnableSessionTracking = true
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
-
-        val event = SentryEvent()
-        val hint = { }
-        sut.startSession()
-        sut.captureEvent(event, hint)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
-        // 2 because of a new session and a session update
-        verify(mockClient, times(2)).captureSession(any(), any())
-    }
-
-    @Test
     fun `when captureEvent is called and session tracking is disabled, it should not capture a session`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
@@ -355,48 +334,6 @@ class HubTest {
         sut.captureEvent(event, hint)
         verify(mockClient).captureEvent(eq(event), any(), eq(hint))
         verify(mockClient, never()).captureSession(any(), any())
-    }
-
-    @Test
-    fun `when captureEvent is called session tracking is enabled with a disk flush hint, use it`() {
-        val options = SentryOptions()
-        options.isEnableSessionTracking = true
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
-
-        val event = SentryEvent()
-
-        sut.startSession()
-        verify(mockClient).captureSession(any(), any())
-        val hint = mock<DiskFlushNotification>()
-        sut.captureEvent(event, hint)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
-        verify(mockClient).captureSession(any(), eq(hint))
-    }
-
-    @Test
-    fun `when captureEvent is called session tracking is enabled and if not a disk flush hint, use a SessionUpdateHint`() {
-        val options = SentryOptions()
-        options.isEnableSessionTracking = true
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
-
-        val event = SentryEvent()
-
-        sut.startSession()
-        verify(mockClient).captureSession(any(), any())
-        val hint = { }
-        sut.captureEvent(event, hint)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
-        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionUpdateHint })
     }
     //endregion
 
