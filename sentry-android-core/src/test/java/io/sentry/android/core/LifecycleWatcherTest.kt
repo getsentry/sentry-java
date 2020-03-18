@@ -46,7 +46,7 @@ class LifecycleWatcherTest {
         val watcher = LifecycleWatcher(hub, 100L)
         watcher.onStart(Owner())
         watcher.onStop(Owner())
-        Thread.sleep(150)
+        Thread.sleep(500L)
         verify(hub).endSession()
     }
 

@@ -10,7 +10,6 @@ import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Objects;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -134,8 +133,7 @@ public final class DiskCache implements IEventCache {
     List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);
 
     for (File f : allCachedEvents) {
-      try (Reader rdr =
-          new InputStreamReader(new BufferedInputStream(new FileInputStream(f)), UTF_8)) {
+      try (final Reader rdr = new InputStreamReader(new FileInputStream(f), UTF_8)) {
 
         ret.add(serializer.deserializeEvent(rdr));
       } catch (FileNotFoundException e) {

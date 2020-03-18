@@ -7,7 +7,6 @@ import io.sentry.core.hints.Cached;
 import io.sentry.core.hints.RetryableHint;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -57,8 +56,7 @@ final class SendCachedEvent extends DirectoryProcessor {
         new SendCachedEventHint(
             15000,
             logger); // TODO: get timeout from options (should be bigger than network timeout)
-    try (Reader reader =
-        new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_8))) {
+    try (final Reader reader = new InputStreamReader(new FileInputStream(file), UTF_8)) {
       SentryEvent event = serializer.deserializeEvent(reader);
       hub.captureEvent(event, hint);
       if (!hint.waitFlush()) {
