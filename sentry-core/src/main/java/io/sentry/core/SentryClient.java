@@ -165,7 +165,11 @@ public final class SentryClient implements ISentryClient {
                     }
                   }
 
-                  session.update(status, userAgent, crashedOrErrored);
+                  if (session.update(status, userAgent, crashedOrErrored)) {
+                    // a session update hint means its gonna only flush to the disk, but not to the
+                    // network
+                    captureSession(session, new Hub.SessionUpdateHint());
+                  }
                 } else {
                   options.getLogger().log(SentryLevel.INFO, "Session is null on scope.withSession");
                 }

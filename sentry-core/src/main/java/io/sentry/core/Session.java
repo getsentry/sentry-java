@@ -207,7 +207,7 @@ public final class Session {
     }
   }
 
-  public void update(final State status, final String userAgent, boolean addErrorsCount) {
+  public boolean update(final State status, final String userAgent, boolean addErrorsCount) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
@@ -229,6 +229,7 @@ public final class Session {
         timestamp = DateUtils.getCurrentDateTime();
         sequence = System.currentTimeMillis();
       }
+      return sessionHasBeenUpdated;
     }
   }
 }

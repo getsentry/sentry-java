@@ -137,6 +137,7 @@ public final class SessionCache implements ISessionCache {
 
     if (hint instanceof SessionUpdate) {
       writeEnvelopeToDisk(currentEnvelopeFile, envelope);
+      return;
     }
 
     File envelopeFile = getEnvelopeFile(envelope);

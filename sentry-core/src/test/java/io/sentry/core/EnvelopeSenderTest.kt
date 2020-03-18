@@ -139,7 +139,7 @@ class EnvelopeSenderTest {
     fun `when hub is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
         val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf({ null; mock<IEnvelopeReader>(); mock<ISerializer>(); mock<ILogger>() })
+        val params = arrayOf(null, mock<IEnvelopeReader>(), mock<ISerializer>(), mock<ILogger>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -147,7 +147,7 @@ class EnvelopeSenderTest {
     fun `when envelopeReader is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
         val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf({ mock<IHub>(); null; mock<ISerializer>(); mock<ILogger>() })
+        val params = arrayOf(mock<IHub>(), null, mock<ISerializer>(), mock<ILogger>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -155,7 +155,7 @@ class EnvelopeSenderTest {
     fun `when serializer is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
         val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf({ mock<IHub>(); mock<IEnvelopeReader>(); null; mock<ILogger>() })
+        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), null, mock<ILogger>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -163,7 +163,7 @@ class EnvelopeSenderTest {
     fun `when logger is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
         val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf({ mock<IHub>(); mock<IEnvelopeReader>(); mock<ISerializer>(); null })
+        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), mock<ISerializer>(), null)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 

@@ -11,6 +11,7 @@ import io.sentry.core.cache.ISessionCache;
 import io.sentry.core.hints.Cached;
 import io.sentry.core.hints.DiskFlushNotification;
 import io.sentry.core.hints.RetryableHint;
+import io.sentry.core.hints.SessionUpdate;
 import io.sentry.core.hints.SubmissionResult;
 import java.io.Closeable;
 import java.io.IOException;
@@ -209,6 +210,7 @@ public final class AsyncConnection implements Closeable, Connection {
     private TransportResult flush() {
       TransportResult result = this.failedResult;
       eventCache.store(event);
+
       if (hint instanceof DiskFlushNotification) {
         ((DiskFlushNotification) hint).markFlushed();
         options
@@ -310,16 +312,12 @@ public final class AsyncConnection implements Closeable, Connection {
 
     private TransportResult flush() {
       TransportResult result = this.failedResult;
-      // TODO: Do we need special policies for caching envelopes?
+
       sessionCache.store(envelope, hint);
-      if (hint instanceof DiskFlushNotification) {
-        ((DiskFlushNotification) hint).markFlushed();
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Disk flush envelope fired: %s",
-                envelope.getHeader().getEventId());
+
+      // we only flush a session update to the disk, but not to the network
+      if (hint instanceof SessionUpdate) {
+        return TransportResult.success();
       }
 
       if (transportGate.isSendingAllowed()) {
