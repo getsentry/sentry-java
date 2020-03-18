@@ -56,7 +56,7 @@ public final class SentryClient implements ISentryClient {
     if (connection == null) {
       // TODO this is obviously provisional and should be constructed based on the config in options
       final IEventCache cache = new DiskCache(options);
-      final ISessionCache sessionCache = new SessionCache(options, new EnvelopeReader());
+      final ISessionCache sessionCache = new SessionCache(options);
 
       connection = AsyncConnectionFactory.create(options, cache, sessionCache);
     }

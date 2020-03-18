@@ -5,7 +5,6 @@ import static io.sentry.core.SentryLevel.ERROR;
 import static io.sentry.core.SentryLevel.WARNING;
 import static java.lang.String.format;
 
-import io.sentry.core.IEnvelopeReader;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
@@ -52,16 +51,13 @@ public final class SessionCache implements ISessionCache {
   private final int maxSize;
   private final ISerializer serializer;
   private final SentryOptions options;
-  private final IEnvelopeReader envelopeReader;
 
-  public SessionCache(final SentryOptions options, final IEnvelopeReader envelopeReader) {
+  public SessionCache(final SentryOptions options) {
     Objects.requireNonNull(options.getSessionsPath(), "sessions dir. path is required.");
-    Objects.requireNonNull(envelopeReader, "EnvelopeReader is required.");
     this.directory = new File(options.getSessionsPath());
     this.maxSize = options.getSessionsDirSize();
     this.serializer = options.getSerializer();
     this.options = options;
-    this.envelopeReader = envelopeReader;
   }
 
   @Override
@@ -88,9 +84,12 @@ public final class SessionCache implements ISessionCache {
       if (currentEnvelopeFile.exists()) {
         options.getLogger().log(WARNING, "Current envelope is not ended, we'd need to end it.");
 
-        try (InputStream stream = new FileInputStream(currentEnvelopeFile)) {
-          SentryEnvelope currentEnvelope = envelopeReader.read(stream);
-          if (currentEnvelope == null) {
+        try (final Reader reader =
+            new InputStreamReader(new FileInputStream(currentEnvelopeFile), UTF_8)) {
+
+          final Session session = serializer.deserializeSession(reader);
+
+          if (session == null) {
             options
                 .getLogger()
                 .log(
@@ -98,41 +97,44 @@ public final class SessionCache implements ISessionCache {
                     "Stream from path %s resulted in a null envelope.",
                     currentEnvelopeFile.getAbsolutePath());
           } else {
-            int items = 0;
-            for (SentryEnvelopeItem item : currentEnvelope.getItems()) {
-              try (Reader reader =
-                  new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
-                items++;
-                Session session = serializer.deserializeSession(reader);
-                if (session == null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.ERROR,
-                          "Item %d of type %s returned null by the parser.",
-                          items,
-                          item.getHeader().getType());
-                } else {
-                  // we're ending a left over session from other runs and writing a proper envelope
-                  // for it.
-                  session.end();
-                  SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
-                  File fileFromSession = getEnvelopeFile(fromSession);
-                  writeEnvelopeToDisk(fileFromSession, fromSession);
-                }
-              } catch (Exception e) {
-                options.getLogger().log(ERROR, "Item failed to process.", e);
-              }
-            }
-
-            File envelopeFile = getEnvelopeFile(currentEnvelope);
-            writeEnvelopeToDisk(envelopeFile, currentEnvelope);
+            // we're ending a left over session from other runs and writing a proper envelope
+            // for it.
+            session.end();
+            SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
+            File fileFromSession = getEnvelopeFile(fromSession);
+            writeEnvelopeToDisk(fileFromSession, fromSession);
           }
         } catch (IOException e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error processing envelope.", e);
+          options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
+        }
+      } else {
+        Iterable<SentryEnvelopeItem> items = envelope.getItems();
+
+        // we know that an envelope with a SessionStart hint has a single item inside
+        if (items.iterator().hasNext()) {
+          SentryEnvelopeItem item = items.iterator().next();
+
+          if ("session".equals(item.getHeader().getType())) {
+            try (final Reader reader =
+                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
+              final Session session = serializer.deserializeSession(reader);
+              if (session == null) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.ERROR,
+                        "Item %d of type %s returned null by the parser.",
+                        items,
+                        item.getHeader().getType());
+              } else {
+                writeSessionToDisk(currentEnvelopeFile, session);
+              }
+            } catch (Exception e) {
+              options.getLogger().log(ERROR, "Item failed to process.", e);
+            }
+          }
         }
       }
-      writeEnvelopeToDisk(currentEnvelopeFile, envelope);
     }
 
     if (hint instanceof SessionUpdate) {
@@ -179,6 +181,24 @@ public final class SessionCache implements ISessionCache {
               ERROR,
               "Error writing Envelope to offline storage: %s",
               envelope.getHeader().getEventId());
+    }
+  }
+
+  private void writeSessionToDisk(File file, Session session) {
+    if (file.exists()) {
+      options
+          .getLogger()
+          .log(DEBUG, "Overwriting session to offline storage: %s", session.getSessionId());
+      file.delete();
+    }
+
+    try (OutputStream fileOutputStream = new FileOutputStream(file);
+        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
+      serializer.serialize(session, wrt);
+    } catch (Exception e) {
+      options
+          .getLogger()
+          .log(ERROR, "Error writing Session to offline storage: %s", session.getSessionId());
     }
   }
 
