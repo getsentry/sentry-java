@@ -32,15 +32,6 @@ public class MyApplication extends Application {
     User user = new User();
     user.setId("fake-id");
     Sentry.setUser(user);
-    Sentry.startSession();
-    //    Sentry.captureMessage("test");
-    //    Sentry.captureException(new RuntimeException("1"));
-    //    Sentry.captureEvent(new SentryEvent());
-    //    Sentry.captureException(new RuntimeException("2"));
-    //    SentryEvent event = new SentryEvent();
-    //    event.setLevel(SentryLevel.FATAL);
-    //    Sentry.captureEvent(event);
-    //    Sentry.endSession();
   }
 
   private void strictMode() {

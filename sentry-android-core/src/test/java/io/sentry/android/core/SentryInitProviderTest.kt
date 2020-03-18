@@ -114,6 +114,18 @@ class SentryInitProviderTest {
     }
 
     @Test
+    fun `when App context is null, do nothing`() {
+        val providerInfo = ProviderInfo()
+
+        assertFalse(Sentry.isEnabled())
+        providerInfo.authority = AUTHORITY
+
+        sentryInitProvider.attachInfo(null, providerInfo)
+
+        assertFalse(Sentry.isEnabled())
+    }
+
+    @Test
     fun `when applicationId is defined, ndk in meta-data is set to false, NDK doesnt initialize`() {
         val sentryOptions = SentryAndroidOptions()
         val mockLogger = mock<ILogger>()

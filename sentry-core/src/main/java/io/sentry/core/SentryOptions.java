@@ -158,6 +158,8 @@ public class SentryOptions {
   /** When enabled, threads are automatically attached to all logged events. */
   private boolean enableSessionTracking;
 
+  private long sessionTrackingIntervalMillis = 30000; // 30s
+
   /** The server name used in the Sentry messages. */
   private String serverName;
 
@@ -686,6 +688,14 @@ public class SentryOptions {
 
   public void setSessionsDirSize(int sessionsDirSize) {
     this.sessionsDirSize = sessionsDirSize;
+  }
+
+  public long getSessionTrackingIntervalMillis() {
+    return sessionTrackingIntervalMillis;
+  }
+
+  public void setSessionTrackingIntervalMillis(long sessionTrackingIntervalMillis) {
+    this.sessionTrackingIntervalMillis = sessionTrackingIntervalMillis;
   }
 
   /** The BeforeSend callback */
