@@ -209,22 +209,26 @@ public final class Session {
 
   public void update(final State status, final String userAgent, boolean addErrorsCount) {
     synchronized (sessionLock) {
-      init = null;
-
+      boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
+        sessionHasBeenUpdated = true;
       }
 
       if (userAgent != null) {
         this.userAgent = userAgent;
+        sessionHasBeenUpdated = true;
       }
       if (addErrorsCount) {
         errorCount.addAndGet(1);
+        sessionHasBeenUpdated = true;
       }
 
-      timestamp = DateUtils.getCurrentDateTime();
-
-      sequence = System.currentTimeMillis();
+      if (sessionHasBeenUpdated) {
+        init = null;
+        timestamp = DateUtils.getCurrentDateTime();
+        sequence = System.currentTimeMillis();
+      }
     }
   }
 }

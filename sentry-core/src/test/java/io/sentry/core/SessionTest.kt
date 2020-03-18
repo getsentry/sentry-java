@@ -93,7 +93,7 @@ class SessionTest {
         session.start("rel", "env", user)
         val timestamp = session.started
         val sequecence = session.sequence
-        session.update(null, null, false)
+        session.update(null, null, true)
 
         assertNull(session.init)
         assertTrue(session.timestamp >= timestamp)

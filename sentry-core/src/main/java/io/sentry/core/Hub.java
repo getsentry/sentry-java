@@ -96,6 +96,9 @@ public final class Hub implements IHub {
                 session -> {
                   if (session != null) {
                     // if we do that on the client, session start will call also a session update
+                    // but I guess this should be in the client anyway, otherlise it will trigger
+                    // captureSession even if
+                    // its a normal event
                     item.client.captureSession(
                         session,
                         (hint instanceof DiskFlushNotification) ? hint : new SessionUpdateHint());

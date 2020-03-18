@@ -25,6 +25,8 @@ final class ManifestMetadataReader {
   static final String RELEASE = "io.sentry.release";
   static final String ENVIRONMENT = "io.sentry.environment";
   static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
+  static final String SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS =
+      "io.sentry.session-tracking.timeout-interval-millis";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -109,6 +111,18 @@ final class ManifestMetadataReader {
         final String environment = metadata.getString(ENVIRONMENT, options.getEnvironment());
         options.getLogger().log(SentryLevel.DEBUG, "environment read: %s", environment);
         options.setEnvironment(environment);
+
+        final long sessionTrackingTimeoutIntervalMillis =
+            metadata.getInt(
+                SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS,
+                (int) options.getSessionTrackingIntervalMillis());
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "sessionTrackingTimeoutIntervalMillis read: %d",
+                sessionTrackingTimeoutIntervalMillis);
+        options.setSessionTrackingIntervalMillis(sessionTrackingTimeoutIntervalMillis);
       }
       options
           .getLogger()

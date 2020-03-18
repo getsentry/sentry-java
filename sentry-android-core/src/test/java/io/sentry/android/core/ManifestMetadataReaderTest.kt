@@ -146,4 +146,33 @@ class ManifestMetadataReaderTest {
         // Assert
         assertNull(options.environment)
     }
+
+    @Test
+    fun `applyMetadata reads session tracking interval to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        bundle.putInt(ManifestMetadataReader.SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS, 1000)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertEquals(1000.toLong(), options.sessionTrackingIntervalMillis)
+    }
+
+    @Test
+    fun `applyMetadata reads session tracking interval and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertEquals(30000.toLong(), options.sessionTrackingIntervalMillis)
+    }
 }

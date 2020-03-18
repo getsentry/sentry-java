@@ -61,6 +61,7 @@ final class AndroidOptionsInitializer {
     options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver(envelopeReader));
     options.addIntegration(new NdkIntegration());
     options.addIntegration(new AnrIntegration());
+    options.addIntegration(new SessionTrackingIntegration());
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
     options.setSerializer(new AndroidSerializer(options.getLogger(), envelopeReader));
