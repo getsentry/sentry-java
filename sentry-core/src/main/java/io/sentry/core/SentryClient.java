@@ -69,6 +69,8 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
+    updateSessionData(event, hint, scope);
+
     // should we sample only if non fatal or non handled?
     if (!sample()) {
       options
@@ -122,8 +124,6 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    updateSessionData(event, hint, scope);
-
     try {
       connection.send(event, hint);
     } catch (IOException e) {
@@ -138,9 +138,6 @@ public final class SentryClient implements ISentryClient {
   @TestOnly
   void updateSessionData(
       final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
-    // TODO: there's already this check above (if its cached), but it's before event processors and
-    // we'd need to refactor
-    // that as well, let's keep like this for now
     if (!(hint instanceof Cached)) {
       // safe guard
       if (options.isEnableSessionTracking()) {
