@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
@@ -74,7 +73,7 @@ class AsyncConnectionTest {
 
         // then
         verify(fixture.eventCache).store(eq(ev))
-        verifyZeroInteractions(fixture.transport)
+        verify(fixture.transport).isRetryAfter(any())
     }
 
     @Test
@@ -82,7 +81,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
-        whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.error(4, 2))
+        whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.error(500))
 
         // when
         try {

@@ -2,6 +2,7 @@ package io.sentry.core.cache;
 
 import static io.sentry.core.SentryLevel.DEBUG;
 import static io.sentry.core.SentryLevel.ERROR;
+import static io.sentry.core.SentryLevel.INFO;
 import static io.sentry.core.SentryLevel.WARNING;
 import static java.lang.String.format;
 
@@ -40,19 +41,20 @@ import org.jetbrains.annotations.Nullable;
 public final class SessionCache implements ISessionCache {
 
   /** File suffix added to all serialized envelopes files. */
-  static final String FILE_SUFFIX = ".envelope";
+  static final String SUFFIX_ENVELOPE_FILE = ".envelope";
 
-  public static final String PREFIX_CURRENT_FILE = "current";
+  public static final String PREFIX_CURRENT_SESSION_FILE = "session";
+  private static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private final File directory;
+  private final @NotNull File directory;
   private final int maxSize;
-  private final ISerializer serializer;
-  private final SentryOptions options;
+  private final @NotNull ISerializer serializer;
+  private final @NotNull SentryOptions options;
 
-  public SessionCache(final SentryOptions options) {
+  public SessionCache(final @NotNull SentryOptions options) {
     Objects.requireNonNull(options.getSessionsPath(), "sessions dir. path is required.");
     this.directory = new File(options.getSessionsPath());
     this.maxSize = options.getSessionsDirSize();
@@ -61,7 +63,9 @@ public final class SessionCache implements ISessionCache {
   }
 
   @Override
-  public void store(@NotNull SentryEnvelope envelope, @Nullable Object hint) {
+  public void store(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+    Objects.requireNonNull(envelope, "Envelope is required.");
+
     if (getNumberOfStoredEnvelopes() >= maxSize) {
       options
           .getLogger()
@@ -72,7 +76,7 @@ public final class SessionCache implements ISessionCache {
       return;
     }
 
-    File currentEnvelopeFile = getCurrentEnvelopeFile();
+    final File currentEnvelopeFile = getCurrentSessionFile();
 
     if (hint instanceof SessionEnd) {
       if (!currentEnvelopeFile.delete()) {
@@ -100,19 +104,19 @@ public final class SessionCache implements ISessionCache {
             // we're ending a left over session from other runs and writing a proper envelope
             // for it.
             session.end();
-            SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
-            File fileFromSession = getEnvelopeFile(fromSession);
+            final SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
+            final File fileFromSession = getEnvelopeFile(fromSession);
             writeEnvelopeToDisk(fileFromSession, fromSession);
           }
         } catch (IOException e) {
           options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
         }
       } else {
-        Iterable<SentryEnvelopeItem> items = envelope.getItems();
+        final Iterable<SentryEnvelopeItem> items = envelope.getItems();
 
         // we know that an envelope with a SessionStart hint has a single item inside
         if (items.iterator().hasNext()) {
-          SentryEnvelopeItem item = items.iterator().next();
+          final SentryEnvelopeItem item = items.iterator().next();
 
           if ("session".equals(item.getHeader().getType())) {
             try (final Reader reader =
@@ -132,7 +136,18 @@ public final class SessionCache implements ISessionCache {
             } catch (Exception e) {
               options.getLogger().log(ERROR, "Item failed to process.", e);
             }
+          } else {
+            options
+                .getLogger()
+                .log(
+                    INFO,
+                    "Current envelope has a different envelope type %s",
+                    item.getHeader().getType());
           }
+        } else {
+          options
+              .getLogger()
+              .log(INFO, "Current envelope is empty %s", envelope.getHeader().getEventId());
         }
       }
     }
@@ -142,7 +157,7 @@ public final class SessionCache implements ISessionCache {
       return;
     }
 
-    File envelopeFile = getEnvelopeFile(envelope);
+    final File envelopeFile = getEnvelopeFile(envelope);
     if (envelopeFile.exists()) {
       options
           .getLogger()
@@ -160,7 +175,8 @@ public final class SessionCache implements ISessionCache {
     writeEnvelopeToDisk(envelopeFile, envelope);
   }
 
-  private void writeEnvelopeToDisk(File file, SentryEnvelope envelope) {
+  private void writeEnvelopeToDisk(
+      final @NotNull File file, final @NotNull SentryEnvelope envelope) {
     if (file.exists()) {
       options
           .getLogger()
@@ -171,8 +187,8 @@ public final class SessionCache implements ISessionCache {
       file.delete();
     }
 
-    try (OutputStream fileOutputStream = new FileOutputStream(file);
-        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
+    try (final OutputStream fileOutputStream = new FileOutputStream(file);
+        final Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
       serializer.serialize(envelope, wrt);
     } catch (Exception e) {
       options
@@ -184,7 +200,7 @@ public final class SessionCache implements ISessionCache {
     }
   }
 
-  private void writeSessionToDisk(File file, Session session) {
+  private void writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
     if (file.exists()) {
       options
           .getLogger()
@@ -192,8 +208,8 @@ public final class SessionCache implements ISessionCache {
       file.delete();
     }
 
-    try (OutputStream fileOutputStream = new FileOutputStream(file);
-        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
+    try (final OutputStream fileOutputStream = new FileOutputStream(file);
+        final Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
       serializer.serialize(session, wrt);
     } catch (Exception e) {
       options
@@ -203,8 +219,10 @@ public final class SessionCache implements ISessionCache {
   }
 
   @Override
-  public void discard(SentryEnvelope envelope) {
-    File envelopeFile = getEnvelopeFile(envelope);
+  public void discard(final @NotNull SentryEnvelope envelope) {
+    Objects.requireNonNull(envelope, "Envelope is required.");
+
+    final File envelopeFile = getEnvelopeFile(envelope);
     if (envelopeFile.exists()) {
       options
           .getLogger()
@@ -237,23 +255,24 @@ public final class SessionCache implements ISessionCache {
     return true;
   }
 
-  private File getEnvelopeFile(SentryEnvelope envelope) {
+  private @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
     return new File(
-        directory.getAbsolutePath(), envelope.getHeader().getEventId().toString() + FILE_SUFFIX);
+        directory.getAbsolutePath(),
+        envelope.getHeader().getEventId().toString() + SUFFIX_ENVELOPE_FILE);
   }
 
-  private File getCurrentEnvelopeFile() {
-    return new File(directory.getAbsolutePath(), "current" + FILE_SUFFIX);
+  private @NotNull File getCurrentSessionFile() {
+    return new File(
+        directory.getAbsolutePath(), PREFIX_CURRENT_SESSION_FILE + SUFFIX_CURRENT_SESSION_FILE);
   }
 
-  @NotNull
   @Override
-  public Iterator<SentryEnvelope> iterator() {
-    File[] allCachedEnvelopes = allEnvelopeFiles();
+  public @NotNull Iterator<SentryEnvelope> iterator() {
+    final File[] allCachedEnvelopes = allEnvelopeFiles();
 
-    List<SentryEnvelope> ret = new ArrayList<>(allCachedEnvelopes.length);
+    final List<SentryEnvelope> ret = new ArrayList<>(allCachedEnvelopes.length);
 
-    for (File f : allCachedEnvelopes) {
+    for (final File f : allCachedEnvelopes) {
       try (final InputStream is = new BufferedInputStream(new FileInputStream(f))) {
 
         ret.add(serializer.deserializeEnvelope(is));
@@ -277,12 +296,10 @@ public final class SessionCache implements ISessionCache {
     return ret.iterator();
   }
 
-  private File[] allEnvelopeFiles() {
+  private @NotNull File[] allEnvelopeFiles() {
     if (isDirectoryValid()) {
-      // lets filter the current.envelope here
-      return directory.listFiles(
-          (__, fileName) ->
-              fileName.endsWith(FILE_SUFFIX) && !fileName.startsWith(PREFIX_CURRENT_FILE));
+      // lets filter the session.json here
+      return directory.listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
     }
     return new File[] {};
   }
