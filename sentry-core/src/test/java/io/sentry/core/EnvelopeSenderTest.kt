@@ -174,7 +174,7 @@ class EnvelopeSenderTest {
 
     @Test
     fun `when file name is current prefix, should be ignored`() {
-        assertFalse(fixture.getSut().isRelevantFileName(SessionCache.PREFIX_CURRENT_FILE))
+        assertFalse(fixture.getSut().isRelevantFileName(SessionCache.PREFIX_CURRENT_SESSION_FILE))
     }
 
     @Test
