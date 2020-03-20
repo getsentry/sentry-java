@@ -537,6 +537,22 @@ class SentryClientTest {
         verify(scope, never()).withSession(any())
     }
 
+    @Test
+    fun `when captureEvent with sampling, session is still updated`() {
+        fixture.sentryOptions.sampleRate = 1.0
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val sut = fixture.getSut()
+
+        val event = SentryEvent().apply {
+            level = SentryLevel.FATAL
+        }
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        sut.captureEvent(event, scope, null)
+        assertEquals(Session.State.Crashed, session.status)
+        assertEquals(1, session.errorCount())
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
