@@ -404,7 +404,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private Date getBootTime() {
     // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
-    return new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime());
+    return DateUtils.getDateTime(
+        new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime()));
   }
 
   private String getResolution(DisplayMetrics displayMetrics) {
