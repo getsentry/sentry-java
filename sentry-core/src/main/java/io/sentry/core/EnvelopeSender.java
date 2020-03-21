@@ -104,7 +104,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         logger.log(SentryLevel.ERROR, "Item %d has no header", items);
         continue;
       }
-      if ("event".equals(item.getHeader().getType())) {
+      if (SentryEnvelopeItemType.Event.getType().equals(item.getHeader().getType())) {
         try (final Reader eventReader =
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
           SentryEvent event = serializer.deserializeEvent(eventReader);
@@ -137,7 +137,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         } catch (Exception e) {
           logger.log(ERROR, "Item failed to process.", e);
         }
-      } else if ("session".equals(item.getHeader().getType())) {
+      } else if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
         try (final Reader reader =
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
           final Session session = serializer.deserializeSession(reader);
