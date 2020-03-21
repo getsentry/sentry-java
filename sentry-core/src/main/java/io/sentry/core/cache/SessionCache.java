@@ -9,6 +9,7 @@ import static java.lang.String.format;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
+import io.sentry.core.SentryEnvelopeItemType;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.Session;
@@ -118,7 +119,7 @@ public final class SessionCache implements ISessionCache {
         if (items.iterator().hasNext()) {
           final SentryEnvelopeItem item = items.iterator().next();
 
-          if ("session".equals(item.getHeader().getType())) {
+          if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
             try (final Reader reader =
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
               final Session session = serializer.deserializeSession(reader);

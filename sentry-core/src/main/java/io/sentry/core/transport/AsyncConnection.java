@@ -2,6 +2,7 @@ package io.sentry.core.transport;
 
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
+import io.sentry.core.SentryEnvelopeItemType;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
@@ -104,7 +105,7 @@ public final class AsyncConnection implements Closeable, Connection {
     }
 
     // no reason to continue
-    if (transport.isRetryAfter("event")) {
+    if (transport.isRetryAfter(SentryEnvelopeItemType.Event.getType())) {
       return;
     }
 

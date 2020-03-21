@@ -66,7 +66,10 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            "session", () -> cachedItem.getBytes().length, "application/json", null);
+            SentryEnvelopeItemType.Session.getType(),
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
 
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }

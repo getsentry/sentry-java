@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryEnvelopeItemHeader {
+
   private final @Nullable String contentType;
   private final @Nullable String fileName;
   private final @NotNull String type;
