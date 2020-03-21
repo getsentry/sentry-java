@@ -39,7 +39,8 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
           SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
       EnvelopeSender envelopeSender =
-          new EnvelopeSender(hub, envelopeReader, options.getSerializer(), logger);
+          new EnvelopeSender(
+              hub, envelopeReader, options.getSerializer(), logger, options.getFlushTimeoutMills());
 
       observer = new EnvelopeFileObserver(path, envelopeSender, logger);
       observer.startWatching();

@@ -72,9 +72,8 @@ public final class UncaughtExceptionHandlerIntegration
     options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
     try {
-      // TODO: should we still use timeout (2s)? flushing a session and an event might not be enough
-      // time
-      UncaughtExceptionHint hint = new UncaughtExceptionHint(5000, options.getLogger());
+      UncaughtExceptionHint hint =
+          new UncaughtExceptionHint(options.getFlushTimeoutMills(), options.getLogger());
       Throwable throwable = getUnhandledThrowable(thread, thrown);
       SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);

@@ -27,13 +27,14 @@ public final class EnvelopeReader implements IEnvelopeReader {
               SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
           .create();
 
-  public @Override @Nullable SentryEnvelope read(@NotNull InputStream stream) throws IOException {
+  public @Override @Nullable SentryEnvelope read(final @NotNull InputStream stream)
+      throws IOException {
     byte[] buffer = new byte[1024];
     int currentLength;
     int streamOffset = 0;
     // Offset of the line break defining the end of the envelope header
     int envelopeEndHeaderOffset = -1;
-    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+    try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
       while ((currentLength = stream.read(buffer)) > 0) {
         for (int i = 0; envelopeEndHeaderOffset == -1 && i < currentLength; i++) {
           if (buffer[i] == '\n') {

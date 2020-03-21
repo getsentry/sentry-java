@@ -4,6 +4,7 @@ import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.util.Objects;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -25,8 +26,8 @@ public final class StdoutTransport implements ITransport {
   public TransportResult send(final @NotNull SentryEvent event) throws IOException {
     Objects.requireNonNull(event, "SentryEvent is required");
 
-    try (final Writer outputStreamWriter = new OutputStreamWriter(System.out, UTF_8);
-        final Writer printWriter = new PrintWriter(outputStreamWriter)) {
+    try (final Writer writer = new BufferedWriter(new OutputStreamWriter(System.out, UTF_8));
+        final Writer printWriter = new PrintWriter(writer)) {
       serializer.serialize(event, printWriter);
       return TransportResult.success();
     }
@@ -41,8 +42,8 @@ public final class StdoutTransport implements ITransport {
   public TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
     Objects.requireNonNull(envelope, "SentryEnvelope is required");
 
-    try (final Writer outputStreamWriter = new OutputStreamWriter(System.out, UTF_8);
-        final Writer printWriter = new PrintWriter(outputStreamWriter)) {
+    try (final Writer writer = new BufferedWriter(new OutputStreamWriter(System.out, UTF_8));
+        final Writer printWriter = new PrintWriter(writer)) {
       serializer.serialize(envelope, printWriter);
       return TransportResult.success();
     } catch (Exception e) {

@@ -83,7 +83,7 @@ final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Qu
     }
   }
 
-  @SuppressWarnings("UndefinedEquals") // TODO: https://errorprone.info/bugpattern/UndefinedEquals
+  @SuppressWarnings("UndefinedEquals")
   @Override
   public boolean equals(final Object object) {
     if (object == this) {

@@ -31,8 +31,11 @@ import io.sentry.core.protocol.Contexts;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.util.Objects;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -182,10 +185,17 @@ final class AndroidSerializer implements ISerializer {
       gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
       writer.write("\n");
 
-      // TODO: fix it
-      String data = new String(item.getData(), UTF_8);
-      // writer.write(item.getData(), 0, item.getData().length);
-      writer.write(data);
+      // it might be a single line anyway, but lets make it as a BufferedReader
+      // I couldn't find a way of mixing a writer which writes String and bytes at the same time
+      // mixing the OutputStream and writer didn't work
+      try (final BufferedReader reader =
+          new BufferedReader(
+              new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
+        String temp;
+        while ((temp = reader.readLine()) != null) {
+          writer.write(temp);
+        }
+      }
 
       writer.write("\n");
     }

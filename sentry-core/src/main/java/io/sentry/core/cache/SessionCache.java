@@ -18,6 +18,8 @@ import io.sentry.core.hints.SessionStart;
 import io.sentry.core.hints.SessionUpdate;
 import io.sentry.core.util.Objects;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -90,7 +92,8 @@ public final class SessionCache implements ISessionCache {
         options.getLogger().log(WARNING, "Current envelope is not ended, we'd need to end it.");
 
         try (final Reader reader =
-            new InputStreamReader(new FileInputStream(currentEnvelopeFile), UTF_8)) {
+            new BufferedReader(
+                new InputStreamReader(new FileInputStream(currentEnvelopeFile), UTF_8))) {
 
           final Session session = serializer.deserializeSession(reader);
 
@@ -121,7 +124,8 @@ public final class SessionCache implements ISessionCache {
 
           if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
             try (final Reader reader =
-                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
+                new BufferedReader(
+                    new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
               final Session session = serializer.deserializeSession(reader);
               if (session == null) {
                 options
@@ -188,9 +192,9 @@ public final class SessionCache implements ISessionCache {
       file.delete();
     }
 
-    try (final OutputStream fileOutputStream = new FileOutputStream(file);
-        final Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
-      serializer.serialize(envelope, wrt);
+    try (final OutputStream outputStream = new FileOutputStream(file);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+      serializer.serialize(envelope, writer);
     } catch (Exception e) {
       options
           .getLogger()
@@ -209,9 +213,9 @@ public final class SessionCache implements ISessionCache {
       file.delete();
     }
 
-    try (final OutputStream fileOutputStream = new FileOutputStream(file);
-        final Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
-      serializer.serialize(session, wrt);
+    try (final OutputStream outputStream = new FileOutputStream(file);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+      serializer.serialize(session, writer);
     } catch (Exception e) {
       options
           .getLogger()
@@ -273,8 +277,8 @@ public final class SessionCache implements ISessionCache {
 
     final List<SentryEnvelope> ret = new ArrayList<>(allCachedEnvelopes.length);
 
-    for (final File f : allCachedEnvelopes) {
-      try (final InputStream is = new BufferedInputStream(new FileInputStream(f))) {
+    for (final File file : allCachedEnvelopes) {
+      try (final InputStream is = new BufferedInputStream(new FileInputStream(file))) {
 
         ret.add(serializer.deserializeEnvelope(is));
       } catch (FileNotFoundException e) {
@@ -283,13 +287,13 @@ public final class SessionCache implements ISessionCache {
             .log(
                 DEBUG,
                 "Envelope file '%s' disappeared while converting all cached files to envelopes.",
-                f.getAbsolutePath());
+                file.getAbsolutePath());
       } catch (IOException e) {
         options
             .getLogger()
             .log(
                 ERROR,
-                format("Error while reading cached envelope from file %s", f.getAbsolutePath()),
+                format("Error while reading cached envelope from file %s", file.getAbsolutePath()),
                 e);
       }
     }

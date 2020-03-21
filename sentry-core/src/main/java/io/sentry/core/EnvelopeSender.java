@@ -7,6 +7,8 @@ import io.sentry.core.hints.Cached;
 import io.sentry.core.hints.RetryableHint;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,17 +33,20 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   private final @NotNull IEnvelopeReader envelopeReader;
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
+  private final long timeout;
 
   public EnvelopeSender(
       final @NotNull IHub hub,
       final @NotNull IEnvelopeReader envelopeReader,
       final @NotNull ISerializer serializer,
-      final @NotNull ILogger logger) {
+      final @NotNull ILogger logger,
+      final long timeout) {
     super(logger);
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
+    this.timeout = timeout;
   }
 
   @Override
@@ -53,9 +58,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       return;
     }
 
-    final CachedEnvelopeHint hint =
-        new CachedEnvelopeHint(15000, logger); // TODO: Take timeout from options
-    try (InputStream stream = new FileInputStream(file)) {
+    final CachedEnvelopeHint hint = new CachedEnvelopeHint(timeout, logger);
+    try (final InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
       final SentryEnvelope envelope = envelopeReader.read(stream);
       if (envelope == null) {
         logger.log(
@@ -106,7 +110,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       }
       if (SentryEnvelopeItemType.Event.getType().equals(item.getHeader().getType())) {
         try (final Reader eventReader =
-            new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
+            new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
           SentryEvent event = serializer.deserializeEvent(eventReader);
           if (event == null) {
             logger.log(
@@ -139,7 +144,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         }
       } else if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
         try (final Reader reader =
-            new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8)) {
+            new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
           final Session session = serializer.deserializeSession(reader);
           if (session == null) {
             logger.log(

@@ -10,6 +10,8 @@ import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Objects;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -79,9 +81,9 @@ public final class DiskCache implements IEventCache {
           .log(DEBUG, "Adding Event to offline storage: %s", eventFile.getAbsolutePath());
     }
 
-    try (OutputStream fileOutputStream = new FileOutputStream(eventFile);
-        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF_8)) {
-      serializer.serialize(event, wrt);
+    try (final OutputStream outputStream = new FileOutputStream(eventFile);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+      serializer.serialize(event, writer);
     } catch (Exception e) {
       options
           .getLogger()
@@ -133,9 +135,10 @@ public final class DiskCache implements IEventCache {
     List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);
 
     for (File f : allCachedEvents) {
-      try (final Reader rdr = new InputStreamReader(new FileInputStream(f), UTF_8)) {
+      try (final Reader reader =
+          new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8))) {
 
-        ret.add(serializer.deserializeEvent(rdr));
+        ret.add(serializer.deserializeEvent(reader));
       } catch (FileNotFoundException e) {
         options
             .getLogger()

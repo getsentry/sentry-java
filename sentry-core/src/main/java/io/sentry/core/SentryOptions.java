@@ -43,6 +43,8 @@ public class SentryOptions {
    */
   private long shutdownTimeoutMills = 2000;
 
+  private long flushTimeoutMills = 15000;
+
   /**
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
    * information if something goes wrong. Default is disabled.
@@ -704,6 +706,14 @@ public class SentryOptions {
     this.distinctId = distinctId;
   }
 
+  public long getFlushTimeoutMills() {
+    return flushTimeoutMills;
+  }
+
+  public void setFlushTimeoutMills(long flushTimeoutMills) {
+    this.flushTimeoutMills = flushTimeoutMills;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -759,7 +769,12 @@ public class SentryOptions {
         new SendCachedEventFireAndForgetIntegration(
             (hub, options) -> {
               EnvelopeSender envelopeSender =
-                  new EnvelopeSender(hub, new EnvelopeReader(), options.getSerializer(), logger);
+                  new EnvelopeSender(
+                      hub,
+                      new EnvelopeReader(),
+                      options.getSerializer(),
+                      logger,
+                      options.getFlushTimeoutMills());
               if (options.getOutboxPath() != null) {
                 File outbox = new File(options.getOutboxPath());
                 return () -> envelopeSender.processDirectory(outbox);
@@ -778,7 +793,12 @@ public class SentryOptions {
         new SendCachedEventFireAndForgetIntegration(
             (hub, options) -> {
               EnvelopeSender envelopeSender =
-                  new EnvelopeSender(hub, new EnvelopeReader(), options.getSerializer(), logger);
+                  new EnvelopeSender(
+                      hub,
+                      new EnvelopeReader(),
+                      options.getSerializer(),
+                      logger,
+                      options.getFlushTimeoutMills());
               if (options.getSessionsPath() != null) {
                 File outbox = new File(options.getSessionsPath());
                 return () -> envelopeSender.processDirectory(outbox);
