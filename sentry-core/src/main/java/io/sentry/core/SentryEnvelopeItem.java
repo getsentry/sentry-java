@@ -1,6 +1,7 @@
 package io.sentry.core;
 
 import io.sentry.core.util.Objects;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -57,8 +58,8 @@ public final class SentryEnvelopeItem {
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
-              try (ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  Writer writer = new OutputStreamWriter(stream, UTF_8)) {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
                 serializer.serialize(session, writer);
                 return stream.toByteArray();
               }

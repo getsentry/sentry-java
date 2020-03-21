@@ -35,7 +35,7 @@ class EnvelopeSenderTest {
         }
 
         fun getSut(): EnvelopeSender {
-            return EnvelopeSender(hub, envelopeReader, serializer, logger)
+            return EnvelopeSender(hub, envelopeReader, serializer, logger, 15000)
         }
     }
 
@@ -138,32 +138,32 @@ class EnvelopeSenderTest {
     @Test
     fun `when hub is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf(null, mock<IEnvelopeReader>(), mock<ISerializer>(), mock<ILogger>())
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
+        val params = arrayOf(null, mock<IEnvelopeReader>(), mock<ISerializer>(), mock<ILogger>(), null)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when envelopeReader is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf(mock<IHub>(), null, mock<ISerializer>(), mock<ILogger>())
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
+        val params = arrayOf(mock<IHub>(), null, mock<ISerializer>(), mock<ILogger>(), 15000)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when serializer is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), null, mock<ILogger>())
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
+        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), null, mock<ILogger>(), 15000)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when logger is null, ctor throws`() {
         val clazz = Class.forName("io.sentry.core.EnvelopeSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java)
-        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), mock<ISerializer>(), null)
+        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
+        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), mock<ISerializer>(), null, 15000)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 

@@ -10,6 +10,7 @@ import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryOptions;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -98,7 +99,7 @@ public class HttpTransport implements ITransport {
     int responseCode = -1;
 
     try (final OutputStream outputStream = connection.getOutputStream();
-        final Writer writer = new OutputStreamWriter(outputStream, UTF_8)) {
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       serializer.serialize(event, writer);
 
       // need to also close the input stream of the connection
@@ -187,7 +188,7 @@ public class HttpTransport implements ITransport {
     int responseCode = -1;
 
     try (final OutputStream outputStream = connection.getOutputStream();
-        final Writer writer = new OutputStreamWriter(outputStream, UTF_8)) {
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       serializer.serialize(envelope, writer);
 
       // need to also close the input stream of the connection
