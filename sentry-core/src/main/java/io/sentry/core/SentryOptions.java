@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -119,13 +120,13 @@ public class SentryOptions {
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
    * default.
    */
-  private @NotNull List<String> inAppExcludes = new ArrayList<>();
+  private final @NotNull List<String> inAppExcludes = new ArrayList<>();
 
   /**
    * A list of string prefixes of module names that belong to the app. This option takes precedence
    * over inAppExcludes.
    */
-  private @NotNull List<String> inAppIncludes = new ArrayList<>();
+  private final @NotNull List<String> inAppIncludes = new ArrayList<>();
 
   /** The transport is an internal construct of the client that abstracts away the event sending. */
   private @Nullable ITransport transport;
@@ -148,17 +149,12 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
-  // TODO: So far docs say 'auto-session-tracking' but this would be defined at the integration
-  // level
-  // but not really at the sentry-core level since it assumes it's possible to have an auto session.
-  // Unless we default to SDK init/close as session in that case which is sub-optimal and makes
-  // harder
-  // to create the integrations
-
   /** When enabled, threads are automatically attached to all logged events. */
   private boolean enableSessionTracking;
 
   private long sessionTrackingIntervalMillis = 30000; // 30s
+
+  private String distinctId;
 
   /** The server name used in the Sentry messages. */
   private String serverName;
@@ -696,6 +692,16 @@ public class SentryOptions {
 
   public void setSessionTrackingIntervalMillis(long sessionTrackingIntervalMillis) {
     this.sessionTrackingIntervalMillis = sessionTrackingIntervalMillis;
+  }
+
+  @ApiStatus.Internal
+  public String getDistinctId() {
+    return distinctId;
+  }
+
+  @ApiStatus.Internal
+  public void setDistinctId(String distinctId) {
+    this.distinctId = distinctId;
   }
 
   /** The BeforeSend callback */

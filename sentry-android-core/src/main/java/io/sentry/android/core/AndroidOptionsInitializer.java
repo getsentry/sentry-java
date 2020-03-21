@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import io.sentry.core.EnvelopeReader;
 import io.sentry.core.IEnvelopeReader;
 import io.sentry.core.ILogger;
@@ -41,9 +42,12 @@ final class AndroidOptionsInitializer {
    */
   static void init(
       final @NotNull SentryAndroidOptions options,
-      final @NotNull Context context,
+      @NotNull Context context,
       final @NotNull ILogger logger) {
-    Objects.requireNonNull(context, "The application context is required.");
+    Objects.requireNonNull(context, "The context is required.");
+    context =
+        Objects.requireNonNull(
+            context.getApplicationContext(), "The application context is required.");
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
 
@@ -54,7 +58,6 @@ final class AndroidOptionsInitializer {
 
     ManifestMetadataReader.applyMetadata(context, options);
     initializeCacheDirs(context, options);
-    setDefaultInApp(context, options);
 
     final IEnvelopeReader envelopeReader = new EnvelopeReader();
     // Integrations are registered in the same order. Watch outbox before adding NDK:
@@ -63,24 +66,58 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new AnrIntegration());
     options.addIntegration(new SessionTrackingIntegration());
 
+    readDefaultOptionValues(options, context);
+
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
+
     options.setSerializer(new AndroidSerializer(options.getLogger(), envelopeReader));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
   }
 
   /**
-   * Sets the App's package name as InApp
+   * Reads and sets default option values that are Android specific like release and inApp
    *
-   * @param context the Application context
    * @param options the SentryOptions
+   * @param context the Android context methods
    */
-  private static void setDefaultInApp(
-      final @NotNull Context context, final @NotNull SentryOptions options) {
-    final String packageName = context.getPackageName();
-    if (packageName != null && !packageName.startsWith("android.")) {
-      options.addInAppInclude(packageName);
+  private static void readDefaultOptionValues(
+      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
+    if (packageInfo != null) {
+      // Sets App's release if not set by Manifest
+      if (options.getRelease() == null) {
+        options.setRelease(
+            getSentryReleaseVersion(packageInfo, ContextUtils.getVersionCode(packageInfo)));
+      }
+
+      // Sets the App's package name as InApp
+      final String packageName = packageInfo.packageName;
+      if (packageName != null && !packageName.startsWith("android.")) {
+        options.addInAppInclude(packageName);
+      }
     }
+
+    if (options.getDistinctId() == null) {
+      try {
+        options.setDistinctId(Installation.id(context));
+      } catch (RuntimeException e) {
+        options.getLogger().log(SentryLevel.ERROR, "Could not generate device Id.", e);
+      }
+    }
+  }
+
+  /**
+   * Returns the sentry release version (eg io.sentry.sample@1.0.0+10000) -
+   * packageName@versionName+buildVersion
+   *
+   * @param packageInfo the PackageInfo
+   * @param versionCode the versionCode
+   * @return the sentry release version as a String
+   */
+  private static @NotNull String getSentryReleaseVersion(
+      final @NotNull PackageInfo packageInfo, final @NotNull String versionCode) {
+    return packageInfo.packageName + "@" + packageInfo.versionName + "+" + versionCode;
   }
 
   /**

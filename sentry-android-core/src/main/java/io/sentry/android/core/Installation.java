@@ -8,17 +8,18 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 final class Installation {
   @TestOnly static String deviceId = null;
 
-  private static final String INSTALLATION = "INSTALLATION";
+  @TestOnly static final String INSTALLATION = "INSTALLATION";
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private Installation() {}
 
-  public static synchronized String id(Context context) {
+  public static synchronized String id(final @NotNull Context context) throws RuntimeException {
     if (deviceId == null) {
       File installation = new File(context.getFilesDir(), INSTALLATION);
       try {
@@ -35,7 +36,7 @@ final class Installation {
   }
 
   @TestOnly
-  static String readInstallationFile(File installation) throws IOException {
+  static @NotNull String readInstallationFile(final @NotNull File installation) throws IOException {
     try (RandomAccessFile f = new RandomAccessFile(installation, "r")) {
       byte[] bytes = new byte[(int) f.length()];
       f.readFully(bytes);
@@ -44,7 +45,8 @@ final class Installation {
   }
 
   @TestOnly
-  static String writeInstallationFile(File installation) throws IOException {
+  static @NotNull String writeInstallationFile(final @NotNull File installation)
+      throws IOException {
     try (OutputStream out = new FileOutputStream(installation)) {
       String id = UUID.randomUUID().toString();
       out.write(id.getBytes(UTF_8));

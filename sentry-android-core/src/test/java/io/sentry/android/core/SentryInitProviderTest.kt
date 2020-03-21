@@ -27,7 +27,7 @@ class SentryInitProviderTest {
     fun `when missing applicationId, SentryInitProvider throws`() {
         val providerInfo = ProviderInfo()
 
-        val mockContext = ContextUtils.createMockContext()
+        val mockContext = ContextUtilsTest.createMockContext()
         providerInfo.authority = SentryInitProvider::class.java.name
         assertFailsWith<IllegalStateException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
@@ -40,7 +40,7 @@ class SentryInitProviderTest {
         providerInfo.authority = AUTHORITY
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
 
@@ -57,7 +57,7 @@ class SentryInitProviderTest {
         providerInfo.authority = AUTHORITY
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "")
 
@@ -74,7 +74,7 @@ class SentryInitProviderTest {
         providerInfo.authority = AUTHORITY
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, null)
 
@@ -89,7 +89,7 @@ class SentryInitProviderTest {
         providerInfo.authority = AUTHORITY
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "invalid dsn")
 
@@ -104,7 +104,7 @@ class SentryInitProviderTest {
         providerInfo.authority = AUTHORITY
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
 
@@ -131,7 +131,7 @@ class SentryInitProviderTest {
         val mockLogger = mock<ILogger>()
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
         metaData.putBoolean(ManifestMetadataReader.NDK_ENABLE, false)
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)

@@ -8,7 +8,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import java.io.File
 
-object ContextUtils {
+object ContextUtilsTest {
     fun mockMetaData(mockContext: Context = createMockContext(), metaData: Bundle): Context {
         val mockPackageManager: PackageManager = mock()
         val mockApplicationInfo: ApplicationInfo = mock()

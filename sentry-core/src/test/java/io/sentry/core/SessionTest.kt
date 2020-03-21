@@ -16,10 +16,10 @@ class SessionTest {
             id = "123"
             ipAddress = "127.0.0.1"
         }
-        session.start("rel", "env", user)
+        session.start("rel", "env", user, "distinctId")
         assertEquals("rel", session.release)
         assertEquals("env", session.environment)
-        assertEquals("123", session.deviceId)
+        assertEquals("distinctId", session.deviceId)
         assertEquals("127.0.0.1", session.ipAddress)
         assertTrue(session.init)
         assertEquals(0L, session.sequence)
@@ -32,10 +32,9 @@ class SessionTest {
     fun `when ending a session, reset init values and stop session`() {
         val session = Session()
         val user = User().apply {
-            id = "123"
             ipAddress = "127.0.0.1"
         }
-        session.start("rel", "env", user)
+        session.start("rel", "env", user, "distinctId")
         val timestamp = session.started
 
         session.end()
@@ -49,10 +48,9 @@ class SessionTest {
     fun `when ending a session, if status is ok and no errorCount, mark it as exited`() {
         val session = Session()
         val user = User().apply {
-            id = "123"
             ipAddress = "127.0.0.1"
         }
-        session.start("rel", "env", user)
+        session.start("rel", "env", user, "distinctId")
         session.end()
         assertEquals(Session.State.Exited, session.status)
     }
@@ -61,10 +59,9 @@ class SessionTest {
     fun `when ending a session, if status is ok and has errorCount, mark it as abnormal`() {
         val session = Session()
         val user = User().apply {
-            id = "123"
             ipAddress = "127.0.0.1"
         }
-        session.start("rel", "env", user)
+        session.start("rel", "env", user, "distinctId")
         session.update(null, null, true)
         session.end()
         assertEquals(Session.State.Abnormal, session.status)
@@ -74,10 +71,9 @@ class SessionTest {
     fun `when ending a session, if status is crashed, keep as it is`() {
         val session = Session()
         val user = User().apply {
-            id = "123"
             ipAddress = "127.0.0.1"
         }
-        session.start("rel", "env", user)
+        session.start("rel", "env", user, "distinctId")
         session.update(Session.State.Crashed, null, true)
         session.end()
         assertEquals(Session.State.Crashed, session.status)
@@ -87,10 +83,9 @@ class SessionTest {
     fun `when updating a session, set default values`() {
         val session = Session()
         val user = User().apply {
-            id = "123"
             ipAddress = "127.0.0.1"
         }
-        session.start("rel", "env", user)
+        session.start("rel", "env", user, "distinctId")
         val timestamp = session.started
         val sequecence = session.sequence
         session.update(null, null, true)

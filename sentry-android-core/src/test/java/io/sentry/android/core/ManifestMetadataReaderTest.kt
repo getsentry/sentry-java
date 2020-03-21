@@ -23,7 +23,7 @@ class ManifestMetadataReaderTest {
     fun `isAutoInit won't throw exception`() {
         // tests for the returned boolean are in SentryInitProviderTest
         val logger = mock<ILogger>()
-        val context = ContextUtils.mockMetaData(metaData = Bundle())
+        val context = ContextUtilsTest.mockMetaData(metaData = Bundle())
         assertTrue(ManifestMetadataReader.isAutoInit(context, logger))
         verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
@@ -33,7 +33,7 @@ class ManifestMetadataReaderTest {
         // tests for the returned boolean are in SentryInitProviderTest
         val options = SentryAndroidOptions()
 
-        val context = ContextUtils.createMockContext()
+        val context = ContextUtilsTest.createMockContext()
         ManifestMetadataReader.applyMetadata(context, options)
         val logger = mock<ILogger>()
         options.setLogger(logger)
@@ -47,7 +47,7 @@ class ManifestMetadataReaderTest {
         val expectedSampleRate = 0.99
 
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
         bundle.putDouble(ManifestMetadataReader.SAMPLE_RATE, expectedSampleRate)
 
         // Act
@@ -65,7 +65,7 @@ class ManifestMetadataReaderTest {
         options.sampleRate = expectedSampleRate
 
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
         bundle.putDouble(ManifestMetadataReader.SAMPLE_RATE, 0.1)
 
         // Act
@@ -80,7 +80,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)
@@ -94,7 +94,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
         bundle.putBoolean(ManifestMetadataReader.SESSION_TRACKING_ENABLE, true)
 
         // Act
@@ -109,7 +109,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)
@@ -123,7 +123,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
         bundle.putString(ManifestMetadataReader.ENVIRONMENT, "env")
 
         // Act
@@ -138,7 +138,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)
@@ -152,7 +152,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
         bundle.putInt(ManifestMetadataReader.SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS, 1000)
 
         // Act
@@ -167,7 +167,7 @@ class ManifestMetadataReaderTest {
         // Arrange
         val options = SentryAndroidOptions()
         val bundle = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = bundle)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)

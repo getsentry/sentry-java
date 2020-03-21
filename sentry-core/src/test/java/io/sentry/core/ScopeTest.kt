@@ -211,11 +211,12 @@ class ScopeTest {
 
     @Test
     fun `Scope starts a new session with release, env and user`() {
-        val options = SentryOptions()
+        val options = SentryOptions().apply {
+            distinctId = "123"
+        }
         options.release = "rel"
         options.environment = "env"
         val user = User()
-        user.id = "123"
 
         val scope = Scope(options)
         scope.user = user

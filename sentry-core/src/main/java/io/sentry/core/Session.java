@@ -142,16 +142,8 @@ public final class Session {
     this.user = user;
   }
 
-  private void updateUserData() {
-    if (user.getIpAddress() != null) {
-      ipAddress = user.getIpAddress();
-    }
-    if (user.getId() != null) {
-      deviceId = user.getId(); // TODO: replace to generated GUID
-    }
-  }
-
-  public synchronized void start(final String release, final String environment, final User user) {
+  public synchronized void start(
+      final String release, final String environment, final User user, final String distinctId) {
     synchronized (sessionLock) {
       init = true;
       sequence = 0L;
@@ -174,7 +166,13 @@ public final class Session {
 
       if (user != null) {
         this.user = user;
-        updateUserData();
+        if (this.user.getIpAddress() != null) {
+          ipAddress = this.user.getIpAddress();
+        }
+      }
+
+      if (distinctId != null) {
+        this.deviceId = distinctId;
       }
 
       if (status == null) {
