@@ -30,7 +30,7 @@ class SentryAndroidTest {
         assertFalse(Sentry.isEnabled())
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
@@ -45,7 +45,7 @@ class SentryAndroidTest {
         assertFalse(Sentry.isEnabled())
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
@@ -62,7 +62,7 @@ class SentryAndroidTest {
         assertFalse(Sentry.isEnabled())
 
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
 
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
         metaData.putBoolean(ManifestMetadataReader.AUTO_INIT, false)
@@ -81,7 +81,7 @@ class SentryAndroidTest {
     @Test
     fun `init won't throw exception`() {
         val metaData = Bundle()
-        val mockContext = ContextUtils.mockMetaData(metaData = metaData)
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
         metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
 
         val logger = mock<ILogger>()

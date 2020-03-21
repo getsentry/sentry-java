@@ -264,6 +264,7 @@ public class HttpTransport implements ITransport {
               final String[] categories = allCategories.split(";", -1);
 
               for (final String catItem : categories) {
+                // we dont care if Date is UTC as we just add the relative seconds
                 sentryRetryAfterLimit.put(
                     catItem, new Date(System.currentTimeMillis() + retryAfterMs));
               }
@@ -273,6 +274,7 @@ public class HttpTransport implements ITransport {
       }
     } else if (errorCode == 429) {
       final long retryAfterMs = parseRetryAfterOrDefault(retryAfterHeader);
+      // we dont care if Date is UTC as we just add the relative seconds
       final Date date = new Date(System.currentTimeMillis() + retryAfterMs);
       sentryRetryAfterLimit.put("default", date);
     }

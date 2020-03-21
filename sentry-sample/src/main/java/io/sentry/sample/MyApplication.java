@@ -2,8 +2,6 @@ package io.sentry.sample;
 
 import android.app.Application;
 import android.os.StrictMode;
-import io.sentry.core.Sentry;
-import io.sentry.core.protocol.User;
 import timber.log.Timber;
 
 // import io.sentry.android.core.SentryAndroid;
@@ -28,10 +26,6 @@ public class MyApplication extends Application {
     //   });
     //   options.setAnrTimeoutIntervalMills(2000);
     // });
-
-    User user = new User();
-    user.setId("fake-id");
-    Sentry.setUser(user);
   }
 
   private void strictMode() {
