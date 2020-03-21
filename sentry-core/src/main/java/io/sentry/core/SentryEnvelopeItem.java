@@ -75,6 +75,31 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
+  public static @NotNull SentryEnvelopeItem fromEvent(
+      final @NotNull ISerializer serializer, final @NotNull SentryEvent event) throws IOException {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(event, "SentryEvent is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(event, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryEnvelopeItemType.Event.getType(),
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
+
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
   private static class CachedItem {
     private @Nullable byte[] bytes;
     private final @Nullable Callable<byte[]> dataFactory;

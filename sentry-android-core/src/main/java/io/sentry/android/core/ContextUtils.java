@@ -27,6 +27,12 @@ final class ContextUtils {
     }
   }
 
+  /**
+   * Returns the App's version code based on the PackageInfo
+   *
+   * @param packageInfo the PackageInfo class
+   * @return the versionCode or LongVersionCode based on your API version
+   */
   @NotNull
   static String getVersionCode(final @NotNull PackageInfo packageInfo) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
