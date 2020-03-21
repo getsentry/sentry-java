@@ -41,9 +41,9 @@ public class SentryOptions {
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeoutMills = 2000;
+  private long shutdownTimeoutMills = 2000; // 2s
 
-  private long flushTimeoutMills = 15000;
+  private long flushTimeoutMills = 15000; // 15s
 
   /**
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
@@ -771,7 +771,8 @@ public class SentryOptions {
               EnvelopeSender envelopeSender =
                   new EnvelopeSender(
                       hub,
-                      new EnvelopeReader(),
+                      new EnvelopeReader(), // TODO: add a getEnvelopeReader() to ISerializer(), so
+                      // we use the same instance always
                       options.getSerializer(),
                       logger,
                       options.getFlushTimeoutMills());

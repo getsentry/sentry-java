@@ -10,7 +10,7 @@ import io.sentry.core.cache.IEventCache;
 import io.sentry.core.cache.ISessionCache;
 import io.sentry.core.hints.Cached;
 import io.sentry.core.hints.DiskFlushNotification;
-import io.sentry.core.hints.RetryableHint;
+import io.sentry.core.hints.Retryable;
 import io.sentry.core.hints.SessionUpdate;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
@@ -250,15 +250,15 @@ public final class AsyncConnection implements Closeable, Connection {
           }
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
-          if (hint instanceof RetryableHint) {
-            ((RetryableHint) hint).setRetry(true);
+          if (hint instanceof Retryable) {
+            ((Retryable) hint).setRetry(true);
           }
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
         // If transportGate is blocking from sending, allowed to retry
-        if (hint instanceof RetryableHint) {
-          ((RetryableHint) hint).setRetry(true);
+        if (hint instanceof Retryable) {
+          ((Retryable) hint).setRetry(true);
         }
       }
       return result;
@@ -333,15 +333,15 @@ public final class AsyncConnection implements Closeable, Connection {
           }
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
-          if (hint instanceof RetryableHint) {
-            ((RetryableHint) hint).setRetry(true);
+          if (hint instanceof Retryable) {
+            ((Retryable) hint).setRetry(true);
           }
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
         // If transportGate is blocking from sending, allowed to retry
-        if (hint instanceof RetryableHint) {
-          ((RetryableHint) hint).setRetry(true);
+        if (hint instanceof Retryable) {
+          ((Retryable) hint).setRetry(true);
         }
       }
       return result;

@@ -4,7 +4,7 @@ import static io.sentry.core.SentryLevel.ERROR;
 import static io.sentry.core.cache.SessionCache.PREFIX_CURRENT_SESSION_FILE;
 
 import io.sentry.core.hints.Cached;
-import io.sentry.core.hints.RetryableHint;
+import io.sentry.core.hints.Retryable;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
 import java.io.BufferedInputStream;
@@ -188,7 +188,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     }
   }
 
-  private static final class CachedEnvelopeHint implements Cached, RetryableHint, SubmissionResult {
+  private static final class CachedEnvelopeHint implements Cached, Retryable, SubmissionResult {
     boolean retry = false;
     boolean succeeded = false;
 

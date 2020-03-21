@@ -610,6 +610,7 @@ public final class Hub implements IHub {
     return clone;
   }
 
+  // TODO: maybe they should live somewhere else?
   static final class SessionStartHint implements SessionStart {}
 
   static final class SessionEndHint implements SessionEnd {}

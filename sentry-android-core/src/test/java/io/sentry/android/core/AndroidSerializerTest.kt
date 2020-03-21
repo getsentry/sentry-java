@@ -68,8 +68,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(expected, actual.eventId.toString())
+        assertEquals(expected, actual!!.eventId.toString())
     }
 
     @Test
@@ -94,8 +93,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(expected, actual.timestamp)
+        assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
@@ -107,8 +105,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(expected, actual.timestamp)
+        assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
@@ -120,8 +117,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(expected, actual.timestamp)
+        assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
@@ -133,8 +129,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals("test", (actual.unknown["string"] as JsonPrimitive).asString)
+        assertEquals("test", (actual!!.unknown["string"] as JsonPrimitive).asString)
         assertEquals(1, (actual.unknown["int"] as JsonPrimitive).asInt)
         assertEquals(true, (actual.unknown["boolean"] as JsonPrimitive).asBoolean)
     }
@@ -156,8 +151,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        val hashMapActual = actual.unknown["object"] as JsonObject // gson creates it as JsonObject
+        val hashMapActual = actual!!.unknown["object"] as JsonObject // gson creates it as JsonObject
 
         assertEquals(true, hashMapActual.get("boolean").asBoolean)
         assertEquals(1, (hashMapActual.get("int")).asInt)
@@ -210,8 +204,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals("Europe/Vienna", actual.contexts.device.timezone.id)
+        assertEquals("Europe/Vienna", actual!!.contexts.device.timezone.id)
     }
 
     @Test
@@ -240,8 +233,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual.contexts.device.orientation)
+        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device.orientation)
     }
 
     @Test
@@ -266,8 +258,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(SentryLevel.DEBUG, actual.level)
+        assertEquals(SentryLevel.DEBUG, actual!!.level)
     }
 
     @Test
@@ -276,8 +267,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertNotNull(actual)
-        assertEquals(2, actual.breadcrumbs.size)
+        assertEquals(2, actual!!.breadcrumbs.size)
     }
 
     @Test
