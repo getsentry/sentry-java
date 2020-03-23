@@ -190,6 +190,11 @@ public final class Session {
     if (status == State.Ok) {
       status = State.Exited;
     }
+
+    // fallback if status is null
+    if (status == null) {
+      status = State.Ok;
+    }
   }
 
   public void end() {
@@ -197,6 +202,11 @@ public final class Session {
       init = null;
       updateStatus();
       timestamp = DateUtils.getCurrentDateTime();
+
+      // fallback if started is null
+      if (started == null) {
+        started = timestamp;
+      }
 
       long diff =
           Math.abs(timestamp.getTime() - started.getTime()); // do we need to subtract idle time?

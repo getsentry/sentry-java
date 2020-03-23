@@ -47,7 +47,7 @@ public final class SessionCache implements ISessionCache {
   static final String SUFFIX_ENVELOPE_FILE = ".envelope";
 
   public static final String PREFIX_CURRENT_SESSION_FILE = "session";
-  private static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
+  static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -105,8 +105,11 @@ public final class SessionCache implements ISessionCache {
                     "Stream from path %s resulted in a null envelope.",
                     currentEnvelopeFile.getAbsolutePath());
           } else {
-            // we're ending a left over session from other runs and writing a proper envelope
-            // for it.
+            options
+                .getLogger()
+                .log(
+                    INFO,
+                    "There's a left over session, it's gonna be ended and cached to be sent.");
             session.end();
             final SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
             final File fileFromSession = getEnvelopeFile(fromSession);
