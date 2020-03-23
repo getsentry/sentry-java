@@ -611,9 +611,9 @@ public final class Hub implements IHub {
   }
 
   // TODO: maybe they should live somewhere else?
-  static final class SessionStartHint implements SessionStart {}
+  public static final class SessionStartHint implements SessionStart {}
 
-  static final class SessionEndHint implements SessionEnd {}
+  public static final class SessionEndHint implements SessionEnd {}
 
-  static final class SessionUpdateHint implements SessionUpdate {}
+  public static final class SessionUpdateHint implements SessionUpdate {}
 }
