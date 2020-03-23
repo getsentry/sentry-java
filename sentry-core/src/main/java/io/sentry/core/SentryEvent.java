@@ -305,7 +305,11 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this.debugMeta = debugMeta;
   }
 
-  // Level is Fatal or any exception was unhandled by the user.
+  /**
+   * Returns true if Level is Fatal or any exception was unhandled by the user.
+   *
+   * @return true if its crashed or false otherwise
+   */
   public boolean isCrashed() {
     if (level == SentryLevel.FATAL) {
       return true;
@@ -321,6 +325,11 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     return false;
   }
 
+  /**
+   * Returns true if this event has any sort of excetion
+   *
+   * @return true if errored or false otherwise
+   */
   public boolean isErrored() {
     return exception != null && !exception.getValues().isEmpty();
   }

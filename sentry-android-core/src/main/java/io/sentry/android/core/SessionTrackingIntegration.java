@@ -43,7 +43,9 @@ public final class SessionTrackingIntegration implements Integration, Closeable 
     if (watcher != null) {
       ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcher);
       watcher = null;
-      options.getLogger().log(SentryLevel.DEBUG, "SessionTrackingIntegration installed.");
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "SessionTrackingIntegration removed.");
+      }
     }
   }
 }

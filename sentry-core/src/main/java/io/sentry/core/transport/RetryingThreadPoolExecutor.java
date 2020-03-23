@@ -80,7 +80,7 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
   private static final class CancelledFuture<T> implements Future<T> {
     @Override
     public boolean cancel(final boolean mayInterruptIfRunning) {
-      throw new CancellationException();
+      return true;
     }
 
     @Override

@@ -69,9 +69,9 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
+    // TODO: should it be done on the HUB?
     updateSessionData(event, hint, scope);
 
-    // should we sample only if non fatal or non handled?
     if (!sample()) {
       options
           .getLogger()
@@ -135,6 +135,13 @@ public final class SentryClient implements ISentryClient {
     return event.getEventId();
   }
 
+  /**
+   * Updates the session data based on the event, hint and scope data
+   *
+   * @param event the SentryEvent
+   * @param hint the hint or null
+   * @param scope the Scope or null
+   */
   @TestOnly
   void updateSessionData(
       final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
