@@ -140,4 +140,42 @@ public interface ISentryClient {
   default SentryId captureException(Throwable throwable, @Nullable Scope scope) {
     return captureException(throwable, scope, null);
   }
+
+  /**
+   * Captures a session. This method transform a session to an envelope and forwards to
+   * captureEnvelope
+   *
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param session the Session
+   */
+  void captureSession(Session session, @Nullable Object hint);
+
+  /**
+   * Captures a session. This method transform a session to an envelope and forwards to
+   * captureEnvelope
+   *
+   * @param session the Session
+   */
+  default void captureSession(Session session) {
+    captureSession(session, null);
+  }
+
+  /**
+   * Captures an envelope.
+   *
+   * @param envelope the SentryEnvelope to send.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @return The Id (SentryId object) of the event
+   */
+  SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+
+  /**
+   * Captures an envelope.
+   *
+   * @param envelope the SentryEnvelope to send.
+   * @return The Id (SentryId object) of the event
+   */
+  default SentryId captureEnvelope(SentryEnvelope envelope) {
+    return captureEnvelope(envelope, null);
+  }
 }

@@ -55,6 +55,25 @@ public interface IHub {
   SentryId captureMessage(String message, SentryLevel level);
 
   /**
+   * Captures an envelope.
+   *
+   * @param envelope the SentryEnvelope to send.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @return The Id (SentryId object) of the event
+   */
+  SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+
+  /**
+   * Captures an envelope.
+   *
+   * @param envelope the SentryEnvelope to send.
+   * @return The Id (SentryId object) of the event
+   */
+  default SentryId captureEnvelope(SentryEnvelope envelope) {
+    return captureEnvelope(envelope, null);
+  }
+
+  /**
    * Captures the exception.
    *
    * @param throwable The exception.
@@ -72,6 +91,12 @@ public interface IHub {
   default SentryId captureException(Throwable throwable) {
     return captureException(throwable, null);
   }
+
+  /** Starts a new session. If there's a running session, it ends it before starting the new one. */
+  void startSession();
+
+  /** Ends the current session */
+  void endSession();
 
   /** Flushes out the queue for up to timeout seconds and disable the Hub. */
   void close();

@@ -208,7 +208,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
     }
   }
 
-  @SuppressWarnings("UndefinedEquals") // TODO: https://errorprone.info/bugpattern/UndefinedEquals
+  @SuppressWarnings("UndefinedEquals")
   @Override
   public boolean equals(final Object object) {
     synchronized (lock) {

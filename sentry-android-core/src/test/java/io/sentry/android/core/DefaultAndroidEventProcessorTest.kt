@@ -5,7 +5,6 @@ import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -50,22 +49,25 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `when instance is created, application context reference is stored`() {
-        val mockContext = mock<Context> {
-            on { applicationContext } doReturn context
-        }
-        val sut = DefaultAndroidEventProcessor(mockContext, fixture.options)
+        val sut = DefaultAndroidEventProcessor(context, fixture.options)
 
         assertEquals(sut.context, context)
     }
 
     @Test
     fun `when null context is provided, invalid argument is thrown`() {
-        assertFailsWith<IllegalArgumentException> { DefaultAndroidEventProcessor(null, fixture.options) }
+        val clazz = Class.forName("io.sentry.android.core.DefaultAndroidEventProcessor")
+        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java)
+        val params = arrayOf(null, mock<SentryOptions>())
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when null options is provided, invalid argument is thrown`() {
-        assertFailsWith<IllegalArgumentException> { DefaultAndroidEventProcessor(context, null) }
+        val clazz = Class.forName("io.sentry.android.core.DefaultAndroidEventProcessor")
+        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java)
+        val params = arrayOf(mock<Context>(), null)
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
@@ -79,7 +81,6 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(event.contexts.app)
         assertEquals("test", event.debugMeta.images[0].uuid)
         assertNotNull(event.sdk)
-        assertNotNull(event.release)
         assertNotNull(event.dist)
     }
 

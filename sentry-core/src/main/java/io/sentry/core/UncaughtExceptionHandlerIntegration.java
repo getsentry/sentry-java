@@ -73,7 +73,7 @@ public final class UncaughtExceptionHandlerIntegration
 
     try {
       UncaughtExceptionHint hint =
-          new UncaughtExceptionHint(options.getShutdownTimeout(), options.getLogger());
+          new UncaughtExceptionHint(options.getFlushTimeoutMills(), options.getLogger());
       Throwable throwable = getUnhandledThrowable(thread, thrown);
       SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);

@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
+import kotlin.test.assertNull
 
 class ScopeTest {
     @Test
@@ -206,5 +207,65 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         scope.addEventProcessor(processor)
         assertEquals(processor, scope.eventProcessors.first())
+    }
+
+    @Test
+    fun `Scope starts a new session with release, env and user`() {
+        val options = SentryOptions().apply {
+            distinctId = "123"
+        }
+        options.release = "rel"
+        options.environment = "env"
+        val user = User()
+
+        val scope = Scope(options)
+        scope.user = user
+
+        val sessionPair = scope.startSession()
+        assertNotNull(sessionPair.current)
+        assertEquals("rel", sessionPair.current.release)
+        assertEquals("env", sessionPair.current.environment)
+        assertEquals("123", sessionPair.current.deviceId)
+    }
+
+    @Test
+    fun `Scope ends a session and returns it if theres one`() {
+        val options = SentryOptions()
+
+        val scope = Scope(options)
+
+        scope.startSession()
+        val session = scope.endSession()
+        assertNotNull(session)
+    }
+
+    @Test
+    fun `Scope ends a session and returns null if none exist`() {
+        val options = SentryOptions()
+        val scope = Scope(options)
+
+        val session = scope.endSession()
+        assertNull(session)
+    }
+
+    @Test
+    fun `withSession returns a callback with the current Session`() {
+        val options = SentryOptions()
+        val scope = Scope(options)
+
+        scope.startSession()
+        scope.withSession {
+            assertNotNull(it)
+        }
+    }
+
+    @Test
+    fun `withSession returns a callback with a null session if theres none`() {
+        val options = SentryOptions()
+        val scope = Scope(options)
+
+        scope.withSession {
+            assertNull(it)
+        }
     }
 }

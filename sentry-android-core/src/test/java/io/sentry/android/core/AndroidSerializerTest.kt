@@ -2,12 +2,21 @@ package io.sentry.android.core
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.DateUtils
+import io.sentry.core.EnvelopeReader
+import io.sentry.core.SentryEnvelope
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryLevel
+import io.sentry.core.Session
 import io.sentry.core.protocol.Contexts
 import io.sentry.core.protocol.Device
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.io.StringReader
 import java.io.StringWriter
 import java.util.Date
@@ -15,15 +24,29 @@ import java.util.TimeZone
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AndroidSerializerTest {
 
-    private val serializer = AndroidSerializer(mock())
+    private val serializer = AndroidSerializer(mock(), EnvelopeReader())
 
     private fun serializeToString(ev: SentryEvent): String {
         val wrt = StringWriter()
         serializer.serialize(ev, wrt)
+        return wrt.toString()
+    }
+
+    private fun serializeToString(session: Session): String {
+        val wrt = StringWriter()
+        serializer.serialize(session, wrt)
+        return wrt.toString()
+    }
+
+    private fun serializeToString(envelope: SentryEnvelope): String {
+        val wrt = StringWriter()
+        serializer.serialize(envelope, wrt)
         return wrt.toString()
     }
 
@@ -45,7 +68,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(expected, actual.eventId.toString())
+        assertEquals(expected, actual!!.eventId.toString())
     }
 
     @Test
@@ -70,7 +93,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(expected, actual.timestamp)
+        assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
@@ -82,7 +105,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(expected, actual.timestamp)
+        assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
@@ -94,7 +117,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(expected, actual.timestamp)
+        assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
@@ -106,7 +129,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals("test", (actual.unknown["string"] as JsonPrimitive).asString)
+        assertEquals("test", (actual!!.unknown["string"] as JsonPrimitive).asString)
         assertEquals(1, (actual.unknown["int"] as JsonPrimitive).asInt)
         assertEquals(true, (actual.unknown["boolean"] as JsonPrimitive).asBoolean)
     }
@@ -128,7 +151,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        val hashMapActual = actual.unknown["object"] as JsonObject // gson creates it as JsonObject
+        val hashMapActual = actual!!.unknown["object"] as JsonObject // gson creates it as JsonObject
 
         assertEquals(true, hashMapActual.get("boolean").asBoolean)
         assertEquals(1, (hashMapActual.get("int")).asInt)
@@ -181,7 +204,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals("Europe/Vienna", actual.contexts.device.timezone.id)
+        assertEquals("Europe/Vienna", actual!!.contexts.device.timezone.id)
     }
 
     @Test
@@ -210,7 +233,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual.contexts.device.orientation)
+        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device.orientation)
     }
 
     @Test
@@ -235,7 +258,7 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(SentryLevel.DEBUG, actual.level)
+        assertEquals(SentryLevel.DEBUG, actual!!.level)
     }
 
     @Test
@@ -244,19 +267,111 @@ class AndroidSerializerTest {
 
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
-        assertEquals(2, actual.breadcrumbs.size)
+        assertEquals(2, actual!!.breadcrumbs.size)
     }
 
     @Test
     fun `when theres a null value, gson wont blow up`() {
         val json = FileFromResources.invoke("event.json")
         val event = serializer.deserializeEvent(StringReader(json))
+        assertNotNull(event)
         assertNull(event.user)
     }
 
-    private fun generateEmptySentryEvent(date: Date? = null): SentryEvent {
-        return SentryEvent(date).apply {
-            contexts = null
+    @Test
+    fun `When deserializing a Session all the values should be set to the Session object`() {
+        val jsonEvent = FileFromResources.invoke("session.txt")
+
+        val actual = serializer.deserializeSession(StringReader(jsonEvent))
+
+        assertSessionData(actual)
+    }
+
+    @Test
+    fun `When deserializing an Envelope and reader throws IOException it should return null `() {
+        val inputStream = mock<InputStream>()
+        whenever(inputStream.read(any())).thenThrow(IOException())
+
+        val envelope = serializer.deserializeEnvelope(inputStream)
+        assertNull(envelope)
+    }
+
+    @Test
+    fun `When serializing a Session all the values should be set to the JSON string`() {
+        val session = createSessionMockData()
+        val jsonSession = serializeToString(session)
+        // reversing, so we can assert values and not a json string
+        val expectedSession = serializer.deserializeSession(StringReader(jsonSession))
+
+        assertSessionData(expectedSession)
+    }
+
+    @Test
+    fun `When deserializing an Envelope, all the values should be set to the SentryEnvelope object`() {
+        val jsonEnvelope = FileFromResources.invoke("envelope_session.txt")
+        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
+        assertEnvelopeData(envelope)
+    }
+
+    @Test
+    fun `When serializing an envelope, all the values should be set`() {
+        val session = createSessionMockData()
+        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session)
+
+        val jsonEnvelope = serializeToString(sentryEnvelope)
+        // reversing it so we can assert the values
+        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
+        assertEnvelopeData(envelope)
+    }
+
+    private fun assertSessionData(expectedSession: Session?) {
+        assertNotNull(expectedSession)
+        assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
+        assertEquals("123", expectedSession.deviceId)
+        assertTrue(expectedSession.init)
+        assertEquals("2020-02-07T14:16:00Z", DateUtils.getTimestamp(expectedSession.started))
+        assertEquals("2020-02-07T14:16:00Z", DateUtils.getTimestamp(expectedSession.timestamp))
+        assertEquals(6000.toDouble(), expectedSession.duration)
+        assertEquals(Session.State.Ok, expectedSession.status)
+        assertEquals(2, expectedSession.errorCount())
+        assertEquals(123456.toLong(), expectedSession.sequence)
+        assertEquals("io.sentry@1.0+123", expectedSession.release)
+        assertEquals("debug", expectedSession.environment)
+        assertEquals("127.0.0.1", expectedSession.ipAddress)
+        assertEquals("jamesBond", expectedSession.userAgent)
+    }
+
+    private fun assertEnvelopeData(expectedEnveope: SentryEnvelope?) {
+        assertNotNull(expectedEnveope)
+        assertEquals(1, expectedEnveope.items.count())
+        expectedEnveope.items.forEach {
+            assertEquals("session", it.header.type)
+            val reader =
+                InputStreamReader(ByteArrayInputStream(it.data), Charsets.UTF_8)
+            val actualSession = serializer.deserializeSession(reader)
+            assertSessionData(actualSession)
         }
     }
+
+    private fun generateEmptySentryEvent(date: Date? = null): SentryEvent =
+        SentryEvent(date).apply {
+            contexts = null
+        }
+
+    private fun createSessionMockData(): Session =
+        Session().apply {
+            sessionId = UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db")
+            deviceId = "123"
+            init = true
+            started = DateUtils.getDateTime("2020-02-07T14:16:00Z")
+            timestamp = DateUtils.getDateTime("2020-02-07T14:16:00Z")
+            duration = 6000.toDouble()
+            status = Session.State.Ok
+            setErrorCount(2)
+            sequence = 123456.toLong()
+            release = "io.sentry@1.0+123"
+            environment = "debug"
+            ipAddress = "127.0.0.1"
+            userAgent = "jamesBond"
+        }
 }
