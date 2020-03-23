@@ -7,9 +7,11 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.exception.ExceptionMechanismException;
 import io.sentry.core.protocol.Mechanism;
+import io.sentry.core.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -19,13 +21,15 @@ import org.jetbrains.annotations.TestOnly;
 public final class AnrIntegration implements Integration, Closeable {
 
   private static ANRWatchDog anrWatchDog;
+  private @Nullable SentryOptions options;
 
   @Override
-  public final void register(IHub hub, SentryOptions options) {
+  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    this.options = Objects.requireNonNull(options, "SentryOptions is required");
     register(hub, (SentryAndroidOptions) options);
   }
 
-  private void register(IHub hub, SentryAndroidOptions options) {
+  private void register(final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
@@ -72,6 +76,9 @@ public final class AnrIntegration implements Integration, Closeable {
     if (anrWatchDog != null) {
       anrWatchDog.interrupt();
       anrWatchDog = null;
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration removed.");
+      }
     }
   }
 }

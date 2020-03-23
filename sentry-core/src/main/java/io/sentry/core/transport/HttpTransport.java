@@ -137,6 +137,12 @@ public class HttpTransport implements ITransport {
     }
   }
 
+  /**
+   * Check if a type is retry after or not
+   *
+   * @param type the type (eg event, session, etc...)
+   * @return true if retry after or false otherwise
+   */
   @Override
   public boolean isRetryAfter(final @NotNull String type) {
     if (sentryRetryAfterLimit.containsKey(type)) {
@@ -151,6 +157,13 @@ public class HttpTransport implements ITransport {
     return false;
   }
 
+  /**
+   * Create a HttpURLConnection connection Sets specific content-type if its an envelope or not
+   *
+   * @param asEnvelope if its an envelope or not
+   * @return the HttpURLConnection
+   * @throws IOException if connection has a problem
+   */
   private @NotNull HttpURLConnection createConnection(boolean asEnvelope) throws IOException {
     final HttpURLConnection connection = open(proxy);
     connectionConfigurator.configure(connection);
@@ -241,6 +254,13 @@ public class HttpTransport implements ITransport {
     updateRetryAfterLimits(sentryRateLimitHeader, retryAfterHeader, responseCode);
   }
 
+  /**
+   * Reads and update the rate limit Dictionary
+   *
+   * @param sentryRateLimitHeader the sentry rate limit header
+   * @param retryAfterHeader the retry after header
+   * @param errorCode the error code if set
+   */
   private void updateRetryAfterLimits(
       final @Nullable String sentryRateLimitHeader,
       final @Nullable String retryAfterHeader,
@@ -281,6 +301,12 @@ public class HttpTransport implements ITransport {
     }
   }
 
+  /**
+   * Parses a millis string to a seconds number
+   *
+   * @param retryAfterHeader the header
+   * @return the millis in seconds or the default seconds value
+   */
   private long parseRetryAfterOrDefault(final @Nullable String retryAfterHeader) {
     long retryAfterMs = HTTP_RETRY_AFTER_DEFAULT_DELAY_MS;
     if (retryAfterHeader != null) {

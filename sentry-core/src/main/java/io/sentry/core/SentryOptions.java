@@ -43,6 +43,11 @@ public class SentryOptions {
    */
   private long shutdownTimeoutMills = 2000; // 2s
 
+  /**
+   * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
+   * background queue and this queue is given a certain amount to drain pending events Default is
+   * 15000 = 15s
+   */
   private long flushTimeoutMills = 15000; // 15s
 
   /**
@@ -87,6 +92,7 @@ public class SentryOptions {
   /** The cache dir. size for capping the number of events Default is 10 */
   private int cacheDirSize = 10;
 
+  /** The sessions dir. size for capping the number of envelopes Default is 100 */
   private int sessionsDirSize = 100;
 
   /**
@@ -154,8 +160,13 @@ public class SentryOptions {
   /** When enabled, threads are automatically attached to all logged events. */
   private boolean enableSessionTracking;
 
+  /**
+   * The session tracking interval in millis. This is the interval to end a session if the App goes
+   * to the background.
+   */
   private long sessionTrackingIntervalMillis = 30000; // 30s
 
+  /** The distinct Id (generated Guid) used for session tracking */
   private String distinctId;
 
   /** The server name used in the Sentry messages. */
@@ -398,6 +409,11 @@ public class SentryOptions {
     return cacheDirPath + File.separator + "outbox";
   }
 
+  /**
+   * Returns the sessions path if cacheDirPath is set
+   *
+   * @return the sessions path or null if not set
+   */
   public @Nullable String getSessionsPath() {
     if (cacheDirPath == null || cacheDirPath.isEmpty()) {
       return null;
@@ -654,10 +670,20 @@ public class SentryOptions {
     this.attachThreads = attachThreads;
   }
 
+  /**
+   * Returns if the session tracking is enabled or not
+   *
+   * @return trye if enabled or false otherwise
+   */
   public boolean isEnableSessionTracking() {
     return enableSessionTracking;
   }
 
+  /**
+   * Enable or disable the session tracking
+   *
+   * @param enableSessionTracking true if enabled or false otherwise
+   */
   public void setEnableSessionTracking(boolean enableSessionTracking) {
     this.enableSessionTracking = enableSessionTracking;
   }
@@ -680,36 +706,76 @@ public class SentryOptions {
     this.serverName = serverName;
   }
 
+  /**
+   * Returns the sessions dir size
+   *
+   * @return the dir size
+   */
   public int getSessionsDirSize() {
     return sessionsDirSize;
   }
 
+  /**
+   * Sets the sessions dir size
+   *
+   * @param sessionsDirSize the sessions dir size
+   */
   public void setSessionsDirSize(int sessionsDirSize) {
     this.sessionsDirSize = sessionsDirSize;
   }
 
+  /**
+   * Returns the session tracking interval in millis
+   *
+   * @return the interval in millis
+   */
   public long getSessionTrackingIntervalMillis() {
     return sessionTrackingIntervalMillis;
   }
 
+  /**
+   * Sets the session tracking interval in millis
+   *
+   * @param sessionTrackingIntervalMillis the interval in millis
+   */
   public void setSessionTrackingIntervalMillis(long sessionTrackingIntervalMillis) {
     this.sessionTrackingIntervalMillis = sessionTrackingIntervalMillis;
   }
 
+  /**
+   * Returns the distinct Id
+   *
+   * @return the distinct Id
+   */
   @ApiStatus.Internal
   public String getDistinctId() {
     return distinctId;
   }
 
+  /**
+   * Sets the distinct Id
+   *
+   * @param distinctId the distinct Id
+   */
   @ApiStatus.Internal
   public void setDistinctId(String distinctId) {
     this.distinctId = distinctId;
   }
 
+  /**
+   * Returns the flush timeout in millis
+   *
+   * @return the timeout in millis
+   */
   public long getFlushTimeoutMills() {
     return flushTimeoutMills;
   }
 
+  /**
+   * Sets the flush timeout in millis
+   *
+   * @param flushTimeoutMills the timeout in millis
+   */
   public void setFlushTimeoutMills(long flushTimeoutMills) {
     this.flushTimeoutMills = flushTimeoutMills;
   }

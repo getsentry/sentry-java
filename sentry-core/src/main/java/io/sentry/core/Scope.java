@@ -43,7 +43,11 @@ public final class Scope implements Cloneable {
   private final @NotNull SentryOptions options;
 
   // TODO Consider: Scope clone doesn't clone sessions
+
+  /** Scope's current session */
   private volatile @Nullable Session session;
+
+  /** Session lock, Ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
 
   /**
@@ -360,19 +364,33 @@ public final class Scope implements Cloneable {
     eventProcessors.add(eventProcessor);
   }
 
-  // Atomic operations on session
+  /**
+   * Callback to do atomic operations on session
+   *
+   * @param sessionCallback the IWithSession callback
+   */
   void withSession(@NotNull IWithSession sessionCallback) {
     synchronized (sessionLock) {
       sessionCallback.accept(session);
     }
   }
 
+  /** the IWithSession callback */
   interface IWithSession {
-    // Called with a null Session if none exists
+
+    /**
+     * The accept method of the callback
+     *
+     * @param session the current session or null if none exists
+     */
     void accept(@Nullable Session session);
   }
 
-  // Returns a previous session (now closed) bound to this scope together with the newly created one
+  /**
+   * Returns a previous session (now closed) bound to this scope together with the newly created one
+   *
+   * @return the SessionPair with the previous closed session if exists and the current session
+   */
   @NotNull
   SessionPair startSession() {
     Session previousSession;
@@ -393,25 +411,50 @@ public final class Scope implements Cloneable {
     return pair;
   }
 
+  /** The SessionPair class */
   static final class SessionPair {
+
+    /** the previous session if exists */
     private final @Nullable Session previous;
+
+    /** The current Session */
     private final @NotNull Session current;
 
+    /**
+     * The SessionPar ctor
+     *
+     * @param current the current session
+     * @param previous the previous sessions if exists or null
+     */
     public SessionPair(final @NotNull Session current, final @Nullable Session previous) {
       this.current = current;
       this.previous = previous;
     }
 
+    /**
+     * REturns the previous session
+     *
+     * @return the previous sessions if exists or null
+     */
     public @Nullable Session getPrevious() {
       return previous;
     }
 
+    /**
+     * Returns the current session
+     *
+     * @return the current session
+     */
     public @NotNull Session getCurrent() {
       return current;
     }
   }
 
-  // ends a session, unbinds it from the scope and returns it.
+  /**
+   * Ends a session, unbinds it from the scope and returns it.
+   *
+   * @return the previous session
+   */
   @Nullable
   Session endSession() {
     Session previousSession = null;

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final class Session {
 
+  /** Session state */
   public enum State {
     Ok,
     Exited,
@@ -15,23 +16,49 @@ public final class Session {
     Abnormal
   }
 
+  /** started timestamp */
   private Date started;
+
+  /** the timestamp */
   private Date timestamp;
+
+  /** the number of errors on the session */
   private final AtomicInteger errorCount = new AtomicInteger(0);
-  private String deviceId; // did, distinctId
-  private UUID sessionId; // sid
+
+  /** The distinctId, did */
+  private String deviceId;
+
+  /** the SessionId, sid */
+  private UUID sessionId;
+
+  /** The session init flag */
   private Boolean init;
+
+  /** The session state */
   private State status;
+
+  /** The session sequence */
   private Long sequence;
+
+  /** The session duration (timestamp - started) */
   private Double duration;
+
+  /** The user */
   private User user;
 
-  // attrs
+  /** the user's ip address */
   private String ipAddress;
+
+  /** the user Agent */
   private String userAgent;
+
+  /** the environment */
   private String environment;
+
+  /** the App's release */
   private String release;
 
+  /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
 
   public Date getStarted() {
@@ -142,7 +169,15 @@ public final class Session {
     this.user = user;
   }
 
-  public synchronized void start(
+  /**
+   * Starts a session and set its default values
+   *
+   * @param release the release
+   * @param environment the env
+   * @param user the user
+   * @param distinctId the distinct Id
+   */
+  public void start(
       final String release, final String environment, final User user, final String distinctId) {
     synchronized (sessionLock) {
       init = true;
@@ -181,6 +216,7 @@ public final class Session {
     }
   }
 
+  /** Updated the session status based on status and errorcount */
   private void updateStatus() {
     // at this state it might be Crashed already, so we don't check for it.
     if (status == State.Ok && errorCount.get() > 0) {
@@ -197,6 +233,7 @@ public final class Session {
     }
   }
 
+  /** Ends a session and update its values */
   public void end() {
     synchronized (sessionLock) {
       init = null;
@@ -215,6 +252,14 @@ public final class Session {
     }
   }
 
+  /**
+   * Updates the current session and set its values
+   *
+   * @param status the status
+   * @param userAgent the userAgent
+   * @param addErrorsCount true if should increase error count or not
+   * @return if the session has been updated
+   */
   public boolean update(final State status, final String userAgent, boolean addErrorsCount) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;

@@ -261,6 +261,8 @@ public final class Hub implements IHub {
         // Close the top-most client
         final StackItem item = stack.peek();
         if (item != null) {
+          // TODO: should we end session before closing client?
+
           item.client.close();
         } else {
           options.getLogger().log(SentryLevel.FATAL, "Stack peek was NULL when closing Hub");

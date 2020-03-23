@@ -163,6 +163,13 @@ final class AndroidSerializer implements ISerializer {
     writer.flush();
   }
 
+  /**
+   * Serialize a Session to a stream Writer (JSON)
+   *
+   * @param session the Session
+   * @param writer the Writer
+   * @throws IOException
+   */
   @Override
   public void serialize(final @NotNull Session session, final @NotNull Writer writer)
       throws IOException {
@@ -173,6 +180,13 @@ final class AndroidSerializer implements ISerializer {
     writer.flush();
   }
 
+  /**
+   * Serialize a SentryEnvelope to a stream Writer (JSON)
+   *
+   * @param envelope the SentryEnvelope
+   * @param writer the Writer
+   * @throws IOException
+   */
   @Override
   public void serialize(final @NotNull SentryEnvelope envelope, final @NotNull Writer writer)
       throws Exception {

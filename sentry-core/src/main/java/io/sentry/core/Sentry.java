@@ -397,10 +397,12 @@ public final class Sentry {
     getCurrentHub().flush(timeoutMills);
   }
 
+  /** Starts a new session. If there's a running session, it ends it before starting the new one. */
   public static void startSession() {
     getCurrentHub().startSession();
   }
 
+  /** Ends the current session */
   public static void endSession() {
     getCurrentHub().endSession();
   }
