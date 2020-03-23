@@ -3,7 +3,6 @@ package io.sentry.core.transport
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -70,80 +69,6 @@ class RetryingThreadPoolExecutorTest {
         Thread.sleep(1000)
 
         assertEquals(1, actualTimes.get(), "Shouldn't see any more attempts, but saw some")
-    }
-
-    @Test
-    fun `honors suggested delay on error and do not accept new tasks`() {
-        val counter = CountDownLatch(1)
-        val actualTimes = AtomicInteger()
-        val delay = 5000L
-
-        threadPool?.submit(object : Retryable {
-            override fun run() {
-                counter.countDown()
-                actualTimes.incrementAndGet()
-                throw RuntimeException()
-            }
-
-            override fun getSuggestedRetryDelayMillis(): Long {
-                return delay
-            }
-
-            override fun getResponseCode(): Int {
-                return 429
-            }
-        })
-
-        threadPool?.submit {
-            actualTimes.incrementAndGet()
-        }
-
-        threadPool?.submit {
-            actualTimes.incrementAndGet()
-        }
-
-        counter.await(1, TimeUnit.MINUTES)
-        Thread.sleep(1000)
-
-        assertEquals(1, actualTimes.get())
-        assertEquals(0, counter.count, "Should not have retried, but it did.")
-    }
-
-    @Test
-    fun `honors suggested delay on error, but accept new tasks after delay has passed`() {
-        var counter = CountDownLatch(1)
-        val actualTimes = AtomicInteger()
-        val delay = 100L
-
-        threadPool?.submit(object : Retryable {
-            override fun run() {
-                counter.countDown()
-                actualTimes.incrementAndGet()
-                throw RuntimeException()
-            }
-
-            override fun getSuggestedRetryDelayMillis(): Long {
-                return delay
-            }
-
-            override fun getResponseCode(): Int {
-                return 429
-            }
-        })
-
-        counter.await(1, TimeUnit.MINUTES)
-        Thread.sleep(1000)
-
-        counter = CountDownLatch(1)
-        threadPool?.submit {
-            counter.countDown()
-            actualTimes.incrementAndGet()
-        }
-
-        counter.await(1, TimeUnit.MINUTES)
-        Thread.sleep(1000)
-
-        assertEquals(2, actualTimes.get())
     }
 
     @Test

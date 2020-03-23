@@ -1,0 +1,17 @@
+{
+  "sid": "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
+  "did": "123",
+  "init": true,
+  "started": "2020-02-07T14:16:00Z",
+  "timestamp": "2020-02-07T14:16:00Z",
+  "duration": 6000,
+  "status": "ok",
+  "errors": 2,
+  "seq": "123456",
+  "attrs": {
+    "release": "io.sentry@1.0+123",
+    "environment": "debug",
+    "ip_address": "127.0.0.1",
+    "user_agent": "jamesBond"
+  }
+}

@@ -1,5 +1,6 @@
 package io.sentry.core
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
@@ -8,18 +9,25 @@ import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.hints.Cached
+import io.sentry.core.protocol.Request
+import io.sentry.core.protocol.SentryException
+import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
 import io.sentry.core.transport.AsyncConnection
 import io.sentry.core.transport.HttpTransport
 import io.sentry.core.transport.ITransportGate
+import java.io.IOException
 import java.net.URL
+import java.util.UUID
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryClientTest {
@@ -388,6 +396,161 @@ class SentryClientTest {
 
         fixture.getSut().captureEvent(event)
         verify(processor).process(eq(event), anyOrNull())
+    }
+
+    @Test
+    fun `when captureSession and no release is set, do nothing`() {
+        fixture.getSut().captureSession(Session())
+        verify(fixture.connection, never()).send(any<SentryEnvelope>())
+    }
+
+    @Test
+    fun `when captureSession and release is set, send an envelope`() {
+        val session = Session().apply {
+            release = "test"
+        }
+        fixture.getSut().captureSession(session)
+        verify(fixture.connection).send(any<SentryEnvelope>(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureEnvelope and thres an exception, returns empty sentryId`() {
+        whenever(fixture.connection.send(any<SentryEnvelope>(), anyOrNull())).thenThrow(IOException())
+
+        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), setOf())
+        val sentryId = fixture.getSut().captureEnvelope(envelope)
+        assertEquals(SentryId.EMPTY_ID, sentryId)
+    }
+
+    @Test
+    fun `when captureEnvelope and theres no exception, returns envelope header id`() {
+        val expectedSentryId = SentryId(UUID.randomUUID())
+        val envelope = SentryEnvelope(expectedSentryId, setOf())
+        val sentryId = fixture.getSut().captureEnvelope(envelope)
+        assertEquals(expectedSentryId, sentryId)
+    }
+
+    @Test
+    fun `When event is Fatal or not handled, mark session as Crashed`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val event = SentryEvent().apply {
+            level = SentryLevel.FATAL
+        }
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals(Session.State.Crashed, session.status)
+    }
+
+    @Test
+    fun `When event is non fatal, keep level as it is`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val level = session.status
+        val event = SentryEvent()
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals(level, session.status)
+    }
+
+    @Test
+    fun `When event is Fatal, increase errorCount`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val event = SentryEvent().apply {
+            level = SentryLevel.FATAL
+        }
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals(1, session.errorCount())
+    }
+
+    @Test
+    fun `When event is Errored, increase errorCount`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val exceptions = mutableListOf<SentryException>()
+        exceptions.add(SentryException())
+        val event = SentryEvent().apply {
+            setExceptions(exceptions)
+        }
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals(1, session.errorCount())
+    }
+
+    @Test
+    fun `When event is non fatal or error, do not increase errorsCount`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val errorCount = session.errorCount()
+        val event = SentryEvent()
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals(errorCount, session.errorCount())
+    }
+
+    @Test
+    fun `When event has userAgent, set it into session`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val event = SentryEvent().apply {
+            request = Request()
+            request.headers = mutableMapOf()
+            request.headers["user-agent"] = "jamesBond"
+        }
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals("jamesBond", session.userAgent)
+    }
+
+    @Test
+    fun `When event has no userAgent, keep as it is`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        val userAgent = session.userAgent
+        val event = SentryEvent().apply {
+            request = Request()
+            request.headers = mutableMapOf()
+        }
+        fixture.getSut().updateSessionData(event, null, scope)
+        assertEquals(userAgent, session.userAgent)
+    }
+
+    @Test
+    fun `When capture an event and theres no session, do nothing`() {
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val scope = Scope(fixture.sentryOptions)
+        val event = SentryEvent()
+        fixture.getSut().updateSessionData(event, null, scope)
+        scope.withSession {
+            assertNull(it)
+        }
+    }
+
+    @Test
+    fun `When capture an event and session tracking is disabled, do nothing`() {
+        val scope = mock<Scope>()
+        val event = SentryEvent()
+        fixture.getSut().updateSessionData(event, null, scope)
+        verify(scope, never()).withSession(any())
+    }
+
+    @Test
+    fun `when captureEvent with sampling, session is still updated`() {
+        fixture.sentryOptions.sampleRate = 1.0
+        fixture.sentryOptions.isEnableSessionTracking = true
+        val sut = fixture.getSut()
+
+        val event = SentryEvent().apply {
+            level = SentryLevel.FATAL
+        }
+        val scope = Scope(fixture.sentryOptions)
+        val session = scope.startSession().current
+        sut.captureEvent(event, scope, null)
+        assertEquals(Session.State.Crashed, session.status)
+        assertEquals(1, session.errorCount())
     }
 
     private fun createScope(): Scope {

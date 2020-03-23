@@ -7,6 +7,7 @@ import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import io.sentry.core.Sentry;
+import io.sentry.core.SentryLevel;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -15,8 +16,13 @@ public final class SentryInitProvider extends ContentProvider {
   @Override
   public boolean onCreate() {
     AndroidLogger logger = new AndroidLogger();
-    if (ManifestMetadataReader.isAutoInit(getContext(), logger)) {
-      SentryAndroid.init(getContext(), logger);
+    final Context context = getContext();
+    if (context == null) {
+      logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
+      return false;
+    }
+    if (ManifestMetadataReader.isAutoInit(context, logger)) {
+      SentryAndroid.init(context, logger);
     }
     return true;
   }

@@ -1,11 +1,14 @@
 package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
@@ -14,6 +17,7 @@ import io.sentry.core.protocol.User
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
+import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -295,6 +299,41 @@ class HubTest {
         val hint = { }
         sut.captureEvent(event, hint)
         verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
+
+    @Test
+    fun `when captureEvent is called and session tracking is disabled, it should not capture a session`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        val event = SentryEvent()
+        val hint = { }
+        sut.captureEvent(event, hint)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient, never()).captureSession(any(), any())
+    }
+
+    @Test
+    fun `when captureEvent is called session tracking is enabled but no session started, it should not capture a session`() {
+        val options = SentryOptions()
+        options.isEnableSessionTracking = true
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        val event = SentryEvent()
+        val hint = { }
+        sut.captureEvent(event, hint)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient, never()).captureSession(any(), any())
     }
     //endregion
 
@@ -762,6 +801,174 @@ class HubTest {
 
         hub.setExtra("test", "test")
         assertEquals(1, scope?.extras?.count())
+    }
+    //endregion
+
+    //region captureEnvelope tests
+    @Test
+    fun `when captureEnvelope is called and envelope is null, throws IllegalArgumentException`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        assertFailsWith<IllegalArgumentException> { sut.captureEnvelope(null) }
+    }
+
+    @Test
+    fun `when captureEnvelope is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureEnvelope(SentryEnvelope(SentryId(UUID.randomUUID()), setOf()))
+        verify(mockClient, never()).captureEnvelope(any(), any())
+    }
+
+    @Test
+    fun `when captureEnvelope is called with a valid envelope, captureEnvelope on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), setOf())
+        sut.captureEnvelope(envelope)
+        verify(mockClient).captureEnvelope(any(), anyOrNull())
+    }
+    //endregion
+
+    //region startSession tests
+    @Test
+    fun `when startSession is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.startSession()
+        verify(mockClient, never()).captureSession(any(), any())
+    }
+
+    @Test
+    fun `when startSession is called and session tracking is disabled, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.startSession()
+        verify(mockClient, never()).captureSession(any(), any())
+    }
+
+    @Test
+    fun `when startSession is called, starts a session`() {
+        val options = SentryOptions()
+        options.isEnableSessionTracking = true
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.startSession()
+        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionStartHint })
+    }
+
+    @Test
+    fun `when startSession is called and theres a session, stops it and starts a new one`() {
+        val options = SentryOptions()
+        options.isEnableSessionTracking = true
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.startSession()
+        sut.startSession()
+        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionEndHint })
+        verify(mockClient, times(2)).captureSession(any(), argWhere { it is Hub.SessionStartHint })
+    }
+    //endregion
+
+    //region endSession tests
+    @Test
+    fun `when endSession is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.endSession()
+        verify(mockClient, never()).captureSession(any(), any())
+    }
+
+    @Test
+    fun `when endSession is called and session tracking is disabled, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.endSession()
+        verify(mockClient, never()).captureSession(any(), any())
+    }
+
+    @Test
+    fun `when endSession is called, end a session`() {
+        val options = SentryOptions()
+        options.isEnableSessionTracking = true
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.startSession()
+        sut.endSession()
+        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionEndHint })
+    }
+
+    @Test
+    fun `when endSession is called and theres no session, do nothing`() {
+        val options = SentryOptions()
+        options.isEnableSessionTracking = true
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.endSession()
+        verify(mockClient, never()).captureSession(any(), any())
     }
     //endregion
 

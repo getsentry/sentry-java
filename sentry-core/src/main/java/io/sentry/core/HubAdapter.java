@@ -3,6 +3,7 @@ package io.sentry.core;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 public final class HubAdapter implements IHub {
@@ -30,9 +31,25 @@ public final class HubAdapter implements IHub {
     return Sentry.captureMessage(message, level);
   }
 
+  @ApiStatus.Internal
+  @Override
+  public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+    return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
+  }
+
   @Override
   public SentryId captureException(Throwable throwable, @Nullable Object hint) {
     return Sentry.captureException(throwable, hint);
+  }
+
+  @Override
+  public void startSession() {
+    Sentry.startSession();
+  }
+
+  @Override
+  public void endSession() {
+    Sentry.endSession();
   }
 
   @Override

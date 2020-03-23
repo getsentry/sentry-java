@@ -75,8 +75,12 @@ android {
 dependencies {
     api(project(":sentry-core"))
 
-    // libs
+    // json parser
     implementation(Config.Libs.gson)
+
+    // lifecycle processor, session tracking
+    implementation(Config.Libs.lifecycleProcessor)
+    implementation(Config.Libs.lifecycleCommonJava8)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

@@ -1,23 +1,29 @@
 package io.sentry.android.core;
 
 import io.sentry.core.EnvelopeSender;
+import io.sentry.core.IEnvelopeReader;
 import io.sentry.core.IHub;
 import io.sentry.core.ILogger;
 import io.sentry.core.Integration;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import java.io.Closeable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Watches the envelope dir. and send them (events) over. */
 public abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
   private @Nullable EnvelopeFileObserver observer;
+  private final @NotNull IEnvelopeReader envelopeReader;
 
-  EnvelopeFileObserverIntegration() {}
+  EnvelopeFileObserverIntegration(final @NotNull IEnvelopeReader envelopeReader) {
+    this.envelopeReader = envelopeReader;
+  }
 
-  public static EnvelopeFileObserverIntegration getOutboxFileObserver() {
-    return new OutboxEnvelopeFileObserverIntegration();
+  public static EnvelopeFileObserverIntegration getOutboxFileObserver(
+      final @NotNull IEnvelopeReader envelopeReader) {
+    return new OutboxEnvelopeFileObserverIntegration(envelopeReader);
   }
 
   @Override
@@ -34,7 +40,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
       EnvelopeSender envelopeSender =
           new EnvelopeSender(
-              hub, new io.sentry.core.EnvelopeReader(), options.getSerializer(), logger);
+              hub, envelopeReader, options.getSerializer(), logger, options.getFlushTimeoutMills());
 
       observer = new EnvelopeFileObserver(path, envelopeSender, logger);
       observer.startWatching();
@@ -55,6 +61,11 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
   private static final class OutboxEnvelopeFileObserverIntegration
       extends EnvelopeFileObserverIntegration {
+
+    OutboxEnvelopeFileObserverIntegration(final @NotNull IEnvelopeReader envelopeReader) {
+      super(envelopeReader);
+    }
+
     @Override
     protected String getPath(final SentryOptions options) {
       return options.getOutboxPath();

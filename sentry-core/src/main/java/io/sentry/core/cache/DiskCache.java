@@ -10,14 +10,17 @@ import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Objects;
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -36,7 +39,7 @@ public final class DiskCache implements IEventCache {
   public static final String FILE_SUFFIX = ".sentry-event";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF8 = Charset.forName("UTF-8");
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final File directory;
   private final int maxSize;
@@ -78,9 +81,9 @@ public final class DiskCache implements IEventCache {
           .log(DEBUG, "Adding Event to offline storage: %s", eventFile.getAbsolutePath());
     }
 
-    try (FileOutputStream fileOutputStream = new FileOutputStream(eventFile);
-        Writer wrt = new OutputStreamWriter(fileOutputStream, UTF8)) {
-      serializer.serialize(event, wrt);
+    try (final OutputStream outputStream = new FileOutputStream(eventFile);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+      serializer.serialize(event, writer);
     } catch (Exception e) {
       options
           .getLogger()
@@ -132,10 +135,10 @@ public final class DiskCache implements IEventCache {
     List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);
 
     for (File f : allCachedEvents) {
-      try (InputStreamReader rdr =
-          new InputStreamReader(new BufferedInputStream(new FileInputStream(f)), UTF8)) {
+      try (final Reader reader =
+          new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8))) {
 
-        ret.add(serializer.deserializeEvent(rdr));
+        ret.add(serializer.deserializeEvent(reader));
       } catch (FileNotFoundException e) {
         options
             .getLogger()

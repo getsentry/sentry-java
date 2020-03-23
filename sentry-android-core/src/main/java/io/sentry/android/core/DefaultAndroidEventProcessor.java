@@ -74,11 +74,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly final Future<Map<String, Object>> contextData;
 
-  public DefaultAndroidEventProcessor(Context context, SentryOptions options) {
-    this.context =
-        Objects.requireNonNull(
-            context != null ? context.getApplicationContext() : null,
-            "The application context is required.");
+  public DefaultAndroidEventProcessor(
+      final @NotNull Context context, final @NotNull SentryOptions options) {
+    this.context = Objects.requireNonNull(context, "The application context is required.");
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -88,7 +86,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     executorService.shutdown();
   }
 
-  private Map<String, Object> loadContextData() {
+  private @NotNull Map<String, Object> loadContextData() {
     Map<String, Object> map = new HashMap<>();
     String[] proGuardUuids = getProGuardUuids();
     if (proGuardUuids != null) {
@@ -114,7 +112,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(
+      final @NotNull SentryEvent event, final @Nullable Object hint) {
     if (!(hint instanceof Cached)) {
       processNonCachedEvent(event);
     } else {
@@ -137,7 +136,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   // Data to be applied to events that was created in the running process
-  private void processNonCachedEvent(SentryEvent event) {
+  private void processNonCachedEvent(final @NotNull SentryEvent event) {
     if (event.getUser() == null) {
       event.setUser(getUser());
     }
@@ -155,18 +154,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       event.setSdk(getSdkVersion());
     }
 
-    PackageInfo packageInfo = getPackageInfo();
+    PackageInfo packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
     if (packageInfo != null) {
-      String versionCode = getVersionCode(packageInfo);
+      String versionCode = ContextUtils.getVersionCode(packageInfo);
 
-      if (event.getRelease() == null) {
-        event.setRelease(
-            packageInfo.packageName + "@" + packageInfo.versionName + "+" + versionCode);
-      }
       if (event.getDist() == null) {
         event.setDist(versionCode);
       }
-      setAppsPackageInfo(app, packageInfo);
+      setAppPackageInfo(app, packageInfo);
     }
 
     event.getContexts().setApp(app);
@@ -178,7 +173,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private List<DebugImage> getDebugImages() {
+  private @Nullable List<DebugImage> getDebugImages() {
     String[] uuids = null;
     try {
       Object proGuardUuids = contextData.get().get(PROGUARD_UUID);
@@ -206,7 +201,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return images;
   }
 
-  private DebugMeta getDebugMeta() {
+  private @Nullable DebugMeta getDebugMeta() {
     List<DebugImage> debugImages = getDebugImages();
 
     if (debugImages == null) {
@@ -223,7 +218,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     app.setAppStartTime(appStartTime);
   }
 
-  private SdkVersion getSdkVersion() {
+  private @NotNull SdkVersion getSdkVersion() {
     SdkVersion sdkVersion = new SdkVersion();
 
     sdkVersion.setName("sentry.java.android");
@@ -238,44 +233,18 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return sdkVersion;
   }
 
-  private String getVersionCode(PackageInfo packageInfo) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      return Long.toString(packageInfo.getLongVersionCode());
-    }
-    return getVersionCodeDep(packageInfo);
-  }
-
   @SuppressWarnings("deprecation")
-  private String getVersionCodeDep(PackageInfo packageInfo) {
-    return Integer.toString(packageInfo.versionCode);
-  }
-
-  @SuppressWarnings("deprecation")
-  private String getAbi() {
+  private @NotNull String getAbi() {
     return Build.CPU_ABI;
   }
 
   @SuppressWarnings("deprecation")
-  private String getAbi2() {
+  private @NotNull String getAbi2() {
     return Build.CPU_ABI2;
   }
 
-  /**
-   * Return the Application's PackageInfo if possible, or null.
-   *
-   * @return the Application's PackageInfo if possible, or null
-   */
-  private PackageInfo getPackageInfo() {
-    try {
-      return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-    } catch (Exception e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting package info.", e);
-      return null;
-    }
-  }
-
   @SuppressWarnings({"ObsoleteSdkInt", "deprecation"})
-  private void setArchitectures(Device device) {
+  private void setArchitectures(final @NotNull Device device) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       String[] supportedAbis = Build.SUPPORTED_ABIS;
       device.setArch(supportedAbis[0]);
@@ -289,7 +258,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  private Long getMemorySize(ActivityManager.MemoryInfo memInfo) {
+  private @NotNull Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       return memInfo.totalMem;
     }
@@ -299,7 +268,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
-  private Device getDevice() {
+  private @NotNull Device getDevice() {
     // TODO: missing usable memory
 
     Device device = new Device();
@@ -380,7 +349,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  private String getDeviceName() {
+  private @Nullable String getDeviceName() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
       return Settings.Global.getString(context.getContentResolver(), "device_name");
     } else {
@@ -389,7 +358,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("deprecation")
-  private void setScreenResolution(Device device, DisplayMetrics displayMetrics) {
+  private void setScreenResolution(
+      final @NotNull Device device, final @NotNull DisplayMetrics displayMetrics) {
     device.setScreenResolution(getResolution(displayMetrics));
   }
 
@@ -404,13 +374,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return Calendar.getInstance().getTimeZone();
   }
 
-  private Date getBootTime() {
+  private @NotNull Date getBootTime() {
     // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
     return DateUtils.getDateTime(
         new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime()));
   }
 
-  private String getResolution(DisplayMetrics displayMetrics) {
+  private @NotNull String getResolution(final @NotNull DisplayMetrics displayMetrics) {
     int largestSide = Math.max(displayMetrics.widthPixels, displayMetrics.heightPixels);
     int smallestSide = Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels);
     return largestSide + "x" + smallestSide;
@@ -421,7 +391,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return MemoryInfo object representing the memory state of the application
    */
-  private ActivityManager.MemoryInfo getMemInfo() {
+  private @Nullable ActivityManager.MemoryInfo getMemInfo() {
     try {
       ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
       ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
@@ -437,7 +407,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private Intent getBatteryIntent() {
+  private @Nullable Intent getBatteryIntent() {
     return context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
   }
 
@@ -447,7 +417,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return family name of the device, as best we can tell
    */
-  private String getFamily() {
+  private @Nullable String getFamily() {
     try {
       return Build.MODEL.split(" ", -1)[0];
     } catch (Exception e) {
@@ -461,7 +431,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return the device's current battery level (as a percentage of total), or null if unknown
    */
-  private Float getBatteryLevel(Intent batteryIntent) {
+  private @Nullable Float getBatteryLevel(final @NotNull Intent batteryIntent) {
     try {
       int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
       int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
@@ -484,7 +454,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return whether or not the device is currently plugged in and charging, or null if unknown
    */
-  private Boolean isCharging(Intent batteryIntent) {
+  private @Nullable Boolean isCharging(final @NotNull Intent batteryIntent) {
     try {
       int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
       return plugged == BatteryManager.BATTERY_PLUGGED_AC
@@ -501,7 +471,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    * @return the device's current screen orientation, or null if unknown
    */
   @SuppressWarnings("deprecation")
-  private Device.DeviceOrientation getOrientation() {
+  private @Nullable Device.DeviceOrientation getOrientation() {
     try {
       switch (context.getResources().getConfiguration().orientation) {
         case Configuration.ORIENTATION_LANDSCAPE:
@@ -530,7 +500,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return true if the application is running in an emulator, false otherwise
    */
-  private Boolean isEmulator() {
+  private @Nullable Boolean isEmulator() {
     try {
       return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
           || Build.FINGERPRINT.startsWith("generic")
@@ -564,7 +534,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return the total amount of internal storage, in bytes
    */
-  private Long getTotalInternalStorage(StatFs stat) {
+  private @Nullable Long getTotalInternalStorage(final @NotNull StatFs stat) {
     try {
       long blockSize = getBlockSizeLong(stat);
       long totalBlocks = getBlockCountLong(stat);
@@ -576,7 +546,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  private long getBlockSizeLong(StatFs stat) {
+  private long getBlockSizeLong(final @NotNull StatFs stat) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       return stat.getBlockSizeLong();
     }
@@ -584,12 +554,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("deprecation")
-  private int getBlockSizeDep(StatFs stat) {
+  private int getBlockSizeDep(final @NotNull StatFs stat) {
     return stat.getBlockSize();
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  private long getBlockCountLong(StatFs stat) {
+  private long getBlockCountLong(final @NotNull StatFs stat) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       return stat.getBlockCountLong();
     }
@@ -597,12 +567,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("deprecation")
-  private int getBlockCountDep(StatFs stat) {
+  private int getBlockCountDep(final @NotNull StatFs stat) {
     return stat.getBlockCount();
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  private long getAvailableBlocksLong(StatFs stat) {
+  private long getAvailableBlocksLong(final @NotNull StatFs stat) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       return stat.getAvailableBlocksLong();
     }
@@ -610,7 +580,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("deprecation")
-  private int getAvailableBlocksDep(StatFs stat) {
+  private int getAvailableBlocksDep(final @NotNull StatFs stat) {
     return stat.getAvailableBlocks();
   }
 
@@ -619,7 +589,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return the unused amount of internal storage, in bytes
    */
-  private Long getUnusedInternalStorage(StatFs stat) {
+  private @Nullable Long getUnusedInternalStorage(final @NotNull StatFs stat) {
     try {
       long blockSize = getBlockSizeLong(stat);
       long availableBlocks = getAvailableBlocksLong(stat);
@@ -632,7 +602,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private StatFs getExternalStorageStat(File internalStorage) {
+  private @Nullable StatFs getExternalStorageStat(final @Nullable File internalStorage) {
     if (!isExternalStorageMounted()) {
       File path = getExternalStorageDep(internalStorage);
       if (path != null) { // && path.canRead()) { canRead() will read return false
@@ -646,7 +616,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
-  private File[] getExternalFilesDirs() {
+  private @Nullable File[] getExternalFilesDirs() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       return context.getExternalFilesDirs(null);
     } else {
@@ -658,7 +628,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  private File getExternalStorageDep(File internalStorage) {
+  private @Nullable File getExternalStorageDep(final @Nullable File internalStorage) {
     File[] externalFilesDirs = getExternalFilesDirs();
 
     if (externalFilesDirs != null) {
@@ -693,7 +663,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    * @return the total amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  private Long getTotalExternalStorage(StatFs stat) {
+  private @Nullable Long getTotalExternalStorage(final @NotNull StatFs stat) {
     try {
       long blockSize = getBlockSizeLong(stat);
       long totalBlocks = getBlockCountLong(stat);
@@ -715,7 +685,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    * @return the unused amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  private Long getUnusedExternalStorage(StatFs stat) {
+  private @Nullable Long getUnusedExternalStorage(final @NotNull StatFs stat) {
     try {
       long blockSize = getBlockSizeLong(stat);
       long availableBlocks = getAvailableBlocksLong(stat);
@@ -733,7 +703,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return the DisplayMetrics object for the current application
    */
-  private DisplayMetrics getDisplayMetrics() {
+  private @Nullable DisplayMetrics getDisplayMetrics() {
     try {
       return context.getResources().getDisplayMetrics();
     } catch (Exception e) {
@@ -742,7 +712,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private OperatingSystem getOperatingSystem() {
+  private @NotNull OperatingSystem getOperatingSystem() {
     OperatingSystem os = new OperatingSystem();
     os.setName("Android");
     os.setVersion(Build.VERSION.RELEASE);
@@ -765,11 +735,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return os;
   }
 
-  private void setAppsPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
+  private void setAppPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
-
     app.setAppVersion(packageInfo.versionName);
-    app.setAppBuild(getVersionCode(packageInfo));
+    app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
   }
 
   /**
@@ -779,7 +748,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    * @return the device's current kernel version, as a string
    */
   @SuppressWarnings("DefaultCharset")
-  private String getKernelVersion() {
+  private @Nullable String getKernelVersion() {
     // its possible to try to execute 'uname' and parse it or also another unix commands or even
     // looking for well known root installed apps
     String errorMsg = "Exception while attempting to read kernel information";
@@ -804,7 +773,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return true if heuristics show the device is probably rooted, otherwise false
    */
-  private Boolean isRooted() {
+  private boolean isRooted() {
     // we could get some inspiration from https://github.com/scottyab/rootbeer
     if (Build.TAGS != null && Build.TAGS.contains("test-keys")) {
       return true;
@@ -851,7 +820,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @return Application name
    */
-  private String getApplicationName() {
+  private @Nullable String getApplicationName() {
     try {
       ApplicationInfo applicationInfo = context.getApplicationInfo();
       int stringId = applicationInfo.labelRes;
@@ -870,14 +839,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  public User getUser() {
+  public @NotNull User getUser() {
     User user = new User();
     user.setId(getDeviceId());
 
     return user;
   }
 
-  private String getDeviceId() {
+  private @Nullable String getDeviceId() {
     try {
       Object androidId = contextData.get().get(ANDROID_ID);
 
@@ -891,7 +860,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("HardwareIds")
-  private String getAndroidId() {
+  private @Nullable String getAndroidId() {
     // Android 29 has changed and -> Avoid using hardware identifiers, find another way in the
     // future
     String androidId =
@@ -913,7 +882,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return androidId;
   }
 
-  private String[] getProGuardUuids() {
+  private @Nullable String[] getProGuardUuids() {
     AssetManager assets = context.getAssets();
     try {
       String[] files = assets.list("");
@@ -926,7 +895,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
           String uuid = properties.getProperty("io.sentry.ProguardUuids");
           if (uuid != null && !uuid.isEmpty()) {
-            return uuid.split("\\|");
+            return uuid.split("\\|", -1);
           }
           options
               .getLogger()

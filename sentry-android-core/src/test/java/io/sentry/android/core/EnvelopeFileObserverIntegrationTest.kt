@@ -34,7 +34,7 @@ class EnvelopeFileObserverIntegrationTest {
         val options = SentryOptions()
         options.cacheDirPath = "some_dir"
 
-        val sut = EnvelopeFileObserverIntegration.getOutboxFileObserver()
+        val sut = EnvelopeFileObserverIntegration.getOutboxFileObserver(mock())
         assertEquals(options.outboxPath, sut.getPath(options))
     }
 

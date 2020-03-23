@@ -53,11 +53,8 @@ final class SendCachedEvent extends DirectoryProcessor {
       return;
     }
 
-    SendCachedEventHint hint =
-        new SendCachedEventHint(
-            15000,
-            logger); // TODO: get timeout from options (should be bigger than network timeout)
-    try (Reader reader =
+    SendCachedEventHint hint = new SendCachedEventHint(15000, logger);
+    try (final Reader reader =
         new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_8))) {
       SentryEvent event = serializer.deserializeEvent(reader);
       hub.captureEvent(event, hint);

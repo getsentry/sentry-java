@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +41,14 @@ public class SentryOptions {
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeoutMills = 2000;
+  private long shutdownTimeoutMills = 2000; // 2s
+
+  /**
+   * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
+   * background queue and this queue is given a certain amount to drain pending events Default is
+   * 15000 = 15s
+   */
+  private long flushTimeoutMills = 15000; // 15s
 
   /**
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
@@ -84,6 +92,9 @@ public class SentryOptions {
   /** The cache dir. size for capping the number of events Default is 10 */
   private int cacheDirSize = 10;
 
+  /** The sessions dir. size for capping the number of envelopes Default is 100 */
+  private int sessionsDirSize = 100;
+
   /**
    * This variable controls the total amount of breadcrumbs that should be captured Default is 100
    */
@@ -117,13 +128,13 @@ public class SentryOptions {
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
    * default.
    */
-  private @NotNull List<String> inAppExcludes = new ArrayList<>();
+  private final @NotNull List<String> inAppExcludes = new ArrayList<>();
 
   /**
    * A list of string prefixes of module names that belong to the app. This option takes precedence
    * over inAppExcludes.
    */
-  private @NotNull List<String> inAppIncludes = new ArrayList<>();
+  private final @NotNull List<String> inAppIncludes = new ArrayList<>();
 
   /** The transport is an internal construct of the client that abstracts away the event sending. */
   private @Nullable ITransport transport;
@@ -145,6 +156,18 @@ public class SentryOptions {
    * always attached to exceptions but when this is set stack traces are also sent with threads
    */
   private boolean attachStacktrace;
+
+  /** When enabled, threads are automatically attached to all logged events. */
+  private boolean enableSessionTracking;
+
+  /**
+   * The session tracking interval in millis. This is the interval to end a session if the App goes
+   * to the background.
+   */
+  private long sessionTrackingIntervalMillis = 30000; // 30s
+
+  /** The distinct Id (generated Guid) used for session tracking */
+  private String distinctId;
 
   /** The server name used in the Sentry messages. */
   private String serverName;
@@ -384,6 +407,18 @@ public class SentryOptions {
       return null;
     }
     return cacheDirPath + File.separator + "outbox";
+  }
+
+  /**
+   * Returns the sessions path if cacheDirPath is set
+   *
+   * @return the sessions path or null if not set
+   */
+  public @Nullable String getSessionsPath() {
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+    return cacheDirPath + File.separator + "sessions";
   }
 
   /**
@@ -636,6 +671,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns if the session tracking is enabled or not
+   *
+   * @return trye if enabled or false otherwise
+   */
+  public boolean isEnableSessionTracking() {
+    return enableSessionTracking;
+  }
+
+  /**
+   * Enable or disable the session tracking
+   *
+   * @param enableSessionTracking true if enabled or false otherwise
+   */
+  public void setEnableSessionTracking(boolean enableSessionTracking) {
+    this.enableSessionTracking = enableSessionTracking;
+  }
+
+  /**
    * Gets the default server name to be used in Sentry events.
    *
    * @return the default server name or null if none set
@@ -651,6 +704,80 @@ public class SentryOptions {
    */
   public void setServerName(@Nullable String serverName) {
     this.serverName = serverName;
+  }
+
+  /**
+   * Returns the sessions dir size
+   *
+   * @return the dir size
+   */
+  public int getSessionsDirSize() {
+    return sessionsDirSize;
+  }
+
+  /**
+   * Sets the sessions dir size
+   *
+   * @param sessionsDirSize the sessions dir size
+   */
+  public void setSessionsDirSize(int sessionsDirSize) {
+    this.sessionsDirSize = sessionsDirSize;
+  }
+
+  /**
+   * Returns the session tracking interval in millis
+   *
+   * @return the interval in millis
+   */
+  public long getSessionTrackingIntervalMillis() {
+    return sessionTrackingIntervalMillis;
+  }
+
+  /**
+   * Sets the session tracking interval in millis
+   *
+   * @param sessionTrackingIntervalMillis the interval in millis
+   */
+  public void setSessionTrackingIntervalMillis(long sessionTrackingIntervalMillis) {
+    this.sessionTrackingIntervalMillis = sessionTrackingIntervalMillis;
+  }
+
+  /**
+   * Returns the distinct Id
+   *
+   * @return the distinct Id
+   */
+  @ApiStatus.Internal
+  public String getDistinctId() {
+    return distinctId;
+  }
+
+  /**
+   * Sets the distinct Id
+   *
+   * @param distinctId the distinct Id
+   */
+  @ApiStatus.Internal
+  public void setDistinctId(String distinctId) {
+    this.distinctId = distinctId;
+  }
+
+  /**
+   * Returns the flush timeout in millis
+   *
+   * @return the timeout in millis
+   */
+  public long getFlushTimeoutMills() {
+    return flushTimeoutMills;
+  }
+
+  /**
+   * Sets the flush timeout in millis
+   *
+   * @param flushTimeoutMills the timeout in millis
+   */
+  public void setFlushTimeoutMills(long flushTimeoutMills) {
+    this.flushTimeoutMills = flushTimeoutMills;
   }
 
   /** The BeforeSend callback */
@@ -709,7 +836,12 @@ public class SentryOptions {
             (hub, options) -> {
               EnvelopeSender envelopeSender =
                   new EnvelopeSender(
-                      hub, new io.sentry.core.EnvelopeReader(), options.getSerializer(), logger);
+                      hub,
+                      new EnvelopeReader(), // TODO: add a getEnvelopeReader() to ISerializer(), so
+                      // we use the same instance always
+                      options.getSerializer(),
+                      logger,
+                      options.getFlushTimeoutMills());
               if (options.getOutboxPath() != null) {
                 File outbox = new File(options.getOutboxPath());
                 return () -> envelopeSender.processDirectory(outbox);
@@ -722,6 +854,31 @@ public class SentryOptions {
                 return null;
               }
             }));
+
+    //     send cached sessions
+    integrations.add(
+        new SendCachedEventFireAndForgetIntegration(
+            (hub, options) -> {
+              EnvelopeSender envelopeSender =
+                  new EnvelopeSender(
+                      hub,
+                      new EnvelopeReader(),
+                      options.getSerializer(),
+                      logger,
+                      options.getFlushTimeoutMills());
+              if (options.getSessionsPath() != null) {
+                File outbox = new File(options.getSessionsPath());
+                return () -> envelopeSender.processDirectory(outbox);
+              } else {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING,
+                        "No sessions dir path is defined in options, discarding EnvelopeSender.");
+                return null;
+              }
+            }));
+
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }
 }

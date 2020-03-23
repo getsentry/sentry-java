@@ -68,8 +68,8 @@ class SendCachedEventTest {
     fun `when directory has non event files, processDirectory logs that`() {
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", ".not-right-suffix").toUri())
-        testFile.deleteOnExit()
         sut.processDirectory(File(tempDirectory.toUri()))
+        testFile.deleteOnExit()
         verify(fixture.logger)!!.log(eq(SentryLevel.DEBUG), eq("File '%s' doesn't match extension expected."), any<Any>())
         verifyNoMoreInteractions(fixture.hub)
     }

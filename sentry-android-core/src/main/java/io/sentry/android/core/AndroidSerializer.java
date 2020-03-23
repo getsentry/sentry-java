@@ -14,32 +14,73 @@ import io.sentry.android.core.adapters.SentryLevelDeserializerAdapter;
 import io.sentry.android.core.adapters.SentryLevelSerializerAdapter;
 import io.sentry.android.core.adapters.TimeZoneDeserializerAdapter;
 import io.sentry.android.core.adapters.TimeZoneSerializerAdapter;
+import io.sentry.core.IEnvelopeReader;
 import io.sentry.core.ILogger;
 import io.sentry.core.ISerializer;
+import io.sentry.core.SentryEnvelope;
+import io.sentry.core.SentryEnvelopeHeader;
+import io.sentry.core.SentryEnvelopeHeaderAdapter;
+import io.sentry.core.SentryEnvelopeItem;
+import io.sentry.core.SentryEnvelopeItemHeader;
+import io.sentry.core.SentryEnvelopeItemHeaderAdapter;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
+import io.sentry.core.Session;
+import io.sentry.core.SessionAdapter;
 import io.sentry.core.protocol.Contexts;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.util.Objects;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+/** The AndroidSerializer class that uses Gson as JSON parser */
 final class AndroidSerializer implements ISerializer {
 
-  private final @NotNull ILogger logger;
-  private final Gson gson;
+  /** the UTF-8 Charset */
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  public AndroidSerializer(final @NotNull ILogger logger) {
-    this.logger = logger;
+  /** the ILogger interface */
+  private final @NotNull ILogger logger;
+
+  /** the Gson instance */
+  private final @NotNull Gson gson;
+
+  /** the IEnvelopeReader interface */
+  private final @NotNull IEnvelopeReader envelopeReader;
+
+  /**
+   * AndroidSerializer ctor
+   *
+   * @param logger the ILogger interface
+   * @param envelopeReader the IEnvelopeReader interface
+   */
+  public AndroidSerializer(
+      final @NotNull ILogger logger, final @NotNull IEnvelopeReader envelopeReader) {
+    this.logger = Objects.requireNonNull(logger, "The ILogger object is required.");
+    this.envelopeReader =
+        Objects.requireNonNull(envelopeReader, "The IEnvelopeReader object is required.");
 
     gson = provideGson();
   }
 
-  private Gson provideGson() {
+  /**
+   * Creates a Gson instance with the naming policy and adapters
+   *
+   * @return the Gson instance
+   */
+  private @NotNull Gson provideGson() {
     return new GsonBuilder()
         .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
         .registerTypeAdapter(SentryId.class, new SentryIdSerializerAdapter(logger))
@@ -56,18 +97,122 @@ final class AndroidSerializer implements ISerializer {
         .registerTypeAdapter(SentryLevel.class, new SentryLevelDeserializerAdapter(logger))
         .registerTypeAdapter(Contexts.class, new ContextsDeserializerAdapter(logger))
         .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
+        .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
+        .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
+        .registerTypeAdapter(Session.class, new SessionAdapter())
         .create();
   }
 
+  /**
+   * Deserialize a SentryEvent from a stream Reader (JSON)
+   *
+   * @param reader the Reader
+   * @return the SentryEvent class or null
+   */
   @Override
-  public SentryEvent deserializeEvent(Reader eventReader) {
-    return gson.fromJson(eventReader, SentryEvent.class);
+  public @Nullable SentryEvent deserializeEvent(final @NotNull Reader reader) {
+    Objects.requireNonNull(reader, "The Reader object is required.");
+
+    return gson.fromJson(reader, SentryEvent.class);
   }
 
+  /**
+   * Deserialize a Session from a stream Reader (JSON)
+   *
+   * @param reader the Reader
+   * @return the SentryEvent class or null
+   */
   @Override
-  public void serialize(SentryEvent event, Writer writer) throws IOException {
+  public @Nullable Session deserializeSession(final @NotNull Reader reader) {
+    Objects.requireNonNull(reader, "The Reader object is required.");
+
+    return gson.fromJson(reader, Session.class);
+  }
+
+  /**
+   * Deserialize a SentryEnvelope from a InputStream (Envelope+JSON)
+   *
+   * @param inputStream the InputStream
+   * @return the SentryEnvelope class or null
+   */
+  @Override
+  public @Nullable SentryEnvelope deserializeEnvelope(final @NotNull InputStream inputStream) {
+    Objects.requireNonNull(inputStream, "The InputStream object is required.");
+    try {
+      return envelopeReader.read(inputStream);
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
+      return null;
+    }
+  }
+
+  /**
+   * Serialize a SentryEvent to a stream Writer (JSON)
+   *
+   * @param event the SentryEvent
+   * @param writer the Writer
+   * @throws IOException
+   */
+  @Override
+  public void serialize(final @NotNull SentryEvent event, final @NotNull Writer writer)
+      throws IOException {
+    Objects.requireNonNull(event, "The SentryEvent object is required.");
+    Objects.requireNonNull(writer, "The Writer object is required.");
+
     gson.toJson(event, SentryEvent.class, writer);
     writer.flush();
-    writer.close();
+  }
+
+  /**
+   * Serialize a Session to a stream Writer (JSON)
+   *
+   * @param session the Session
+   * @param writer the Writer
+   * @throws IOException
+   */
+  @Override
+  public void serialize(final @NotNull Session session, final @NotNull Writer writer)
+      throws IOException {
+    Objects.requireNonNull(session, "The Session object is required.");
+    Objects.requireNonNull(writer, "The Writer object is required.");
+
+    gson.toJson(session, Session.class, writer);
+    writer.flush();
+  }
+
+  /**
+   * Serialize a SentryEnvelope to a stream Writer (JSON)
+   *
+   * @param envelope the SentryEnvelope
+   * @param writer the Writer
+   * @throws IOException
+   */
+  @Override
+  public void serialize(final @NotNull SentryEnvelope envelope, final @NotNull Writer writer)
+      throws Exception {
+    Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
+    Objects.requireNonNull(writer, "The Writer object is required.");
+
+    gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
+    writer.write("\n");
+    for (SentryEnvelopeItem item : envelope.getItems()) {
+      gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
+      writer.write("\n");
+
+      // it might be a single line anyway, but lets make it as a BufferedReader
+      // I couldn't find a way of mixing a writer which writes String and bytes at the same time
+      // mixing the OutputStream and writer didn't work
+      try (final BufferedReader reader =
+          new BufferedReader(
+              new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
+        String temp;
+        while ((temp = reader.readLine()) != null) {
+          writer.write(temp);
+        }
+      }
+
+      writer.write("\n");
+    }
+    writer.flush();
   }
 }
