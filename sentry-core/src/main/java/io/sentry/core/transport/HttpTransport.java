@@ -250,7 +250,7 @@ public class HttpTransport implements ITransport {
   private void updateRetryAfterLimits(
       final @NotNull HttpURLConnection connection, final int responseCode) {
     final String retryAfterHeader = connection.getHeaderField("Retry-After");
-    final String sentryRateLimitHeader = connection.getHeaderField("X-Sentry-Rate-Limit");
+    final String sentryRateLimitHeader = connection.getHeaderField("X-Sentry-Rate-Limits");
     updateRetryAfterLimits(sentryRateLimitHeader, retryAfterHeader, responseCode);
   }
 
