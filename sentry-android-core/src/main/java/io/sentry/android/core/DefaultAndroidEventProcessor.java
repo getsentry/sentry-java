@@ -53,6 +53,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
@@ -140,7 +141,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (event.getUser() == null) {
       event.setUser(getUser());
     }
-    setAppExtras(event);
+
+    App app = event.getContexts().getApp();
+    if (app == null) {
+      app = new App();
+    }
+    setAppExtras(app);
 
     if (event.getDebugMeta() == null) {
       event.setDebugMeta(getDebugMeta());
@@ -160,10 +166,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       if (event.getDist() == null) {
         event.setDist(versionCode);
       }
-      if (event.getContexts().getApp() == null) {
-        event.getContexts().setApp(getApp(packageInfo));
-      }
+      setAppsPackageInfo(app, packageInfo);
     }
+
+    event.getContexts().setApp(app);
 
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
@@ -212,11 +218,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return debugMeta;
   }
 
-  private void setAppExtras(SentryEvent event) {
-    App app = event.getContexts().getApp();
-    if (event.getContexts().getApp() == null) {
-      app = new App();
-    }
+  private void setAppExtras(final @NotNull App app) {
     app.setAppName(getApplicationName());
     app.setAppStartTime(appStartTime);
   }
@@ -763,16 +765,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return os;
   }
 
-  private App getApp(PackageInfo packageInfo) {
-    App app = new App();
+  private void setAppsPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
 
-    //    app.setBuildType(); possible with BuildConfig.BUILD_VARIANT but Apps
-    // side, also for flavor
     app.setAppVersion(packageInfo.versionName);
     app.setAppBuild(getVersionCode(packageInfo));
-
-    return app;
   }
 
   /**
