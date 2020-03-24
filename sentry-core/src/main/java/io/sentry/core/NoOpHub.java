@@ -100,7 +100,7 @@ final class NoOpHub implements IHub {
   public void bindClient(ISentryClient client) {}
 
   @Override
-  public void flush(long timeoutMills) {}
+  public void flush(long timeoutMillis) {}
 
   @Override
   public IHub clone() {

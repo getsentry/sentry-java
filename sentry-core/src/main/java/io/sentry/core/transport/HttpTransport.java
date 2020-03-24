@@ -52,7 +52,7 @@ public class HttpTransport implements ITransport {
 
   private final @NotNull Map<String, Date> sentryRetryAfterLimit = new ConcurrentHashMap<>();
 
-  private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MS = 60000;
+  private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
@@ -62,23 +62,23 @@ public class HttpTransport implements ITransport {
    * @param options sentry options to read the config from
    * @param connectionConfigurator this consumer is given a chance to set up the request before it
    *     is sent
-   * @param connectionTimeoutMills connection timeout in milliseconds
-   * @param readTimeoutMills read timeout in milliseconds
+   * @param connectionTimeoutMillis connection timeout in milliseconds
+   * @param readTimeoutMillis read timeout in milliseconds
    * @param bypassSecurity whether to ignore TLS errors
    * @param sentryUrl sentryUrl which is the parsed DSN
    */
   public HttpTransport(
       final @NotNull SentryOptions options,
       final @NotNull IConnectionConfigurator connectionConfigurator,
-      final int connectionTimeoutMills,
-      final int readTimeoutMills,
+      final int connectionTimeoutMillis,
+      final int readTimeoutMillis,
       final boolean bypassSecurity,
       final @NotNull URL sentryUrl) {
     this.proxy = options.getProxy();
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
-    this.connectionTimeout = connectionTimeoutMills;
-    this.readTimeout = readTimeoutMills;
+    this.connectionTimeout = connectionTimeoutMillis;
+    this.readTimeout = readTimeoutMillis;
     this.options = options;
     this.bypassSecurity = bypassSecurity;
     this.sentryUrl = sentryUrl;
@@ -276,7 +276,7 @@ public class HttpTransport implements ITransport {
 
         if (retryAfterAndCategories.length > 0) {
           final String retryAfter = retryAfterAndCategories[0];
-          long retryAfterMs = parseRetryAfterOrDefault(retryAfter);
+          long retryAfterMillis = parseRetryAfterOrDefault(retryAfter);
 
           if (retryAfterAndCategories.length > 1) {
             final String allCategories = retryAfterAndCategories[1];
@@ -287,16 +287,16 @@ public class HttpTransport implements ITransport {
               for (final String catItem : categories) {
                 // we dont care if Date is UTC as we just add the relative seconds
                 sentryRetryAfterLimit.put(
-                    catItem, new Date(System.currentTimeMillis() + retryAfterMs));
+                    catItem, new Date(System.currentTimeMillis() + retryAfterMillis));
               }
             }
           }
         }
       }
     } else if (errorCode == 429) {
-      final long retryAfterMs = parseRetryAfterOrDefault(retryAfterHeader);
+      final long retryAfterMillis = parseRetryAfterOrDefault(retryAfterHeader);
       // we dont care if Date is UTC as we just add the relative seconds
-      final Date date = new Date(System.currentTimeMillis() + retryAfterMs);
+      final Date date = new Date(System.currentTimeMillis() + retryAfterMillis);
       sentryRetryAfterLimit.put("default", date);
     }
   }
@@ -308,16 +308,16 @@ public class HttpTransport implements ITransport {
    * @return the millis in seconds or the default seconds value
    */
   private long parseRetryAfterOrDefault(final @Nullable String retryAfterHeader) {
-    long retryAfterMs = HTTP_RETRY_AFTER_DEFAULT_DELAY_MS;
+    long retryAfterMillis = HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS;
     if (retryAfterHeader != null) {
       try {
-        retryAfterMs =
+        retryAfterMillis =
             (long) (Double.parseDouble(retryAfterHeader) * 1000L); // seconds -> milliseconds
       } catch (NumberFormatException __) {
         // let's use the default then
       }
     }
-    return retryAfterMs;
+    return retryAfterMillis;
   }
 
   private void logErrorInPayload(final @NotNull HttpURLConnection connection) {

@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.Hub
 import io.sentry.core.ILogger
 import io.sentry.core.ISerializer
 import io.sentry.core.SentryEnvelope
@@ -15,6 +14,9 @@ import io.sentry.core.Session
 import io.sentry.core.cache.SessionCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.core.cache.SessionCache.SUFFIX_CURRENT_SESSION_FILE
 import io.sentry.core.cache.SessionCache.SUFFIX_ENVELOPE_FILE
+import io.sentry.core.hints.SessionEndHint
+import io.sentry.core.hints.SessionStartHint
+import io.sentry.core.hints.SessionUpdateHint
 import io.sentry.core.protocol.User
 import java.io.File
 import java.nio.file.Files
@@ -102,7 +104,7 @@ class SessionCacheTest {
         val file = File(fixture.options.sessionsPath!!)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
-        cache.store(envelope, Hub.SessionStartHint())
+        cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
@@ -117,12 +119,12 @@ class SessionCacheTest {
         val file = File(fixture.options.sessionsPath!!)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
-        cache.store(envelope, Hub.SessionStartHint())
+        cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
-        cache.store(envelope, Hub.SessionEndHint())
+        cache.store(envelope, SessionEndHint())
         assertFalse(currentFile.exists())
 
         deleteFiles(file)
@@ -135,14 +137,14 @@ class SessionCacheTest {
         val file = File(fixture.options.sessionsPath!!)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
-        cache.store(envelope, Hub.SessionStartHint())
+        cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
         val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
-        cache.store(newEnvelope, Hub.SessionUpdateHint())
+        cache.store(newEnvelope, SessionUpdateHint())
         assertTrue(currentFile.exists())
 
         val newFile = File(file.absolutePath, "${newEnvelope.header.eventId}$SUFFIX_ENVELOPE_FILE")
@@ -158,11 +160,11 @@ class SessionCacheTest {
         val file = File(fixture.options.sessionsPath!!)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
-        cache.store(envelope, Hub.SessionStartHint())
+        cache.store(envelope, SessionStartHint())
 
         val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
-        cache.store(newEnvelope, Hub.SessionStartHint())
+        cache.store(newEnvelope, SessionStartHint())
         verify(fixture.logger).log(eq(SentryLevel.INFO), eq("There's a left over session, it's gonna be ended and cached to be sent."))
 
         deleteFiles(file)

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryEnvelope {
@@ -33,18 +32,8 @@ public final class SentryEnvelope {
   }
 
   public SentryEnvelope(
-      final @NotNull SentryId sentryId,
-      final @Nullable String auth,
-      final @NotNull Iterable<SentryEnvelopeItem> items) {
-    Objects.requireNonNull(sentryId, "SentryId is required.");
-    header = new SentryEnvelopeHeader(sentryId, auth);
-    this.items = Objects.requireNonNull(items, "SentryEnvelope items are required.");
-  }
-
-  public SentryEnvelope(
       final @NotNull SentryId sentryId, final @NotNull Iterable<SentryEnvelopeItem> items) {
     Objects.requireNonNull(sentryId, "SentryId is required.");
-
     header = new SentryEnvelopeHeader(sentryId);
     this.items = Objects.requireNonNull(items, "SentryEnvelope items are required.");
   }

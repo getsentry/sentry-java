@@ -62,7 +62,8 @@ public final class Session {
   private final @NotNull Object sessionLock = new Object();
 
   public Date getStarted() {
-    return started;
+    final Date startedRef = started;
+    return startedRef != null ? (Date) startedRef.clone() : null;
   }
 
   public void setStarted(Date started) {
@@ -158,7 +159,8 @@ public final class Session {
   }
 
   public Date getTimestamp() {
-    return timestamp;
+    final Date timestampRef = timestamp;
+    return timestampRef != null ? (Date) timestampRef.clone() : null;
   }
 
   public void setTimestamp(Date timestamp) {

@@ -19,7 +19,12 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
+
+  @Deprecated
   static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
+
+  static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
+
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
   static final String RELEASE = "io.sentry.release";
@@ -81,12 +86,19 @@ final class ManifestMetadataReader {
         options.getLogger().log(SentryLevel.DEBUG, "anrReportInDebug read: %s", anrReportInDebug);
         options.setAnrReportInDebug(anrReportInDebug);
 
+        // deprecated
         final long anrTimeoutIntervalMills =
-            metadata.getInt(ANR_TIMEOUT_INTERVAL_MILLS, (int) options.getAnrTimeoutIntervalMills());
+            metadata.getInt(
+                ANR_TIMEOUT_INTERVAL_MILLS, (int) options.getAnrTimeoutIntervalMillis());
+
+        // reading new values, but deprecated one as fallback
+        final long anrTimeoutIntervalMillis =
+            metadata.getInt(ANR_TIMEOUT_INTERVAL_MILLIS, (int) anrTimeoutIntervalMills);
+
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "anrTimeoutIntervalMills read: %d", anrTimeoutIntervalMills);
-        options.setAnrTimeoutIntervalMills(anrTimeoutIntervalMills);
+            .log(SentryLevel.DEBUG, "anrTimeoutIntervalMillis read: %d", anrTimeoutIntervalMillis);
+        options.setAnrTimeoutIntervalMillis(anrTimeoutIntervalMillis);
 
         final String dsn = metadata.getString(DSN, null);
         if (dsn == null) {

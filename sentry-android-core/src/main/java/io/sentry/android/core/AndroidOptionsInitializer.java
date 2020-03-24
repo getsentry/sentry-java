@@ -102,7 +102,7 @@ final class AndroidOptionsInitializer {
       try {
         options.setDistinctId(Installation.id(context));
       } catch (RuntimeException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Could not generate device Id.", e);
+        options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }
     }
   }

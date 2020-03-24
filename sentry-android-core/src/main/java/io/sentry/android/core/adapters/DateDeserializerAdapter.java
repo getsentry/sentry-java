@@ -29,13 +29,13 @@ public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
     } catch (Exception e) {
       logger.log(
           SentryLevel.DEBUG,
-          "Error when deserializing UTC timestamp format, it might be mills timestamp format.",
+          "Error when deserializing UTC timestamp format, it might be millis timestamp format.",
           e);
     }
     try {
-      return DateUtils.getDateTimeWithMillsPrecision(json.getAsString());
+      return DateUtils.getDateTimeWithMillisPrecision(json.getAsString());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing mills timestamp format.", e);
+      logger.log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);
     }
     return null;
   }

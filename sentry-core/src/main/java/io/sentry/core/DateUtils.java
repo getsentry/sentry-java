@@ -55,21 +55,21 @@ public final class DateUtils {
   }
 
   /**
-   * Get Java Date from mills timestamp format
+   * Get Java Date from millis timestamp format
    *
-   * @param timestamp mills format eg 1581410911.988 (1581410911 seconds and 988 mills)
+   * @param timestamp millis format eg 1581410911.988 (1581410911 seconds and 988 millis)
    * @return the Date
    */
-  public static Date getDateTimeWithMillsPrecision(String timestamp)
+  public static Date getDateTimeWithMillisPrecision(String timestamp)
       throws IllegalArgumentException {
     try {
       String[] times = timestamp.split("\\.", -1);
       long seconds = Long.parseLong(times[0]);
-      long mills = times.length > 1 ? Long.parseLong(times[1]) : 0;
+      long millis = times.length > 1 ? Long.parseLong(times[1]) : 0;
 
-      return new Date((seconds * 1000) + mills);
+      return new Date((seconds * 1000) + millis);
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("timestamp is not mills format " + timestamp);
+      throw new IllegalArgumentException("timestamp is not millis format " + timestamp);
     }
   }
 

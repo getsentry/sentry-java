@@ -19,11 +19,6 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
     writer.beginObject();
 
-    if (value.getAuth() != null) {
-      writer.name("auth");
-      writer.value(value.getAuth());
-    }
-
     if (value.getEventId() != null) {
       writer.name("event_id");
       writer.value(value.getEventId().toString());
@@ -40,16 +35,12 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
 
     SentryId sentryId = SentryId.EMPTY_ID;
-    String auth = null;
 
     reader.beginObject();
     while (reader.hasNext()) {
       switch (reader.nextName()) {
         case "event_id":
           sentryId = new SentryId(reader.nextString());
-          break;
-        case "auth":
-          auth = reader.nextString();
           break;
         default:
           reader.skipValue();
@@ -58,6 +49,6 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
     reader.endObject();
 
-    return new SentryEnvelopeHeader(sentryId, auth);
+    return new SentryEnvelopeHeader(sentryId);
   }
 }

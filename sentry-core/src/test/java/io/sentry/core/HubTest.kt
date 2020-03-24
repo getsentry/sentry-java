@@ -12,6 +12,8 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.hints.SessionEndHint
+import io.sentry.core.hints.SessionStartHint
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
 import java.io.File
@@ -888,7 +890,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.startSession()
-        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { it is SessionStartHint })
     }
 
     @Test
@@ -904,8 +906,8 @@ class HubTest {
 
         sut.startSession()
         sut.startSession()
-        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionEndHint })
-        verify(mockClient, times(2)).captureSession(any(), argWhere { it is Hub.SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { it is SessionEndHint })
+        verify(mockClient, times(2)).captureSession(any(), argWhere { it is SessionStartHint })
     }
     //endregion
 
@@ -952,8 +954,8 @@ class HubTest {
 
         sut.startSession()
         sut.endSession()
-        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionStartHint })
-        verify(mockClient).captureSession(any(), argWhere { it is Hub.SessionEndHint })
+        verify(mockClient).captureSession(any(), argWhere { it is SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { it is SessionEndHint })
     }
 
     @Test

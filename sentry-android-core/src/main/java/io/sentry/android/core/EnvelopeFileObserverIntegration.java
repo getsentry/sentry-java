@@ -40,7 +40,11 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
       EnvelopeSender envelopeSender =
           new EnvelopeSender(
-              hub, envelopeReader, options.getSerializer(), logger, options.getFlushTimeoutMills());
+              hub,
+              envelopeReader,
+              options.getSerializer(),
+              logger,
+              options.getFlushTimeoutMillis());
 
       observer = new EnvelopeFileObserver(path, envelopeSender, logger);
       observer.startWatching();

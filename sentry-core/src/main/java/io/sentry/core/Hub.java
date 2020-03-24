@@ -1,8 +1,7 @@
 package io.sentry.core;
 
-import io.sentry.core.hints.SessionEnd;
-import io.sentry.core.hints.SessionStart;
-import io.sentry.core.hints.SessionUpdate;
+import io.sentry.core.hints.SessionEndHint;
+import io.sentry.core.hints.SessionStartHint;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
 import io.sentry.core.util.Objects;
@@ -208,6 +207,9 @@ public final class Hub implements IHub {
       if (item != null) {
         final Scope.SessionPair pair = item.scope.startSession();
 
+        // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
+        // single envelope
+        // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
           item.client.captureSession(pair.getPrevious(), new SessionEndHint());
         }
@@ -571,7 +573,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void flush(long timeoutMills) {
+  public void flush(long timeoutMillis) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -580,7 +582,7 @@ public final class Hub implements IHub {
       final StackItem item = stack.peek();
       if (item != null) {
         try {
-          item.client.flush(timeoutMills);
+          item.client.flush(timeoutMillis);
         } catch (Exception e) {
           options.getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
         }
@@ -611,11 +613,4 @@ public final class Hub implements IHub {
     }
     return clone;
   }
-
-  // TODO: maybe they should live somewhere else?
-  public static final class SessionStartHint implements SessionStart {}
-
-  public static final class SessionEndHint implements SessionEnd {}
-
-  public static final class SessionUpdateHint implements SessionUpdate {}
 }
