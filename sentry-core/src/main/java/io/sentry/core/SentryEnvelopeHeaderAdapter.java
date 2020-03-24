@@ -34,13 +34,13 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
       return null;
     }
 
-    SentryId sentryId = SentryId.EMPTY_ID;
+    SentryId eventId = null;
 
     reader.beginObject();
     while (reader.hasNext()) {
       switch (reader.nextName()) {
         case "event_id":
-          sentryId = new SentryId(reader.nextString());
+          eventId = new SentryId(reader.nextString());
           break;
         default:
           reader.skipValue();
@@ -49,6 +49,6 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
     reader.endObject();
 
-    return new SentryEnvelopeHeader(sentryId);
+    return new SentryEnvelopeHeader(eventId);
   }
 }

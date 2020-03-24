@@ -120,7 +120,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
                 items,
                 item.getHeader().getType());
           } else {
-            if (!envelope.getHeader().getEventId().equals(event.getEventId())) {
+            if (envelope.getHeader().getEventId() != null
+                && !envelope.getHeader().getEventId().equals(event.getEventId())) {
               logger.log(
                   SentryLevel.ERROR,
                   "Item %d of has a different event id (%s) to the envelope header (%s)",

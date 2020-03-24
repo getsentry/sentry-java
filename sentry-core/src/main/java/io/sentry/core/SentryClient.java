@@ -209,7 +209,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public @NotNull SentryId captureEnvelope(
+  public @Nullable SentryId captureEnvelope(
       final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 

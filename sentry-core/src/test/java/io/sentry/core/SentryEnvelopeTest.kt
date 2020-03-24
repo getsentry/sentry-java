@@ -59,14 +59,6 @@ class SentryEnvelopeTest {
     }
 
     @Test
-    fun `when envelope header has no event_id, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
-        val stream = "{}\n{\"item_header\":\"value\",\"length\":\"2\"}\n{}".toInputStream()
-        val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
-        assertEquals("Envelope header is missing required 'event_id'.", exception.message)
-    }
-
-    @Test
     fun `when envelope terminates with line break, envelope parsed correctly`() {
         val envelopeReader = EnvelopeReader()
         val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":15,\"type\":\"event\"}\n{\"contexts\":{}}\n".toInputStream()

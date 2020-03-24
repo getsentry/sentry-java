@@ -2,7 +2,6 @@ package io.sentry.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.sentry.core.protocol.SentryId;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,8 +56,8 @@ public final class EnvelopeReader implements IEnvelopeReader {
 
       SentryEnvelopeHeader header =
           deserializeEnvelopeHeader(envelopeBytes, 0, envelopeEndHeaderOffset);
-      if (header.getEventId() == null || header.getEventId().equals(SentryId.EMPTY_ID)) {
-        throw new IllegalArgumentException("Envelope header is missing required 'event_id'.");
+      if (header == null) {
+        throw new IllegalArgumentException("Envelope header is null.");
       }
 
       int itemHeaderStartOffset = envelopeEndHeaderOffset + 1;
