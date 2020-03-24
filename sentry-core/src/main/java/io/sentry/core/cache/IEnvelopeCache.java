@@ -3,7 +3,7 @@ package io.sentry.core.cache;
 import io.sentry.core.SentryEnvelope;
 import org.jetbrains.annotations.Nullable;
 
-public interface ISessionCache extends Iterable<SentryEnvelope> {
+public interface IEnvelopeCache extends Iterable<SentryEnvelope> {
 
   void store(SentryEnvelope envelope, @Nullable Object hint);
 

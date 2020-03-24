@@ -6,8 +6,8 @@ import io.sentry.core.SentryEnvelopeItemType;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
+import io.sentry.core.cache.IEnvelopeCache;
 import io.sentry.core.cache.IEventCache;
-import io.sentry.core.cache.ISessionCache;
 import io.sentry.core.hints.Cached;
 import io.sentry.core.hints.DiskFlushNotification;
 import io.sentry.core.hints.Retryable;
@@ -34,14 +34,14 @@ public final class AsyncConnection implements Closeable, Connection {
   private final @NotNull ITransportGate transportGate;
   private final @NotNull ExecutorService executor;
   private final @NotNull IEventCache eventCache;
-  private final @NotNull ISessionCache sessionCache;
+  private final @NotNull IEnvelopeCache sessionCache;
   private final @NotNull SentryOptions options;
 
   public AsyncConnection(
       final ITransport transport,
       final ITransportGate transportGate,
       final IEventCache eventCache,
-      final ISessionCache sessionCache,
+      final IEnvelopeCache sessionCache,
       final int maxQueueSize,
       final SentryOptions options) {
     this(
@@ -58,7 +58,7 @@ public final class AsyncConnection implements Closeable, Connection {
       final @NotNull ITransport transport,
       final @NotNull ITransportGate transportGate,
       final @NotNull IEventCache eventCache,
-      final @NotNull ISessionCache sessionCache,
+      final @NotNull IEnvelopeCache sessionCache,
       final @NotNull ExecutorService executorService,
       final @NotNull SentryOptions options) {
     this.transport = transport;
@@ -72,7 +72,7 @@ public final class AsyncConnection implements Closeable, Connection {
   private static RetryingThreadPoolExecutor initExecutor(
       final int maxQueueSize,
       final @NotNull IEventCache eventCache,
-      final @NotNull ISessionCache sessionCache) {
+      final @NotNull IEnvelopeCache sessionCache) {
 
     final RejectedExecutionHandler storeEvents =
         (r, executor) -> {
@@ -117,9 +117,9 @@ public final class AsyncConnection implements Closeable, Connection {
   public void send(@NotNull SentryEnvelope envelope, final @Nullable Object hint)
       throws IOException {
     // For now no caching on envelopes
-    ISessionCache currentEventCache = sessionCache;
+    IEnvelopeCache currentEventCache = sessionCache;
     if (hint instanceof Cached) {
-      currentEventCache = NoOpSessionCache.getInstance();
+      currentEventCache = NoOpEnvelopeCache.getInstance();
     }
 
     // Optimize for/No allocations if no items are under 429
@@ -268,13 +268,13 @@ public final class AsyncConnection implements Closeable, Connection {
   private final class SessionSender implements Runnable {
     private final @NotNull SentryEnvelope envelope;
     private final @Nullable Object hint;
-    private final @NotNull ISessionCache sessionCache;
+    private final @NotNull IEnvelopeCache sessionCache;
     private final TransportResult failedResult = TransportResult.error(-1);
 
     SessionSender(
         final @NotNull SentryEnvelope envelope,
         final @Nullable Object hint,
-        final @NotNull ISessionCache sessionCache) {
+        final @NotNull IEnvelopeCache sessionCache) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
       this.sessionCache = Objects.requireNonNull(sessionCache, "SessionCache is required.");

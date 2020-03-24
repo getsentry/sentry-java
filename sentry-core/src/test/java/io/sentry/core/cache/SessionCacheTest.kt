@@ -34,7 +34,7 @@ class SessionCacheTest {
         val options = SentryOptions()
         val logger = mock<ILogger>()
 
-        fun getSUT(): ISessionCache {
+        fun getSUT(): IEnvelopeCache {
             options.sessionsDirSize = maxSize
             options.cacheDirPath = dir.toAbsolutePath().toFile().absolutePath
             File(options.sessionsPath!!).mkdirs()

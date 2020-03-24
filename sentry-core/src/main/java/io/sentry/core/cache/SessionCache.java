@@ -41,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SessionCache implements ISessionCache {
+public final class SessionCache implements IEnvelopeCache {
 
   /** File suffix added to all serialized envelopes files. */
   static final String SUFFIX_ENVELOPE_FILE = ".envelope";
