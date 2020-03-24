@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
@@ -25,8 +26,8 @@ public final class SessionAdapter extends TypeAdapter<Session> {
       writer.name("sid").value(value.getSessionId().toString());
     }
 
-    if (value.getDeviceId() != null) {
-      writer.name("did").value(value.getDeviceId());
+    if (value.getDistinctId() != null) {
+      writer.name("did").value(value.getDistinctId());
     }
 
     if (value.getInit() != null) {
@@ -103,38 +104,50 @@ public final class SessionAdapter extends TypeAdapter<Session> {
       reader.nextNull();
       return null;
     }
-    Session session = new Session();
+    UUID sid = null;
+    String did = null;
+    Boolean init = null;
+    Date started = null;
+    Session.State status = null;
+    int errors = 0;
+    Long seq = null;
+    Double duration = null;
+    Date timestamp = null;
+    String release = null;
+    String environment = null;
+    String ipAddress = null;
+    String userAgent = null;
 
     reader.beginObject();
 
     while (reader.hasNext()) {
       switch (reader.nextName()) {
         case "sid":
-          session.setSessionId(UUID.fromString(reader.nextString()));
+          sid = UUID.fromString(reader.nextString());
           break;
         case "did":
-          session.setDeviceId(reader.nextString());
+          did = reader.nextString();
           break;
         case "init":
-          session.setInit(reader.nextBoolean());
+          init = reader.nextBoolean();
           break;
         case "started":
-          session.setStarted(DateUtils.getDateTime(reader.nextString()));
+          started = DateUtils.getDateTime(reader.nextString());
           break;
         case "status":
-          session.setStatus(Session.State.valueOf(capitalize(reader.nextString())));
+          status = Session.State.valueOf(capitalize(reader.nextString()));
           break;
         case "errors":
-          session.setErrorCount(reader.nextInt());
+          errors = reader.nextInt();
           break;
         case "seq":
-          session.setSequence(reader.nextLong());
+          seq = reader.nextLong();
           break;
         case "duration":
-          session.setDuration(reader.nextDouble());
+          duration = reader.nextDouble();
           break;
         case "timestamp":
-          session.setTimestamp(DateUtils.getDateTime(reader.nextString()));
+          timestamp = DateUtils.getDateTime(reader.nextString());
           break;
         case "attrs":
           {
@@ -143,16 +156,16 @@ public final class SessionAdapter extends TypeAdapter<Session> {
             while (reader.hasNext()) {
               switch (reader.nextName()) {
                 case "release":
-                  session.setRelease(reader.nextString());
+                  release = reader.nextString();
                   break;
                 case "environment":
-                  session.setEnvironment(reader.nextString());
+                  environment = reader.nextString();
                   break;
                 case "ip_address":
-                  session.setIpAddress(reader.nextString());
+                  ipAddress = reader.nextString();
                   break;
                 case "user_agent":
-                  session.setUserAgent(reader.nextString());
+                  userAgent = reader.nextString();
                   break;
                 default:
                   reader.skipValue();
@@ -169,7 +182,20 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     }
     reader.endObject();
 
-    return session;
+    return new Session(
+        status,
+        started,
+        timestamp,
+        errors,
+        did,
+        sid,
+        init,
+        seq,
+        duration,
+        ipAddress,
+        userAgent,
+        environment,
+        release);
   }
 
   @TestOnly

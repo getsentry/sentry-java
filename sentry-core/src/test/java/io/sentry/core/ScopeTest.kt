@@ -225,7 +225,7 @@ class ScopeTest {
         assertNotNull(sessionPair.current)
         assertEquals("rel", sessionPair.current.release)
         assertEquals("env", sessionPair.current.environment)
-        assertEquals("123", sessionPair.current.deviceId)
+        assertEquals("123", sessionPair.current.distinctId)
     }
 
     @Test

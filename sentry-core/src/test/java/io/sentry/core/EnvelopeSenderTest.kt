@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.cache.SessionCache
 import io.sentry.core.protocol.SentryId
+import io.sentry.core.protocol.User
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
@@ -81,7 +82,7 @@ class EnvelopeSenderTest {
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEnvelope, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
-        val session = Session()
+        val session = Session("123", User(), "env", "release")
         val expected = SentryEnvelope(SentryId("3067d54967f84f20a2adfab5119156ce"), emptySet())
         whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(expected)
         whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)

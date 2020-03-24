@@ -327,8 +327,8 @@ class AndroidSerializerTest {
     private fun assertSessionData(expectedSession: Session?) {
         assertNotNull(expectedSession)
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
-        assertEquals("123", expectedSession.deviceId)
-        assertTrue(expectedSession.init)
+        assertEquals("123", expectedSession.distinctId)
+        assertTrue(expectedSession.init!!)
         assertEquals("2020-02-07T14:16:00Z", DateUtils.getTimestamp(expectedSession.started))
         assertEquals("2020-02-07T14:16:00Z", DateUtils.getTimestamp(expectedSession.timestamp))
         assertEquals(6000.toDouble(), expectedSession.duration)
@@ -359,19 +359,19 @@ class AndroidSerializerTest {
         }
 
     private fun createSessionMockData(): Session =
-        Session().apply {
-            sessionId = UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db")
-            deviceId = "123"
-            init = true
-            started = DateUtils.getDateTime("2020-02-07T14:16:00Z")
-            timestamp = DateUtils.getDateTime("2020-02-07T14:16:00Z")
-            duration = 6000.toDouble()
-            status = Session.State.Ok
-            setErrorCount(2)
-            sequence = 123456.toLong()
-            release = "io.sentry@1.0+123"
-            environment = "debug"
-            ipAddress = "127.0.0.1"
-            userAgent = "jamesBond"
-        }
+        Session(
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123"
+        )
 }
