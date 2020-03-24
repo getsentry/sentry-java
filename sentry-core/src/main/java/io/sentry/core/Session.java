@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class Session {
 
@@ -17,205 +18,149 @@ public final class Session {
   }
 
   /** started timestamp */
-  private Date started;
+  private @Nullable Date started;
 
   /** the timestamp */
-  private Date timestamp;
+  private @Nullable Date timestamp;
 
   /** the number of errors on the session */
-  private final AtomicInteger errorCount = new AtomicInteger(0);
+  private final @NotNull AtomicInteger errorCount;
 
   /** The distinctId, did */
-  private String deviceId;
+  private final @Nullable String distinctId;
 
   /** the SessionId, sid */
-  private UUID sessionId;
+  private final @Nullable UUID sessionId;
 
   /** The session init flag */
-  private Boolean init;
+  private @Nullable Boolean init;
 
   /** The session state */
-  private State status;
+  private @Nullable State status;
 
   /** The session sequence */
-  private Long sequence;
+  private @Nullable Long sequence;
 
   /** The session duration (timestamp - started) */
-  private Double duration;
-
-  /** The user */
-  private User user;
+  private @Nullable Double duration;
 
   /** the user's ip address */
-  private String ipAddress;
+  private final @Nullable String ipAddress;
 
   /** the user Agent */
-  private String userAgent;
+  private @Nullable String userAgent;
 
   /** the environment */
-  private String environment;
+  private final @Nullable String environment;
 
   /** the App's release */
-  private String release;
+  private final @Nullable String release;
 
   /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
+
+  public Session(
+      final @Nullable State status,
+      final @Nullable Date started,
+      final @Nullable Date timestamp,
+      final int errorCount,
+      final @Nullable String distinctId,
+      final @Nullable UUID sessionId,
+      final @Nullable Boolean init,
+      final @Nullable Long sequence,
+      final @Nullable Double duration,
+      final @Nullable String ipAddress,
+      final @Nullable String userAgent,
+      final @Nullable String environment,
+      final @Nullable String release) {
+    this.status = status;
+    this.started = started;
+    this.timestamp = timestamp;
+    this.errorCount = new AtomicInteger(errorCount);
+    this.distinctId = distinctId;
+    this.sessionId = sessionId;
+    this.init = init;
+    this.sequence = sequence;
+    this.duration = duration;
+    this.ipAddress = ipAddress;
+    this.userAgent = userAgent;
+    this.environment = environment;
+    this.release = release;
+  }
+
+  public Session(
+      @Nullable String distinctId,
+      final @Nullable User user,
+      final @Nullable String environment,
+      final @Nullable String release) {
+    this(
+        State.Ok,
+        DateUtils.getCurrentDateTime(),
+        null,
+        0,
+        distinctId,
+        UUID.randomUUID(),
+        true,
+        0L,
+        null,
+        (user != null ? user.getIpAddress() : null),
+        null,
+        environment,
+        release);
+  }
 
   public Date getStarted() {
     final Date startedRef = started;
     return startedRef != null ? (Date) startedRef.clone() : null;
   }
 
-  public void setStarted(Date started) {
-    this.started = started;
+  public @Nullable String getDistinctId() {
+    return distinctId;
   }
 
-  public String getDeviceId() {
-    return deviceId;
-  }
-
-  public void setDeviceId(String deviceId) {
-    this.deviceId = deviceId;
-  }
-
-  public UUID getSessionId() {
+  public @Nullable UUID getSessionId() {
     return sessionId;
   }
 
-  public void setSessionId(UUID sessionId) {
-    this.sessionId = sessionId;
-  }
-
-  public String getIpAddress() {
+  public @Nullable String getIpAddress() {
     return ipAddress;
   }
 
-  public void setIpAddress(String ipAddress) {
-    this.ipAddress = ipAddress;
-  }
-
-  public String getUserAgent() {
+  public @Nullable String getUserAgent() {
     return userAgent;
   }
 
-  public void setUserAgent(String userAgent) {
-    this.userAgent = userAgent;
-  }
-
-  public String getEnvironment() {
+  public @Nullable String getEnvironment() {
     return environment;
   }
 
-  public void setEnvironment(String environment) {
-    this.environment = environment;
-  }
-
-  public void setRelease(String release) {
-    this.release = release;
-  }
-
-  public String getRelease() {
+  public @Nullable String getRelease() {
     return release;
   }
 
-  public Boolean getInit() {
+  public @Nullable Boolean getInit() {
     return init;
-  }
-
-  public void setInit(Boolean init) {
-    this.init = init;
   }
 
   public int errorCount() {
     return errorCount.get();
   }
 
-  public void setErrorCount(int errorCount) {
-    this.errorCount.set(errorCount);
-  }
-
-  public State getStatus() {
+  public @Nullable State getStatus() {
     return status;
   }
 
-  public void setStatus(State status) {
-    this.status = status;
-  }
-
-  public Long getSequence() {
+  public @Nullable Long getSequence() {
     return sequence;
   }
 
-  public void setSequence(Long sequence) {
-    this.sequence = sequence;
-  }
-
-  public Double getDuration() {
+  public @Nullable Double getDuration() {
     return duration;
-  }
-
-  public void setDuration(Double duration) {
-    this.duration = duration;
   }
 
   public Date getTimestamp() {
     final Date timestampRef = timestamp;
     return timestampRef != null ? (Date) timestampRef.clone() : null;
-  }
-
-  public void setTimestamp(Date timestamp) {
-    this.timestamp = timestamp;
-  }
-
-  public void setUser(User user) {
-    this.user = user;
-  }
-
-  /**
-   * Starts a session and set its default values
-   *
-   * @param release the release
-   * @param environment the env
-   * @param user the user
-   * @param distinctId the distinct Id
-   */
-  public void start(
-      final String release, final String environment, final User user, final String distinctId) {
-    synchronized (sessionLock) {
-      init = true;
-      sequence = 0L;
-
-      if (sessionId == null) {
-        sessionId = UUID.randomUUID();
-      }
-
-      if (started == null) {
-        started = DateUtils.getCurrentDateTime();
-      }
-
-      if (release != null) {
-        this.release = release;
-      }
-
-      if (environment != null) {
-        this.environment = environment;
-      }
-
-      if (user != null) {
-        this.user = user;
-        if (this.user.getIpAddress() != null) {
-          ipAddress = this.user.getIpAddress();
-        }
-      }
-
-      if (distinctId != null) {
-        this.deviceId = distinctId;
-      }
-
-      if (status == null) {
-        status = State.Ok;
-      }
-    }
   }
 
   /** Updated the session status based on status and errorcount */
@@ -231,7 +176,8 @@ public final class Session {
 
     // fallback if status is null
     if (status == null) {
-      status = State.Ok;
+      // its ending a session and we don't have the current status, set it as Abnormal
+      status = State.Abnormal;
     }
   }
 
@@ -247,8 +193,7 @@ public final class Session {
         started = timestamp;
       }
 
-      long diff =
-          Math.abs(timestamp.getTime() - started.getTime()); // do we need to subtract idle time?
+      long diff = Math.abs(timestamp.getTime() - started.getTime());
       duration = (double) diff;
       sequence = System.currentTimeMillis();
     }

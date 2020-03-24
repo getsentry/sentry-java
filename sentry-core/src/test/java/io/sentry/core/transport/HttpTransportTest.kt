@@ -10,6 +10,7 @@ import io.sentry.core.SentryEnvelope
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
 import io.sentry.core.Session
+import io.sentry.core.protocol.User
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.Proxy
@@ -68,7 +69,7 @@ class HttpTransportTest {
     fun `test serializes envelope`() {
         val transport = fixture.getSUT()
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
         val result = transport.send(envelope)
 
@@ -101,7 +102,7 @@ class HttpTransportTest {
         whenever(fixture.connection.getHeaderField(eq("Retry-After"))).thenReturn("30")
         whenever(fixture.connection.responseCode).thenReturn(429)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
         val result = transport.send(envelope)
 
@@ -133,7 +134,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.responseCode).thenReturn(1234)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
         val result = transport.send(envelope)
 
@@ -165,7 +166,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.responseCode).thenReturn(429)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
         val result = transport.send(envelope)
 
@@ -197,7 +198,8 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.responseCode).thenThrow(IOException())
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, Session())
+        val session = Session("123", User(), "env", "release")
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, session)
 
         val result = transport.send(envelope)
 
@@ -275,5 +277,9 @@ class HttpTransportTest {
         assertFalse(transport.isRetryAfter("default"))
         assertFalse(transport.isRetryAfter("event"))
         assertFalse(transport.isRetryAfter("security"))
+    }
+
+    private fun createSession(): Session {
+        return Session("123", User(), "env", "release")
     }
 }

@@ -400,16 +400,13 @@ class SentryClientTest {
 
     @Test
     fun `when captureSession and no release is set, do nothing`() {
-        fixture.getSut().captureSession(Session())
+        fixture.getSut().captureSession(createSession(null))
         verify(fixture.connection, never()).send(any<SentryEnvelope>())
     }
 
     @Test
     fun `when captureSession and release is set, send an envelope`() {
-        val session = Session().apply {
-            release = "test"
-        }
-        fixture.getSut().captureSession(session)
+        fixture.getSut().captureSession(createSession())
         verify(fixture.connection).send(any<SentryEnvelope>(), anyOrNull())
     }
 
@@ -583,6 +580,10 @@ class SentryClientTest {
                 id = "eventId"
             }
         }
+    }
+
+    private fun createSession(release: String? = "rel"): Session {
+        return Session("dis", User(), "env", release)
     }
 
     internal class CustomTransportGate : ITransportGate {

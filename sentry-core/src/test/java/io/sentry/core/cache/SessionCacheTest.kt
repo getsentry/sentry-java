@@ -40,8 +40,7 @@ class SessionCacheTest {
             File(options.sessionsPath!!).mkdirs()
 
             whenever(serializer.deserializeSession(any())).thenAnswer {
-                val session = Session()
-                session
+                Session("dis", User(), "env", "rel")
             }
 
             options.setLogger(logger)
@@ -175,9 +174,7 @@ class SessionCacheTest {
         Files.delete(file.toPath())
     }
 
-    fun createSession(): Session {
-        val session = Session()
-        session.start("rel", "env", User(), "dis")
-        return session
+    private fun createSession(): Session {
+        return Session("dis", User(), "env", "rel")
     }
 }

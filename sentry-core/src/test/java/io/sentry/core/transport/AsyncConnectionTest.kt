@@ -18,6 +18,7 @@ import io.sentry.core.Session
 import io.sentry.core.cache.IEnvelopeCache
 import io.sentry.core.cache.IEventCache
 import io.sentry.core.dsnString
+import io.sentry.core.protocol.User
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import kotlin.test.Test
@@ -73,7 +74,7 @@ class AsyncConnectionTest {
     @Test
     fun `successful send discards the session from cache`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
 
@@ -107,7 +108,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores session in cache if sending is not allowed`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(false)
 
         // when
@@ -145,7 +146,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores session after unsuccessful send`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.error(500))
 
@@ -189,7 +190,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores session after send failure`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
         whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenThrow(IOException())
 
@@ -235,7 +236,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after, do not submit runnable`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -248,7 +249,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is not retry after, submit runnable`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, Session())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(false)
 
         // when
@@ -272,5 +273,9 @@ class AsyncConnectionTest {
         verify(fixture.transport).send(check<SentryEnvelope> {
             assertEquals(1, it.items.count())
         })
+    }
+
+    private fun createSession(): Session {
+        return Session("123", User(), "env", "release")
     }
 }
