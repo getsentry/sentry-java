@@ -15,8 +15,8 @@ import io.sentry.core.SentryEnvelopeItem
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
 import io.sentry.core.Session
+import io.sentry.core.cache.IEnvelopeCache
 import io.sentry.core.cache.IEventCache
-import io.sentry.core.cache.ISessionCache
 import io.sentry.core.dsnString
 import java.io.IOException
 import java.util.concurrent.ExecutorService
@@ -29,7 +29,7 @@ class AsyncConnectionTest {
         var transport = mock<ITransport>()
         var transportGate = mock<ITransportGate>()
         var eventCache = mock<IEventCache>()
-        var sessionCache = mock<ISessionCache>()
+        var sessionCache = mock<IEnvelopeCache>()
         var executor = mock<ExecutorService>()
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString

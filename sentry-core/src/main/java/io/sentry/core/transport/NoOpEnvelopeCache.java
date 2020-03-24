@@ -1,16 +1,16 @@
 package io.sentry.core.transport;
 
 import io.sentry.core.SentryEnvelope;
-import io.sentry.core.cache.ISessionCache;
+import io.sentry.core.cache.IEnvelopeCache;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class NoOpSessionCache implements ISessionCache {
-  private static final NoOpSessionCache instance = new NoOpSessionCache();
+final class NoOpEnvelopeCache implements IEnvelopeCache {
+  private static final NoOpEnvelopeCache instance = new NoOpEnvelopeCache();
 
-  public static NoOpSessionCache getInstance() {
+  public static NoOpEnvelopeCache getInstance() {
     return instance;
   }
 

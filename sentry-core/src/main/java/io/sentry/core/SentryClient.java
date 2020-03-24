@@ -1,8 +1,8 @@
 package io.sentry.core;
 
 import io.sentry.core.cache.DiskCache;
+import io.sentry.core.cache.IEnvelopeCache;
 import io.sentry.core.cache.IEventCache;
-import io.sentry.core.cache.ISessionCache;
 import io.sentry.core.cache.SessionCache;
 import io.sentry.core.hints.Cached;
 import io.sentry.core.hints.SessionUpdateHint;
@@ -57,7 +57,7 @@ public final class SentryClient implements ISentryClient {
     if (connection == null) {
       // TODO this is obviously provisional and should be constructed based on the config in options
       final IEventCache cache = new DiskCache(options);
-      final ISessionCache sessionCache = new SessionCache(options);
+      final IEnvelopeCache sessionCache = new SessionCache(options);
 
       connection = AsyncConnectionFactory.create(options, cache, sessionCache);
     }
