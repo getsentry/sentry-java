@@ -73,7 +73,7 @@ public final class UncaughtExceptionHandlerIntegration
 
     try {
       UncaughtExceptionHint hint =
-          new UncaughtExceptionHint(options.getFlushTimeoutMills(), options.getLogger());
+          new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
       Throwable throwable = getUnhandledThrowable(thread, thrown);
       SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);
@@ -117,18 +117,18 @@ public final class UncaughtExceptionHandlerIntegration
   private static final class UncaughtExceptionHint implements DiskFlushNotification {
 
     private final CountDownLatch latch;
-    private final long timeoutMills;
+    private final long timeoutMillis;
     private final @NotNull ILogger logger;
 
-    UncaughtExceptionHint(final long timeoutMills, final @NotNull ILogger logger) {
-      this.timeoutMills = timeoutMills;
+    UncaughtExceptionHint(final long timeoutMillis, final @NotNull ILogger logger) {
+      this.timeoutMillis = timeoutMillis;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
     }
 
     boolean waitFlush() {
       try {
-        return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
+        return latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         logger.log(ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);

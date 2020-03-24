@@ -30,9 +30,9 @@ public interface ISentryClient {
   /**
    * Flushes events queued up, but keeps the client enabled. Not implemented yet.
    *
-   * @param timeoutMills time in milliseconds
+   * @param timeoutMillis time in milliseconds
    */
-  void flush(long timeoutMills);
+  void flush(long timeoutMillis);
 
   /**
    * Captures the event.

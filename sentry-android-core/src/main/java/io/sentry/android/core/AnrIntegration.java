@@ -40,11 +40,11 @@ public final class AnrIntegration implements Integration, Closeable {
           .log(
               SentryLevel.DEBUG,
               "ANR timeout in milliseconds: %d",
-              options.getAnrTimeoutIntervalMills());
+              options.getAnrTimeoutIntervalMillis());
 
       anrWatchDog =
           new ANRWatchDog(
-              options.getAnrTimeoutIntervalMills(),
+              options.getAnrTimeoutIntervalMillis(),
               options.isAnrReportInDebug(),
               error -> reportANR(hub, options.getLogger(), error),
               options.getLogger());

@@ -41,14 +41,14 @@ public class SentryOptions {
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeoutMills = 2000; // 2s
+  private long shutdownTimeoutMillis = 2000; // 2s
 
   /**
    * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 15000 = 15s
    */
-  private long flushTimeoutMills = 15000; // 15s
+  private long flushTimeoutMillis = 15000; // 15s
 
   /**
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
@@ -317,21 +317,21 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the shutdown timeout in Mills
+   * Returns the shutdown timeout in Millis
    *
-   * @return the timeout in Mills
+   * @return the timeout in Millis
    */
   public long getShutdownTimeout() {
-    return shutdownTimeoutMills;
+    return shutdownTimeoutMillis;
   }
 
   /**
-   * Sets the shutdown timeout in Mills Default is 2000 = 2s
+   * Sets the shutdown timeout in Millis Default is 2000 = 2s
    *
-   * @param shutdownTimeoutMills the shutdown timeout in mills
+   * @param shutdownTimeoutMillis the shutdown timeout in millis
    */
-  public void setShutdownTimeout(long shutdownTimeoutMills) {
-    this.shutdownTimeoutMills = shutdownTimeoutMills;
+  public void setShutdownTimeout(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -767,17 +767,17 @@ public class SentryOptions {
    *
    * @return the timeout in millis
    */
-  public long getFlushTimeoutMills() {
-    return flushTimeoutMills;
+  public long getFlushTimeoutMillis() {
+    return flushTimeoutMillis;
   }
 
   /**
    * Sets the flush timeout in millis
    *
-   * @param flushTimeoutMills the timeout in millis
+   * @param flushTimeoutMillis the timeout in millis
    */
-  public void setFlushTimeoutMills(long flushTimeoutMills) {
-    this.flushTimeoutMills = flushTimeoutMills;
+  public void setFlushTimeoutMillis(long flushTimeoutMillis) {
+    this.flushTimeoutMillis = flushTimeoutMillis;
   }
 
   /** The BeforeSend callback */
@@ -841,7 +841,7 @@ public class SentryOptions {
                       // we use the same instance always
                       options.getSerializer(),
                       logger,
-                      options.getFlushTimeoutMills());
+                      options.getFlushTimeoutMillis());
               if (options.getOutboxPath() != null) {
                 File outbox = new File(options.getOutboxPath());
                 return () -> envelopeSender.processDirectory(outbox);
@@ -865,7 +865,7 @@ public class SentryOptions {
                       new EnvelopeReader(),
                       options.getSerializer(),
                       logger,
-                      options.getFlushTimeoutMills());
+                      options.getFlushTimeoutMillis());
               if (options.getSessionsPath() != null) {
                 File outbox = new File(options.getSessionsPath());
                 return () -> envelopeSender.processDirectory(outbox);

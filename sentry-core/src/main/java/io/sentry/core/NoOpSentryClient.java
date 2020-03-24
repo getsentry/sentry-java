@@ -27,7 +27,7 @@ final class NoOpSentryClient implements ISentryClient {
   public void close() {}
 
   @Override
-  public void flush(long timeoutMills) {}
+  public void flush(long timeoutMillis) {}
 
   @Override
   public void captureSession(Session session, @Nullable Object hint) {}

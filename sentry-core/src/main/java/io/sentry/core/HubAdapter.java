@@ -138,8 +138,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void flush(long timeoutMills) {
-    Sentry.flush(timeoutMills);
+  public void flush(long timeoutMillis) {
+    Sentry.flush(timeoutMillis);
   }
 
   @Override

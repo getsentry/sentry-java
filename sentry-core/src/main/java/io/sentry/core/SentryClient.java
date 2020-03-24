@@ -5,6 +5,7 @@ import io.sentry.core.cache.IEventCache;
 import io.sentry.core.cache.ISessionCache;
 import io.sentry.core.cache.SessionCache;
 import io.sentry.core.hints.Cached;
+import io.sentry.core.hints.SessionUpdateHint;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.Connection;
 import io.sentry.core.transport.ITransport;
@@ -172,7 +173,7 @@ public final class SentryClient implements ISentryClient {
                   if (session.update(status, userAgent, crashedOrErrored)) {
                     // a session update hint means its gonna only flush to the disk, but not to the
                     // network
-                    captureSession(session, new Hub.SessionUpdateHint());
+                    captureSession(session, new SessionUpdateHint());
                   }
                 } else {
                   options.getLogger().log(SentryLevel.INFO, "Session is null on scope.withSession");
@@ -319,7 +320,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public void flush(long timeoutMills) {
+  public void flush(long timeoutMillis) {
     // TODO: Flush transport
   }
 

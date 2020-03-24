@@ -69,11 +69,11 @@ class SentryAndroidTest {
 
         var refOptions: SentryAndroidOptions? = null
         SentryAndroid.init(mockContext) { options ->
-            options.anrTimeoutIntervalMills = 3000
+            options.anrTimeoutIntervalMillis = 3000
             refOptions = options
         }
 
-        assertEquals(3000, refOptions!!.anrTimeoutIntervalMills)
+        assertEquals(3000, refOptions!!.anrTimeoutIntervalMillis)
 
         assertTrue(Sentry.isEnabled())
     }

@@ -239,9 +239,9 @@ public interface IHub {
   /**
    * Flushes events queued up, but keeps the Hub enabled. Not implemented yet.
    *
-   * @param timeoutMills time in milliseconds
+   * @param timeoutMillis time in milliseconds
    */
-  void flush(long timeoutMills);
+  void flush(long timeoutMillis);
 
   /**
    * Clones the Hub

@@ -154,7 +154,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
                 items,
                 item.getHeader().getType());
           } else {
-            // capture 1 per 1 to be easier for now
+            // TODO: Bundle all session in a single envelope
             hub.captureEnvelope(SentryEnvelope.fromSession(serializer, session), hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
             if (!hint.waitFlush()) {
@@ -193,18 +193,18 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     boolean succeeded = false;
 
     private @NotNull CountDownLatch latch;
-    private final long timeoutMills;
+    private final long timeoutMillis;
     private final @NotNull ILogger logger;
 
-    CachedEnvelopeHint(final long timeoutMills, final @NotNull ILogger logger) {
-      this.timeoutMills = timeoutMills;
+    CachedEnvelopeHint(final long timeoutMillis, final @NotNull ILogger logger) {
+      this.timeoutMillis = timeoutMillis;
       this.latch = new CountDownLatch(1);
       this.logger = Objects.requireNonNull(logger, "ILogger is required.");
     }
 
     boolean waitFlush() {
       try {
-        return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
+        return latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         logger.log(ERROR, "Exception while awaiting on lock.", e);

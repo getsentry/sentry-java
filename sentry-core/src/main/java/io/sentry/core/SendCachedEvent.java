@@ -98,11 +98,11 @@ final class SendCachedEvent extends DirectoryProcessor {
   private static final class SendCachedEventHint implements Cached, Retryable, SubmissionResult {
     boolean retry = false;
     private final CountDownLatch latch;
-    private final long timeoutMills;
+    private final long timeoutMillis;
     private final @NotNull ILogger logger;
 
-    SendCachedEventHint(final long timeoutMills, final @NotNull ILogger logger) {
-      this.timeoutMills = timeoutMills;
+    SendCachedEventHint(final long timeoutMillis, final @NotNull ILogger logger) {
+      this.timeoutMillis = timeoutMillis;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
     }
@@ -119,7 +119,7 @@ final class SendCachedEvent extends DirectoryProcessor {
 
     boolean waitFlush() {
       try {
-        return latch.await(timeoutMills, TimeUnit.MILLISECONDS);
+        return latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         logger.log(ERROR, "Exception while awaiting on lock.", e);

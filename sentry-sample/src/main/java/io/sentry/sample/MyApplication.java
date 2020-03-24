@@ -24,7 +24,7 @@ public class MyApplication extends Application {
     //   options.setBeforeSend(event -> {
     //     event.setTag("sample-key", "before-send");
     //   });
-    //   options.setAnrTimeoutIntervalMills(2000);
+    //   options.setAnrTimeoutIntervalMillis(2000);
     // });
   }
 

@@ -99,7 +99,7 @@ class AndroidSerializerTest {
     @Test
     fun `when deserializing mills timestamp, it should become a SentryEvent-Date`() {
         val dateIsoFormat = "1581410911"
-        val expected = DateUtils.getDateTimeWithMillsPrecision(dateIsoFormat)
+        val expected = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
@@ -111,7 +111,7 @@ class AndroidSerializerTest {
     @Test
     fun `when deserializing mills timestamp with mills precision, it should become a SentryEvent-Date`() {
         val dateIsoFormat = "1581410911.988"
-        val expected = DateUtils.getDateTimeWithMillsPrecision(dateIsoFormat)
+        val expected = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 

@@ -141,7 +141,7 @@ final class AndroidSerializer implements ISerializer {
     try {
       return envelopeReader.read(inputStream);
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
+      logger.log(SentryLevel.ERROR, "Error deserializing envelope.", e);
       return null;
     }
   }
@@ -199,15 +199,13 @@ final class AndroidSerializer implements ISerializer {
       gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
       writer.write("\n");
 
-      // it might be a single line anyway, but lets make it as a BufferedReader
-      // I couldn't find a way of mixing a writer which writes String and bytes at the same time
-      // mixing the OutputStream and writer didn't work
       try (final BufferedReader reader =
           new BufferedReader(
               new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-        String temp;
-        while ((temp = reader.readLine()) != null) {
-          writer.write(temp);
+        final char[] buffer = new char[1024];
+        int charsRead;
+        while ((charsRead = reader.read(buffer, 0, buffer.length)) > 0) {
+          writer.write(buffer, 0, charsRead);
         }
       }
 

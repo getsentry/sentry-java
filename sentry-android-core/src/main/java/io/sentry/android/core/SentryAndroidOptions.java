@@ -10,8 +10,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean anrEnabled = true;
 
-  /** ANR Timeout internal in Mills Default is 4000 = 4s Used by AnrIntegration */
-  private long anrTimeoutIntervalMills = 4000;
+  /** ANR Timeout internal in Millis Default is 4000 = 4s Used by AnrIntegration */
+  private long anrTimeoutIntervalMillis = 4000;
 
   /** Enable or disable ANR on Debug mode Default is disabled Used by AnrIntegration */
   private boolean anrReportInDebug = false;
@@ -35,21 +35,37 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Returns the ANR timeout internal in Mills Default is 4000 = 4s
-   *
-   * @return the timeout in mills
+   * @deprecated use {@link #getAnrTimeoutIntervalMillis , #getAnrTimeoutIntervalMillis} instead.
    */
+  @Deprecated
   public long getAnrTimeoutIntervalMills() {
-    return anrTimeoutIntervalMills;
+    return getAnrTimeoutIntervalMillis();
   }
 
   /**
-   * Sets the ANR timeout internal in Mills Default is 4000 = 4s
-   *
-   * @param anrTimeoutIntervalMills the timeout internal in Mills
+   * @deprecated use {@link #setAnrTimeoutIntervalMillis , #setAnrTimeoutIntervalMillis} instead.
    */
-  public void setAnrTimeoutIntervalMills(long anrTimeoutIntervalMills) {
-    this.anrTimeoutIntervalMills = anrTimeoutIntervalMills;
+  @Deprecated
+  public void setAnrTimeoutIntervalMills(long anrTimeoutIntervalMillis) {
+    setAnrTimeoutIntervalMillis(anrTimeoutIntervalMillis);
+  }
+
+  /**
+   * Returns the ANR timeout internal in Millis Default is 4000 = 4s
+   *
+   * @return the timeout in millis
+   */
+  public long getAnrTimeoutIntervalMillis() {
+    return anrTimeoutIntervalMillis;
+  }
+
+  /**
+   * Sets the ANR timeout internal in Millis Default is 4000 = 4s
+   *
+   * @param anrTimeoutIntervalMillis the timeout internal in Millis
+   */
+  public void setAnrTimeoutIntervalMillis(long anrTimeoutIntervalMillis) {
+    this.anrTimeoutIntervalMillis = anrTimeoutIntervalMillis;
   }
 
   /**

@@ -16,7 +16,7 @@ final class ANRWatchDog extends Thread {
   private final boolean reportInDebug;
   private final ANRListener anrListener;
   private final IHandler uiHandler;
-  private final long timeoutIntervalMills;
+  private final long timeoutIntervalMillis;
   private final @NotNull ILogger logger;
   private AtomicLong tick = new AtomicLong(0);
   private volatile boolean reported = false;
@@ -29,16 +29,16 @@ final class ANRWatchDog extends Thread {
       };
 
   ANRWatchDog(
-      long timeoutIntervalMills,
+      long timeoutIntervalMillis,
       boolean reportInDebug,
       @NotNull ANRListener listener,
       @NotNull ILogger logger) {
-    this(timeoutIntervalMills, reportInDebug, listener, logger, new MainLooperHandler());
+    this(timeoutIntervalMillis, reportInDebug, listener, logger, new MainLooperHandler());
   }
 
   @TestOnly
   ANRWatchDog(
-      long timeoutIntervalMills,
+      long timeoutIntervalMillis,
       boolean reportInDebug,
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
@@ -46,7 +46,7 @@ final class ANRWatchDog extends Thread {
     super();
     this.reportInDebug = reportInDebug;
     this.anrListener = listener;
-    this.timeoutIntervalMills = timeoutIntervalMills;
+    this.timeoutIntervalMillis = timeoutIntervalMillis;
     this.logger = logger;
     this.uiHandler = uiHandler;
   }
@@ -56,7 +56,7 @@ final class ANRWatchDog extends Thread {
   public void run() {
     setName("|ANR-WatchDog|");
 
-    long interval = timeoutIntervalMills;
+    long interval = timeoutIntervalMillis;
     while (!isInterrupted()) {
       boolean needPost = tick.get() == 0;
       tick.addAndGet(interval);
@@ -85,12 +85,12 @@ final class ANRWatchDog extends Thread {
 
         logger.log(SentryLevel.INFO, "Raising ANR");
         final String message =
-            "Application Not Responding for at least " + timeoutIntervalMills + " ms.";
+            "Application Not Responding for at least " + timeoutIntervalMillis + " ms.";
 
         final ApplicationNotResponding error =
             new ApplicationNotResponding(message, uiHandler.getThread());
         anrListener.onAppNotResponding(error);
-        interval = timeoutIntervalMills;
+        interval = timeoutIntervalMillis;
         reported = true;
       }
     }
