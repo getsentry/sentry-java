@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryEnvelope {
@@ -32,27 +33,25 @@ public final class SentryEnvelope {
   }
 
   public SentryEnvelope(
-      final @NotNull SentryId sentryId, final @NotNull Iterable<SentryEnvelopeItem> items) {
-    Objects.requireNonNull(sentryId, "SentryId is required.");
-    header = new SentryEnvelopeHeader(sentryId);
+      final @Nullable SentryId eventId, final @NotNull Iterable<SentryEnvelopeItem> items) {
+    header = new SentryEnvelopeHeader(eventId);
     this.items = Objects.requireNonNull(items, "SentryEnvelope items are required.");
   }
 
-  // Single item envelope with an envelope-allocated id
-  public SentryEnvelope(final @NotNull SentryEnvelopeItem item) {
+  public SentryEnvelope(final @Nullable SentryId eventId, final @NotNull SentryEnvelopeItem item) {
     Objects.requireNonNull(item, "SentryEnvelopeItem is required.");
 
-    header = new SentryEnvelopeHeader();
+    header = new SentryEnvelopeHeader(eventId);
     final List<SentryEnvelopeItem> items = new ArrayList<>(1);
     items.add(item);
     this.items = items;
   }
 
-  public static SentryEnvelope fromSession(
+  public static @NotNull SentryEnvelope fromSession(
       final @NotNull ISerializer serializer, final @NotNull Session session) throws IOException {
     Objects.requireNonNull(serializer, "Serializer is required.");
     Objects.requireNonNull(session, "session is required.");
 
-    return new SentryEnvelope(SentryEnvelopeItem.fromSession(serializer, session));
+    return new SentryEnvelope(null, SentryEnvelopeItem.fromSession(serializer, session));
   }
 }

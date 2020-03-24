@@ -36,6 +36,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.WeakHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +59,8 @@ public final class SessionCache implements IEnvelopeCache {
   private final int maxSize;
   private final @NotNull ISerializer serializer;
   private final @NotNull SentryOptions options;
+
+  private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
   public SessionCache(final @NotNull SentryOptions options) {
     Objects.requireNonNull(options.getSessionsPath(), "sessions dir. path is required.");
@@ -263,10 +268,28 @@ public final class SessionCache implements IEnvelopeCache {
     return true;
   }
 
-  private @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
-    return new File(
-        directory.getAbsolutePath(),
-        envelope.getHeader().getEventId().toString() + SUFFIX_ENVELOPE_FILE);
+  /**
+   * Returns the envelope's file path. If the envelope has no eventId header, it generates a random
+   * file name to it.
+   *
+   * @param envelope the SentryEnvelope object
+   * @return the file
+   */
+  private synchronized @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
+    String filaName;
+    if (fileNameMap.containsKey(envelope)) {
+      filaName = fileNameMap.get(envelope);
+    } else {
+      if (envelope.getHeader().getEventId() != null) {
+        filaName = envelope.getHeader().getEventId().toString();
+      } else {
+        filaName = UUID.randomUUID().toString();
+      }
+      filaName += SUFFIX_ENVELOPE_FILE;
+      fileNameMap.put(envelope, filaName);
+    }
+
+    return new File(directory.getAbsolutePath(), filaName);
   }
 
   private @NotNull File getCurrentSessionFile() {
