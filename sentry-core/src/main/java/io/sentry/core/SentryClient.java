@@ -70,19 +70,6 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
-    // TODO: should it be done on the HUB?
-    updateSessionData(event, hint, scope);
-
-    if (!sample()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event %s was dropped due to sampling decision.",
-              event.getEventId());
-      return SentryId.EMPTY_ID;
-    }
-
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (!(hint instanceof Cached)) {
@@ -115,6 +102,19 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    // TODO: should it be done on the HUB?
+    updateSessionData(event, hint, scope);
+
+    if (!sample()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Event %s was dropped due to sampling decision.",
+              event.getEventId());
       return SentryId.EMPTY_ID;
     }
 
