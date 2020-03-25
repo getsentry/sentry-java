@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.cache.SessionCache
+import io.sentry.core.hints.Retryable
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
 import java.io.File
@@ -28,9 +29,10 @@ class EnvelopeSenderTest {
         var envelopeReader: IEnvelopeReader = mock()
         var serializer: ISerializer = mock()
         var logger: ILogger = mock()
+        var options: SentryOptions
 
         init {
-            val options = SentryOptions()
+            options = SentryOptions()
             options.isDebug = true
             options.setLogger(logger)
         }
@@ -56,7 +58,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path)
+        sut.processEnvelopeFile(path, mock<Retryable>())
         assertFalse(File(path).exists())
         // Additionally make sure we have a error logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -70,7 +72,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path)
+        sut.processEnvelopeFile(path, mock<Retryable>())
 
         verify(fixture.hub).captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
@@ -89,7 +91,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-session-start.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path)
+        sut.processEnvelopeFile(path, mock<Retryable>())
 
         verify(fixture.hub).captureEnvelope(any(), any())
         assertFalse(File(path).exists())
@@ -105,7 +107,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path)
+        sut.processEnvelopeFile(path, mock<Retryable>())
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -121,7 +123,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-session-start.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path)
+        sut.processEnvelopeFile(path, mock<Retryable>())
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -132,7 +134,7 @@ class EnvelopeSenderTest {
     @Test
     fun `when processEnvelopeFile is called with a invalid path, logs error`() {
         val sut = fixture.getSut()
-        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt")
+        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", mock<Retryable>())
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
     }
 

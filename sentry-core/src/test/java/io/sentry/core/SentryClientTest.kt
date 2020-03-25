@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.hints.ApplyScopeData
 import io.sentry.core.hints.Cached
 import io.sentry.core.protocol.Request
 import io.sentry.core.protocol.SentryException
@@ -316,13 +317,37 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when hint is not Cached, scope is not applied`() {
+    fun `when hint is not Cached, scope is applied`() {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
         sut.captureEvent(event, scope, Object())
+
+        assertEquals(scope.level, event.level)
+    }
+
+    @Test
+    fun `when hint is ApplyScopeData, scope is applied`() {
+        val sut = fixture.getSut()
+
+        val event = SentryEvent()
+        val scope = Scope(SentryOptions())
+        scope.level = SentryLevel.FATAL
+        sut.captureEvent(event, scope, mock<ApplyScopeData>())
+
+        assertEquals(scope.level, event.level)
+    }
+
+    @Test
+    fun `when hint is Cached but also ApplyScopeData, scope is applied`() {
+        val sut = fixture.getSut()
+
+        val event = SentryEvent()
+        val scope = Scope(SentryOptions())
+        scope.level = SentryLevel.FATAL
+        sut.captureEvent(event, scope, mock<CustomCachedApplyScopeDataHint>())
 
         assertEquals(scope.level, event.level)
     }
@@ -589,4 +614,6 @@ class SentryClientTest {
     internal class CustomTransportGate : ITransportGate {
         override fun isSendingAllowed(): Boolean = false
     }
+
+    internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
 }

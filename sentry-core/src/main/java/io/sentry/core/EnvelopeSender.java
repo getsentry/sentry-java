@@ -3,7 +3,7 @@ package io.sentry.core;
 import static io.sentry.core.SentryLevel.ERROR;
 import static io.sentry.core.cache.SessionCache.PREFIX_CURRENT_SESSION_FILE;
 
-import io.sentry.core.hints.Cached;
+import io.sentry.core.hints.Flushable;
 import io.sentry.core.hints.Retryable;
 import io.sentry.core.hints.SubmissionResult;
 import io.sentry.core.util.Objects;
@@ -17,8 +17,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,24 +31,22 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   private final @NotNull IEnvelopeReader envelopeReader;
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
-  private final long timeout;
 
   public EnvelopeSender(
       final @NotNull IHub hub,
       final @NotNull IEnvelopeReader envelopeReader,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
-      final long timeout) {
-    super(logger);
+      final long flushTimeoutMillis) {
+    super(logger, flushTimeoutMillis);
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
-    this.timeout = timeout;
   }
 
   @Override
-  protected void processFile(final @NotNull File file) {
+  protected void processFile(final @NotNull File file, @Nullable Object hint) {
     Objects.requireNonNull(file, "File is required.");
 
     if (!isRelevantFileName(file.getName())) {
@@ -58,7 +54,6 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       return;
     }
 
-    final CachedEnvelopeHint hint = new CachedEnvelopeHint(timeout, logger);
     try (final InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
       final SentryEnvelope envelope = envelopeReader.read(stream);
       if (envelope == null) {
@@ -72,7 +67,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
     } finally {
-      if (!hint.getRetry()) {
+      if ((hint instanceof Retryable) && !((Retryable) hint).isRetry()) {
         try {
           file.delete();
         } catch (RuntimeException e) {
@@ -90,14 +85,13 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  public void processEnvelopeFile(@NotNull String path) {
+  public void processEnvelopeFile(@NotNull String path, @Nullable Object hint) {
     Objects.requireNonNull(path, "Path is required.");
 
-    processFile(new File(path));
+    processFile(new File(path), hint);
   }
 
-  private void processEnvelope(
-      final @NotNull SentryEnvelope envelope, final @NotNull CachedEnvelopeHint hint)
+  private void processEnvelope(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
       throws IOException {
     logger.log(SentryLevel.DEBUG, "Envelope for event Id: %s", envelope.getHeader().getEventId());
     int items = 0;
@@ -132,7 +126,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             }
             hub.captureEvent(event, hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
-            if (!hint.waitFlush()) {
+            if ((hint instanceof Flushable) && !((Flushable) hint).waitFlush()) {
               logger.log(
                   SentryLevel.WARNING,
                   "Timed out waiting for event submission: %s",
@@ -158,7 +152,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             // TODO: Bundle all session in a single envelope
             hub.captureEnvelope(SentryEnvelope.fromSession(serializer, session), hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
-            if (!hint.waitFlush()) {
+            if ((hint instanceof Flushable) && !((Flushable) hint).waitFlush()) {
               logger.log(
                   SentryLevel.WARNING,
                   "Timed out waiting for item submission: %s",
@@ -175,7 +169,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             SentryLevel.WARNING, "Item %d of type: %s ignored.", items, item.getHeader().getType());
       }
 
-      if (!hint.succeeded) {
+      if ((hint instanceof SubmissionResult) && !((SubmissionResult) hint).isSuccess()) {
         // Failed to send an item of the envelope: Stop attempting to send the rest (an attachment
         // without the event that created it isn't useful)
         logger.log(
@@ -185,53 +179,6 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             items);
         break;
       }
-      hint.reset();
-    }
-  }
-
-  private static final class CachedEnvelopeHint implements Cached, Retryable, SubmissionResult {
-    boolean retry = false;
-    boolean succeeded = false;
-
-    private @NotNull CountDownLatch latch;
-    private final long timeoutMillis;
-    private final @NotNull ILogger logger;
-
-    CachedEnvelopeHint(final long timeoutMillis, final @NotNull ILogger logger) {
-      this.timeoutMillis = timeoutMillis;
-      this.latch = new CountDownLatch(1);
-      this.logger = Objects.requireNonNull(logger, "ILogger is required.");
-    }
-
-    boolean waitFlush() {
-      try {
-        return latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        logger.log(ERROR, "Exception while awaiting on lock.", e);
-      }
-      return false;
-    }
-
-    public void reset() {
-      latch = new CountDownLatch(1);
-      succeeded = false;
-    }
-
-    @Override
-    public boolean getRetry() {
-      return retry;
-    }
-
-    @Override
-    public void setRetry(boolean retry) {
-      this.retry = retry;
-    }
-
-    @Override
-    public void setResult(boolean succeeded) {
-      this.succeeded = succeeded;
-      latch.countDown();
     }
   }
 }
