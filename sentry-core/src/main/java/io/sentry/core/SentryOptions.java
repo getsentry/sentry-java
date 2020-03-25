@@ -817,7 +817,11 @@ public class SentryOptions {
         new SendCachedEventFireAndForgetIntegration(
             (hub, options) -> {
               SendCachedEvent sender =
-                  new SendCachedEvent(options.getSerializer(), hub, options.getLogger());
+                  new SendCachedEvent(
+                      options.getSerializer(),
+                      hub,
+                      options.getLogger(),
+                      options.getFlushTimeoutMillis());
               if (options.getCacheDirPath() != null) {
                 File cacheDir = new File(options.getCacheDirPath());
                 return () -> sender.processDirectory(cacheDir);
@@ -837,8 +841,7 @@ public class SentryOptions {
               EnvelopeSender envelopeSender =
                   new EnvelopeSender(
                       hub,
-                      new EnvelopeReader(), // TODO: add a getEnvelopeReader() to ISerializer(), so
-                      // we use the same instance always
+                      new EnvelopeReader(), // TODO: add a getEnvelopeReader() to ISerializer()
                       options.getSerializer(),
                       logger,
                       options.getFlushTimeoutMillis());

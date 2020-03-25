@@ -25,7 +25,6 @@ import io.sentry.core.EventProcessor;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
-import io.sentry.core.hints.Cached;
 import io.sentry.core.protocol.App;
 import io.sentry.core.protocol.DebugImage;
 import io.sentry.core.protocol.DebugMeta;
@@ -34,6 +33,7 @@ import io.sentry.core.protocol.OperatingSystem;
 import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.protocol.SentryThread;
 import io.sentry.core.protocol.User;
+import io.sentry.core.util.ApplyScopeUtils;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -114,7 +114,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    if (!(hint instanceof Cached)) {
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
       processNonCachedEvent(event);
     } else {
       options

@@ -1,6 +1,8 @@
 package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.core.hints.ApplyScopeData
+import io.sentry.core.hints.Cached
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -54,6 +56,20 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `When hint is ApplyScopeData, data should be applied`() {
+        val sut = fixture.getSut()
+        val crashedThread = Thread.currentThread()
+        var event = generateCrashedEvent(crashedThread)
+        event = sut.process(event, mock<ApplyScopeData>())
+
+        assertEquals("release", event.release)
+        assertEquals("environment", event.environment)
+        assertEquals("dist", event.dist)
+        assertEquals("server", event.serverName)
+        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+    }
+
+    @Test
     fun `data should be applied only if event doesn't have them`() {
         val sut = fixture.getSut()
         var event = generateCrashedEvent()
@@ -85,6 +101,20 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `When hint is Cached but also ApplyScopeData, data should be applied`() {
+        val sut = fixture.getSut()
+        val crashedThread = Thread.currentThread()
+        var event = generateCrashedEvent(crashedThread)
+        event = sut.process(event, mock<CustomCachedApplyScopeDataHint>())
+
+        assertEquals("release", event.release)
+        assertEquals("environment", event.environment)
+        assertEquals("dist", event.dist)
+        assertEquals("server", event.serverName)
+        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+    }
+
+    @Test
     fun `when processing an event and attach threads is disabled, threads should not be set`() {
         val sut = fixture.getSut(false)
 
@@ -109,4 +139,6 @@ class MainEventProcessorTest {
         val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(crashedThread, mockThrowable)
         throwable = actualThrowable
     }
+
+    internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
 }

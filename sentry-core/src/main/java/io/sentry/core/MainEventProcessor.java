@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import io.sentry.core.hints.Cached;
+import io.sentry.core.util.ApplyScopeUtils;
 import io.sentry.core.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +46,7 @@ public final class MainEventProcessor implements EventProcessor {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
 
-    if (!(hint instanceof Cached)) {
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
       processNonCachedEvent(event);
     } else {
       options

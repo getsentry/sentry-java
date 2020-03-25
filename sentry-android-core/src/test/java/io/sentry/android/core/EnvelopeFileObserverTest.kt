@@ -2,7 +2,10 @@ package io.sentry.android.core
 
 import android.os.FileObserver
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
@@ -10,6 +13,7 @@ import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import io.sentry.core.IEnvelopeSender
 import io.sentry.core.ILogger
 import io.sentry.core.SentryOptions
+import io.sentry.core.hints.ApplyScopeData
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,15 +27,15 @@ class EnvelopeFileObserverTest {
         var path: String? = "."
         var envelopeSender: IEnvelopeSender = mock()
         var logger: ILogger = mock()
+        var options: SentryOptions = SentryOptions()
 
         init {
-            val options = SentryOptions()
             options.isDebug = true
             options.setLogger(logger)
         }
 
         fun getSut(): EnvelopeFileObserver {
-            return EnvelopeFileObserver(path, envelopeSender, logger)
+            return EnvelopeFileObserver(path, envelopeSender, logger, options.flushTimeoutMillis)
         }
     }
 
@@ -42,7 +46,7 @@ class EnvelopeFileObserverTest {
         val sut = fixture.getSut()
         val param = "file-name.txt"
         sut.onEvent(FileObserver.CLOSE_WRITE, param)
-        verify(fixture.envelopeSender).processEnvelopeFile(fixture.path + File.separator + param)
+        verify(fixture.envelopeSender).processEnvelopeFile(eq(fixture.path + File.separator + param), any())
     }
 
     @Test
@@ -56,7 +60,7 @@ class EnvelopeFileObserverTest {
     fun `when event is fired with null path, envelope reader is not called`() {
         val sut = fixture.getSut()
         sut.onEvent(0, null)
-        verify(fixture.envelopeSender, never()).processEnvelopeFile(anyOrNull())
+        verify(fixture.envelopeSender, never()).processEnvelopeFile(anyOrNull(), any())
     }
 
     @Test
@@ -64,5 +68,13 @@ class EnvelopeFileObserverTest {
         fixture.path = null
         val exception = assertFailsWith<Exception> { fixture.getSut() }
         assertEquals("File path is required.", exception.message)
+    }
+
+    @Test
+    fun `envelope sender is called with fully qualified path and ApplyScopeData hint`() {
+        val sut = fixture.getSut()
+        val param = "file-name.txt"
+        sut.onEvent(FileObserver.CLOSE_WRITE, param)
+        verify(fixture.envelopeSender).processEnvelopeFile(eq(fixture.path + File.separator + param), argWhere { it is ApplyScopeData })
     }
 }

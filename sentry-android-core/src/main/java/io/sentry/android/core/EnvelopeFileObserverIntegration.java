@@ -46,7 +46,8 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
               logger,
               options.getFlushTimeoutMillis());
 
-      observer = new EnvelopeFileObserver(path, envelopeSender, logger);
+      observer =
+          new EnvelopeFileObserver(path, envelopeSender, logger, options.getFlushTimeoutMillis());
       observer.startWatching();
 
       options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
