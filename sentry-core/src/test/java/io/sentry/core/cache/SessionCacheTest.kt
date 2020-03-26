@@ -24,6 +24,7 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SessionCacheTest {
@@ -66,7 +67,7 @@ class SessionCacheTest {
 
         assertEquals(1, nofFiles())
 
-        deleteFiles(file)
+        file.deleteRecursively()
     }
 
     @Test
@@ -84,7 +85,7 @@ class SessionCacheTest {
 
         assertEquals(fixture.maxSize, nofFiles())
 
-        deleteFiles(file)
+        file.deleteRecursively()
     }
 
     @Test
@@ -108,7 +109,7 @@ class SessionCacheTest {
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
-        deleteFiles(file)
+        file.deleteRecursively()
     }
 
     @Test
@@ -126,7 +127,7 @@ class SessionCacheTest {
         cache.store(envelope, SessionEndHint())
         assertFalse(currentFile.exists())
 
-        deleteFiles(file)
+        file.deleteRecursively()
     }
 
     @Test
@@ -149,7 +150,27 @@ class SessionCacheTest {
         val newFile = File(file.absolutePath, "${newEnvelope.header.eventId}$SUFFIX_ENVELOPE_FILE")
         assertFalse(newFile.exists())
 
-        deleteFiles(file)
+        file.deleteRecursively()
+    }
+
+    @Test
+    fun `updates current file on session update and read it back`() {
+        val cache = fixture.getSUT()
+
+        val file = File(fixture.options.sessionsPath!!)
+
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        cache.store(envelope, SessionStartHint())
+
+        val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
+        assertTrue(currentFile.exists())
+
+        val session = fixture.serializer.deserializeSession(currentFile.bufferedReader(Charsets.UTF_8))
+        assertNotNull(session)
+
+        currentFile.delete()
+
+        file.deleteRecursively()
     }
 
     @Test
@@ -165,13 +186,6 @@ class SessionCacheTest {
 
         cache.store(newEnvelope, SessionStartHint())
         verify(fixture.logger).log(eq(SentryLevel.INFO), eq("There's a left over session, it's gonna be ended and cached to be sent."))
-
-        deleteFiles(file)
-    }
-
-    private fun deleteFiles(file: File) {
-        file.listFiles()?.forEach { it.delete() }
-        Files.delete(file.toPath())
     }
 
     private fun createSession(): Session {

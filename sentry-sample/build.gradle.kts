@@ -11,8 +11,8 @@ android {
         applicationId = "io.sentry.sample"
         minSdkVersion(Config.Android.minSdkVersionNdk)
         targetSdkVersion(Config.Android.targetSdkVersion)
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         externalNativeBuild {
             val sentryNativeSrc = if (File("${project.projectDir}/../sentry-android-ndk/sentry-native-local").exists()) {
