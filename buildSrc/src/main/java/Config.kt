@@ -53,11 +53,7 @@ object Config {
     object Sentry {
         val SENTRY_CLIENT_NAME = "sentry.java.android"
         val group = "io.sentry"
-//        TODO: change version to publish new version
-        val version = "2.0.2"
         val description = "SDK for sentry.io"
-//        TODO: change version code to publish new version, follow the pattern of `version`
-        val buildVersionCode = 20018
         val website = "https://sentry.io"
         val userOrg = "getsentry"
         val repoName = "sentry-android"
@@ -70,6 +66,8 @@ object Config {
         val scmConnection = "scm:git:git://github.com/getsentry/sentry-android.git"
         val scmDevConnection = "scm:git:ssh://github.com:getsentry/sentry-android.git"
         val scmUrl = "https://github.com/getsentry/sentry-android/tree/master"
+        val versionNameProp = "versionName"
+        val buildVersionCodeProp = "buildVersionCode"
     }
 
     object CompileOnly {
