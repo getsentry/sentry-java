@@ -42,7 +42,7 @@ allprojects {
         mavenCentral()
     }
     group = Config.Sentry.group
-    version = Config.Sentry.version
+    version = properties[Config.Sentry.versionNameProp].toString()
     description = Config.Sentry.description
     tasks {
         withType<Test> {

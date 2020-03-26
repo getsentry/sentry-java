@@ -27,7 +27,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         versionName = project.version.toString()
-        versionCode = Config.Sentry.buildVersionCode
+        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
 
         buildConfigField("String", "SENTRY_CLIENT_NAME", "\"${Config.Sentry.SENTRY_CLIENT_NAME}\"")
     }
