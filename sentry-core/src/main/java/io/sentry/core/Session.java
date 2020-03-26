@@ -193,10 +193,21 @@ public final class Session {
         started = timestamp;
       }
 
-      long diff = Math.abs(timestamp.getTime() - started.getTime());
-      duration = (double) diff;
-      sequence = System.currentTimeMillis();
+      duration = calculateDurationTime(timestamp, started);
+      sequence = getSequenceTimestamp();
     }
+  }
+
+  /**
+   * Calculates the duration time in seconds timestamp (last update) - started
+   *
+   * @param timestamp the timestamp
+   * @param started the started timestamp
+   * @return duration in seconds
+   */
+  private Double calculateDurationTime(final @NotNull Date timestamp, final @NotNull Date started) {
+    long diff = Math.abs(timestamp.getTime() - started.getTime());
+    return (double) diff / 1000; // duration in seconds
   }
 
   /**
@@ -227,9 +238,18 @@ public final class Session {
       if (sessionHasBeenUpdated) {
         init = null;
         timestamp = DateUtils.getCurrentDateTime();
-        sequence = System.currentTimeMillis();
+        sequence = getSequenceTimestamp();
       }
       return sessionHasBeenUpdated;
     }
+  }
+
+  /**
+   * Returns a logical clock.
+   *
+   * @return time stamp in milliseconds UTC
+   */
+  private Long getSequenceTimestamp() {
+    return DateUtils.getCurrentDateTime().getTime();
   }
 }
