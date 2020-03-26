@@ -16,16 +16,15 @@ import org.jetbrains.annotations.NotNull;
 final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
-  private final Thread.State state;
+  private final Thread thread;
 
   ApplicationNotResponding(@NotNull String message, @NotNull Thread thread) {
     super(message);
-    thread = Objects.requireNonNull(thread, "Thread must be provided.");
-    setStackTrace(thread.getStackTrace());
-    state = thread.getState();
+    this.thread = Objects.requireNonNull(thread, "Thread must be provided.");
+    setStackTrace(this.thread.getStackTrace());
   }
 
-  public Thread.State getState() {
-    return state;
+  public Thread getThread() {
+    return thread;
   }
 }

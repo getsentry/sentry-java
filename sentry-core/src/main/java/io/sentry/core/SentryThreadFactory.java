@@ -49,11 +49,12 @@ final class SentryThreadFactory {
    * Converts a list of all current threads to a list of SentryThread Assumes its being called from
    * the crashed thread.
    *
+   * @param mechanismThreadIds list of threadIds that came from exception mechanism
    * @return a list of SentryThread
    */
   @Nullable
-  List<SentryThread> getCurrentThreads() {
-    return getCurrentThreads(Thread.getAllStackTraces());
+  List<SentryThread> getCurrentThreads(final @Nullable List<Long> mechanismThreadIds) {
+    return getCurrentThreads(Thread.getAllStackTraces(), mechanismThreadIds);
   }
 
   /**
@@ -61,11 +62,14 @@ final class SentryThreadFactory {
    * the crashed thread.
    *
    * @param threads a map with all the current threads and stacktraces
+   * @param mechanismThreadIds list of threadIds that came from exception mechanism
    * @return a list of SentryThread or null if none
    */
   @TestOnly
   @Nullable
-  List<SentryThread> getCurrentThreads(final @NotNull Map<Thread, StackTraceElement[]> threads) {
+  List<SentryThread> getCurrentThreads(
+      final @NotNull Map<Thread, StackTraceElement[]> threads,
+      final @Nullable List<Long> mechanismThreadIds) {
     List<SentryThread> result = null;
 
     final Thread currentThread = Thread.currentThread();
@@ -79,7 +83,13 @@ final class SentryThreadFactory {
       }
 
       for (Map.Entry<Thread, StackTraceElement[]> item : threads.entrySet()) {
-        result.add(getSentryThread(currentThread, item.getValue(), item.getKey()));
+
+        final Thread thread = item.getKey();
+        final boolean crashed =
+            (thread == currentThread)
+                || (mechanismThreadIds != null && mechanismThreadIds.contains(thread.getId()));
+
+        result.add(getSentryThread(crashed, item.getValue(), item.getKey()));
       }
     }
 
@@ -89,13 +99,13 @@ final class SentryThreadFactory {
   /**
    * Converts a current thread to a SentryThread
    *
-   * @param currentThread the currentThread
+   * @param crashed if its the thread that has crashed or not
    * @param stackFramesElements the stack traces of the current thread
    * @param thread the thread to be converted
    * @return a SentryThread
    */
   private @NotNull SentryThread getSentryThread(
-      final @NotNull Thread currentThread,
+      final boolean crashed,
       final @NotNull StackTraceElement[] stackFramesElements,
       final @NotNull Thread thread) {
     final SentryThread sentryThread = new SentryThread();
@@ -105,7 +115,7 @@ final class SentryThreadFactory {
     sentryThread.setId(thread.getId());
     sentryThread.setDaemon(thread.isDaemon());
     sentryThread.setState(thread.getState().name());
-    sentryThread.setCrashed(thread == currentThread);
+    sentryThread.setCrashed(crashed);
 
     final List<SentryStackFrame> frames =
         sentryStackTraceFactory.getStackFrames(stackFramesElements);
