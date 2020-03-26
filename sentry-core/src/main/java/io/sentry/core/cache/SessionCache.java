@@ -84,31 +84,30 @@ public final class SessionCache implements IEnvelopeCache {
       return;
     }
 
-    final File currentEnvelopeFile = getCurrentSessionFile();
+    final File currentSessionFile = getCurrentSessionFile();
 
     if (hint instanceof SessionEnd) {
-      if (!currentEnvelopeFile.delete()) {
+      if (!currentSessionFile.delete()) {
         options.getLogger().log(WARNING, "Current envelope doesn't exist.");
       }
     }
 
     if (hint instanceof SessionStart) {
-      if (currentEnvelopeFile.exists()) {
+      if (currentSessionFile.exists()) {
         options.getLogger().log(WARNING, "Current envelope is not ended, we'd need to end it.");
 
         try (final Reader reader =
             new BufferedReader(
-                new InputStreamReader(new FileInputStream(currentEnvelopeFile), UTF_8))) {
+                new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
 
           final Session session = serializer.deserializeSession(reader);
-
           if (session == null) {
             options
                 .getLogger()
                 .log(
                     SentryLevel.ERROR,
                     "Stream from path %s resulted in a null envelope.",
-                    currentEnvelopeFile.getAbsolutePath());
+                    currentSessionFile.getAbsolutePath());
           } else {
             options
                 .getLogger()
@@ -124,49 +123,12 @@ public final class SessionCache implements IEnvelopeCache {
           options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
         }
       } else {
-        final Iterable<SentryEnvelopeItem> items = envelope.getItems();
-
-        // we know that an envelope with a SessionStart hint has a single item inside
-        if (items.iterator().hasNext()) {
-          final SentryEnvelopeItem item = items.iterator().next();
-
-          if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
-            try (final Reader reader =
-                new BufferedReader(
-                    new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-              final Session session = serializer.deserializeSession(reader);
-              if (session == null) {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.ERROR,
-                        "Item %d of type %s returned null by the parser.",
-                        items,
-                        item.getHeader().getType());
-              } else {
-                writeSessionToDisk(currentEnvelopeFile, session);
-              }
-            } catch (Exception e) {
-              options.getLogger().log(ERROR, "Item failed to process.", e);
-            }
-          } else {
-            options
-                .getLogger()
-                .log(
-                    INFO,
-                    "Current envelope has a different envelope type %s",
-                    item.getHeader().getType());
-          }
-        } else {
-          options
-              .getLogger()
-              .log(INFO, "Current envelope is empty %s", envelope.getHeader().getEventId());
-        }
+        updateCurrentSession(currentSessionFile, envelope);
       }
     }
 
     if (hint instanceof SessionUpdate) {
-      writeEnvelopeToDisk(currentEnvelopeFile, envelope);
+      updateCurrentSession(currentSessionFile, envelope);
       return;
     }
 
@@ -186,6 +148,48 @@ public final class SessionCache implements IEnvelopeCache {
     }
 
     writeEnvelopeToDisk(envelopeFile, envelope);
+  }
+
+  private void updateCurrentSession(
+      final @NotNull File currentSessionFile, final @NotNull SentryEnvelope envelope) {
+    final Iterable<SentryEnvelopeItem> items = envelope.getItems();
+
+    // we know that an envelope with a SessionStart hint has a single item inside
+    if (items.iterator().hasNext()) {
+      final SentryEnvelopeItem item = items.iterator().next();
+
+      if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
+        try (final Reader reader =
+            new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
+          final Session session = serializer.deserializeSession(reader);
+          if (session == null) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "Item %d of type %s returned null by the parser.",
+                    items,
+                    item.getHeader().getType());
+          } else {
+            writeSessionToDisk(currentSessionFile, session);
+          }
+        } catch (Exception e) {
+          options.getLogger().log(ERROR, "Item failed to process.", e);
+        }
+      } else {
+        options
+            .getLogger()
+            .log(
+                INFO,
+                "Current envelope has a different envelope type %s",
+                item.getHeader().getType());
+      }
+    } else {
+      options
+          .getLogger()
+          .log(INFO, "Current envelope is empty %s", envelope.getHeader().getEventId());
+    }
   }
 
   private void writeEnvelopeToDisk(
@@ -276,20 +280,20 @@ public final class SessionCache implements IEnvelopeCache {
    * @return the file
    */
   private synchronized @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
-    String filaName;
+    String fileName;
     if (fileNameMap.containsKey(envelope)) {
-      filaName = fileNameMap.get(envelope);
+      fileName = fileNameMap.get(envelope);
     } else {
       if (envelope.getHeader().getEventId() != null) {
-        filaName = envelope.getHeader().getEventId().toString();
+        fileName = envelope.getHeader().getEventId().toString();
       } else {
-        filaName = UUID.randomUUID().toString();
+        fileName = UUID.randomUUID().toString();
       }
-      filaName += SUFFIX_ENVELOPE_FILE;
-      fileNameMap.put(envelope, filaName);
+      fileName += SUFFIX_ENVELOPE_FILE;
+      fileNameMap.put(envelope, fileName);
     }
 
-    return new File(directory.getAbsolutePath(), filaName);
+    return new File(directory.getAbsolutePath(), fileName);
   }
 
   private @NotNull File getCurrentSessionFile() {

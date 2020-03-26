@@ -38,7 +38,7 @@
 <!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
 
     <!-- To change the time used to watch for ANR. By default it's 4 seconds (4000 below as it's in milliseconds) -->
-    <meta-data android:name="io.sentry.anr.timeout-interval-mills" android:value="1000" />
+    <meta-data android:name="io.sentry.anr.timeout-interval-millis" android:value="1000" />
 
     <!-- Raise ANR events even if the debugger is attached -->
 <!--    <meta-data android:name="io.sentry.anr.report-debug" android:value="true" />-->
