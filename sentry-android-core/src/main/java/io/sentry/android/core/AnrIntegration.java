@@ -61,7 +61,7 @@ public final class AnrIntegration implements Integration, Closeable {
     Mechanism mechanism = new Mechanism();
     mechanism.setType("ANR");
     ExceptionMechanismException throwable =
-        new ExceptionMechanismException(mechanism, error, Thread.currentThread());
+        new ExceptionMechanismException(mechanism, error, error.getThread());
 
     hub.captureException(throwable);
   }

@@ -42,6 +42,17 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `when processing an event from UncaughtExceptionHandlerIntegration, crashed thread is flagged, even if its not the current thread`() {
+        val sut = fixture.getSut()
+
+        val crashedThread = Thread()
+        var event = generateCrashedEvent(crashedThread)
+        event = sut.process(event, null)
+
+        assertTrue(event.threads.any { it.isCrashed })
+    }
+
+    @Test
     fun `When hint is not Cached, data should be applied`() {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
