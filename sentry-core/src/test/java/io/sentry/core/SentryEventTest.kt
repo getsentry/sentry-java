@@ -32,8 +32,8 @@ class SentryEventTest {
     @Test
     fun `timestamp is formatted in ISO 8601 in UTC with Z format`() {
         // Sentry expects this format:
-        val expected = "2000-12-31T23:59:58Z"
-        val formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ssX", Locale.ROOT)
+        val expected = "2000-12-31T23:59:58.000Z"
+        val formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSX", Locale.ROOT)
         val date = OffsetDateTime.parse(expected, formatter)
         val actual = SentryEvent(null, Date(date.toInstant().toEpochMilli()))
         assertEquals(expected, DateUtils.getTimestampIsoFormat(actual.timestamp))

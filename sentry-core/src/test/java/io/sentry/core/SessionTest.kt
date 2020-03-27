@@ -1,6 +1,7 @@
 package io.sentry.core
 
 import io.sentry.core.protocol.User
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -72,6 +73,18 @@ class SessionTest {
         session.update(Session.State.Crashed, null, true)
         session.end()
         assertEquals(Session.State.Crashed, session.status)
+    }
+
+    @Test
+    fun `when ending a session, if theres a timestamp, use it`() {
+        val user = User().apply {
+            ipAddress = "127.0.0.1"
+        }
+        val session = createSession(user)
+        val date = Date()
+        session.update(Session.State.Crashed, null, true)
+        session.end(date)
+        assertEquals(date, session.timestamp)
     }
 
     @Test
