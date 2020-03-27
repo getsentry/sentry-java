@@ -73,7 +73,7 @@ class AndroidSerializerTest {
 
     @Test
     fun `when serializing SentryEvent-Date, it should become a timestamp json ISO format`() {
-        val dateIsoFormat = "2000-12-31T23:59:58Z"
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
         val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
 
@@ -86,7 +86,7 @@ class AndroidSerializerTest {
 
     @Test
     fun `when deserializing timestamp, it should become a SentryEvent-Date`() {
-        val dateIsoFormat = "2000-12-31T23:59:58Z"
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
         val expected = DateUtils.getDateTime(dateIsoFormat)
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
@@ -329,8 +329,8 @@ class AndroidSerializerTest {
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
-        assertEquals("2020-02-07T14:16:00Z", DateUtils.getTimestamp(expectedSession.started))
-        assertEquals("2020-02-07T14:16:00Z", DateUtils.getTimestamp(expectedSession.timestamp))
+        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started))
+        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.timestamp))
         assertEquals(6000.toDouble(), expectedSession.duration)
         assertEquals(Session.State.Ok, expectedSession.status)
         assertEquals(2, expectedSession.errorCount())
@@ -361,8 +361,8 @@ class AndroidSerializerTest {
     private fun createSessionMockData(): Session =
         Session(
             Session.State.Ok,
-            DateUtils.getDateTime("2020-02-07T14:16:00Z"),
-            DateUtils.getDateTime("2020-02-07T14:16:00Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
             UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),

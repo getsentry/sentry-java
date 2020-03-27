@@ -183,17 +183,31 @@ public final class Session {
 
   /** Ends a session and update its values */
   public void end() {
+    end(DateUtils.getCurrentDateTime());
+  }
+
+  /**
+   * Ends a session and update its values
+   *
+   * @param timestamp the timestamp or null
+   */
+  public void end(final @Nullable Date timestamp) {
     synchronized (sessionLock) {
       init = null;
       updateStatus();
-      timestamp = DateUtils.getCurrentDateTime();
+
+      if (timestamp != null) {
+        this.timestamp = timestamp;
+      } else {
+        this.timestamp = DateUtils.getCurrentDateTime();
+      }
 
       // fallback if started is null
       if (started == null) {
         started = timestamp;
       }
 
-      duration = calculateDurationTime(timestamp, started);
+      duration = calculateDurationTime(this.timestamp, started);
       sequence = getSequenceTimestamp();
     }
   }

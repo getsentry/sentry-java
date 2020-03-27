@@ -3,6 +3,7 @@ package io.sentry.core
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.hints.ApplyScopeData
@@ -46,7 +47,7 @@ class DirectoryProcessorTest {
 
     @AfterTest
     fun shutdown() {
-        Files.delete(file.toPath())
+        file.deleteRecursively()
     }
 
     @Test
@@ -58,6 +59,15 @@ class DirectoryProcessorTest {
         whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         fixture.getSut().processDirectory(file)
         verify(fixture.hub).captureEnvelope(any(), argWhere { it !is ApplyScopeData })
+    }
+
+    @Test
+    fun `process directory ignores non files on the cache folder`() {
+        val dir = File(file.absolutePath, "testDir")
+        dir.mkdirs()
+        assertTrue(dir.exists()) // sanity check
+        fixture.getSut().processDirectory(file)
+        verify(fixture.hub, never()).captureEnvelope(any(), any())
     }
 
     private fun getTempEnvelope(fileName: String): String {

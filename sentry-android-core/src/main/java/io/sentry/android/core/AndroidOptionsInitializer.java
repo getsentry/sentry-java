@@ -60,9 +60,11 @@ final class AndroidOptionsInitializer {
     initializeCacheDirs(context, options);
 
     final IEnvelopeReader envelopeReader = new EnvelopeReader();
-    // Integrations are registered in the same order. Watch outbox before adding NDK:
-    options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver(envelopeReader));
+
+    // Integrations are registered in the same order. NDK before adding Watch outbox,
+    // because sentry-native move files around and we don't want to watch that.
     options.addIntegration(new NdkIntegration());
+    options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver(envelopeReader));
     options.addIntegration(new AnrIntegration());
     options.addIntegration(new SessionTrackingIntegration());
 

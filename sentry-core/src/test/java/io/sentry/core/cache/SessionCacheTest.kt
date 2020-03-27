@@ -188,6 +188,46 @@ class SessionCacheTest {
         verify(fixture.logger).log(eq(SentryLevel.INFO), eq("There's a left over session, it's gonna be ended and cached to be sent."))
     }
 
+    @Test
+    fun `when session start, current file already exist and crash marker file exist, end session and delete marker file`() {
+        val cache = fixture.getSUT()
+
+        val file = File(fixture.options.sessionsPath!!)
+        val markerFile = File(fixture.options.cacheDirPath!!, SessionCache.CRASH_MARKER_FILE)
+        markerFile.mkdirs()
+        assertTrue(markerFile.exists())
+
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        cache.store(envelope, SessionStartHint())
+
+        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+
+        cache.store(newEnvelope, SessionStartHint())
+        verify(fixture.logger).log(eq(SentryLevel.INFO), eq("Crash marker file exists, last Session is gonna be Crashed."))
+        assertFalse(markerFile.exists())
+        file.deleteRecursively()
+    }
+
+    @Test
+    fun `when session start, current file already exist and crash marker file exist, end session with given timestamp`() {
+        val cache = fixture.getSUT()
+        val file = File(fixture.options.sessionsPath!!)
+        val markerFile = File(fixture.options.cacheDirPath!!, SessionCache.CRASH_MARKER_FILE)
+        File(fixture.options.cacheDirPath!!, ".sentry-native").mkdirs()
+        markerFile.createNewFile()
+        val date = "2020-02-07T14:16:00.000Z"
+        markerFile.writeText(charset = Charsets.UTF_8, text = date)
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        cache.store(envelope, SessionStartHint())
+
+        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+
+        cache.store(newEnvelope, SessionStartHint())
+        assertFalse(markerFile.exists())
+        file.deleteRecursively()
+        File(fixture.options.cacheDirPath!!).deleteRecursively()
+    }
+
     private fun createSession(): Session {
         return Session("dis", User(), "env", "rel")
     }

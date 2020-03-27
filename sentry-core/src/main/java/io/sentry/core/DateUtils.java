@@ -13,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 public final class DateUtils {
   private static final String UTC = "UTC";
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+  private static final String ISO_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
   private DateUtils() {}
 
@@ -20,11 +21,11 @@ public final class DateUtils {
    * Get date formatted as expected by Sentry.
    *
    * @param date the current date with local timezone
-   * @return the ISO formatted UTC date.
+   * @return the ISO formatted UTC date with millis precision.
    */
   public static String getTimestampIsoFormat(Date date) {
     TimeZone tz = TimeZone.getTimeZone(UTC);
-    DateFormat df = new SimpleDateFormat(ISO_FORMAT, Locale.US);
+    DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
     df.setTimeZone(tz);
     return df.format(date);
   }
@@ -42,14 +43,18 @@ public final class DateUtils {
   /**
    * Get Java Date from UTC timestamp format
    *
-   * @param timestamp UTC format eg 2000-12-31T23:59:58Z
+   * @param timestamp UTC format eg 2000-12-31T23:59:58Z or 2000-12-31T23:59:58.123Z
    * @return the Date
    */
   public static Date getDateTime(String timestamp) throws IllegalArgumentException {
-    DateFormat df = new SimpleDateFormat(ISO_FORMAT, Locale.US);
     try {
-      return df.parse(timestamp);
+      return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US).parse(timestamp);
     } catch (ParseException e) {
+      try {
+        // to keep compatibility with older envelopes
+        return new SimpleDateFormat(ISO_FORMAT, Locale.US).parse(timestamp);
+      } catch (ParseException ignored) {
+      }
       throw new IllegalArgumentException("timestamp is not ISO format " + timestamp);
     }
   }
@@ -77,10 +82,10 @@ public final class DateUtils {
    * Get date formatted as expected by Sentry.
    *
    * @param date already UTC format
-   * @return the ISO formatted date.
+   * @return the ISO formatted date with millis precision.
    */
   public static String getTimestamp(Date date) {
-    DateFormat df = new SimpleDateFormat(ISO_FORMAT, Locale.US);
+    DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
     return df.format(date);
   }
 
