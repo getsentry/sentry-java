@@ -13,7 +13,8 @@ struct transport_options {
 
 struct transport_options g_transport_options;
 
-static void send_envelope(sentry_envelope_t *envelope, void *data) {
+static void send_envelope(sentry_envelope_t *envelope, void *unused_data) {
+    (void)unused_data;
     char envelope_id_str[40];
     char outbox_path[4096];
 
@@ -44,7 +45,15 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
 
     sentry_options_t *options = sentry_options_new();
 
-    sentry_options_set_database_path(options, g_transport_options.outbox_path);
+    // give sentry-native its own database path it can work with, next to the outbox
+    char database_path[4096];
+    strncpy(database_path, g_transport_options.outbox_path, 4096);
+    char *dir = strrchr(database_path, '/');
+    if (dir) {
+        strncpy(dir + 1, ".sentry-native", 4096 - (dir + 1 - database_path));
+    }
+    sentry_options_set_database_path(options, database_path);
+
     sentry_options_set_transport(
             options, sentry_new_function_transport(send_envelope, NULL));
     sentry_options_set_debug(options, g_transport_options.debug);
