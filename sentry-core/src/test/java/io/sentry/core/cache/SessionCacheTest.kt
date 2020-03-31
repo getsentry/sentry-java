@@ -177,8 +177,6 @@ class SessionCacheTest {
     fun `when session start and current file already exist, close session and start a new one`() {
         val cache = fixture.getSUT()
 
-        val file = File(fixture.options.sessionsPath!!)
-
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
         cache.store(envelope, SessionStartHint())
 

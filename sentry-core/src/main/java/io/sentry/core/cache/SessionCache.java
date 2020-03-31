@@ -97,7 +97,7 @@ public final class SessionCache implements IEnvelopeCache {
 
     if (hint instanceof SessionStart) {
       if (currentSessionFile.exists()) {
-        options.getLogger().log(WARNING, "Current envelope is not ended, we'd need to end it.");
+        options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
 
         try (final Reader reader =
             new BufferedReader(
@@ -228,7 +228,7 @@ public final class SessionCache implements IEnvelopeCache {
     } else {
       options
           .getLogger()
-          .log(INFO, "Current envelope is empty %s", envelope.getHeader().getEventId());
+          .log(INFO, "Current envelope %s is empty", currentSessionFile.getAbsolutePath());
     }
   }
 
@@ -237,10 +237,7 @@ public final class SessionCache implements IEnvelopeCache {
     if (file.exists()) {
       options
           .getLogger()
-          .log(
-              DEBUG,
-              "Overwriting envelope to offline storage: %s",
-              envelope.getHeader().getEventId());
+          .log(DEBUG, "Overwriting envelope to offline storage: %s", file.getAbsolutePath());
       file.delete();
     }
 
@@ -250,10 +247,7 @@ public final class SessionCache implements IEnvelopeCache {
     } catch (Exception e) {
       options
           .getLogger()
-          .log(
-              ERROR,
-              "Error writing Envelope to offline storage: %s",
-              envelope.getHeader().getEventId());
+          .log(ERROR, "Error writing Envelope %s to offline storage", file.getAbsolutePath());
     }
   }
 
