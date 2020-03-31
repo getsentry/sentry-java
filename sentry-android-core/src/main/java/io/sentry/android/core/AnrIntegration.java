@@ -20,8 +20,15 @@ import org.jetbrains.annotations.TestOnly;
  */
 public final class AnrIntegration implements Integration, Closeable {
 
-  private static ANRWatchDog anrWatchDog;
+  /**
+   * Responsible for watching UI thread. being static to avoid multiple instances running at the
+   * same time.
+   */
+  private static @Nullable ANRWatchDog anrWatchDog;
+
   private @Nullable SentryOptions options;
+
+  private static final @NotNull Object watchDogLock = new Object();
 
   @Override
   public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
@@ -34,28 +41,35 @@ public final class AnrIntegration implements Integration, Closeable {
         .getLogger()
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
 
-    if (options.isAnrEnabled() && anrWatchDog == null) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "ANR timeout in milliseconds: %d",
-              options.getAnrTimeoutIntervalMillis());
+    if (options.isAnrEnabled()) {
+      synchronized (watchDogLock) {
+        if (anrWatchDog == null) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "ANR timeout in milliseconds: %d",
+                  options.getAnrTimeoutIntervalMillis());
 
-      anrWatchDog =
-          new ANRWatchDog(
-              options.getAnrTimeoutIntervalMillis(),
-              options.isAnrReportInDebug(),
-              error -> reportANR(hub, options.getLogger(), error),
-              options.getLogger());
-      anrWatchDog.start();
+          anrWatchDog =
+              new ANRWatchDog(
+                  options.getAnrTimeoutIntervalMillis(),
+                  options.isAnrReportInDebug(),
+                  error -> reportANR(hub, options.getLogger(), error),
+                  options.getLogger());
+          anrWatchDog.start();
 
-      options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
+          options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
+        }
+      }
     }
   }
 
   @TestOnly
-  void reportANR(IHub hub, final @NotNull ILogger logger, ApplicationNotResponding error) {
+  void reportANR(
+      final @NotNull IHub hub,
+      final @NotNull ILogger logger,
+      final @NotNull ApplicationNotResponding error) {
     logger.log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
 
     Mechanism mechanism = new Mechanism();
@@ -67,17 +81,20 @@ public final class AnrIntegration implements Integration, Closeable {
   }
 
   @TestOnly
+  @Nullable
   ANRWatchDog getANRWatchDog() {
     return anrWatchDog;
   }
 
   @Override
   public void close() throws IOException {
-    if (anrWatchDog != null) {
-      anrWatchDog.interrupt();
-      anrWatchDog = null;
-      if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration removed.");
+    synchronized (watchDogLock) {
+      if (anrWatchDog != null) {
+        anrWatchDog.interrupt();
+        anrWatchDog = null;
+        if (options != null) {
+          options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration removed.");
+        }
       }
     }
   }
