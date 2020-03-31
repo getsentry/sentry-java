@@ -285,17 +285,9 @@ public final class AsyncConnection implements Closeable, Connection {
       TransportResult result = this.failedResult;
       try {
         result = flush();
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Envelope flushed: %s", envelope.getHeader().getEventId());
+        options.getLogger().log(SentryLevel.DEBUG, "Envelope flushed");
       } catch (Exception e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                e,
-                "Envelope submission failed: %s",
-                envelope.getHeader().getEventId());
+        options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
         throw e;
       } finally {
         if (hint instanceof SubmissionResult) {

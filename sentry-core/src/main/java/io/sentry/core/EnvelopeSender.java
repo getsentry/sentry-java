@@ -6,6 +6,7 @@ import static io.sentry.core.cache.SessionCache.PREFIX_CURRENT_SESSION_FILE;
 import io.sentry.core.hints.Flushable;
 import io.sentry.core.hints.Retryable;
 import io.sentry.core.hints.SubmissionResult;
+import io.sentry.core.util.CollectionUtils;
 import io.sentry.core.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -93,7 +94,10 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
 
   private void processEnvelope(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
       throws IOException {
-    logger.log(SentryLevel.DEBUG, "Envelope for event Id: %s", envelope.getHeader().getEventId());
+    logger.log(
+        SentryLevel.DEBUG,
+        "Processing Envelope with %d item(s)",
+        CollectionUtils.size(envelope.getItems()));
     int items = 0;
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       items++;
@@ -174,8 +178,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         // without the event that created it isn't useful)
         logger.log(
             SentryLevel.WARNING,
-            "Envelope for event Id: %s had a failed capture at item %d. No more items will be sent.",
-            envelope.getHeader().getEventId(),
+            "Envelope had a failed capture at item %d. No more items will be sent.",
             items);
         break;
       }

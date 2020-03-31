@@ -206,9 +206,7 @@ public class HttpTransport implements ITransport {
 
       // need to also close the input stream of the connection
       connection.getInputStream().close();
-      options
-          .getLogger()
-          .log(DEBUG, "Envelope sent %s successfully.", envelope.getHeader().getEventId());
+      options.getLogger().log(DEBUG, "Envelope sent successfully.");
       return TransportResult.success();
     } catch (IOException e) {
       try {
@@ -218,11 +216,7 @@ public class HttpTransport implements ITransport {
         if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
           options
               .getLogger()
-              .log(
-                  DEBUG,
-                  "Envelope '"
-                      + envelope.getHeader().getEventId()
-                      + "' was rejected by the Sentry server due to a filter.");
+              .log(DEBUG, "Envelope was rejected by the Sentry server due to a filter.");
         }
         logErrorInPayload(connection);
         return TransportResult.error(responseCode);
