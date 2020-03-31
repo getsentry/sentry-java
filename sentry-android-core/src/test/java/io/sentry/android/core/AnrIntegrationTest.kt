@@ -26,7 +26,7 @@ class AnrIntegrationTest {
         val hub = mock<IHub>()
         integration.register(hub, options)
         assertNotNull(integration.anrWatchDog)
-        assertTrue(integration.anrWatchDog.isAlive)
+        assertTrue((integration.anrWatchDog as ANRWatchDog).isAlive)
     }
 
     @Test
