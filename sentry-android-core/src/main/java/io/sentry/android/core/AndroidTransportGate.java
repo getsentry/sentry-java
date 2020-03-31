@@ -18,7 +18,7 @@ final class AndroidTransportGate implements ITransportGate {
   }
 
   @Override
-  public boolean isSendingAllowed() {
+  public boolean isConnected() {
     return isConnected(ConnectivityChecker.isConnected(context, logger));
   }
 

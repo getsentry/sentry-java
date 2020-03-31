@@ -396,7 +396,7 @@ class SentryClientTest {
         SentryClient(sentryOptions, connection)
 
         assertNotNull(sentryOptions.transportGate)
-        assertTrue(sentryOptions.transportGate!!.isSendingAllowed)
+        assertTrue(sentryOptions.transportGate!!.isConnected)
     }
 
     @Test
@@ -612,7 +612,7 @@ class SentryClientTest {
     }
 
     internal class CustomTransportGate : ITransportGate {
-        override fun isSendingAllowed(): Boolean = false
+        override fun isConnected(): Boolean = false
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData

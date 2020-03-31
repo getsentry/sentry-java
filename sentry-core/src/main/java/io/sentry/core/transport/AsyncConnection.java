@@ -234,7 +234,7 @@ public final class AsyncConnection implements Closeable, Connection {
             .log(SentryLevel.DEBUG, "Disk flush event fired: %s", event.getEventId());
       }
 
-      if (transportGate.isSendingAllowed()) {
+      if (transportGate.isConnected()) {
         try {
           result = transport.send(event);
           if (result.isSuccess()) {
@@ -317,7 +317,7 @@ public final class AsyncConnection implements Closeable, Connection {
         return TransportResult.success();
       }
 
-      if (transportGate.isSendingAllowed()) {
+      if (transportGate.isConnected()) {
         try {
           result = transport.send(envelope);
           if (result.isSuccess()) {

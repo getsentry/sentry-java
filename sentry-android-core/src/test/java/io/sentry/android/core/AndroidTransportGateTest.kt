@@ -25,7 +25,7 @@ class AndroidTransportGateTest {
 
     @Test
     fun `isSendingAllowed is not null`() {
-        assertNotNull(transportGate.isSendingAllowed)
+        assertNotNull(transportGate.isConnected)
     }
 
     @Test
