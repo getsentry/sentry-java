@@ -157,7 +157,7 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
-  /** When enabled, threads are automatically attached to all logged events. */
+  /** Whether to enable automatic session tracking. */
   private boolean enableSessionTracking;
 
   /**
