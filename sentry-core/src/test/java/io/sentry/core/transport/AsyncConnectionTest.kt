@@ -55,7 +55,7 @@ class AsyncConnectionTest {
     fun `successful send discards the event from cache`() {
         // given
         val ev = mock<SentryEvent>()
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.success())
 
         // when
@@ -75,7 +75,7 @@ class AsyncConnectionTest {
     fun `successful send discards the session from cache`() {
         // given
         val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
 
         // when
@@ -95,7 +95,7 @@ class AsyncConnectionTest {
     fun `stores event in cache if sending is not allowed`() {
         // given
         val ev = mock<SentryEvent>()
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(false)
+        whenever(fixture.transportGate.isConnected).thenReturn(false)
 
         // when
         fixture.getSUT().send(ev)
@@ -109,7 +109,7 @@ class AsyncConnectionTest {
     fun `stores session in cache if sending is not allowed`() {
         // given
         val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(false)
+        whenever(fixture.transportGate.isConnected).thenReturn(false)
 
         // when
         fixture.getSUT().send(envelope)
@@ -123,7 +123,7 @@ class AsyncConnectionTest {
     fun `stores event after unsuccessful send`() {
         // given
         val ev = mock<SentryEvent>()
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.error(500))
 
         // when
@@ -147,7 +147,7 @@ class AsyncConnectionTest {
     fun `stores session after unsuccessful send`() {
         // given
         val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.error(500))
 
         // when
@@ -171,7 +171,7 @@ class AsyncConnectionTest {
     fun `stores event after send failure`() {
         // given
         val ev = mock<SentryEvent>()
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEvent>())).thenThrow(IOException())
 
         // when
@@ -191,7 +191,7 @@ class AsyncConnectionTest {
     fun `stores session after send failure`() {
         // given
         val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenThrow(IOException())
 
         // when
@@ -267,7 +267,7 @@ class AsyncConnectionTest {
 
         whenever(fixture.transport.isRetryAfter(eq("event"))).thenReturn(false)
         whenever(fixture.transport.isRetryAfter(eq("session"))).thenReturn(true)
-        whenever(fixture.transportGate.isSendingAllowed).thenReturn(true)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
         fixture.getSUT().send(envelope)
         verify(fixture.transport).send(check<SentryEnvelope> {
