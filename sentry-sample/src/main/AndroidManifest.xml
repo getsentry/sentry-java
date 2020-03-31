@@ -2,8 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="io.sentry.sample">
+
+<!--  extra recommended permission, we'd be able to check network status-->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+<!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
   <uses-sdk
     tools:overrideLibrary="io.sentry.android"/>
 
@@ -15,9 +18,7 @@
     android:roundIcon="@mipmap/ic_launcher_round"
     android:supportsRtl="true"
     android:theme="@style/AppTheme"
-    tools:ignore="GoogleAppIndexingWarning, UnusedAttribute"
-    android:usesCleartextTraffic="true" >
-<!--    TODO: needed or Android 8: Cleartext HTTP traffic not permitted-->
+    tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
     <activity android:name=".MainActivity">
       <intent-filter>
@@ -27,20 +28,19 @@
       </intent-filter>
     </activity>
 
-    <!--  NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
+<!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data android:name="io.sentry.dsn" android:value="https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954" />
-
 
 <!--    how to enable Sentry's debug mode-->
     <meta-data android:name="io.sentry.debug" android:value="true" />
 
-    <!--    how to set custom debug level-->
+<!--    how to set a custom debug level-->
 <!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
 
-    <!-- To change the time used to watch for ANR. By default it's 4 seconds (4000 below as it's in milliseconds) -->
-    <meta-data android:name="io.sentry.anr.timeout-interval-millis" android:value="1000" />
+<!--    To change the time used to watch for ANR. By default it's 4 seconds (4000 below as it's in milliseconds)-->
+<!--    <meta-data android:name="io.sentry.anr.timeout-interval-millis" android:value="4000" />-->
 
-    <!-- Raise ANR events even if the debugger is attached -->
+<!--    Raise ANR events even if the debugger is attached-->
 <!--    <meta-data android:name="io.sentry.anr.report-debug" android:value="true" />-->
 
 <!--    how to disable ANR-->
@@ -52,16 +52,20 @@
 <!--    how to disable the NDK-->
 <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
 
-<!--    how to set a release-->
+<!--    how to set a custom release-->
 <!--    <meta-data android:name="io.sentry.release" android:value="io.sentry.sample@1.0.0+10001" />-->
 
 <!--    how to enable session tracking-->
     <meta-data android:name="io.sentry.session-tracking.enable" android:value="true" />
 
-<!--    how to set a environment-->
+<!--    how to set an environment-->
 <!--    <meta-data android:name="io.sentry.environment" android:value="debug" />-->
 
-<!--    how to change a session tracking interval-->
+<!--    how to change the session tracking interval-->
     <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="10000" />
+
+<!--    how to enable and set a sampleRate (anything between 0.01 and 1.0), it's disabled by default-->
+<!--    <meta-data android:name="io.sentry.sample-rate" android:value="0.5" />-->
+
   </application>
 </manifest>
