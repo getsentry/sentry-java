@@ -147,41 +147,38 @@ public final class SentryClient implements ISentryClient {
   void updateSessionData(
       final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
-      // safe guard
-      if (options.isEnableSessionTracking()) {
-        if (scope != null) {
-          scope.withSession(
-              session -> {
-                if (session != null) {
-                  Session.State status = null;
-                  if (event.isCrashed()) {
-                    status = Session.State.Crashed;
-                  }
-
-                  boolean crashedOrErrored = false;
-                  if (Session.State.Crashed == status || event.isErrored()) {
-                    crashedOrErrored = true;
-                  }
-
-                  String userAgent = null;
-                  if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
-                    if (event.getRequest().getHeaders().containsKey("user-agent")) {
-                      userAgent = event.getRequest().getHeaders().get("user-agent");
-                    }
-                  }
-
-                  if (session.update(status, userAgent, crashedOrErrored)) {
-                    // a session update hint means its gonna only flush to the disk, but not to the
-                    // network
-                    captureSession(session, new SessionUpdateHint());
-                  }
-                } else {
-                  options.getLogger().log(SentryLevel.INFO, "Session is null on scope.withSession");
+      if (scope != null) {
+        scope.withSession(
+            session -> {
+              if (session != null) {
+                Session.State status = null;
+                if (event.isCrashed()) {
+                  status = Session.State.Crashed;
                 }
-              });
-        } else {
-          options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
-        }
+
+                boolean crashedOrErrored = false;
+                if (Session.State.Crashed == status || event.isErrored()) {
+                  crashedOrErrored = true;
+                }
+
+                String userAgent = null;
+                if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
+                  if (event.getRequest().getHeaders().containsKey("user-agent")) {
+                    userAgent = event.getRequest().getHeaders().get("user-agent");
+                  }
+                }
+
+                if (session.update(status, userAgent, crashedOrErrored)) {
+                  // a session update hint means its gonna only flush to the disk, but not to the
+                  // network
+                  captureSession(session, new SessionUpdateHint());
+                }
+              } else {
+                options.getLogger().log(SentryLevel.INFO, "Session is null on scope.withSession");
+              }
+            });
+      } else {
+        options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
       }
     }
   }

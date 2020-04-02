@@ -196,12 +196,6 @@ public final class Hub implements IHub {
           .getLogger()
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'startSession' call is a no-op.");
-    } else if (!options.isEnableSessionTracking()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Session tracking is disabled and this 'startSession' call is a no-op.");
     } else {
       final StackItem item = this.stack.peek();
       if (item != null) {
@@ -227,12 +221,6 @@ public final class Hub implements IHub {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
-    } else if (!options.isEnableSessionTracking()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Session tracking is disabled and this 'endSession' call is a no-op.");
     } else {
       final StackItem item = this.stack.peek();
       if (item != null) {

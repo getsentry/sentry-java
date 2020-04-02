@@ -671,16 +671,16 @@ public class SentryOptions {
   }
 
   /**
-   * Returns if the session tracking is enabled or not
+   * Returns if the automatic session tracking is enabled or not
    *
-   * @return trye if enabled or false otherwise
+   * @return true if enabled or false otherwise
    */
   public boolean isEnableSessionTracking() {
     return enableSessionTracking;
   }
 
   /**
-   * Enable or disable the session tracking
+   * Enable or disable the automatic session tracking
    *
    * @param enableSessionTracking true if enabled or false otherwise
    */
