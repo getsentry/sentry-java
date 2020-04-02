@@ -31,4 +31,7 @@
 # don't warn jetbrains annotations
 -dontwarn org.jetbrains.annotations.**
 
+# R8: Attribute Signature requires InnerClasses attribute. Check -keepattributes directive.
+-keepattributes InnerClasses
+
 ##---------------End: proguard configuration for Gson  ----------

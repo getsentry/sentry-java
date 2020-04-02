@@ -55,7 +55,7 @@
 <!--    how to set a custom release-->
 <!--    <meta-data android:name="io.sentry.release" android:value="io.sentry.sample@1.0.0+10001" />-->
 
-<!--    how to enable session tracking-->
+<!--    how to enable automatic session tracking-->
     <meta-data android:name="io.sentry.session-tracking.enable" android:value="true" />
 
 <!--    how to set an environment-->

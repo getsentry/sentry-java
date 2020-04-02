@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# R8: Attribute Signature requires InnerClasses attribute. Check -keepattributes directive.
+-keepattributes InnerClasses

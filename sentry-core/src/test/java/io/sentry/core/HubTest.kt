@@ -321,9 +321,8 @@ class HubTest {
     }
 
     @Test
-    fun `when captureEvent is called session tracking is enabled but no session started, it should not capture a session`() {
+    fun `when captureEvent is called but no session started, it should not capture a session`() {
         val options = SentryOptions()
-        options.isEnableSessionTracking = true
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
@@ -865,23 +864,8 @@ class HubTest {
     }
 
     @Test
-    fun `when startSession is called and session tracking is disabled, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
-
-        sut.startSession()
-        verify(mockClient, never()).captureSession(any(), any())
-    }
-
-    @Test
     fun `when startSession is called, starts a session`() {
         val options = SentryOptions()
-        options.isEnableSessionTracking = true
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
@@ -894,9 +878,8 @@ class HubTest {
     }
 
     @Test
-    fun `when startSession is called and theres a session, stops it and starts a new one`() {
+    fun `when startSession is called and there's a session, stops it and starts a new one`() {
         val options = SentryOptions()
-        options.isEnableSessionTracking = true
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
@@ -944,7 +927,6 @@ class HubTest {
     @Test
     fun `when endSession is called, end a session`() {
         val options = SentryOptions()
-        options.isEnableSessionTracking = true
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
@@ -959,9 +941,8 @@ class HubTest {
     }
 
     @Test
-    fun `when endSession is called and theres no session, do nothing`() {
+    fun `when endSession is called and there's no session, do nothing`() {
         val options = SentryOptions()
-        options.isEnableSessionTracking = true
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
