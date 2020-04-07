@@ -19,8 +19,7 @@ public final class NdkIntegration implements Integration {
     options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
 
     // Note: `hub` isn't used here because the NDK integration writes files to disk which are picked
-    // up by another
-    // integration. The NDK directory watching must happen before this integration runs.
+    // up by another integration (EnvelopeFileObserverIntegration).
     if (enabled) {
       try {
         Class<?> cls = Class.forName("io.sentry.android.ndk.SentryNdk");
@@ -34,7 +33,12 @@ public final class NdkIntegration implements Integration {
       } catch (ClassNotFoundException e) {
         options.setEnableNdk(false);
         options.getLogger().log(SentryLevel.ERROR, "Failed to load SentryNdk.", e);
-      } catch (Exception e) {
+      } catch (UnsatisfiedLinkError e) {
+        options.setEnableNdk(false);
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to load (UnsatisfiedLinkError) SentryNdk.", e);
+      } catch (Throwable e) {
         options.setEnableNdk(false);
         options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
       }
