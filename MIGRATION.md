@@ -70,6 +70,27 @@ try {
 }
 ```
 
+#### Capture a custom event
+
+_Old_:
+
+```
+Exception exception = new Exception("custom error");
+EventBuilder eventBuilder = new EventBuilder()
+  .withLevel(Event.Level.ERROR)
+  .withSentryInterface(new ExceptionInterface(exception));
+Sentry.capture(eventBuilder);
+```
+
+_New_:
+
+```
+Exception exception = new Exception("custom error");
+SentryEvent event = new SentryEvent(exception);
+event.setLevel(SentryLevel.ERROR);
+Sentry.captureEvent(event);
+```
+
 #### Capture a message
 
 _Old_:
