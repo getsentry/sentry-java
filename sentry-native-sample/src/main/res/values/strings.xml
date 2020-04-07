@@ -1,4 +1,0 @@
-<resources>
-  <string name="app_name">Sentry Native Sample</string>
-    <string name="capture_from_native">Capture message from native</string>
-</resources>
