@@ -834,29 +834,6 @@ public class SentryOptions {
                 return null;
               }
             }));
-    // Send cache envelopes from NDK
-    integrations.add(
-        new SendCachedEventFireAndForgetIntegration(
-            (hub, options) -> {
-              EnvelopeSender envelopeSender =
-                  new EnvelopeSender(
-                      hub,
-                      new EnvelopeReader(), // TODO: add a getEnvelopeReader() to ISerializer()
-                      options.getSerializer(),
-                      logger,
-                      options.getFlushTimeoutMillis());
-              if (options.getOutboxPath() != null) {
-                File outbox = new File(options.getOutboxPath());
-                return () -> envelopeSender.processDirectory(outbox);
-              } else {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.WARNING,
-                        "No outbox dir path is defined in options, discarding EnvelopeSender.");
-                return null;
-              }
-            }));
 
     //     send cached sessions
     integrations.add(
