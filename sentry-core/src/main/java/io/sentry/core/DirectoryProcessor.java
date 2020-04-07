@@ -22,7 +22,7 @@ abstract class DirectoryProcessor {
     this.flushTimeoutMillis = flushTimeoutMillis;
   }
 
-  void processDirectory(@NotNull File directory) {
+  public void processDirectory(@NotNull File directory) {
     try {
       if (!directory.exists()) {
         logger.log(

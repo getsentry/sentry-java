@@ -9,15 +9,15 @@ public final class SendCachedEventFireAndForgetIntegration implements Integratio
 
   private final SendFireAndForgetFactory factory;
 
-  interface SendFireAndForget {
+  public interface SendFireAndForget {
     void send();
   }
 
-  interface SendFireAndForgetFactory {
+  public interface SendFireAndForgetFactory {
     SendFireAndForget create(IHub hub, SentryOptions options);
   }
 
-  SendCachedEventFireAndForgetIntegration(SendFireAndForgetFactory factory) {
+  public SendCachedEventFireAndForgetIntegration(SendFireAndForgetFactory factory) {
     this.factory = factory;
   }
 
