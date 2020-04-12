@@ -21,7 +21,7 @@ before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
   - chmod +x ./gradlew
 script:
-- ./gradlew build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PmavenCentralUser=MAVEN_USER -PmavenCentralPassword=MAVEN_PASS
+- make all
 android:
   components:
     - platform-tools
