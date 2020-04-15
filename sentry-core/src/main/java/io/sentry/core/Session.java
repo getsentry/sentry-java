@@ -166,10 +166,6 @@ public final class Session {
   /** Updated the session status based on status and errorcount */
   private void updateStatus() {
     // at this state it might be Crashed already, so we don't check for it.
-    if (status == State.Ok && errorCount.get() > 0) {
-      status = State.Abnormal;
-    }
-
     if (status == State.Ok) {
       status = State.Exited;
     }
