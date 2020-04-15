@@ -136,8 +136,14 @@ public final class SessionCache implements IEnvelopeCache {
               }
               session.update(Session.State.Crashed, null, true);
             } else {
-              // I don't know what happened, it's not a NDK crash, let's mark it as Abnormal
-              session.update(Session.State.Abnormal, null, false);
+              // We don't know what happened, it's not a NDK crash nor a normal crashed shutdown,
+              // let's mark it as Abnormal
+              Session.State state = Session.State.Abnormal;
+              if (session.getStatus() != null
+                  && Session.State.Crashed.equals(session.getStatus())) {
+                state = null; // keep as it is
+              }
+              session.update(state, null, false);
             }
             session.end(timestamp);
             final SentryEnvelope fromSession = SentryEnvelope.fromSession(serializer, session);
