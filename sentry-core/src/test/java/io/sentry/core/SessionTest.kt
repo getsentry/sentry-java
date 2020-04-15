@@ -54,14 +54,14 @@ class SessionTest {
     }
 
     @Test
-    fun `when ending a session, if status is ok and has errorCount, mark it as abnormal`() {
+    fun `when ending a session, if status is ok, mark it as exited`() {
         val user = User().apply {
             ipAddress = "127.0.0.1"
         }
         val session = createSession(user)
         session.update(null, null, true)
         session.end()
-        assertEquals(Session.State.Abnormal, session.status)
+        assertEquals(Session.State.Exited, session.status)
     }
 
     @Test
