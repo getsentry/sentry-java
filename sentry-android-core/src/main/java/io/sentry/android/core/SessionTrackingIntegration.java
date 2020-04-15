@@ -31,10 +31,21 @@ public final class SessionTrackingIntegration implements Integration, Closeable 
             options.isEnableSessionTracking());
 
     if (options.isEnableSessionTracking()) {
-      watcher = new LifecycleWatcher(hub, options.getSessionTrackingIntervalMillis());
-      ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
+      try {
+        Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
+        Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
+        watcher = new LifecycleWatcher(hub, options.getSessionTrackingIntervalMillis());
+        ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
 
-      options.getLogger().log(SentryLevel.DEBUG, "SessionTrackingIntegration installed.");
+        options.getLogger().log(SentryLevel.DEBUG, "SessionTrackingIntegration installed.");
+      } catch (ClassNotFoundException e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.INFO,
+                "androidx.lifecycle is not available, SessionTrackingIntegration won't be installed",
+                e);
+      }
     }
   }
 
