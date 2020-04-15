@@ -84,7 +84,6 @@ object Config {
         val novodaBintrayPlugin = "com.novoda:bintray-release:1.0.3"
         val novodaBintray = "com.novoda.bintray-release"
         val sign = true
-        val mavenCentralSync = true
     }
 
     object NativePlugins {

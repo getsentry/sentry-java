@@ -136,7 +136,6 @@ configure<PublishExtension> {
     issueTracker = Config.Sentry.issueTracker
     repository = Config.Sentry.repository
     sign = Config.Deploy.sign
-    mavenCentralSync = Config.Deploy.mavenCentralSync
     artifactId = project.name
     uploadName = "${project.group}:${project.name}"
     devId = Config.Sentry.userOrg
