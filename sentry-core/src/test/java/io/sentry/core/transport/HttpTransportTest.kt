@@ -47,6 +47,9 @@ class HttpTransportTest {
                 override fun open(proxy: Proxy?): HttpURLConnection {
                     return connection
                 }
+                override fun open(url: URL, proxy: Proxy?): HttpURLConnection {
+                    return connection
+                }
             }
         }
     }
