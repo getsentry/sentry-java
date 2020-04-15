@@ -18,7 +18,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Date;
@@ -47,7 +50,8 @@ public class HttpTransport implements ITransport {
   private final int connectionTimeout;
   private final int readTimeout;
   private final boolean bypassSecurity;
-  private final @NotNull URL sentryUrl;
+  private final @NotNull URL storeUrl;
+  private final @NotNull URL envelopeUrl;
   private final @NotNull SentryOptions options;
 
   private final @NotNull Map<String, Date> sentryRetryAfterLimit = new ConcurrentHashMap<>();
@@ -81,15 +85,26 @@ public class HttpTransport implements ITransport {
     this.readTimeout = readTimeoutMillis;
     this.options = options;
     this.bypassSecurity = bypassSecurity;
-    this.sentryUrl = sentryUrl;
+
+    try {
+      final URI uri = sentryUrl.toURI();
+      storeUrl = uri.resolve(uri.getPath() + "/store/").toURL();
+      envelopeUrl = uri.resolve(uri.getPath() + "/envelope/").toURL();
+    } catch (URISyntaxException | MalformedURLException e) {
+      throw new IllegalArgumentException("Failed to compose the Sentry's server URL.", e);
+    }
   }
 
   // giving up on testing this method is probably the simplest way of having the rest of the class
   // testable...
   protected @NotNull HttpURLConnection open(final @Nullable Proxy proxy) throws IOException {
+    return open(storeUrl, proxy);
+  }
+
+  protected @NotNull HttpURLConnection open(final @NotNull URL url, final @Nullable Proxy proxy)
+      throws IOException {
     // why do we need url here? its not used
-    return (HttpURLConnection)
-        (proxy == null ? sentryUrl.openConnection() : sentryUrl.openConnection(proxy));
+    return (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
   }
 
   @Override
@@ -165,18 +180,20 @@ public class HttpTransport implements ITransport {
    * @throws IOException if connection has a problem
    */
   private @NotNull HttpURLConnection createConnection(boolean asEnvelope) throws IOException {
-    final HttpURLConnection connection = open(proxy);
+    String contentType = "application/json";
+    HttpURLConnection connection;
+    if (asEnvelope) {
+      connection = open(envelopeUrl, proxy);
+      contentType = "application/x-sentry-envelope";
+    } else {
+      connection = open(proxy);
+    }
     connectionConfigurator.configure(connection);
 
     connection.setRequestMethod("POST");
     connection.setDoOutput(true);
 
     connection.setRequestProperty("Content-Encoding", "UTF-8");
-
-    String contentType = "application/json";
-    if (asEnvelope) {
-      contentType = "application/x-sentry-envelope";
-    }
     connection.setRequestProperty("Content-Type", contentType);
     connection.setRequestProperty("Accept", "application/json");
 

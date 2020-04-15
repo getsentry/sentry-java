@@ -78,7 +78,7 @@ final class Dsn {
               null,
               uri.getHost(),
               uri.getPort(),
-              path + "api/" + projectId + "/store/",
+              path + "api/" + projectId,
               null,
               null);
     } catch (Exception e) {
