@@ -19,4 +19,4 @@ doRelease:
 	./gradlew bintrayUpload -PbintrayUser="$(BINTRAY_USERNAME)" -PbintrayKey="$(BINTRAY_KEY)" -PmavenCentralUser="$(MAVEN_USER)" -PmavenCentralPassword="$(MAVEN_PASS)" -PmavenCentralSync=true -PdryRun=false
 
 # deep clean, build and deploy to bintray, jcenter and maven central
-release: clean compile doRelease
+release: clean compile dryRelease doRelease
