@@ -154,7 +154,8 @@ public final class SessionCache implements IEnvelopeCache {
           options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
         }
 
-        // at this point the leftover session and its current session file already became a new envelope file to be sent
+        // at this point the leftover session and its current session file already became a new
+        // envelope file to be sent
         // so deleting it as the new session will take place.
         if (!currentSessionFile.delete()) {
           options.getLogger().log(WARNING, "Failed to delete the current session file.");
