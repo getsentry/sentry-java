@@ -1,6 +1,6 @@
-.PHONY: clean compile dryRelease doRelease release
+.PHONY: clean compile dryRelease doRelease release update
 
-all: clean compile dryRelease
+all: clean compile update dryRelease
 
 # deep clean
 clean:
@@ -20,3 +20,7 @@ doRelease:
 
 # deep clean, build and deploy to bintray, jcenter and maven central
 release: clean compile dryRelease doRelease
+
+# check for dependencies update
+update:
+	./gradlew dependencyUpdates -Drevision=release
