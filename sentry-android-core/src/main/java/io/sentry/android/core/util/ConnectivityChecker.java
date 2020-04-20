@@ -98,7 +98,7 @@ public final class ConnectivityChecker {
       if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
         return "ethernet";
       }
-      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
         return "cellular";
       }
     }
