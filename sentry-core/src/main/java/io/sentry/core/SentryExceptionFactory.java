@@ -100,7 +100,7 @@ final class SentryExceptionFactory {
   /**
    * Transforms a {@link Throwable} into a Queue of {@link SentryException}.
    *
-   * <p>Exceptions are stored in the queue from the most recent one to the oldest one.
+   * <p>Multiple values represent chained exceptions and should be sorted oldest to newest.
    *
    * @param throwable throwable to transform in a queue of exceptions.
    * @return a queue of exception with StackTrace.
@@ -130,7 +130,7 @@ final class SentryExceptionFactory {
       }
 
       SentryException exception = getSentryException(currentThrowable, exceptionMechanism, thread);
-      exceptions.add(exception);
+      exceptions.addFirst(exception);
       currentThrowable = currentThrowable.getCause();
     }
 

@@ -41,12 +41,12 @@ class SentryExceptionFactoryTest {
     }
 
     @Test
-    fun `when exception has a cause, ensure conversion queue keeps order`() {
+    fun `when exception is nested, it should be sorted oldest to newest`() {
         val exception = Exception("message", Exception("cause"))
         val queue = sut.extractExceptionQueue(exception)
 
-        assertEquals("message", queue.first.value)
-        assertEquals("cause", queue.last.value)
+        assertEquals("cause", queue.first.value)
+        assertEquals("message", queue.last.value)
     }
 
     @Test
