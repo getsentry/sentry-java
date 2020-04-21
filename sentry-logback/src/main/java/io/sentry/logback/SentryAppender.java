@@ -248,7 +248,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             Package exceptionPackage = exceptionClass.getPackage();
             packageNameSimpleName[0] = exceptionPackage != null ? exceptionPackage.getName()
                     : SentryException.DEFAULT_PACKAGE_NAME;
-            packageNameSimpleName[1] = exceptionClass.getSimpleName();
+            String exceptionClassName = exceptionClass.getName();
+            packageNameSimpleName[1] = exceptionClassName.substring(exceptionClassName.lastIndexOf('.') + 1);;
         } catch (ClassNotFoundException e) {
             int lastDot = canonicalClassName.lastIndexOf('.');
             if (lastDot != -1) {

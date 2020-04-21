@@ -1,5 +1,20 @@
 package io.sentry.logback;
 
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.slf4j.MarkerFactory;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -10,23 +25,25 @@ import ch.qos.logback.core.status.OnConsoleStatusListener;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import io.sentry.event.interfaces.*;
+import io.sentry.event.Event;
+import io.sentry.event.EventBuilder;
+import io.sentry.event.interfaces.ExceptionInterface;
+import io.sentry.event.interfaces.MessageInterface;
+import io.sentry.event.interfaces.SentryException;
+import io.sentry.event.interfaces.SentryStackTraceElement;
+import io.sentry.event.interfaces.StackTraceInterface;
 import junitparams.JUnitParamsRunner;
 import junitparams.NamedParameters;
 import junitparams.Parameters;
-import io.sentry.event.Event;
-import io.sentry.event.EventBuilder;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.slf4j.MarkerFactory;
-
-import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -124,6 +141,29 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         assertThat(sentryException.getStackTraceInterface().getStackTrace(),
             is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace(), null)));
         assertNoErrorsInStatusManager();
+    }
+
+    @Test
+    public void testInnerExceptionLogging() throws Exception {
+        final Exception exception = new InnerException();
+
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.ERROR, null, null, exception));
+
+        ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
+        Event event = eventBuilderArgumentCaptor.getValue().build();
+        ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
+            .get(ExceptionInterface.EXCEPTION_INTERFACE);
+        SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+        assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+        assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+            is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace(), null)));
+        assertNoErrorsInStatusManager();
+
+        String rebuiltExceptionClassName = sentryException.getExceptionPackageName() + "." + sentryException.getExceptionClassName();
+        Class<?> rebuiltExceptionClass = Class.forName(rebuiltExceptionClassName);
+
+        assertThat(rebuiltExceptionClass == InnerException.class, equalTo(true));
     }
 
     @Test
@@ -304,5 +344,9 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         Event event = eventBuilderArgumentCaptor.getValue().build();
         assertThat(event.getMessage(), is("INFO  : " + expectedMessage));
         assertNoErrorsInStatusManager();
+    }
+
+    private static class InnerException extends Exception {
+
     }
 }
