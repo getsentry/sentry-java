@@ -9,6 +9,7 @@ import java.io.Closeable;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -130,6 +131,7 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
+  @ApiStatus.Internal
   @Override
   public SentryId captureEnvelope(
       final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
