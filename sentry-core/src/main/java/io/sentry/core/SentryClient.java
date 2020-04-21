@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -183,6 +184,7 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
+  @ApiStatus.Internal
   @Override
   public void captureSession(final @NotNull Session session, final @Nullable Object hint) {
     Objects.requireNonNull(session, "Session is required.");
@@ -205,6 +207,7 @@ public final class SentryClient implements ISentryClient {
     captureEnvelope(envelope, hint);
   }
 
+  @ApiStatus.Internal
   @Override
   public @Nullable SentryId captureEnvelope(
       final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
