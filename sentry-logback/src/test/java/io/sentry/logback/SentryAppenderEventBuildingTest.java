@@ -1,20 +1,5 @@
 package io.sentry.logback;
 
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.slf4j.MarkerFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -25,25 +10,23 @@ import ch.qos.logback.core.status.OnConsoleStatusListener;
 import io.sentry.BaseTest;
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import io.sentry.event.Event;
-import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.MessageInterface;
-import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.SentryStackTraceElement;
-import io.sentry.event.interfaces.StackTraceInterface;
+import io.sentry.event.interfaces.*;
 import junitparams.JUnitParamsRunner;
 import junitparams.NamedParameters;
 import junitparams.Parameters;
+import io.sentry.event.Event;
+import io.sentry.event.EventBuilder;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.slf4j.MarkerFactory;
+
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -177,12 +160,12 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
         Event event = eventBuilderArgumentCaptor.getValue().build();
         MessageInterface messageInterface = (MessageInterface) event.getSentryInterfaces()
-                .get(MessageInterface.MESSAGE_INTERFACE);
+            .get(MessageInterface.MESSAGE_INTERFACE);
 
         assertThat(event.getMessage(), is("Formatted message first parameter [] null"));
         assertThat(messageInterface.getMessage(), is(messagePattern));
         assertThat(messageInterface.getParameters(),
-                is(Arrays.asList(parameters[0].toString(), parameters[1].toString(), null)));
+            is(Arrays.asList(parameters[0].toString(), parameters[1].toString(), null)));
         assertNoErrorsInStatusManager();
     }
 
@@ -191,7 +174,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         final String markerName = "d33e3927-ea6c-4a5a-b66c-8dcb2052e812";
 
         sentryAppender.append(
-                new TestLoggingEvent(null, MarkerFactory.getMarker(markerName), Level.INFO, null, null, null));
+            new TestLoggingEvent(null, MarkerFactory.getMarker(markerName), Level.INFO, null, null, null));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -206,7 +189,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         final String extraValue = "5f7a53b1-4354-4120-a368-78a615705540";
 
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null,
-                Collections.singletonMap(extraKey, extraValue), null, null, 0));
+            Collections.singletonMap(extraKey, extraValue), null, null, 0));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -221,7 +204,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         final String extraValue = "986adaa7-c0e4-4c09-9c5e-49edaf2e6d53";
 
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null,
-                null, null, null, 0, Collections.singletonMap(extraKey, extraValue)));
+            null, null, null, 0, Collections.singletonMap(extraKey, extraValue)));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -238,8 +221,8 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         final String contextValue = "66d123eb-7786-4f3d-86f1-a906039401d9";
 
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null,
-                Collections.singletonMap(mdcKey, mdcValue), null, null, 0,
-                Collections.singletonMap(contextKey, contextValue)));
+            Collections.singletonMap(mdcKey, mdcValue), null, null, 0,
+            Collections.singletonMap(contextKey, contextValue)));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -247,15 +230,15 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         assertThat(event.getExtra(), Matchers.<String, Object>hasEntry(mdcKey, mdcValue));
         assertNoErrorsInStatusManager();
     }
-    
+
     @Test
     public void testGLobalAddedToExtra() throws Exception {
         final String extraKey = "10e09b11-546f-4c57-99b2-cf3c627c8737";
         final String extraValue = "5f7a53b1-4354-4120-a368-78a615705540";
 
-        
+
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null,
-                null, null, null, 0, Collections.singletonMap(extraKey, extraValue)));
+            null, null, null, 0, Collections.singletonMap(extraKey, extraValue)));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -267,17 +250,17 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
     @Test
     public void testSourceUsedAsStacktrace() throws Exception {
         final StackTraceElement[] location = {new StackTraceElement("854de9b9-95ea-4dae-8e01-23b25c9bd271",
-                "49974348-1704-47cc-be5a-4e72f2e0db33",
-                "bf48ef03-657c-4924-844a-317743c4599b", 42)};
+            "49974348-1704-47cc-be5a-4e72f2e0db33",
+            "bf48ef03-657c-4924-844a-317743c4599b", 42)};
 
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null, null, null, location, 0)
-                );
+        );
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
         Event event = eventBuilderArgumentCaptor.getValue().build();
         StackTraceInterface stackTraceInterface = (StackTraceInterface) event.getSentryInterfaces()
-                .get(StackTraceInterface.STACKTRACE_INTERFACE);
+            .get(StackTraceInterface.STACKTRACE_INTERFACE);
         assertThat(stackTraceInterface.getStackTrace(), is(SentryStackTraceElement.fromStackTraceElements(location, null)));
         assertNoErrorsInStatusManager();
     }
@@ -291,7 +274,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         when(mockSentryClient.getMdcTags()).thenReturn(extraTags);
 
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null, mdcPropertyMap, null,
-                null, 0));
+            null, 0));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -302,7 +285,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196"));
         assertNoErrorsInStatusManager();
     }
-    
+
     @Test
     public void testExtraTagObtainedFromGlobal() throws Exception {
         Map<String, String> propertyMap = new HashMap<>();
@@ -310,9 +293,9 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         propertyMap.put("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196");
 
         when(mockSentryClient.getMdcTags()).thenReturn(extraTags);
-        
+
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, null, null, null, null, null,
-                null, 0, propertyMap));
+            null, 0, propertyMap));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -323,11 +306,11 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         assertThat(event.getExtra(), Matchers.<String, Object>hasEntry("other_property", "cb9c92a1-0182-4e9c-866f-b06b271cd196"));
         assertNoErrorsInStatusManager();
     }
-    
+
     @Test
     public void testSetEncoder() throws Exception {
         when(mockSentryClient.getMdcTags()).thenReturn(extraTags);
-        
+
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setPattern("%-5level : %message");
         encoder.setContext(mockContext);
@@ -337,7 +320,7 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
 
         String expectedMessage = "some message";
         sentryAppender.append(new TestLoggingEvent(null, null, Level.INFO, expectedMessage, null, null, null, null,
-                null, 0));
+            null, 0));
 
         ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
         verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
@@ -350,3 +333,4 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
 
     }
 }
+
