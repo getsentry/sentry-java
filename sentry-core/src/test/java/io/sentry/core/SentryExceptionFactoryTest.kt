@@ -57,6 +57,12 @@ class SentryExceptionFactoryTest {
     }
 
     @Test
+    fun `when getSentryExceptions is called passing an anonymous exception, not empty result`() {
+        val queue = sut.extractExceptionQueue(anonymousException)
+        assertEquals("SentryExceptionFactoryTest\$anonymousException\$1", queue.first.type)
+    }
+
+    @Test
     fun `when exception has no mechanism, it should get and set the current threadId`() {
         val threadId = Thread.currentThread().id
         val exception = Exception("message", Exception("cause"))
@@ -78,5 +84,8 @@ class SentryExceptionFactoryTest {
         assertEquals(thread.id, queue.first.threadId)
     }
 
-    private inner class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)
+    internal inner class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)
+
+    internal val anonymousException = object : Exception() {
+    }
 }
