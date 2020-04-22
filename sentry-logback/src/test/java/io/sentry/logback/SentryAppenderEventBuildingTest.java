@@ -127,6 +127,54 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
     }
 
     @Test
+    public void testInnerExceptionLogging() throws Exception {
+        final Exception exception = new InnerException();
+
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.ERROR, null, null, exception));
+
+        ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
+        Event event = eventBuilderArgumentCaptor.getValue().build();
+        ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
+            .get(ExceptionInterface.EXCEPTION_INTERFACE);
+        SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+        assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+        assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+            is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace(), null)));
+        assertNoErrorsInStatusManager();
+
+        String rebuiltExceptionClassName = sentryException.getExceptionPackageName() + "." + sentryException.getExceptionClassName();
+        Class<?> rebuiltExceptionClass = Class.forName(rebuiltExceptionClassName);
+
+        assertThat(rebuiltExceptionClass == exception.getClass(), is(true));
+    }
+
+    @Test
+    public void testAnonymousExceptionLogging() throws Exception {
+        final Exception exception = new Exception() {
+
+        };
+
+        sentryAppender.append(new TestLoggingEvent(null, null, Level.ERROR, null, null, exception));
+
+        ArgumentCaptor<EventBuilder> eventBuilderArgumentCaptor = ArgumentCaptor.forClass(EventBuilder.class);
+        verify(mockSentryClient).sendEvent(eventBuilderArgumentCaptor.capture());
+        Event event = eventBuilderArgumentCaptor.getValue().build();
+        ExceptionInterface exceptionInterface = (ExceptionInterface) event.getSentryInterfaces()
+            .get(ExceptionInterface.EXCEPTION_INTERFACE);
+        SentryException sentryException = exceptionInterface.getExceptions().getFirst();
+        assertThat(sentryException.getExceptionMessage(), is(exception.getMessage()));
+        assertThat(sentryException.getStackTraceInterface().getStackTrace(),
+            is(SentryStackTraceElement.fromStackTraceElements(exception.getStackTrace(), null)));
+        assertNoErrorsInStatusManager();
+
+        String rebuiltExceptionClassName = sentryException.getExceptionPackageName() + "." + sentryException.getExceptionClassName();
+        Class<?> rebuiltExceptionClass = Class.forName(rebuiltExceptionClassName);
+
+        assertThat(rebuiltExceptionClass == exception.getClass(), equalTo(true));
+    }
+
+    @Test
     public void testLogParametrisedMessage() throws Exception {
         final String messagePattern = "Formatted message {} {} {}";
         final Object[] parameters = {"first parameter", new Object[0], null};
@@ -304,5 +352,9 @@ public class SentryAppenderEventBuildingTest extends BaseTest {
         Event event = eventBuilderArgumentCaptor.getValue().build();
         assertThat(event.getMessage(), is("INFO  : " + expectedMessage));
         assertNoErrorsInStatusManager();
+    }
+
+    private static class InnerException extends Exception {
+
     }
 }
