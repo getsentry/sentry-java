@@ -1,16 +1,13 @@
-cmake_minimum_required(VERSION 3.4.1)
-project("sentry-android")
+cmake_minimum_required(VERSION 3.10)
+project(Sentry-Android LANGUAGES C CXX)
+
+# Add sentry-android shared library
+add_library(sentry-android SHARED src/main/jni/sentry.c)
 
 # Adding sentry-native submodule subdirectory
-add_subdirectory(${SENTRY_NATIVE_SRC})
+add_subdirectory(${SENTRY_NATIVE_SRC} sentry_build)
 
-# sentry-native submodule include path.
-include_directories(${SENTRY_NATIVE_SRC}/include)
-
-# sentry-native source code.
-file(GLOB SENTRY_ANDROID_SOURCES ${CMAKE_SOURCE_DIR}/src/main/jni/*.c)
-
-# Adding dynamic library and linking it with log and sentry-native.
-add_library("sentry-android" SHARED ${SENTRY_ANDROID_SOURCES})
-find_library(LOG_LIB log)
-target_link_libraries("sentry-android" "sentry" ${LOG_LIB})
+# Link to sentry-native
+target_link_libraries(sentry-android PRIVATE
+    $<BUILD_INTERFACE:sentry::sentry>
+)
