@@ -1,8 +1,6 @@
 #include <string.h>
 #include <sentry.h>
 #include <jni.h>
-#include <malloc.h>
-#include <android/log.h>
 
 struct transport_options {
     jclass cls;
