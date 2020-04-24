@@ -8,6 +8,7 @@ import io.sentry.core.ILogger;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.util.Objects;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Class responsible for reading values from manifest and setting them to the options */
@@ -20,7 +21,7 @@ final class ManifestMetadataReader {
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
 
-  @Deprecated
+  @ApiStatus.ScheduledForRemoval @Deprecated
   static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
 
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";

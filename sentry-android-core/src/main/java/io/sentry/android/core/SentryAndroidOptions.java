@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import io.sentry.core.SentryOptions;
+import org.jetbrains.annotations.ApiStatus;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -37,6 +38,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   /**
    * @deprecated use {@link #getAnrTimeoutIntervalMillis , #getAnrTimeoutIntervalMillis} instead.
    */
+  @ApiStatus.ScheduledForRemoval
   @Deprecated
   public long getAnrTimeoutIntervalMills() {
     return getAnrTimeoutIntervalMillis();
@@ -45,6 +47,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   /**
    * @deprecated use {@link #setAnrTimeoutIntervalMillis , #setAnrTimeoutIntervalMillis} instead.
    */
+  @ApiStatus.ScheduledForRemoval
   @Deprecated
   public void setAnrTimeoutIntervalMills(long anrTimeoutIntervalMillis) {
     setAnrTimeoutIntervalMillis(anrTimeoutIntervalMillis);
