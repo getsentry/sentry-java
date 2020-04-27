@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.CachedEvent
 import io.sentry.core.SentryEnvelope
 import io.sentry.core.SentryEnvelopeHeader
 import io.sentry.core.SentryEnvelopeItem
@@ -247,6 +248,32 @@ class AsyncConnectionTest {
     }
 
     @Test
+    fun `when session is retry after and cached, discard session`() {
+        // given
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+
+        // when
+        fixture.getSUT().send(envelope, CachedEvent())
+
+        // then
+        verify(fixture.sessionCache).discard(any())
+    }
+
+    @Test
+    fun `when session is retry after but not cached, do nothing`() {
+        // given
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+
+        // when
+        fixture.getSUT().send(envelope)
+
+        // then
+        verify(fixture.sessionCache, never()).discard(any())
+    }
+
+    @Test
     fun `when session is not retry after, submit runnable`() {
         // given
         val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
@@ -273,6 +300,32 @@ class AsyncConnectionTest {
         verify(fixture.transport).send(check<SentryEnvelope> {
             assertEquals(1, it.items.count())
         })
+    }
+
+    @Test
+    fun `when event is retry after and cached, discard session`() {
+        // given
+        val ev = mock<SentryEvent>()
+        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+
+        // when
+        fixture.getSUT().send(ev, CachedEvent())
+
+        // then
+        verify(fixture.eventCache).discard(any())
+    }
+
+    @Test
+    fun `when event is retry after but not cached, do nothing`() {
+        // given
+        val ev = mock<SentryEvent>()
+        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+
+        // when
+        fixture.getSUT().send(ev)
+
+        // then
+        verify(fixture.eventCache, never()).discard(any())
     }
 
     private fun createSession(): Session {

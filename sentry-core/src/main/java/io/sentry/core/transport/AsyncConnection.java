@@ -100,12 +100,17 @@ public final class AsyncConnection implements Closeable, Connection {
   public void send(final @NotNull SentryEvent event, final @Nullable Object hint)
       throws IOException {
     IEventCache currentEventCache = eventCache;
+    boolean cached = false;
     if (hint instanceof Cached) {
       currentEventCache = NoOpEventCache.getInstance();
+      cached = true;
     }
 
     // no reason to continue
     if (transport.isRetryAfter(SentryEnvelopeItemType.Event.getType())) {
+      if (cached) {
+        eventCache.discard(event);
+      }
       return;
     }
 
@@ -118,8 +123,10 @@ public final class AsyncConnection implements Closeable, Connection {
       throws IOException {
     // For now no caching on envelopes
     IEnvelopeCache currentEnvelopeCache = sessionCache;
+    boolean cached = false;
     if (hint instanceof Cached) {
       currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
+      cached = true;
     }
 
     // Optimize for/No allocations if no items are under 429
@@ -144,6 +151,9 @@ public final class AsyncConnection implements Closeable, Connection {
 
       // no reason to continue
       if (toSend.isEmpty()) {
+        if (cached) {
+          sessionCache.discard(envelope);
+        }
         return;
       }
 
