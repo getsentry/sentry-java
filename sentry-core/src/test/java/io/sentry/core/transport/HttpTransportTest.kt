@@ -282,6 +282,21 @@ class HttpTransportTest {
         assertFalse(transport.isRetryAfter("security"))
     }
 
+    @Test
+    fun `When X-Sentry-Rate-Limit categories are empty, applies to all the categories`() {
+        val transport = fixture.getSUT()
+
+        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
+            .thenReturn("50::key")
+
+        val event = SentryEvent()
+
+        transport.send(event)
+
+        assertTrue(transport.isRetryAfter("event"))
+    }
+
     private fun createSession(): Session {
         return Session("123", User(), "env", "release")
     }
