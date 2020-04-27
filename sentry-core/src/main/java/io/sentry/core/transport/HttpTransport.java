@@ -57,6 +57,7 @@ public class HttpTransport implements ITransport {
   private final @NotNull Map<String, Date> sentryRetryAfterLimit = new ConcurrentHashMap<>();
 
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
+  private static final String HTTP_RETRY_DEFAULT_CATEGORY = "default";
 
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
@@ -164,8 +165,8 @@ public class HttpTransport implements ITransport {
       final Date date = sentryRetryAfterLimit.get(type);
 
       return !new Date().after(date);
-    } else if (sentryRetryAfterLimit.containsKey("default")) {
-      final Date date = sentryRetryAfterLimit.get("default");
+    } else if (sentryRetryAfterLimit.containsKey(HTTP_RETRY_DEFAULT_CATEGORY)) {
+      final Date date = sentryRetryAfterLimit.get(HTTP_RETRY_DEFAULT_CATEGORY);
 
       return !new Date().after(date);
     }
@@ -260,7 +261,15 @@ public class HttpTransport implements ITransport {
 
   private void updateRetryAfterLimits(
       final @NotNull HttpURLConnection connection, final int responseCode) {
+    // seconds
     final String retryAfterHeader = connection.getHeaderField("Retry-After");
+
+    // X-Sentry-Rate-Limits looks like: seconds:categories:scope
+    // it could have more than one scope so it looks like:
+    // quota_limit, quota_limit, quota_limit
+
+    // a real example: 50:transaction:key, 2700:default;event;security:organization
+    // 50::key is also a valid case, it means no categories and it should apply to all of them
     final String sentryRateLimitHeader = connection.getHeaderField("X-Sentry-Rate-Limits");
     updateRetryAfterLimits(sentryRateLimitHeader, retryAfterHeader, responseCode);
   }
@@ -292,13 +301,23 @@ public class HttpTransport implements ITransport {
           if (retryAfterAndCategories.length > 1) {
             final String allCategories = retryAfterAndCategories[1];
 
-            if (allCategories != null) {
+            // we dont care if Date is UTC as we just add the relative seconds
+            final Date date = new Date(System.currentTimeMillis() + retryAfterMillis);
+
+            if (allCategories != null && !allCategories.isEmpty()) {
               final String[] categories = allCategories.split(";", -1);
 
               for (final String catItem : categories) {
-                // we dont care if Date is UTC as we just add the relative seconds
-                sentryRetryAfterLimit.put(
-                    catItem, new Date(System.currentTimeMillis() + retryAfterMillis));
+                sentryRetryAfterLimit.put(catItem, date);
+              }
+            } else {
+              // if categories are empty, we should apply to all the categories.
+              for (final String catItem : sentryRetryAfterLimit.keySet()) {
+                sentryRetryAfterLimit.put(catItem, date);
+              }
+              // if 'default' category is not added yet, we add it as a fallback
+              if (!sentryRetryAfterLimit.containsKey(HTTP_RETRY_DEFAULT_CATEGORY)) {
+                sentryRetryAfterLimit.put(HTTP_RETRY_DEFAULT_CATEGORY, date);
               }
             }
           }
@@ -308,7 +327,7 @@ public class HttpTransport implements ITransport {
       final long retryAfterMillis = parseRetryAfterOrDefault(retryAfterHeader);
       // we dont care if Date is UTC as we just add the relative seconds
       final Date date = new Date(System.currentTimeMillis() + retryAfterMillis);
-      sentryRetryAfterLimit.put("default", date);
+      sentryRetryAfterLimit.put(HTTP_RETRY_DEFAULT_CATEGORY, date);
     }
   }
 
