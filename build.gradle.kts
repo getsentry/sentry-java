@@ -66,6 +66,7 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
+        paddedCell()
     }
 
     kotlin {

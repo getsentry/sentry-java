@@ -12,38 +12,53 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SessionTrackingIntegration implements Integration, Closeable {
+public final class AppLifecycleIntegration implements Integration, Closeable {
 
   @TestOnly @Nullable LifecycleWatcher watcher;
 
-  private @Nullable SentryOptions options;
+  private @Nullable SentryAndroidOptions options;
 
   @Override
   public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    this.options = Objects.requireNonNull(options, "SentryOptions is required");
     Objects.requireNonNull(hub, "Hub is required");
+    this.options =
+        Objects.requireNonNull(
+            (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
+            "SentryAndroidOptions is required");
 
-    options
+    this.options
         .getLogger()
         .log(
             SentryLevel.DEBUG,
-            "SessionTrackingIntegration enabled: %s",
-            options.isEnableSessionTracking());
+            "enableSessionTracking enabled: %s",
+            this.options.isEnableSessionTracking());
 
-    if (options.isEnableSessionTracking()) {
+    this.options
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "enableAppLifecycleBreadcrumbs enabled: %s",
+            this.options.isEnableAppLifecycleBreadcrumbs());
+
+    if (this.options.isEnableSessionTracking() || this.options.isEnableAppLifecycleBreadcrumbs()) {
       try {
         Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
         Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
-        watcher = new LifecycleWatcher(hub, options.getSessionTrackingIntervalMillis());
+        watcher =
+            new LifecycleWatcher(
+                hub,
+                this.options.getSessionTrackingIntervalMillis(),
+                this.options.isEnableSessionTracking(),
+                this.options.isEnableAppLifecycleBreadcrumbs());
         ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
 
-        options.getLogger().log(SentryLevel.DEBUG, "SessionTrackingIntegration installed.");
+        options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
       } catch (ClassNotFoundException e) {
         options
             .getLogger()
             .log(
                 SentryLevel.INFO,
-                "androidx.lifecycle is not available, SessionTrackingIntegration won't be installed",
+                "androidx.lifecycle is not available, AppLifecycleIntegration won't be installed",
                 e);
       }
     }
@@ -55,7 +70,7 @@ public final class SessionTrackingIntegration implements Integration, Closeable 
       ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcher);
       watcher = null;
       if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "SessionTrackingIntegration removed.");
+        options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration removed.");
       }
     }
   }

@@ -46,6 +46,9 @@ public final class Device implements IUnknownPropertiesConsumer {
   private String language;
   private String connectionType;
 
+  /** battery's temperature in celsius */
+  private Float batteryTemperature;
+
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
@@ -320,6 +323,14 @@ public final class Device implements IUnknownPropertiesConsumer {
 
   public void setConnectionType(String connectionType) {
     this.connectionType = connectionType;
+  }
+
+  public Float getBatteryTemperature() {
+    return batteryTemperature;
+  }
+
+  public void setBatteryTemperature(Float batteryTemperature) {
+    this.batteryTemperature = batteryTemperature;
   }
 
   public enum DeviceOrientation {

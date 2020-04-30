@@ -148,6 +148,35 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads release to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putString(ManifestMetadataReader.RELEASE, "release")
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertEquals("release", options.release)
+    }
+
+    @Test
+    fun `applyMetadata reads release and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertNull(options.release)
+    }
+
+    @Test
     fun `applyMetadata reads session tracking interval to options`() {
         // Arrange
         val options = SentryAndroidOptions()
@@ -204,5 +233,121 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertEquals(1000.toLong(), options.anrTimeoutIntervalMillis)
+    }
+
+    @Test
+    fun `applyMetadata reads activity breadcrumbs to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE, false)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isEnableActivityLifecycleBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads activity breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isEnableActivityLifecycleBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads app lifecycle breadcrumbs to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_APP_LIFECYCLE_ENABLE, false)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isEnableAppLifecycleBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads app lifecycle breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isEnableAppLifecycleBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads system events breadcrumbs to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_SYSTEM_EVENTS_ENABLE, false)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isEnableSystemEventBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads system events breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isEnableSystemEventBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads app components breadcrumbs to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_APP_COMPONENTS_ENABLE, false)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isEnableAppComponentBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads app components breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isEnableAppComponentBreadcrumbs)
     }
 }

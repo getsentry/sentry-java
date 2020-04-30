@@ -6,31 +6,32 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class SessionTrackingIntegrationTest {
+class AppLifecycleIntegrationTest {
 
-    private val integration = SessionTrackingIntegration()
+    private val integration = AppLifecycleIntegration()
 
     @Test
-    fun `When SessionTracking is enabled, lifecycle watcher should be started`() {
+    fun `When AppLifecycleIntegration is added, lifecycle watcher should be started`() {
         val options = SentryAndroidOptions()
-        options.isEnableSessionTracking = true
         val hub = mock<IHub>()
         integration.register(hub, options)
         assertNotNull(integration.watcher)
     }
 
     @Test
-    fun `When SessionTracking is disabled, lifecycle watcher should not be started`() {
-        val options = SentryAndroidOptions()
+    fun `When SessionTracking and AppLifecycle breadcrumbs are disabled, lifecycle watcher should not be started`() {
+        val options = SentryAndroidOptions().apply {
+            isEnableAppLifecycleBreadcrumbs = false
+            isEnableSessionTracking = false
+        }
         val hub = mock<IHub>()
         integration.register(hub, options)
         assertNull(integration.watcher)
     }
 
     @Test
-    fun `When SessionTracking integration is closed, lifecycle watcher should be closed`() {
+    fun `When AppLifecycleIntegration is closed, lifecycle watcher should be closed`() {
         val options = SentryAndroidOptions()
-        options.isEnableSessionTracking = true
         val hub = mock<IHub>()
         integration.register(hub, options)
         assertNotNull(integration.watcher)
