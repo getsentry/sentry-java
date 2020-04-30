@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.core.EnvelopeReader;
@@ -63,6 +64,22 @@ final class AndroidOptionsInitializer {
 
     final IEnvelopeReader envelopeReader = new EnvelopeReader();
 
+    installDefaultIntegrations(context, options, envelopeReader);
+
+    readDefaultOptionValues(options, context);
+
+    options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
+
+    options.setSerializer(new AndroidSerializer(options.getLogger(), envelopeReader));
+
+    options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+  }
+
+  private static void installDefaultIntegrations(
+      final @NotNull Context context,
+      final @NotNull SentryOptions options,
+      final @NotNull IEnvelopeReader envelopeReader) {
+
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
     options.addIntegration(new NdkIntegration());
@@ -95,15 +112,20 @@ final class AndroidOptionsInitializer {
             }));
 
     options.addIntegration(new AnrIntegration());
-    options.addIntegration(new SessionTrackingIntegration());
-
-    readDefaultOptionValues(options, context);
-
-    options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
-
-    options.setSerializer(new AndroidSerializer(options.getLogger(), envelopeReader));
-
-    options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    options.addIntegration(new AppLifecycleIntegration());
+    if (context instanceof Application) { // just a guard check, it should be an Application
+      options.addIntegration(new ActivityBreadcrumbsIntegration((Application) context));
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "ActivityBreadcrumbsIntegration needs an Application class to be installed.");
+    }
+    options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
+    options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
+    options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
+    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
   }
 
   /**

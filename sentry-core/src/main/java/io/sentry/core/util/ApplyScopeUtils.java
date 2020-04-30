@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class ApplyScopeUtils {
 
+  private ApplyScopeUtils() {}
+
   /**
    * Scope's data should be applied if: Hint is of the type ApplyScopeData or Hint is not Cached
    * (this includes a null hint)

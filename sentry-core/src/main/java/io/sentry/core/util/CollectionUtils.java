@@ -4,9 +4,9 @@ import java.util.Collection;
 import org.jetbrains.annotations.ApiStatus;
 
 /** Util class for Collections */
+@ApiStatus.Internal
 public final class CollectionUtils {
 
-  @ApiStatus.Internal
   private CollectionUtils() {}
 
   /**

@@ -34,6 +34,12 @@ final class ManifestMetadataReader {
   static final String SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS =
       "io.sentry.session-tracking.timeout-interval-millis";
 
+  static final String BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE =
+      "io.sentry.breadcrumbs.activity-lifecycle";
+  static final String BREADCRUMBS_APP_LIFECYCLE_ENABLE = "io.sentry.breadcrumbs.app-lifecycle";
+  static final String BREADCRUMBS_SYSTEM_EVENTS_ENABLE = "io.sentry.breadcrumbs.system-events";
+  static final String BREADCRUMBS_APP_COMPONENTS_ENABLE = "io.sentry.breadcrumbs.app-components";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -136,6 +142,33 @@ final class ManifestMetadataReader {
                 "sessionTrackingTimeoutIntervalMillis read: %d",
                 sessionTrackingTimeoutIntervalMillis);
         options.setSessionTrackingIntervalMillis(sessionTrackingTimeoutIntervalMillis);
+
+        final boolean enableActivityLifecycleBreadcrumbs =
+            metadata.getBoolean(
+                BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE,
+                options.isEnableActivityLifecycleBreadcrumbs());
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "enableActivityLifecycleBreadcrumbs read: %s", ndk);
+        options.setEnableActivityLifecycleBreadcrumbs(enableActivityLifecycleBreadcrumbs);
+
+        final boolean enableAppLifecycleBreadcrumbs =
+            metadata.getBoolean(
+                BREADCRUMBS_APP_LIFECYCLE_ENABLE, options.isEnableAppComponentBreadcrumbs());
+        options.getLogger().log(SentryLevel.DEBUG, "enableAppLifecycleBreadcrumbs read: %s", ndk);
+        options.setEnableAppLifecycleBreadcrumbs(enableAppLifecycleBreadcrumbs);
+
+        final boolean enableSystemEventBreadcrumbs =
+            metadata.getBoolean(
+                BREADCRUMBS_SYSTEM_EVENTS_ENABLE, options.isEnableSystemEventBreadcrumbs());
+        options.getLogger().log(SentryLevel.DEBUG, "enableSystemEventBreadcrumbs read: %s", ndk);
+        options.setEnableSystemEventBreadcrumbs(enableSystemEventBreadcrumbs);
+
+        final boolean enableAppComponentBreadcrumbs =
+            metadata.getBoolean(
+                BREADCRUMBS_APP_COMPONENTS_ENABLE, options.isEnableAppComponentBreadcrumbs());
+        options.getLogger().log(SentryLevel.DEBUG, "enableAppComponentBreadcrumbs read: %s", ndk);
+        options.setEnableAppComponentBreadcrumbs(enableAppComponentBreadcrumbs);
       }
       options
           .getLogger()

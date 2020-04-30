@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -23,9 +24,9 @@ object ContextUtilsTest {
     }
 
     fun createMockContext(): Context {
-        val mockContext = mock<Context>()
-        whenever(mockContext.applicationContext).thenReturn(mockContext)
-        whenever(mockContext.cacheDir).thenReturn(File(""))
-        return mockContext
+        val mockApp = mock<Application>()
+        whenever(mockApp.applicationContext).thenReturn(mockApp)
+        whenever(mockApp.cacheDir).thenReturn(File(""))
+        return mockApp
     }
 }
