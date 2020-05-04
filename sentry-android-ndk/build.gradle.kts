@@ -100,8 +100,6 @@ android {
         isCheckReleaseBuilds = false
     }
 
-//    ndkVersion = "21.0.6113669" while https://discuss.lgtm.com/t/android-project-build-is-not-working/2587/4 is not fixed.
-
     nativeBundleExport {
         headerDir = "${project.projectDir}/$sentryNativeSrc/include"
     }
