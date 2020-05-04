@@ -11,6 +11,7 @@ import java.io.Closeable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -20,24 +21,24 @@ import org.jetbrains.annotations.TestOnly;
 public final class UncaughtExceptionHandlerIntegration
     implements Integration, Thread.UncaughtExceptionHandler, Closeable {
   /** Reference to the pre-existing uncaught exception handler. */
-  private Thread.UncaughtExceptionHandler defaultExceptionHandler;
+  private @Nullable Thread.UncaughtExceptionHandler defaultExceptionHandler;
 
-  private IHub hub;
-  private SentryOptions options;
+  private @Nullable IHub hub;
+  private @Nullable SentryOptions options;
 
   private boolean registered = false;
-  private final UncaughtExceptionHandler threadAdapter;
+  private final @NotNull UncaughtExceptionHandler threadAdapter;
 
-  UncaughtExceptionHandlerIntegration() {
+  public UncaughtExceptionHandlerIntegration() {
     this(UncaughtExceptionHandler.Adapter.getInstance());
   }
 
-  UncaughtExceptionHandlerIntegration(UncaughtExceptionHandler threadAdapter) {
+  UncaughtExceptionHandlerIntegration(final @NotNull UncaughtExceptionHandler threadAdapter) {
     this.threadAdapter = Objects.requireNonNull(threadAdapter, "threadAdapter is required.");
   }
 
   @Override
-  public final void register(IHub hub, SentryOptions options) {
+  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     if (registered) {
       options
           .getLogger()
@@ -48,60 +49,77 @@ public final class UncaughtExceptionHandlerIntegration
     }
     registered = true;
 
-    this.hub = hub;
-    this.options = options;
-    Thread.UncaughtExceptionHandler currentHandler =
-        threadAdapter.getDefaultUncaughtExceptionHandler();
-    if (currentHandler != null) {
-      options
+    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.options = Objects.requireNonNull(options, "SentryOptions is required");
+
+    this.options
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "UncaughtExceptionHandlerIntegration enabled: %s",
+            this.options.isEnableUncaughtExceptionHandler());
+
+    if (this.options.isEnableUncaughtExceptionHandler()) {
+      final Thread.UncaughtExceptionHandler currentHandler =
+          threadAdapter.getDefaultUncaughtExceptionHandler();
+      if (currentHandler != null) {
+        this.options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "default UncaughtExceptionHandler class='"
+                    + currentHandler.getClass().getName()
+                    + "'");
+        defaultExceptionHandler = currentHandler;
+      }
+
+      threadAdapter.setDefaultUncaughtExceptionHandler(this);
+
+      this.options
           .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "default UncaughtExceptionHandler class='"
-                  + currentHandler.getClass().getName()
-                  + "'");
-      defaultExceptionHandler = currentHandler;
+          .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
     }
-
-    threadAdapter.setDefaultUncaughtExceptionHandler(this);
-
-    options.getLogger().log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
   }
 
   @Override
   public void uncaughtException(Thread thread, Throwable thrown) {
-    options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
+    if (options != null && hub != null) {
+      options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
-    try {
-      UncaughtExceptionHint hint =
-          new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
-      Throwable throwable = getUnhandledThrowable(thread, thrown);
-      SentryEvent event = new SentryEvent(throwable);
-      event.setLevel(SentryLevel.FATAL);
-      this.hub.captureEvent(event, hint);
-      // Block until the event is flushed to disk
-      if (!hint.waitFlush()) {
+      try {
+        final UncaughtExceptionHint hint =
+            new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
+        final Throwable throwable = getUnhandledThrowable(thread, thrown);
+        final SentryEvent event = new SentryEvent(throwable);
+        event.setLevel(SentryLevel.FATAL);
+        hub.captureEvent(event, hint);
+        // Block until the event is flushed to disk
+        if (!hint.waitFlush()) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Timed out waiting to flush event to disk before crashing. Event: %s",
+                  event.getEventId());
+        }
+      } catch (Exception e) {
         options
             .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Timed out waiting to flush event to disk before crashing. Event: %s",
-                event.getEventId());
+            .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
       }
-    } catch (Exception e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
-    }
 
-    if (defaultExceptionHandler != null) {
-      options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
-      defaultExceptionHandler.uncaughtException(thread, thrown);
+      if (defaultExceptionHandler != null) {
+        options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
+        defaultExceptionHandler.uncaughtException(thread, thrown);
+      }
     }
   }
 
   @TestOnly
   @NotNull
-  static Throwable getUnhandledThrowable(Thread thread, Throwable thrown) {
-    Mechanism mechanism = new Mechanism();
+  static Throwable getUnhandledThrowable(
+      final @NotNull Thread thread, final @NotNull Throwable thrown) {
+    final Mechanism mechanism = new Mechanism();
     mechanism.setHandled(false);
     mechanism.setType("UncaughtExceptionHandler");
     return new ExceptionMechanismException(mechanism, thrown, thread);
@@ -112,6 +130,10 @@ public final class UncaughtExceptionHandlerIntegration
     if (defaultExceptionHandler != null
         && this == threadAdapter.getDefaultUncaughtExceptionHandler()) {
       threadAdapter.setDefaultUncaughtExceptionHandler(defaultExceptionHandler);
+
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration removed.");
+      }
     }
   }
 
@@ -123,7 +145,7 @@ public final class UncaughtExceptionHandlerIntegration
 
     UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       this.flushTimeoutMillis = flushTimeoutMillis;
-      this.latch = new CountDownLatch(1);
+      latch = new CountDownLatch(1);
       this.logger = logger;
     }
 

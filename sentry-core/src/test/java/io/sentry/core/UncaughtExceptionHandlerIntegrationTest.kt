@@ -1,7 +1,9 @@
 package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
@@ -97,5 +99,26 @@ class UncaughtExceptionHandlerIntegrationTest {
         verify(integrationMock).register(expected, options)
         hub.close()
         verify(integrationMock).close()
+    }
+
+    @Test
+    fun `When defaultUncaughtExceptionHandler is disabled, should not install Sentry UncaughtExceptionHandler`() {
+        val options = SentryOptions()
+        options.isEnableUncaughtExceptionHandler = false
+        val hub = mock<IHub>()
+        val handlerMock = mock<UncaughtExceptionHandler>()
+        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+        integration.register(hub, options)
+        verify(handlerMock, never()).defaultUncaughtExceptionHandler = any()
+    }
+
+    @Test
+    fun `When defaultUncaughtExceptionHandler is enabled, should install Sentry UncaughtExceptionHandler`() {
+        val options = SentryOptions()
+        val hub = mock<IHub>()
+        val handlerMock = mock<UncaughtExceptionHandler>()
+        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+        integration.register(hub, options)
+        verify(handlerMock).defaultUncaughtExceptionHandler = argWhere { it is UncaughtExceptionHandlerIntegration }
     }
 }

@@ -350,4 +350,33 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(options.isEnableAppComponentBreadcrumbs)
     }
+
+    @Test
+    fun `applyMetadata reads enableUncaughtExceptionHandler to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.UNCAUGHT_EXCEPTION_HANDLER_ENABLE, false)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isEnableUncaughtExceptionHandler)
+    }
+
+    @Test
+    fun `applyMetadata reads enableUncaughtExceptionHandler and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isEnableUncaughtExceptionHandler)
+    }
 }
