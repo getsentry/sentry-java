@@ -5,8 +5,8 @@ import io.sentry.core.transport.ITransport;
 import io.sentry.core.transport.ITransportGate;
 import java.io.File;
 import java.net.Proxy;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,13 +22,13 @@ public class SentryOptions {
    * Are callbacks that run for every event. They can either return a new event which in most cases
    * means just adding data OR return null in case the event will be dropped and not sent.
    */
-  private final @NotNull List<EventProcessor> eventProcessors = new ArrayList<>();
+  private final @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
 
   /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
    * along with code that inserts those bindings and activates them.
    */
-  private final @NotNull List<Integration> integrations = new ArrayList<>();
+  private final @NotNull List<Integration> integrations = new CopyOnWriteArrayList<>();
 
   /**
    * The DSN tells the SDK where to send the events to. If this value is not provided, the SDK will
@@ -128,13 +128,13 @@ public class SentryOptions {
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
    * default.
    */
-  private final @NotNull List<String> inAppExcludes = new ArrayList<>();
+  private final @NotNull List<String> inAppExcludes = new CopyOnWriteArrayList<>();
 
   /**
    * A list of string prefixes of module names that belong to the app. This option takes precedence
    * over inAppExcludes.
    */
-  private final @NotNull List<String> inAppIncludes = new ArrayList<>();
+  private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
   /** The transport is an internal construct of the client that abstracts away the event sending. */
   private @Nullable ITransport transport;
@@ -171,6 +171,11 @@ public class SentryOptions {
 
   /** The server name used in the Sentry messages. */
   private String serverName;
+
+  /*
+  When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
+   */
+  private boolean enableUncaughtExceptionHandler = true;
 
   /**
    * Adds an event processor
@@ -778,6 +783,24 @@ public class SentryOptions {
    */
   public void setFlushTimeoutMillis(long flushTimeoutMillis) {
     this.flushTimeoutMillis = flushTimeoutMillis;
+  }
+
+  /**
+   * Checks if the default UncaughtExceptionHandlerIntegration is enabled or not.
+   *
+   * @return true if enabled or false otherwise.
+   */
+  public boolean isEnableUncaughtExceptionHandler() {
+    return enableUncaughtExceptionHandler;
+  }
+
+  /**
+   * Enable or disable the default UncaughtExceptionHandlerIntegration.
+   *
+   * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
+   */
+  public void setEnableUncaughtExceptionHandler(boolean enableUncaughtExceptionHandler) {
+    this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
   /** The BeforeSend callback */

@@ -67,5 +67,8 @@
 <!--    how to enable and set a sampleRate (anything between 0.01 and 1.0), it's disabled by default-->
 <!--    <meta-data android:name="io.sentry.sample-rate" android:value="0.5" />-->
 
+    <!--    how to disable default sentry uncaught exception-->
+<!--    <meta-data android:name="io.sentry.uncaught-exception-handler.enable" android:value="false" />-->
+
   </application>
 </manifest>
