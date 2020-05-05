@@ -29,4 +29,29 @@ class StringUtilsTest {
     fun `when str has no dots, return the original str`() {
         assertEquals("iosentry", StringUtils.getStringAfterDot("iosentry"))
     }
+
+    @Test
+    fun `capitalize string`() {
+        assertEquals("Test", StringUtils.capitalize("test"))
+    }
+
+    @Test
+    fun `capitalize string even if its uppercase`() {
+        assertEquals("Test", StringUtils.capitalize("TEST"))
+    }
+
+    @Test
+    fun `capitalize do not throw if only 1 char`() {
+        assertEquals("T", StringUtils.capitalize("t"))
+    }
+
+    @Test
+    fun `capitalize returns itself if null`() {
+        assertNull(StringUtils.capitalize(null))
+    }
+
+    @Test
+    fun `capitalize returns itself if empty`() {
+        assertEquals("", StringUtils.capitalize(""))
+    }
 }

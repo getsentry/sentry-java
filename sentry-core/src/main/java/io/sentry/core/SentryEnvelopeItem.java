@@ -67,10 +67,7 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryEnvelopeItemType.Session.getType(),
-            () -> cachedItem.getBytes().length,
-            "application/json",
-            null);
+            SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
 
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
@@ -92,10 +89,7 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryEnvelopeItemType.Event.getType(),
-            () -> cachedItem.getBytes().length,
-            "application/json",
-            null);
+            SentryItemType.Event, () -> cachedItem.getBytes().length, "application/json", null);
 
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }

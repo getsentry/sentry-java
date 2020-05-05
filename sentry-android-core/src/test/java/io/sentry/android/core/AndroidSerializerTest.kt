@@ -9,6 +9,7 @@ import io.sentry.core.DateUtils
 import io.sentry.core.EnvelopeReader
 import io.sentry.core.SentryEnvelope
 import io.sentry.core.SentryEvent
+import io.sentry.core.SentryItemType
 import io.sentry.core.SentryLevel
 import io.sentry.core.Session
 import io.sentry.core.protocol.Contexts
@@ -345,7 +346,7 @@ class AndroidSerializerTest {
         assertNotNull(expectedEnveope)
         assertEquals(1, expectedEnveope.items.count())
         expectedEnveope.items.forEach {
-            assertEquals("session", it.header.type)
+            assertEquals(SentryItemType.Session, it.header.type)
             val reader =
                 InputStreamReader(ByteArrayInputStream(it.data), Charsets.UTF_8)
             val actualSession = serializer.deserializeSession(reader)

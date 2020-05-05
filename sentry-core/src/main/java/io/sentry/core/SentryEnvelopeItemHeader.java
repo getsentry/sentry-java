@@ -11,12 +11,11 @@ public final class SentryEnvelopeItemHeader {
 
   private final @Nullable String contentType;
   private final @Nullable String fileName;
-  private final @NotNull String type;
+  private final @NotNull SentryItemType type;
   private final int length;
   @Nullable private final Callable<Integer> getLength;
 
-  // TODO: Looks like a type here that defaults to String for unknown values would be ideal
-  public @NotNull String getType() {
+  public @NotNull SentryItemType getType() {
     return type;
   }
 
@@ -40,9 +39,9 @@ public final class SentryEnvelopeItemHeader {
   }
 
   SentryEnvelopeItemHeader(
-      final @NotNull String type,
+      final @NotNull SentryItemType type,
       int length,
-      final @NotNull String contentType,
+      final @Nullable String contentType,
       final @Nullable String fileName) {
     this.type = Objects.requireNonNull(type, "type is required");
     this.contentType = contentType;
@@ -52,7 +51,7 @@ public final class SentryEnvelopeItemHeader {
   }
 
   SentryEnvelopeItemHeader(
-      final @NotNull String type,
+      final @NotNull SentryItemType type,
       final @Nullable Callable<Integer> getLength,
       final @Nullable String contentType,
       final @Nullable String fileName) {
