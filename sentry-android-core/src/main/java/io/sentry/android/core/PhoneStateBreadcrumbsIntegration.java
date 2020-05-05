@@ -47,10 +47,16 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
     if (this.options.isEnableSystemEventBreadcrumbs()) {
       telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
       if (telephonyManager != null) {
-        listener = new PhoneStateChangeListener(hub);
-        telephonyManager.listen(listener, LISTEN_CALL_STATE);
+        try {
+          listener = new PhoneStateChangeListener(hub);
+          telephonyManager.listen(listener, LISTEN_CALL_STATE);
 
-        options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
+          options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
+        } catch (NullPointerException e) {
+          this.options
+              .getLogger()
+              .log(SentryLevel.INFO, e, "TelephonyManager is not ready for use.");
+        }
       } else {
         this.options.getLogger().log(SentryLevel.INFO, "TelephonyManager is not available");
       }
