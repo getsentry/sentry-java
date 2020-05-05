@@ -2,8 +2,8 @@ package io.sentry.core.transport;
 
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
-import io.sentry.core.SentryEnvelopeItemType;
 import io.sentry.core.SentryEvent;
+import io.sentry.core.SentryItemType;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.cache.IEnvelopeCache;
@@ -107,7 +107,7 @@ public final class AsyncConnection implements Closeable, Connection {
     }
 
     // no reason to continue
-    if (transport.isRetryAfter(SentryEnvelopeItemType.Event.getType())) {
+    if (transport.isRetryAfter(SentryItemType.Event.getItemType())) {
       if (cached) {
         eventCache.discard(event);
       }
@@ -132,7 +132,8 @@ public final class AsyncConnection implements Closeable, Connection {
     // Optimize for/No allocations if no items are under 429
     List<SentryEnvelopeItem> dropItems = null;
     for (SentryEnvelopeItem item : envelope.getItems()) {
-      if (transport.isRetryAfter(item.getHeader().getType())) {
+      // using the raw value of the enum to not expose SentryEnvelopeItemType
+      if (transport.isRetryAfter(item.getHeader().getType().getItemType())) {
         if (dropItems == null) {
           dropItems = new ArrayList<>();
         }

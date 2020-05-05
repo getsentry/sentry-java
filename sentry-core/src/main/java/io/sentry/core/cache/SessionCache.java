@@ -10,7 +10,7 @@ import io.sentry.core.DateUtils;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
-import io.sentry.core.SentryEnvelopeItemType;
+import io.sentry.core.SentryItemType;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.Session;
@@ -213,7 +213,7 @@ public final class SessionCache implements IEnvelopeCache {
     if (items.iterator().hasNext()) {
       final SentryEnvelopeItem item = items.iterator().next();
 
-      if (SentryEnvelopeItemType.Session.getType().equals(item.getHeader().getType())) {
+      if (SentryItemType.Session.equals(item.getHeader().getType())) {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {

@@ -4,7 +4,9 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import io.sentry.core.util.StringUtils;
 import java.io.IOException;
+import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -27,9 +29,9 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
       writer.value(value.getFileName());
     }
 
-    if (value.getType() != null) {
+    if (!SentryItemType.Unknown.equals(value.getType())) {
       writer.name("type");
-      writer.value(value.getType());
+      writer.value(value.getType().name().toLowerCase(Locale.ROOT));
     }
 
     writer.name("length");
@@ -47,7 +49,7 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
 
     String contentType = null;
     String fileName = null;
-    String type = ""; // this cant be null
+    SentryItemType type = SentryItemType.Unknown;
     int length = 0;
 
     reader.beginObject();
@@ -60,7 +62,10 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
           fileName = reader.nextString();
           break;
         case "type":
-          type = reader.nextString();
+          try {
+            type = SentryItemType.valueOf(StringUtils.capitalize(reader.nextString()));
+          } catch (IllegalArgumentException ignored) {
+          }
           break;
         case "length":
           length = reader.nextInt();

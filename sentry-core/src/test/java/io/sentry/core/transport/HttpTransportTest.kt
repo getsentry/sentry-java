@@ -217,7 +217,7 @@ class HttpTransportTest {
 
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50:transaction:key, 2700:default;event;security:organization")
+            .thenReturn("50:transaction:key, 2700:default;error;security:organization")
 
         val event = SentryEvent()
 
@@ -234,7 +234,7 @@ class HttpTransportTest {
 
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50:transaction:key, 1:default;event;security:organization")
+            .thenReturn("50:transaction:key, 1:default;error;security:organization")
 
         val event = SentryEvent()
 
@@ -252,16 +252,14 @@ class HttpTransportTest {
 
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50:transaction:key, 2700:default;event;security:organization")
+            .thenReturn("50:transaction:key, 2700:default;error;security:organization")
 
         val event = SentryEvent()
 
         transport.send(event)
 
         assertTrue(transport.isRetryAfter("transaction"))
-        assertTrue(transport.isRetryAfter("default"))
         assertTrue(transport.isRetryAfter("event"))
-        assertTrue(transport.isRetryAfter("security"))
     }
 
     @Test
@@ -270,16 +268,14 @@ class HttpTransportTest {
 
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("1:transaction:key, 1:default;event;security:organization")
+            .thenReturn("1:transaction:key, 1:default;error;security:organization")
 
         val event = SentryEvent()
 
         transport.send(event)
         Thread.sleep(2000)
         assertFalse(transport.isRetryAfter("transaction"))
-        assertFalse(transport.isRetryAfter("default"))
         assertFalse(transport.isRetryAfter("event"))
-        assertFalse(transport.isRetryAfter("security"))
     }
 
     @Test
@@ -294,6 +290,50 @@ class HttpTransportTest {
 
         transport.send(event)
 
+        assertTrue(transport.isRetryAfter("event"))
+    }
+
+    @Test
+    fun `parse X-Sentry-Rate-Limit and ignore unknown categories`() {
+        val transport = fixture.getSUT()
+
+        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
+            .thenReturn("60:default;foobar;error;security:organization")
+
+        val event = SentryEvent()
+
+        transport.send(event)
+        assertFalse(transport.isRetryAfter("foobar"))
+    }
+
+    @Test
+    fun `When all categories is set but expired, applies only for specific category`() {
+        val transport = fixture.getSUT()
+
+        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
+            .thenReturn("1::key, 60:default;error;security:organization")
+
+        val event = SentryEvent()
+
+        transport.send(event)
+        Thread.sleep(2000)
+        assertTrue(transport.isRetryAfter("event"))
+    }
+
+    @Test
+    fun `When category has shorter rate limiting, do not apply new timestamp`() {
+        val transport = fixture.getSUT()
+
+        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
+            .thenReturn("60:error:key, 1:error:organization")
+
+        val event = SentryEvent()
+
+        transport.send(event)
+        Thread.sleep(2000)
         assertTrue(transport.isRetryAfter("event"))
     }
 

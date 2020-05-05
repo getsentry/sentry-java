@@ -4,12 +4,12 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import io.sentry.core.util.StringUtils;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SessionAdapter extends TypeAdapter<Session> {
@@ -135,7 +135,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
           started = DateUtils.getDateTime(reader.nextString());
           break;
         case "status":
-          status = Session.State.valueOf(capitalize(reader.nextString()));
+          status = Session.State.valueOf(StringUtils.capitalize(reader.nextString()));
           break;
         case "errors":
           errors = reader.nextInt();
@@ -196,14 +196,5 @@ public final class SessionAdapter extends TypeAdapter<Session> {
         userAgent,
         environment,
         release);
-  }
-
-  @TestOnly
-  String capitalize(String str) {
-    if (str == null || str.isEmpty()) {
-      return str;
-    }
-
-    return str.substring(0, 1).toUpperCase(Locale.ROOT) + str.substring(1);
   }
 }
