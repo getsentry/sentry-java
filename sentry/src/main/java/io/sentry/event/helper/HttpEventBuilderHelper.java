@@ -2,6 +2,7 @@ package io.sentry.event.helper;
 
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.HttpInterface;
+import io.sentry.event.interfaces.HttpRequestInterface;
 import io.sentry.event.interfaces.UserInterface;
 import io.sentry.servlet.SentryServletRequestListener;
 
@@ -40,15 +41,16 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
             return;
         }
 
-        addHttpInterface(eventBuilder, servletRequest);
-        addUserInterface(eventBuilder, servletRequest);
+        HttpServletRequestWrapper servletRequestWrapper = new HttpServletRequestWrapper(servletRequest);
+        addHttpInterface(eventBuilder, servletRequestWrapper);
+        addUserInterface(eventBuilder, servletRequestWrapper);
     }
 
-    private void addHttpInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
+    private void addHttpInterface(EventBuilder eventBuilder, HttpRequestInterface servletRequest) {
         eventBuilder.withSentryInterface(new HttpInterface(servletRequest, remoteAddressResolver), false);
     }
 
-    private void addUserInterface(EventBuilder eventBuilder, HttpServletRequest servletRequest) {
+    private void addUserInterface(EventBuilder eventBuilder, HttpRequestInterface servletRequest) {
         String username = null;
         if (servletRequest.getUserPrincipal() != null) {
             username = servletRequest.getUserPrincipal().getName();

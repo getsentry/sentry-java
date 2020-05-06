@@ -1,8 +1,8 @@
 package io.sentry.event.helper;
 
+import io.sentry.event.interfaces.HttpRequestInterface;
 import io.sentry.util.Util;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class ForwardedAddressResolver implements RemoteAddressResolver {
     }
 
     @Override
-    public String getRemoteAddress(HttpServletRequest request) {
+    public String getRemoteAddress(HttpRequestInterface request) {
         String forwarded = request.getHeader("X-FORWARDED-FOR");
         if (!Util.isNullOrEmpty(forwarded)) {
             return firstAddress(forwarded);

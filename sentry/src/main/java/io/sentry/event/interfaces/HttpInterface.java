@@ -3,8 +3,6 @@ package io.sentry.event.interfaces;
 import io.sentry.event.helper.BasicRemoteAddressResolver;
 import io.sentry.event.helper.RemoteAddressResolver;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
@@ -39,7 +37,7 @@ public class HttpInterface implements SentryInterface {
      *
      * @param request HttpServletRequest
      */
-    public HttpInterface(HttpServletRequest request) {
+    public HttpInterface(HttpRequestInterface request) {
         this(request, new BasicRemoteAddressResolver());
     }
 
@@ -49,7 +47,7 @@ public class HttpInterface implements SentryInterface {
      * @param request Captured HTTP request to send to Sentry.
      * @param remoteAddressResolver RemoteAddressResolver
      */
-    public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver) {
+    public HttpInterface(HttpRequestInterface request, RemoteAddressResolver remoteAddressResolver) {
         this(request, remoteAddressResolver, null);
     }
 
@@ -60,7 +58,7 @@ public class HttpInterface implements SentryInterface {
      * @param remoteAddressResolver RemoteAddressResolver
      * @param body HTTP request body (optional)
      */
-    public HttpInterface(HttpServletRequest request, RemoteAddressResolver remoteAddressResolver, String body) {
+    public HttpInterface(HttpRequestInterface request, RemoteAddressResolver remoteAddressResolver, String body) {
         this.requestUrl = request.getRequestURL().toString();
         this.method = request.getMethod();
         this.parameters = new HashMap<>();
@@ -70,7 +68,7 @@ public class HttpInterface implements SentryInterface {
         this.queryString = request.getQueryString();
         if (request.getCookies() != null) {
             this.cookies = new HashMap<>();
-            for (Cookie cookie : request.getCookies()) {
+            for (CookieInterface cookie : request.getCookies()) {
                 this.cookies.put(cookie.getName(), cookie.getValue());
             }
         } else {
