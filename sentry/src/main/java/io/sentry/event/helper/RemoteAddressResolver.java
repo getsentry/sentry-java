@@ -12,7 +12,7 @@ public interface RemoteAddressResolver {
     /**
      * Returns the REMOTE_ADDR for the provided request.
      *
-     * @param request HttpServletRequest
+     * @param request HttpRequestInterface
      * @return String representing the desired REMOTE_ADDR.
      */
     String getRemoteAddress(HttpRequestInterface request);
