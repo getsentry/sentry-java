@@ -94,7 +94,6 @@ public class HttpServletRequestWrapper implements HttpRequestInterface {
         return request.getLocalPort();
     }
 
-
     @Override
     public String getProtocol() {
         return request.getProtocol();
