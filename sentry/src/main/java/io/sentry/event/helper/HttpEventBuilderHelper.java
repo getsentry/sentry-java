@@ -41,7 +41,7 @@ public class HttpEventBuilderHelper implements EventBuilderHelper {
             return;
         }
 
-        HttpServletRequestWrapper servletRequestWrapper = new HttpServletRequestWrapper(servletRequest);
+        HttpRequestInterface servletRequestWrapper = new HttpServletRequestWrapper(servletRequest);
         addHttpInterface(eventBuilder, servletRequestWrapper);
         addUserInterface(eventBuilder, servletRequestWrapper);
     }
