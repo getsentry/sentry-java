@@ -35,7 +35,7 @@ public class HttpInterface implements SentryInterface {
     /**
      * This constructor is for compatibility reasons and should not be used.
      *
-     * @param request HttpServletRequest
+     * @param request HttpRequestInterface
      */
     public HttpInterface(HttpRequestInterface request) {
         this(request, new BasicRemoteAddressResolver());
