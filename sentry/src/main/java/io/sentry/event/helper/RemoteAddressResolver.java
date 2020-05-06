@@ -1,6 +1,7 @@
 package io.sentry.event.helper;
 
-import javax.servlet.http.HttpServletRequest;
+
+import io.sentry.event.interfaces.HttpRequestInterface;
 
 /**
  * Interface that allows users to define how the REMOTE_ADDR
@@ -11,9 +12,9 @@ public interface RemoteAddressResolver {
     /**
      * Returns the REMOTE_ADDR for the provided request.
      *
-     * @param request HttpServletRequest
+     * @param request HttpRequestInterface
      * @return String representing the desired REMOTE_ADDR.
      */
-    String getRemoteAddress(HttpServletRequest request);
+    String getRemoteAddress(HttpRequestInterface request);
 
 }

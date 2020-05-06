@@ -19,6 +19,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import io.sentry.BaseTest;
+import io.sentry.event.helper.HttpServletRequestWrapper;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -99,7 +101,7 @@ public class HttpInterfaceTest extends BaseTest {
         when(mockHttpServletRequest.getHeaderNames()).thenReturn(enumeration(singleton(headerKey)));
         when(mockHttpServletRequest.getHeaders(eq(headerKey))).thenReturn(enumeration(singleton(headerValue)));
 
-        HttpInterface httpInterface = new HttpInterface(mockHttpServletRequest);
+        HttpInterface httpInterface = new HttpInterface(new HttpServletRequestWrapper(mockHttpServletRequest));
 
         assertThat(httpInterface.getRequestUrl(), is(requestUrl));
         assertThat(httpInterface.getMethod(), is(method));
@@ -121,7 +123,7 @@ public class HttpInterfaceTest extends BaseTest {
 
     @Test
     public void testNullCookies() throws Exception {
-        HttpInterface httpInterface = new HttpInterface(mockHttpServletRequest);
+        HttpInterface httpInterface = new HttpInterface(new HttpServletRequestWrapper(mockHttpServletRequest));
 
         assertThat(httpInterface.getCookies().size(), is(0));
     }

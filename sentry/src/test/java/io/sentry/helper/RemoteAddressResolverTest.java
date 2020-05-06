@@ -3,6 +3,8 @@ package io.sentry.helper;
 import io.sentry.BaseTest;
 import io.sentry.event.helper.BasicRemoteAddressResolver;
 import io.sentry.event.helper.ForwardedAddressResolver;
+import io.sentry.event.helper.HttpServletRequestWrapper;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +31,7 @@ public class RemoteAddressResolverTest extends BaseTest {
 
         when(request.getRemoteAddr()).thenReturn("1.2.3.4");
 
-        String remoteAddress = resolver.getRemoteAddress(request);
+        String remoteAddress = resolver.getRemoteAddress(new HttpServletRequestWrapper(request));
         assertThat(remoteAddress, is("1.2.3.4"));
     }
 
@@ -39,7 +41,7 @@ public class RemoteAddressResolverTest extends BaseTest {
         when(request.getRemoteAddr()).thenReturn("1.2.3.4");
         when(request.getHeader(eq("X-FORWARDED-FOR"))).thenReturn("9.9.9.9");
 
-        String remoteAddress = resolver.getRemoteAddress(request);
+        String remoteAddress = resolver.getRemoteAddress(new HttpServletRequestWrapper(request));
         assertThat(remoteAddress, is("1.2.3.4"));
 
         String xForwardedFor = request.getHeader("X-FORWARDED-FOR");
@@ -52,7 +54,7 @@ public class RemoteAddressResolverTest extends BaseTest {
 
         when(request.getHeader(eq("X-FORWARDED-FOR"))).thenReturn("9.9.9.9");
 
-        String remoteAddress = resolver.getRemoteAddress(request);
+        String remoteAddress = resolver.getRemoteAddress(new HttpServletRequestWrapper(request));
         assertThat(remoteAddress, is("9.9.9.9"));
     }
 
@@ -62,7 +64,7 @@ public class RemoteAddressResolverTest extends BaseTest {
 
         when(request.getRemoteAddr()).thenReturn("1.2.3.4");
 
-        String remoteAddress = resolver.getRemoteAddress(request);
+        String remoteAddress = resolver.getRemoteAddress(new HttpServletRequestWrapper(request));
         assertThat(remoteAddress, is("1.2.3.4"));
     }
 }
