@@ -32,6 +32,7 @@ class HttpTransportTest {
         var readTimeout = 500
         var bypassSecurity = false
         val connection = mock<HttpURLConnection>()
+        val currentDateProvider = mock<ICurrentDateProvider>()
 
         init {
             whenever(connection.outputStream).thenReturn(mock())
@@ -43,10 +44,11 @@ class HttpTransportTest {
             options.setSerializer(serializer)
             options.proxy = proxy
 
-            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn) {
+            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn, currentDateProvider) {
                 override fun open(proxy: Proxy?): HttpURLConnection {
                     return connection
                 }
+
                 override fun open(url: URL, proxy: Proxy?): HttpURLConnection {
                     return connection
                 }
@@ -87,6 +89,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("Retry-After"))).thenReturn("30")
         whenever(fixture.connection.responseCode).thenReturn(429)
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val event = SentryEvent()
 
@@ -104,6 +107,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("Retry-After"))).thenReturn("30")
         whenever(fixture.connection.responseCode).thenReturn(429)
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
@@ -152,6 +156,7 @@ class HttpTransportTest {
 
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.responseCode).thenReturn(429)
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val event = SentryEvent()
 
@@ -168,6 +173,7 @@ class HttpTransportTest {
 
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.responseCode).thenReturn(429)
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
@@ -218,6 +224,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("50:transaction:key, 2700:default;error;security:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val event = SentryEvent()
 
@@ -235,6 +242,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("50:transaction:key, 1:default;error;security:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
         val event = SentryEvent()
 
@@ -242,7 +250,6 @@ class HttpTransportTest {
 
         verify(fixture.serializer).serialize(eq(event), any())
         assertFalse(result.isSuccess)
-        Thread.sleep(2000)
         assertFalse(transport.isRetryAfter("event"))
     }
 
@@ -253,6 +260,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("50:transaction:key, 2700:default;error;security:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val event = SentryEvent()
 
@@ -269,11 +277,11 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("1:transaction:key, 1:default;error;security:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
         val event = SentryEvent()
 
         transport.send(event)
-        Thread.sleep(2000)
         assertFalse(transport.isRetryAfter("transaction"))
         assertFalse(transport.isRetryAfter("event"))
     }
@@ -285,6 +293,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("50::key")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val event = SentryEvent()
 
@@ -300,6 +309,7 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("60:default;foobar;error;security:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
         val event = SentryEvent()
 
@@ -314,11 +324,11 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("1::key, 60:default;error;security:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
         val event = SentryEvent()
 
         transport.send(event)
-        Thread.sleep(2000)
         assertTrue(transport.isRetryAfter("event"))
     }
 
@@ -329,11 +339,26 @@ class HttpTransportTest {
         whenever(fixture.connection.inputStream).thenThrow(IOException())
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("60:error:key, 1:error:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
         val event = SentryEvent()
 
         transport.send(event)
-        Thread.sleep(2000)
+        assertTrue(transport.isRetryAfter("event"))
+    }
+
+    @Test
+    fun `When category has longer rate limiting, apply new timestamp`() {
+        val transport = fixture.getSUT()
+
+        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
+            .thenReturn("1:error:key, 5:error:organization")
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
+
+        val event = SentryEvent()
+
+        transport.send(event)
         assertTrue(transport.isRetryAfter("event"))
     }
 

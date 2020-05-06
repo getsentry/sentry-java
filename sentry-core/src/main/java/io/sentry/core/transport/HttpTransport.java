@@ -10,6 +10,7 @@ import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryOptions;
+import io.sentry.core.util.Objects;
 import io.sentry.core.util.StringUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -81,6 +82,8 @@ public class HttpTransport implements ITransport {
 
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
+  private final @NotNull ICurrentDateProvider currentDateProvider;
+
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
    * the appropriate content encoding header for the {@link io.sentry.core.ISerializer} instance
@@ -101,6 +104,24 @@ public class HttpTransport implements ITransport {
       final int readTimeoutMillis,
       final boolean bypassSecurity,
       final @NotNull URL sentryUrl) {
+    this(
+        options,
+        connectionConfigurator,
+        connectionTimeoutMillis,
+        readTimeoutMillis,
+        bypassSecurity,
+        sentryUrl,
+        new CurrentDateProvider());
+  }
+
+  HttpTransport(
+      final @NotNull SentryOptions options,
+      final @NotNull IConnectionConfigurator connectionConfigurator,
+      final int connectionTimeoutMillis,
+      final int readTimeoutMillis,
+      final boolean bypassSecurity,
+      final @NotNull URL sentryUrl,
+      final @NotNull ICurrentDateProvider currentDateProvider) {
     this.proxy = options.getProxy();
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
@@ -108,6 +129,8 @@ public class HttpTransport implements ITransport {
     this.readTimeout = readTimeoutMillis;
     this.options = options;
     this.bypassSecurity = bypassSecurity;
+    this.currentDateProvider =
+        Objects.requireNonNull(currentDateProvider, "CurrentDateProvider is required.");
 
     try {
       final URI uri = sentryUrl.toURI();
@@ -183,7 +206,7 @@ public class HttpTransport implements ITransport {
   @Override
   public boolean isRetryAfter(final @NotNull String itemType) {
     final DataCategory dataCategory = getCategoryFromItemType(itemType);
-    final Date currentDate = new Date();
+    final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
 
     // check all categories
     final Date dateAllCategories = sentryRetryAfterLimit.get(DataCategory.All);
@@ -357,7 +380,8 @@ public class HttpTransport implements ITransport {
             final String allCategories = retryAfterAndCategories[1];
 
             // we dont care if Date is UTC as we just add the relative seconds
-            final Date date = new Date(System.currentTimeMillis() + retryAfterMillis);
+            final Date date =
+                new Date(currentDateProvider.getCurrentTimeMillis() + retryAfterMillis);
 
             if (allCategories != null && !allCategories.isEmpty()) {
               final String[] categories = allCategories.split(";", -1);
@@ -385,7 +409,7 @@ public class HttpTransport implements ITransport {
     } else if (errorCode == 429) {
       final long retryAfterMillis = parseRetryAfterOrDefault(retryAfterHeader);
       // we dont care if Date is UTC as we just add the relative seconds
-      final Date date = new Date(System.currentTimeMillis() + retryAfterMillis);
+      final Date date = new Date(currentDateProvider.getCurrentTimeMillis() + retryAfterMillis);
       applyRetryAfterOnlyIfLonger(DataCategory.All, date);
     }
   }
