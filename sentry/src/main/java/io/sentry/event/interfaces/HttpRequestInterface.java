@@ -4,7 +4,6 @@ import java.util.Enumeration;
 import java.util.Map;
 
 
-
 /**
  * Interface exposing http request methods.
  */
