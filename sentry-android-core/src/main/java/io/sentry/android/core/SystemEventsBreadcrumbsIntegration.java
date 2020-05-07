@@ -200,8 +200,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                 action);
           }
         }
+        breadcrumb.setData("extras", newExtras);
       }
-      breadcrumb.setData("extras", newExtras);
       breadcrumb.setLevel(SentryLevel.INFO);
       hub.addBreadcrumb(breadcrumb);
     }
