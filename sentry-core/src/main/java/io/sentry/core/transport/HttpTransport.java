@@ -111,7 +111,7 @@ public class HttpTransport implements ITransport {
         readTimeoutMillis,
         bypassSecurity,
         sentryUrl,
-        new CurrentDateProvider());
+        CurrentDateProvider.getInstance());
   }
 
   HttpTransport(

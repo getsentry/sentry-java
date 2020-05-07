@@ -25,7 +25,7 @@ object Config {
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.1"
 
         val lifecycleVersion = "2.2.0"
-        val lifecycleProcessor = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
+        val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
     }
 
@@ -38,6 +38,7 @@ object Config {
         val androidxJunit = "androidx.test.ext:junit:1.1.1"
         val robolectric = "org.robolectric:robolectric:4.3.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
+        val awaitility = "org.awaitility:awaitility-kotlin:4.0.2"
     }
 
     object QualityPlugins {
