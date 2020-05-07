@@ -1,7 +1,10 @@
 package io.sentry.core.transport;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /** Date Provider to make the Transport unit testable */
-interface ICurrentDateProvider {
+@ApiStatus.Internal
+public interface ICurrentDateProvider {
 
   /**
    * Returns the current time in millis
