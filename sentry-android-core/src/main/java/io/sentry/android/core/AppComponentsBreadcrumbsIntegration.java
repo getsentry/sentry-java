@@ -1,6 +1,6 @@
 package io.sentry.android.core;
 
-import android.content.ComponentCallbacks;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
@@ -19,7 +19,7 @@ import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
 public final class AppComponentsBreadcrumbsIntegration
-    implements Integration, Closeable, ComponentCallbacks {
+    implements Integration, Closeable, ComponentCallbacks2 {
 
   private final @NotNull Context context;
   private @Nullable IHub hub;
@@ -84,12 +84,24 @@ public final class AppComponentsBreadcrumbsIntegration
 
   @Override
   public void onLowMemory() {
+    createLowMemoryBreadcrumb(null);
+  }
+
+  @Override
+  public void onTrimMemory(final int level) {
+    createLowMemoryBreadcrumb(level);
+  }
+
+  private void createLowMemoryBreadcrumb(final @Nullable Integer level) {
     if (hub != null) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
       breadcrumb.setMessage("Low memory");
       breadcrumb.setData("action", "LOW_MEMORY");
+      if (level != null) {
+        breadcrumb.setData("level", level);
+      }
       breadcrumb.setLevel(SentryLevel.WARNING);
       hub.addBreadcrumb(breadcrumb);
     }
