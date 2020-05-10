@@ -114,6 +114,16 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   /**
+   * Returns the value of data[key] or null
+   *
+   * @return the value or null
+   */
+  @Nullable
+  public Object getData(final @NotNull String key) {
+    return data.get(key);
+  }
+
+  /**
    * Sets an entry to the data's map
    *
    * @param key the key
