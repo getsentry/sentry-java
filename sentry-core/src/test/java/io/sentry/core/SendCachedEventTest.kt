@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.cache.DiskCache
 import io.sentry.core.hints.Retryable
+import io.sentry.core.util.NoFlushTimeout
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,7 +23,7 @@ class SendCachedEventTest {
         var hub: IHub? = mock()
         var logger: ILogger? = mock()
         var serializer: ISerializer? = mock()
-        var options = SentryOptions()
+        var options = SentryOptions().NoFlushTimeout()
 
         init {
             options.isDebug = true
