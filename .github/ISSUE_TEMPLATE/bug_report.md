@@ -12,6 +12,7 @@ _Platform:_
 - [ ]  Java -> If yes, which Java (and sourceCompatibility/targetCompatibility) version?
 - [ ]  Kotlin -> If yes, which Kotlin (and jvmTarget) version?
 - [ ]  NDK -> If yes, which NDK/CMake version?
+- [ ]  React-Native -> If yes, which version?
 
 _IDE:_
 - [ ]  Android Studio -> If yes, which version?
@@ -39,6 +40,7 @@ _Proguard/R8:_
 _sentry-android installed with:_
 - [ ] JCenter
 - [ ] Bintray
+- [ ] Maven Central
 - [ ] Manually
 
 The version of sentry-android:
