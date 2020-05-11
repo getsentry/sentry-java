@@ -116,6 +116,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   /**
    * Returns the value of data[key] or null
    *
+   * @param key the key
    * @return the value or null
    */
   @Nullable
