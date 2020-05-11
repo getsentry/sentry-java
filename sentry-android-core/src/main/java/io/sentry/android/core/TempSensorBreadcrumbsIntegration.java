@@ -82,6 +82,12 @@ public final class TempSensorBreadcrumbsIntegration
 
   @Override
   public void onSensorChanged(SensorEvent event) {
+    final float[] values = event.values;
+    // return if data is not available or zero'ed
+    if (values == null || values.length == 0 || values[0] == 0f) {
+      return;
+    }
+
     if (hub != null) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("system");
@@ -90,9 +96,7 @@ public final class TempSensorBreadcrumbsIntegration
       breadcrumb.setData("accuracy", event.accuracy);
       breadcrumb.setData("timestamp", event.timestamp);
       breadcrumb.setLevel(SentryLevel.INFO);
-      if (event.values != null) {
-        breadcrumb.setData("values", event.values);
-      }
+      breadcrumb.setData("degree", event.values[0]); // Celsius
       hub.addBreadcrumb(breadcrumb);
     }
   }
