@@ -2,3 +2,7 @@ template: |
   ## What’s Changed
 
   $CHANGES
+
+  Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/sentry-android/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/) and [`mavenCentral`](https://repo.maven.apache.org/maven2/io/sentry/sentry-android/)
+
+  We'd love to get feedback.
