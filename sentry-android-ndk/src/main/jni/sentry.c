@@ -38,6 +38,15 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
     jmethodID is_debug_mid = (*env)->GetMethodID(env, options_cls, "isDebug", "()Z");
     g_transport_options.debug = (*env)->CallBooleanMethod(env, sentry_sdk_options, is_debug_mid);
 
+    jmethodID release_mid = (*env)->GetMethodID(env, options_cls, "getRelease", "()Ljava/lang/String;");
+    jstring release = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, release_mid);
+
+    jmethodID environment_mid = (*env)->GetMethodID(env, options_cls, "getEnvironment", "()Ljava/lang/String;");
+    jstring environment = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, environment_mid);
+
+    jmethodID dist_mid = (*env)->GetMethodID(env, options_cls, "getDist", "()Ljava/lang/String;");
+    jstring dist = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, dist_mid);
+
     g_transport_options.env = env;
     g_transport_options.cls = cls;
 
@@ -56,5 +65,16 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
             options, sentry_new_function_transport(send_envelope, NULL));
     sentry_options_set_debug(options, g_transport_options.debug);
     sentry_options_set_dsn(options, (*env)->GetStringUTFChars(env, dsn, 0));
+
+    if (release != NULL) {
+        sentry_options_set_release(options, (*env)->GetStringUTFChars(env, release, 0));
+    }
+    if (environment != NULL) {
+        sentry_options_set_environment(options, (*env)->GetStringUTFChars(env, environment, 0));
+    }
+    if (dist != NULL) {
+        sentry_options_set_dist(options, (*env)->GetStringUTFChars(env, dist, 0));
+    }
+
     sentry_init(options);
 }
