@@ -189,7 +189,7 @@ public final class SentryClient implements ISentryClient {
   public void captureSession(final @NotNull Session session, final @Nullable Object hint) {
     Objects.requireNonNull(session, "Session is required.");
 
-    if (session.getRelease() == null) {
+    if (session.getRelease() == null || session.getRelease().isEmpty()) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Sessions can't be captured without setting a release.");

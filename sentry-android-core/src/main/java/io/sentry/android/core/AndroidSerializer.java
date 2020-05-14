@@ -99,7 +99,7 @@ final class AndroidSerializer implements ISerializer {
         .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
         .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
         .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
-        .registerTypeAdapter(Session.class, new SessionAdapter())
+        .registerTypeAdapter(Session.class, new SessionAdapter(logger))
         .create();
   }
 
