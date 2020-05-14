@@ -45,14 +45,26 @@ public final class AppComponentsBreadcrumbsIntegration
             this.options.isEnableAppComponentBreadcrumbs());
 
     if (this.options.isEnableAppComponentBreadcrumbs()) {
-      context.registerComponentCallbacks(this);
-      options.getLogger().log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
+      try {
+        // if its a ContextImpl, registerComponentCallbacks can't be used
+        context.registerComponentCallbacks(this);
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
+      } catch (Exception e) {
+        this.options.setEnableAppComponentBreadcrumbs(false);
+        options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
+      }
     }
   }
 
   @Override
   public void close() throws IOException {
-    context.unregisterComponentCallbacks(this);
+    try {
+      // if its a ContextImpl, unregisterComponentCallbacks can't be used
+      context.unregisterComponentCallbacks(this);
+    } catch (Exception ignored) {
+    }
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration removed.");
