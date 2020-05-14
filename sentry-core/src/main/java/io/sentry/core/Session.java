@@ -13,12 +13,11 @@ public final class Session {
   public enum State {
     Ok,
     Exited,
-    Crashed,
-    Abnormal
+    Crashed
   }
 
   /** started timestamp */
-  private @Nullable Date started;
+  private final @NotNull Date started;
 
   /** the timestamp */
   private @Nullable Date timestamp;
@@ -36,7 +35,7 @@ public final class Session {
   private @Nullable Boolean init;
 
   /** The session state */
-  private @Nullable State status;
+  private @NotNull State status;
 
   /** The session sequence */
   private @Nullable Long sequence;
@@ -54,14 +53,14 @@ public final class Session {
   private final @Nullable String environment;
 
   /** the App's release */
-  private final @Nullable String release;
+  private final @NotNull String release;
 
   /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
 
   public Session(
-      final @Nullable State status,
-      final @Nullable Date started,
+      final @NotNull State status,
+      final @NotNull Date started,
       final @Nullable Date timestamp,
       final int errorCount,
       final @Nullable String distinctId,
@@ -72,7 +71,7 @@ public final class Session {
       final @Nullable String ipAddress,
       final @Nullable String userAgent,
       final @Nullable String environment,
-      final @Nullable String release) {
+      final @NotNull String release) {
     this.status = status;
     this.started = started;
     this.timestamp = timestamp;
@@ -92,7 +91,7 @@ public final class Session {
       @Nullable String distinctId,
       final @Nullable User user,
       final @Nullable String environment,
-      final @Nullable String release) {
+      final @NotNull String release) {
     this(
         State.Ok,
         DateUtils.getCurrentDateTime(),
@@ -109,9 +108,8 @@ public final class Session {
         release);
   }
 
-  public Date getStarted() {
-    final Date startedRef = started;
-    return startedRef != null ? (Date) startedRef.clone() : null;
+  public @NotNull Date getStarted() {
+    return (Date) started.clone();
   }
 
   public @Nullable String getDistinctId() {
@@ -134,7 +132,7 @@ public final class Session {
     return environment;
   }
 
-  public @Nullable String getRelease() {
+  public @NotNull String getRelease() {
     return release;
   }
 
@@ -146,7 +144,7 @@ public final class Session {
     return errorCount.get();
   }
 
-  public @Nullable State getStatus() {
+  public @NotNull State getStatus() {
     return status;
   }
 
@@ -163,20 +161,6 @@ public final class Session {
     return timestampRef != null ? (Date) timestampRef.clone() : null;
   }
 
-  /** Updated the session status based on status and errorcount */
-  private void updateStatus() {
-    // at this state it might be Crashed already, so we don't check for it.
-    if (status == State.Ok) {
-      status = State.Exited;
-    }
-
-    // fallback if status is null
-    if (status == null) {
-      // its ending a session and we don't have the current status, set it as Abnormal
-      status = State.Abnormal;
-    }
-  }
-
   /** Ends a session and update its values */
   public void end() {
     end(DateUtils.getCurrentDateTime());
@@ -190,7 +174,11 @@ public final class Session {
   public void end(final @Nullable Date timestamp) {
     synchronized (sessionLock) {
       init = null;
-      updateStatus();
+
+      // at this state it might be Crashed already, so we don't check for it.
+      if (status == State.Ok) {
+        status = State.Exited;
+      }
 
       if (timestamp != null) {
         this.timestamp = timestamp;
@@ -198,12 +186,7 @@ public final class Session {
         this.timestamp = DateUtils.getCurrentDateTime();
       }
 
-      // fallback if started is null
-      if (started == null) {
-        started = timestamp;
-      }
-
-      duration = calculateDurationTime(this.timestamp, started);
+      duration = calculateDurationTime(this.timestamp);
       sequence = getSequenceTimestamp();
     }
   }
@@ -212,10 +195,9 @@ public final class Session {
    * Calculates the duration time in seconds timestamp (last update) - started
    *
    * @param timestamp the timestamp
-   * @param started the started timestamp
    * @return duration in seconds
    */
-  private Double calculateDurationTime(final @NotNull Date timestamp, final @NotNull Date started) {
+  private Double calculateDurationTime(final @NotNull Date timestamp) {
     long diff = Math.abs(timestamp.getTime() - started.getTime());
     return (double) diff / 1000; // duration in seconds
   }
@@ -228,7 +210,8 @@ public final class Session {
    * @param addErrorsCount true if should increase error count or not
    * @return if the session has been updated
    */
-  public boolean update(final State status, final String userAgent, boolean addErrorsCount) {
+  public boolean update(
+      final @Nullable State status, final String userAgent, boolean addErrorsCount) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {

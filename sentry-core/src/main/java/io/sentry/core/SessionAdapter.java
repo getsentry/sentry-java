@@ -4,15 +4,23 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import io.sentry.core.util.Objects;
 import io.sentry.core.util.StringUtils;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class SessionAdapter extends TypeAdapter<Session> {
+
+  private final @NotNull ILogger logger;
+
+  public SessionAdapter(final @NotNull ILogger logger) {
+    this.logger = Objects.requireNonNull(logger, "The Logger is required.");
+  }
 
   @Override
   public void write(JsonWriter writer, Session value) throws IOException {
@@ -34,13 +42,8 @@ public final class SessionAdapter extends TypeAdapter<Session> {
       writer.name("init").value(value.getInit());
     }
 
-    if (value.getStarted() != null) {
-      writer.name("started").value(DateUtils.getTimestamp(value.getStarted()));
-    }
-
-    if (value.getStatus() != null) {
-      writer.name("status").value(value.getStatus().name().toLowerCase(Locale.ROOT));
-    }
+    writer.name("started").value(DateUtils.getTimestamp(value.getStarted()));
+    writer.name("status").value(value.getStatus().name().toLowerCase(Locale.ROOT));
 
     if (value.getSequence() != null) {
       writer.name("seq").value(value.getSequence());
@@ -60,11 +63,9 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     }
 
     boolean hasInitAttrs = false;
-    if (value.getRelease() != null) {
-      hasInitAttrs = initAttrs(writer, hasInitAttrs);
+    hasInitAttrs = initAttrs(writer, hasInitAttrs);
 
-      writer.name("release").value(value.getRelease());
-    }
+    writer.name("release").value(value.getRelease());
 
     if (value.getEnvironment() != null) {
       hasInitAttrs = initAttrs(writer, hasInitAttrs);
@@ -181,6 +182,11 @@ public final class SessionAdapter extends TypeAdapter<Session> {
       }
     }
     reader.endObject();
+
+    if (status == null || started == null || release == null || release.isEmpty()) {
+      logger.log(SentryLevel.ERROR, "Session is gonna be dropped due to invalid fields.");
+      return null;
+    }
 
     return new Session(
         status,

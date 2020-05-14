@@ -425,7 +425,7 @@ class SentryClientTest {
 
     @Test
     fun `when captureSession and no release is set, do nothing`() {
-        fixture.getSut().captureSession(createSession(null))
+        fixture.getSut().captureSession(createSession(""))
         verify(fixture.connection, never()).send(any<SentryEnvelope>())
     }
 
@@ -590,7 +590,7 @@ class SentryClientTest {
         }
     }
 
-    private fun createSession(release: String? = "rel"): Session {
+    private fun createSession(release: String = "rel"): Session {
         return Session("dis", User(), "env", release)
     }
 
