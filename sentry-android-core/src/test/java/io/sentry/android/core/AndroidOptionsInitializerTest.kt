@@ -1,8 +1,10 @@
 package io.sentry.android.core
 
+import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.MainEventProcessor
 import io.sentry.core.SentryOptions
@@ -12,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 
@@ -205,6 +208,38 @@ class AndroidOptionsInitializerTest {
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
         val actual = sentryOptions.integrations.firstOrNull { it is EnvelopeFileObserverIntegration }
         assertNotNull(actual)
+    }
+
+    @Test
+    fun `When given Context returns a non null ApplicationContext, uses it`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockApp = mock<Application>()
+        val mockContext = mock<Context>()
+        whenever(mockContext.applicationContext).thenReturn(mockApp)
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        assertNotNull(mockContext)
+    }
+
+    @Test
+    fun `When given Context returns a null ApplicationContext is null, keep given Context`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = mock<Context>()
+        whenever(mockContext.applicationContext).thenReturn(null)
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        assertNotNull(mockContext)
+    }
+
+    @Test
+    fun `When given Context is not an Application class, do not add ActivityBreadcrumbsIntegration`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = mock<Context>()
+        whenever(mockContext.applicationContext).thenReturn(null)
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        val actual = sentryOptions.integrations.firstOrNull { it is ActivityBreadcrumbsIntegration }
+        assertNull(actual)
     }
 
     private fun createMockContext(): Context {

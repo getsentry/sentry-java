@@ -9,11 +9,14 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.Breadcrumb
 import io.sentry.core.IHub
 import io.sentry.core.SentryLevel
+import java.lang.NullPointerException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -39,6 +42,17 @@ class AppComponentsBreadcrumbsIntegrationTest {
     }
 
     @Test
+    fun `When app components breadcrumb is enabled, but ComponentCallbacks is not ready, do not throw`() {
+        val sut = fixture.getSut()
+        val options = SentryAndroidOptions()
+        val hub = mock<IHub>()
+        sut.register(hub, options)
+        whenever(fixture.context.registerComponentCallbacks(any())).thenThrow(NullPointerException())
+        sut.register(hub, options)
+        assertFalse(options.isEnableAppComponentBreadcrumbs)
+    }
+
+    @Test
     fun `When app components breadcrumb is disabled, it doesn't register callback`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions().apply {
@@ -57,6 +71,17 @@ class AppComponentsBreadcrumbsIntegrationTest {
         sut.register(hub, options)
         sut.close()
         verify(fixture.context).unregisterComponentCallbacks(any())
+    }
+
+    @Test
+    fun `When app components breadcrumb is closed, but ComponentCallbacks is not ready, do not throw`() {
+        val sut = fixture.getSut()
+        val options = SentryAndroidOptions()
+        val hub = mock<IHub>()
+        whenever(fixture.context.registerComponentCallbacks(any())).thenThrow(NullPointerException())
+        whenever(fixture.context.unregisterComponentCallbacks(any())).thenThrow(NullPointerException())
+        sut.register(hub, options)
+        sut.close()
     }
 
     @Test
