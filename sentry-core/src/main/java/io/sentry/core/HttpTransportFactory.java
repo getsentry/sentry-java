@@ -23,7 +23,12 @@ final class HttpTransportFactory {
       throw new IllegalArgumentException("Failed to compose the Sentry's server URL.", e);
     }
 
-    // these magic values could come from SentryOptions
-    return new HttpTransport(options, credentials, 5000, 5000, false, sentryUrl);
+    return new HttpTransport(
+        options,
+        credentials,
+        options.getConnectionTimeoutMillis(),
+        options.getReadTimeoutMillis(),
+        options.isBypassSecurity(),
+        sentryUrl);
   }
 }
