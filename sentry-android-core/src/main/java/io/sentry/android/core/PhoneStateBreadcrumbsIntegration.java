@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static android.Manifest.permission.READ_PHONE_STATE;
 import static android.telephony.PhoneStateListener.LISTEN_CALL_STATE;
 import static android.telephony.PhoneStateListener.LISTEN_NONE;
 
@@ -7,6 +8,7 @@ import android.content.Context;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import androidx.annotation.Nullable;
+import io.sentry.android.core.util.Permissions;
 import io.sentry.core.Breadcrumb;
 import io.sentry.core.IHub;
 import io.sentry.core.Integration;
@@ -44,7 +46,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
             "enableSystemEventBreadcrumbs enabled: %s",
             this.options.isEnableSystemEventBreadcrumbs());
 
-    if (this.options.isEnableSystemEventBreadcrumbs()) {
+    if (this.options.isEnableSystemEventBreadcrumbs()
+        && Permissions.hasPermission(context, READ_PHONE_STATE)) {
       telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
       if (telephonyManager != null) {
         try {
@@ -52,10 +55,10 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
           telephonyManager.listen(listener, LISTEN_CALL_STATE);
 
           options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
-        } catch (NullPointerException e) {
+        } catch (Exception e) {
           this.options
               .getLogger()
-              .log(SentryLevel.INFO, e, "TelephonyManager is not ready for use.");
+              .log(SentryLevel.INFO, e, "TelephonyManager is not available or ready to use.");
         }
       } else {
         this.options.getLogger().log(SentryLevel.INFO, "TelephonyManager is not available");
