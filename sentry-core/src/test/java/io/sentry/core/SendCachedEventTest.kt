@@ -95,7 +95,7 @@ class SendCachedEventTest {
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", DiskCache.FILE_SUFFIX).toUri())
         testFile.deleteOnExit()
         sut.processFile(testFile, mock<Retryable>())
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq("Failed to capture cached event."), any<Any>())
+        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached event %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.hub)
         assertFalse(testFile.exists())
     }
@@ -109,7 +109,7 @@ class SendCachedEventTest {
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", DiskCache.FILE_SUFFIX).toUri())
         testFile.deleteOnExit()
         sut.processFile(testFile, any())
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq("Failed to capture cached event."), any<Any>())
+        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached event %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.hub)
     }
 }

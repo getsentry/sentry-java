@@ -113,4 +113,10 @@ class SentryOptionsTest {
         options.cacheDirPath = "${File.separator}test"
         assertEquals("${File.separator}test${File.separator}sessions", options.sessionsPath)
     }
+
+    @Test
+    fun `SentryOptions creates SentryExecutorService on ctor`() {
+        val options = SentryOptions()
+        assertNotNull(options.executorService)
+    }
 }

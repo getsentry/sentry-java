@@ -2,6 +2,7 @@ package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
@@ -12,6 +13,9 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.hints.ApplyScopeData
 import io.sentry.core.hints.Cached
+import io.sentry.core.hints.DiskFlushNotification
+import io.sentry.core.hints.SessionEndHint
+import io.sentry.core.hints.SessionUpdateHint
 import io.sentry.core.protocol.Request
 import io.sentry.core.protocol.SentryException
 import io.sentry.core.protocol.SentryId
@@ -544,6 +548,39 @@ class SentryClientTest {
     }
 
     @Test
+    fun `When event comes from uncaughtException, captureSession should use SessionEndHint`() {
+        fixture.sentryOptions.release = "a@1+1"
+        val sut = fixture.getSut()
+
+        val event = SentryEvent().apply {
+            level = SentryLevel.FATAL
+        }
+        val scope = Scope(fixture.sentryOptions)
+        scope.startSession()
+        val hint = mock<DiskFlushNotificationHint>()
+        sut.captureEvent(event, scope, hint)
+        verify(fixture.connection).send(any<SentryEnvelope>(), argWhere {
+            it is SessionEndHint
+        })
+    }
+
+    @Test
+    fun `When event is not from uncaughtException, captureSession should use SessionUpdateHint`() {
+        fixture.sentryOptions.release = "a@1+1"
+        val sut = fixture.getSut()
+
+        val event = SentryEvent().apply {
+            level = SentryLevel.FATAL
+        }
+        val scope = Scope(fixture.sentryOptions)
+        scope.startSession()
+        sut.captureEvent(event, scope)
+        verify(fixture.connection).send(any<SentryEnvelope>(), argWhere {
+            it is SessionUpdateHint
+        })
+    }
+
+    @Test
     fun `when captureEvent with sampling, session is still updated`() {
         fixture.sentryOptions.sampleRate = 1.0
         val sut = fixture.getSut()
@@ -599,4 +636,8 @@ class SentryClientTest {
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
+
+    internal class DiskFlushNotificationHint : DiskFlushNotification {
+        override fun markFlushed() {}
+    }
 }

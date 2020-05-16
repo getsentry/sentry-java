@@ -87,7 +87,7 @@ public final class DiskCache implements IEventCache {
     } catch (Exception e) {
       options
           .getLogger()
-          .log(ERROR, "Error writing Event to offline storage: %s", event.getEventId());
+          .log(ERROR, e, "Error writing Event to offline storage: %s", event.getEventId());
     }
   }
 

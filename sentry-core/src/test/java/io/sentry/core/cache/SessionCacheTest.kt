@@ -183,7 +183,7 @@ class SessionCacheTest {
         val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
         cache.store(newEnvelope, SessionStartHint())
-        verify(fixture.logger).log(eq(SentryLevel.INFO), eq("There's a left over session, it's gonna be ended and cached to be sent."))
+        verify(fixture.logger).log(eq(SentryLevel.WARNING), eq("Current session is not ended, we'd need to end it."))
     }
 
     @Test

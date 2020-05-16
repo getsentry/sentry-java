@@ -4,10 +4,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.core.EnvelopeReader;
-import io.sentry.core.EnvelopeSender;
 import io.sentry.core.IEnvelopeReader;
 import io.sentry.core.ILogger;
 import io.sentry.core.SendCachedEventFireAndForgetIntegration;
+import io.sentry.core.SendFireAndForgetEnvelopeSender;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Objects;
@@ -93,26 +93,7 @@ final class AndroidOptionsInitializer {
     // and we'd like to send them right away
     options.addIntegration(
         new SendCachedEventFireAndForgetIntegration(
-            (hub, sentryOptions) -> {
-              final EnvelopeSender envelopeSender =
-                  new EnvelopeSender(
-                      hub,
-                      new EnvelopeReader(),
-                      sentryOptions.getSerializer(),
-                      sentryOptions.getLogger(),
-                      sentryOptions.getFlushTimeoutMillis());
-              if (sentryOptions.getOutboxPath() != null) {
-                final File outbox = new File(sentryOptions.getOutboxPath());
-                return () -> envelopeSender.processDirectory(outbox);
-              } else {
-                sentryOptions
-                    .getLogger()
-                    .log(
-                        SentryLevel.WARNING,
-                        "No outbox dir path is defined in options, discarding EnvelopeSender.");
-                return null;
-              }
-            }));
+            new SendFireAndForgetEnvelopeSender(() -> options.getOutboxPath())));
 
     options.addIntegration(new AnrIntegration());
     options.addIntegration(new AppLifecycleIntegration());

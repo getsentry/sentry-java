@@ -24,6 +24,8 @@ abstract class DirectoryProcessor {
 
   public void processDirectory(@NotNull File directory) {
     try {
+      logger.log(SentryLevel.DEBUG, "Processing dir. %s", directory.getAbsolutePath());
+
       if (!directory.exists()) {
         logger.log(
             SentryLevel.WARNING,
@@ -57,6 +59,8 @@ abstract class DirectoryProcessor {
           logger.log(SentryLevel.DEBUG, "File %s is not a File.", file.getAbsolutePath());
           continue;
         }
+
+        logger.log(SentryLevel.DEBUG, "Processing file: %s", file.getAbsolutePath());
 
         final SendCachedEventHint hint = new SendCachedEventHint(flushTimeoutMillis, logger);
         processFile(file, hint);
