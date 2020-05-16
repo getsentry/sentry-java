@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 
 class AnrIntegrationTest {
 
-    private val integration = AnrIntegration()
+    private val integration = AnrIntegration(mock())
 
     @BeforeTest
     fun `before each test`() {
@@ -34,7 +34,7 @@ class AnrIntegrationTest {
         val options = SentryAndroidOptions()
         options.isAnrEnabled = false
         val hub = mock<IHub>()
-        val integration = AnrIntegration()
+        val integration = AnrIntegration(mock())
         integration.register(hub, options)
         assertNull(integration.anrWatchDog)
     }
@@ -42,7 +42,7 @@ class AnrIntegrationTest {
     @Test
     fun `When ANR watch dog is triggered, it should capture exception`() {
         val hub = mock<IHub>()
-        val integration = AnrIntegration()
+        val integration = AnrIntegration(mock())
         integration.reportANR(hub, mock(), mock())
         verify(hub).captureException(any())
     }
@@ -51,7 +51,7 @@ class AnrIntegrationTest {
     fun `When ANR integration is closed, watch dog should stop`() {
         val options = SentryAndroidOptions()
         val hub = mock<IHub>()
-        val integration = AnrIntegration()
+        val integration = AnrIntegration(mock())
         integration.register(hub, options)
         assertNotNull(integration.anrWatchDog)
         integration.close()
