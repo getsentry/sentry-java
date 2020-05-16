@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import io.sentry.core.IHub;
 import io.sentry.core.ILogger;
 import io.sentry.core.Integration;
@@ -20,10 +22,17 @@ import org.jetbrains.annotations.TestOnly;
  */
 public final class AnrIntegration implements Integration, Closeable {
 
+  private final @NotNull Context context;
+
+  public AnrIntegration(final @NotNull Context context) {
+    this.context = context;
+  }
+
   /**
    * Responsible for watching UI thread. being static to avoid multiple instances running at the
    * same time.
    */
+  @SuppressLint("StaticFieldLeak") // we have watchDogLock to avoid those leaks
   private static @Nullable ANRWatchDog anrWatchDog;
 
   private @Nullable SentryOptions options;
@@ -56,7 +65,8 @@ public final class AnrIntegration implements Integration, Closeable {
                   options.getAnrTimeoutIntervalMillis(),
                   options.isAnrReportInDebug(),
                   error -> reportANR(hub, options.getLogger(), error),
-                  options.getLogger());
+                  options.getLogger(),
+                  context);
           anrWatchDog.start();
 
           options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");

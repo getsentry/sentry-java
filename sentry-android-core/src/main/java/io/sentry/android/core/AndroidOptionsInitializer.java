@@ -95,7 +95,7 @@ final class AndroidOptionsInitializer {
         new SendCachedEventFireAndForgetIntegration(
             new SendFireAndForgetEnvelopeSender(() -> options.getOutboxPath())));
 
-    options.addIntegration(new AnrIntegration());
+    options.addIntegration(new AnrIntegration(context));
     options.addIntegration(new AppLifecycleIntegration());
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
