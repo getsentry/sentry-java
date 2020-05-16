@@ -177,6 +177,9 @@ public class SentryOptions {
    */
   private boolean enableUncaughtExceptionHandler = true;
 
+  /** Sentry Executor Service that sends cached events and envelopes on App. start. */
+  private @NotNull ISentryExecutorService executorService;
+
   /** connection timeout in milliseconds. */
   private int connectionTimeoutMillis = 5000;
 
@@ -813,6 +816,27 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the SentryExecutorService
+   *
+   * @return the SentryExecutorService
+   */
+  @NotNull
+  ISentryExecutorService getExecutorService() {
+    return executorService;
+  }
+
+  /**
+   * Sets the SentryExecutorService
+   *
+   * @param executorService the SentryExecutorService
+   */
+  void setExecutorService(final @NotNull ISentryExecutorService executorService) {
+    if (executorService != null) {
+      this.executorService = executorService;
+    }
+  }
+
+  /**
    * Returns the connection timeout in milliseconds.
    *
    * @return the connectionTimeoutMillis
@@ -892,54 +916,17 @@ public class SentryOptions {
 
   /** SentryOptions ctor It adds and set default things */
   public SentryOptions() {
+    executorService = new SentryExecutorService();
+
     eventProcessors.add(new MainEventProcessor(this));
 
-    // Start off sending any cached event.
     integrations.add(
         new SendCachedEventFireAndForgetIntegration(
-            (hub, options) -> {
-              SendCachedEvent sender =
-                  new SendCachedEvent(
-                      options.getSerializer(),
-                      hub,
-                      options.getLogger(),
-                      options.getFlushTimeoutMillis());
-              if (options.getCacheDirPath() != null) {
-                File cacheDir = new File(options.getCacheDirPath());
-                return () -> sender.processDirectory(cacheDir);
-              } else {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.WARNING,
-                        "No cache dir path is defined in options, discarding SendCachedEvent.");
-                return null;
-              }
-            }));
+            new SendFireAndForgetEventSender(() -> getCacheDirPath())));
 
-    //     send cached sessions
     integrations.add(
         new SendCachedEventFireAndForgetIntegration(
-            (hub, options) -> {
-              EnvelopeSender envelopeSender =
-                  new EnvelopeSender(
-                      hub,
-                      new EnvelopeReader(),
-                      options.getSerializer(),
-                      logger,
-                      options.getFlushTimeoutMillis());
-              if (options.getSessionsPath() != null) {
-                File outbox = new File(options.getSessionsPath());
-                return () -> envelopeSender.processDirectory(outbox);
-              } else {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.WARNING,
-                        "No sessions dir path is defined in options, discarding EnvelopeSender.");
-                return null;
-              }
-            }));
+            new SendFireAndForgetEnvelopeSender(() -> getSessionsPath())));
 
     integrations.add(new UncaughtExceptionHandlerIntegration());
   }

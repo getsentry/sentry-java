@@ -955,6 +955,19 @@ class HubTest {
     }
     //endregion
 
+    @Test
+    fun `Hub should close the sentry executor processor on close call`() {
+        val executor = mock<ISentryExecutorService>()
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            cacheDirPath = file.absolutePath
+            executorService = executor
+        }
+        val sut = Hub(options)
+        sut.close()
+        verify(executor).close(any())
+    }
+
     private fun generateHub(): IHub {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
