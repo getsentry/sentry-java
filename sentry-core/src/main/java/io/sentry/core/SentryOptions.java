@@ -854,7 +854,11 @@ public class SentryOptions {
     this.connectionTimeoutMillis = connectionTimeoutMillis;
   }
 
-  /** Returns the read timeout in milliseconds */
+  /**
+   * Returns the read timeout in milliseconds
+   *
+   * @return the readTimeoutMillis
+   */
   public int getReadTimeoutMillis() {
     return readTimeoutMillis;
   }
