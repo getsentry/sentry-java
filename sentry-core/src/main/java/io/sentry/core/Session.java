@@ -13,7 +13,8 @@ public final class Session {
   public enum State {
     Ok,
     Exited,
-    Crashed
+    Crashed,
+    Abnormal // not currently used in this SDK.
   }
 
   /** started timestamp */
