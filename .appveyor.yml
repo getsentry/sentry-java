@@ -20,7 +20,6 @@ install:
   - yes 2> nul | sdkmanager "cmake;%ANDROID_CMAKE_VERSION%" > nul
 cache:
   - "%USERPROFILE%\\.gradle\\caches"
-  - "%USERPROFILE%\\.gradle\\wrapper"
   - "%USERPROFILE%\\.m2\\repository"
 build_script:
   - cmd: gradlew.bat clean cleanBuildCache build bintrayUpload -PbintrayUser=dryUser -PbintrayKey=dryKey
