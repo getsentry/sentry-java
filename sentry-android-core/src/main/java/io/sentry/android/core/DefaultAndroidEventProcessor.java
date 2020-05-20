@@ -75,10 +75,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly final Future<Map<String, Object>> contextData;
 
+  private final @NotNull IBuildInfoProvider buildInfoProvider;
+
   public DefaultAndroidEventProcessor(
-      final @NotNull Context context, final @NotNull SentryOptions options) {
+      final @NotNull Context context,
+      final @NotNull SentryOptions options,
+      final @NotNull IBuildInfoProvider buildInfoProvider) {
     this.context = Objects.requireNonNull(context, "The application context is required.");
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
+    this.buildInfoProvider =
+        Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     // dont ref. to method reference, theres a bug on it
@@ -287,7 +293,18 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setCharging(isCharging(batteryIntent));
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
-    device.setOnline(ConnectivityChecker.isConnected(context, options.getLogger()));
+    Boolean connected;
+    switch (ConnectivityChecker.getConnectionStatus(context, options.getLogger())) {
+      case NOT_CONNECTED:
+        connected = false;
+        break;
+      case CONNECTED:
+        connected = true;
+        break;
+      default:
+        connected = null;
+    }
+    device.setOnline(connected);
     device.setOrientation(getOrientation());
 
     try {
@@ -344,7 +361,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     if (device.getConnectionType() == null) {
       // wifi, ethernet or cellular, null if none
-      device.setConnectionType(ConnectivityChecker.getConnectionType(context, options.getLogger()));
+      device.setConnectionType(
+          ConnectivityChecker.getConnectionType(context, options.getLogger(), buildInfoProvider));
     }
 
     return device;

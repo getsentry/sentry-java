@@ -34,6 +34,7 @@ class DefaultAndroidEventProcessorTest {
     private lateinit var context: Context
 
     private class Fixture {
+        val buildInfo = mock<IBuildInfoProvider>()
         val options = SentryOptions().apply {
             isDebug = true
             setLogger(mock())
@@ -49,7 +50,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `when instance is created, application context reference is stored`() {
-        val sut = DefaultAndroidEventProcessor(context, fixture.options)
+        val sut = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
 
         assertEquals(sut.context, context)
     }
@@ -57,22 +58,30 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `when null context is provided, invalid argument is thrown`() {
         val clazz = Class.forName("io.sentry.android.core.DefaultAndroidEventProcessor")
-        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java)
-        val params = arrayOf(null, mock<SentryOptions>())
+        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java, IBuildInfoProvider::class.java)
+        val params = arrayOf(null, mock<SentryOptions>(), null)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `when null options is provided, invalid argument is thrown`() {
         val clazz = Class.forName("io.sentry.android.core.DefaultAndroidEventProcessor")
-        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java)
-        val params = arrayOf(mock<Context>(), null)
+        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java, IBuildInfoProvider::class.java)
+        val params = arrayOf(mock<Context>(), null, null)
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
+    }
+
+    @Test
+    fun `when null buildInfo is provided, invalid argument is thrown`() {
+        val clazz = Class.forName("io.sentry.android.core.DefaultAndroidEventProcessor")
+        val ctor = clazz.getConstructor(Context::class.java, SentryOptions::class.java, IBuildInfoProvider::class.java)
+        val params = arrayOf(null, null, mock<IBuildInfoProvider>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test
     fun `When hint is not Cached, data should be applied`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         var event = SentryEvent().apply {
         }
         // refactor and mock data later on
@@ -86,7 +95,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Current should be true if it comes from main thread`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         val sentryThread = SentryThread().apply {
             id = Looper.getMainLooper().thread.id
         }
@@ -100,7 +109,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Current should be false if it its not the main thread`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         val sentryThread = SentryThread().apply {
             id = 10L
         }
@@ -114,7 +123,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When hint is Cached, data should not be applied`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         var event = SentryEvent().apply {
         }
         // refactor and mock data later on
@@ -129,7 +138,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Executor service should be called on ctor`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         val contextData = processor.contextData.get()
         assertNotNull(contextData)
         assertEquals("test", (contextData[PROGUARD_UUID] as Array<*>)[0])
@@ -141,14 +150,14 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Processor won't throw exception`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         processor.process(SentryEvent(), null)
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
     fun `Processor won't throw exception when theres a hint`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
         processor.process(SentryEvent(), CachedEvent())
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
