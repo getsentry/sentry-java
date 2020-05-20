@@ -71,7 +71,8 @@ final class AndroidOptionsInitializer {
 
     readDefaultOptionValues(options, context);
 
-    options.addEventProcessor(new DefaultAndroidEventProcessor(context, options));
+    options.addEventProcessor(
+        new DefaultAndroidEventProcessor(context, options, new BuildInfoProvider()));
 
     options.setSerializer(new AndroidSerializer(options.getLogger(), envelopeReader));
 
