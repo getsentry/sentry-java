@@ -142,8 +142,18 @@ public final class Sentry {
 
     IHub hub = getCurrentHub();
     mainHub = new Hub(options);
+
     currentHub.set(mainHub);
+
     hub.close();
+
+    // when integrations are registered on Hub ctor and async integrations are fired,
+    // it might and actually happened that integrations called captureSomething
+    // and hub was still NoOp.
+    // Registering integrations here make sure that Hub is already created.
+    for (final Integration integration : options.getIntegrations()) {
+      integration.register(HubAdapter.getInstance(), options);
+    }
   }
 
   /** Close the SDK */
