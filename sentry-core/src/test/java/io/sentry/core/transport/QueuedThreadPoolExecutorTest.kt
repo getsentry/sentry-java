@@ -13,9 +13,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class RetryingThreadPoolExecutorTest {
+class QueuedThreadPoolExecutorTest {
     private val maxQueueSize = 5
-    private var threadPool: RetryingThreadPoolExecutor? = null
+    private var threadPool: QueuedThreadPoolExecutor? = null
 
     @BeforeTest
     fun setup() {
@@ -30,7 +30,7 @@ class RetryingThreadPoolExecutorTest {
         // with a number of jobs. If there weren't enough threads, the main thread could block indefinitely
         // because there wouldn't be enough worker threads to handle all jobs in the queue (because the test
         // code blocks the worker threads).
-        threadPool = RetryingThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy())
+        threadPool = QueuedThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy())
     }
 
     @AfterTest

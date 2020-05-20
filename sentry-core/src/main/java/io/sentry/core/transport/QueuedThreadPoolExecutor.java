@@ -2,27 +2,24 @@ package io.sentry.core.transport;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This is a thread pool executor enriched for the possibility of retrying the supplied tasks.
- *
- * <p>Note that only {@link Runnable} tasks are retried, a {@link java.util.concurrent.Callable} is
- * not retry-able. Note also that the {@link Future} returned from the {@link #submit(Runnable)} or
- * {@link #submit(Runnable, Object)} methods is NOT generally usable, because it does not work when
- * the task is retried!
+ * This is a thread pool executor enriched for the possibility of queueing (with max queue size) the
+ * supplied tasks.
  *
  * <p>The {@link Runnable} instances.
  *
  * <p>This class is not public because it is used solely in {@link AsyncConnection}.
  */
-final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
+final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;
   private final AtomicInteger currentlyRunning;
 
@@ -34,13 +31,20 @@ final class RetryingThreadPoolExecutor extends ScheduledThreadPoolExecutor {
    * @param rejectedExecutionHandler specifies what to do with the tasks that cannot be run (e.g.
    *     during the shutdown)
    */
-  public RetryingThreadPoolExecutor(
+  public QueuedThreadPoolExecutor(
       final int corePoolSize,
       final int maxQueueSize,
       final @NotNull ThreadFactory threadFactory,
       final @NotNull RejectedExecutionHandler rejectedExecutionHandler) {
-
-    super(corePoolSize, threadFactory, rejectedExecutionHandler);
+    // similar to Executors.newSingleThreadExecutor, but with a max queue size control
+    super(
+        corePoolSize,
+        corePoolSize,
+        0L,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(),
+        threadFactory,
+        rejectedExecutionHandler);
     this.maxQueueSize = maxQueueSize;
     this.currentlyRunning = new AtomicInteger();
   }

@@ -3,6 +3,7 @@ package io.sentry.core;
 import io.sentry.core.cache.DiskCache;
 import io.sentry.core.hints.Flushable;
 import io.sentry.core.hints.Retryable;
+import io.sentry.core.util.LogUtils;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -64,9 +65,14 @@ final class SendCachedEvent extends DirectoryProcessor {
               SentryLevel.WARNING,
               "Timed out waiting for event submission: %s",
               event.getEventId());
+
+          //          TODO: find out about the time out
+          //          if (hint instanceof Retryable) {
+          //            ((Retryable) hint).setRetry(true);
+          //          }
         }
       } else {
-        logger.log(SentryLevel.DEBUG, "File %s is not Flushable", file.getAbsolutePath());
+        LogUtils.logIfNotFlushable(logger, hint);
       }
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, e, "File '%s' cannot be found.", file.getAbsolutePath());
@@ -78,7 +84,7 @@ final class SendCachedEvent extends DirectoryProcessor {
         ((Retryable) hint).setRetry(false);
         logger.log(SentryLevel.INFO, e, "File '%s' won't retry.", file.getAbsolutePath());
       } else {
-        logger.log(SentryLevel.DEBUG, "File %s is not Retryable", file.getAbsolutePath());
+        LogUtils.logIfNotRetryable(logger, hint);
       }
     } finally {
       // Unless the transport marked this to be retried, it'll be deleted.
@@ -92,6 +98,8 @@ final class SendCachedEvent extends DirectoryProcessor {
               "File not deleted since retry was marked. %s.",
               file.getAbsolutePath());
         }
+      } else {
+        LogUtils.logIfNotRetryable(logger, hint);
       }
     }
   }
