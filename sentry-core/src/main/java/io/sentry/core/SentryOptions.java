@@ -920,7 +920,12 @@ public class SentryOptions {
 
   /** SentryOptions ctor It adds and set default things */
   public SentryOptions() {
+    // SentryExecutorService should be inited before any SendCachedEventFireAndForgetIntegration
     executorService = new SentryExecutorService();
+
+    // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
+    // if there's an error on the setup, we are able to capture it
+    integrations.add(new UncaughtExceptionHandlerIntegration());
 
     eventProcessors.add(new MainEventProcessor(this));
 
@@ -931,7 +936,5 @@ public class SentryOptions {
     integrations.add(
         new SendCachedEventFireAndForgetIntegration(
             new SendFireAndForgetEnvelopeSender(() -> getSessionsPath())));
-
-    integrations.add(new UncaughtExceptionHandlerIntegration());
   }
 }

@@ -96,6 +96,9 @@ public final class SessionCache implements IEnvelopeCache {
     }
 
     if (hint instanceof SessionStart) {
+
+      // TODO: should we move this to AppLifecycleIntegration? and do on SDK init? but it's too much
+      // on main-thread
       if (currentSessionFile.exists()) {
         options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
 
