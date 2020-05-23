@@ -104,12 +104,22 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions()
         val hub = mock<IHub>()
         sut.register(hub, options)
-        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
         verify(hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("device.event", it.category)
             assertEquals("system", it.type)
             assertEquals(SentryLevel.WARNING, it.level)
         })
+    }
+
+    @Test
+    fun `When trim memory event with level not so high, do not add a breadcrumb`() {
+        val sut = fixture.getSut()
+        val options = SentryAndroidOptions()
+        val hub = mock<IHub>()
+        sut.register(hub, options)
+        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
