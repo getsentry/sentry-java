@@ -119,7 +119,7 @@
 
         <!-- dependencies versions -->
         <slf4j.version>1.7.24</slf4j.version>
-        <jackson.version>2.10.5</jackson.version>
+        <jackson.version>2.10.4</jackson.version>
         <hamcrest.version>1.3</hamcrest.version>
         <junit.version>4.12</junit.version>
         <wiremock.version>2.5.1</wiremock.version>
