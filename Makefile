@@ -1,4 +1,4 @@
-.PHONY: clean compile dryRelease doRelease release update
+.PHONY: clean compile dryRelease doRelease release update stop
 
 all: clean compile update dryRelease
 
@@ -24,3 +24,8 @@ release: clean compile dryRelease doRelease
 # check for dependencies update
 update:
 	./gradlew dependencyUpdates -Drevision=release
+
+# We stop gradle at the end to make sure the cache folders
+# don't contain any lock files and are free to be cached.
+stop:
+	./gradlew --stop
