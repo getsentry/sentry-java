@@ -1,0 +1,77 @@
+name: Android CI Ubuntu/macOS
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '*'
+
+env:
+  CMAKE_VERSION: "3.10.2.4988404"
+  # NDK_VERSION: "20.0.5594570"
+
+jobs:
+  build:
+    name: Build Job ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # we want that the matrix keeps running, default is to cancel them if it fails.
+      fail-fast: false
+      matrix:
+        # TODO: windows-latest
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      # Zulu Community distribution of OpenJDK
+      - name: set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      # sudo is necessary for linux
+
+      # 20.0.5594570 is not used, but it needs to be installed
+      # https://github.com/actions/virtual-environments/issues/60
+      # - name: Install NDK 20.0
+      #  run: sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;${NDK_VERSION}"
+
+      # required because macOS doesn't have cmake 3.10 installed by default
+      - name: Install cmake 3.10.2
+        run: sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "cmake;${CMAKE_VERSION}"
+
+
+      # use sequential key when bumping dependencies till single lock file is out of preview
+      # https://docs.gradle.org/current/userguide/dependency_locking.html#single_lock_file_per_project
+      - name: Cache Gradle Caches
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches/
+          key: cache-gradle-cache-2
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/wrapper/
+          key: cache-gradle-wrapper-2
+
+      # uses eskatos/gradle-command-action, so we don't care for ./gradlew or gradlew.bat
+
+      # - name: Clean and Build
+      #   uses: eskatos/gradle-command-action@v1
+      #   with:
+      #     arguments: clean build
+      - name: Make all
+        run: make all
+
+      # We stop gradle at the end to make sure the cache folders
+      # don't contain any lock files and are free to be cached.
+      # - name: Stop Gradle
+      #   uses: eskatos/gradle-command-action@v1
+      #  with:
+      #    arguments: --stop
+      - name: Make stop
+        run: make stop
