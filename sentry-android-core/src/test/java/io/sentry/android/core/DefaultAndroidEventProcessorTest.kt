@@ -150,14 +150,14 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Processor won't throw exception`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo, mock())
         processor.process(SentryEvent(), null)
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
     fun `Processor won't throw exception when theres a hint`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo)
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo, mock())
         processor.process(SentryEvent(), CachedEvent())
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }

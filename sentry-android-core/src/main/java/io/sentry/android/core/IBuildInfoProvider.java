@@ -9,4 +9,11 @@ public interface IBuildInfoProvider {
    * @return the SDK Version
    */
   int getSdkInfoVersion();
+
+  /**
+   * Returns the Build tags of the given SDK
+   *
+   * @return the Build tags
+   */
+  String getBuildTags();
 }
