@@ -7,8 +7,9 @@
 
 Android SDK for Sentry
 ===========
-[![Travis](https://travis-ci.com/getsentry/sentry-android.svg?branch=master)](https://travis-ci.com/getsentry/sentry-android)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/kr49snupeb1dsgwa/branch/master?svg=true)](https://ci.appveyor.com/project/sentry/sentry-android/branch/master)
+![Travis](https://img.shields.io/travis/getsentry/sentry-android?label=Travis)
+![AppVeyor](https://img.shields.io/appveyor/build/sentry/sentry-android?label=AppVeyor)
+![GH Workflow](https://img.shields.io/github/workflow/status/getsentry/sentry-android/Workflow%20Ubuntu%20macOS?label=GH%20Workflow)
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-android/master?compact_message)](https://ci.appveyor.com/project/sentry/sentry-android/branch/master/tests)
 [![codecov](https://codecov.io/gh/getsentry/sentry-android/branch/master/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-android)
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/getsentry/sentry-android.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/getsentry/sentry-android/context:java)
