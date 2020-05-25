@@ -1,4 +1,4 @@
-name: Android CI Ubuntu/macOS
+name: Workflow Ubuntu macOS
 on:
   push:
     branches:
