@@ -6,6 +6,7 @@ import static io.sentry.core.SentryLevel.INFO;
 import static io.sentry.core.SentryLevel.WARNING;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.core.ILogger;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEvent;
@@ -30,6 +31,7 @@ import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * An implementation of the {@link ITransport} interface that sends the events to the Sentry server
- * over HTTP(S) in UTF-8 encoding.
+ * over HTTP(S).
  */
 @Open
 @ApiStatus.NonExtendable // only not final because of testing
@@ -83,6 +85,8 @@ public class HttpTransport implements ITransport {
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
+
+  private final @NotNull ILogger logger;
 
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
@@ -131,6 +135,7 @@ public class HttpTransport implements ITransport {
     this.bypassSecurity = bypassSecurity;
     this.currentDateProvider =
         Objects.requireNonNull(currentDateProvider, "CurrentDateProvider is required.");
+    this.logger = Objects.requireNonNull(options.getLogger(), "Logger is required.");
 
     try {
       final URI uri = sentryUrl.toURI();
@@ -159,41 +164,20 @@ public class HttpTransport implements ITransport {
     int responseCode = -1;
 
     try (final OutputStream outputStream = connection.getOutputStream();
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+        final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
       serializer.serialize(event, writer);
 
-      // need to also close the input stream of the connection
-      connection.getInputStream().close();
-      options.getLogger().log(DEBUG, "Event sent %s successfully.", event.getEventId());
+      logger.log(DEBUG, "Event sent %s successfully.", event.getEventId());
       return TransportResult.success();
     } catch (IOException e) {
-      try {
-        responseCode = connection.getResponseCode();
-
-        if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
-          options
-              .getLogger()
-              .log(
-                  DEBUG,
-                  "Event '"
-                      + event.getEventId()
-                      + "' was rejected by the Sentry server due to a filter.");
-        }
-        logErrorInPayload(connection);
-        return TransportResult.error(responseCode);
-      } catch (IOException responseCodeException) {
-        // this should not stop us from continuing. We'll just use -1 as response code.
-        options
-            .getLogger()
-            .log(WARNING, "Failed to obtain response code while analyzing event send failure.", e);
-      }
-
-      logErrorInPayload(connection);
-      return TransportResult.error(responseCode);
+      final TransportResult errorResult = getResultFromErrorCode(connection, e);
+      responseCode = errorResult.getResponseCode();
+      return errorResult;
     } finally {
       updateRetryAfterLimits(connection, responseCode);
 
-      connection.disconnect();
+      closeAndDisconnect(connection);
     }
   }
 
@@ -272,7 +256,7 @@ public class HttpTransport implements ITransport {
     connection.setRequestMethod("POST");
     connection.setDoOutput(true);
 
-    connection.setRequestProperty("Content-Encoding", "UTF-8");
+    connection.setRequestProperty("Content-Encoding", "gzip");
     connection.setRequestProperty("Content-Type", contentType);
     connection.setRequestProperty("Accept", "application/json");
 
@@ -297,46 +281,80 @@ public class HttpTransport implements ITransport {
     int responseCode = -1;
 
     try (final OutputStream outputStream = connection.getOutputStream();
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+        final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
       serializer.serialize(envelope, writer);
 
-      // need to also close the input stream of the connection
-      connection.getInputStream().close();
-      options.getLogger().log(DEBUG, "Envelope sent successfully.");
+      logger.log(DEBUG, "Envelope sent successfully.");
       return TransportResult.success();
     } catch (IOException e) {
-      try {
-        responseCode = connection.getResponseCode();
-
-        // TODO: 403 part of the protocol?
-        if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
-          options
-              .getLogger()
-              .log(DEBUG, "Envelope was rejected by the Sentry server due to a filter.");
-        }
-        logErrorInPayload(connection);
-        return TransportResult.error(responseCode);
-      } catch (IOException responseCodeException) {
-        // this should not stop us from continuing. We'll just use -1 as response code.
-        options
-            .getLogger()
-            .log(WARNING, "Failed to obtain response code while analyzing event send failure.", e);
-      }
-
-      logErrorInPayload(connection);
-      return TransportResult.error(responseCode);
+      final TransportResult errorResult = getResultFromErrorCode(connection, e);
+      responseCode = errorResult.getResponseCode();
+      return errorResult;
     } catch (Exception e) {
-      options
-          .getLogger()
-          .log(WARNING, "Failed to obtain error message while analyzing event send failure.", e);
-      return TransportResult.error(-1);
+      return getDefaultErrorResult(e);
     } finally {
       updateRetryAfterLimits(connection, responseCode);
 
+      closeAndDisconnect(connection);
+    }
+  }
+
+  /**
+   * Closes the Response stream and disconnect the connection
+   *
+   * @param connection the HttpURLConnection
+   */
+  private void closeAndDisconnect(final @NotNull HttpURLConnection connection) {
+    try {
+      connection.getInputStream().close();
+    } catch (IOException e) {
+      logger.log(ERROR, e, "Error while closing the connection.");
+    } finally {
       connection.disconnect();
     }
   }
 
+  /**
+   * Returns a TransportResult error with the given responseCode
+   *
+   * @param connection the HttpURLConnection
+   * @param ioException the IOException
+   * @return the TransportResult error
+   */
+  private @NotNull TransportResult getResultFromErrorCode(
+      final @NotNull HttpURLConnection connection, final @NotNull IOException ioException) {
+    try {
+      final int responseCode = connection.getResponseCode();
+
+      logErrorInPayload(connection);
+      return TransportResult.error(responseCode);
+    } catch (IOException responseCodeException) {
+      logger.log(ERROR, responseCodeException, "Error getting responseCode");
+
+      // this should not stop us from continuing.
+      return getDefaultErrorResult(ioException);
+    }
+  }
+
+  /**
+   * Logs a default error message and return the TransportResult error with -1 responseCode
+   *
+   * @param exception the Exception
+   * @return the TransportResult error
+   */
+  private @NotNull TransportResult getDefaultErrorResult(final @NotNull Exception exception) {
+    logger.log(
+        WARNING, "Failed to obtain error message while analyzing event send failure.", exception);
+    return TransportResult.error();
+  }
+
+  /**
+   * Read retry after headers and update the rate limit Dictionary
+   *
+   * @param connection the HttpURLConnection
+   * @param responseCode the responseCode
+   */
   private void updateRetryAfterLimits(
       final @NotNull HttpURLConnection connection, final int responseCode) {
     // seconds
@@ -391,7 +409,7 @@ public class HttpTransport implements ITransport {
                 try {
                   dataCategory = DataCategory.valueOf(StringUtils.capitalize(catItem));
                 } catch (IllegalArgumentException e) {
-                  options.getLogger().log(INFO, e, "Unknown category: %s", catItem);
+                  logger.log(INFO, e, "Unknown category: %s", catItem);
                 }
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {
@@ -442,34 +460,42 @@ public class HttpTransport implements ITransport {
       try {
         retryAfterMillis =
             (long) (Double.parseDouble(retryAfterHeader) * 1000L); // seconds -> milliseconds
-      } catch (NumberFormatException __) {
+      } catch (NumberFormatException ignored) {
         // let's use the default then
       }
     }
     return retryAfterMillis;
   }
 
+  /**
+   * Logs the error message from the ErrorStream
+   *
+   * @param connection the HttpURLConnection
+   */
   private void logErrorInPayload(final @NotNull HttpURLConnection connection) {
-    if (options
-        .isDebug()) { // just because its expensive, but internally isDebug is already checked when
-      // .log() is called
-      String errorMessage = null;
-      final InputStream errorStream = connection.getErrorStream();
-      if (errorStream != null) {
-        errorMessage = getErrorMessageFromStream(errorStream);
-      }
+    // just because its expensive, but internally isDebug is already checked when
+    // .log() is called
+    if (options.isDebug()) {
+      String errorMessage = getErrorMessageFromStream(connection);
       if (null == errorMessage || errorMessage.isEmpty()) {
         errorMessage = "An exception occurred while submitting the event to the Sentry server.";
       }
 
-      options.getLogger().log(DEBUG, errorMessage);
+      logger.log(DEBUG, errorMessage);
     }
   }
 
-  private String getErrorMessageFromStream(final @NotNull InputStream errorStream) {
-    final BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8));
-    StringBuilder sb = new StringBuilder();
-    try {
+  /**
+   * Reads the error message from the error stream
+   *
+   * @param connection the HttpURLConnection
+   * @return the error message or null if none
+   */
+  private @Nullable String getErrorMessageFromStream(final @NotNull HttpURLConnection connection) {
+    try (final InputStream errorStream = connection.getErrorStream();
+        final BufferedReader reader =
+            new BufferedReader(new InputStreamReader(errorStream, UTF_8))) {
+      final StringBuilder sb = new StringBuilder();
       String line;
       // ensure we do not add "\n" to the last line
       boolean first = true;
@@ -480,16 +506,15 @@ public class HttpTransport implements ITransport {
         sb.append(line);
         first = false;
       }
-    } catch (Exception e2) {
-      options
-          .getLogger()
-          .log(
-              ERROR,
-              "Exception while reading the error message from the connection: " + e2.getMessage());
+      return sb.toString();
+    } catch (IOException e) {
+      logger.log(ERROR, e, "Exception while reading the error message from the connection");
     }
-    return sb.toString();
+    return null;
   }
 
   @Override
-  public void close() throws IOException {}
+  public void close() throws IOException {
+    // a connection is opened and closed for each request, so this method is not used at all.
+  }
 }

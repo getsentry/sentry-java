@@ -86,7 +86,7 @@ class HttpTransportTest {
     fun `uses Retry-After header if X-Sentry-Rate-Limit is not set when sending an event`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEventSerialize()
         whenever(fixture.connection.getHeaderField(eq("Retry-After"))).thenReturn("30")
         whenever(fixture.connection.responseCode).thenReturn(429)
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
@@ -104,7 +104,7 @@ class HttpTransportTest {
     fun `uses Retry-After header if X-Sentry-Rate-Limit is not set when sending an envelope`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEnvelopeSerialize()
         whenever(fixture.connection.getHeaderField(eq("Retry-After"))).thenReturn("30")
         whenever(fixture.connection.responseCode).thenReturn(429)
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
@@ -122,7 +122,7 @@ class HttpTransportTest {
     fun `passes on the response code on error when sending an event`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEventSerialize()
         whenever(fixture.connection.responseCode).thenReturn(1234)
 
         val event = SentryEvent()
@@ -138,7 +138,7 @@ class HttpTransportTest {
     fun `passes on the response code on error when sending an envelope`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEnvelopeSerialize()
         whenever(fixture.connection.responseCode).thenReturn(1234)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
@@ -154,7 +154,7 @@ class HttpTransportTest {
     fun `uses the default retry interval if there is no Retry-After header when sending an event`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEventSerialize()
         whenever(fixture.connection.responseCode).thenReturn(429)
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
@@ -171,7 +171,7 @@ class HttpTransportTest {
     fun `uses the default retry interval if there is no Retry-After header when sending an envelope`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEnvelopeSerialize()
         whenever(fixture.connection.responseCode).thenReturn(429)
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
@@ -188,7 +188,7 @@ class HttpTransportTest {
     fun `failure to get response code doesn't break sending an event`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEventSerialize()
         whenever(fixture.connection.responseCode).thenThrow(IOException())
 
         val event = SentryEvent()
@@ -204,7 +204,7 @@ class HttpTransportTest {
     fun `failure to get response code doesn't break sending an envelope`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEnvelopeSerialize()
         whenever(fixture.connection.responseCode).thenThrow(IOException())
 
         val session = Session("123", User(), "env", "release")
@@ -221,7 +221,7 @@ class HttpTransportTest {
     fun `uses X-Sentry-Rate-Limit and returns accordingly`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEventSerialize()
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("50:transaction:key, 2700:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
@@ -239,7 +239,7 @@ class HttpTransportTest {
     fun `uses X-Sentry-Rate-Limit and allows sending if time has passed`() {
         val transport = fixture.getSUT()
 
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
+        throwOnEventSerialize()
         whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
             .thenReturn("50:transaction:key, 1:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
@@ -364,5 +364,14 @@ class HttpTransportTest {
 
     private fun createSession(): Session {
         return Session("123", User(), "env", "release")
+    }
+
+    // TODO: make inline fun <reified T : Any>, so we can throwOnSerialize<SentryEvent>()
+    private fun throwOnEventSerialize() {
+        whenever(fixture.serializer.serialize(any<SentryEvent>(), any())).thenThrow(IOException())
+    }
+
+    private fun throwOnEnvelopeSerialize() {
+        whenever(fixture.serializer.serialize(any<SentryEnvelope>(), any())).thenThrow(IOException())
     }
 }
