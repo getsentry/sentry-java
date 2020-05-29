@@ -41,7 +41,7 @@ object Config {
         val androidxJunit = "androidx.test.ext:junit:1.1.1"
         val robolectric = "org.robolectric:robolectric:4.3.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val awaitility = "org.awaitility:awaitility-kotlin:4.0.2"
+        val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
     }
 
     object QualityPlugins {
