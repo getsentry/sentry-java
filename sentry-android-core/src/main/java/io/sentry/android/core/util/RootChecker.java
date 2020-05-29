@@ -8,6 +8,7 @@ import io.sentry.core.SentryLevel;
 import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import org.jetbrains.annotations.ApiStatus;
@@ -137,14 +138,16 @@ public final class RootChecker {
           new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
         return reader.readLine() != null;
       }
+    } catch (IOException e) {
+      logger.log(SentryLevel.DEBUG, "SU doesn't exist.", e);
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when trying to check if SU exists.", e);
-      return false;
+      logger.log(SentryLevel.DEBUG, "Error when trying to check if SU exists.", e);
     } finally {
       if (process != null) {
         process.destroy();
       }
     }
+    return false;
   }
 
   /**
