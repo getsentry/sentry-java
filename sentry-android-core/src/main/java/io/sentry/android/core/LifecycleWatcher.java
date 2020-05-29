@@ -10,13 +10,15 @@ import io.sentry.core.transport.ICurrentDateProvider;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 final class LifecycleWatcher implements DefaultLifecycleObserver {
 
-  private long lastStartedSession = 0L;
+  private final AtomicLong lastUpdatedSession = new AtomicLong(0L);
 
   private final long sessionIntervalMillis;
 
@@ -64,15 +66,18 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
   private void startSession() {
     if (enableSessionTracking) {
-      final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
       cancelTask();
-      if (lastStartedSession == 0L
-          || (lastStartedSession + sessionIntervalMillis) <= currentTimeMillis) {
+
+      final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
+      final long lastUpdatedSession = this.lastUpdatedSession.get();
+
+      if (lastUpdatedSession == 0L
+          || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
         addSessionBreadcrumb("start");
         hub.startSession();
         runningSession.set(true);
       }
-      lastStartedSession = currentTimeMillis;
+      this.lastUpdatedSession.set(currentTimeMillis);
     }
   }
 
@@ -81,6 +86,9 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   @Override
   public void onStop(final @NotNull LifecycleOwner owner) {
     if (enableSessionTracking) {
+      final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
+      this.lastUpdatedSession.set(currentTimeMillis);
+
       scheduleEndSession();
     }
 
