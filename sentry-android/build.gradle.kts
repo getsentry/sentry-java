@@ -24,11 +24,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    // replace with https://issuetracker.google.com/issues/72050365 once released.
-    libraryVariants.all {
-        generateBuildConfigProvider?.configure {
-            enabled = false
-        }
+    buildFeatures {
+        // Determines whether to generate a BuildConfig class.
+        buildConfig = false
+        // Determines whether to support injecting custom variables into the module's R class.
+        resValues = false
     }
 }
 

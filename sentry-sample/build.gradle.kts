@@ -34,9 +34,24 @@ android {
         }
     }
 
+    buildFeatures {
+        // Determines whether to support View Binding.
+        // Note that the viewBinding.enabled property is now deprecated.
+        viewBinding = true
+        // Determines whether to support injecting custom variables into the module's R class.
+        resValues = false
+    }
+
+    dependenciesInfo {
+        // Disables dependency metadata when building APKs.
+        includeInApk = false
+        // Disables dependency metadata when building Android App Bundles.
+        includeInBundle = false
+    }
+
     externalNativeBuild {
         cmake {
-            setVersion(Config.Android.cmakeVersion)
+            version = Config.Android.cmakeVersion
             setPath("CMakeLists.txt")
         }
     }
@@ -51,12 +66,20 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            manifestPlaceholders = mapOf(
+                "sentryDebug" to true
+            )
+        }
         getByName("release") {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             isShrinkResources = true
+
+            manifestPlaceholders = mapOf(
+                "sentryDebug" to false
+            )
         }
     }
 

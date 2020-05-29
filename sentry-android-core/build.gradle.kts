@@ -18,12 +18,6 @@ android {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersion)
 
-        javaCompileOptions {
-            annotationProcessorOptions {
-                includeCompileClasspath = true
-            }
-        }
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         versionName = project.version.toString()
@@ -37,6 +31,11 @@ android {
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
+    }
+
+    buildFeatures {
+        // Determines whether to support injecting custom variables into the module's R class.
+        resValues = false
     }
 
     compileOptions {

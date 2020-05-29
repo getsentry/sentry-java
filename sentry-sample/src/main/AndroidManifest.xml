@@ -32,7 +32,7 @@
     <meta-data android:name="io.sentry.dsn" android:value="https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954" />
 
     <!--    how to enable Sentry's debug mode-->
-    <meta-data android:name="io.sentry.debug" android:value="true" />
+    <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
 
     <!--    how to set a custom debug level-->
     <!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
