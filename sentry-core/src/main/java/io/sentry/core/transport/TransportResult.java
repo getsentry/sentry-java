@@ -29,6 +29,16 @@ public abstract class TransportResult {
     return new ErrorTransportResult(responseCode);
   }
 
+  /**
+   * Use this method to announce failure of sending the event. Defaults responseCode to -1 (unknown
+   * responseCode)
+   *
+   * @return an erroneous transport result
+   */
+  public static @NotNull TransportResult error() {
+    return error(-1);
+  }
+
   private TransportResult() {}
 
   public abstract boolean isSuccess();
