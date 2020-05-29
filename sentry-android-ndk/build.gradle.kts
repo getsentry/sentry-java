@@ -24,12 +24,6 @@ android {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersionNdk) // NDK requires a higher API level than core.
 
-        javaCompileOptions {
-            annotationProcessorOptions {
-                includeCompileClasspath = true
-            }
-        }
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         versionName = project.version.toString()
@@ -46,18 +40,18 @@ android {
             setAbiFilters(Config.Android.abiFilters)
             ndkVersion = Config.Android.ndkVersion
         }
+    }
 
-        // replace with https://issuetracker.google.com/issues/72050365 once released.
-        libraryVariants.all {
-            generateBuildConfigProvider?.configure {
-                enabled = false
-            }
-        }
+    buildFeatures {
+        // Determines whether to generate a BuildConfig class.
+        buildConfig = false
+        // Determines whether to support injecting custom variables into the module's R class.
+        resValues = false
     }
 
     externalNativeBuild {
         cmake {
-            setVersion(Config.Android.cmakeVersion)
+            version = Config.Android.cmakeVersion
             setPath("CMakeLists.txt")
         }
     }

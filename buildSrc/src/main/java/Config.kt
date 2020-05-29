@@ -3,7 +3,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:3.6.3"
+        val androidGradle = "com.android.tools.build:gradle:4.0.0"
         val kotlinGradlePlugin = "gradle-plugin"
     }
 
@@ -16,7 +16,7 @@ object Config {
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
         val cmakeVersion = "3.10.2"
-        val ndkVersion = "21.1.6352462"
+        val ndkVersion = "21.0.6113669" // 21.1.6352462 when https://discuss.lgtm.com/t/android-ndk-v21-1-6352462-is-not-available/2910 is fixed
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
     }
 
