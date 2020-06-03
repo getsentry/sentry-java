@@ -873,12 +873,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private @Nullable String[] getProguardUUIDs() {
+    final AssetManager assets = context.getAssets();
     // one may have thousands of asset files and looking up this list might slow down the SDK init.
     // quite a bit, for this reason, we try to open the file directly and take care of errors
     // like FileNotFoundException
-    try (final AssetManager assets = context.getAssets();
-        final InputStream is =
-            new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
+    try (final InputStream is =
+        new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
       final Properties properties = new Properties();
       properties.load(is);
 
