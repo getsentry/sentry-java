@@ -6,6 +6,10 @@
   <!--  extra recommended permission, we'd be able to check network status-->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+  <!-- add extra permission (optional) -->
+  <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
   <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
   <uses-sdk
     tools:overrideLibrary="io.sentry.android"/>
