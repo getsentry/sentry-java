@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 /** Utilities to deal with dates */
 @ApiStatus.Internal
@@ -23,9 +24,9 @@ public final class DateUtils {
    * @param date the current date with local timezone
    * @return the ISO formatted UTC date with millis precision.
    */
-  public static String getTimestampIsoFormat(Date date) {
-    TimeZone tz = TimeZone.getTimeZone(UTC);
-    DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
+  public static @NotNull String getTimestampIsoFormat(final @NotNull Date date) {
+    final TimeZone tz = TimeZone.getTimeZone(UTC);
+    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
     df.setTimeZone(tz);
     return df.format(date);
   }
@@ -35,8 +36,8 @@ public final class DateUtils {
    *
    * @return the ISO UTC date and time
    */
-  public static Date getCurrentDateTime() {
-    String timestampIsoFormat = getTimestampIsoFormat(new Date());
+  public static @NotNull Date getCurrentDateTime() {
+    final String timestampIsoFormat = getTimestampIsoFormat(new Date());
     return getDateTime(timestampIsoFormat);
   }
 
@@ -46,7 +47,8 @@ public final class DateUtils {
    * @param timestamp UTC format eg 2000-12-31T23:59:58Z or 2000-12-31T23:59:58.123Z
    * @return the Date
    */
-  public static Date getDateTime(String timestamp) throws IllegalArgumentException {
+  public static @NotNull Date getDateTime(final @NotNull String timestamp)
+      throws IllegalArgumentException {
     try {
       return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US).parse(timestamp);
     } catch (ParseException e) {
@@ -63,16 +65,16 @@ public final class DateUtils {
    * Get Java Date from millis timestamp format
    *
    * @param timestamp millis format eg 1581410911.988 (1581410911 seconds and 988 millis)
-   * @return the Date
+   * @return the Date UTC timezone
    */
-  public static Date getDateTimeWithMillisPrecision(String timestamp)
+  public static @NotNull Date getDateTimeWithMillisPrecision(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
-      String[] times = timestamp.split("\\.", -1);
-      long seconds = Long.parseLong(times[0]);
-      long millis = times.length > 1 ? Long.parseLong(times[1]) : 0;
+      final String[] times = timestamp.split("\\.", -1);
+      final long seconds = Long.parseLong(times[0]);
+      final long millis = times.length > 1 ? Long.parseLong(times[1]) : 0;
 
-      return new Date((seconds * 1000) + millis);
+      return getDateTime(new Date((seconds * 1000) + millis));
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException("timestamp is not millis format " + timestamp);
     }
@@ -84,8 +86,8 @@ public final class DateUtils {
    * @param date already UTC format
    * @return the ISO formatted date with millis precision.
    */
-  public static String getTimestamp(Date date) {
-    DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
+  public static @NotNull String getTimestamp(final @NotNull Date date) {
+    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
     return df.format(date);
   }
 
@@ -95,8 +97,8 @@ public final class DateUtils {
    * @param date the Date with local timezone
    * @return the Date UTC timezone
    */
-  public static Date getDateTime(Date date) {
-    String timestampIsoFormat = getTimestampIsoFormat(date);
+  public static @NotNull Date getDateTime(final @NotNull Date date) {
+    final String timestampIsoFormat = getTimestampIsoFormat(date);
     return getDateTime(timestampIsoFormat);
   }
 }
