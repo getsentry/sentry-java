@@ -122,6 +122,17 @@ class AndroidSerializerTest {
     }
 
     @Test
+    fun `when deserializing mills timestamp with mills precision, it should be UTC`() {
+        // Jun 7, 2020 12:38:12 PM UTC
+        val dateIsoFormat = "1591533492.631"
+        val actual = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
+
+        val expected = DateUtils.getTimestamp(actual)
+
+        assertEquals("2020-06-07T12:38:12.631Z", expected)
+    }
+
+    @Test
     fun `when deserializing unknown properties, it should be added to unknown field`() {
         val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
