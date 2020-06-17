@@ -4,8 +4,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -14,52 +12,56 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class QueuedThreadPoolExecutorTest {
-    private val maxQueueSize = 5
-    private var threadPool: QueuedThreadPoolExecutor? = null
 
-    @BeforeTest
-    fun setup() {
-        val threadFactory = ThreadFactory { r ->
-            val t = Thread(r, "RetryingScheduledThreadPoolExecutorTestThread")
-            t.isDaemon = true
-            t
-        }
+    private class Fixture {
+        val maxQueueSize = 5
 
         // make sure we have enough threads to handle more than the maximum number of enqueued operations
         // in reality this would not be a problem but the test code needs to synchronize the main thread
         // with a number of jobs. If there weren't enough threads, the main thread could block indefinitely
         // because there wouldn't be enough worker threads to handle all jobs in the queue (because the test
         // code blocks the worker threads).
-        threadPool = QueuedThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy())
+        private val threadFactory = ThreadFactory { r ->
+            val t = Thread(r, "RetryingScheduledThreadPoolExecutorTestThread")
+            t.isDaemon = true
+            t
+        }
+
+        fun getSut(): QueuedThreadPoolExecutor =
+            QueuedThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy())
     }
 
-    @AfterTest
-    fun teardown() {
-        threadPool?.shutdownNow()
-    }
+    private val fixture = Fixture()
 
     @Test
     fun `executes once when finishes ok`() {
+        val sut = fixture.getSut()
         val counter = CountDownLatch(1)
         val actualTimes = AtomicInteger()
-        threadPool?.submit {
+        sut.submit {
             counter.countDown()
             actualTimes.incrementAndGet()
         }
 
+        // when running "all tests" from the project tool context, this line might be flaky
+        // it throws InterruptedException for no reason, it works when running a single test
+        // the whole class or via CLI, no root cause found.
         counter.await()
         // wait to see if there are any more attempts
         Thread.sleep(1000)
 
         assertEquals(1, actualTimes.get(), "Successful task should only be run once.")
+        val runnables = sut.shutdownNow()
+        assertTrue(runnables.isEmpty())
     }
 
     @Test
     fun `do not retry failed tasks`() {
+        val sut = fixture.getSut()
         val counter = CountDownLatch(1)
         val actualTimes = AtomicInteger()
 
-        threadPool?.submit {
+        sut.submit {
             counter.countDown()
             actualTimes.incrementAndGet()
             throw RuntimeException()
@@ -69,21 +71,24 @@ class QueuedThreadPoolExecutorTest {
         Thread.sleep(1000)
 
         assertEquals(1, actualTimes.get(), "Shouldn't see any more attempts, but saw some")
+        val runnables = sut.shutdownNow()
+        assertTrue(runnables.isEmpty())
     }
 
     @Test
     fun `limits the queue size`() {
+        val sut = fixture.getSut()
         // using this we're waiting for the submitted jobs to be unblocked
         val jobBlocker = Object()
 
         // this is used to wait on the main thread until all the jobs are started
-        val sync = CountDownLatch(maxQueueSize)
+        val sync = CountDownLatch(fixture.maxQueueSize)
 
         // this is used to block the main thread until at least 1 of the jobs has finished
         val atLeastOneFinished = CountDownLatch(1)
 
-        val futures = (1..maxQueueSize).map {
-            threadPool?.submit {
+        val futures = (1..fixture.maxQueueSize).map {
+            sut.submit {
                 sync.countDown()
 
                 // using the primitive notify/wait enables us to wake up the jobs 1 by 1.
@@ -102,8 +107,8 @@ class QueuedThreadPoolExecutorTest {
             assertFalse(it.isCancelled, "No task below the max queue size should be cancelled.")
         }
 
-        var f = threadPool?.submit { synchronized(jobBlocker) { jobBlocker.wait() } }
-        assertTrue(f != null && f.isCancelled, "A task above the queue size should have been cancelled.")
+        var f = sut.submit { synchronized(jobBlocker) { jobBlocker.wait() } }
+        assertTrue(f.isCancelled, "A task above the queue size should have been cancelled.")
 
         // wake up a single job and wait on the main thread for that to finish
         synchronized(jobBlocker) { jobBlocker.notify() }
@@ -111,7 +116,7 @@ class QueuedThreadPoolExecutorTest {
 
         var waitCount = 0
         // wait for the thread pool to realize that the job indeed finished
-        while (threadPool?.completedTaskCount == 0L) {
+        while (sut.completedTaskCount == 0L) {
             waitCount++
             if (waitCount == 10) {
                 fail()
@@ -123,11 +128,13 @@ class QueuedThreadPoolExecutorTest {
         val jobBlocker2 = CountDownLatch(1)
         val sync2 = CountDownLatch(1)
 
-        f = threadPool?.submit { sync2.countDown(); jobBlocker2.await() }
-        assertFalse(f != null && f.isCancelled, "A task should be successfully enqueued after making a place in the queue")
+        f = sut.submit { sync2.countDown(); jobBlocker2.await() }
+        assertFalse(f.isCancelled, "A task should be successfully enqueued after making a place in the queue")
         sync2.await()
 
         synchronized(jobBlocker) { jobBlocker.notifyAll() }
         jobBlocker2.countDown()
+        val runnables = sut.shutdownNow()
+        assertTrue(runnables.isEmpty())
     }
 }
