@@ -8,7 +8,7 @@ import io.sentry.core.ISerializer
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
 import kotlin.test.assertTrue
-import org.junit.Test
+import kotlin.test.Test
 
 class StdoutTransportTest {
     private class Fixture {
