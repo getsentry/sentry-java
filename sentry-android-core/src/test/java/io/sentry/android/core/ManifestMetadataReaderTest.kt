@@ -31,7 +31,9 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata won't throw exception`() {
         // tests for the returned boolean are in SentryInitProviderTest
-        val options = SentryAndroidOptions()
+        val options = SentryAndroidOptions().apply {
+            isDebug = true
+        }
 
         val context = ContextUtilsTest.createMockContext()
         ManifestMetadataReader.applyMetadata(context, options)

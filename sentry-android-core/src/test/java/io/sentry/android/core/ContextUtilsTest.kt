@@ -4,20 +4,26 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.res.AssetManager
 import android.os.Bundle
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import java.io.File
+import java.io.FileNotFoundException
 
 object ContextUtilsTest {
     fun mockMetaData(mockContext: Context = createMockContext(), metaData: Bundle): Context {
         val mockPackageManager: PackageManager = mock()
         val mockApplicationInfo: ApplicationInfo = mock()
+        val assets: AssetManager = mock()
 
         whenever(mockContext.packageName).thenReturn("io.sentry.sample.test")
         whenever(mockContext.packageManager).thenReturn(mockPackageManager)
         whenever(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA))
             .thenReturn(mockApplicationInfo)
+        whenever(assets.open(any())).thenThrow(FileNotFoundException())
+        whenever(mockContext.assets).thenReturn(assets)
 
         mockApplicationInfo.metaData = metaData
         return mockContext
