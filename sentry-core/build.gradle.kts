@@ -9,6 +9,15 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
+configure<JavaPluginConvention> {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
 dependencies {
     // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
     implementation(Config.Libs.gson)
