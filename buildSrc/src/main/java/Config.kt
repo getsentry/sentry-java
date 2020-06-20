@@ -47,9 +47,9 @@ object Config {
     object QualityPlugins {
         val jacocoVersion = "0.8.5"
         val spotless = "com.diffplug.gradle.spotless"
-        val spotlessVersion = "3.27.0"
+        val spotlessVersion = "4.4.0"
         val errorProne = "net.ltgt.errorprone"
-        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.1.1"
+        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.2.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.28.0"
         val gradleVersions = "com.github.ben-manes.versions"
     }
@@ -80,7 +80,7 @@ object Config {
         val jetbrainsAnnotations = "org.jetbrains:annotations:19.0.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.3.4"
+        val errorprone = "com.google.errorprone:error_prone_core:2.4.0"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
     }
 
@@ -91,7 +91,7 @@ object Config {
     }
 
     object NativePlugins {
-        val nativeBundlePlugin = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.4"
+        val nativeBundlePlugin = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.6"
         val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
     }
 }

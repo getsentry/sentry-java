@@ -412,6 +412,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return Calendar.getInstance().getTimeZone();
   }
 
+  @SuppressWarnings("JdkObsolete")
   private @NotNull Date getBootTime() {
     // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
     return DateUtils.getDateTime(

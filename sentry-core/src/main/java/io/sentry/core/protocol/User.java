@@ -134,7 +134,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
   /**
    * the User's unknown fields
    *
-   * @return
+   * @return the unknown map
    */
   @TestOnly
   Map<String, Object> getUnknown() {

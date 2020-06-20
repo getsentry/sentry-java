@@ -36,6 +36,7 @@ public final class DateUtils {
    *
    * @return the ISO UTC date and time
    */
+  @SuppressWarnings("JdkObsolete")
   public static @NotNull Date getCurrentDateTime() {
     final String timestampIsoFormat = getTimestampIsoFormat(new Date());
     return getDateTime(timestampIsoFormat);
@@ -56,6 +57,7 @@ public final class DateUtils {
         // to keep compatibility with older envelopes
         return new SimpleDateFormat(ISO_FORMAT, Locale.US).parse(timestamp);
       } catch (ParseException ignored) {
+        // invalid timestamp format
       }
       throw new IllegalArgumentException("timestamp is not ISO format " + timestamp);
     }
@@ -67,6 +69,7 @@ public final class DateUtils {
    * @param timestamp millis format eg 1581410911.988 (1581410911 seconds and 988 millis)
    * @return the Date UTC timezone
    */
+  @SuppressWarnings("JdkObsolete")
   public static @NotNull Date getDateTimeWithMillisPrecision(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {

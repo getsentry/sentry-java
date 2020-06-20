@@ -61,6 +61,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     return eventId;
   }
 
+  @SuppressWarnings("JdkObsolete")
   public Date getTimestamp() {
     return (Date) timestamp.clone();
   }

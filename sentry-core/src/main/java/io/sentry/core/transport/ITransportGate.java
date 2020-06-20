@@ -10,6 +10,10 @@ package io.sentry.core.transport;
  */
 public interface ITransportGate {
 
-  /** @return true if it is possible to send events to the Sentry server, false otherwise */
+  /**
+   * Checks if the device is connected or not
+   *
+   * @return true if it is possible to send events to the Sentry server, false otherwise
+   */
   boolean isConnected();
 }

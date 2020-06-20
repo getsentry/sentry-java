@@ -7,8 +7,8 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.ISerializer
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
-import kotlin.test.assertTrue
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 class StdoutTransportTest {
     private class Fixture {

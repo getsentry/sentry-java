@@ -63,6 +63,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the timestamp
    */
+  @SuppressWarnings("JdkObsolete")
   public @NotNull Date getTimestamp() {
     return (Date) timestamp.clone();
   }
@@ -193,7 +194,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   /**
    * Returns the unknown's map, internal usage only
    *
-   * @return
+   * @return the unknown map
    */
   @TestOnly
   @Nullable

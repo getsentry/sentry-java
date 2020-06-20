@@ -252,7 +252,7 @@ public final class Scope implements Cloneable {
   /**
    * Returns the Scope's extra map
    *
-   * @return
+   * @return the extra map
    */
   @NotNull
   Map<String, Object> getExtras() {

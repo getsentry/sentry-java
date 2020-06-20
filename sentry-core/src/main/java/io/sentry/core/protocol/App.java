@@ -27,6 +27,7 @@ public final class App implements IUnknownPropertiesConsumer {
     this.appIdentifier = appIdentifier;
   }
 
+  @SuppressWarnings("JdkObsolete")
   public Date getAppStartTime() {
     final Date appStartTimeRef = appStartTime;
     return appStartTimeRef != null ? (Date) appStartTimeRef.clone() : null;

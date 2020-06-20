@@ -19,7 +19,11 @@ public final class Message implements IUnknownPropertiesConsumer {
     return formatted;
   }
 
-  /** @param formatted a formatted String */
+  /**
+   * Sets a formatted String
+   *
+   * @param formatted a formatted String
+   */
   public void setFormatted(String formatted) {
     this.formatted = formatted;
   }

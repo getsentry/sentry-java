@@ -56,6 +56,8 @@ public final class Sentry {
   }
 
   /**
+   * Initializes the SDK
+   *
    * @param clazz OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
    * @param <T> class that extends SentryOptions
@@ -72,6 +74,8 @@ public final class Sentry {
   }
 
   /**
+   * Initializes the SDK
+   *
    * @param clazz OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
    * @param globalHubMode the globalHubMode

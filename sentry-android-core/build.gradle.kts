@@ -33,11 +33,6 @@ android {
         }
     }
 
-    buildFeatures {
-        // Determines whether to support injecting custom variables into the module's R class.
-        resValues = false
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
