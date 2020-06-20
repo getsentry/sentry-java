@@ -38,8 +38,6 @@ android {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
-        // Determines whether to support injecting custom variables into the module's R class.
-        resValues = false
     }
 
     dependenciesInfo {

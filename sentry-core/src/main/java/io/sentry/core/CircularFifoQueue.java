@@ -156,9 +156,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * <p>A {@code CircularFifoQueue} can never be full, thus this returns always {@code false}.
+   * A {@code CircularFifoQueue} can never be full, thus this returns always {@code false}.
    *
    * @return always returns {@code false}
    */

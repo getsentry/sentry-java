@@ -65,6 +65,7 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
           try {
             type = SentryItemType.valueOf(StringUtils.capitalize(reader.nextString()));
           } catch (IllegalArgumentException ignored) {
+            // invalid type
           }
           break;
         case "length":

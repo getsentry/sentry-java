@@ -45,8 +45,6 @@ android {
     buildFeatures {
         // Determines whether to generate a BuildConfig class.
         buildConfig = false
-        // Determines whether to support injecting custom variables into the module's R class.
-        resValues = false
     }
 
     externalNativeBuild {

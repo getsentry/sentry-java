@@ -163,6 +163,7 @@ public final class RootChecker {
           pm.getPackageInfo(pkg, 0);
           return true;
         } catch (PackageManager.NameNotFoundException ignored) {
+          // fine, package doesn't exist.
         }
       }
     }

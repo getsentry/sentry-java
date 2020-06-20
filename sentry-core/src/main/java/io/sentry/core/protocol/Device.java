@@ -101,6 +101,8 @@ public final class Device implements IUnknownPropertiesConsumer {
   }
 
   /**
+   * Returns the arch String
+   *
    * @deprecated use {@link #getArchs} instead.
    * @return device architecture
    */
@@ -225,6 +227,8 @@ public final class Device implements IUnknownPropertiesConsumer {
   }
 
   /**
+   * Returns the screenResolution String
+   *
    * @deprecated use {@link #getScreenWidthPixels , #getScreenHeightPixels} instead.
    * @return screen resolution largest + smallest
    */
@@ -260,6 +264,7 @@ public final class Device implements IUnknownPropertiesConsumer {
     this.screenDpi = screenDpi;
   }
 
+  @SuppressWarnings("JdkObsolete")
   public Date getBootTime() {
     final Date bootTimeRef = bootTime;
     return bootTimeRef != null ? (Date) bootTimeRef.clone() : null;

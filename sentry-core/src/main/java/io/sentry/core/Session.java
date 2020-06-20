@@ -109,6 +109,7 @@ public final class Session {
         release);
   }
 
+  @SuppressWarnings("JdkObsolete")
   public @NotNull Date getStarted() {
     return (Date) started.clone();
   }
@@ -157,6 +158,7 @@ public final class Session {
     return duration;
   }
 
+  @SuppressWarnings("JdkObsolete")
   public Date getTimestamp() {
     final Date timestampRef = timestamp;
     return timestampRef != null ? (Date) timestampRef.clone() : null;
@@ -198,6 +200,7 @@ public final class Session {
    * @param timestamp the timestamp
    * @return duration in seconds
    */
+  @SuppressWarnings("JdkObsolete")
   private Double calculateDurationTime(final @NotNull Date timestamp) {
     long diff = Math.abs(timestamp.getTime() - started.getTime());
     return (double) diff / 1000; // duration in seconds
@@ -243,6 +246,7 @@ public final class Session {
    *
    * @return time stamp in milliseconds UTC
    */
+  @SuppressWarnings("JdkObsolete")
   private Long getSequenceTimestamp() {
     return DateUtils.getCurrentDateTime().getTime();
   }

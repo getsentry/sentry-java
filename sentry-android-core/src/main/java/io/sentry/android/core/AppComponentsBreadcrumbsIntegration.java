@@ -64,6 +64,7 @@ public final class AppComponentsBreadcrumbsIntegration
       // if its a ContextImpl, unregisterComponentCallbacks can't be used
       context.unregisterComponentCallbacks(this);
     } catch (Exception ignored) {
+      // fine, might throw on older versions
     }
 
     if (options != null) {

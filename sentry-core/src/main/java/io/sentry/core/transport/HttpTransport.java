@@ -187,6 +187,7 @@ public class HttpTransport implements ITransport {
    * @param itemType the itemType (eg event, session, etc...)
    * @return true if retry after or false otherwise
    */
+  @SuppressWarnings("JdkObsolete")
   @Override
   public boolean isRetryAfter(final @NotNull String itemType) {
     final DataCategory dataCategory = getCategoryFromItemType(itemType);
@@ -377,6 +378,7 @@ public class HttpTransport implements ITransport {
    * @param retryAfterHeader the retry after header
    * @param errorCode the error code if set
    */
+  @SuppressWarnings("JdkObsolete")
   private void updateRetryAfterLimits(
       final @Nullable String sentryRateLimitHeader,
       final @Nullable String retryAfterHeader,
@@ -438,6 +440,7 @@ public class HttpTransport implements ITransport {
    * @param dataCategory the DataCategory
    * @param date the Date to be applied
    */
+  @SuppressWarnings("JdkObsolete")
   private void applyRetryAfterOnlyIfLonger(
       final @NotNull DataCategory dataCategory, final @NotNull Date date) {
     final Date oldDate = sentryRetryAfterLimit.get(dataCategory);

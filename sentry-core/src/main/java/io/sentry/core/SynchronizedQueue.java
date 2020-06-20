@@ -62,6 +62,7 @@ final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Qu
    * @param lock the lock to use, must not be null
    * @throws NullPointerException if queue or lock is null
    */
+  @SuppressWarnings("ProtectedMembersInFinalClass")
   protected SynchronizedQueue(final Queue<E> queue, final Object lock) {
     super(queue, lock);
   }
