@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration debug="true">
+    <appender name="sentry" class="io.sentry.log4j.SentryAppender"/>
+
+    <root>
+        <level value="DEBUG" />
+        <appender-ref ref="sentry" />
+    </root>
+</log4j:configuration>

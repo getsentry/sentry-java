@@ -30,6 +30,10 @@ object Config {
         val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
+
+        // desktop/server JVM subprojects deps
+        // sentry-log4j
+        const val log4j = "log4j:log4j:1.2.17"
     }
 
     object TestLibs {
