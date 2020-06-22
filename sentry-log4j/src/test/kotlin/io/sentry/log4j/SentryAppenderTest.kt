@@ -9,8 +9,11 @@ import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.core.ILogger
+import io.sentry.core.ISentryClient
+import io.sentry.core.Sentry
 import io.sentry.core.SentryCoreFieldsProxy
-import io.sentry.core.*
+import io.sentry.core.SentryOptions
 import org.apache.log4j.Logger
 import org.mockito.stubbing.Answer
 import java.util.concurrent.atomic.AtomicInteger
