@@ -108,6 +108,7 @@ dependencies {
 val initNative = tasks.register<Exec>("initNative") {
     logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
     commandLine("git", "submodule", "update", "--init", "--recursive")
+    outputs.dir("${project.projectDir}/sentry-native")
 }
 
 tasks.named("preBuild") {
