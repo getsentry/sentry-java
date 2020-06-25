@@ -6,7 +6,6 @@ import io.sentry.core.Sentry;
 import io.sentry.core.protocol.User;
 import io.sentry.sample.databinding.ActivityMainBinding;
 import java.util.Collections;
-import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -15,8 +14,6 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
 
     ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
-
-    Timber.i("Sentry.isEnabled() = %s", Sentry.isEnabled());
 
     binding.crashFromJava.setOnClickListener(
         view -> {

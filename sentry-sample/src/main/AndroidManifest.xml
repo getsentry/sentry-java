@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  package="io.sentry.sample">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="io.sentry.sample">
 
   <!--  extra recommended permission, we'd be able to check network status-->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -12,17 +12,17 @@
 
   <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
   <uses-sdk
-    tools:overrideLibrary="io.sentry.android"/>
+      tools:overrideLibrary="io.sentry.android"/>
 
   <application
-    android:name=".MyApplication"
-    android:allowBackup="false"
-    android:icon="@mipmap/ic_launcher"
-    android:label="@string/app_name"
-    android:roundIcon="@mipmap/ic_launcher_round"
-    android:supportsRtl="true"
-    android:theme="@style/AppTheme"
-    tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
+      android:name=".MyApplication"
+      android:allowBackup="false"
+      android:icon="@mipmap/ic_launcher"
+      android:label="@string/app_name"
+      android:roundIcon="@mipmap/ic_launcher_round"
+      android:supportsRtl="true"
+      android:theme="@style/AppTheme"
+      tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
     <activity android:name=".MainActivity">
       <intent-filter>

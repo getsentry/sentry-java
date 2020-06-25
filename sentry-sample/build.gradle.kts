@@ -100,7 +100,5 @@ dependencies {
 
     implementation(Config.Libs.appCompat)
 
-    // debugging purpose
-    implementation(Config.Libs.timber)
     debugImplementation(Config.Libs.leakCanary)
 }

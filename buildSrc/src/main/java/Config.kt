@@ -52,6 +52,9 @@ object Config {
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.2.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.28.0"
         val gradleVersions = "com.github.ben-manes.versions"
+        val detekt = "io.gitlab.arturbosch.detekt"
+        val detektVersion = "1.9.1"
+        val detektPlugin = "io.gitlab.arturbosch.detekt"
     }
 
     object Sentry {
