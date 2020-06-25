@@ -373,7 +373,7 @@ class AndroidSerializerTest {
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
         assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started))
-        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.timestamp))
+        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.timestamp!!))
         assertEquals(6000.toDouble(), expectedSession.duration)
         assertEquals(Session.State.Ok, expectedSession.status)
         assertEquals(2, expectedSession.errorCount())

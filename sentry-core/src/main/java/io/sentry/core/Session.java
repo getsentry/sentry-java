@@ -159,7 +159,7 @@ public final class Session {
   }
 
   @SuppressWarnings("JdkObsolete")
-  public Date getTimestamp() {
+  public @Nullable Date getTimestamp() {
     final Date timestampRef = timestamp;
     return timestampRef != null ? (Date) timestampRef.clone() : null;
   }
@@ -190,7 +190,7 @@ public final class Session {
       }
 
       duration = calculateDurationTime(this.timestamp);
-      sequence = getSequenceTimestamp();
+      sequence = getSequenceTimestamp(this.timestamp);
     }
   }
 
@@ -201,7 +201,7 @@ public final class Session {
    * @return duration in seconds
    */
   @SuppressWarnings("JdkObsolete")
-  private Double calculateDurationTime(final @NotNull Date timestamp) {
+  private double calculateDurationTime(final @NotNull Date timestamp) {
     long diff = Math.abs(timestamp.getTime() - started.getTime());
     return (double) diff / 1000; // duration in seconds
   }
@@ -215,7 +215,7 @@ public final class Session {
    * @return if the session has been updated
    */
   public boolean update(
-      final @Nullable State status, final String userAgent, boolean addErrorsCount) {
+      final @Nullable State status, final @Nullable String userAgent, boolean addErrorsCount) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
@@ -235,7 +235,7 @@ public final class Session {
       if (sessionHasBeenUpdated) {
         init = null;
         timestamp = DateUtils.getCurrentDateTime();
-        sequence = getSequenceTimestamp();
+        sequence = getSequenceTimestamp(timestamp);
       }
       return sessionHasBeenUpdated;
     }
@@ -244,10 +244,17 @@ public final class Session {
   /**
    * Returns a logical clock.
    *
+   * @param timestamp The timestamp
    * @return time stamp in milliseconds UTC
    */
   @SuppressWarnings("JdkObsolete")
-  private Long getSequenceTimestamp() {
-    return DateUtils.getCurrentDateTime().getTime();
+  private long getSequenceTimestamp(final @NotNull Date timestamp) {
+    long sequence = timestamp.getTime();
+    // if device has wrong date and time and it is nearly at the beginning of the epoch time.
+    // when converting GMT to UTC may give a negative value.
+    if (sequence < 0) {
+      sequence = Math.abs(sequence);
+    }
+    return sequence;
   }
 }

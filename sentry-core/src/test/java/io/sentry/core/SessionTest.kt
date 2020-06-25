@@ -1,5 +1,7 @@
 package io.sentry.core
 
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.protocol.User
 import java.util.Date
 import kotlin.test.Test
@@ -38,7 +40,7 @@ class SessionTest {
 
         session.end()
         assertNull(session.init)
-        assertTrue(session.timestamp >= timestamp)
+        assertTrue(session.timestamp!! >= timestamp)
         assertNotNull(session.duration)
         assertTrue(session.sequence!! > 0L)
     }
@@ -98,8 +100,20 @@ class SessionTest {
         session.update(null, null, true)
 
         assertNull(session.init)
-        assertTrue(session.timestamp >= timestamp)
+        assertTrue(session.timestamp!! >= timestamp)
         assertTrue(session.sequence!! > sequecence!!)
+    }
+
+    @Test
+    fun `Offset sequence if Date and Time is wrong and time is negative`() {
+        val user = User().apply {
+            ipAddress = "127.0.0.1"
+        }
+        val session = createSession(user)
+        val dateMock = mock<Date>()
+        whenever(dateMock.time).thenReturn(-1489552)
+        session.end(dateMock)
+        assertEquals(1489552, session.sequence)
     }
 
     private fun createSession(user: User = User()): Session {
