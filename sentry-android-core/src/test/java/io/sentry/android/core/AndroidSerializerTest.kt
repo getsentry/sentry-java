@@ -25,6 +25,7 @@ import java.util.TimeZone
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -280,6 +281,36 @@ class AndroidSerializerTest {
         val actual = serializer.deserializeEvent(StringReader(jsonEvent))
 
         assertEquals(2, actual!!.breadcrumbs.size)
+    }
+
+    @Test
+    fun `when deserializing a event with custom contexts, they should be set in the event contexts`() {
+        val jsonEvent = FileFromResources.invoke("event_with_contexts.json")
+
+        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val obj = actual!!.contexts["object"] as Map<*, *>
+        val number = actual.contexts["number"] as Double
+        val list = actual.contexts["list"] as List<*>
+        val listObjects = actual.contexts["list_objects"] as List<*>
+
+        assertTrue(obj["boolean"] as Boolean)
+        assertEquals("hi", obj["string"] as String)
+        assertEquals(9.0, obj["number"] as Double)
+
+        assertEquals(50.0, number)
+
+        assertEquals(1.0, list[0])
+        assertEquals(2.0, list[1])
+
+        val listObjectsFirst = listObjects[0] as Map<*, *>
+        assertTrue(listObjectsFirst["boolean"] as Boolean)
+        assertEquals("hi", listObjectsFirst["string"] as String)
+        assertEquals(9.0, listObjectsFirst["number"] as Double)
+
+        val listObjectsSecond = listObjects[1] as Map<*, *>
+        assertFalse(listObjectsSecond["boolean"] as Boolean)
+        assertEquals("ciao", listObjectsSecond["string"] as String)
+        assertEquals(10.0, listObjectsSecond["number"] as Double)
     }
 
     @Test

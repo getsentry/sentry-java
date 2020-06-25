@@ -1,0 +1,26 @@
+{
+  "contexts": {
+    "object": {
+      "boolean": true,
+      "string": "hi",
+      "number": 9
+    },
+    "number": 50,
+    "list": [
+      1,
+      2
+    ],
+    "list_objects": [
+      {
+        "boolean": true,
+        "string": "hi",
+        "number": 9
+      },
+      {
+        "boolean": false,
+        "string": "ciao",
+        "number": 10
+      }
+    ]
+  }
+}
