@@ -7,6 +7,7 @@ import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -24,7 +25,7 @@ class SessionTest {
         assertEquals("distinctId", session.distinctId)
         assertEquals("127.0.0.1", session.ipAddress)
         assertTrue(session.init!!)
-        assertEquals(0L, session.sequence)
+        assertNull(session.sequence)
         assertNotNull(session.sessionId)
         assertNotNull(session.started)
         assertEquals(Session.State.Ok, session.status)
@@ -96,12 +97,11 @@ class SessionTest {
         }
         val session = createSession(user)
         val timestamp = session.started
-        val sequecence = session.sequence
         session.update(null, null, true)
 
         assertNull(session.init)
         assertTrue(session.timestamp!! >= timestamp)
-        assertTrue(session.sequence!! > sequecence!!)
+        assertNotNull(session.sequence)
     }
 
     @Test
@@ -114,6 +114,17 @@ class SessionTest {
         whenever(dateMock.time).thenReturn(-1489552)
         session.end(dateMock)
         assertEquals(1489552, session.sequence)
+    }
+
+    @Test
+    fun `Clone session returns a copy of the session`() {
+        val user = User().apply {
+            ipAddress = "127.0.0.1"
+        }
+        val session = createSession(user)
+        val clone = session.clone()
+
+        assertNotSame(clone, session)
     }
 
     private fun createSession(user: User = User()): Session {

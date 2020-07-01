@@ -406,7 +406,8 @@ public final class Scope implements Cloneable {
           new Session(
               options.getDistinctId(), user, options.getEnvironment(), options.getRelease());
 
-      pair = new SessionPair(session, previousSession);
+      final Session previousClone = previousSession != null ? previousSession.clone() : null;
+      pair = new SessionPair(session.clone(), previousClone);
     }
     return pair;
   }
@@ -461,7 +462,7 @@ public final class Scope implements Cloneable {
     synchronized (sessionLock) {
       if (session != null) {
         session.end();
-        previousSession = session;
+        previousSession = session.clone();
         session = null;
       }
     }

@@ -96,12 +96,12 @@ public final class Session {
     this(
         State.Ok,
         DateUtils.getCurrentDateTime(),
-        null,
+        DateUtils.getCurrentDateTime(),
         0,
         distinctId,
         UUID.randomUUID(),
         true,
-        0L,
+        null,
         null,
         (user != null ? user.getIpAddress() : null),
         null,
@@ -256,5 +256,28 @@ public final class Session {
       sequence = Math.abs(sequence);
     }
     return sequence;
+  }
+
+  /**
+   * Ctor copy of the Session
+   *
+   * @return a copy of the Session
+   */
+  @SuppressWarnings("MissingOverride")
+  public @NotNull Session clone() {
+    return new Session(
+        status,
+        started,
+        timestamp,
+        errorCount.get(),
+        distinctId,
+        sessionId,
+        init,
+        sequence,
+        duration,
+        ipAddress,
+        userAgent,
+        environment,
+        release);
   }
 }
