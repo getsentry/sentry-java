@@ -23,17 +23,6 @@ class SentryTimberTree(
     private fun isLoggable(level: SentryLevel, minLevel: SentryLevel): Boolean = level.ordinal >= minLevel.ordinal
 
     /**
-     * Compares the minLevel given by the user and the level given by the event
-     * to capture an event or not.
-     */
-    override fun isLoggable(tag: String?, priority: Int): Boolean {
-        val level = getSentryLevel(priority)
-
-        // checks only the event level
-        return isLoggable(level, minEventLevel)
-    }
-
-    /**
      * Captures a Sentry Event if the min. level is equal or higher than the min. required level.
      */
     override fun log(priority: Int, tag: String?, message: String, throwable: Throwable?) {
@@ -47,26 +36,28 @@ class SentryTimberTree(
      * Captures an event with the given attributes
      */
     private fun captureEvent(sentryLevel: SentryLevel, tag: String?, msg: String, throwable: Throwable?) {
-        val sentryEvent = SentryEvent().apply {
+        if (isLoggable(sentryLevel, minEventLevel)) {
+            val sentryEvent = SentryEvent().apply {
 
-            level = sentryLevel
+                level = sentryLevel
 
-            throwable?.let {
-                setThrowable(it)
+                throwable?.let {
+                    setThrowable(it)
+                }
+
+                message = Message().apply {
+                    formatted = msg
+                }
+
+                tag?.let {
+                    setTag("TimberTag", it)
+                }
+
+                logger = "Timber"
             }
 
-            message = Message().apply {
-                formatted = msg
-            }
-
-            tag?.let {
-                setTag("TimberTag", it)
-            }
-
-            logger = "Timber"
+            hub.captureEvent(sentryEvent)
         }
-
-        hub.captureEvent(sentryEvent)
     }
 
     /**

@@ -171,28 +171,28 @@ class SentryTimberTreeTest {
 
     @Test
     fun `Tree adds a breadcrumb if min level is equal`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+        val sut = fixture.getSut()
         sut.i(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `Tree adds a breadcrumb if min level is higher`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+        val sut = fixture.getSut()
         sut.e(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `Tree won't add a breadcrumb if min level is lower`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.DEBUG, minBreadcrumbLevel = SentryLevel.ERROR)
+        val sut = fixture.getSut(minBreadcrumbLevel = SentryLevel.ERROR)
         sut.i(Throwable("test"))
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `Tree adds a breadcrumb with given level`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+        val sut = fixture.getSut()
         sut.e(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals(SentryLevel.ERROR, it.level)
@@ -201,7 +201,7 @@ class SentryTimberTreeTest {
 
     @Test
     fun `Tree adds a breadcrumb with Timber category`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+        val sut = fixture.getSut()
         sut.e(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("Timber", it.category)
@@ -210,7 +210,7 @@ class SentryTimberTreeTest {
 
     @Test
     fun `Tree adds a breadcrumb with exception message`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+        val sut = fixture.getSut()
         sut.e(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertTrue(it.message!!.contains("test"))
