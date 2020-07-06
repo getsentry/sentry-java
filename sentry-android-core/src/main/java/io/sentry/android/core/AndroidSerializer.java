@@ -4,6 +4,7 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.sentry.android.core.adapters.ContextsDeserializerAdapter;
+import io.sentry.android.core.adapters.ContextsSerializerAdapter;
 import io.sentry.android.core.adapters.DateDeserializerAdapter;
 import io.sentry.android.core.adapters.DateSerializerAdapter;
 import io.sentry.android.core.adapters.OrientationDeserializerAdapter;
@@ -96,6 +97,7 @@ final class AndroidSerializer implements ISerializer {
         .registerTypeAdapter(SentryLevel.class, new SentryLevelSerializerAdapter(logger))
         .registerTypeAdapter(SentryLevel.class, new SentryLevelDeserializerAdapter(logger))
         .registerTypeAdapter(Contexts.class, new ContextsDeserializerAdapter(logger))
+        .registerTypeAdapter(Contexts.class, new ContextsSerializerAdapter(logger))
         .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
         .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
         .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
