@@ -61,6 +61,7 @@ class HttpTransportTest {
     @Test
     fun `test serializes event`() {
         val transport = fixture.getSUT()
+        whenever(fixture.connection.responseCode).thenReturn(200)
 
         val event = SentryEvent()
 
@@ -73,6 +74,7 @@ class HttpTransportTest {
     @Test
     fun `test serializes envelope`() {
         val transport = fixture.getSUT()
+        whenever(fixture.connection.responseCode).thenReturn(200)
 
         val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
 
