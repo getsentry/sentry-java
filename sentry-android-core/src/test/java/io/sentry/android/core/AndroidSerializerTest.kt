@@ -14,6 +14,7 @@ import io.sentry.core.SentryLevel
 import io.sentry.core.Session
 import io.sentry.core.protocol.Contexts
 import io.sentry.core.protocol.Device
+import io.sentry.core.protocol.SdkInfo
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -323,7 +324,7 @@ class AndroidSerializerTest {
 
     @Test
     fun `When deserializing a Session all the values should be set to the Session object`() {
-        val jsonEvent = FileFromResources.invoke("session.txt")
+        val jsonEvent = FileFromResources.invoke("session.json")
 
         val actual = serializer.deserializeSession(StringReader(jsonEvent))
 
@@ -357,14 +358,44 @@ class AndroidSerializerTest {
     }
 
     @Test
+    fun `When deserializing an Envelope, sdkInfo should be set`() {
+        val jsonEnvelope = FileFromResources.invoke("envelope_session_sdkinfo.txt")
+        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))!!
+        assertNotNull(envelope.header.sdkInfo)
+        val sdkInfo = envelope.header.sdkInfo!!
+
+        assertEquals("test", sdkInfo.sdkName)
+        assertEquals(1, sdkInfo.versionMajor)
+        assertEquals(2, sdkInfo.versionMinor)
+        assertEquals(3, sdkInfo.versionPatchlevel)
+    }
+
+    @Test
     fun `When serializing an envelope, all the values should be set`() {
         val session = createSessionMockData()
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session)
+        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, null)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values
         val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
         assertEnvelopeData(envelope)
+    }
+
+    @Test
+    fun `When serializing an envelope, sdkInfo should be set`() {
+        val session = createSessionMockData()
+        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, SdkInfo.createSdkInfo("test", "1.2.3"))
+
+        val jsonEnvelope = serializeToString(sentryEnvelope)
+        // reversing it so we can assert the values
+        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))!!
+        assertNotNull(envelope.header.sdkInfo)
+
+        val sdkInfo = envelope.header.sdkInfo!!
+        assertEquals("test", sdkInfo.sdkName)
+        assertEquals(1, sdkInfo.versionMajor)
+        assertEquals(2, sdkInfo.versionMinor)
+        assertEquals(3, sdkInfo.versionPatchlevel)
     }
 
     private fun assertSessionData(expectedSession: Session?) {

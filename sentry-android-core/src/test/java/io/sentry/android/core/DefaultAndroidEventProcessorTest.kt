@@ -18,6 +18,7 @@ import io.sentry.core.DiagnosticLogger
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryLevel
 import io.sentry.core.SentryOptions
+import io.sentry.core.protocol.SdkInfo
 import io.sentry.core.protocol.SentryThread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -38,6 +39,7 @@ class DefaultAndroidEventProcessorTest {
         val options = SentryOptions().apply {
             isDebug = true
             setLogger(mock())
+            sdkInfo = SdkInfo.createSdkInfo("test", "1.2.3")
         }
     }
 
@@ -160,5 +162,17 @@ class DefaultAndroidEventProcessorTest {
         val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo, mock())
         processor.process(SentryEvent(), CachedEvent())
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `Processor sets sdkInfo in the event`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo, mock())
+        val event = SentryEvent()
+        processor.process(event, null)
+        assertNotNull(event.debugMeta.sdkInfo)
+        assertEquals("test", event.debugMeta.sdkInfo.sdkName)
+        assertEquals(1, event.debugMeta.sdkInfo.versionMajor)
+        assertEquals(2, event.debugMeta.sdkInfo.versionMinor)
+        assertEquals(3, event.debugMeta.sdkInfo.versionPatchlevel)
     }
 }

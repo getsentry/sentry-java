@@ -829,7 +829,7 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureEnvelope(SentryEnvelope(SentryId(UUID.randomUUID()), setOf()))
+        sut.captureEnvelope(SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf()))
         verify(mockClient, never()).captureEnvelope(any(), any())
     }
 
@@ -843,7 +843,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), setOf())
+        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
         sut.captureEnvelope(envelope)
         verify(mockClient).captureEnvelope(any(), anyOrNull())
     }

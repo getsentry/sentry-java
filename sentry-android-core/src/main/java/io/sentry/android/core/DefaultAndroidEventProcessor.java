@@ -235,6 +235,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     DebugMeta debugMeta = new DebugMeta();
     debugMeta.setImages(debugImages);
+    debugMeta.setSdkInfo(options.getSdkInfo());
     return debugMeta;
   }
 

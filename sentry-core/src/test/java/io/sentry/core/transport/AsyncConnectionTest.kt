@@ -75,7 +75,7 @@ class AsyncConnectionTest {
     @Test
     fun `successful send discards the session from cache`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
 
@@ -109,7 +109,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores session in cache if sending is not allowed`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(false)
 
         // when
@@ -147,7 +147,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores session after unsuccessful send`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.error(500))
 
@@ -191,7 +191,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores session after send failure`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenThrow(IOException())
 
@@ -237,7 +237,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after, do not submit runnable`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -250,7 +250,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after and cached, discard session`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -263,7 +263,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after but not cached, do nothing`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -276,7 +276,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is not retry after, submit runnable`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(false)
 
         // when

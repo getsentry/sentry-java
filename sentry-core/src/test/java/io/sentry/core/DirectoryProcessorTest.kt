@@ -56,7 +56,7 @@ class DirectoryProcessorTest {
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
         val session = createSession()
-        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.fromSession(fixture.serializer, session))
+        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.fromSession(fixture.serializer, session, null))
         whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         fixture.getSut().processDirectory(file)
         verify(fixture.hub).captureEnvelope(any(), argWhere { it !is ApplyScopeData })

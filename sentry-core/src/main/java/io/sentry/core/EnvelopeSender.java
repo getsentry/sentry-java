@@ -172,7 +172,9 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
                 item.getHeader().getType());
           } else {
             // TODO: Bundle all session in a single envelope
-            hub.captureEnvelope(SentryEnvelope.fromSession(serializer, session), hint);
+            hub.captureEnvelope(
+                SentryEnvelope.fromSession(serializer, session, envelope.getHeader().getSdkInfo()),
+                hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
 
             if (hint instanceof Flushable) {

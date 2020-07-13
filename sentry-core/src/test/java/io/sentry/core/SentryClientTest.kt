@@ -3,6 +3,7 @@ package io.sentry.core
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
@@ -17,6 +18,7 @@ import io.sentry.core.hints.DiskFlushNotification
 import io.sentry.core.hints.SessionEndHint
 import io.sentry.core.hints.SessionUpdateHint
 import io.sentry.core.protocol.Request
+import io.sentry.core.protocol.SdkInfo
 import io.sentry.core.protocol.SentryException
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
@@ -40,6 +42,7 @@ class SentryClientTest {
     class Fixture {
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
+            sdkInfo = SdkInfo.createSdkInfo("test", "1.2.3")
         }
         var connection: AsyncConnection = mock()
         fun getSut() = SentryClient(sentryOptions, connection)
@@ -440,10 +443,18 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureSession, sdkInfo should be in the envelope header`() {
+        fixture.getSut().captureSession(createSession())
+        verify(fixture.connection).send(check<SentryEnvelope> {
+            assertNotNull(it.header.sdkInfo)
+        }, anyOrNull())
+    }
+
+    @Test
     fun `when captureEnvelope and thres an exception, returns empty sentryId`() {
         whenever(fixture.connection.send(any<SentryEnvelope>(), anyOrNull())).thenThrow(IOException())
 
-        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), setOf())
+        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
         val sentryId = fixture.getSut().captureEnvelope(envelope)
         assertEquals(SentryId.EMPTY_ID, sentryId)
     }
@@ -451,7 +462,7 @@ class SentryClientTest {
     @Test
     fun `when captureEnvelope and theres no exception, returns envelope header id`() {
         val expectedSentryId = SentryId(UUID.randomUUID())
-        val envelope = SentryEnvelope(expectedSentryId, setOf())
+        val envelope = SentryEnvelope(expectedSentryId, null, setOf())
         val sentryId = fixture.getSut().captureEnvelope(envelope)
         assertEquals(expectedSentryId, sentryId)
     }

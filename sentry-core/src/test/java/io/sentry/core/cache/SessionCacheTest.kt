@@ -63,7 +63,7 @@ class SessionCacheTest {
 
         assertEquals(0, nofFiles())
 
-        cache.store(SentryEnvelope.fromSession(fixture.serializer, createSession()))
+        cache.store(SentryEnvelope.fromSession(fixture.serializer, createSession(), null))
 
         assertEquals(1, nofFiles())
 
@@ -80,7 +80,7 @@ class SessionCacheTest {
         assertEquals(0, nofFiles())
 
         (1..fixture.maxSize + 1).forEach { _ ->
-            cache.store(SentryEnvelope.fromSession(fixture.serializer, createSession()))
+            cache.store(SentryEnvelope.fromSession(fixture.serializer, createSession(), null))
         }
 
         assertEquals(fixture.maxSize, nofFiles())
@@ -92,7 +92,7 @@ class SessionCacheTest {
     fun `tolerates discarding unknown envelope`() {
         val cache = fixture.getSUT()
 
-        cache.discard(SentryEnvelope.fromSession(fixture.serializer, createSession()))
+        cache.discard(SentryEnvelope.fromSession(fixture.serializer, createSession(), null))
 
         // no exception thrown
     }
@@ -103,7 +103,7 @@ class SessionCacheTest {
 
         val file = File(fixture.options.sessionsPath!!)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
@@ -118,7 +118,7 @@ class SessionCacheTest {
 
         val file = File(fixture.options.sessionsPath!!)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
@@ -136,13 +136,13 @@ class SessionCacheTest {
 
         val file = File(fixture.options.sessionsPath!!)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
-        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
 
         cache.store(newEnvelope, SessionUpdateHint())
         assertTrue(currentFile.exists())
@@ -159,7 +159,7 @@ class SessionCacheTest {
 
         val file = File(fixture.options.sessionsPath!!)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
         val currentFile = File(fixture.options.sessionsPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
@@ -177,10 +177,10 @@ class SessionCacheTest {
     fun `when session start and current file already exist, close session and start a new one`() {
         val cache = fixture.getSUT()
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
-        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
 
         cache.store(newEnvelope, SessionStartHint())
         verify(fixture.logger).log(eq(SentryLevel.WARNING), eq("Current session is not ended, we'd need to end it."))
@@ -195,10 +195,10 @@ class SessionCacheTest {
         markerFile.mkdirs()
         assertTrue(markerFile.exists())
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
-        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
 
         cache.store(newEnvelope, SessionStartHint())
         verify(fixture.logger).log(eq(SentryLevel.INFO), eq("Crash marker file exists, last Session is gonna be Crashed."))
@@ -215,10 +215,10 @@ class SessionCacheTest {
         markerFile.createNewFile()
         val date = "2020-02-07T14:16:00.000Z"
         markerFile.writeText(charset = Charsets.UTF_8, text = date)
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
         cache.store(envelope, SessionStartHint())
 
-        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession())
+        val newEnvelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
 
         cache.store(newEnvelope, SessionStartHint())
         assertFalse(markerFile.exists())

@@ -85,7 +85,7 @@ class EnvelopeSenderTest {
     fun `when parser is EnvelopeReader and serializer returns SentryEnvelope, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
         val session = Session("123", User(), "env", "release")
-        val expected = SentryEnvelope(SentryId("3067d54967f84f20a2adfab5119156ce"), emptySet())
+        val expected = SentryEnvelope(SentryId("3067d54967f84f20a2adfab5119156ce"), null, setOf())
         whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(expected)
         whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         val sut = fixture.getSut()
