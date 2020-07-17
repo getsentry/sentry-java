@@ -46,14 +46,14 @@ object Config {
 
     object QualityPlugins {
         val jacocoVersion = "0.8.5"
-        val spotless = "com.diffplug.gradle.spotless"
-        val spotlessVersion = "4.4.0"
+        val spotless = "com.diffplug.spotless"
+        val spotlessVersion = "5.1.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.2.1"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.28.0"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.29.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.9.1"
+        val detektVersion = "1.10.0"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
     }
 
