@@ -23,6 +23,7 @@
 - [ ] I reviewed submitted code
 - [ ] I added tests to verify changes
 - [ ] All tests passing
+- [ ] No breaking changes
 
 
 ## :crystal_ball: Next steps
