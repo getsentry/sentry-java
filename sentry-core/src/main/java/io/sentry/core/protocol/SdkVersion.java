@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 public final class SdkVersion implements IUnknownPropertiesConsumer {
   private String name;
@@ -52,5 +53,13 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  public @Nullable List<SentryPackage> getPackages() {
+    return packages;
+  }
+
+  public @Nullable List<String> getIntegrations() {
+    return integrations;
   }
 }

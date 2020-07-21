@@ -2,6 +2,7 @@ package io.sentry.android.ndk;
 
 import io.sentry.core.SentryOptions;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class SentryNdk {
@@ -19,9 +20,10 @@ public final class SentryNdk {
     System.loadLibrary("sentry-android");
   }
 
-  private static native void initSentryNative(SentryOptions options);
+  private static native void initSentryNative(@NotNull final SentryOptions options);
 
-  public static void init(SentryOptions options) {
+  public static void init(@NotNull final SentryOptions options) {
+    SentryNdkUtil.addPackage(options.getSdkVersion());
     initSentryNative(options);
   }
 }

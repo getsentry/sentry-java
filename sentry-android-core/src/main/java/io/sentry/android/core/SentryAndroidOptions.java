@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
 import io.sentry.core.SentryOptions;
+import io.sentry.core.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -31,6 +33,25 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
+
+  public SentryAndroidOptions() {
+    setSdkVersion(createSdkVersion());
+  }
+
+  private @NotNull SdkVersion createSdkVersion() {
+    final SdkVersion sdkVersion = new SdkVersion();
+
+    sdkVersion.setName(BuildConfig.SENTRY_CLIENT_NAME);
+    String version = BuildConfig.VERSION_NAME;
+    sdkVersion.setVersion(version);
+
+    // add 2 default packages
+    sdkVersion.addPackage("maven:sentry-android-core", version);
+    // TODO: sentry-core should add itself as the version may mismatch
+    sdkVersion.addPackage("maven:sentry-core", version);
+
+    return sdkVersion;
+  }
 
   /**
    * Checks if ANR (Application Not Responding) is enabled or disabled Default is enabled

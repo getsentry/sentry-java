@@ -18,7 +18,7 @@ import io.sentry.core.DiagnosticLogger
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryLevel
 import io.sentry.core.SentryOptions
-import io.sentry.core.protocol.SdkInfo
+import io.sentry.core.protocol.SdkVersion
 import io.sentry.core.protocol.SentryThread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -27,6 +27,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 
@@ -39,7 +40,10 @@ class DefaultAndroidEventProcessorTest {
         val options = SentryOptions().apply {
             isDebug = true
             setLogger(mock())
-            sdkInfo = SdkInfo.createSdkInfo("test", "1.2.3")
+            sdkVersion = SdkVersion().apply {
+                name = "test"
+                version = "1.2.3"
+            }
         }
     }
 
@@ -165,14 +169,11 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Processor sets sdkInfo in the event`() {
+    fun `Processor sets sdkVersion in the event`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options, fixture.buildInfo, mock())
         val event = SentryEvent()
         processor.process(event, null)
-        assertNotNull(event.debugMeta.sdkInfo)
-        assertEquals("test", event.debugMeta.sdkInfo.sdkName)
-        assertEquals(1, event.debugMeta.sdkInfo.versionMajor)
-        assertEquals(2, event.debugMeta.sdkInfo.versionMinor)
-        assertEquals(3, event.debugMeta.sdkInfo.versionPatchlevel)
+        assertNotNull(event.sdk)
+        assertSame(event.sdk, fixture.options.sdkVersion)
     }
 }

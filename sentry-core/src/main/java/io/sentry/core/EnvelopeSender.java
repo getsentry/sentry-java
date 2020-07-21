@@ -173,7 +173,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           } else {
             // TODO: Bundle all session in a single envelope
             hub.captureEnvelope(
-                SentryEnvelope.fromSession(serializer, session, envelope.getHeader().getSdkInfo()),
+                SentryEnvelope.fromSession(
+                    serializer, session, envelope.getHeader().getSdkVersion()),
                 hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
 

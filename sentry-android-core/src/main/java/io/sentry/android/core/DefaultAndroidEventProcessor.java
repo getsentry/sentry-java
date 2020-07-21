@@ -33,7 +33,6 @@ import io.sentry.core.protocol.DebugImage;
 import io.sentry.core.protocol.DebugMeta;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.OperatingSystem;
-import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.protocol.SentryThread;
 import io.sentry.core.protocol.User;
 import io.sentry.core.util.ApplyScopeUtils;
@@ -176,7 +175,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       event.setDebugMeta(getDebugMeta());
     }
     if (event.getSdk() == null) {
-      event.setSdk(getSdkVersion());
+      event.setSdk(options.getSdkVersion());
     }
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
@@ -235,28 +234,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     DebugMeta debugMeta = new DebugMeta();
     debugMeta.setImages(debugImages);
-    debugMeta.setSdkInfo(options.getSdkInfo());
     return debugMeta;
   }
 
   private void setAppExtras(final @NotNull App app) {
     app.setAppName(getApplicationName());
     app.setAppStartTime(appStartTime);
-  }
-
-  private @NotNull SdkVersion getSdkVersion() {
-    SdkVersion sdkVersion = new SdkVersion();
-
-    sdkVersion.setName("sentry.java.android");
-    String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:sentry-core", version);
-    sdkVersion.addPackage("maven:sentry-android-core", version);
-    if (options.isEnableNdk()) {
-      sdkVersion.addPackage("maven:sentry-android-ndk", version);
-    }
-
-    return sdkVersion;
   }
 
   @SuppressWarnings("deprecation")

@@ -4,10 +4,13 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import io.sentry.core.protocol.SdkInfo;
+import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.protocol.SentryId;
+import io.sentry.core.protocol.SentryPackage;
 import java.io.IOException;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelopeHeader> {
@@ -25,32 +28,46 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
       writer.value(value.getEventId().toString());
     }
 
-    final SdkInfo sdkInfo = value.getSdkInfo();
-    if (sdkInfo != null) {
-      boolean hasInitAttrs = false;
+    final SdkVersion sdkVersion = value.getSdkVersion();
+    if (sdkVersion != null) {
+      if (hasValidSdkVersion(sdkVersion)) {
+        writer.name("sdk").beginObject();
 
-      if (sdkInfo.getSdkName() != null) {
-        hasInitAttrs = initAttrs(writer, hasInitAttrs);
-        writer.name("sdk_name").value(sdkInfo.getSdkName());
+        writer.name("name").value(sdkVersion.getName());
+        writer.name("version").value(sdkVersion.getVersion());
 
-        // we only add versions if the name is not null
-        if (sdkInfo.getVersionMajor() != null) {
-          hasInitAttrs = initAttrs(writer, hasInitAttrs);
-          writer.name("version_major").value(sdkInfo.getVersionMajor());
+        final List<String> integrations = sdkVersion.getIntegrations();
+        if (integrations != null) {
+          writer.name("integrations").beginArray();
+
+          for (final String integration : integrations) {
+            writer.value(integration);
+          }
+
+          // integrations
+          writer.endArray();
         }
-        if (sdkInfo.getVersionMinor() != null) {
-          hasInitAttrs = initAttrs(writer, hasInitAttrs);
-          writer.name("version_minor").value(sdkInfo.getVersionMinor());
-        }
-        if (sdkInfo.getVersionPatchlevel() != null) {
-          hasInitAttrs = initAttrs(writer, hasInitAttrs);
-          writer.name("version_patchlevel").value(sdkInfo.getVersionPatchlevel());
-        }
-      }
 
-      // we don't write the unknown fields for the envelope header, we skip them
+        final List<SentryPackage> packages = sdkVersion.getPackages();
+        if (packages != null) {
+          writer.name("packages").beginArray();
 
-      if (hasInitAttrs) {
+          for (final SentryPackage item : packages) {
+            // item packages
+            writer.beginObject();
+
+            writer.name("name").value(item.getName());
+            writer.name("version").value(item.getVersion());
+
+            // item packages
+            writer.endObject();
+          }
+
+          // packages
+          writer.endArray();
+        }
+
+        // sdk
         writer.endObject();
       }
     }
@@ -58,11 +75,17 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     writer.endObject();
   }
 
-  private boolean initAttrs(JsonWriter writer, boolean hasInitAtts) throws IOException {
-    if (!hasInitAtts) {
-      writer.name("sdk_info").beginObject();
-    }
-    return true;
+  /**
+   * Returns if SdkVersion is a valid object, with non empty name and version
+   *
+   * @param sdkVersion the SdkVersion object
+   * @return true if contains a valid name and version or false otherwise
+   */
+  private boolean hasValidSdkVersion(final @NotNull SdkVersion sdkVersion) {
+    return sdkVersion.getName() != null
+        && !sdkVersion.getName().isEmpty()
+        && sdkVersion.getVersion() != null
+        && !sdkVersion.getVersion().isEmpty();
   }
 
   @Override
@@ -73,7 +96,7 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
 
     SentryId eventId = null;
-    SdkInfo sdkInfo = null;
+    SdkVersion sdkVersion = null;
 
     reader.beginObject();
     while (reader.hasNext()) {
@@ -81,24 +104,57 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
         case "event_id":
           eventId = new SentryId(reader.nextString());
           break;
-        case "sdk_info":
+        case "sdk":
           {
             reader.beginObject();
-            sdkInfo = new SdkInfo();
+            sdkVersion = new SdkVersion();
 
             while (reader.hasNext()) {
               switch (reader.nextName()) {
-                case "sdk_name":
-                  sdkInfo.setSdkName(reader.nextString());
+                case "name":
+                  sdkVersion.setName(reader.nextString());
                   break;
-                case "version_major":
-                  sdkInfo.setVersionMajor(reader.nextInt());
+                case "version":
+                  sdkVersion.setVersion(reader.nextString());
                   break;
-                case "version_minor":
-                  sdkInfo.setVersionMinor(reader.nextInt());
+                case "integrations":
+                  reader.beginArray();
+
+                  while (reader.hasNext()) {
+                    sdkVersion.addIntegration(reader.nextString());
+                  }
+                  reader.endArray();
                   break;
-                case "version_patchlevel":
-                  sdkInfo.setVersionPatchlevel(reader.nextInt());
+                case "packages":
+                  // packages
+                  reader.beginArray();
+
+                  while (reader.hasNext()) {
+                    // packages item
+                    reader.beginObject();
+
+                    String name = null;
+                    String version = null;
+                    while (reader.hasNext()) {
+                      switch (reader.nextName()) {
+                        case "name":
+                          name = reader.nextString();
+                          break;
+                        case "version":
+                          version = reader.nextString();
+                          break;
+                        default:
+                          reader.skipValue();
+                      }
+                    }
+                    sdkVersion.addPackage(name, version);
+
+                    // packages item
+                    reader.endObject();
+                  }
+
+                  // packages
+                  reader.endArray();
                   break;
                 default:
                   reader.skipValue();
@@ -118,6 +174,6 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
     reader.endObject();
 
-    return new SentryEnvelopeHeader(eventId, sdkInfo);
+    return new SentryEnvelopeHeader(eventId, sdkVersion);
   }
 }

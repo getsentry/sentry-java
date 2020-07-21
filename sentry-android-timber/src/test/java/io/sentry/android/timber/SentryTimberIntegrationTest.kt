@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.IHub
 import io.sentry.core.SentryLevel
 import io.sentry.core.SentryOptions
+import io.sentry.core.protocol.SdkVersion
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +17,9 @@ class SentryTimberIntegrationTest {
 
     private class Fixture {
         val hub = mock<IHub>()
-        val options = SentryOptions()
+        val options = SentryOptions().apply {
+            sdkVersion = SdkVersion()
+        }
 
         fun getSut(
             minEventLevel: SentryLevel = SentryLevel.ERROR,
@@ -81,5 +84,16 @@ class SentryTimberIntegrationTest {
 
         assertEquals(sut.minEventLevel, SentryLevel.INFO)
         assertEquals(sut.minBreadcrumbLevel, SentryLevel.DEBUG)
+    }
+
+    @Test
+    fun `Integrations adds itself to the package list`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        assertTrue(fixture.options.sdkVersion!!.packages!!.any {
+            it.name == "maven:sentry-android-timber"
+            it.version == BuildConfig.VERSION_NAME
+        })
     }
 }

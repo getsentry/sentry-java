@@ -1,7 +1,7 @@
 package io.sentry.core;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.protocol.SdkInfo;
+import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.transport.ITransport;
 import io.sentry.core.transport.ITransportGate;
 import java.io.File;
@@ -190,8 +190,8 @@ public class SentryOptions {
   /** whether to ignore TLS errors */
   private boolean bypassSecurity = false;
 
-  /** SdkInfo object that contains the Sentry Client Name and its version */
-  private @Nullable SdkInfo sdkInfo;
+  /** SdkVersion object that contains the Sentry Client Name and its version */
+  private @Nullable SdkVersion sdkVersion;
 
   /**
    * Adds an event processor
@@ -895,22 +895,22 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the SdkInfo object
+   * Returns the SdkVersion object
    *
-   * @return the SdkInfo object or null
+   * @return the SdkVersion object or null
    */
-  public @Nullable SdkInfo getSdkInfo() {
-    return sdkInfo;
+  public @Nullable SdkVersion getSdkVersion() {
+    return sdkVersion;
   }
 
   /**
-   * Sets the SdkInfo object
+   * Sets the SdkVersion object
    *
-   * @param sdkInfo the sdkInfo object or null
+   * @param sdkVersion the SdkVersion object or null
    */
   @ApiStatus.Internal
-  public void setSdkInfo(final @Nullable SdkInfo sdkInfo) {
-    this.sdkInfo = sdkInfo;
+  public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    this.sdkVersion = sdkVersion;
   }
 
   /** The BeforeSend callback */

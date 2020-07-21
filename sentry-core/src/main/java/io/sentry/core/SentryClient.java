@@ -210,7 +210,8 @@ public final class SentryClient implements ISentryClient {
 
     SentryEnvelope envelope;
     try {
-      envelope = SentryEnvelope.fromSession(options.getSerializer(), session, options.getSdkInfo());
+      envelope =
+          SentryEnvelope.fromSession(options.getSerializer(), session, options.getSdkVersion());
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
       return;

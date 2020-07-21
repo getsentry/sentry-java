@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import io.sentry.core.protocol.SdkInfo;
+import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.util.Objects;
 import java.io.IOException;
@@ -35,19 +35,19 @@ public final class SentryEnvelope {
 
   public SentryEnvelope(
       final @Nullable SentryId eventId,
-      final @Nullable SdkInfo sdkInfo,
+      final @Nullable SdkVersion sdkVersion,
       final @NotNull Iterable<SentryEnvelopeItem> items) {
-    header = new SentryEnvelopeHeader(eventId, sdkInfo);
+    header = new SentryEnvelopeHeader(eventId, sdkVersion);
     this.items = Objects.requireNonNull(items, "SentryEnvelope items are required.");
   }
 
   public SentryEnvelope(
       final @Nullable SentryId eventId,
-      final @Nullable SdkInfo sdkInfo,
+      final @Nullable SdkVersion sdkVersion,
       final @NotNull SentryEnvelopeItem item) {
     Objects.requireNonNull(item, "SentryEnvelopeItem is required.");
 
-    header = new SentryEnvelopeHeader(eventId, sdkInfo);
+    header = new SentryEnvelopeHeader(eventId, sdkVersion);
     final List<SentryEnvelopeItem> items = new ArrayList<>(1);
     items.add(item);
     this.items = items;
@@ -56,11 +56,12 @@ public final class SentryEnvelope {
   public static @NotNull SentryEnvelope fromSession(
       final @NotNull ISerializer serializer,
       final @NotNull Session session,
-      final @Nullable SdkInfo sdkInfo)
+      final @Nullable SdkVersion sdkVersion)
       throws IOException {
     Objects.requireNonNull(serializer, "Serializer is required.");
     Objects.requireNonNull(session, "session is required.");
 
-    return new SentryEnvelope(null, sdkInfo, SentryEnvelopeItem.fromSession(serializer, session));
+    return new SentryEnvelope(
+        null, sdkVersion, SentryEnvelopeItem.fromSession(serializer, session));
   }
 }

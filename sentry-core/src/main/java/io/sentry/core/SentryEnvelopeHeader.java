@@ -1,6 +1,6 @@
 package io.sentry.core;
 
-import io.sentry.core.protocol.SdkInfo;
+import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -11,11 +11,12 @@ public final class SentryEnvelopeHeader {
   // (e.g: attachments, user feedback)
   private final @Nullable SentryId eventId;
 
-  private final @Nullable SdkInfo sdkInfo;
+  private final @Nullable SdkVersion sdkVersion;
 
-  public SentryEnvelopeHeader(final @Nullable SentryId eventId, final @Nullable SdkInfo sdkInfo) {
+  public SentryEnvelopeHeader(
+      final @Nullable SentryId eventId, final @Nullable SdkVersion sdkVersion) {
     this.eventId = eventId;
-    this.sdkInfo = sdkInfo;
+    this.sdkVersion = sdkVersion;
   }
 
   public SentryEnvelopeHeader(final @Nullable SentryId eventId) {
@@ -30,7 +31,7 @@ public final class SentryEnvelopeHeader {
     return eventId;
   }
 
-  public @Nullable SdkInfo getSdkInfo() {
-    return sdkInfo;
+  public @Nullable SdkVersion getSdkVersion() {
+    return sdkVersion;
   }
 }

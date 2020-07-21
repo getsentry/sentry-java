@@ -18,7 +18,7 @@ import io.sentry.core.hints.DiskFlushNotification
 import io.sentry.core.hints.SessionEndHint
 import io.sentry.core.hints.SessionUpdateHint
 import io.sentry.core.protocol.Request
-import io.sentry.core.protocol.SdkInfo
+import io.sentry.core.protocol.SdkVersion
 import io.sentry.core.protocol.SentryException
 import io.sentry.core.protocol.SentryId
 import io.sentry.core.protocol.User
@@ -42,7 +42,10 @@ class SentryClientTest {
     class Fixture {
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
-            sdkInfo = SdkInfo.createSdkInfo("test", "1.2.3")
+            sdkVersion = SdkVersion().apply {
+                name = "test"
+                version = "1.2.3"
+            }
         }
         var connection: AsyncConnection = mock()
         fun getSut() = SentryClient(sentryOptions, connection)
@@ -446,7 +449,7 @@ class SentryClientTest {
     fun `when captureSession, sdkInfo should be in the envelope header`() {
         fixture.getSut().captureSession(createSession())
         verify(fixture.connection).send(check<SentryEnvelope> {
-            assertNotNull(it.header.sdkInfo)
+            assertNotNull(it.header.sdkVersion)
         }, anyOrNull())
     }
 
