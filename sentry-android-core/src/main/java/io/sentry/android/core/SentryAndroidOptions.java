@@ -35,6 +35,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enableAppComponentBreadcrumbs = true;
 
   public SentryAndroidOptions() {
+    setSentryClientName(BuildConfig.SENTRY_CLIENT_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
   }
 

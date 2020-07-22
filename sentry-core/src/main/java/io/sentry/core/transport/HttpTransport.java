@@ -165,6 +165,7 @@ public class HttpTransport implements ITransport {
     try (final OutputStream outputStream = connection.getOutputStream();
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
+
       serializer.serialize(event, writer);
     } catch (IOException e) {
       logger.log(
@@ -279,6 +280,7 @@ public class HttpTransport implements ITransport {
     try (final OutputStream outputStream = connection.getOutputStream();
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
+
       serializer.serialize(envelope, writer);
     } catch (Exception e) {
       logger.log(

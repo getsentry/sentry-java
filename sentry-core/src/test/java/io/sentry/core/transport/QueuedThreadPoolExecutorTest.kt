@@ -1,5 +1,6 @@
 package io.sentry.core.transport
 
+import com.nhaarman.mockitokotlin2.mock
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy
@@ -28,7 +29,7 @@ class QueuedThreadPoolExecutorTest {
         }
 
         fun getSut(): QueuedThreadPoolExecutor =
-            QueuedThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy())
+            QueuedThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy(), mock())
     }
 
     private val fixture = Fixture()

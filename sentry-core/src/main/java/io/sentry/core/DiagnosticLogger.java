@@ -2,13 +2,14 @@ package io.sentry.core;
 
 import io.sentry.core.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK internal diagnostic logger. */
 @ApiStatus.Internal
 public final class DiagnosticLogger implements ILogger {
-  private final SentryOptions options;
+  private final @NotNull SentryOptions options;
   private final @Nullable ILogger logger;
 
   /**
@@ -17,7 +18,7 @@ public final class DiagnosticLogger implements ILogger {
    * @param options a SentryOptions instance
    * @param logger a ILogger instance
    */
-  public DiagnosticLogger(final SentryOptions options, final @Nullable ILogger logger) {
+  public DiagnosticLogger(final @NotNull SentryOptions options, final @Nullable ILogger logger) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.logger = logger;
   }
@@ -29,8 +30,8 @@ public final class DiagnosticLogger implements ILogger {
    * @return True if a log message would be recorded for the level. Otherwise false.
    */
   public boolean isEnabled(final @Nullable SentryLevel level) {
-    SentryLevel diagLevel = options.getDiagnosticLevel();
-    if (level == null || diagLevel == null) {
+    final SentryLevel diagLevel = options.getDiagnosticLevel();
+    if (level == null) {
       return false;
     }
     return options.isDebug() && level.ordinal() >= diagLevel.ordinal();

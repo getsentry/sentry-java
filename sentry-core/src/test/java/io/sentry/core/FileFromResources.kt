@@ -1,4 +1,4 @@
-package io.sentry.android.core
+package io.sentry.core
 
 import java.io.File
 import java.util.Scanner

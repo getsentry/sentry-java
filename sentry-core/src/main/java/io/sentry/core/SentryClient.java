@@ -1,16 +1,12 @@
 package io.sentry.core;
 
-import io.sentry.core.cache.DiskCache;
-import io.sentry.core.cache.IEnvelopeCache;
-import io.sentry.core.cache.IEventCache;
-import io.sentry.core.cache.SessionCache;
 import io.sentry.core.hints.DiskFlushNotification;
 import io.sentry.core.hints.SessionEndHint;
 import io.sentry.core.hints.SessionUpdateHint;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.transport.Connection;
 import io.sentry.core.transport.ITransport;
-import io.sentry.core.transport.ITransportGate;
+import io.sentry.core.transport.NoOpTransport;
 import io.sentry.core.util.ApplyScopeUtils;
 import io.sentry.core.util.Objects;
 import java.io.IOException;
@@ -46,23 +42,15 @@ public final class SentryClient implements ISentryClient {
     this.enabled = true;
 
     ITransport transport = options.getTransport();
-    if (transport == null) {
+    if (transport instanceof NoOpTransport) {
       transport = HttpTransportFactory.create(options);
       options.setTransport(transport);
     }
 
-    ITransportGate transportGate = options.getTransportGate();
-    if (transportGate == null) {
-      transportGate = () -> true;
-      options.setTransportGate(transportGate);
-    }
-
     if (connection == null) {
-      // TODO this is obviously provisional and should be constructed based on the config in options
-      final IEventCache cache = new DiskCache(options);
-      final IEnvelopeCache sessionCache = new SessionCache(options);
-
-      connection = AsyncConnectionFactory.create(options, cache, sessionCache);
+      connection =
+          AsyncConnectionFactory.create(
+              options, options.getEventDiskCache(), options.getEnvelopeDiskCache());
     }
     this.connection = connection;
     random = options.getSampleRate() == null ? null : new Random();

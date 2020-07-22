@@ -22,12 +22,4 @@ public final class LogUtils {
         "%s is not Retryable",
         hint != null ? hint.getClass().getCanonicalName() : "Hint");
   }
-
-  public static void logIfNotSubmissionResult(
-      final @NotNull ILogger logger, final @Nullable Object hint) {
-    logger.log(
-        SentryLevel.DEBUG,
-        "%s is not SubmissionResult",
-        hint != null ? hint.getClass().getCanonicalName() : "Hint");
-  }
 }

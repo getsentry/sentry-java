@@ -72,42 +72,33 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `envelopesDir should be created at initialization`() {
+    fun `envelopesDir should be set at initialization`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
 
         assertTrue(sentryOptions.cacheDirPath?.endsWith("${File.separator}cache${File.separator}sentry")!!)
-        val file = File(sentryOptions.cacheDirPath!!)
-        assertTrue(file.exists())
-        file.deleteOnExit()
     }
 
     @Test
-    fun `outboxDir should be created at initialization`() {
+    fun `outboxDir should be set at initialization`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
 
         assertTrue(sentryOptions.outboxPath?.endsWith("${File.separator}cache${File.separator}sentry${File.separator}outbox")!!)
-        val file = File(sentryOptions.outboxPath!!)
-        assertTrue(file.exists())
-        file.deleteOnExit()
     }
 
     @Test
-    fun `sessionDir should be created at initialization`() {
+    fun `sessionDir should be set at initialization`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
 
         assertTrue(sentryOptions.sessionsPath?.endsWith("${File.separator}cache${File.separator}sentry${File.separator}sessions")!!)
-        val file = File(sentryOptions.sessionsPath!!)
-        assertTrue(file.exists())
-        file.deleteOnExit()
     }
 
     @Test
@@ -174,18 +165,6 @@ class AndroidOptionsInitializerTest {
 
         assertNotNull(sentryOptions.transportGate)
         assertTrue(sentryOptions.transportGate is AndroidTransportGate)
-    }
-
-    @Test
-    fun `init should set clientName`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        val clientName = "${BuildConfig.SENTRY_CLIENT_NAME}/${BuildConfig.VERSION_NAME}"
-
-        assertEquals(clientName, sentryOptions.sentryClientName)
     }
 
     @Test
@@ -320,31 +299,6 @@ class AndroidOptionsInitializerTest {
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
         val actual = sentryOptions.integrations.firstOrNull { it is ActivityBreadcrumbsIntegration }
         assertNull(actual)
-    }
-
-    @Test
-    fun `init should set SdkVersion`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = mock<Context>()
-        whenever(mockContext.applicationContext).thenReturn(null)
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertNotNull(sentryOptions.sdkVersion)
-        val sdkVersion = sentryOptions.sdkVersion!!
-
-        assertEquals(BuildConfig.SENTRY_CLIENT_NAME, sdkVersion.name)
-        assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
-
-        assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:sentry-android-core"
-            it.version == BuildConfig.VERSION_NAME
-        })
-
-        assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:sentry-core"
-            it.version == BuildConfig.VERSION_NAME
-        })
     }
 
     private fun createMockContext(): Context {

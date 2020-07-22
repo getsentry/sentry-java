@@ -1,7 +1,10 @@
 package io.sentry.core;
 
+import io.sentry.core.cache.DiskCache;
+import io.sentry.core.cache.SessionCache;
 import io.sentry.core.protocol.SentryId;
 import io.sentry.core.protocol.User;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -67,7 +70,8 @@ public final class Sentry {
    * @throws InvocationTargetException the InvocationTargetException
    */
   public static <T extends SentryOptions> void init(
-      @NotNull OptionsContainer<T> clazz, @NotNull OptionsConfiguration<T> optionsConfiguration)
+      final @NotNull OptionsContainer<T> clazz,
+      final @NotNull OptionsConfiguration<T> optionsConfiguration)
       throws IllegalAccessException, InstantiationException, NoSuchMethodException,
           InvocationTargetException {
     init(clazz, optionsConfiguration, GLOBAL_HUB_DEFAULT_MODE);
@@ -86,12 +90,12 @@ public final class Sentry {
    * @throws InvocationTargetException the InvocationTargetException
    */
   public static <T extends SentryOptions> void init(
-      @NotNull OptionsContainer<T> clazz,
-      @NotNull OptionsConfiguration<T> optionsConfiguration,
-      boolean globalHubMode)
+      final @NotNull OptionsContainer<T> clazz,
+      final @NotNull OptionsConfiguration<T> optionsConfiguration,
+      final boolean globalHubMode)
       throws IllegalAccessException, InstantiationException, NoSuchMethodException,
           InvocationTargetException {
-    T options = clazz.createInstance();
+    final T options = clazz.createInstance();
     optionsConfiguration.configure(options);
     init(options, globalHubMode);
   }
@@ -101,7 +105,7 @@ public final class Sentry {
    *
    * @param optionsConfiguration configuration options callback
    */
-  public static void init(@NotNull OptionsConfiguration<SentryOptions> optionsConfiguration) {
+  public static void init(final @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration) {
     init(optionsConfiguration, GLOBAL_HUB_DEFAULT_MODE);
   }
 
@@ -112,8 +116,9 @@ public final class Sentry {
    * @param globalHubMode the globalHubMode
    */
   public static void init(
-      @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration, boolean globalHubMode) {
-    SentryOptions options = new SentryOptions();
+      final @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration,
+      final boolean globalHubMode) {
+    final SentryOptions options = new SentryOptions();
     optionsConfiguration.configure(options);
     init(options, globalHubMode);
   }
@@ -123,28 +128,17 @@ public final class Sentry {
    *
    * @param options options the SentryOptions
    * @param globalHubMode the globalHubMode
-   * @param <T> a class that extends SentryOptions or SentryOptions itself.
    */
-  private static synchronized <T extends SentryOptions> void init(
-      @NotNull T options, boolean globalHubMode) {
-    String dsn = options.getDsn();
-    if (dsn == null) {
-      throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");
-    } else if (dsn.isEmpty()) {
-      close();
+  private static synchronized void init(
+      final @NotNull SentryOptions options, final boolean globalHubMode) {
+    if (!initConfigurations(options)) {
       return;
     }
 
-    @SuppressWarnings("unused")
-    Dsn parsedDsn = new Dsn(dsn);
-
-    ILogger logger = options.getLogger();
-    logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
-
-    logger.log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
+    options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
 
-    IHub hub = getCurrentHub();
+    final IHub hub = getCurrentHub();
     mainHub = new Hub(options);
 
     currentHub.set(mainHub);
@@ -160,9 +154,56 @@ public final class Sentry {
     }
   }
 
+  private static boolean initConfigurations(final @NotNull SentryOptions options) {
+    final String dsn = options.getDsn();
+    if (dsn == null) {
+      throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");
+    } else if (dsn.isEmpty()) {
+      close();
+      return false;
+    }
+
+    @SuppressWarnings("unused")
+    final Dsn parsedDsn = new Dsn(dsn);
+
+    ILogger logger = options.getLogger();
+
+    if (options.isDebug() && logger instanceof NoOpLogger) {
+      options.setLogger(new SystemOutLogger());
+      logger = options.getLogger();
+    }
+    logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
+
+    // TODO: read values from conf file, Build conf or system envs
+    // eg release, distinctId, sentryClientName
+
+    if (options.getSerializer() instanceof NoOpSerializer) {
+      options.setSerializer(new GsonSerializer(logger, options.getEnvelopeReader()));
+    }
+
+    // this should be after setting serializers
+    if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
+      final File cacheDir = new File(options.getCacheDirPath());
+      cacheDir.mkdirs();
+
+      final File outboxDir = new File(options.getOutboxPath());
+      outboxDir.mkdirs();
+
+      final File sessionsDir = new File(options.getSessionsPath());
+      sessionsDir.mkdirs();
+
+      options.setEventDiskCache(new DiskCache(options));
+      options.setEnvelopeDiskCache(new SessionCache(options));
+    } else {
+      logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
+    }
+
+    return true;
+  }
+
   /** Close the SDK */
   public static synchronized void close() {
-    IHub hub = getCurrentHub();
+    final IHub hub = getCurrentHub();
     mainHub = NoOpHub.getInstance();
     hub.close();
   }
@@ -173,7 +214,7 @@ public final class Sentry {
    * @param event the event
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureEvent(@NotNull SentryEvent event) {
+  public static @NotNull SentryId captureEvent(final @NotNull SentryEvent event) {
     return getCurrentHub().captureEvent(event);
   }
 
@@ -184,7 +225,8 @@ public final class Sentry {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
+  public static @NotNull SentryId captureEvent(
+      final @NotNull SentryEvent event, final @Nullable Object hint) {
     return getCurrentHub().captureEvent(event, hint);
   }
 
@@ -194,7 +236,7 @@ public final class Sentry {
    * @param message The message to send.
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureMessage(@NotNull String message) {
+  public static @NotNull SentryId captureMessage(final @NotNull String message) {
     return getCurrentHub().captureMessage(message);
   }
 
@@ -206,7 +248,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureMessage(
-      @NotNull String message, @NotNull SentryLevel level) {
+      final @NotNull String message, final @NotNull SentryLevel level) {
     return getCurrentHub().captureMessage(message, level);
   }
 
@@ -216,7 +258,7 @@ public final class Sentry {
    * @param throwable The exception.
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureException(@NotNull Throwable throwable) {
+  public static @NotNull SentryId captureException(final @NotNull Throwable throwable) {
     return getCurrentHub().captureException(throwable);
   }
 
@@ -228,7 +270,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
-      @NotNull Throwable throwable, @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Object hint) {
     return getCurrentHub().captureException(throwable, hint);
   }
 
@@ -238,7 +280,8 @@ public final class Sentry {
    * @param breadcrumb the breadcrumb
    * @param hint SDK specific but provides high level information about the origin of the event
    */
-  public static void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {
+  public static void addBreadcrumb(
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
     getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 
@@ -247,7 +290,7 @@ public final class Sentry {
    *
    * @param breadcrumb the breadcrumb
    */
-  public static void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
+  public static void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
     getCurrentHub().addBreadcrumb(breadcrumb);
   }
 
@@ -256,7 +299,7 @@ public final class Sentry {
    *
    * @param message rendered as text and the whitespace is preserved.
    */
-  public static void addBreadcrumb(@NotNull String message) {
+  public static void addBreadcrumb(final @NotNull String message) {
     getCurrentHub().addBreadcrumb(message);
   }
 
@@ -267,7 +310,7 @@ public final class Sentry {
    * @param category Categories are dotted strings that indicate what the crumb is or where it comes
    *     from.
    */
-  public static void addBreadcrumb(@NotNull String message, @NotNull String category) {
+  public static void addBreadcrumb(final @NotNull String message, final @NotNull String category) {
     getCurrentHub().addBreadcrumb(message, category);
   }
 
@@ -276,7 +319,7 @@ public final class Sentry {
    *
    * @param level the Sentry level
    */
-  public static void setLevel(@Nullable SentryLevel level) {
+  public static void setLevel(final @Nullable SentryLevel level) {
     getCurrentHub().setLevel(level);
   }
 
@@ -285,7 +328,7 @@ public final class Sentry {
    *
    * @param transaction the transaction
    */
-  public static void setTransaction(@Nullable String transaction) {
+  public static void setTransaction(final @Nullable String transaction) {
     getCurrentHub().setTransaction(transaction);
   }
 
@@ -294,7 +337,7 @@ public final class Sentry {
    *
    * @param user the user
    */
-  public static void setUser(@Nullable User user) {
+  public static void setUser(final @Nullable User user) {
     getCurrentHub().setUser(user);
   }
 
@@ -303,7 +346,7 @@ public final class Sentry {
    *
    * @param fingerprint the fingerprints
    */
-  public static void setFingerprint(@NotNull List<String> fingerprint) {
+  public static void setFingerprint(final @NotNull List<String> fingerprint) {
     getCurrentHub().setFingerprint(fingerprint);
   }
 
@@ -318,7 +361,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setTag(@NotNull String key, @NotNull String value) {
+  public static void setTag(final @NotNull String key, final @NotNull String value) {
     getCurrentHub().setTag(key, value);
   }
 
@@ -327,7 +370,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeTag(@NotNull String key) {
+  public static void removeTag(final @NotNull String key) {
     getCurrentHub().removeTag(key);
   }
 
@@ -338,7 +381,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setExtra(@NotNull String key, @NotNull String value) {
+  public static void setExtra(final @NotNull String key, final @NotNull String value) {
     getCurrentHub().setExtra(key, value);
   }
 
@@ -347,7 +390,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeExtra(@NotNull String key) {
+  public static void removeExtra(final @NotNull String key) {
     getCurrentHub().removeExtra(key);
   }
 
@@ -381,7 +424,7 @@ public final class Sentry {
    *
    * @param callback the callback
    */
-  public static void withScope(@NotNull ScopeCallback callback) {
+  public static void withScope(final @NotNull ScopeCallback callback) {
     getCurrentHub().withScope(callback);
   }
 
@@ -390,7 +433,7 @@ public final class Sentry {
    *
    * @param callback The configure scope callback.
    */
-  public static void configureScope(@NotNull ScopeCallback callback) {
+  public static void configureScope(final @NotNull ScopeCallback callback) {
     getCurrentHub().configureScope(callback);
   }
 
@@ -399,7 +442,7 @@ public final class Sentry {
    *
    * @param client the client.
    */
-  public static void bindClient(@NotNull ISentryClient client) {
+  public static void bindClient(final @NotNull ISentryClient client) {
     getCurrentHub().bindClient(client);
   }
 
@@ -408,7 +451,7 @@ public final class Sentry {
    *
    * @param timeoutMillis time in milliseconds
    */
-  public static void flush(long timeoutMillis) {
+  public static void flush(final long timeoutMillis) {
     getCurrentHub().flush(timeoutMillis);
   }
 

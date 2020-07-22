@@ -1,8 +1,9 @@
 package io.sentry.core;
 
-import java.io.File;
+import io.sentry.core.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SendFireAndForgetEnvelopeSender
@@ -14,38 +15,30 @@ public final class SendFireAndForgetEnvelopeSender
   public SendFireAndForgetEnvelopeSender(
       final @NotNull SendCachedEventFireAndForgetIntegration.SendFireAndForgetDirPath
               sendFireAndForgetDirPath) {
-    this.sendFireAndForgetDirPath = sendFireAndForgetDirPath;
+    this.sendFireAndForgetDirPath =
+        Objects.requireNonNull(sendFireAndForgetDirPath, "SendFireAndForgetDirPath is required");
   }
 
   @Override
-  public SendCachedEventFireAndForgetIntegration.SendFireAndForget create(
+  public @Nullable SendCachedEventFireAndForgetIntegration.SendFireAndForget create(
       final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(hub, "Hub is required");
+    Objects.requireNonNull(options, "SentryOptions is required");
+
     final String dirPath = sendFireAndForgetDirPath.getDirPath();
-    if (dirPath == null) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "No envelope dir path is defined in options, discarding EnvelopeSender.");
+    if (!hasValidPath(dirPath, options.getLogger())) {
+      options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
       return null;
     }
 
     final EnvelopeSender envelopeSender =
         new EnvelopeSender(
             hub,
-            new EnvelopeReader(),
+            options.getEnvelopeReader(),
             options.getSerializer(),
             options.getLogger(),
             options.getFlushTimeoutMillis());
-    final File dirFile = new File(dirPath);
-    return () -> {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Started processing cached files from %s", dirPath);
-      envelopeSender.processDirectory(dirFile);
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Finished processing cached files from %s", dirPath);
-    };
+
+    return processDir(envelopeSender, dirPath, options.getLogger());
   }
 }

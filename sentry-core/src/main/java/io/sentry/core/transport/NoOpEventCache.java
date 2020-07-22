@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-final class NoOpEventCache implements IEventCache {
+public final class NoOpEventCache implements IEventCache {
   private static final NoOpEventCache instance = new NoOpEventCache();
 
   public static NoOpEventCache getInstance() {

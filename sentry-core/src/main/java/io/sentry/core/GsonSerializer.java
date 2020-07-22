@@ -1,33 +1,20 @@
-package io.sentry.android.core;
+package io.sentry.core;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.sentry.android.core.adapters.ContextsDeserializerAdapter;
-import io.sentry.android.core.adapters.ContextsSerializerAdapter;
-import io.sentry.android.core.adapters.DateDeserializerAdapter;
-import io.sentry.android.core.adapters.DateSerializerAdapter;
-import io.sentry.android.core.adapters.OrientationDeserializerAdapter;
-import io.sentry.android.core.adapters.OrientationSerializerAdapter;
-import io.sentry.android.core.adapters.SentryIdDeserializerAdapter;
-import io.sentry.android.core.adapters.SentryIdSerializerAdapter;
-import io.sentry.android.core.adapters.SentryLevelDeserializerAdapter;
-import io.sentry.android.core.adapters.SentryLevelSerializerAdapter;
-import io.sentry.android.core.adapters.TimeZoneDeserializerAdapter;
-import io.sentry.android.core.adapters.TimeZoneSerializerAdapter;
-import io.sentry.core.IEnvelopeReader;
-import io.sentry.core.ILogger;
-import io.sentry.core.ISerializer;
-import io.sentry.core.SentryEnvelope;
-import io.sentry.core.SentryEnvelopeHeader;
-import io.sentry.core.SentryEnvelopeHeaderAdapter;
-import io.sentry.core.SentryEnvelopeItem;
-import io.sentry.core.SentryEnvelopeItemHeader;
-import io.sentry.core.SentryEnvelopeItemHeaderAdapter;
-import io.sentry.core.SentryEvent;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.Session;
-import io.sentry.core.SessionAdapter;
+import io.sentry.core.adapters.ContextsDeserializerAdapter;
+import io.sentry.core.adapters.ContextsSerializerAdapter;
+import io.sentry.core.adapters.DateDeserializerAdapter;
+import io.sentry.core.adapters.DateSerializerAdapter;
+import io.sentry.core.adapters.OrientationDeserializerAdapter;
+import io.sentry.core.adapters.OrientationSerializerAdapter;
+import io.sentry.core.adapters.SentryIdDeserializerAdapter;
+import io.sentry.core.adapters.SentryIdSerializerAdapter;
+import io.sentry.core.adapters.SentryLevelDeserializerAdapter;
+import io.sentry.core.adapters.SentryLevelSerializerAdapter;
+import io.sentry.core.adapters.TimeZoneDeserializerAdapter;
+import io.sentry.core.adapters.TimeZoneSerializerAdapter;
 import io.sentry.core.protocol.Contexts;
 import io.sentry.core.protocol.Device;
 import io.sentry.core.protocol.SentryId;
@@ -46,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** The AndroidSerializer class that uses Gson as JSON parser */
-final class AndroidSerializer implements ISerializer {
+public final class GsonSerializer implements ISerializer {
 
   /** the UTF-8 Charset */
   @SuppressWarnings("CharsetObjectCanBeUsed")
@@ -67,7 +54,7 @@ final class AndroidSerializer implements ISerializer {
    * @param logger the ILogger interface
    * @param envelopeReader the IEnvelopeReader interface
    */
-  public AndroidSerializer(
+  public GsonSerializer(
       final @NotNull ILogger logger, final @NotNull IEnvelopeReader envelopeReader) {
     this.logger = Objects.requireNonNull(logger, "The ILogger object is required.");
     this.envelopeReader =

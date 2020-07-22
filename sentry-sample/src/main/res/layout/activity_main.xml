@@ -1,43 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-              tools:context=".MainActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/crash_from_java"
-          android:text="@string/crash_from_java"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/crash_from_java"
+        android:text="@string/crash_from_java"/>
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/send_message"
-          android:text="@string/send_message"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/send_message"
+        android:text="@string/send_message"/>
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/capture_exception"
-          android:text="@string/capture_exception"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/capture_exception"
+        android:text="@string/capture_exception"/>
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/breadcrumb"
-          android:text="@string/breadcrumb"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/breadcrumb"
+        android:text="@string/breadcrumb"/>
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/anr"
-          android:text="@string/anr"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/anr"
+        android:text="@string/anr"/>
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/native_crash"
-          android:text="@string/crash_from_native"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/native_crash"
+        android:text="@string/crash_from_native"/>
 
-  <Button android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:id="@+id/native_capture"
-          android:text="@string/capture_from_native"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/native_capture"
+        android:text="@string/capture_from_native"/>
 </LinearLayout>

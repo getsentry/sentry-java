@@ -40,7 +40,7 @@ class HubTest {
 
     @AfterTest
     fun shutdown() {
-        Files.delete(file.toPath())
+        file.deleteRecursively()
         Sentry.close()
     }
 

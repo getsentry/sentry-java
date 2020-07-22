@@ -91,11 +91,40 @@ class NdkIntegrationTest {
         assertFalse(options.isEnableNdk)
     }
 
-    private fun getOptions(enableNdk: Boolean = true, logger: ILogger = mock()): SentryOptions {
+    @Test
+    fun `NdkIntegration won't init if cache dir is null`() {
+        val integration = fixture.getSut()
+
+        val logger = mock<ILogger>()
+        val options = getOptions(logger = logger, cacheDir = null)
+
+        integration.register(mock(), options)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any())
+
+        assertFalse(options.isEnableNdk)
+    }
+
+    @Test
+    fun `NdkIntegration won't init if cache dir is empty`() {
+        val integration = fixture.getSut()
+
+        val logger = mock<ILogger>()
+        val options = getOptions(logger = logger, cacheDir = "")
+
+        integration.register(mock(), options)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any())
+
+        assertFalse(options.isEnableNdk)
+    }
+
+    private fun getOptions(enableNdk: Boolean = true, logger: ILogger = mock(), cacheDir: String? = "abc"): SentryOptions {
         return SentryOptions().apply {
             setLogger(logger)
             isDebug = true
             isEnableNdk = enableNdk
+            cacheDirPath = cacheDir
         }
     }
 

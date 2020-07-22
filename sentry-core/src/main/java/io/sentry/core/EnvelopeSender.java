@@ -217,8 +217,6 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
               items);
           break;
         }
-      } else {
-        LogUtils.logIfNotSubmissionResult(logger, hint);
       }
     }
   }

@@ -1,4 +1,4 @@
-package io.sentry.android.core.adapters;
+package io.sentry.core.adapters;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;

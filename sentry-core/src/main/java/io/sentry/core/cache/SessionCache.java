@@ -215,8 +215,7 @@ public final class SessionCache implements IEnvelopeCache {
                 .getLogger()
                 .log(
                     SentryLevel.ERROR,
-                    "Item %d of type %s returned null by the parser.",
-                    items,
+                    "Item of type %s returned null by the parser.",
                     item.getHeader().getType());
           } else {
             writeSessionToDisk(currentSessionFile, session);

@@ -1,3 +1,0 @@
-{}
-{"type":"session","length":107}
-{"sid":"deadbeef","init":true,"started":"2020-02-07T14:16:00Z","duration":60,"status":"started","attrs":{}}

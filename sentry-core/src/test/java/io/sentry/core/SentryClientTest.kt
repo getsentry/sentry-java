@@ -31,6 +31,7 @@ import java.util.UUID
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -65,6 +66,12 @@ class SentryClientTest {
         fixture.sentryOptions.dsn = "invalid-dsn"
         val sut = fixture.getSut()
         assertFalse(sut.isEnabled)
+    }
+
+    @Test
+    fun `when dsn is an invalid string, client throws`() {
+        fixture.sentryOptions.dsn = "invalid-dsn"
+        assertFailsWith<InvalidDsnException> { fixture.getSut() }
     }
 
     @Test
@@ -374,7 +381,7 @@ class SentryClientTest {
             dsn = dsnString
         }
         val transport = HttpTransport(sentryOptions, mock(), 500, 500, false, URL("https://key@sentry.io/proj"))
-        sentryOptions.transport = transport
+        sentryOptions.setTransport(transport)
 
         val connection = mock<AsyncConnection>()
         SentryClient(sentryOptions, connection)
@@ -388,7 +395,7 @@ class SentryClientTest {
             dsn = dsnString
         }
         val transportGate = CustomTransportGate()
-        sentryOptions.transportGate = transportGate
+        sentryOptions.setTransportGate(transportGate)
 
         val connection = mock<AsyncConnection>()
         SentryClient(sentryOptions, connection)

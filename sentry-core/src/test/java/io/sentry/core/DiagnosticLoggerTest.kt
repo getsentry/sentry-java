@@ -4,22 +4,16 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import java.lang.IllegalArgumentException
 import kotlin.test.Test
-import kotlin.test.assertFailsWith
 
 class DiagnosticLoggerTest {
 
     private class Fixture {
-        var options: SentryOptions?
-        var logger: ILogger? = mock()
-
-        init {
-            val options = SentryOptions()
-            options.isDebug = true
-            options.setLogger(logger)
-            this.options = options
+        val options = SentryOptions().apply {
+            isDebug = true
+            setLogger(logger)
         }
+        var logger: ILogger? = mock()
 
         fun getSut(): DiagnosticLogger {
             return DiagnosticLogger(options, logger)
@@ -35,12 +29,6 @@ class DiagnosticLoggerTest {
         val sut = fixture.getSut()
         sut.log(SentryLevel.FATAL, "test")
         verify(fixture.logger)?.log(any(), any())
-    }
-
-    @Test
-    fun `when SentryOptions is null, invalid argument is thrown`() {
-        fixture.options = null
-        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
     }
 
     @Test

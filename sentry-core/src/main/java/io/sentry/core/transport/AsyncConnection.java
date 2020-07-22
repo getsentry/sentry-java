@@ -1,5 +1,6 @@
 package io.sentry.core.transport;
 
+import io.sentry.core.ILogger;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
 import io.sentry.core.SentryEvent;
@@ -50,7 +51,7 @@ public final class AsyncConnection implements Closeable, Connection {
         transportGate,
         eventCache,
         sessionCache,
-        initExecutor(maxQueueSize, eventCache, sessionCache),
+        initExecutor(maxQueueSize, eventCache, sessionCache, options.getLogger()),
         options);
   }
 
@@ -73,7 +74,8 @@ public final class AsyncConnection implements Closeable, Connection {
   private static QueuedThreadPoolExecutor initExecutor(
       final int maxQueueSize,
       final @NotNull IEventCache eventCache,
-      final @NotNull IEnvelopeCache sessionCache) {
+      final @NotNull IEnvelopeCache sessionCache,
+      final @NotNull ILogger logger) {
 
     final RejectedExecutionHandler storeEvents =
         (r, executor) -> {
@@ -85,6 +87,7 @@ public final class AsyncConnection implements Closeable, Connection {
             }
 
             markHintWhenSendingFailed(eventSender.hint, true);
+            logger.log(SentryLevel.WARNING, "Event rejected: %s", eventSender.event.getEventId());
           }
           if (r instanceof SessionSender) {
             final SessionSender sessionSender = (SessionSender) r;
@@ -94,11 +97,12 @@ public final class AsyncConnection implements Closeable, Connection {
             }
 
             markHintWhenSendingFailed(sessionSender.hint, true);
+            logger.log(SentryLevel.WARNING, "Envelope rejected");
           }
         };
 
     return new QueuedThreadPoolExecutor(
-        1, maxQueueSize, new AsyncConnectionThreadFactory(), storeEvents);
+        1, maxQueueSize, new AsyncConnectionThreadFactory(), storeEvents, logger);
   }
 
   /**
@@ -267,8 +271,6 @@ public final class AsyncConnection implements Closeable, Connection {
               .getLogger()
               .log(SentryLevel.DEBUG, "Marking event submission result: %s", result.isSuccess());
           ((SubmissionResult) hint).setResult(result.isSuccess());
-        } else {
-          LogUtils.logIfNotSubmissionResult(options.getLogger(), hint);
         }
       }
     }
@@ -349,8 +351,6 @@ public final class AsyncConnection implements Closeable, Connection {
               .getLogger()
               .log(SentryLevel.DEBUG, "Marking envelope submission result: %s", result.isSuccess());
           ((SubmissionResult) hint).setResult(result.isSuccess());
-        } else {
-          LogUtils.logIfNotSubmissionResult(options.getLogger(), hint);
         }
       }
     }

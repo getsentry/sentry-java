@@ -7,7 +7,7 @@ import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class NoOpEnvelopeCache implements IEnvelopeCache {
+public final class NoOpEnvelopeCache implements IEnvelopeCache {
   private static final NoOpEnvelopeCache instance = new NoOpEnvelopeCache();
 
   public static NoOpEnvelopeCache getInstance() {

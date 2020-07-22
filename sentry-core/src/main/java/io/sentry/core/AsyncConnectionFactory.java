@@ -17,7 +17,7 @@ final class AsyncConnectionFactory {
         options.getTransportGate(),
         eventCache,
         sessionCache,
-        options.getCacheDirSize(),
+        options.getMaxQueueSize(),
         options);
   }
 }

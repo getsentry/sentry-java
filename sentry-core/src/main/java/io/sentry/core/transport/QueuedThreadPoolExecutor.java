@@ -1,5 +1,7 @@
 package io.sentry.core.transport;
 
+import io.sentry.core.ILogger;
+import io.sentry.core.SentryLevel;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;
   private final AtomicInteger currentlyRunning;
+  private final @NotNull ILogger logger;
 
   /**
    * Creates a new instance of the thread pool.
@@ -35,7 +38,8 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       final int corePoolSize,
       final int maxQueueSize,
       final @NotNull ThreadFactory threadFactory,
-      final @NotNull RejectedExecutionHandler rejectedExecutionHandler) {
+      final @NotNull RejectedExecutionHandler rejectedExecutionHandler,
+      final @NotNull ILogger logger) {
     // similar to Executors.newSingleThreadExecutor, but with a max queue size control
     super(
         corePoolSize,
@@ -47,6 +51,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
         rejectedExecutionHandler);
     this.maxQueueSize = maxQueueSize;
     this.currentlyRunning = new AtomicInteger();
+    this.logger = logger;
   }
 
   @Override
@@ -54,6 +59,8 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     if (isSchedulingAllowed()) {
       return super.submit(task);
     } else {
+      // if the thread pool is full, we don't cache it
+      logger.log(SentryLevel.WARNING, "Submit cancelled");
       return new CancelledFuture<>();
     }
   }

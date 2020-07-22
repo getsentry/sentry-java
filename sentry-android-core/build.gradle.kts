@@ -69,9 +69,6 @@ android {
 dependencies {
     api(project(":sentry-core"))
 
-    // json parser
-    implementation(Config.Libs.gson)
-
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
     implementation(Config.Libs.lifecycleCommonJava8)

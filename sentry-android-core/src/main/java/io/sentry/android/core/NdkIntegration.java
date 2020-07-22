@@ -32,6 +32,13 @@ public final class NdkIntegration implements Integration {
     // Note: `hub` isn't used here because the NDK integration writes files to disk which are picked
     // up by another integration (EnvelopeFileObserverIntegration).
     if (enabled && sentryNdkClass != null) {
+      final String cachedDir = options.getCacheDirPath();
+      if (cachedDir == null || cachedDir.isEmpty()) {
+        options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+        options.setEnableNdk(false);
+        return;
+      }
+
       try {
         final Method method = sentryNdkClass.getMethod("init", SentryOptions.class);
         final Object[] args = new Object[1];
