@@ -404,19 +404,6 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when transport gate is null, it should init an always on transport gate`() {
-        val sentryOptions: SentryOptions = SentryOptions().apply {
-            dsn = dsnString
-        }
-
-        val connection = mock<AsyncConnection>()
-        SentryClient(sentryOptions, connection)
-
-        assertNotNull(sentryOptions.transportGate)
-        assertTrue(sentryOptions.transportGate!!.isConnected)
-    }
-
-    @Test
     fun `when scope has event processors, they should be applied`() {
         val event = SentryEvent()
         val scope = createScope()
