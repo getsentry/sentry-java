@@ -40,13 +40,6 @@ class SentryEventTest {
     }
 
     @Test
-    fun `if level Fatal it should return isCrashed=true`() {
-        val event = SentryEvent()
-        event.level = SentryLevel.FATAL
-        assertTrue(event.isCrashed)
-    }
-
-    @Test
     fun `if mechanism is not handled, it should return isCrashed=true`() {
         val mechanism = Mechanism()
         mechanism.isHandled = false
@@ -58,11 +51,10 @@ class SentryEventTest {
     }
 
     @Test
-    fun `if mechanism is handled and level is not fatal, it should return isCrashed=false`() {
+    fun `if mechanism is handled, it should return isCrashed=false`() {
         val mechanism = Mechanism()
         mechanism.isHandled = true
         val event = SentryEvent()
-        event.level = SentryLevel.ERROR
         val factory = SentryExceptionFactory(mock())
         val sentryExceptions = factory.getSentryExceptions(ExceptionMechanismException(mechanism, Throwable(), Thread()))
         event.exceptions = sentryExceptions
@@ -70,13 +62,21 @@ class SentryEventTest {
     }
 
     @Test
-    fun `if mechanism nas not handled flag and level is not fatal, it should return isCrashed=false`() {
+    fun `if mechanism handled flag is null, it should return isCrashed=false`() {
         val mechanism = Mechanism()
         mechanism.isHandled = null
         val event = SentryEvent()
-        event.level = SentryLevel.ERROR
         val factory = SentryExceptionFactory(mock())
         val sentryExceptions = factory.getSentryExceptions(ExceptionMechanismException(mechanism, Throwable(), Thread()))
+        event.exceptions = sentryExceptions
+        assertFalse(event.isCrashed)
+    }
+
+    @Test
+    fun `if mechanism is not set, it should return isCrashed=false`() {
+        val event = SentryEvent()
+        val factory = SentryExceptionFactory(mock())
+        val sentryExceptions = factory.getSentryExceptions(RuntimeException(Throwable()))
         event.exceptions = sentryExceptions
         assertFalse(event.isCrashed)
     }

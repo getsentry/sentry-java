@@ -17,6 +17,7 @@ import io.sentry.core.hints.Cached
 import io.sentry.core.hints.DiskFlushNotification
 import io.sentry.core.hints.SessionEndHint
 import io.sentry.core.hints.SessionUpdateHint
+import io.sentry.core.protocol.Mechanism
 import io.sentry.core.protocol.Request
 import io.sentry.core.protocol.SdkVersion
 import io.sentry.core.protocol.SentryException
@@ -465,11 +466,11 @@ class SentryClientTest {
     }
 
     @Test
-    fun `When event is Fatal or not handled, mark session as Crashed`() {
+    fun `When event is non handled, mark session as Crashed`() {
         val scope = Scope(fixture.sentryOptions)
         scope.startSession().current
         val event = SentryEvent().apply {
-            level = SentryLevel.FATAL
+            exceptions = createNonHandledException()
         }
         fixture.getSut().updateSessionData(event, null, scope)
         scope.withSession {
@@ -478,7 +479,7 @@ class SentryClientTest {
     }
 
     @Test
-    fun `When event is non fatal, keep level as it is`() {
+    fun `When event is handled, keep level as it is`() {
         val scope = Scope(fixture.sentryOptions)
         val session = scope.startSession().current
         val level = session.status
@@ -488,11 +489,11 @@ class SentryClientTest {
     }
 
     @Test
-    fun `When event is Fatal, increase errorCount`() {
+    fun `When event is non handled, increase errorCount`() {
         val scope = Scope(fixture.sentryOptions)
         scope.startSession().current
         val event = SentryEvent().apply {
-            level = SentryLevel.FATAL
+            exceptions = createNonHandledException()
         }
         fixture.getSut().updateSessionData(event, null, scope)
         scope.withSession {
@@ -516,7 +517,7 @@ class SentryClientTest {
     }
 
     @Test
-    fun `When event is non fatal nor errored, do not increase errorsCount`() {
+    fun `When event is handled and not errored, do not increase errorsCount`() {
         val scope = Scope(fixture.sentryOptions)
         val session = scope.startSession().current
         val errorCount = session.errorCount()
@@ -569,7 +570,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent().apply {
-            level = SentryLevel.FATAL
+            exceptions = createNonHandledException()
         }
         val scope = Scope(fixture.sentryOptions)
         scope.startSession()
@@ -586,7 +587,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent().apply {
-            level = SentryLevel.FATAL
+            exceptions = createNonHandledException()
         }
         val scope = Scope(fixture.sentryOptions)
         scope.startSession()
@@ -602,7 +603,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent().apply {
-            level = SentryLevel.FATAL
+            exceptions = createNonHandledException()
         }
         val scope = Scope(fixture.sentryOptions)
         scope.startSession().current
@@ -651,6 +652,15 @@ class SentryClientTest {
 
     internal class CustomTransportGate : ITransportGate {
         override fun isConnected(): Boolean = false
+    }
+
+    private fun createNonHandledException(): List<SentryException> {
+        val exception = SentryException().apply {
+            mechanism = Mechanism().apply {
+                isHandled = false
+            }
+        }
+        return listOf(exception)
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData

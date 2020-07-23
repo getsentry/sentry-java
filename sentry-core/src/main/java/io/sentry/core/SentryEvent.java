@@ -330,14 +330,11 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   }
 
   /**
-   * Returns true if Level is Fatal or any exception was unhandled by the user.
+   * Returns true if any exception was unhandled by the user.
    *
    * @return true if its crashed or false otherwise
    */
   public boolean isCrashed() {
-    if (level == SentryLevel.FATAL) {
-      return true;
-    }
     if (exception != null) {
       for (SentryException e : exception.getValues()) {
         if (e.getMechanism() != null
