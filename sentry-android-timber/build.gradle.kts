@@ -1,7 +1,7 @@
 import com.novoda.gradle.release.PublishExtension
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
     id("com.android.library")
@@ -79,7 +79,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
 }
 
-//TODO: move thse blocks to parent gradle file, DRY
+// TODO: move thse blocks to parent gradle file, DRY
 configure<PublishExtension> {
     userOrg = Config.Sentry.userOrg
     groupId = project.group.toString()
@@ -99,7 +99,7 @@ configure<PublishExtension> {
     devEmail = Config.Sentry.devEmail
     scmConnection = Config.Sentry.scmConnection
     scmDevConnection = Config.Sentry.scmDevConnection
-    scmUrl  = Config.Sentry.scmUrl
+    scmUrl = Config.Sentry.scmUrl
 }
 
 tasks.withType<Detekt> {

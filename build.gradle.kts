@@ -65,10 +65,11 @@ spotless {
     }
 
     kotlin {
-        ktlint()
         target("**/*.kt")
+        ktlint()
     }
     kotlinGradle {
+        target("**/*.kts")
         ktlint()
     }
 }
