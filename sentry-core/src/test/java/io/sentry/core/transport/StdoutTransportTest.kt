@@ -5,8 +5,8 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.ISerializer
+import io.sentry.core.SentryEnvelope
 import io.sentry.core.SentryEvent
-import io.sentry.core.SentryOptions
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -15,9 +15,6 @@ class StdoutTransportTest {
         val serializer = mock<ISerializer>()
 
         fun getSUT(): ITransport {
-            val options = SentryOptions()
-            options.setSerializer(serializer)
-
             return StdoutTransport(serializer)
         }
     }
@@ -25,13 +22,14 @@ class StdoutTransportTest {
     private val fixture = Fixture()
 
     @Test
-    fun `test serializes event`() {
+    fun `test serializes envelope`() {
         val transport = fixture.getSUT()
         val event = SentryEvent()
+        val envelope = SentryEnvelope.fromEvent(fixture.serializer, event, null)
 
-        val result = transport.send(event)
+        val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(event), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertTrue(result.isSuccess)
     }
 }

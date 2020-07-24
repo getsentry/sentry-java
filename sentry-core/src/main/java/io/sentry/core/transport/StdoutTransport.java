@@ -2,7 +2,6 @@ package io.sentry.core.transport;
 
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
-import io.sentry.core.SentryEvent;
 import io.sentry.core.util.Objects;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -23,17 +22,6 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
-  public TransportResult send(final @NotNull SentryEvent event) throws IOException {
-    Objects.requireNonNull(event, "SentryEvent is required");
-
-    try (final Writer writer = new BufferedWriter(new OutputStreamWriter(System.out, UTF_8));
-        final Writer printWriter = new PrintWriter(writer)) {
-      serializer.serialize(event, printWriter);
-      return TransportResult.success();
-    }
-  }
-
-  @Override
   public boolean isRetryAfter(String type) {
     return false;
   }
@@ -47,7 +35,7 @@ public final class StdoutTransport implements ITransport {
       serializer.serialize(envelope, printWriter);
       return TransportResult.success();
     } catch (Exception e) {
-      return TransportResult.error(-1);
+      return TransportResult.error();
     }
   }
 

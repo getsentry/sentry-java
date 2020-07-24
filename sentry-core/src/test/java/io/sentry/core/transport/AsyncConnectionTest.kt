@@ -57,7 +57,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isConnected).thenReturn(true)
-        whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.success())
+        whenever(fixture.transport.send(any())).thenReturn(TransportResult.success())
 
         // when
         fixture.getSUT().send(ev)
@@ -68,7 +68,9 @@ class AsyncConnectionTest {
         // because storeBeforeSend is enabled by default
         order.verify(fixture.eventCache).store(eq(ev))
 
-        order.verify(fixture.transport).send(eq(ev))
+        order.verify(fixture.transport).send(check {
+            assertEquals(ev.eventId, it.header.eventId)
+        })
         order.verify(fixture.eventCache).discard(eq(ev))
     }
 
@@ -125,7 +127,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isConnected).thenReturn(true)
-        whenever(fixture.transport.send(any<SentryEvent>())).thenReturn(TransportResult.error(500))
+        whenever(fixture.transport.send(any())).thenReturn(TransportResult.error(500))
 
         // when
         try {
@@ -140,7 +142,9 @@ class AsyncConnectionTest {
         // because storeBeforeSend is enabled by default
         order.verify(fixture.eventCache).store(eq(ev))
 
-        order.verify(fixture.transport).send(eq(ev))
+        order.verify(fixture.transport).send(check {
+            assertEquals(ev.eventId, it.header.eventId)
+        })
         verify(fixture.eventCache, never()).discard(any())
     }
 
@@ -173,7 +177,7 @@ class AsyncConnectionTest {
         // given
         val ev = mock<SentryEvent>()
         whenever(fixture.transportGate.isConnected).thenReturn(true)
-        whenever(fixture.transport.send(any<SentryEvent>())).thenThrow(IOException())
+        whenever(fixture.transport.send(any())).thenThrow(IOException())
 
         // when
         try {
@@ -184,7 +188,9 @@ class AsyncConnectionTest {
 
         // then
         val order = inOrder(fixture.transport, fixture.eventCache)
-        order.verify(fixture.transport).send(eq(ev))
+        order.verify(fixture.transport).send(check {
+            assertEquals(ev.eventId, it.header.eventId)
+        })
         verify(fixture.eventCache, never()).discard(any())
     }
 

@@ -244,7 +244,7 @@ public final class AsyncConnection implements Closeable, Connection {
     private final SentryEvent event;
     private final Object hint;
     private final IEventCache eventCache;
-    private final TransportResult failedResult = TransportResult.error(-1);
+    private final TransportResult failedResult = TransportResult.error();
 
     EventSender(
         final @NotNull SentryEvent event,
@@ -288,7 +288,10 @@ public final class AsyncConnection implements Closeable, Connection {
 
       if (transportGate.isConnected()) {
         try {
-          result = transport.send(event);
+          result =
+              transport.send(
+                  SentryEnvelope.fromEvent(
+                      options.getSerializer(), event, options.getSdkVersion()));
           if (result.isSuccess()) {
             eventCache.discard(event);
           } else {
@@ -325,7 +328,7 @@ public final class AsyncConnection implements Closeable, Connection {
     private final @NotNull SentryEnvelope envelope;
     private final @Nullable Object hint;
     private final @NotNull IEnvelopeCache sessionCache;
-    private final TransportResult failedResult = TransportResult.error(-1);
+    private final TransportResult failedResult = TransportResult.error();
 
     SessionSender(
         final @NotNull SentryEnvelope envelope,

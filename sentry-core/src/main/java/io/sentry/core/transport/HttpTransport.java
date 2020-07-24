@@ -9,7 +9,6 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.ILogger;
 import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
-import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Objects;
 import io.sentry.core.util.StringUtils;
@@ -76,7 +75,6 @@ public class HttpTransport implements ITransport {
   private final int connectionTimeout;
   private final int readTimeout;
   private final boolean bypassSecurity;
-  private final @NotNull URL storeUrl;
   private final @NotNull URL envelopeUrl;
   private final @NotNull SentryOptions options;
 
@@ -139,42 +137,15 @@ public class HttpTransport implements ITransport {
 
     try {
       final URI uri = sentryUrl.toURI();
-      storeUrl = uri.resolve(uri.getPath() + "/store/").toURL();
       envelopeUrl = uri.resolve(uri.getPath() + "/envelope/").toURL();
     } catch (URISyntaxException | MalformedURLException e) {
       throw new IllegalArgumentException("Failed to compose the Sentry's server URL.", e);
     }
   }
 
-  // giving up on testing this method is probably the simplest way of having the rest of the class
-  // testable...
-  protected @NotNull HttpURLConnection open(final @Nullable Proxy proxy) throws IOException {
-    return open(storeUrl, proxy);
-  }
-
-  protected @NotNull HttpURLConnection open(final @NotNull URL url, final @Nullable Proxy proxy)
-      throws IOException {
-    return (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
-  }
-
-  @Override
-  public @NotNull TransportResult send(final @NotNull SentryEvent event) throws IOException {
-    final HttpURLConnection connection = createConnection(false);
-    TransportResult result;
-
-    try (final OutputStream outputStream = connection.getOutputStream();
-        final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
-
-      serializer.serialize(event, writer);
-    } catch (IOException e) {
-      logger.log(
-          ERROR, e, "An exception occurred while submitting the event to the Sentry server.");
-    } finally {
-      result =
-          readAndLog(connection, String.format("Event sent %s successfully.", event.getEventId()));
-    }
-    return result;
+  protected @NotNull HttpURLConnection open() throws IOException {
+    return (HttpURLConnection)
+        (proxy == null ? envelopeUrl.openConnection() : envelopeUrl.openConnection(proxy));
   }
 
   /**
@@ -235,19 +206,11 @@ public class HttpTransport implements ITransport {
   /**
    * Create a HttpURLConnection connection Sets specific content-type if its an envelope or not
    *
-   * @param asEnvelope if its an envelope or not
    * @return the HttpURLConnection
    * @throws IOException if connection has a problem
    */
-  private @NotNull HttpURLConnection createConnection(boolean asEnvelope) throws IOException {
-    String contentType = "application/json";
-    HttpURLConnection connection;
-    if (asEnvelope) {
-      connection = open(envelopeUrl, proxy);
-      contentType = "application/x-sentry-envelope";
-    } else {
-      connection = open(proxy);
-    }
+  private @NotNull HttpURLConnection createConnection() throws IOException {
+    HttpURLConnection connection = open();
     connectionConfigurator.configure(connection);
 
     connection.setRequestMethod("POST");
@@ -255,7 +218,7 @@ public class HttpTransport implements ITransport {
     connection.setChunkedStreamingMode(0);
 
     connection.setRequestProperty("Content-Encoding", "gzip");
-    connection.setRequestProperty("Content-Type", contentType);
+    connection.setRequestProperty("Content-Type", "application/x-sentry-envelope");
     connection.setRequestProperty("Accept", "application/json");
 
     // https://stackoverflow.com/questions/52726909/java-io-ioexception-unexpected-end-of-stream-on-connection/53089882
@@ -274,7 +237,7 @@ public class HttpTransport implements ITransport {
 
   @Override
   public @NotNull TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
-    final HttpURLConnection connection = createConnection(true);
+    final HttpURLConnection connection = createConnection();
     TransportResult result;
 
     try (final OutputStream outputStream = connection.getOutputStream();
@@ -286,7 +249,7 @@ public class HttpTransport implements ITransport {
       logger.log(
           ERROR, e, "An exception occurred while submitting the envelope to the Sentry server.");
     } finally {
-      result = readAndLog(connection, "Envelope sent successfully.");
+      result = readAndLog(connection);
     }
     return result;
   }
@@ -295,11 +258,9 @@ public class HttpTransport implements ITransport {
    * Read responde code, retry after header and its error stream if there are errors and log it
    *
    * @param connection the HttpURLConnection
-   * @param message the message, if custom message if its an event or envelope
    * @return TransportResult.success if responseCode is 200 or TransportResult.error otherwise
    */
-  private @NotNull TransportResult readAndLog(
-      final @NotNull HttpURLConnection connection, final @NotNull String message) {
+  private @NotNull TransportResult readAndLog(final @NotNull HttpURLConnection connection) {
     try {
       final int responseCode = connection.getResponseCode();
 
@@ -316,7 +277,7 @@ public class HttpTransport implements ITransport {
         return TransportResult.error(responseCode);
       }
 
-      logger.log(DEBUG, message);
+      logger.log(DEBUG, "Envelope sent successfully.");
 
       return TransportResult.success();
     } catch (IOException e) {
