@@ -5,11 +5,8 @@ import static io.sentry.core.SentryLevel.ERROR;
 import static io.sentry.core.SentryLevel.WARNING;
 import static java.lang.String.format;
 
-import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEvent;
-import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,7 +19,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -34,39 +30,19 @@ import org.jetbrains.annotations.NotNull;
  * configured directory.
  */
 @ApiStatus.Internal
-public final class DiskCache implements IEventCache {
+public final class DiskCache extends CacheStrategy implements IEventCache {
   /** File suffix added to all serialized event files. */
   public static final String FILE_SUFFIX = ".sentry-event";
 
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
-
-  private final File directory;
-  private final int maxSize;
-  private final ISerializer serializer;
-  private final SentryOptions options;
-
-  public DiskCache(SentryOptions options) {
-    Objects.requireNonNull(options.getCacheDirPath(), "Cache dir. path is required.");
-    this.directory = new File(options.getCacheDirPath());
-    this.maxSize = options.getCacheDirSize();
-    this.serializer = options.getSerializer();
-    this.options = options;
+  public DiskCache(final @NotNull SentryOptions options) {
+    super(options, options.getCacheDirPath(), options.getCacheDirSize());
   }
 
   @Override
-  public void store(SentryEvent event) {
-    if (getNumberOfStoredEvents() >= maxSize) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Disk cache full (respecting maxSize). Not storing event {}",
-              event);
-      return;
-    }
+  public void store(final @NotNull SentryEvent event) {
+    rotateCacheIfNeeded(allEventFiles());
 
-    File eventFile = getEventFile(event);
+    final File eventFile = getEventFile(event);
     if (eventFile.exists()) {
       options
           .getLogger()
@@ -92,8 +68,8 @@ public final class DiskCache implements IEventCache {
   }
 
   @Override
-  public void discard(SentryEvent event) {
-    File eventFile = getEventFile(event);
+  public void discard(final @NotNull SentryEvent event) {
+    final File eventFile = getEventFile(event);
     if (eventFile.exists()) {
       options
           .getLogger()
@@ -107,34 +83,17 @@ public final class DiskCache implements IEventCache {
     }
   }
 
-  private int getNumberOfStoredEvents() {
-    return allEventFiles().length;
-  }
-
-  private boolean isDirectoryValid() {
-    if (!directory.isDirectory() || !directory.canWrite() || !directory.canRead()) {
-      options
-          .getLogger()
-          .log(
-              ERROR,
-              "The directory for caching Sentry events is inaccessible.: %s",
-              directory.getAbsolutePath());
-      return false;
-    }
-    return true;
-  }
-
-  private File getEventFile(SentryEvent event) {
+  private @NotNull File getEventFile(final @NotNull SentryEvent event) {
     return new File(directory.getAbsolutePath(), event.getEventId().toString() + FILE_SUFFIX);
   }
 
   @Override
   public @NotNull Iterator<SentryEvent> iterator() {
-    File[] allCachedEvents = allEventFiles();
+    final File[] allCachedEvents = allEventFiles();
 
-    List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);
+    final List<SentryEvent> ret = new ArrayList<>(allCachedEvents.length);
 
-    for (File f : allCachedEvents) {
+    for (final File f : allCachedEvents) {
       try (final Reader reader =
           new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8))) {
 
@@ -159,10 +118,12 @@ public final class DiskCache implements IEventCache {
     return ret.iterator();
   }
 
-  private File[] allEventFiles() {
+  private @NotNull File[] allEventFiles() {
     if (isDirectoryValid()) {
-      // TODO: we need to order by oldest to the newest here
-      return directory.listFiles((__, fileName) -> fileName.endsWith(FILE_SUFFIX));
+      final File[] files = directory.listFiles((__, fileName) -> fileName.endsWith(FILE_SUFFIX));
+      if (files != null) {
+        return files;
+      }
     }
     return new File[] {};
   }

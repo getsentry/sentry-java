@@ -7,7 +7,6 @@ import static io.sentry.core.SentryLevel.WARNING;
 import static java.lang.String.format;
 
 import io.sentry.core.DateUtils;
-import io.sentry.core.ISerializer;
 import io.sentry.core.SentryEnvelope;
 import io.sentry.core.SentryEnvelopeItem;
 import io.sentry.core.SentryItemType;
@@ -33,7 +32,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -46,7 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SessionCache implements IEnvelopeCache {
+public final class SessionCache extends CacheStrategy implements IEnvelopeCache {
 
   /** File suffix added to all serialized envelopes files. */
   static final String SUFFIX_ENVELOPE_FILE = ".envelope";
@@ -55,37 +53,17 @@ public final class SessionCache implements IEnvelopeCache {
   static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
   static final String CRASH_MARKER_FILE = ".sentry-native/last_crash";
 
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
-
-  private final @NotNull File directory;
-  private final int maxSize;
-  private final @NotNull ISerializer serializer;
-  private final @NotNull SentryOptions options;
-
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
   public SessionCache(final @NotNull SentryOptions options) {
-    Objects.requireNonNull(options.getSessionsPath(), "sessions dir. path is required.");
-    this.directory = new File(options.getSessionsPath());
-    this.maxSize = options.getSessionsDirSize();
-    this.serializer = options.getSerializer();
-    this.options = options;
+    super(options, options.getSessionsPath(), options.getSessionsDirSize());
   }
 
   @Override
   public void store(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
-    if (getNumberOfStoredEnvelopes() >= maxSize) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Disk cache full (respecting maxSize). Not storing envelope {}",
-              envelope);
-      return;
-    }
+    rotateCacheIfNeeded(allEnvelopeFiles());
 
     final File currentSessionFile = getCurrentSessionFile();
 
@@ -185,7 +163,7 @@ public final class SessionCache implements IEnvelopeCache {
    * @param markerFile the marker file
    * @return the timestamp as Date
    */
-  private Date getTimestampFromCrashMarkerFile(final @NotNull File markerFile) {
+  private @Nullable Date getTimestampFromCrashMarkerFile(final @NotNull File markerFile) {
     try (final BufferedReader reader =
         new BufferedReader(new InputStreamReader(new FileInputStream(markerFile), UTF_8))) {
       final String timestamp = reader.readLine();
@@ -299,23 +277,6 @@ public final class SessionCache implements IEnvelopeCache {
     }
   }
 
-  private int getNumberOfStoredEnvelopes() {
-    return allEnvelopeFiles().length;
-  }
-
-  private boolean isDirectoryValid() {
-    if (!directory.isDirectory() || !directory.canWrite() || !directory.canRead()) {
-      options
-          .getLogger()
-          .log(
-              ERROR,
-              "The directory for caching Sentry envelopes is inaccessible.: %s",
-              directory.getAbsolutePath());
-      return false;
-    }
-    return true;
-  }
-
   /**
    * Returns the envelope's file path. If the envelope has no eventId header, it generates a random
    * file name to it.
@@ -378,7 +339,11 @@ public final class SessionCache implements IEnvelopeCache {
   private @NotNull File[] allEnvelopeFiles() {
     if (isDirectoryValid()) {
       // lets filter the session.json here
-      return directory.listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
+      final File[] files =
+          directory.listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
+      if (files != null) {
+        return files;
+      }
     }
     return new File[] {};
   }
