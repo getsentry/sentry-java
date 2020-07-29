@@ -45,6 +45,11 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, integrations contain ShutdownHookIntegration`() {
+        assertTrue(SentryOptions().integrations.any { it is ShutdownHookIntegration })
+    }
+
+    @Test
     fun `when options is initialized, default maxBreadcrumb is 100`() =
         assertEquals(100, SentryOptions().maxBreadcrumbs)
 
