@@ -1,14 +1,16 @@
 package io.sentry.core;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-final class SendFireAndForgetEventSender
+@ApiStatus.Internal
+public final class SendFireAndForgetEventSender
     implements SendCachedEventFireAndForgetIntegration.SendFireAndForgetFactory {
 
   private final @NotNull SendCachedEventFireAndForgetIntegration.SendFireAndForgetDirPath
       sendFireAndForgetDirPath;
 
-  SendFireAndForgetEventSender(
+  public SendFireAndForgetEventSender(
       final @NotNull SendCachedEventFireAndForgetIntegration.SendFireAndForgetDirPath
               sendFireAndForgetDirPath) {
     this.sendFireAndForgetDirPath = sendFireAndForgetDirPath;
