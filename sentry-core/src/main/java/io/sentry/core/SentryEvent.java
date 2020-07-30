@@ -218,6 +218,10 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     breadcrumbs.add(breadcrumb);
   }
 
+  public void addBreadcrumb(final @Nullable String message) {
+    this.addBreadcrumb(new Breadcrumb(message));
+  }
+
   Map<String, String> getTags() {
     return tags;
   }

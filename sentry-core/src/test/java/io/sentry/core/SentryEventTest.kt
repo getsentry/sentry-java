@@ -80,4 +80,11 @@ class SentryEventTest {
         event.exceptions = sentryExceptions
         assertFalse(event.isCrashed)
     }
+
+    @Test
+    fun `adds breadcrumb with string as a parameter`() {
+        val event = SentryEvent()
+        event.addBreadcrumb("breadcrumb")
+        assertEquals(1, event.breadcrumbs.filter { it.message == "breadcrumb" }.size)
+    }
 }
