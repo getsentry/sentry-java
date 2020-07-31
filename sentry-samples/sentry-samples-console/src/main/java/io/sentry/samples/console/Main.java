@@ -20,7 +20,6 @@ public class Main {
 
           // All events get assigned to the release. See more at https://docs.sentry.io/workflow/releases/
           options.setRelease("io.sentry.samples.console@3.0.0+1");
-          options.setSentryClientName("sentry.java/3.0.0");
 
           // Modifications to event before it goes out. Could replace the event altogether
           options.setBeforeSend(
