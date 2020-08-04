@@ -193,6 +193,8 @@ public final class SessionCache implements IEnvelopeCache {
       return DateUtils.getDateTime(timestamp);
     } catch (IOException e) {
       options.getLogger().log(ERROR, "Error reading the crash marker file.", e);
+    } catch (IllegalArgumentException e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Error converting the crash timestamp.");
     }
     return null;
   }

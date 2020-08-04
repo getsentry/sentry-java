@@ -18,7 +18,8 @@ public class Main {
           // your Sentry project/dashboard
           options.setDsn("https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954");
 
-          // All events get assigned to the release. See more at https://docs.sentry.io/workflow/releases/
+          // All events get assigned to the release. See more at
+          // https://docs.sentry.io/workflow/releases/
           options.setRelease("io.sentry.samples.console@3.0.0+1");
 
           // Modifications to event before it goes out. Could replace the event altogether
@@ -50,9 +51,13 @@ public class Main {
           options.setDebug(true);
           // To change the verbosity, use:
           // By default it's DEBUG.
-          options.setDiagnosticLevel(SentryLevel.ERROR); //  A good option to have SDK debug log in prod is to use only level ERROR here.
+          options.setDiagnosticLevel(
+              SentryLevel
+                  .ERROR); //  A good option to have SDK debug log in prod is to use only level
+          // ERROR here.
 
-          // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry UI:
+          // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
+          // UI:
           options.addInAppExclude("org.jboss");
         });
 
@@ -110,7 +115,8 @@ public class Main {
       Sentry.captureEvent(event, SentryLevel.DEBUG);
     }
 
-    // All events that have not been sent yet are being flushed on JVM exit. Events can be also flushed manually:
+    // All events that have not been sent yet are being flushed on JVM exit. Events can be also
+    // flushed manually:
     // Sentry.close();
   }
 

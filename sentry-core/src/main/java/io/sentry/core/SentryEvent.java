@@ -49,7 +49,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   }
 
   public SentryEvent() {
-    this(new SentryId(), DateUtils.getCurrentDateTime());
+    this(new SentryId(), DateUtils.getCurrentDateTimeOrNull());
   }
 
   @TestOnly

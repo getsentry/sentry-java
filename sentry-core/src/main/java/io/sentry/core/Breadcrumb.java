@@ -14,7 +14,7 @@ import org.jetbrains.annotations.TestOnly;
 public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
 
   /** A timestamp representing when the breadcrumb occurred. */
-  private final @NotNull Date timestamp;
+  private final @Nullable Date timestamp;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -39,13 +39,13 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param timestamp the timestamp
    */
-  Breadcrumb(final @NotNull Date timestamp) {
+  Breadcrumb(final @Nullable Date timestamp) {
     this.timestamp = timestamp;
   }
 
   /** Breadcrumb ctor */
   public Breadcrumb() {
-    this(DateUtils.getCurrentDateTime());
+    this(DateUtils.getCurrentDateTimeOrNull());
   }
 
   /**
