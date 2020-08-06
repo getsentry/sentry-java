@@ -2,11 +2,12 @@ package io.sentry.core
 
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.CompletableFuture
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-
 class SentryTest {
 
     @BeforeTest
@@ -79,6 +80,30 @@ class SentryTest {
         }
 
         assertTrue(sentryOptions!!.serializer is GsonSerializer)
+    }
+
+    @Test
+    fun `scope changes are isolated to a thread`() {
+        Sentry.init {
+            it.dsn = "http://key@localhost/proj"
+        }
+        Sentry.configureScope {
+            it.setTag("a", "a")
+        }
+
+        CompletableFuture.runAsync {
+            Sentry.configureScope {
+                it.setTag("b", "b")
+            }
+
+            Sentry.configureScope {
+                assertEquals(setOf("a", "b"), it.tags.keys)
+            }
+        }.get()
+
+        Sentry.configureScope {
+            assertEquals(setOf("a"), it.tags.keys)
+        }
     }
 
     private fun getTempPath(): String {
