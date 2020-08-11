@@ -1,10 +1,14 @@
 package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
+import io.sentry.core.util.CollectionUtils;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
-public final class Gpu implements IUnknownPropertiesConsumer {
+public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "gpu";
 
   private String name;
@@ -92,9 +96,29 @@ public final class Gpu implements IUnknownPropertiesConsumer {
     this.npotSupport = npotSupport;
   }
 
+  @TestOnly
+  Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
-    this.unknown = unknown;
+    this.unknown = new ConcurrentHashMap<>(unknown);
+  }
+
+  /**
+   * Clones a Gpu aka deep copy
+   *
+   * @return the cloned Gpu
+   * @throws CloneNotSupportedException if object is not cloneable
+   */
+  @Override
+  public @NotNull Gpu clone() throws CloneNotSupportedException {
+    final Gpu clone = (Gpu) super.clone();
+
+    clone.unknown = CollectionUtils.shallowCopy(unknown);
+
+    return clone;
   }
 }

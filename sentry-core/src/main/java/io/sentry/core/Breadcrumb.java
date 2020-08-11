@@ -1,7 +1,7 @@
 package io.sentry.core;
 
+import io.sentry.core.util.CollectionUtils;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -188,7 +188,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(@Nullable Map<String, Object> unknown) {
-    this.unknown = unknown;
+    this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
   /**
@@ -212,35 +212,8 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   public @NotNull Breadcrumb clone() throws CloneNotSupportedException {
     final Breadcrumb clone = (Breadcrumb) super.clone();
 
-    final Map<String, Object> dataRef = data;
-    if (dataRef != null) {
-      final Map<String, Object> dataClone = new ConcurrentHashMap<>();
-
-      for (Map.Entry<String, Object> item : dataRef.entrySet()) {
-        if (item != null) {
-          dataClone.put(item.getKey(), item.getValue()); // shallow copy
-        }
-      }
-
-      clone.data = dataClone;
-    } else {
-      clone.data = null;
-    }
-
-    final Map<String, Object> unknownRef = unknown;
-    if (unknownRef != null) {
-      final Map<String, Object> unknownClone = new HashMap<>();
-
-      for (Map.Entry<String, Object> item : unknownRef.entrySet()) {
-        if (item != null) {
-          unknownClone.put(item.getKey(), item.getValue()); // shallow copy
-        }
-      }
-
-      clone.unknown = unknownClone;
-    } else {
-      clone.unknown = null;
-    }
+    clone.data = CollectionUtils.shallowCopy(data);
+    clone.unknown = CollectionUtils.shallowCopy(unknown);
 
     final SentryLevel levelRef = level;
     clone.level =

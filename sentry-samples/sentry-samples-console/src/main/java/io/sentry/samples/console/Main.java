@@ -1,5 +1,7 @@
 package io.sentry.samples.console;
 
+import java.util.Collections;
+
 import io.sentry.core.Breadcrumb;
 import io.sentry.core.EventProcessor;
 import io.sentry.core.Sentry;
@@ -7,7 +9,6 @@ import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.protocol.Message;
 import io.sentry.core.protocol.User;
-import java.util.Collections;
 
 public class Main {
 

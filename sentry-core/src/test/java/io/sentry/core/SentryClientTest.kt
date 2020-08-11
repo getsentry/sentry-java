@@ -626,6 +626,35 @@ class SentryClientTest {
         }
     }
 
+    @Test
+    fun `when context property is missing on the event, property from scope contexts is applied`() {
+        val sut = fixture.getSut()
+
+        val event = SentryEvent()
+        val scope = Scope(fixture.sentryOptions)
+        scope.setContexts("key", "value")
+        scope.startSession().current
+        sut.captureEvent(event, scope, null)
+        verify(fixture.connection).send(check<SentryEvent>() {
+            assertEquals("value", it.contexts["key"])
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `when contexts property is set on the event, property from scope contexts is not applied`() {
+        val sut = fixture.getSut()
+
+        val event = SentryEvent()
+        event.contexts.put("key", "event value")
+        val scope = Scope(fixture.sentryOptions)
+        scope.setContexts("key", "scope value")
+        scope.startSession().current
+        sut.captureEvent(event, scope, null)
+        verify(fixture.connection).send(check<SentryEvent>() {
+            assertEquals("event value", it.contexts["key"])
+        }, anyOrNull())
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {

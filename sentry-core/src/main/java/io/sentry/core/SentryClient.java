@@ -258,6 +258,17 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
+      try {
+        for (Map.Entry<String, Object> entry : scope.getContexts().clone().entrySet()) {
+          if (!event.getContexts().containsKey(entry.getKey())) {
+            event.getContexts().put(entry.getKey(), entry.getValue());
+          }
+        }
+      } catch (CloneNotSupportedException e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "An error has occurred when cloning Contexts", e);
+      }
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
         event.setLevel(scope.getLevel());
