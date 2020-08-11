@@ -1,8 +1,8 @@
 package io.sentry.core;
 
+import io.sentry.core.protocol.Contexts;
 import io.sentry.core.protocol.User;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +49,9 @@ public final class Scope implements Cloneable {
 
   /** Session lock, Ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
+
+  /** Scope's contexts */
+  private @NotNull Contexts contexts = new Contexts();
 
   /**
    * Scope's ctor
@@ -125,7 +128,7 @@ public final class Scope implements Cloneable {
   }
 
   /**
-   * Sets the Scoope's fingerprint list
+   * Sets the Scope's fingerprint list
    *
    * @param fingerprint the fingerprint list
    */
@@ -279,6 +282,25 @@ public final class Scope implements Cloneable {
   }
 
   /**
+   * Returns the Scope's contexts
+   *
+   * @return the contexts
+   */
+  public @NotNull Contexts getContexts() {
+    return contexts;
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull Object value) {
+    this.contexts.put(key, value);
+  }
+
+  /**
    * Creates a breadcrumb list with the max number of breadcrumbs
    *
    * @param maxBreadcrumb the max number of breadcrumbs
@@ -332,7 +354,7 @@ public final class Scope implements Cloneable {
 
     final Map<String, Object> extraRef = extra;
 
-    Map<String, Object> extraClone = new HashMap<>();
+    Map<String, Object> extraClone = new ConcurrentHashMap<>();
 
     for (Map.Entry<String, Object> item : extraRef.entrySet()) {
       if (item != null) {
@@ -341,6 +363,8 @@ public final class Scope implements Cloneable {
     }
 
     clone.extra = extraClone;
+
+    clone.contexts = contexts.clone();
 
     return clone;
   }

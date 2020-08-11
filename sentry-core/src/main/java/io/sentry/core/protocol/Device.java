@@ -1,12 +1,16 @@
 package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
+import io.sentry.core.util.CollectionUtils;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
-public final class Device implements IUnknownPropertiesConsumer {
+public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "device";
 
   private String name;
@@ -343,9 +347,35 @@ public final class Device implements IUnknownPropertiesConsumer {
     LANDSCAPE
   }
 
+  @TestOnly
+  Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
-    this.unknown = unknown;
+    this.unknown = new ConcurrentHashMap<>(unknown);
+  }
+
+  /**
+   * Clones a Device aka deep copy
+   *
+   * @return the cloned Device
+   * @throws CloneNotSupportedException if object is not cloneable
+   */
+  @Override
+  public @NotNull Device clone() throws CloneNotSupportedException {
+    final Device clone = (Device) super.clone();
+
+    final String[] archsRef = this.archs;
+    clone.archs = archsRef != null ? this.archs.clone() : null;
+
+    final TimeZone timezoneRef = this.timezone;
+    clone.timezone = timezoneRef != null ? (TimeZone) this.timezone.clone() : null;
+
+    clone.unknown = CollectionUtils.shallowCopy(unknown);
+
+    return clone;
   }
 }

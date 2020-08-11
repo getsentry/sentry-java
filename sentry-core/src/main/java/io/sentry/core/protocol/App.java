@@ -1,11 +1,15 @@
 package io.sentry.core.protocol;
 
 import io.sentry.core.IUnknownPropertiesConsumer;
+import io.sentry.core.util.CollectionUtils;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
-public final class App implements IUnknownPropertiesConsumer {
+public final class App implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "app";
 
   private String appIdentifier;
@@ -77,9 +81,29 @@ public final class App implements IUnknownPropertiesConsumer {
     this.appBuild = appBuild;
   }
 
+  @TestOnly
+  Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
-    this.unknown = unknown;
+    this.unknown = new ConcurrentHashMap<>(unknown);
+  }
+
+  /**
+   * Clones an App aka deep copy
+   *
+   * @return the cloned App
+   * @throws CloneNotSupportedException if object is not cloneable
+   */
+  @Override
+  public @NotNull App clone() throws CloneNotSupportedException {
+    final App clone = (App) super.clone();
+
+    clone.unknown = CollectionUtils.shallowCopy(unknown);
+
+    return clone;
   }
 }

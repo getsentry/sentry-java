@@ -124,4 +124,28 @@ class SentryOptionsTest {
         val options = SentryOptions()
         assertNotNull(options.executorService)
     }
+
+    @Test
+    fun `init should set SdkVersion`() {
+        val sentryOptions = SentryOptions()
+        assertNotNull(sentryOptions.sdkVersion)
+        val sdkVersion = sentryOptions.sdkVersion!!
+
+        assertEquals(BuildConfig.SENTRY_JAVA_SDK_NAME, sdkVersion.name)
+        assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
+
+        assertTrue(sdkVersion.packages!!.any {
+            it.name == "maven:sentry-core" &&
+            it.version == BuildConfig.VERSION_NAME
+        })
+    }
+
+    @Test
+    fun `init should set clientName`() {
+        val sentryOptions = SentryOptions()
+
+        val clientName = "${BuildConfig.SENTRY_JAVA_SDK_NAME}/${BuildConfig.VERSION_NAME}"
+
+        assertEquals(clientName, sentryOptions.sentryClientName)
+    }
 }

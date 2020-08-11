@@ -1,8 +1,10 @@
 package io.sentry.core.protocol;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> {
+public final class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
   private static final long serialVersionUID = 252445813254943011L;
 
   private <T> T toContextType(String key, Class<T> clazz) {
@@ -56,5 +58,34 @@ public final class Contexts extends ConcurrentHashMap<String, Object> {
 
   public void setGpu(Gpu gpu) {
     this.put(Gpu.TYPE, gpu);
+  }
+
+  @Override
+  public @NotNull Contexts clone() throws CloneNotSupportedException {
+    final Contexts clone = new Contexts();
+
+    for (Map.Entry<String, Object> entry : entrySet()) {
+      if (entry != null) {
+        Object value = entry.getValue();
+        if (App.TYPE.equals(entry.getKey()) && value instanceof App) {
+          clone.setApp(((App) value).clone());
+        } else if (Browser.TYPE.equals(entry.getKey()) && value instanceof Browser) {
+          clone.setBrowser(((Browser) value).clone());
+        } else if (Device.TYPE.equals(entry.getKey()) && value instanceof Device) {
+          clone.setDevice(((Device) value).clone());
+        } else if (OperatingSystem.TYPE.equals(entry.getKey())
+            && value instanceof OperatingSystem) {
+          clone.setOperatingSystem(((OperatingSystem) value).clone());
+        } else if (SentryRuntime.TYPE.equals(entry.getKey()) && value instanceof SentryRuntime) {
+          clone.setRuntime(((SentryRuntime) value).clone());
+        } else if (Gpu.TYPE.equals(entry.getKey()) && value instanceof Gpu) {
+          clone.setGpu(((Gpu) value).clone());
+        } else {
+          clone.put(entry.getKey(), value);
+        }
+      }
+    }
+
+    return clone;
   }
 }

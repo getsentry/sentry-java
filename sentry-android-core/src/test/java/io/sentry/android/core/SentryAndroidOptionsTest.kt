@@ -11,7 +11,7 @@ class SentryAndroidOptionsTest {
     fun `init should set clientName`() {
         val sentryOptions = SentryAndroidOptions()
 
-        val clientName = "${BuildConfig.SENTRY_CLIENT_NAME}/${BuildConfig.VERSION_NAME}"
+        val clientName = "${BuildConfig.SENTRY_ANDROID_SDK_NAME}/${BuildConfig.VERSION_NAME}"
 
         assertEquals(clientName, sentryOptions.sentryClientName)
     }
@@ -22,16 +22,16 @@ class SentryAndroidOptionsTest {
         assertNotNull(sentryOptions.sdkVersion)
         val sdkVersion = sentryOptions.sdkVersion!!
 
-        assertEquals(BuildConfig.SENTRY_CLIENT_NAME, sdkVersion.name)
+        assertEquals(BuildConfig.SENTRY_ANDROID_SDK_NAME, sdkVersion.name)
         assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
 
         assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:sentry-android-core"
+            it.name == "maven:sentry-android-core" &&
             it.version == BuildConfig.VERSION_NAME
         })
 
         assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:sentry-core"
+            it.name == "maven:sentry-core" &&
             it.version == BuildConfig.VERSION_NAME
         })
     }

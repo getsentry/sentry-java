@@ -69,7 +69,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String EMULATOR = "emulator";
 
   // it could also be a parameter and get from Sentry.init(...)
-  private static final Date appStartTime = DateUtils.getCurrentDateTime();
+  private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTimeOrNull();
 
   @TestOnly final Context context;
 
@@ -397,10 +397,15 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("JdkObsolete")
-  private @NotNull Date getBootTime() {
-    // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
-    return DateUtils.getDateTime(
-        new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime()));
+  private @Nullable Date getBootTime() {
+    try {
+      // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
+      return DateUtils.getDateTime(
+          new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime()));
+    } catch (IllegalArgumentException e) {
+      logger.log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
+    }
+    return null;
   }
 
   private @NotNull String getResolution(final @NotNull DisplayMetrics displayMetrics) {

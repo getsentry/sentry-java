@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SessionAdapter extends TypeAdapter<Session> {
@@ -133,7 +134,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
           init = reader.nextBoolean();
           break;
         case "started":
-          started = DateUtils.getDateTime(reader.nextString());
+          started = converTimeStamp(reader.nextString(), "started");
           break;
         case "status":
           status = Session.State.valueOf(StringUtils.capitalize(reader.nextString()));
@@ -148,7 +149,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
           duration = reader.nextDouble();
           break;
         case "timestamp":
-          timestamp = DateUtils.getDateTime(reader.nextString());
+          timestamp = converTimeStamp(reader.nextString(), "timestamp");
           break;
         case "attrs":
           {
@@ -202,5 +203,15 @@ public final class SessionAdapter extends TypeAdapter<Session> {
         userAgent,
         environment,
         release);
+  }
+
+  private @Nullable Date converTimeStamp(
+      final @NotNull String timestamp, final @NotNull String field) {
+    try {
+      return DateUtils.getDateTime(timestamp);
+    } catch (IllegalArgumentException e) {
+      logger.log(SentryLevel.ERROR, e, "Error converting session (%s) field.", field);
+    }
+    return null;
   }
 }

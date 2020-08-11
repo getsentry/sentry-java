@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Utilities to deal with dates */
 @ApiStatus.Internal
@@ -26,7 +27,7 @@ public final class DateUtils {
    */
   public static @NotNull String getTimestampIsoFormat(final @NotNull Date date) {
     final TimeZone tz = TimeZone.getTimeZone(UTC);
-    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
+    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
     df.setTimeZone(tz);
     return df.format(date);
   }
@@ -37,9 +38,23 @@ public final class DateUtils {
    * @return the ISO UTC date and time
    */
   @SuppressWarnings("JdkObsolete")
-  public static @NotNull Date getCurrentDateTime() {
+  public static @NotNull Date getCurrentDateTime() throws IllegalArgumentException {
     final String timestampIsoFormat = getTimestampIsoFormat(new Date());
     return getDateTime(timestampIsoFormat);
+  }
+
+  /**
+   * Get the current date and time as ISO UTC or null if not available
+   *
+   * @return the ISO UTC date and time or null
+   */
+  public static @Nullable Date getCurrentDateTimeOrNull() throws IllegalArgumentException {
+    try {
+      return getCurrentDateTime();
+    } catch (IllegalArgumentException ignored) {
+      // error getting current device's timestamp due to eg locale problems
+    }
+    return null;
   }
 
   /**
@@ -51,11 +66,11 @@ public final class DateUtils {
   public static @NotNull Date getDateTime(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
-      return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US).parse(timestamp);
+      return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT).parse(timestamp);
     } catch (ParseException e) {
       try {
         // to keep compatibility with older envelopes
-        return new SimpleDateFormat(ISO_FORMAT, Locale.US).parse(timestamp);
+        return new SimpleDateFormat(ISO_FORMAT, Locale.ROOT).parse(timestamp);
       } catch (ParseException ignored) {
         // invalid timestamp format
       }
@@ -90,7 +105,7 @@ public final class DateUtils {
    * @return the ISO formatted date with millis precision.
    */
   public static @NotNull String getTimestamp(final @NotNull Date date) {
-    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.US);
+    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
     return df.format(date);
   }
 
@@ -100,7 +115,8 @@ public final class DateUtils {
    * @param date the Date with local timezone
    * @return the Date UTC timezone
    */
-  public static @NotNull Date getDateTime(final @NotNull Date date) {
+  public static @NotNull Date getDateTime(final @NotNull Date date)
+      throws IllegalArgumentException {
     final String timestampIsoFormat = getTimestampIsoFormat(date);
     return getDateTime(timestampIsoFormat);
   }
