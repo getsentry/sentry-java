@@ -3,6 +3,7 @@ package io.sentry.core
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.core.hints.ApplyScopeData
 import io.sentry.core.hints.Cached
+import io.sentry.core.protocol.SdkVersion
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,6 +20,10 @@ class MainEventProcessorTest {
             environment = "environment"
             dist = "dist"
             serverName = "server"
+            sdkVersion = SdkVersion().apply {
+                name = "test"
+                version = "1.2.3"
+            }
         }
         fun getSut(attachThreads: Boolean = true): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
@@ -143,6 +148,16 @@ class MainEventProcessorTest {
         event = sut.process(event, null)
 
         assertNotNull(event.threads)
+    }
+
+    @Test
+    fun `sets sdkVersion in the event`() {
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        sut.process(event, null)
+        assertNotNull(event.sdk)
+        assertEquals(event.sdk.name, "test")
+        assertEquals(event.sdk.version, "1.2.3")
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {
