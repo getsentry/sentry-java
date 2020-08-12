@@ -75,6 +75,8 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
     if (dist != NULL) {
         sentry_options_set_dist(options, (*env)->GetStringUTFChars(env, dist, 0));
     }
+    // session tracking is enabled by default, but the Android SDK already handles it
+    sentry_options_set_auto_session_tracking(options, 0);
 
     sentry_init(options);
 }
