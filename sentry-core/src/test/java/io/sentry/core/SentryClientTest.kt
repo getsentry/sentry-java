@@ -413,7 +413,7 @@ class SentryClientTest {
         SentryClient(sentryOptions, connection)
 
         assertNotNull(sentryOptions.transportGate)
-        assertTrue(sentryOptions.transportGate!!.isConnected)
+        assertTrue(sentryOptions.transportGate.isConnected)
     }
 
     @Test

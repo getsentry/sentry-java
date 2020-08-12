@@ -37,19 +37,19 @@ class SendCachedEventFireAndForgetIntegrationTest {
 
     @Test
     fun `path is invalid if it is null`() {
-        val sut = fixture.getSut()
+        fixture.getSut()
         assertFalse(fixture.callback.hasValidPath(null, fixture.logger))
     }
 
     @Test
     fun `path is invalid if it is empty`() {
-        val sut = fixture.getSut()
+        fixture.getSut()
         assertFalse(fixture.callback.hasValidPath("", fixture.logger))
     }
 
     @Test
     fun `path is valid if not null or empty`() {
-        val sut = fixture.getSut()
+        fixture.getSut()
         assertFalse(fixture.callback.hasValidPath("cache", fixture.logger))
     }
 

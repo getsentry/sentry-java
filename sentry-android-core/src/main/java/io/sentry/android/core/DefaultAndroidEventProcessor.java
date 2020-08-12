@@ -27,7 +27,6 @@ import io.sentry.core.EventProcessor;
 import io.sentry.core.ILogger;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryLevel;
-import io.sentry.core.SentryOptions;
 import io.sentry.core.protocol.App;
 import io.sentry.core.protocol.DebugImage;
 import io.sentry.core.protocol.DebugMeta;
@@ -73,8 +72,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly final Context context;
 
-  private final SentryOptions options;
-
   @TestOnly final Future<Map<String, Object>> contextData;
 
   private final @NotNull IBuildInfoProvider buildInfoProvider;
@@ -84,23 +81,18 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
-      final @NotNull SentryOptions options,
+      final @NotNull ILogger logger,
       final @NotNull IBuildInfoProvider buildInfoProvider) {
-    this(
-        context,
-        options,
-        buildInfoProvider,
-        new RootChecker(context, buildInfoProvider, options.getLogger()));
+    this(context, logger, buildInfoProvider, new RootChecker(context, buildInfoProvider, logger));
   }
 
   DefaultAndroidEventProcessor(
       final @NotNull Context context,
-      final @NotNull SentryOptions options,
+      final @NotNull ILogger logger,
       final @NotNull IBuildInfoProvider buildInfoProvider,
       final @NotNull RootChecker rootChecker) {
     this.context = Objects.requireNonNull(context, "The application context is required.");
-    this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
-    this.logger = Objects.requireNonNull(options.getLogger(), "The Logger is required.");
+    this.logger = Objects.requireNonNull(logger, "The Logger is required.");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.rootChecker = Objects.requireNonNull(rootChecker, "The RootChecker is required.");
@@ -173,9 +165,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     if (event.getDebugMeta() == null) {
       event.setDebugMeta(getDebugMeta());
-    }
-    if (event.getSdk() == null) {
-      event.setSdk(options.getSdkVersion());
     }
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
