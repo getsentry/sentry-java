@@ -5,6 +5,8 @@ object Config {
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:4.0.1"
         val kotlinGradlePlugin = "gradle-plugin"
+        val buildConfig = "com.github.gmazzo.buildconfig"
+        val buildConfigVersion = "2.0.2"
     }
 
     object Android {
@@ -58,7 +60,8 @@ object Config {
     }
 
     object Sentry {
-        val SENTRY_CLIENT_NAME = "sentry.java.android"
+        val SENTRY_JAVA_SDK_NAME = "sentry.java"
+        val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val website = "https://sentry.io"
@@ -80,7 +83,7 @@ object Config {
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val jetbrainsAnnotations = "org.jetbrains:annotations:19.0.0"
+        val jetbrainsAnnotations = "org.jetbrains:annotations:20.0.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.4.0"

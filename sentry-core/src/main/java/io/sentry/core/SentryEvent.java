@@ -49,7 +49,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   }
 
   public SentryEvent() {
-    this(new SentryId(), DateUtils.getCurrentDateTime());
+    this(new SentryId(), DateUtils.getCurrentDateTimeOrNull());
   }
 
   @TestOnly
@@ -216,6 +216,10 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
       breadcrumbs = new ArrayList<>();
     }
     breadcrumbs.add(breadcrumb);
+  }
+
+  public void addBreadcrumb(final @Nullable String message) {
+    this.addBreadcrumb(new Breadcrumb(message));
   }
 
   Map<String, String> getTags() {

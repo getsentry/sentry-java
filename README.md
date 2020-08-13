@@ -5,7 +5,7 @@
   <br />
 </p>
 
-Android SDK for Sentry
+Sentry SDK for Android
 ===========
 [![Travis](https://img.shields.io/travis/getsentry/sentry-android?label=Travis)](https://travis-ci.com/getsentry/sentry-android)
 [![AppVeyor](https://img.shields.io/appveyor/build/sentry/sentry-android?label=AppVeyor)](https://ci.appveyor.com/project/sentry/sentry-android/branch/master)

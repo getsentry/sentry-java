@@ -5,5 +5,6 @@ include("sentry-android",
         "sentry-android-ndk",
         "sentry-android-core",
         "sentry-core",
-        "sentry-sample",
+        "sentry-samples:sentry-samples-android",
+        "sentry-samples:sentry-samples-console",
         "sentry-android-timber")

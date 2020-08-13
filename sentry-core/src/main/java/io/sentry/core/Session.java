@@ -95,8 +95,8 @@ public final class Session {
       final @NotNull String release) {
     this(
         State.Ok,
-        DateUtils.getCurrentDateTime(),
-        DateUtils.getCurrentDateTime(),
+        DateUtils.getCurrentDateTimeOrNull(),
+        DateUtils.getCurrentDateTimeOrNull(),
         0,
         distinctId,
         UUID.randomUUID(),
@@ -166,7 +166,7 @@ public final class Session {
 
   /** Ends a session and update its values */
   public void end() {
-    end(DateUtils.getCurrentDateTime());
+    end(DateUtils.getCurrentDateTimeOrNull());
   }
 
   /**
@@ -186,11 +186,13 @@ public final class Session {
       if (timestamp != null) {
         this.timestamp = timestamp;
       } else {
-        this.timestamp = DateUtils.getCurrentDateTime();
+        this.timestamp = DateUtils.getCurrentDateTimeOrNull();
       }
 
-      duration = calculateDurationTime(this.timestamp);
-      sequence = getSequenceTimestamp(this.timestamp);
+      if (this.timestamp != null) {
+        duration = calculateDurationTime(this.timestamp);
+        sequence = getSequenceTimestamp(this.timestamp);
+      }
     }
   }
 
@@ -234,8 +236,10 @@ public final class Session {
 
       if (sessionHasBeenUpdated) {
         init = null;
-        timestamp = DateUtils.getCurrentDateTime();
-        sequence = getSequenceTimestamp(timestamp);
+        timestamp = DateUtils.getCurrentDateTimeOrNull();
+        if (timestamp != null) {
+          sequence = getSequenceTimestamp(timestamp);
+        }
       }
       return sessionHasBeenUpdated;
     }

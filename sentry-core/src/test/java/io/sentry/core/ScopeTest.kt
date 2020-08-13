@@ -49,6 +49,7 @@ class ScopeTest {
         assertNotNull(clone)
         assertNotSame(scope, clone)
         assertNotSame(scope.user, clone.user)
+        assertNotSame(scope.contexts, clone.contexts)
         assertNotSame(scope.fingerprint, clone.fingerprint)
         assertNotSame(scope.breadcrumbs, clone.breadcrumbs)
         assertNotSame(scope.tags, clone.tags)

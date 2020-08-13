@@ -77,6 +77,9 @@ public final class MainEventProcessor implements EventProcessor {
     if (event.getDist() == null) {
       event.setDist(options.getDist());
     }
+    if (event.getSdk() == null) {
+      event.setSdk(options.getSdkVersion());
+    }
 
     if (event.getThreads() == null && options.isAttachThreads()) {
       List<Long> mechanismThreadIds = null;
