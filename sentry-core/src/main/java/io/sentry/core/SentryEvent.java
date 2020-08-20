@@ -67,7 +67,8 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   }
 
   @Nullable
-  Throwable getThrowable() {
+  @ApiStatus.Internal
+  public Throwable getThrowable() {
     return throwable;
   }
 
