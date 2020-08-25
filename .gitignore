@@ -5,3 +5,6 @@ agent/.vscode/
 local.properties
 .idea
 *.iml
+.classpath
+.project
+.settings

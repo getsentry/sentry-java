@@ -5,9 +5,17 @@ import java.util.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+import org.junit.After;
 import org.junit.Test;
 
 public class DefaultSentryClientFactoryTest extends BaseTest {
+    
+    @After
+    public void after() {
+        System.clearProperty("sentry.tags");
+        System.clearProperty("sentry.properties.file");
+    }
+    
     @Test
     public void testFieldsFromDsn() throws Exception {
         String release = "rel";
@@ -55,5 +63,20 @@ public class DefaultSentryClientFactoryTest extends BaseTest {
         assertThat(sentryClient, is(notNullValue()));
         assertThat(sentryClient, isA(SentryClient.class));
         assertThat(sentryClient.getContext(), notNullValue());
+    }
+    
+    @Test
+    public void tagsAtMultipleLevel() {
+        System.setProperty("sentry.properties.file", "io/sentry/sentry-tagsAtMultipleLevel.properties");
+        System.setProperty("sentry.tags", "foo:system");
+        String dsnTags = "foo:dns,qux:baz";
+        String dsn =  String.format("https://user:pass@example.com/1?tags=%s", dsnTags);
+        SentryClient sentryClient = SentryClientFactory.sentryClient(dsn);
+        
+        Map<String, String> tagsMap = new HashMap<>();
+        tagsMap.put("foo", "system");
+        tagsMap.put("qux", "baz");
+        tagsMap.put("mode", "file");
+        assertThat(sentryClient.getTags(), is(tagsMap));
     }
 }

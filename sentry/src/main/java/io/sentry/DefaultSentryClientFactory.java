@@ -795,7 +795,13 @@ public class DefaultSentryClientFactory extends SentryClientFactory {
      * @return Additional tags to send with {@link io.sentry.event.Event}s.
      */
     protected Map<String, String> getTags(Dsn dsn) {
-        return Util.parseTags(lookup.get(TAGS_OPTION, dsn));
+        List<String> list = lookup.getAll(TAGS_OPTION, dsn);
+        ListIterator<String> it = list.listIterator(list.size());
+        Map<String, String> map = new HashMap<>();
+        while (it.hasPrevious()) {
+            map.putAll(Util.parseTags(it.previous()));
+        }
+        return map;
     }
 
     /**

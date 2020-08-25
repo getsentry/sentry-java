@@ -22,6 +22,7 @@ import io.sentry.config.provider.EnvironmentConfigurationProvider;
 import io.sentry.config.provider.JndiConfigurationProvider;
 import io.sentry.config.provider.JndiSupport;
 import io.sentry.config.provider.LocatorBasedConfigurationProvider;
+import io.sentry.config.provider.MultiConfigurationProvider;
 import io.sentry.config.provider.SystemPropertiesConfigurationProvider;
 import io.sentry.dsn.Dsn;
 import io.sentry.util.Nullable;
@@ -223,4 +224,36 @@ public final class Lookup {
 
         return val == null ? null : val.trim();
     }
+
+    /**
+     * Attempt to lookup a configuration key using either some internal means or from the DSN.
+     *
+     * @param key name of configuration key, e.g. "dsn"
+     * @param dsn an optional DSN to retrieve options from
+     * @return all values of configuration key, if found, otherwise an empty list
+     */
+    public List<String> getAll(String key, @Nullable Dsn dsn) {
+        List<String> result = new ArrayList<>();
+        addToList(result, highPriorityProvider, key);
+        if (dsn != null) {
+            String val = dsn.getOptions().get(key);
+            if (val != null) {
+                result.add(val);
+            }
+        }
+        addToList(result, lowPriorityProvider, key);
+        return result;
+    }
+
+    private void addToList(List<String> result, ConfigurationProvider provider, String key) {
+        if (provider instanceof MultiConfigurationProvider) {
+            result.addAll(((MultiConfigurationProvider) provider).getAllProperty(key));
+        } else {
+            String val = provider.getProperty(key);
+            if (val != null) {
+                result.add(val);
+            }
+        }
+    }
+
 }
