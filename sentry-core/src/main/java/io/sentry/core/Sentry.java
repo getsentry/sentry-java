@@ -133,11 +133,10 @@ public final class Sentry {
       final @NotNull SentryOptions options, final boolean globalHubMode) {
     if (isEnabled()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING,
-          "Sentry has been already initialized. Previous configuration will be overwritten."
-        );
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Sentry has been already initialized. Previous configuration will be overwritten.");
     }
 
     if (!initConfigurations(options)) {
