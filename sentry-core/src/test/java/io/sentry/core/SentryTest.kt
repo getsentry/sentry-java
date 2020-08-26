@@ -1,5 +1,8 @@
 package io.sentry.core
 
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
@@ -104,6 +107,20 @@ class SentryTest {
         Sentry.configureScope {
             assertEquals(setOf("a"), it.tags.keys)
         }
+    }
+
+    @Test
+    fun `warns about multiple Sentry initializations`() {
+        val logger = mock<ILogger>()
+        Sentry.init {
+            it.dsn = "http://key@localhost/proj"
+        }
+        Sentry.init {
+            it.dsn = "http://key@localhost/proj"
+            it.isDebug = true
+            it.setLogger(logger)
+        }
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
     }
 
     private fun getTempPath(): String {
