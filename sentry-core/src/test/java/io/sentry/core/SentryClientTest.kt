@@ -26,6 +26,7 @@ import io.sentry.core.transport.AsyncConnection
 import io.sentry.core.transport.HttpTransport
 import io.sentry.core.transport.ITransportGate
 import java.io.IOException
+import java.lang.RuntimeException
 import java.net.URL
 import java.util.UUID
 import kotlin.test.Ignore
@@ -653,6 +654,13 @@ class SentryClientTest {
         verify(fixture.connection).send(check<SentryEvent>() {
             assertEquals("event value", it.contexts["key"])
         }, anyOrNull())
+    }
+
+    @Test
+    fun `exception thrown by an event processor is handled gracefully`() {
+        fixture.sentryOptions.addEventProcessor { _, _ -> throw RuntimeException() }
+        val sut = fixture.getSut()
+        sut.captureEvent(SentryEvent())
     }
 
     private fun createScope(): Scope {

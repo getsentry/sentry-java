@@ -12,6 +12,7 @@ import io.sentry.core.util.Objects;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import org.jetbrains.annotations.ApiStatus;
@@ -78,19 +79,7 @@ public final class SentryClient implements ISentryClient {
           .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
-    for (EventProcessor processor : options.getEventProcessors()) {
-      event = processor.process(event, hint);
-
-      if (event == null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped by processor: %s",
-                processor.getClass().getName());
-        break;
-      }
-    }
+    event = processEvent(event, hint, options.getEventProcessors());
 
     if (event == null) {
       return SentryId.EMPTY_ID;
@@ -125,6 +114,37 @@ public final class SentryClient implements ISentryClient {
     }
 
     return event.getEventId();
+  }
+
+  @Nullable
+  private SentryEvent processEvent(
+      @NotNull SentryEvent event,
+      final @Nullable Object hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (EventProcessor processor : eventProcessors) {
+      try {
+        event = processor.process(event, hint);
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped by a processor: %s",
+                processor.getClass().getName());
+        break;
+      }
+    }
+    return event;
   }
 
   /**
@@ -274,19 +294,7 @@ public final class SentryClient implements ISentryClient {
         event.setLevel(scope.getLevel());
       }
 
-      for (EventProcessor processor : scope.getEventProcessors()) {
-        event = processor.process(event, hint);
-
-        if (event == null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Event was dropped by scope processor: %s",
-                  processor.getClass().getName());
-          break;
-        }
-      }
+      event = processEvent(event, hint, scope.getEventProcessors());
     }
     return event;
   }

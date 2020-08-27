@@ -7,6 +7,7 @@ import io.sentry.core.protocol.User;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -121,6 +122,16 @@ public final class Sentry {
     final SentryOptions options = new SentryOptions();
     optionsConfiguration.configure(options);
     init(options, globalHubMode);
+  }
+
+  /**
+   * Initializes the SDK with a SentryOptions.
+   *
+   * @param options options the SentryOptions
+   */
+  @ApiStatus.Internal
+  public static void init(final @NotNull SentryOptions options) {
+    init(options, GLOBAL_HUB_DEFAULT_MODE);
   }
 
   /**
