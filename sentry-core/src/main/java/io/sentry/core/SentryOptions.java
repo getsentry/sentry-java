@@ -48,7 +48,7 @@ public class SentryOptions {
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeoutMillis = 2000; // 2s
+  private long shutdownTimeout = 2000; // 2s
 
   /**
    * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
@@ -369,7 +369,7 @@ public class SentryOptions {
    * @return the timeout in Millis
    */
   public long getShutdownTimeout() {
-    return shutdownTimeoutMillis;
+    return shutdownTimeout;
   }
 
   /**
@@ -378,7 +378,7 @@ public class SentryOptions {
    * @param shutdownTimeoutMillis the shutdown timeout in millis
    */
   public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
+    this.shutdownTimeout = shutdownTimeoutMillis;
   }
 
   /**

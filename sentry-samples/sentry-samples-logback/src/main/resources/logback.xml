@@ -7,8 +7,10 @@
   </appender>
 
   <appender name="sentry" class="io.sentry.logback.SentryAppender">
-    <!-- NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
-    <dsn>https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954</dsn>
+    <options>
+      <!-- NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
+      <dsn>https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954</dsn>
+    </options>
 
     <!-- Optionally you can filter what statements are sent to Sentry independently from loggers configuration -->
 <!--    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->

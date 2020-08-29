@@ -9,22 +9,23 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryLevel
+import io.sentry.core.SentryOptions
 import io.sentry.core.transport.ITransport
 import io.sentry.core.transport.TransportResult
-import org.awaitility.kotlin.await
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.awaitility.kotlin.await
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 class SentryAppenderTest {
     private class Fixture {
@@ -36,7 +37,9 @@ class SentryAppenderTest {
             whenever(transport.send(any<SentryEvent>())).thenReturn(TransportResult.success())
 
             val appender = SentryAppender()
-            appender.setDsn("http://key@localhost/proj")
+            val options = SentryOptions()
+            options.dsn = "http://key@localhost/proj"
+            appender.setOptions(options)
             appender.context = loggerContext
             appender.setTransport(transport)
 
@@ -204,8 +207,8 @@ class SentryAppenderTest {
                 assertEquals(BuildConfig.VERSION_NAME, it.sdk.version)
                 assertNotNull(it.sdk.packages)
                 assertTrue(it.sdk.packages!!.any { pkg ->
-                    "maven:sentry-logback" == pkg.name
-                        && BuildConfig.VERSION_NAME == pkg.version
+                    "maven:sentry-logback" == pkg.name &&
+                        BuildConfig.VERSION_NAME == pkg.version
                 })
             })
         }

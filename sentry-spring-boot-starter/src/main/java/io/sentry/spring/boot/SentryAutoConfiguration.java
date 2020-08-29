@@ -23,13 +23,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 @Configuration
-@ConditionalOnProperty(name = "sentry.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "sentry.dsn")
 @Open
 public class SentryAutoConfiguration {
 
   /** Registers general purpose Sentry related beans. */
   @Configuration
-  @ConditionalOnProperty("sentry.dsn")
   @EnableConfigurationProperties(SentryProperties.class)
   @Open
   static class HubConfiguration {
@@ -55,34 +54,27 @@ public class SentryAutoConfiguration {
     }
 
     @Bean
-    public @NotNull SentryOptions sentryOptions(
+    public @NotNull IHub sentryHub(
         final @NotNull Sentry.OptionsConfiguration<SentryOptions> optionsConfiguration,
-        final @NotNull SentryProperties properties,
+        final @NotNull SentryProperties options,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
-      final SentryOptions options = new SentryOptions();
       optionsConfiguration.configure(options);
       gitProperties.ifAvailable(
           git -> {
-            if (properties.isUseGitCommitIdAsRelease()) {
+            if (options.getRelease() == null && options.isUseGitCommitIdAsRelease()) {
               options.setRelease(git.getCommitId());
             }
           });
-      properties.applyTo(options);
+
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
-      return options;
-    }
-
-    @Bean
-    public @NotNull IHub sentryHub(final @NotNull SentryOptions sentryOptions) {
-      Sentry.init(sentryOptions);
+      Sentry.init(options);
       return HubAdapter.getInstance();
     }
 
     /** Registers beans specific to Spring MVC. */
     @Configuration
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-    @ConditionalOnProperty("sentry.dsn")
     @Open
     static class SentryWebMvcConfiguration {
 

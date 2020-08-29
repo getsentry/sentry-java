@@ -21,7 +21,6 @@ import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.info.GitProperties
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
-import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -29,22 +28,11 @@ class SentryAutoConfigurationTest {
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
 
-    private val webContextRunner = WebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java))
-
     @Test
-    fun `hub is not created when auto-configuration is disabled`() {
-        contextRunner.withPropertyValues("sentry.enabled=false", "sentry.dsn=http://key@localhost/proj")
+    fun `hub is not created when auto-configuration dsn is not set`() {
+        contextRunner
             .run {
                 assertThat(it).doesNotHaveBean(IHub::class.java)
-            }
-    }
-
-    @Test
-    fun `hub is created when auto-configuration is enabled`() {
-        contextRunner.withPropertyValues("sentry.enabled=true", "sentry.dsn=http://key@localhost/proj")
-            .run {
-                assertThat(it).hasSingleBean(IHub::class.java)
             }
     }
 
@@ -53,14 +41,6 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).hasSingleBean(IHub::class.java)
-            }
-    }
-
-    @Test
-    fun `hub is not created when dsn is provided but sentry is disabled`() {
-        contextRunner.withPropertyValues("sentry.enabled=false", "sentry.dsn=http://key@localhost/proj")
-            .run {
-                assertThat(it).doesNotHaveBean(IHub::class.java)
             }
     }
 
@@ -87,7 +67,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj",
             "sentry.read-timeout-millis=10",
-            "sentry.shutdown-timeout-millis=20",
+            "sentry.shutdown-timeout=20",
             "sentry.flush-timeout-millis=30",
             "sentry.bypass-security=true",
             "sentry.debug=true",
