@@ -1,6 +1,7 @@
 package io.sentry.samples.spring;
 
 import io.sentry.core.IHub;
+import io.sentry.core.SentryOptions;
 import io.sentry.spring.boot.SentrySecurityFilter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
@@ -19,15 +20,19 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   private final @NotNull IHub hub;
+  private final @NotNull SentryOptions options;
 
-  public SecurityConfiguration(final @NotNull IHub hub) {
+  public SecurityConfiguration(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     this.hub = hub;
+    this.options = options;
   }
 
+  // this API is meant to be consumed by non-browser clients thus the CSRF protection is not needed.
   @Override
+  @SuppressWarnings("lgtm[java/spring-disabled-csrf-protection]")
   protected void configure(final @NotNull HttpSecurity http) throws Exception {
     // register SentrySecurityFilter to attach user information to SentryEvents
-    http.addFilterAfter(new SentrySecurityFilter(hub), AnonymousAuthenticationFilter.class)
+    http.addFilterAfter(new SentrySecurityFilter(hub, options), AnonymousAuthenticationFilter.class)
         .csrf()
         .disable()
         .authorizeRequests()

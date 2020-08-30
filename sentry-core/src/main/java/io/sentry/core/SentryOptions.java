@@ -210,6 +210,9 @@ public class SentryOptions {
   /** SdkVersion object that contains the Sentry Client Name and its version */
   private @Nullable SdkVersion sdkVersion;
 
+  /** whether to send personal identifiable information along with events */
+  private boolean sendDefaultPii = false;
+
   /**
    * Adds an event processor
    *
@@ -994,6 +997,14 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
     this.sdkVersion = sdkVersion;
+  }
+
+  public boolean isSendDefaultPii() {
+    return sendDefaultPii;
+  }
+
+  public void setSendDefaultPii(boolean sendDefaultPii) {
+    this.sendDefaultPii = sendDefaultPii;
   }
 
   /** The BeforeSend callback */

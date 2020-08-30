@@ -1,9 +1,13 @@
 package io.sentry.spring.boot
 
 import io.sentry.core.SentryEvent
+import io.sentry.core.SentryOptions
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -17,7 +21,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("some-header", "some-header value")
             .accept(MediaType.APPLICATION_JSON)
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -38,7 +42,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("another-header", "another value")
             .header("another-header", "another value2")
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -49,17 +53,59 @@ class SentryRequestHttpServletRequestProcessorTest {
     }
 
     @Test
-    fun `attaches cookies information`() {
+    fun `when sendDefaultPii is set to true, attaches cookies information`() {
         val request = MockMvcRequestBuilders
             .get(URI.create("http://example.com?param1=xyz"))
             .header("Cookie", "name=value")
             .header("Cookie", "name2=value2")
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+        val sentryOptions = SentryOptions()
+        sentryOptions.isSendDefaultPii = true
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
 
         assertEquals("name=value,name2=value2", event.request.cookies)
+    }
+
+    @Test
+    fun `when sendDefaultPii is set to false, does not attach cookies`() {
+        val request = MockMvcRequestBuilders
+            .get(URI.create("http://example.com?param1=xyz"))
+            .header("Cookie", "name=value")
+            .buildRequest(MockServletContext())
+        val sentryOptions = SentryOptions()
+        sentryOptions.isSendDefaultPii = false
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+        val event = SentryEvent()
+
+        eventProcessor.process(event, null)
+
+        assertNull(event.request.cookies)
+    }
+
+    @Test
+    fun `when sendDefaultPii is set to false, does not attach sensitive headers`() {
+        val request = MockMvcRequestBuilders
+            .get(URI.create("http://example.com?param1=xyz"))
+            .header("some-header", "some-header value")
+            .header("X-FORWARDED-FOR", "192.168.0.1")
+            .header("authorization", "Token")
+            .header("Authorization", "Token")
+            .header("Cookies", "some cookies")
+            .buildRequest(MockServletContext())
+        val sentryOptions = SentryOptions()
+        sentryOptions.isSendDefaultPii = false
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+        val event = SentryEvent()
+
+        eventProcessor.process(event, null)
+
+        assertFalse(event.request.headers.containsKey("X-FORWARDED-FOR"))
+        assertFalse(event.request.headers.containsKey("Authorization"))
+        assertFalse(event.request.headers.containsKey("authorization"))
+        assertFalse(event.request.headers.containsKey("Cookies"))
+        assertTrue(event.request.headers.containsKey("some-header"))
     }
 }

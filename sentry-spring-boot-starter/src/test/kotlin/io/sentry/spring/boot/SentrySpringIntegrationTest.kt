@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.IHub
 import io.sentry.core.Sentry
 import io.sentry.core.SentryEvent
+import io.sentry.core.SentryOptions
 import io.sentry.core.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -37,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true"]
 )
 class SentrySpringIntegrationTest {
 
@@ -97,11 +98,14 @@ class HelloController {
 }
 
 @Configuration
-open class SecurityConfiguration(private val hub: IHub) : WebSecurityConfigurerAdapter() {
+open class SecurityConfiguration(
+    private val hub: IHub,
+    private val options: SentryOptions
+) : WebSecurityConfigurerAdapter() {
 
     override fun configure(http: HttpSecurity) {
         http
-            .addFilterAfter(SentrySecurityFilter(hub), AnonymousAuthenticationFilter::class.java)
+            .addFilterAfter(SentrySecurityFilter(hub, options), AnonymousAuthenticationFilter::class.java)
             .csrf().disable()
             .authorizeRequests().anyRequest().authenticated()
             .and()

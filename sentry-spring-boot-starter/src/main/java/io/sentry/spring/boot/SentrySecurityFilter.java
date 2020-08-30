@@ -2,6 +2,7 @@ package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.IHub;
+import io.sentry.core.SentryOptions;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -17,9 +18,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Open
 public class SentrySecurityFilter extends OncePerRequestFilter {
   private final @NotNull IHub hub;
+  private final @NotNull SentryOptions options;
 
-  public SentrySecurityFilter(final @NotNull IHub hub) {
+  public SentrySecurityFilter(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     this.hub = hub;
+    this.options = options;
   }
 
   @Override
@@ -32,7 +35,7 @@ public class SentrySecurityFilter extends OncePerRequestFilter {
         scope ->
             scope.addEventProcessor(
                 new SentryUserHttpServletRequestProcessor(
-                    request.getUserPrincipal(), toIpAddress(request))));
+                    request.getUserPrincipal(), toIpAddress(request), options)));
     filterChain.doFilter(request, response);
   }
 

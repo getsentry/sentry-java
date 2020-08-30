@@ -80,9 +80,9 @@ public class SentryAutoConfiguration {
 
       @Bean
       public @NotNull FilterRegistrationBean<SentryRequestFilter> sentryRequestFilter(
-          final @NotNull IHub sentryHub) {
+          final @NotNull IHub sentryHub, final @NotNull SentryOptions sentryOptions) {
         FilterRegistrationBean<SentryRequestFilter> filterRegistrationBean =
-            new FilterRegistrationBean<>(new SentryRequestFilter(sentryHub));
+            new FilterRegistrationBean<>(new SentryRequestFilter(sentryHub, sentryOptions));
         filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return filterRegistrationBean;
       }
