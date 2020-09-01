@@ -169,8 +169,8 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
-  /** Whether to enable automatic session tracking. */
-  private boolean enableSessionTracking;
+  /** Whether to enable or disable automatic session tracking. */
+  private boolean enableSessionTracking = true;
 
   /**
    * The session tracking interval in millis. This is the interval to end a session if the App goes
