@@ -60,6 +60,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
    * @param loggingEvent the logback event
    * @return the sentry event
    */
+  // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
   final @NotNull SentryEvent createEvent(@NotNull ILoggingEvent loggingEvent) {
     final SentryEvent event =
