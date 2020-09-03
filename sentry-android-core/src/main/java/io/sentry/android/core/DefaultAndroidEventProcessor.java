@@ -14,13 +14,13 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.LocaleList;
-import android.os.Looper;
 import android.os.StatFs;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.android.core.util.ConnectivityChecker;
 import io.sentry.android.core.util.DeviceOrientations;
+import io.sentry.android.core.util.MainThreadChecker;
 import io.sentry.android.core.util.RootChecker;
 import io.sentry.core.DateUtils;
 import io.sentry.core.EventProcessor;
@@ -181,7 +181,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
-        thread.setCurrent(Looper.getMainLooper().getThread().getId() == thread.getId());
+        thread.setCurrent(MainThreadChecker.isMainThread(thread));
       }
     }
   }
