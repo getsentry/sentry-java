@@ -32,8 +32,8 @@ class DirectoryProcessorTest {
             options.setLogger(logger)
         }
 
-        fun getSut(): EnvelopeSender {
-            return EnvelopeSender(hub, envelopeReader, serializer, logger, 15000)
+        fun getSut(): OutboxSender {
+            return OutboxSender(hub, envelopeReader, serializer, logger, 15000)
         }
     }
 
@@ -55,11 +55,17 @@ class DirectoryProcessorTest {
     fun `process directory folder has a non ApplyScopeData hint`() {
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        val session = createSession()
-        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.fromSession(fixture.serializer, session, null))
-        whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
+//        val session = createSession()
+//        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.fromSession(fixture.serializer, session, null))
+//        whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
+        val event = SentryEvent()
+        val envelope = SentryEnvelope.fromEvent(fixture.serializer, event, null)
+
+        whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
+        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(event)
+
         fixture.getSut().processDirectory(file)
-        verify(fixture.hub).captureEnvelope(any(), argWhere { it !is ApplyScopeData })
+        verify(fixture.hub).captureEvent(any(), argWhere { it !is ApplyScopeData })
     }
 
     @Test

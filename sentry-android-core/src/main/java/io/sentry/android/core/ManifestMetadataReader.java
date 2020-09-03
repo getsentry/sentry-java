@@ -84,6 +84,7 @@ final class ManifestMetadataReader {
         options.setEnableSessionTracking(sessionTrackingEnabled);
 
         if (options.getSampleRate() == null) {
+          // TODO: it needs to read a Float I guess
           Double sampleRate = metadata.getDouble(SAMPLE_RATE, -1);
           options.getLogger().log(SentryLevel.DEBUG, "sampleRate read: %s", sampleRate);
           if (sampleRate != -1) {

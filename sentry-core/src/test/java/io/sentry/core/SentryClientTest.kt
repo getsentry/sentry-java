@@ -2,10 +2,8 @@ package io.sentry.core
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
@@ -15,8 +13,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.hints.ApplyScopeData
 import io.sentry.core.hints.Cached
 import io.sentry.core.hints.DiskFlushNotification
-import io.sentry.core.hints.SessionEndHint
-import io.sentry.core.hints.SessionUpdateHint
 import io.sentry.core.protocol.Mechanism
 import io.sentry.core.protocol.Request
 import io.sentry.core.protocol.SdkVersion
@@ -26,7 +22,9 @@ import io.sentry.core.protocol.User
 import io.sentry.core.transport.AsyncConnection
 import io.sentry.core.transport.HttpTransport
 import io.sentry.core.transport.ITransportGate
+import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.io.InputStreamReader
 import java.net.URL
 import java.util.UUID
 import kotlin.test.Ignore
@@ -48,8 +46,10 @@ class SentryClientTest {
                 name = "test"
                 version = "1.2.3"
             }
+            setSerializer(GsonSerializer(mock(), envelopeReader))
         }
         var connection: AsyncConnection = mock()
+
         fun getSut() = SentryClient(sentryOptions, connection)
     }
 
@@ -120,17 +120,22 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val event = SentryEvent()
         sut.captureEvent(event)
-        verify(fixture.connection, never()).send(event)
+        verify(fixture.connection, never()).send(any())
     }
 
     @Test
     fun `when beforeSend is returns new instance, new instance is sent`() {
-        val expected = SentryEvent()
+        val expected = SentryEvent().apply {
+            setTag("test", "test")
+        }
         fixture.sentryOptions.setBeforeSend { _, _ -> expected }
         val sut = fixture.getSut()
         val actual = SentryEvent()
         sut.captureEvent(actual)
-        verify(fixture.connection).send(eq(expected), isNull())
+        verify(fixture.connection).send(check {
+            val event = getEventFromData(it.items.first().data)
+            assertEquals("test", event.tags["test"])
+        }, anyOrNull())
         verifyNoMoreInteractions(fixture.connection)
     }
 
@@ -157,7 +162,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val expectedHint = Object()
         sut.captureEvent(event, expectedHint)
-        verify(fixture.connection).send(event, expectedHint)
+        verify(fixture.connection).send(any(), eq(expectedHint))
     }
 
     @Test
@@ -422,6 +427,7 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = createScope()
         val processor = mock<EventProcessor>()
+        whenever(processor.process(any(), anyOrNull())).thenReturn(event)
         scope.addEventProcessor(processor)
 
         val sut = fixture.getSut()
@@ -578,39 +584,6 @@ class SentryClientTest {
     }
 
     @Test
-    fun `When event comes from uncaughtException, captureSession should use SessionEndHint`() {
-        fixture.sentryOptions.release = "a@1+1"
-        val sut = fixture.getSut()
-
-        val event = SentryEvent().apply {
-            exceptions = createNonHandledException()
-        }
-        val scope = Scope(fixture.sentryOptions)
-        scope.startSession()
-        val hint = mock<DiskFlushNotificationHint>()
-        sut.captureEvent(event, scope, hint)
-        verify(fixture.connection).send(any<SentryEnvelope>(), argWhere {
-            it is SessionEndHint
-        })
-    }
-
-    @Test
-    fun `When event is not from uncaughtException, captureSession should use SessionUpdateHint`() {
-        fixture.sentryOptions.release = "a@1+1"
-        val sut = fixture.getSut()
-
-        val event = SentryEvent().apply {
-            exceptions = createNonHandledException()
-        }
-        val scope = Scope(fixture.sentryOptions)
-        scope.startSession()
-        sut.captureEvent(event, scope)
-        verify(fixture.connection).send(any<SentryEnvelope>(), argWhere {
-            it is SessionUpdateHint
-        })
-    }
-
-    @Test
     fun `when captureEvent with sampling, session is still updated`() {
         fixture.sentryOptions.sampleRate = 1.0
         val sut = fixture.getSut()
@@ -631,13 +604,13 @@ class SentryClientTest {
     fun `when context property is missing on the event, property from scope contexts is applied`() {
         val sut = fixture.getSut()
 
-        val event = SentryEvent()
         val scope = Scope(fixture.sentryOptions)
         scope.setContexts("key", "value")
         scope.startSession().current
-        sut.captureEvent(event, scope, null)
-        verify(fixture.connection).send(check<SentryEvent>() {
-            assertEquals("value", it.contexts["key"])
+        sut.captureEvent(SentryEvent(), scope, null)
+        verify(fixture.connection).send(check {
+            val event = getEventFromData(it.items.first().data)
+            assertEquals("value", event.contexts["key"])
         }, anyOrNull())
     }
 
@@ -651,8 +624,9 @@ class SentryClientTest {
         scope.setContexts("key", "scope value")
         scope.startSession().current
         sut.captureEvent(event, scope, null)
-        verify(fixture.connection).send(check<SentryEvent>() {
-            assertEquals("event value", it.contexts["key"])
+        verify(fixture.connection).send(check {
+            val eventFromData = getEventFromData(it.items.first().data)
+            assertEquals("event value", eventFromData.contexts["key"])
         }, anyOrNull())
     }
 
@@ -703,6 +677,11 @@ class SentryClientTest {
             }
         }
         return listOf(exception)
+    }
+
+    private fun getEventFromData(data: ByteArray): SentryEvent {
+        val inputStream = InputStreamReader(ByteArrayInputStream(data))
+        return fixture.sentryOptions.serializer.deserializeEvent(inputStream)
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
