@@ -57,13 +57,13 @@
         <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
 
         <!--    how to set a custom release-->
-        <!--    <meta-data android:name="io.sentry.release" android:value="io.sentry.sample@1.0.0+10001" />-->
+        <!--    <meta-data android:name="io.sentry.release" android:value="io.sentry.samples.android@1.1.0+2" />-->
 
         <!--    how to disable automatic session tracking-->
-        <meta-data android:name="io.sentry.session-tracking.enable" android:value="false" />
+        <!--    <meta-data android:name="io.sentry.session-tracking.enable" android:value="false" />-->
 
         <!--    how to set an environment-->
-        <!--    <meta-data android:name="io.sentry.environment" android:value="debug" />-->
+        <meta-data android:name="io.sentry.environment" android:value="${sentryEnvironment}" />
 
         <!--    how to change the session tracking interval-->
         <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="10000" />
