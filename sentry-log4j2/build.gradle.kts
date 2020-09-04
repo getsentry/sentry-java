@@ -44,7 +44,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.jacocoVersion
+    toolVersion = Config.QualityPlugins.Jacoco.version
 }
 
 tasks.jacocoTestReport {
@@ -57,7 +57,7 @@ tasks.jacocoTestReport {
 tasks {
     jacocoTestCoverageVerification {
         violationRules {
-            rule { limit { minimum = BigDecimal.valueOf(0.6) } }
+            rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } }
         }
     }
     check {
