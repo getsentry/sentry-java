@@ -18,31 +18,21 @@ final class SentryThreadFactory {
   private final @NotNull SentryStackTraceFactory sentryStackTraceFactory;
 
   /**
-   * When enabled, stack traces are automatically attached to all threads logged. Stack traces are
-   * always attached to exceptions but when this is set stack traces are also sent with threads
+   * the SentryOptions.
    */
-  private final boolean attachStacktrace;
+  private final @NotNull SentryOptions options;
 
   /**
    * ctor SentryThreadFactory that takes a SentryStackTraceFactory
    *
    * @param sentryStackTraceFactory the SentryStackTraceFactory
-   * @param attachStacktrace the attachStacktrace
+   * @param options the SentryOptions
    */
   public SentryThreadFactory(
-      final @NotNull SentryStackTraceFactory sentryStackTraceFactory, boolean attachStacktrace) {
+      final @NotNull SentryStackTraceFactory sentryStackTraceFactory, final @NotNull SentryOptions options) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
-    this.attachStacktrace = attachStacktrace;
-  }
-
-  /**
-   * ctor SentryThreadFactory that takes a SentryStackTraceFactory
-   *
-   * @param sentryStackTraceFactory the SentryStackTraceFactory
-   */
-  public SentryThreadFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
-    this(sentryStackTraceFactory, false);
+    this.options = Objects.requireNonNull(options, "The SentryOptions is required");
   }
 
   /**
@@ -120,7 +110,7 @@ final class SentryThreadFactory {
     final List<SentryStackFrame> frames =
         sentryStackTraceFactory.getStackFrames(stackFramesElements);
 
-    if (attachStacktrace && frames != null && frames.size() > 0) {
+    if (options.isAttachStacktrace() && frames != null && frames.size() > 0) {
       sentryThread.setStacktrace(new SentryStackTrace(frames));
     }
 

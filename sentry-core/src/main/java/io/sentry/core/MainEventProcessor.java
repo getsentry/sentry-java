@@ -23,7 +23,7 @@ public final class MainEventProcessor implements EventProcessor {
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
     sentryThreadFactory =
-        new SentryThreadFactory(sentryStackTraceFactory, this.options.isAttachStacktrace());
+        new SentryThreadFactory(sentryStackTraceFactory, this.options);
   }
 
   MainEventProcessor(
