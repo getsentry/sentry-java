@@ -1,6 +1,8 @@
-package io.sentry.spring.boot
+package io.sentry.spring
 
 import com.nhaarman.mockitokotlin2.check
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.core.IHub
 import io.sentry.core.Sentry
@@ -8,15 +10,15 @@ import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions
 import io.sentry.core.exception.ExceptionMechanismException
 import io.sentry.core.transport.ITransport
-import io.sentry.spring.SentrySecurityFilter
 import java.lang.RuntimeException
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -40,16 +42,20 @@ import org.springframework.web.bind.annotation.RestController
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [App::class],
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true"]
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 class SentrySpringIntegrationTest {
 
-    @MockBean
+    @Autowired
     lateinit var transport: ITransport
 
     @LocalServerPort
     lateinit var port: Integer
+
+    @Before
+    fun `reset mocks`() {
+        reset(transport)
+    }
 
     @Test
     fun `attaches request and user information to SentryEvents`() {
@@ -106,7 +112,12 @@ class SentrySpringIntegrationTest {
 }
 
 @SpringBootApplication
-open class App
+@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
+open class App {
+
+    @Bean
+    open fun mockTransport() = mock<ITransport>()
+}
 
 @RestController
 class HelloController {

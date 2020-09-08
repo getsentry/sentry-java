@@ -1,10 +1,11 @@
-package io.sentry.spring.boot;
+package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.EventProcessor;
 import io.sentry.core.SentryEvent;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.protocol.Request;
+import io.sentry.core.util.Objects;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -26,8 +27,8 @@ public class SentryRequestHttpServletRequestProcessor implements EventProcessor 
 
   public SentryRequestHttpServletRequestProcessor(
       final @NotNull HttpServletRequest request, final @NotNull SentryOptions options) {
-    this.request = request;
-    this.options = options;
+    this.request = Objects.requireNonNull(request, "request is required");
+    this.options = Objects.requireNonNull(options, "options are required");
   }
 
   @Override

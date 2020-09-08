@@ -98,4 +98,13 @@ class BreadcrumbTest {
         val breadcrumb = Breadcrumb("this is a test")
         assertEquals("this is a test", breadcrumb.message)
     }
+
+    @Test
+    fun `creates HTTP breadcrumb`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST")
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+    }
 }

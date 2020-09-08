@@ -48,6 +48,9 @@ object Config {
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
+        val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+        val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
         val servletApi = "javax.servlet:javax.servlet-api"
@@ -68,9 +71,6 @@ object Config {
         val robolectric = "org.robolectric:robolectric:4.3.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
-        val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-        val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-        val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
     }
 
     object QualityPlugins {
@@ -78,7 +78,6 @@ object Config {
             val version = "0.8.5"
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
-        val jacocoVersion = "0.8.5"
         val spotless = "com.diffplug.spotless"
         val spotlessVersion = "5.1.0"
         val errorProne = "net.ltgt.errorprone"
@@ -95,6 +94,7 @@ object Config {
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
         val SENTRY_LOGBACK_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.logback"
         val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"
+        val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val group = "io.sentry"
         val description = "SDK for sentry.io"

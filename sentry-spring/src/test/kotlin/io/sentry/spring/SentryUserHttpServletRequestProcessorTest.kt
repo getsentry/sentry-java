@@ -1,4 +1,4 @@
-package io.sentry.spring.boot
+package io.sentry.spring
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever

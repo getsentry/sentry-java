@@ -1,4 +1,4 @@
-package io.sentry.samples.spring;
+package io.sentry.samples.spring.boot;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,7 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
+    LOGGER.info("Loading person with id={}", id);
     throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
   }
 

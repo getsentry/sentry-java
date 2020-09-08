@@ -43,6 +43,22 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     this.timestamp = timestamp;
   }
 
+  /**
+   * Creates HTTP breadcrumb.
+   *
+   * @param url - the request URL
+   * @param method - the request method
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb http(final @NotNull String url, final @NotNull String method) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("http");
+    breadcrumb.setCategory("http");
+    breadcrumb.setData("url", url);
+    breadcrumb.setData("method", method.toUpperCase(Locale.getDefault()));
+    return breadcrumb;
+  }
+
   /** Breadcrumb ctor */
   public Breadcrumb() {
     this(DateUtils.getCurrentDateTimeOrNull());

@@ -8,7 +8,7 @@ plugins {
     kotlin("plugin.spring") version Config.kotlinVersion
 }
 
-group = "io.sentry.sample.spring-boot"
+group = "io.sentry.sample.spring"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
@@ -22,7 +22,7 @@ dependencies {
     implementation(Config.Libs.springBootStarter)
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    implementation(project(":sentry-spring-boot-starter"))
+    implementation(project(":sentry-spring"))
     implementation(project(":sentry-logback"))
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

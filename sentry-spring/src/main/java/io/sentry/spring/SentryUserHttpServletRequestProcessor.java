@@ -1,4 +1,4 @@
-package io.sentry.spring.boot;
+package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.EventProcessor;

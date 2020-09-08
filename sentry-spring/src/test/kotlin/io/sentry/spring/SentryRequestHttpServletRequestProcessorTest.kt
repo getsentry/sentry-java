@@ -1,4 +1,4 @@
-package io.sentry.spring.boot
+package io.sentry.spring
 
 import io.sentry.core.SentryEvent
 import io.sentry.core.SentryOptions

@@ -1,8 +1,8 @@
-package io.sentry.samples.spring;
+package io.sentry.samples.spring.boot;
 
 import io.sentry.core.IHub;
 import io.sentry.core.SentryOptions;
-import io.sentry.spring.boot.SentrySecurityFilter;
+import io.sentry.spring.SentrySecurityFilter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

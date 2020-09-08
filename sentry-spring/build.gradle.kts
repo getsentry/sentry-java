@@ -33,13 +33,8 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(project(":sentry-core"))
-    api(project(":sentry-spring"))
-    implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.servletApi)
-
-    annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
-    annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -88,8 +83,8 @@ tasks {
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry.spring.boot")
-    buildConfigField("String", "SENTRY_SPRING_BOOT_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_BOOT_SDK_NAME}\"")
+    packageName("io.sentry.spring")
+    buildConfigField("String", "SENTRY_SPRING_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
