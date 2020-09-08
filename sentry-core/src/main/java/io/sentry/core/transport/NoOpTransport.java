@@ -1,7 +1,6 @@
 package io.sentry.core.transport;
 
 import io.sentry.core.SentryEnvelope;
-import io.sentry.core.SentryEvent;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -15,11 +14,6 @@ public final class NoOpTransport implements ITransport {
   }
 
   private NoOpTransport() {}
-
-  @Override
-  public TransportResult send(SentryEvent event) throws IOException {
-    return TransportResult.success();
-  }
 
   @Override
   public boolean isRetryAfter(String type) {

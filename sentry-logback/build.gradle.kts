@@ -77,7 +77,7 @@ tasks.withType<JavaCompile>().configureEach {
     dependsOn(generateBuildConfig)
 }
 
-//TODO: move these blocks to parent gradle file, DRY
+// TODO: move these blocks to parent gradle file, DRY
 configure<PublishExtension> {
     userOrg = Config.Sentry.userOrg
     groupId = project.group.toString()
@@ -97,6 +97,5 @@ configure<PublishExtension> {
     devEmail = Config.Sentry.devEmail
     scmConnection = Config.Sentry.scmConnection
     scmDevConnection = Config.Sentry.scmDevConnection
-    scmUrl  = Config.Sentry.scmUrl
+    scmUrl = Config.Sentry.scmUrl
 }
-

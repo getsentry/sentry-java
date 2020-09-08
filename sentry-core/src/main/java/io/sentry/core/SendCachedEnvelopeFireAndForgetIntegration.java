@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Sends cached events over when your App. is starting. */
-public final class SendCachedEventFireAndForgetIntegration implements Integration {
+public final class SendCachedEnvelopeFireAndForgetIntegration implements Integration {
 
   private final SendFireAndForgetFactory factory;
 
@@ -46,7 +46,8 @@ public final class SendCachedEventFireAndForgetIntegration implements Integratio
     }
   }
 
-  public SendCachedEventFireAndForgetIntegration(final @NotNull SendFireAndForgetFactory factory) {
+  public SendCachedEnvelopeFireAndForgetIntegration(
+      final @NotNull SendFireAndForgetFactory factory) {
     this.factory = Objects.requireNonNull(factory, "SendFireAndForgetFactory is required");
   }
 

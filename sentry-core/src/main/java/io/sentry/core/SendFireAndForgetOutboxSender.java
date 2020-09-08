@@ -6,13 +6,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SendFireAndForgetEnvelopeSender
+public final class SendFireAndForgetOutboxSender
     implements SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
 
   private final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetDirPath
       sendFireAndForgetDirPath;
 
-  public SendFireAndForgetEnvelopeSender(
+  public SendFireAndForgetOutboxSender(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetDirPath
               sendFireAndForgetDirPath) {
     this.sendFireAndForgetDirPath =
@@ -27,14 +27,18 @@ public final class SendFireAndForgetEnvelopeSender
 
     final String dirPath = sendFireAndForgetDirPath.getDirPath();
     if (!hasValidPath(dirPath, options.getLogger())) {
-      options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+      options.getLogger().log(SentryLevel.ERROR, "No outbox dir path is defined in options.");
       return null;
     }
 
-    final EnvelopeSender envelopeSender =
-        new EnvelopeSender(
-            hub, options.getSerializer(), options.getLogger(), options.getFlushTimeoutMillis());
+    final OutboxSender outboxSender =
+        new OutboxSender(
+            hub,
+            options.getEnvelopeReader(),
+            options.getSerializer(),
+            options.getLogger(),
+            options.getFlushTimeoutMillis());
 
-    return processDir(envelopeSender, dirPath, options.getLogger());
+    return processDir(outboxSender, dirPath, options.getLogger());
   }
 }

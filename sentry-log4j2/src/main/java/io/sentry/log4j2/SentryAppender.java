@@ -80,7 +80,14 @@ public final class SentryAppender extends AbstractAppender {
       LOGGER.error("No name provided for SentryAppender");
       return null;
     }
-    return new SentryAppender(name, filter, dsn, minimumBreadcrumbLevel, minimumEventLevel, null, HubAdapter.getInstance());
+    return new SentryAppender(
+        name,
+        filter,
+        dsn,
+        minimumBreadcrumbLevel,
+        minimumEventLevel,
+        null,
+        HubAdapter.getInstance());
   }
 
   @Override

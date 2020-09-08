@@ -90,7 +90,7 @@ dependencies {
     testImplementation(Config.TestLibs.awaitility)
 }
 
-//TODO: move thse blocks to parent gradle file, DRY
+// TODO: move thse blocks to parent gradle file, DRY
 configure<PublishExtension> {
     userOrg = Config.Sentry.userOrg
     groupId = project.group.toString()
@@ -110,5 +110,5 @@ configure<PublishExtension> {
     devEmail = Config.Sentry.devEmail
     scmConnection = Config.Sentry.scmConnection
     scmDevConnection = Config.Sentry.scmDevConnection
-    scmUrl  = Config.Sentry.scmUrl
+    scmUrl = Config.Sentry.scmUrl
 }

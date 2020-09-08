@@ -66,7 +66,8 @@ android {
     buildTypes {
         getByName("debug") {
             manifestPlaceholders = mapOf(
-                "sentryDebug" to true
+                "sentryDebug" to true,
+                "sentryEnvironment" to "debug"
             )
         }
         getByName("release") {
@@ -76,7 +77,8 @@ android {
             isShrinkResources = true
 
             manifestPlaceholders = mapOf(
-                "sentryDebug" to false
+                "sentryDebug" to false,
+                "sentryEnvironment" to "release"
             )
         }
     }

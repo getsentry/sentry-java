@@ -1,12 +1,11 @@
 package io.sentry.core.transport;
 
-import io.sentry.core.SentryEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A result of {@link ITransport#send(SentryEvent)}. Note that this class is intentionally not
- * subclassable and has only two factory methods to capture the 2 possible states - success or
- * error.
+ * A result of {@link ITransport#send(io.sentry.core.SentryEnvelope)}. Note that this class is
+ * intentionally not subclassable and has only two factory methods to capture the 2 possible states
+ * - success or error.
  */
 public abstract class TransportResult {
 

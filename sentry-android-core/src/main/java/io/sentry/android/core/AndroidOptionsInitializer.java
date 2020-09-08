@@ -7,9 +7,9 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import io.sentry.core.ILogger;
-import io.sentry.core.SendCachedEventFireAndForgetIntegration;
+import io.sentry.core.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.core.SendFireAndForgetEnvelopeSender;
-import io.sentry.core.SendFireAndForgetEventSender;
+import io.sentry.core.SendFireAndForgetOutboxSender;
 import io.sentry.core.SentryLevel;
 import io.sentry.core.SentryOptions;
 import io.sentry.core.util.Objects;
@@ -116,12 +116,8 @@ final class AndroidOptionsInitializer {
       final @NotNull ILoadClass loadClass) {
 
     options.addIntegration(
-        new SendCachedEventFireAndForgetIntegration(
-            new SendFireAndForgetEventSender(() -> options.getCacheDirPath())));
-
-    options.addIntegration(
-        new SendCachedEventFireAndForgetIntegration(
-            new SendFireAndForgetEnvelopeSender(() -> options.getSessionsPath())));
+        new SendCachedEnvelopeFireAndForgetIntegration(
+            new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath())));
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
@@ -136,8 +132,8 @@ final class AndroidOptionsInitializer {
     // this should be executed after NdkIntegration because sentry-native move files on init.
     // and we'd like to send them right away
     options.addIntegration(
-        new SendCachedEventFireAndForgetIntegration(
-            new SendFireAndForgetEnvelopeSender(() -> options.getOutboxPath())));
+        new SendCachedEnvelopeFireAndForgetIntegration(
+            new SendFireAndForgetOutboxSender(() -> options.getOutboxPath())));
 
     options.addIntegration(new AnrIntegration(context));
     options.addIntegration(new AppLifecycleIntegration());

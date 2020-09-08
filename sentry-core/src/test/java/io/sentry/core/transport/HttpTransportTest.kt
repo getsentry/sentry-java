@@ -45,11 +45,7 @@ class HttpTransportTest {
             options.proxy = proxy
 
             return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn, currentDateProvider) {
-                override fun open(proxy: Proxy?): HttpURLConnection {
-                    return connection
-                }
-
-                override fun open(url: URL, proxy: Proxy?): HttpURLConnection {
+                override fun open(): HttpURLConnection {
                     return connection
                 }
             }
@@ -57,19 +53,6 @@ class HttpTransportTest {
     }
 
     private val fixture = Fixture()
-
-    @Test
-    fun `test serializes event`() {
-        val transport = fixture.getSUT()
-        whenever(fixture.connection.responseCode).thenReturn(200)
-
-        val event = SentryEvent()
-
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
-        assertTrue(result.isSuccess)
-    }
 
     @Test
     fun `test serializes envelope`() {
@@ -82,24 +65,6 @@ class HttpTransportTest {
 
         verify(fixture.serializer).serialize(eq(envelope), any())
         assertTrue(result.isSuccess)
-    }
-
-    @Test
-    fun `uses Retry-After header if X-Sentry-Rate-Limit is not set when sending an event`() {
-        val transport = fixture.getSUT()
-
-        throwOnEventSerialize()
-        whenever(fixture.connection.getHeaderField(eq("Retry-After"))).thenReturn("30")
-        whenever(fixture.connection.responseCode).thenReturn(429)
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-
-        val event = SentryEvent()
-
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
-        assertFalse(result.isSuccess)
-        assertTrue(transport.isRetryAfter("event"))
     }
 
     @Test
@@ -121,22 +86,6 @@ class HttpTransportTest {
     }
 
     @Test
-    fun `passes on the response code on error when sending an event`() {
-        val transport = fixture.getSUT()
-
-        throwOnEventSerialize()
-        whenever(fixture.connection.responseCode).thenReturn(1234)
-
-        val event = SentryEvent()
-
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
-        assertFalse(result.isSuccess)
-        assertEquals(1234, result.responseCode)
-    }
-
-    @Test
     fun `passes on the response code on error when sending an envelope`() {
         val transport = fixture.getSUT()
 
@@ -150,23 +99,6 @@ class HttpTransportTest {
         verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertEquals(1234, result.responseCode)
-    }
-
-    @Test
-    fun `uses the default retry interval if there is no Retry-After header when sending an event`() {
-        val transport = fixture.getSUT()
-
-        throwOnEventSerialize()
-        whenever(fixture.connection.responseCode).thenReturn(429)
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-
-        val event = SentryEvent()
-
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
-        assertFalse(result.isSuccess)
-        assertTrue(transport.isRetryAfter("event"))
     }
 
     @Test
@@ -184,22 +116,6 @@ class HttpTransportTest {
         verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertTrue(transport.isRetryAfter("session"))
-    }
-
-    @Test
-    fun `failure to get response code doesn't break sending an event`() {
-        val transport = fixture.getSUT()
-
-        throwOnEventSerialize()
-        whenever(fixture.connection.responseCode).thenThrow(IOException())
-
-        val event = SentryEvent()
-
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
-        assertFalse(result.isSuccess)
-        assertEquals(-1, result.responseCode)
     }
 
     @Test
@@ -228,11 +144,10 @@ class HttpTransportTest {
             .thenReturn("50:transaction:key, 2700:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
-        val event = SentryEvent()
+        val envelope = createEnvelope()
+        val result = transport.send(envelope)
 
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertTrue(transport.isRetryAfter("event"))
     }
@@ -246,11 +161,10 @@ class HttpTransportTest {
             .thenReturn("50:transaction:key, 1:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
-        val event = SentryEvent()
+        val envelope = createEnvelope()
+        val result = transport.send(envelope)
 
-        val result = transport.send(event)
-
-        verify(fixture.serializer).serialize(eq(event), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertFalse(transport.isRetryAfter("event"))
     }
@@ -264,9 +178,7 @@ class HttpTransportTest {
             .thenReturn("50:transaction:key, 2700:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
-        val event = SentryEvent()
-
-        transport.send(event)
+        transport.send(createEnvelope())
 
         assertTrue(transport.isRetryAfter("transaction"))
         assertTrue(transport.isRetryAfter("event"))
@@ -281,9 +193,8 @@ class HttpTransportTest {
             .thenReturn("1:transaction:key, 1:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
-        val event = SentryEvent()
+        transport.send(createEnvelope())
 
-        transport.send(event)
         assertFalse(transport.isRetryAfter("transaction"))
         assertFalse(transport.isRetryAfter("event"))
     }
@@ -297,9 +208,7 @@ class HttpTransportTest {
             .thenReturn("50::key")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
-        val event = SentryEvent()
-
-        transport.send(event)
+        transport.send(createEnvelope())
 
         assertTrue(transport.isRetryAfter("event"))
     }
@@ -313,9 +222,7 @@ class HttpTransportTest {
             .thenReturn("60:default;foobar;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
-        val event = SentryEvent()
-
-        transport.send(event)
+        transport.send(createEnvelope())
         assertFalse(transport.isRetryAfter("foobar"))
     }
 
@@ -328,9 +235,7 @@ class HttpTransportTest {
             .thenReturn("1::key, 60:default;error;security:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
-        val event = SentryEvent()
-
-        transport.send(event)
+        transport.send(createEnvelope())
         assertTrue(transport.isRetryAfter("event"))
     }
 
@@ -343,9 +248,7 @@ class HttpTransportTest {
             .thenReturn("60:error:key, 1:error:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
-        val event = SentryEvent()
-
-        transport.send(event)
+        transport.send(createEnvelope())
         assertTrue(transport.isRetryAfter("event"))
     }
 
@@ -358,9 +261,7 @@ class HttpTransportTest {
             .thenReturn("1:error:key, 5:error:organization")
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
 
-        val event = SentryEvent()
-
-        transport.send(event)
+        transport.send(createEnvelope())
         assertTrue(transport.isRetryAfter("event"))
     }
 
@@ -375,5 +276,9 @@ class HttpTransportTest {
 
     private fun throwOnEnvelopeSerialize() {
         whenever(fixture.serializer.serialize(any<SentryEnvelope>(), any())).thenThrow(IOException())
+    }
+
+    private fun createEnvelope(event: SentryEvent = SentryEvent()): SentryEnvelope {
+        return SentryEnvelope.fromEvent(fixture.serializer, event, null)
     }
 }

@@ -7,20 +7,20 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import kotlin.test.Test
 import kotlin.test.assertFalse
 
-class SendCachedEventFireAndForgetIntegrationTest {
+class SendCachedEnvelopeFireAndForgetIntegrationTest {
     private class Fixture {
         var hub: IHub = mock()
         var logger: ILogger = mock()
         var options = SentryOptions()
-        var callback = mock<SendCachedEventFireAndForgetIntegration.SendFireAndForgetFactory>()
+        var callback = mock<SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory>()
 
         init {
             options.isDebug = true
             options.setLogger(logger)
         }
 
-        fun getSut(): SendCachedEventFireAndForgetIntegration {
-            return SendCachedEventFireAndForgetIntegration(callback)
+        fun getSut(): SendCachedEnvelopeFireAndForgetIntegration {
+            return SendCachedEnvelopeFireAndForgetIntegration(callback)
         }
     }
 
@@ -55,15 +55,15 @@ class SendCachedEventFireAndForgetIntegrationTest {
 
     @Test
     fun `when Factory returns null, register logs and exit`() {
-        val sut = SendCachedEventFireAndForgetIntegration(CustomFactory())
+        val sut = SendCachedEnvelopeFireAndForgetIntegration(CustomFactory())
         fixture.options.cacheDirPath = "abc"
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("SendFireAndForget factory is null."))
         verifyNoMoreInteractions(fixture.hub)
     }
 
-    private class CustomFactory : SendCachedEventFireAndForgetIntegration.SendFireAndForgetFactory {
-        override fun create(hub: IHub?, options: SentryOptions?): SendCachedEventFireAndForgetIntegration.SendFireAndForget? {
+    private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
+        override fun create(hub: IHub?, options: SentryOptions?): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
             return null
         }
     }

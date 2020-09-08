@@ -5,7 +5,7 @@
   <br />
 </p>
 
-Java and Android SDK for Sentry
+Sentry SDK for Java and Android
 ===========
 [![Travis](https://img.shields.io/travis/getsentry/sentry-java/ref/sentry-java-2?label=Travis)](https://travis-ci.com/getsentry/sentry-java)
 [![AppVeyor](https://img.shields.io/appveyor/build/sentry/sentry-java?label=AppVeyor)](https://ci.appveyor.com/project/sentry/sentry-java)
@@ -28,7 +28,7 @@ Java and Android SDK for Sentry
 | sentry-spring-boot-starter | [![sentry-spring-boot-starter](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter?tab=overview) | |
 | sentry-appengine | [![sentry-appengine](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-appengine)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-appengine?tab=overview) | |
 | sentry-log4j | [![sentry-log4j](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j?tab=overview) | |
-| sentry-logback | [![sentry-logback](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-logback)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-logback?tab=overview) | |
+| sentry-log4j2 | [![sentry-log4j2](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j2)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j2?tab=overview) | |
 
 
 # Java SDK 2.0 Docs

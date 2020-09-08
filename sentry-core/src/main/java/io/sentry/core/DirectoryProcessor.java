@@ -22,7 +22,7 @@ abstract class DirectoryProcessor {
     this.flushTimeoutMillis = flushTimeoutMillis;
   }
 
-  public void processDirectory(@NotNull File directory) {
+  public void processDirectory(final @NotNull File directory) {
     try {
       logger.log(SentryLevel.DEBUG, "Processing dir. %s", directory.getAbsolutePath());
 
@@ -39,13 +39,13 @@ abstract class DirectoryProcessor {
         return;
       }
 
-      File[] listFiles = directory.listFiles();
+      final File[] listFiles = directory.listFiles();
       if (listFiles == null) {
         logger.log(SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
         return;
       }
 
-      File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
+      final File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
 
       logger.log(
           SentryLevel.DEBUG,
@@ -62,7 +62,7 @@ abstract class DirectoryProcessor {
 
         logger.log(SentryLevel.DEBUG, "Processing file: %s", file.getAbsolutePath());
 
-        final SendCachedEventHint hint = new SendCachedEventHint(flushTimeoutMillis, logger);
+        final SendCachedEnvelopeHint hint = new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
         processFile(file, hint);
       }
     } catch (Exception e) {
@@ -70,11 +70,11 @@ abstract class DirectoryProcessor {
     }
   }
 
-  protected abstract void processFile(File file, @Nullable Object hint);
+  protected abstract void processFile(final @NotNull File file, final @Nullable Object hint);
 
   protected abstract boolean isRelevantFileName(String fileName);
 
-  private static final class SendCachedEventHint
+  private static final class SendCachedEnvelopeHint
       implements Cached, Retryable, SubmissionResult, Flushable {
     boolean retry = false;
     boolean succeeded = false;
@@ -83,7 +83,7 @@ abstract class DirectoryProcessor {
     private final long flushTimeoutMillis;
     private final @NotNull ILogger logger;
 
-    public SendCachedEventHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
+    public SendCachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       this.flushTimeoutMillis = flushTimeoutMillis;
       this.latch = new CountDownLatch(1);
       this.logger = logger;

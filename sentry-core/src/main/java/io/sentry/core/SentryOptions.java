@@ -2,12 +2,10 @@ package io.sentry.core;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.core.cache.IEnvelopeCache;
-import io.sentry.core.cache.IEventCache;
 import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.transport.ITransport;
 import io.sentry.core.transport.ITransportGate;
 import io.sentry.core.transport.NoOpEnvelopeCache;
-import io.sentry.core.transport.NoOpEventCache;
 import io.sentry.core.transport.NoOpTransport;
 import io.sentry.core.transport.NoOpTransportGate;
 import java.io.File;
@@ -101,11 +99,8 @@ public class SentryOptions {
   /** The cache dir. size for capping the number of events Default is 10 */
   private int cacheDirSize = 10;
 
-  /** The sessions dir. size for capping the number of envelopes Default is 100 */
-  private int sessionsDirSize = 100;
-
   /** Max. queue size before flushing events/envelopes to the disk */
-  private int maxQueueSize = cacheDirSize + sessionsDirSize;
+  private int maxQueueSize = cacheDirSize;
 
   /**
    * This variable controls the total amount of breadcrumbs that should be captured Default is 100
@@ -169,8 +164,8 @@ public class SentryOptions {
    */
   private boolean attachStacktrace;
 
-  /** Whether to enable automatic session tracking. */
-  private boolean enableSessionTracking;
+  /** Whether to enable or disable automatic session tracking. */
+  private boolean enableSessionTracking = true;
 
   /**
    * The session tracking interval in millis. This is the interval to end a session if the App goes
@@ -200,9 +195,6 @@ public class SentryOptions {
 
   /** whether to ignore TLS errors */
   private boolean bypassSecurity = false;
-
-  /** Reads and caches event json files in the disk */
-  private @NotNull IEventCache eventDiskCache = NoOpEventCache.getInstance();
 
   /** Reads and caches envelope files in the disk */
   private @NotNull IEnvelopeCache envelopeDiskCache = NoOpEnvelopeCache.getInstance();
@@ -457,18 +449,6 @@ public class SentryOptions {
       return null;
     }
     return cacheDirPath + File.separator + "outbox";
-  }
-
-  /**
-   * Returns the sessions path if cacheDirPath is set
-   *
-   * @return the sessions path or null if not set
-   */
-  public @Nullable String getSessionsPath() {
-    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
-      return null;
-    }
-    return cacheDirPath + File.separator + "sessions";
   }
 
   /**
@@ -757,24 +737,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the sessions dir size
-   *
-   * @return the dir size
-   */
-  public int getSessionsDirSize() {
-    return sessionsDirSize;
-  }
-
-  /**
-   * Sets the sessions dir size
-   *
-   * @param sessionsDirSize the sessions dir size
-   */
-  public void setSessionsDirSize(int sessionsDirSize) {
-    this.sessionsDirSize = sessionsDirSize;
-  }
-
-  /**
    * Returns the session tracking interval in millis
    *
    * @return the interval in millis
@@ -921,24 +883,6 @@ public class SentryOptions {
    */
   public void setBypassSecurity(boolean bypassSecurity) {
     this.bypassSecurity = bypassSecurity;
-  }
-
-  /**
-   * Returns the EventCache interface
-   *
-   * @return the EventCache object
-   */
-  public @NotNull IEventCache getEventDiskCache() {
-    return eventDiskCache;
-  }
-
-  /**
-   * Sets the EventCache interface
-   *
-   * @param eventDiskCache the EventCache object
-   */
-  public void setEventDiskCache(final @Nullable IEventCache eventDiskCache) {
-    this.eventDiskCache = eventDiskCache != null ? eventDiskCache : NoOpEventCache.getInstance();
   }
 
   /**

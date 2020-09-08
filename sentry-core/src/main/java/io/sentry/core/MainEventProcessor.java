@@ -6,6 +6,7 @@ import io.sentry.core.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -22,8 +23,7 @@ public final class MainEventProcessor implements EventProcessor {
         new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
-    sentryThreadFactory =
-        new SentryThreadFactory(sentryStackTraceFactory, this.options.isAttachStacktrace());
+    sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory, this.options);
   }
 
   MainEventProcessor(
@@ -38,7 +38,7 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(SentryEvent event, @Nullable Object hint) {
     if (event.getPlatform() == null) {
       // this actually means JVM related.
       event.setPlatform("java");

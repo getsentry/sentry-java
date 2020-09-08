@@ -107,19 +107,6 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when there's no cacheDirPath, sessionPath returns null`() {
-        val options = SentryOptions()
-        assertNull(options.sessionsPath)
-    }
-
-    @Test
-    fun `when cacheDirPath is set, sessionPath concatenate sessions path`() {
-        val options = SentryOptions()
-        options.cacheDirPath = "${File.separator}test"
-        assertEquals("${File.separator}test${File.separator}sessions", options.sessionsPath)
-    }
-
-    @Test
     fun `SentryOptions creates SentryExecutorService on ctor`() {
         val options = SentryOptions()
         assertNotNull(options.executorService)
