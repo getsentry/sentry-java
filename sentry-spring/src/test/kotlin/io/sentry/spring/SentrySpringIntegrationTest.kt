@@ -3,9 +3,7 @@ package io.sentry.spring
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.IHub
 import io.sentry.core.Sentry
-import io.sentry.core.SentryOptions
 import io.sentry.core.transport.ITransport
 import io.sentry.test.checkEvent
 import java.lang.RuntimeException
@@ -32,7 +30,6 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
@@ -131,15 +128,10 @@ class HelloController {
 }
 
 @Configuration
-open class SecurityConfiguration(
-    private val hub: IHub,
-    private val options: SentryOptions
-) : WebSecurityConfigurerAdapter() {
+open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
 
     override fun configure(http: HttpSecurity) {
-        http
-            .addFilterAfter(SentrySecurityFilter(hub, options), AnonymousAuthenticationFilter::class.java)
-            .csrf().disable()
+        http.csrf().disable()
             .authorizeRequests().anyRequest().authenticated()
             .and()
             .httpBasic()

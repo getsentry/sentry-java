@@ -10,6 +10,8 @@ import io.sentry.core.SentryOptions;
 import io.sentry.core.protocol.SdkVersion;
 import io.sentry.core.transport.ITransport;
 import io.sentry.core.transport.ITransportGate;
+import io.sentry.spring.SentryUserProvider;
+import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -43,12 +45,17 @@ public class SentryAutoConfiguration {
         final @NotNull List<EventProcessor> eventProcessors,
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
+        final @NotNull ObjectProvider<SentryUserProvider> sentryUserProviders,
         final @NotNull ObjectProvider<ITransport> transport) {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
         beforeBreadcrumbCallback.ifAvailable(options::setBeforeBreadcrumb);
         eventProcessors.forEach(options::addEventProcessor);
         integrations.forEach(options::addIntegration);
+        sentryUserProviders.forEach(
+            sentryUserProvider ->
+                options.addEventProcessor(
+                    new SentryUserProviderEventProcessor(sentryUserProvider)));
         transportGate.ifAvailable(options::setTransportGate);
         transport.ifAvailable(options::setTransport);
       };
