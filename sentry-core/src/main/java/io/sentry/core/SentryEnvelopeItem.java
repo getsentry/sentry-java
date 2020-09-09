@@ -1,10 +1,14 @@
 package io.sentry.core;
 
 import io.sentry.core.util.Objects;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
@@ -70,6 +74,16 @@ public final class SentryEnvelopeItem {
             SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
 
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public @Nullable SentryEvent getEvent(final @NotNull ISerializer serializer) throws Exception {
+    if (header == null || header.getType() != SentryItemType.Event) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserializeEvent(eventReader);
+    }
   }
 
   public static @NotNull SentryEnvelopeItem fromEvent(

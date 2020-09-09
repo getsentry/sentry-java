@@ -30,6 +30,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
+    testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

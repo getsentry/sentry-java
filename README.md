@@ -21,12 +21,9 @@ Sentry SDK for Java and Android
 | sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-core)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-core?tab=overview) | 14 |
 | sentry-android-ndk | [![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-ndk)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-ndk?tab=overview) | 16 |
 | sentry-android-timber | [![sentry-android-timber](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-timber)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-timber?tab=overview) | 14 |
-| sentry-core | [![sentry-core](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-core)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-core?tab=overview) | 14 |
-| sentry | [![sentry](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry?tab=overview) | |
+| sentry | [![sentry](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry?tab=overview) | 14 |
 | sentry-spring-boot-starter | [![sentry-spring-boot-starter](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter?tab=overview) | |
 | sentry-spring | [![sentry-spring](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring?tab=overview) | |
-| sentry-spring-boot-starter | [![sentry-spring-boot-starter](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter?tab=overview) | |
-| sentry-appengine | [![sentry-appengine](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-appengine)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-appengine?tab=overview) | |
 | sentry-log4j | [![sentry-log4j](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j?tab=overview) | |
 | sentry-log4j2 | [![sentry-log4j2](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j2)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j2?tab=overview) | |
 
