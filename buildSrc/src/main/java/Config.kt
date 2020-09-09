@@ -18,7 +18,7 @@ object Config {
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
         val cmakeVersion = "3.10.2"
-        val ndkVersion = "21.0.6113669" // 21.1.6352462 when https://discuss.lgtm.com/t/android-ndk-v21-1-6352462-is-not-available/2910 is fixed
+        val ndkVersion = "21.3.6528147"
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
     }
 
