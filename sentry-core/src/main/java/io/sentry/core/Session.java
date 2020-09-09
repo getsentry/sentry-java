@@ -4,6 +4,7 @@ import io.sentry.core.protocol.User;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -140,6 +141,12 @@ public final class Session {
 
   public @Nullable Boolean getInit() {
     return init;
+  }
+
+  /** Used for migrating the init flag when an session is gonna be deleted. */
+  @ApiStatus.Internal
+  public void setInitAsTrue() {
+    this.init = true;
   }
 
   public int errorCount() {
