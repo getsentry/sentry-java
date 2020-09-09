@@ -29,13 +29,6 @@ class EnvelopeSenderTest {
         var envelopeReader: IEnvelopeReader = mock()
         var serializer: ISerializer = mock()
         var logger: ILogger = mock()
-        var options: SentryOptions
-
-        init {
-            options = SentryOptions()
-            options.isDebug = true
-            options.setLogger(logger)
-        }
 
         fun getSut(): EnvelopeSender {
             return EnvelopeSender(hub, envelopeReader, serializer, logger, 15000)

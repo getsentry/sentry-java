@@ -84,8 +84,8 @@ class SentryExceptionFactoryTest {
         assertEquals(thread.id, queue.first.threadId)
     }
 
-    internal inner class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)
+    internal class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)
 
-    internal val anonymousException = object : Exception() {
+    private val anonymousException = object : Exception() {
     }
 }

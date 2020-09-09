@@ -8,7 +8,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.core.hints.ApplyScopeData
 import io.sentry.core.protocol.User
-import io.sentry.core.util.NoFlushTimeout
+import io.sentry.core.util.noFlushTimeout
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -25,7 +25,7 @@ class DirectoryProcessorTest {
         var envelopeReader: IEnvelopeReader = mock()
         var serializer: ISerializer = mock()
         var logger: ILogger = mock()
-        var options = SentryOptions().NoFlushTimeout()
+        var options = SentryOptions().noFlushTimeout()
 
         init {
             options.isDebug = true

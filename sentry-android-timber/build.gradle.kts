@@ -77,6 +77,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockitoInline)
 }
 
 //TODO: move thse blocks to parent gradle file, DRY

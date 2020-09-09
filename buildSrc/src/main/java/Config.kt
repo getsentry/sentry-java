@@ -1,5 +1,5 @@
 object Config {
-    val kotlinVersion = "1.3.72"
+    val kotlinVersion = "1.4.0"
     val kotlinStdLib = "stdlib-jdk8"
 
     object BuildPlugins {
@@ -23,39 +23,40 @@ object Config {
     }
 
     object Libs {
-        val appCompat = "androidx.appcompat:appcompat:1.1.0"
+        val appCompat = "androidx.appcompat:appcompat:1.2.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
         val gson = "com.google.code.gson:gson:2.8.5"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.3"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.4"
 
-        val lifecycleVersion = "2.2.0"
+        private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.2.0"
+        private val androidxTestVersion = "1.3.0"
 
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxJunit = "androidx.test.ext:junit:1.1.1"
-        val robolectric = "org.robolectric:robolectric:4.3.1"
+        val androidxJunit = "androidx.test.ext:junit:1.1.2"
+        val robolectric = "org.robolectric:robolectric:4.4"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
+        val mockitoInline = "org.mockito:mockito-inline:3.5.10"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
     }
 
     object QualityPlugins {
         val jacocoVersion = "0.8.5"
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.1.0"
+        val spotlessVersion = "5.3.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.2.1"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.29.0"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.31.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.10.0"
+        val detektVersion = "1.12.0"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
     }
 
@@ -83,7 +84,7 @@ object Config {
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val jetbrainsAnnotations = "org.jetbrains:annotations:20.0.0"
+        val jetbrainsAnnotations = "org.jetbrains:annotations:20.1.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.4.0"

@@ -635,7 +635,7 @@ class SentryClientTest {
         scope.setContexts("key", "value")
         scope.startSession().current
         sut.captureEvent(event, scope, null)
-        verify(fixture.connection).send(check<SentryEvent>() {
+        verify(fixture.connection).send(check<SentryEvent> {
             assertEquals("value", it.contexts["key"])
         }, anyOrNull())
     }
@@ -645,12 +645,12 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        event.contexts.put("key", "event value")
+        event.contexts["key"] = "event value"
         val scope = Scope(fixture.sentryOptions)
         scope.setContexts("key", "scope value")
         scope.startSession().current
         sut.captureEvent(event, scope, null)
-        verify(fixture.connection).send(check<SentryEvent>() {
+        verify(fixture.connection).send(check<SentryEvent> {
             assertEquals("event value", it.contexts["key"])
         }, anyOrNull())
     }
