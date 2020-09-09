@@ -619,7 +619,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        event.contexts.put("key", "event value")
+        event.contexts["key"] = "event value"
         val scope = Scope(fixture.sentryOptions)
         scope.setContexts("key", "scope value")
         scope.startSession().current

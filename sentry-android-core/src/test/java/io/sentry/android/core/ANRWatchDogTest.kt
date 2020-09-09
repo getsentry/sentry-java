@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.android.core.ANRWatchDog.ANRListener
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -32,7 +31,7 @@ class ANRWatchDogTest {
         whenever(handler.post(any())).then { latch.countDown() }
         whenever(handler.thread).thenReturn(thread)
         val interval = 1L
-        val sut = ANRWatchDog(interval, true, ANRListener { a -> anr = a }, mock(), handler, mock())
+        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, mock())
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
@@ -64,7 +63,7 @@ class ANRWatchDogTest {
         }
         whenever(handler.thread).thenReturn(thread)
         val interval = 1L
-        val sut = ANRWatchDog(interval, true, ANRListener { a -> anr = a }, mock(), handler, mock())
+        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, mock())
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
@@ -103,7 +102,7 @@ class ANRWatchDogTest {
         stateInfo.condition = NOT_RESPONDING
         val anrs = listOf(stateInfo)
         whenever(am.processesInErrorState).thenReturn(anrs)
-        val sut = ANRWatchDog(interval, true, ANRListener { a -> anr = a }, mock(), handler, context)
+        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, context)
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
@@ -144,7 +143,7 @@ class ANRWatchDogTest {
         stateInfo.condition = NO_ERROR
         val anrs = listOf(stateInfo)
         whenever(am.processesInErrorState).thenReturn(anrs)
-        val sut = ANRWatchDog(interval, true, ANRListener { a -> anr = a }, mock(), handler, context)
+        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, context)
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }

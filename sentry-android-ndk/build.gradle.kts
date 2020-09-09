@@ -92,6 +92,11 @@ android {
     nativeBundleExport {
         headerDir = "${project.projectDir}/$sentryNativeSrc/include"
     }
+
+    // needed because of Kotlin 1.4.x
+    configurations.all {
+        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+    }
 }
 
 dependencies {

@@ -17,9 +17,7 @@ final class SentryThreadFactory {
   /** the SentryStackTraceFactory */
   private final @NotNull SentryStackTraceFactory sentryStackTraceFactory;
 
-  /**
-   * the SentryOptions.
-   */
+  /** the SentryOptions. */
   private final @NotNull SentryOptions options;
 
   /**
@@ -29,7 +27,8 @@ final class SentryThreadFactory {
    * @param options the SentryOptions
    */
   public SentryThreadFactory(
-      final @NotNull SentryStackTraceFactory sentryStackTraceFactory, final @NotNull SentryOptions options) {
+      final @NotNull SentryStackTraceFactory sentryStackTraceFactory,
+      final @NotNull SentryOptions options) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
     this.options = Objects.requireNonNull(options, "The SentryOptions is required");
