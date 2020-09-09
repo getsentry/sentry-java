@@ -64,6 +64,11 @@ android {
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         isCheckReleaseBuilds = false
     }
+
+    // needed because of Kotlin 1.4.x
+    configurations.all {
+        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+    }
 }
 
 dependencies {
@@ -87,6 +92,7 @@ dependencies {
     testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
 }
 

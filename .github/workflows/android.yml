@@ -9,7 +9,6 @@ on:
 
 env:
   CMAKE_VERSION: "3.10.2.4988404"
-  NDK_VERSION: "21.0.6113669"
 
 jobs:
   build:
@@ -33,11 +32,6 @@ jobs:
           java-version: 1.8
 
       # sudo is required for linux
-
-      # https://github.com/actions/virtual-environments/issues/60
-      # required because ubuntu doesn't have NDK 21.0 installed by default
-      - name: Install NDK 21.0
-        run: sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;${NDK_VERSION}"
 
       # required because macOS doesn't have cmake 3.10 installed by default
       - name: Install cmake 3.10.2
