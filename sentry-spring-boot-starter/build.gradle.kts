@@ -29,6 +29,7 @@ configure<JavaPluginConvention> {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+    kotlinOptions.languageVersion = Config.springKotlinCompatibleLanguageVersion
 }
 
 dependencies {

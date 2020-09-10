@@ -27,7 +27,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    api(kotlin(Config.kotlinStdLib))
+    implementation(kotlin(Config.kotlinStdLib))
     implementation(Config.TestLibs.kotlinTestJunit)
     implementation(Config.TestLibs.mockitoKotlin)
 }
