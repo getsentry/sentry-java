@@ -44,13 +44,13 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.gradle/caches/
-          key: cache-gradle-cache-2
+          key: cache-gradle-cache-3
 
       - name: Cache Gradle Wrapper
         uses: actions/cache@v1
         with:
           path: ~/.gradle/wrapper/
-          key: cache-gradle-wrapper-2
+          key: cache-gradle-wrapper-3
 
       # uses eskatos/gradle-command-action, so we don't care for ./gradlew or gradlew.bat
 
