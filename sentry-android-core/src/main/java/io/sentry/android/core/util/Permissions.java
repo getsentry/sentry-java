@@ -3,7 +3,7 @@ package io.sentry.android.core.util;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Process;
-import io.sentry.core.util.Objects;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal

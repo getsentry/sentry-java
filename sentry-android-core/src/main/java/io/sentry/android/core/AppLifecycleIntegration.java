@@ -1,12 +1,12 @@
 package io.sentry.android.core;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
+import io.sentry.IHub;
+import io.sentry.Integration;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.util.MainThreadChecker;
-import io.sentry.core.IHub;
-import io.sentry.core.Integration;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
+import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;

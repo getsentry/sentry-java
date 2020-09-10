@@ -2,8 +2,8 @@ package io.sentry.sample;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import io.sentry.core.Sentry;
-import io.sentry.core.protocol.User;
+import io.sentry.Sentry;
+import io.sentry.protocol.User;
 import io.sentry.sample.databinding.ActivityMainBinding;
 import java.util.Collections;
 

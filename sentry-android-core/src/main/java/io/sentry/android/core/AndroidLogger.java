@@ -1,8 +1,8 @@
 package io.sentry.android.core;
 
 import android.util.Log;
-import io.sentry.core.ILogger;
-import io.sentry.core.SentryLevel;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 
 final class AndroidLogger implements ILogger {
 

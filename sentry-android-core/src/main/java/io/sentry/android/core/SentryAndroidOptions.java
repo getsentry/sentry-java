@@ -1,7 +1,7 @@
 package io.sentry.android.core;
 
-import io.sentry.core.SentryOptions;
-import io.sentry.core.protocol.SdkVersion;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 

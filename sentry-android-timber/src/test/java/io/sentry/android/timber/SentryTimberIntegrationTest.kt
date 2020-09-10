@@ -3,10 +3,10 @@ package io.sentry.android.timber
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.IHub
-import io.sentry.core.SentryLevel
-import io.sentry.core.SentryOptions
-import io.sentry.core.protocol.SdkVersion
+import io.sentry.IHub
+import io.sentry.SentryLevel
+import io.sentry.SentryOptions
+import io.sentry.protocol.SdkVersion
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

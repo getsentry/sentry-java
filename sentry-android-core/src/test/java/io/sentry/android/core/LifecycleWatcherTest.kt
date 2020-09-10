@@ -8,10 +8,10 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.Breadcrumb
-import io.sentry.core.IHub
-import io.sentry.core.SentryLevel
-import io.sentry.core.transport.ICurrentDateProvider
+import io.sentry.Breadcrumb
+import io.sentry.IHub
+import io.sentry.SentryLevel
+import io.sentry.transport.ICurrentDateProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

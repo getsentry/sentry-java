@@ -1,7 +1,7 @@
 package io.sentry.android.core.util;
 
 import android.os.Looper;
-import io.sentry.core.protocol.SentryThread;
+import io.sentry.protocol.SentryThread;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 

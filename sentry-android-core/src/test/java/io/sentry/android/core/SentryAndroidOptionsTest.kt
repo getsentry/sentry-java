@@ -31,7 +31,7 @@ class SentryAndroidOptionsTest {
         })
 
         assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:sentry-core" &&
+            it.name == "maven:sentry" &&
             it.version == BuildConfig.VERSION_NAME
         })
     }

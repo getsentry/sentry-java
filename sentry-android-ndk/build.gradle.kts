@@ -100,7 +100,7 @@ android {
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
     api(project(":sentry-android-core"))
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
@@ -119,7 +119,7 @@ tasks.named("preBuild") {
     dependsOn(initNative)
 }
 
-//TODO: move thse blocks to parent gradle file, DRY
+// TODO: move thse blocks to parent gradle file, DRY
 configure<PublishExtension> {
     userOrg = Config.Sentry.userOrg
     groupId = project.group.toString()
@@ -139,5 +139,5 @@ configure<PublishExtension> {
     devEmail = Config.Sentry.devEmail
     scmConnection = Config.Sentry.scmConnection
     scmDevConnection = Config.Sentry.scmDevConnection
-    scmUrl  = Config.Sentry.scmUrl
+    scmUrl = Config.Sentry.scmUrl
 }

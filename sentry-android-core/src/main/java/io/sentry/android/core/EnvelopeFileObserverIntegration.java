@@ -1,12 +1,12 @@
 package io.sentry.android.core;
 
-import io.sentry.core.EnvelopeSender;
-import io.sentry.core.IHub;
-import io.sentry.core.ILogger;
-import io.sentry.core.Integration;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
+import io.sentry.IHub;
+import io.sentry.ILogger;
+import io.sentry.Integration;
+import io.sentry.OutboxSender;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.io.Closeable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,8 +37,8 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       logger.log(
           SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
-      final EnvelopeSender envelopeSender =
-          new EnvelopeSender(
+      final OutboxSender outboxSender =
+          new OutboxSender(
               hub,
               options.getEnvelopeReader(),
               options.getSerializer(),
@@ -46,7 +46,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
               options.getFlushTimeoutMillis());
 
       observer =
-          new EnvelopeFileObserver(path, envelopeSender, logger, options.getFlushTimeoutMillis());
+          new EnvelopeFileObserver(path, outboxSender, logger, options.getFlushTimeoutMillis());
       observer.startWatching();
 
       logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");

@@ -7,9 +7,9 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.ILogger
-import io.sentry.core.Sentry
-import io.sentry.core.SentryLevel
+import io.sentry.ILogger
+import io.sentry.Sentry
+import io.sentry.SentryLevel
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

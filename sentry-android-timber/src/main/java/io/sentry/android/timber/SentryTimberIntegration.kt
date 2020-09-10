@@ -1,11 +1,11 @@
 package io.sentry.android.timber
 
-import io.sentry.core.IHub
-import io.sentry.core.ILogger
-import io.sentry.core.Integration
-import io.sentry.core.SentryLevel
-import io.sentry.core.SentryOptions
-import io.sentry.core.protocol.SdkVersion
+import io.sentry.IHub
+import io.sentry.ILogger
+import io.sentry.Integration
+import io.sentry.SentryLevel
+import io.sentry.SentryOptions
+import io.sentry.protocol.SdkVersion
 import java.io.Closeable
 import timber.log.Timber
 

@@ -1,6 +1,6 @@
 package io.sentry.android.core
 
-import io.sentry.core.SentryOptions
+import io.sentry.SentryOptions
 
 class SentryNdk {
     companion object {

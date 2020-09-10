@@ -51,7 +51,7 @@ allprojects {
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
         }
     }
 }
@@ -65,10 +65,11 @@ spotless {
     }
 
     kotlin {
-        ktlint()
         target("**/*.kt")
+        ktlint()
     }
     kotlinGradle {
+        target("**/*.kts")
         ktlint()
     }
 }

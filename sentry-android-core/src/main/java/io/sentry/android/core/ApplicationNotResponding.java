@@ -2,7 +2,7 @@
 // Based on the class above. The API unnecessary here was removed.
 package io.sentry.android.core;
 
-import io.sentry.core.util.Objects;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**

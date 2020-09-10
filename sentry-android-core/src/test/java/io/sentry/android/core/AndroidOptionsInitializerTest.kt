@@ -11,11 +11,11 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.ILogger
-import io.sentry.core.MainEventProcessor
-import io.sentry.core.SendCachedEventFireAndForgetIntegration
-import io.sentry.core.SentryLevel
-import io.sentry.core.SentryOptions
+import io.sentry.ILogger
+import io.sentry.MainEventProcessor
+import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
+import io.sentry.SentryLevel
+import io.sentry.SentryOptions
 import java.io.File
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest
@@ -90,16 +90,6 @@ class AndroidOptionsInitializerTest {
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
 
         assertTrue(sentryOptions.outboxPath?.endsWith("${File.separator}cache${File.separator}sentry${File.separator}outbox")!!)
-    }
-
-    @Test
-    fun `sessionDir should be set at initialization`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertTrue(sentryOptions.sessionsPath?.endsWith("${File.separator}cache${File.separator}sentry${File.separator}sessions")!!)
     }
 
     @Test
@@ -271,12 +261,12 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `SendCachedEventFireAndForgetIntegration added to integration list`() {
+    fun `SendCachedEnvelopeFireAndForgetIntegration added to integration list`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is SendCachedEventFireAndForgetIntegration }
+        val actual = sentryOptions.integrations.firstOrNull { it is SendCachedEnvelopeFireAndForgetIntegration }
         assertNotNull(actual)
     }
 

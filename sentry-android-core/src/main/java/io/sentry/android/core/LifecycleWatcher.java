@@ -2,11 +2,11 @@ package io.sentry.android.core;
 
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
-import io.sentry.core.Breadcrumb;
-import io.sentry.core.IHub;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.transport.CurrentDateProvider;
-import io.sentry.core.transport.ICurrentDateProvider;
+import io.sentry.Breadcrumb;
+import io.sentry.IHub;
+import io.sentry.SentryLevel;
+import io.sentry.transport.CurrentDateProvider;
+import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;

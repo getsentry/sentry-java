@@ -4,9 +4,9 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import io.sentry.core.ILogger;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.util.Objects;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
+import io.sentry.util.Objects;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -84,6 +84,7 @@ final class ManifestMetadataReader {
         options.setEnableSessionTracking(sessionTrackingEnabled);
 
         if (options.getSampleRate() == null) {
+          // TODO: it needs to read a Float I guess
           Double sampleRate = metadata.getDouble(SAMPLE_RATE, -1);
           options.getLogger().log(SentryLevel.DEBUG, "sampleRate read: %s", sampleRate);
           if (sampleRate != -1) {

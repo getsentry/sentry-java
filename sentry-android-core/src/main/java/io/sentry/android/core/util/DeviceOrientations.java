@@ -1,7 +1,7 @@
 package io.sentry.android.core.util;
 
 import android.content.res.Configuration;
-import io.sentry.core.protocol.Device;
+import io.sentry.protocol.Device;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 

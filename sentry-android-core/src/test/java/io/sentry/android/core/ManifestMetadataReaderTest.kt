@@ -7,8 +7,8 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.ILogger
-import io.sentry.core.SentryLevel
+import io.sentry.ILogger
+import io.sentry.SentryLevel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -97,13 +97,13 @@ class ManifestMetadataReaderTest {
         val options = SentryAndroidOptions()
         val bundle = Bundle()
         val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.SESSION_TRACKING_ENABLE, true)
+        bundle.putBoolean(ManifestMetadataReader.SESSION_TRACKING_ENABLE, false)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
-        assertTrue(options.isEnableSessionTracking)
+        assertFalse(options.isEnableSessionTracking)
     }
 
     @Test
@@ -117,7 +117,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
-        assertFalse(options.isEnableSessionTracking)
+        assertTrue(options.isEnableSessionTracking)
     }
 
     @Test

@@ -1,6 +1,6 @@
 package io.sentry.android.ndk
 
-import io.sentry.core.SentryOptions
+import io.sentry.SentryOptions
 import kotlin.test.Test
 import kotlin.test.assertNull
 import kotlin.test.assertTrue

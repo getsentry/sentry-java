@@ -1,12 +1,21 @@
+import java.math.BigDecimal
+
 object Config {
     val kotlinVersion = "1.4.0"
     val kotlinStdLib = "stdlib-jdk8"
+
+    val springBootVersion = "2.3.3.RELEASE"
+    // Spring is currently not compatible with Kotlin 1.4
+    val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:4.0.1"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "2.0.2"
+        val springBoot = "org.springframework.boot"
+        val springDependencyManagement = "io.spring.dependency-management"
+        val springDependencyManagementVersion = "1.0.10.RELEASE"
     }
 
     object Android {
@@ -32,6 +41,26 @@ object Config {
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
+
+        val logbackVersion = "1.2.3"
+        val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
+
+        val log4j2Version = "2.13.3"
+        val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
+        val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
+
+        val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
+        val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+        val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
+
+        val springWeb = "org.springframework:spring-webmvc"
+        val servletApi = "javax.servlet:javax.servlet-api"
+    }
+
+    object AnnotationProcessors {
+        val springBootAutoConfigure = "org.springframework.boot:spring-boot-autoconfigure-processor"
+        val springBootConfiguration = "org.springframework.boot:spring-boot-configuration-processor"
     }
 
     object TestLibs {
@@ -48,7 +77,10 @@ object Config {
     }
 
     object QualityPlugins {
-        val jacocoVersion = "0.8.5"
+        object Jacoco {
+            val version = "0.8.5"
+            val minimumCoverage = BigDecimal.valueOf(0.6)
+        }
         val spotless = "com.diffplug.spotless"
         val spotlessVersion = "5.3.0"
         val errorProne = "net.ltgt.errorprone"
@@ -63,6 +95,10 @@ object Config {
     object Sentry {
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
+        val SENTRY_LOGBACK_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.logback"
+        val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"
+        val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
+        val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val website = "https://sentry.io"

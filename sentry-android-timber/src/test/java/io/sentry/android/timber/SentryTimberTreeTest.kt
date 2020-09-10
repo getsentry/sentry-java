@@ -5,10 +5,10 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.Breadcrumb
-import io.sentry.core.IHub
-import io.sentry.core.SentryLevel
-import io.sentry.core.getExc
+import io.sentry.Breadcrumb
+import io.sentry.IHub
+import io.sentry.SentryLevel
+import io.sentry.getExc
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

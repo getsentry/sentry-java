@@ -1,10 +1,10 @@
 package io.sentry.android.core;
 
 import android.content.Context;
-import io.sentry.core.ILogger;
-import io.sentry.core.OptionsContainer;
-import io.sentry.core.Sentry;
-import io.sentry.core.SentryLevel;
+import io.sentry.ILogger;
+import io.sentry.OptionsContainer;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import java.lang.reflect.InvocationTargetException;
 import org.jetbrains.annotations.NotNull;
 

@@ -3,8 +3,8 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
-import io.sentry.core.ILogger;
-import io.sentry.core.SentryLevel;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

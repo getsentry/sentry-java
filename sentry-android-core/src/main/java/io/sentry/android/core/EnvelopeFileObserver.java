@@ -1,17 +1,17 @@
 package io.sentry.android.core;
 
-import static io.sentry.core.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.ERROR;
 
 import android.os.FileObserver;
-import io.sentry.core.IEnvelopeSender;
-import io.sentry.core.ILogger;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.hints.ApplyScopeData;
-import io.sentry.core.hints.Cached;
-import io.sentry.core.hints.Flushable;
-import io.sentry.core.hints.Retryable;
-import io.sentry.core.hints.SubmissionResult;
-import io.sentry.core.util.Objects;
+import io.sentry.IEnvelopeSender;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
+import io.sentry.hints.ApplyScopeData;
+import io.sentry.hints.Cached;
+import io.sentry.hints.Flushable;
+import io.sentry.hints.Retryable;
+import io.sentry.hints.SubmissionResult;
+import io.sentry.util.Objects;
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

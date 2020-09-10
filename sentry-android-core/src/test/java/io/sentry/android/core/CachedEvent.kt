@@ -1,5 +1,5 @@
 package io.sentry.android.core
 
-import io.sentry.core.hints.Cached
+import io.sentry.hints.Cached
 
 class CachedEvent : Cached
