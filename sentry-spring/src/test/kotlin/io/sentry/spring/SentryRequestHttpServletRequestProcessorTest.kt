@@ -1,7 +1,7 @@
 package io.sentry.spring
 
-import io.sentry.core.SentryEvent
-import io.sentry.core.SentryOptions
+import io.sentry.SentryEvent
+import io.sentry.SentryOptions
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals

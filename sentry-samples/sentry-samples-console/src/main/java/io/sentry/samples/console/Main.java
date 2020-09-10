@@ -1,12 +1,12 @@
 package io.sentry.samples.console;
 
-import io.sentry.core.Breadcrumb;
-import io.sentry.core.EventProcessor;
-import io.sentry.core.Sentry;
-import io.sentry.core.SentryEvent;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.protocol.Message;
-import io.sentry.core.protocol.User;
+import io.sentry.Breadcrumb;
+import io.sentry.EventProcessor;
+import io.sentry.Sentry;
+import io.sentry.SentryEvent;
+import io.sentry.SentryLevel;
+import io.sentry.protocol.Message;
+import io.sentry.protocol.User;
 import java.util.Collections;
 
 public class Main {

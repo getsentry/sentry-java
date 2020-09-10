@@ -2,10 +2,10 @@ package io.sentry.android.core.util;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import io.sentry.android.core.IBuildInfoProvider;
-import io.sentry.core.ILogger;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.util.Objects;
+import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;

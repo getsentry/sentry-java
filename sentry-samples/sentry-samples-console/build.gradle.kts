@@ -9,5 +9,5 @@ configure<JavaPluginConvention> {
 }
 
 dependencies {
-    implementation(project(":sentry-core"))
+    implementation(project(":sentry"))
 }

@@ -1,7 +1,7 @@
 package io.sentry.spring
 
-import io.sentry.core.IHub
-import io.sentry.core.SentryOptions
+import io.sentry.IHub
+import io.sentry.SentryOptions
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.context.annotation.UserConfigurations

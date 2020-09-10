@@ -2,7 +2,7 @@ package io.sentry.spring
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.SentryOptions
+import io.sentry.SentryOptions
 import java.security.Principal
 import kotlin.test.Test
 import kotlin.test.assertEquals

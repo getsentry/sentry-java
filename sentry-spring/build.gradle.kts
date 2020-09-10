@@ -33,7 +33,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.servletApi)
 

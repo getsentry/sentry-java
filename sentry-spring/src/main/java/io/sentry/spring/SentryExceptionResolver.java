@@ -1,12 +1,12 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.IHub;
-import io.sentry.core.SentryEvent;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.exception.ExceptionMechanismException;
-import io.sentry.core.protocol.Mechanism;
-import io.sentry.core.util.Objects;
+import io.sentry.IHub;
+import io.sentry.SentryEvent;
+import io.sentry.SentryLevel;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
+import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;

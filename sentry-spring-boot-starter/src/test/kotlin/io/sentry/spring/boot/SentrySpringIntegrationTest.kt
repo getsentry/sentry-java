@@ -1,9 +1,9 @@
 package io.sentry.spring.boot
 
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.Sentry
-import io.sentry.core.transport.ITransport
+import io.sentry.Sentry
 import io.sentry.test.checkEvent
+import io.sentry.transport.ITransport
 import java.lang.RuntimeException
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await

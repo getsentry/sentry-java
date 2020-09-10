@@ -1,9 +1,9 @@
 package io.sentry.spring;
 
-import io.sentry.core.EventProcessor;
-import io.sentry.core.SentryEvent;
-import io.sentry.core.protocol.User;
-import io.sentry.core.util.Objects;
+import io.sentry.EventProcessor;
+import io.sentry.SentryEvent;
+import io.sentry.protocol.User;
+import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

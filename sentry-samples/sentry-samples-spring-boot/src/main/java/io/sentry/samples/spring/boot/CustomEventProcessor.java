@@ -1,8 +1,8 @@
 package io.sentry.samples.spring.boot;
 
-import io.sentry.core.EventProcessor;
-import io.sentry.core.SentryEvent;
-import io.sentry.core.protocol.SentryRuntime;
+import io.sentry.EventProcessor;
+import io.sentry.SentryEvent;
+import io.sentry.protocol.SentryRuntime;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,8 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.Sentry;
-import io.sentry.core.SentryOptions;
+import io.sentry.Sentry;
+import io.sentry.SentryOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;

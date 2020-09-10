@@ -1,9 +1,9 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.HubAdapter;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.protocol.SdkVersion;
+import io.sentry.HubAdapter;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;

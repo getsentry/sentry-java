@@ -1,12 +1,12 @@
 package io.sentry.android.core;
 
-import io.sentry.core.IHub;
-import io.sentry.core.ILogger;
-import io.sentry.core.Integration;
-import io.sentry.core.OutboxSender;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
+import io.sentry.IHub;
+import io.sentry.ILogger;
+import io.sentry.Integration;
+import io.sentry.OutboxSender;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.io.Closeable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

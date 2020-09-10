@@ -1,10 +1,10 @@
 package io.sentry.android.core;
 
-import io.sentry.core.IHub;
-import io.sentry.core.Integration;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
+import io.sentry.IHub;
+import io.sentry.Integration;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

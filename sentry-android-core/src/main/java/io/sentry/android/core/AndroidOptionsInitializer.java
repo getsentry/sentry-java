@@ -6,13 +6,13 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
-import io.sentry.core.ILogger;
-import io.sentry.core.SendCachedEnvelopeFireAndForgetIntegration;
-import io.sentry.core.SendFireAndForgetEnvelopeSender;
-import io.sentry.core.SendFireAndForgetOutboxSender;
-import io.sentry.core.SentryLevel;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
+import io.sentry.ILogger;
+import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
+import io.sentry.SendFireAndForgetEnvelopeSender;
+import io.sentry.SendFireAndForgetOutboxSender;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -124,7 +124,7 @@ final class AndroidOptionsInitializer {
     final Class<?> sentryNdkClass = loadNdkIfAvailable(options, buildInfoProvider, loadClass);
     options.addIntegration(new NdkIntegration(sentryNdkClass));
 
-    // this integration uses android.os.FileObserver, we can't move to sentry-core
+    // this integration uses android.os.FileObserver, we can't move to sentry
     // before creating a pure java impl.
     options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver());
 

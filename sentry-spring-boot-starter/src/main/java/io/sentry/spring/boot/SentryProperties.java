@@ -1,7 +1,7 @@
 package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.SentryOptions;
+import io.sentry.SentryOptions;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Configuration for Sentry integration. */

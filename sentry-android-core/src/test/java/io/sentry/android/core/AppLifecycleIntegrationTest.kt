@@ -4,7 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.IHub
+import io.sentry.IHub
 import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertNotNull

@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
-import io.sentry.core.Sentry;
-import io.sentry.core.SentryLevel;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal

@@ -16,7 +16,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
     // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
     implementation(Config.Libs.gson)
 

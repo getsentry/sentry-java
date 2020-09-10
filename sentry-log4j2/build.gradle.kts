@@ -20,7 +20,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
     implementation(Config.Libs.log4j2Api)
     implementation(Config.Libs.log4j2Core)
 

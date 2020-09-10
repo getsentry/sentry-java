@@ -1,8 +1,8 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.IHub;
-import io.sentry.core.SentryOptions;
+import io.sentry.IHub;
+import io.sentry.SentryOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

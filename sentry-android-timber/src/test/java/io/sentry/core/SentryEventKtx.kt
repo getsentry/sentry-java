@@ -1,4 +1,4 @@
-package io.sentry.core
+package io.sentry
 
 /**
  * package-private hack.

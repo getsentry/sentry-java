@@ -1,11 +1,11 @@
 package io.sentry.test
 
 import com.nhaarman.mockitokotlin2.check
-import io.sentry.core.GsonSerializer
-import io.sentry.core.NoOpLogger
-import io.sentry.core.SentryEnvelope
-import io.sentry.core.SentryEvent
-import io.sentry.core.SentryOptions
+import io.sentry.GsonSerializer
+import io.sentry.NoOpLogger
+import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
+import io.sentry.SentryOptions
 
 /**
  * Verifies is [SentryEnvelope] contains first event matching a predicate.

@@ -1,11 +1,11 @@
 package io.sentry.android.timber
 
 import android.util.Log
-import io.sentry.core.Breadcrumb
-import io.sentry.core.IHub
-import io.sentry.core.SentryEvent
-import io.sentry.core.SentryLevel
-import io.sentry.core.protocol.Message
+import io.sentry.Breadcrumb
+import io.sentry.IHub
+import io.sentry.SentryEvent
+import io.sentry.SentryLevel
+import io.sentry.protocol.Message
 import timber.log.Timber
 
 /**

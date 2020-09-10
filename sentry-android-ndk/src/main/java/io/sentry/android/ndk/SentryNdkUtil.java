@@ -1,6 +1,6 @@
 package io.sentry.android.ndk;
 
-import io.sentry.core.protocol.SdkVersion;
+import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.Nullable;
 
 /**

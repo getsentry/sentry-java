@@ -1,11 +1,11 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.EventProcessor;
-import io.sentry.core.SentryEvent;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.protocol.Request;
-import io.sentry.core.util.Objects;
+import io.sentry.EventProcessor;
+import io.sentry.SentryEvent;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.Request;
+import io.sentry.util.Objects;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;

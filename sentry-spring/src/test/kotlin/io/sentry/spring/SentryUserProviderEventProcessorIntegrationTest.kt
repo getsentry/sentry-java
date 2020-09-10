@@ -3,12 +3,12 @@ package io.sentry.spring
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.Sentry
-import io.sentry.core.SentryEvent
-import io.sentry.core.SentryOptions
-import io.sentry.core.protocol.User
-import io.sentry.core.transport.ITransport
+import io.sentry.Sentry
+import io.sentry.SentryEvent
+import io.sentry.SentryOptions
+import io.sentry.protocol.User
 import io.sentry.test.checkEvent
+import io.sentry.transport.ITransport
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

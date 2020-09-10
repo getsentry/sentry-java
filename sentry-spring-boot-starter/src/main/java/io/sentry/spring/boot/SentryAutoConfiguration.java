@@ -1,18 +1,18 @@
 package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.EventProcessor;
-import io.sentry.core.HubAdapter;
-import io.sentry.core.IHub;
-import io.sentry.core.Integration;
-import io.sentry.core.Sentry;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.protocol.SdkVersion;
-import io.sentry.core.transport.ITransport;
-import io.sentry.core.transport.ITransportGate;
+import io.sentry.EventProcessor;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
+import io.sentry.Integration;
+import io.sentry.Sentry;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.transport.ITransport;
+import io.sentry.transport.ITransportGate;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.ObjectProvider;

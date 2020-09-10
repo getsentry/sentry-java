@@ -1,6 +1,6 @@
 package io.sentry.android.ndk;
 
-import io.sentry.core.SentryOptions;
+import io.sentry.SentryOptions;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 

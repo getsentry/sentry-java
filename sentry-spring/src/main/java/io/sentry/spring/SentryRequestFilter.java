@@ -1,10 +1,10 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.core.Breadcrumb;
-import io.sentry.core.IHub;
-import io.sentry.core.SentryOptions;
-import io.sentry.core.util.Objects;
+import io.sentry.Breadcrumb;
+import io.sentry.IHub;
+import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Pushes new {@link io.sentry.core.Scope} on each incoming HTTP request. */
+/** Pushes new {@link io.sentry.Scope} on each incoming HTTP request. */
 @Open
 public class SentryRequestFilter extends OncePerRequestFilter implements Ordered {
   private final @NotNull IHub hub;

@@ -100,7 +100,7 @@ android {
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
     api(project(":sentry-android-core"))
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)

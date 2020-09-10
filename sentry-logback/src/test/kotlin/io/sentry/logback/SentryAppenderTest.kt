@@ -6,11 +6,11 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.SentryLevel
-import io.sentry.core.SentryOptions
-import io.sentry.core.transport.ITransport
-import io.sentry.core.transport.TransportResult
+import io.sentry.SentryLevel
+import io.sentry.SentryOptions
 import io.sentry.test.checkEvent
+import io.sentry.transport.ITransport
+import io.sentry.transport.TransportResult
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId

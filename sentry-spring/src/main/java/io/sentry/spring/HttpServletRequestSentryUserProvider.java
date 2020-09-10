@@ -1,8 +1,8 @@
 package io.sentry.spring;
 
-import io.sentry.core.SentryOptions;
-import io.sentry.core.protocol.User;
-import io.sentry.core.util.Objects;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.User;
+import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

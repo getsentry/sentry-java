@@ -2,10 +2,10 @@ package io.sentry.log4j2
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.core.HubAdapter
-import io.sentry.core.SentryLevel
-import io.sentry.core.transport.ITransport
+import io.sentry.HubAdapter
+import io.sentry.SentryLevel
 import io.sentry.test.checkEvent
+import io.sentry.transport.ITransport
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId

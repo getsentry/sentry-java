@@ -11,11 +11,11 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.core.ILogger
-import io.sentry.core.MainEventProcessor
-import io.sentry.core.SendCachedEnvelopeFireAndForgetIntegration
-import io.sentry.core.SentryLevel
-import io.sentry.core.SentryOptions
+import io.sentry.ILogger
+import io.sentry.MainEventProcessor
+import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
+import io.sentry.SentryLevel
+import io.sentry.SentryOptions
 import java.io.File
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest

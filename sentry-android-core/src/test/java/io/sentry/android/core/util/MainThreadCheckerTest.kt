@@ -1,7 +1,7 @@
 package io.sentry.android.core.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.core.protocol.SentryThread
+import io.sentry.protocol.SentryThread
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

@@ -10,10 +10,10 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
-import io.sentry.core.IEnvelopeSender
-import io.sentry.core.ILogger
-import io.sentry.core.SentryOptions
-import io.sentry.core.hints.ApplyScopeData
+import io.sentry.IEnvelopeSender
+import io.sentry.ILogger
+import io.sentry.SentryOptions
+import io.sentry.hints.ApplyScopeData
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -72,7 +72,7 @@ android {
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)

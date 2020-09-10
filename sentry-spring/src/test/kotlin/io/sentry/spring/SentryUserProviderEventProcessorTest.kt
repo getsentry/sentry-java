@@ -1,7 +1,7 @@
 package io.sentry.spring
 
-import io.sentry.core.SentryEvent
-import io.sentry.core.protocol.User
+import io.sentry.SentryEvent
+import io.sentry.protocol.User
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

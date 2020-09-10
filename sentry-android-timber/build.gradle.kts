@@ -67,7 +67,7 @@ android {
 }
 
 dependencies {
-    api(project(":sentry-core"))
+    api(project(":sentry"))
 
     api(Config.Libs.timber)
 
