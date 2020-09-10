@@ -24,7 +24,7 @@ Sentry SDK for Java and Android
 | sentry | [![sentry](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry?tab=overview) | 14 |
 | sentry-spring-boot-starter | [![sentry-spring-boot-starter](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter?tab=overview) | |
 | sentry-spring | [![sentry-spring](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring?tab=overview) | |
-| sentry-log4j | [![sentry-log4j](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j?tab=overview) | |
+| sentry-logback | [![sentry-logback](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-logback)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-logback?tab=overview) | |
 | sentry-log4j2 | [![sentry-log4j2](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j2)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j2?tab=overview) | |
 
 
