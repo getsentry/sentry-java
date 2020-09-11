@@ -12,7 +12,6 @@ plugins {
 
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
-    buildToolsVersion(Config.Android.buildToolsVersion)
 
     val sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
         "sentry-native-local"

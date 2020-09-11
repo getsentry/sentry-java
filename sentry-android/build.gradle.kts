@@ -9,7 +9,6 @@ plugins {
 
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
-    buildToolsVersion(Config.Android.buildToolsVersion)
 
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)

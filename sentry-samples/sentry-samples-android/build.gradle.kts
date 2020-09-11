@@ -5,7 +5,6 @@ plugins {
 
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
-    buildToolsVersion(Config.Android.buildToolsVersion)
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
