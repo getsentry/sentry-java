@@ -45,7 +45,7 @@ class SentrySpringIntegrationTest {
     lateinit var transport: ITransport
 
     @LocalServerPort
-    lateinit var port: Integer
+    lateinit var port: Int
 
     @Before
     fun `reset mocks`() {

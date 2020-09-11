@@ -8,3 +8,4 @@ local.properties
 *.hprof
 .cxx
 **/sentry-native-local
+target/
