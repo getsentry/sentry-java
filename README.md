@@ -13,7 +13,7 @@ Sentry SDK for Java and Android
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-java/ref/sentry-java-2?compact_message)](https://ci.appveyor.com/project/sentry/sentry-java/branch/ref/sentry-java-2/tests)
 [![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/ref/sentry-java-2/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/getsentry/sentry-java.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/getsentry/sentry-java/context:java)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/getsentry/sentry-java/ref/sentry-java-2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/getsentry/sentry-java/alerts/)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/getsentry/sentry-java/ref/main.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/getsentry/sentry-java/alerts/)
 
 |      Packages          | bintray | API |
 | ---------------------- | ------- | ------- |
