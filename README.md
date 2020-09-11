@@ -15,15 +15,15 @@ Sentry SDK for Java and Android
 
 |      Packages          | bintray | Android API |
 | ---------------------- | ------- | ------- |
-| sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android?tab=overview) | 16 |
-| sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-core)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-core?tab=overview) | 14 |
-| sentry-android-ndk | [![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-ndk)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-ndk?tab=overview) | 16 |
-| sentry-android-timber | [![sentry-android-timber](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-timber)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-timber?tab=overview) | 14 |
-| sentry | [![sentry](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry?tab=overview) | 14 |
-| sentry-spring-boot-starter | [![sentry-spring-boot-starter](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring-boot-starter?tab=overview) | |
-| sentry-spring | [![sentry-spring](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-spring)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-spring?tab=overview) | |
-| sentry-logback | [![sentry-logback](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-logback)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-logback?tab=overview) | |
-| sentry-log4j2 | [![sentry-log4j2](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j2)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j2?tab=overview) | |
+| sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-android)](https://bintray.com/getsentry/maven/io.sentry:sentry-android?tab=overview) | 16 |
+| sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-android-core)](https://bintray.com/getsentry/maven/io.sentry:sentry-android-core?tab=overview) | 14 |
+| sentry-android-ndk | [![sentry-android-ndk](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-android-ndk)](https://bintray.com/getsentry/maven/io.sentry:sentry-android-ndk?tab=overview) | 16 |
+| sentry-android-timber | [![sentry-android-timber](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-android-timber)](https://bintray.com/getsentry/maven/io.sentry:sentry-android-timber?tab=overview) | 14 |
+| sentry | [![sentry](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry)](https://bintray.com/getsentry/maven/io.sentry:sentry?tab=overview) | 14 |
+| sentry-spring-boot-starter | [![sentry-spring-boot-starter](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-spring-boot-starter)](https://bintray.com/getsentry/maven/io.sentry:sentry-spring-boot-starter?tab=overview) | |
+| sentry-spring | [![sentry-spring](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-spring)](https://bintray.com/getsentry/maven/io.sentry:sentry-spring?tab=overview) | |
+| sentry-logback | [![sentry-logback](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-logback)](https://bintray.com/getsentry/maven/io.sentry:sentry-logback?tab=overview) | |
+| sentry-log4j2 | [![sentry-log4j2](https://img.shields.io/bintray/v/getsentry/maven/io.sentry:sentry-log4j2)](https://bintray.com/getsentry/maven/io.sentry:sentry-log4j2?tab=overview) | |
 
 
 # Java SDK 3.0 Docs
