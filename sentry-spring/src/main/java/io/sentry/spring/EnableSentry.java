@@ -21,12 +21,19 @@ import org.springframework.context.annotation.Import;
 @Import({SentryHubRegistrar.class, SentryInitBeanPostProcessor.class, SentryWebConfiguration.class})
 @Target(ElementType.TYPE)
 public @interface EnableSentry {
+
   /**
    * The DSN tells the SDK where to send the events to. If this value is not provided, the SDK will
    * just not send any events.
+   *
+   * @return the Sentry DSN
    */
   String dsn() default "";
 
-  /** Whether to send personal identifiable information along with events. */
+  /**
+   * Whether to send personal identifiable information along with events.
+   *
+   * @return true if send default PII or false otherwise.
+   */
   boolean sendDefaultPii() default false;
 }

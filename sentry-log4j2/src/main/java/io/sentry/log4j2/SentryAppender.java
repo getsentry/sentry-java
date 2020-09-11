@@ -65,6 +65,9 @@ public final class SentryAppender extends AbstractAppender {
    * Create a Sentry Appender.
    *
    * @param name The name of the Appender.
+   * @param minimumBreadcrumbLevel The min. level of the breadcrumb.
+   * @param minimumEventLevel The min. level of the event.
+   * @param dsn the Sentry DSN.
    * @param filter The filter, if any, to use.
    * @return The SentryAppender.
    */
