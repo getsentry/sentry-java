@@ -103,7 +103,7 @@ object Config {
         val description = "SDK for sentry.io"
         val website = "https://sentry.io"
         val userOrg = "getsentry"
-        val repoName = "sentry-java"
+        val repoName = "maven"
         val licence = "MIT"
         val licenceUrl = "http://www.opensource.org/licenses/mit-license.php"
         val issueTracker = "https://github.com/getsentry/sentry-java/issues"
