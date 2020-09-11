@@ -12,10 +12,8 @@ Sentry SDK for Java and Android
 [![GH Workflow](https://img.shields.io/github/workflow/status/getsentry/sentry-java/Workflow%20Ubuntu%20macOS?label=GH%20Workflow)](https://github.com/getsentry/sentry-java/actions)
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-java/ref/sentry-java-2?compact_message)](https://ci.appveyor.com/project/sentry/sentry-java/branch/ref/sentry-java-2/tests)
 [![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/ref/sentry-java-2/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/getsentry/sentry-java.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/getsentry/sentry-java/context:java)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/getsentry/sentry-java/ref/main.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/getsentry/sentry-java/alerts/)
 
-|      Packages          | bintray | API |
+|      Packages          | bintray | Android API |
 | ---------------------- | ------- | ------- |
 | sentry-android | [![sentry-android](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android?tab=overview) | 16 |
 | sentry-android-core | [![sentry-android-core](https://img.shields.io/bintray/v/getsentry/sentry-android/io.sentry:sentry-android-core)](https://bintray.com/getsentry/sentry-android/io.sentry:sentry-android-core?tab=overview) | 14 |
@@ -28,7 +26,7 @@ Sentry SDK for Java and Android
 | sentry-log4j2 | [![sentry-log4j2](https://img.shields.io/bintray/v/getsentry/sentry-java/io.sentry:sentry-log4j2)](https://bintray.com/getsentry/sentry-java/io.sentry:sentry-log4j2?tab=overview) | |
 
 
-# Java SDK 2.0 Docs
+# Java SDK 3.0 Docs
 
 The Java SDK documentation [can be found on docs.sentry.io](https://docs.sentry.io/platforms/java/).
 
@@ -50,7 +48,7 @@ Migration page from [sentry-android 1.x to sentry-android 2.0](https://docs.sent
 
 [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
 
-[Sample for Development](https://github.com/getsentry/sentry-android/tree/master/sentry-sample).
+[Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
 
 # Development
 
@@ -65,8 +63,8 @@ This directory is also included in `.gitignore` not to be shown as pending chang
 
 # Resources
 
-* [![Java Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg)](https://docs.sentry.io/platforms/java/)
-* [![Android Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg)](https://docs.sentry.io/platforms/android/)
+* [![Java Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=java%20docs)](https://docs.sentry.io/platforms/java/)
+* [![Android Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=android%20docs)](https://docs.sentry.io/platforms/android/)
 * [![Forum](https://img.shields.io/badge/forum-sentry-green.svg)](https://forum.sentry.io/c/sdks)
 * [![Discord](https://img.shields.io/discord/621778831602221064)](https://discord.gg/Ww9hbqr)
 * [![Stack Overflow](https://img.shields.io/badge/stack%20overflow-sentry-green.svg)](http://stackoverflow.com/questions/tagged/sentry)
