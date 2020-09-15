@@ -36,7 +36,6 @@ final class AndroidLogger implements ILogger {
       case FATAL:
         Log.wtf(tag, message, throwable);
         break;
-      case LOG:
       case DEBUG:
       default:
         Log.d(tag, message, throwable);
@@ -52,7 +51,6 @@ final class AndroidLogger implements ILogger {
         return Log.WARN;
       case FATAL:
         return Log.ASSERT;
-      case LOG:
       case DEBUG:
       default:
         return Log.DEBUG;
