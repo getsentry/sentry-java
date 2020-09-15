@@ -135,4 +135,14 @@ class SentryOptionsTest {
 
         assertEquals(clientName, sentryOptions.sentryClientName)
     }
+
+    @Test
+    fun `when options is initialized, attachThreads is false`() {
+        assertFalse(SentryOptions().isAttachThreads)
+    }
+
+    @Test
+    fun `when options is initialized, attachStacktrace is true`() {
+        assertTrue(SentryOptions().isAttachStacktrace)
+    }
 }

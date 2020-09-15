@@ -156,13 +156,13 @@ public class SentryOptions {
   private @Nullable String dist;
 
   /** When enabled, threads are automatically attached to all logged events. */
-  private boolean attachThreads = true;
+  private boolean attachThreads;
 
   /**
    * When enabled, stack traces are automatically attached to all threads logged. Stack traces are
    * always attached to exceptions but when this is set stack traces are also sent with threads
    */
-  private boolean attachStacktrace;
+  private boolean attachStacktrace = true;
 
   /** Whether to enable or disable automatic session tracking. */
   private boolean enableSessionTracking = true;
