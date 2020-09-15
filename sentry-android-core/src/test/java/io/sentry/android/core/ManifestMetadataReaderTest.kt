@@ -46,35 +46,35 @@ class ManifestMetadataReaderTest {
     fun `applyMetadata reads sampleRate from metadata`() {
         // Arrange
         val options = SentryAndroidOptions()
-        val expectedSampleRate = 0.99
+        val expectedSampleRate = 0.99f
 
         val bundle = Bundle()
         val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putDouble(ManifestMetadataReader.SAMPLE_RATE, expectedSampleRate)
+        bundle.putFloat(ManifestMetadataReader.SAMPLE_RATE, expectedSampleRate)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
-        assertEquals(expectedSampleRate, options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), options.sampleRate)
     }
 
     @Test
     fun `applyMetadata does not override sampleRate from options`() {
         // Arrange
-        val expectedSampleRate = 0.99
+        val expectedSampleRate = 0.99f
         val options = SentryAndroidOptions()
-        options.sampleRate = expectedSampleRate
+        options.sampleRate = expectedSampleRate.toDouble()
 
         val bundle = Bundle()
         val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putDouble(ManifestMetadataReader.SAMPLE_RATE, 0.1)
+        bundle.putFloat(ManifestMetadataReader.SAMPLE_RATE, 0.1f)
 
         // Act
         ManifestMetadataReader.applyMetadata(mockContext, options)
 
         // Assert
-        assertEquals(expectedSampleRate, options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), options.sampleRate)
     }
 
     @Test
