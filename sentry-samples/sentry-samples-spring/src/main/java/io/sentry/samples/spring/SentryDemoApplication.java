@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry
 // project/dashboard
 @EnableSentry(
-    dsn = "https://f7f320d5c3a54709be7b28e0f2ca7081@sentry.io/1808954",
+    dsn = "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563",
     sendDefaultPii = true)
 public class SentryDemoApplication {
   public static void main(String[] args) {
