@@ -13,6 +13,10 @@ _Platform:_
 - [ ]  Kotlin -> If yes, which Kotlin (and jvmTarget) version?
 - [ ]  NDK -> If yes, which NDK/CMake version?
 - [ ]  React-Native -> If yes, which version?
+- [ ]  Timber -> If yes, which version?
+- [ ]  Log4j -> If yes, which version?
+- [ ]  Logback -> If yes, which version?
+- [ ]  Spring -> If yes, which version?
 
 _IDE:_
 - [ ]  Android Studio -> If yes, which version?
@@ -23,6 +27,7 @@ _Build system:_
 - [ ]  Gradle -> If yes, which version?
 - [ ]  Buck -> If yes, which version?
 - [ ]  Bazel -> If yes, which version?
+- [ ]  Maven -> If yes, which version?
 - [ ]  Other -> If yes, which one?
 
 _Android Gradle Plugin:_
@@ -37,14 +42,14 @@ _Proguard/R8:_
 - [ ]  Enabled
 - [ ]  Disabled
 
-_sentry-android installed with:_
+_Platform installed with:_
 - [ ] JCenter
 - [ ] Bintray
 - [ ] Maven Central
 - [ ] Manually
 
-The version of sentry-android:
-**2.x.x**
+The version of the SDK:
+**3.x.x**
 
 ---
 I have the following issue:
