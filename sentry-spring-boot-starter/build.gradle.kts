@@ -107,7 +107,7 @@ configure<PublishExtension> {
     publishVersion = project.version.toString()
     desc = Config.Sentry.description
     website = Config.Sentry.website
-    repoName = Config.Sentry.repoName
+    repoName = Config.Sentry.javaRepoName
     setLicences(Config.Sentry.licence)
     setLicenceUrls(Config.Sentry.licenceUrl)
     issueTracker = Config.Sentry.issueTracker
