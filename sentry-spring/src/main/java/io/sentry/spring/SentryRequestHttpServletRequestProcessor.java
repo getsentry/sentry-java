@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   private static final List<String> SENSITIVE_HEADERS =
-      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIES");
+      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
   private final @NotNull HttpServletRequest request;
   private final @NotNull SentryOptions options;
