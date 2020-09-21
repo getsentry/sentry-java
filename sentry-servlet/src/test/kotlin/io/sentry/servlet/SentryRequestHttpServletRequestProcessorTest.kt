@@ -75,7 +75,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("X-FORWARDED-FOR", "192.168.0.1")
             .header("authorization", "Token")
             .header("Authorization", "Token")
-            .header("Cookies", "some cookies")
+            .header("Cookie", "some cookies")
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false

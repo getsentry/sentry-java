@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 /** Attaches information about HTTP request to {@link SentryEvent}. */
 final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   private static final List<String> SENSITIVE_HEADERS =
-      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIES");
+      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
   private final @NotNull HttpServletRequest httpRequest;
 
