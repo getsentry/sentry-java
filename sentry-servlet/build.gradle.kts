@@ -10,7 +10,6 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.Deploy.novodaBintray)
     id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
 }
 
@@ -79,18 +78,6 @@ tasks {
         dependsOn(jacocoTestCoverageVerification)
         dependsOn(jacocoTestReport)
     }
-}
-
-buildConfig {
-    useJavaOutput()
-    packageName("io.sentry.spring")
-    buildConfigField("String", "SENTRY_SERVLET_SDK_NAME", "\"${Config.Sentry.SENTRY_SERVLET_SDK_NAME}\"")
-    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-}
-
-val generateBuildConfig by tasks
-tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
 }
 
 // TODO: move these blocks to parent gradle file, DRY
