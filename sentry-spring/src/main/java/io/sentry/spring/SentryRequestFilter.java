@@ -38,7 +38,12 @@ public class SentryRequestFilter extends OncePerRequestFilter implements Ordered
         scope -> {
           scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request, options));
         });
-    filterChain.doFilter(request, response);
+
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      hub.popScope();
+    }
   }
 
   @Override
