@@ -22,7 +22,7 @@ public class NdkScopeObserver implements IScopeObserver {
   public void addBreadcrumb(@NotNull Breadcrumb crumb) {
     String level = null;
     if (crumb.getLevel() != null) {
-      level = crumb.getLevel().toString();
+      level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
     }
     nativeAddBreadcrumb(
       level,
