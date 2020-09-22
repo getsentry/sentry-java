@@ -115,6 +115,9 @@ public final class Scope implements Cloneable {
    */
   public void setUser(@Nullable User user) {
     this.user = user;
+    for (IScopeObserver o : this.options.getScopeObservers()) {
+      o.setUser(user);
+    }
   }
 
   /**
@@ -191,6 +194,9 @@ public final class Scope implements Cloneable {
     }
     if (breadcrumb != null) {
       this.breadcrumbs.add(breadcrumb);
+      for (IScopeObserver o : this.options.getScopeObservers()) {
+        o.addBreadcrumb(breadcrumb);
+      }
     } else {
       options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
     }
@@ -240,7 +246,11 @@ public final class Scope implements Cloneable {
    * @param value the value
    */
   public void setTag(@NotNull String key, @NotNull String value) {
+
     this.tags.put(key, value);
+    for (IScopeObserver o : this.options.getScopeObservers()) {
+      o.setTag(key, value);
+    }
   }
 
   /**

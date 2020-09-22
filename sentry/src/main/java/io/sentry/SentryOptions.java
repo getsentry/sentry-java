@@ -10,6 +10,7 @@ import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
 import java.net.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -949,6 +950,16 @@ public class SentryOptions {
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  private final List<IScopeObserver> observers = new ArrayList<>() ;
+
+  public void addScopeObserver(IScopeObserver observer) {
+    observers.add(observer);
+  }
+
+  public List<IScopeObserver> getScopeObservers() {
+    return observers;
   }
 
   /** The BeforeSend callback */
