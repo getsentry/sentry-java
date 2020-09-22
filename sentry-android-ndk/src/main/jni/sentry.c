@@ -17,7 +17,7 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetTag(
     }
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = NULL;
-    if (value == NULL) {
+    if (value != NULL) {
         charValue = (*env)->GetStringUTFChars(env, value, 0);
     }
     sentry_set_tag(charKey, charValue);
