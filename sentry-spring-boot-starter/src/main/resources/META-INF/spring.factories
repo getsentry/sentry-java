@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-io.sentry.spring.boot.SentryAutoConfiguration
+io.sentry.spring.boot.SentryAutoConfiguration,\
+io.sentry.spring.boot.SentryLogbackAppenderAutoConfiguration
