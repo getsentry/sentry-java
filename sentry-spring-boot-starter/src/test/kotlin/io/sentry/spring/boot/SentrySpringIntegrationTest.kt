@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -96,6 +97,19 @@ class SentrySpringIntegrationTest {
             })
         }
     }
+
+    @Test
+    fun `sends events for error logs`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/logging", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.message.message).isEqualTo("event from logger")
+            })
+        }
+    }
 }
 
 @SpringBootApplication
@@ -103,6 +117,7 @@ open class App
 
 @RestController
 class HelloController {
+    private val logger = LoggerFactory.getLogger(HelloController::class.java)
 
     @GetMapping("/hello")
     fun hello() {
@@ -112,6 +127,11 @@ class HelloController {
     @GetMapping("/throws")
     fun throws() {
         throw RuntimeException("something went wrong")
+    }
+
+    @GetMapping("/logging")
+    fun logging() {
+        logger.error("event from logger")
     }
 }
 

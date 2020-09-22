@@ -8,7 +8,6 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.logback.SentryAppender;
 import java.util.Iterator;
 import java.util.Optional;
-
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,17 +15,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Auto-configures {@link SentryAppender}.
- */
+/** Auto-configures {@link SentryAppender}. */
 @Configuration
 @Open
 @ConditionalOnClass(LoggerContext.class)
 @ConditionalOnProperty(name = "sentry.logging.enabled", havingValue = "true", matchIfMissing = true)
 public class SentryLogbackAppenderAutoConfiguration implements InitializingBean {
 
-  @Autowired
-  private SentryProperties sentryProperties;
+  @Autowired private SentryProperties sentryProperties;
 
   @Override
   public void afterPropertiesSet() {
@@ -38,9 +34,9 @@ public class SentryLogbackAppenderAutoConfiguration implements InitializingBean 
       sentryAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
 
       Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
-        .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
+          .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
       Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
-        .ifPresent(sentryAppender::setMinimumEventLevel);
+          .ifPresent(sentryAppender::setMinimumEventLevel);
 
       sentryAppender.start();
       rootLogger.addAppender(sentryAppender);
