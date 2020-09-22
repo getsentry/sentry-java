@@ -4,7 +4,7 @@ Sample application showing how to use Sentry with a non-Spring Java servlet appl
 
 ## How to build?
 
-From the project directory execute command:
+From the module directory execute a command:
 
 ```
 ../../gradlew build
