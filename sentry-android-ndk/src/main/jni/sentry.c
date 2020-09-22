@@ -31,7 +31,7 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetUser
         jstring ipAddress,
         jstring username) {
     if (id == NULL && email == NULL && ipAddress == NULL && username == NULL) {
-        sentry_set_user(sentry_value_new_object());
+        sentry_remove_user();
         return;
     }
 
