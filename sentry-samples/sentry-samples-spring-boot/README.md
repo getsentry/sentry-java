@@ -1,6 +1,6 @@
 # Sentry Sample Spring Boot
 
-Sample application showing how to use Sentry with [Spring](http://spring.io/projects/spring-boot).
+Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot).
 
 ## How to run? 
 
