@@ -115,8 +115,9 @@ public final class Scope implements Cloneable {
    */
   public void setUser(@Nullable User user) {
     this.user = user;
-    for (IScopeObserver o : this.options.getScopeObservers()) {
-      o.setUser(user);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setUser(user);
     }
   }
 
@@ -194,8 +195,9 @@ public final class Scope implements Cloneable {
     }
     if (breadcrumb != null) {
       this.breadcrumbs.add(breadcrumb);
-      for (IScopeObserver o : this.options.getScopeObservers()) {
-        o.addBreadcrumb(breadcrumb);
+
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        observer.addBreadcrumb(breadcrumb);
       }
     } else {
       options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
@@ -246,10 +248,10 @@ public final class Scope implements Cloneable {
    * @param value the value
    */
   public void setTag(@NotNull String key, @NotNull String value) {
-
     this.tags.put(key, value);
-    for (IScopeObserver o : this.options.getScopeObservers()) {
-      o.setTag(key, value);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTag(key, value);
     }
   }
 
@@ -260,6 +262,10 @@ public final class Scope implements Cloneable {
    */
   public void removeTag(@NotNull String key) {
     this.tags.remove(key);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.removeTag(key);
+    }
   }
 
   /**
@@ -280,6 +286,10 @@ public final class Scope implements Cloneable {
    */
   public void setExtra(@NotNull String key, @NotNull String value) {
     this.extra.put(key, value);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setExtra(key, value);
+    }
   }
 
   /**
@@ -289,6 +299,10 @@ public final class Scope implements Cloneable {
    */
   public void removeExtra(@NotNull String key) {
     this.extra.remove(key);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.removeExtra(key);
+    }
   }
 
   /**

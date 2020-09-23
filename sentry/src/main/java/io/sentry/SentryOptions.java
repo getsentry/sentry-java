@@ -206,6 +206,9 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
+  /** list of scope observers */
+  private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
+
   /**
    * Adds an event processor
    *
@@ -952,13 +955,11 @@ public class SentryOptions {
     this.sendDefaultPii = sendDefaultPii;
   }
 
-  private final List<IScopeObserver> observers = new ArrayList<>();
-
-  public void addScopeObserver(IScopeObserver observer) {
+  public void addScopeObserver(final @NotNull IScopeObserver observer) {
     observers.add(observer);
   }
 
-  public List<IScopeObserver> getScopeObservers() {
+  public @NotNull List<IScopeObserver> getScopeObservers() {
     return observers;
   }
 

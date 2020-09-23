@@ -4,22 +4,24 @@ import io.sentry.Breadcrumb;
 import io.sentry.IScopeObserver;
 import io.sentry.protocol.User;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class NdkScopeObserver implements IScopeObserver {
+@ApiStatus.Internal
+public final class NdkScopeObserver implements IScopeObserver {
   @Override
-  public void setUser(@Nullable User user) {
+  public void setUser(final @Nullable User user) {
     // Unset user from the scope
     if (user == null) {
-      nativeSetUser(null, null, null, null);
+      nativeRemoveUser();
     } else {
       nativeSetUser(user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
     }
   }
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb crumb) {
+  public void addBreadcrumb(final @NotNull Breadcrumb crumb) {
     String level = null;
     if (crumb.getLevel() != null) {
       level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
@@ -28,15 +30,39 @@ public class NdkScopeObserver implements IScopeObserver {
   }
 
   @Override
-  public void setTag(@NotNull String key, @Nullable String value) {
+  public void setTag(final @NotNull String key, final @Nullable String value) {
     nativeSetTag(key, value);
+  }
+
+  @Override
+  public void removeTag(final @NotNull String key) {
+    nativeRemoveTag(key);
+  }
+
+  @Override
+  public void setExtra(final @NotNull String key, final @Nullable String value) {
+    nativeSetExtra(key, value);
+  }
+
+  @Override
+  public void removeExtra(final @NotNull String key) {
+    nativeRemoveExtra(key);
   }
 
   public static native void nativeSetTag(String key, String value);
 
+  public static native void nativeRemoveTag(String key);
+
+  public static native void nativeSetExtra(String key, String value);
+
+  public static native void nativeRemoveExtra(String key);
+
   public static native void nativeSetUser(
       String id, String email, String ipAddress, String username);
 
+  public static native void nativeRemoveUser();
+
+  // TODO: missing data field
   public static native void nativeAddBreadcrumb(
-      String id, String email, String ipAddress, String username);
+      String level, String message, String category, String type);
 }

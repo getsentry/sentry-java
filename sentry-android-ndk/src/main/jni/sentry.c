@@ -12,15 +12,30 @@ struct transport_options {
 struct transport_options g_transport_options;
 
 JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetTag(JNIEnv *env, jclass cls, jstring key, jstring value) {
-    if (key == NULL) {
-        return;
-    }
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
-    const char *charValue = NULL;
-    if (value != NULL) {
-        charValue = (*env)->GetStringUTFChars(env, value, 0);
-    }
+    const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
+
     sentry_set_tag(charKey, charValue);
+}
+
+JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveTag(JNIEnv *env, jclass cls, jstring key) {
+    const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
+
+    sentry_remove_tag(charKey);
+}
+
+JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetExtra(JNIEnv *env, jclass cls, jstring key, jstring value) {
+    const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
+    const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
+
+    sentry_value_t sentryValue = sentry_value_new_string(charValue);
+    sentry_set_extra(charKey, sentryValue);
+}
+
+JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveExtra(JNIEnv *env, jclass cls, jstring key) {
+    const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
+
+    sentry_remove_extra(charKey);
 }
 
 JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetUser(
@@ -30,11 +45,6 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetUser
         jstring email,
         jstring ipAddress,
         jstring username) {
-    if (id == NULL && email == NULL && ipAddress == NULL && username == NULL) {
-        sentry_remove_user();
-        return;
-    }
-
     sentry_value_t user = sentry_value_new_object();
     if (id) {
         const char *charId = (*env)->GetStringUTFChars(env, id, 0);
@@ -58,6 +68,12 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetUser
     sentry_set_user(user);
 }
 
+JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveUser(
+        JNIEnv *env,
+        jclass cls) {
+    sentry_remove_user();
+}
+
 JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBreadcrumb(
         JNIEnv *env,
         jclass cls,
@@ -65,7 +81,7 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
         jstring message,
         jstring category,
         jstring type) {
-    if (level == NULL && message == NULL && category == NULL && type == NULL) {
+    if (!level && !message && !category && !type) {
         return;
     }
     const char *charMessage = NULL;
@@ -92,8 +108,6 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
 
     sentry_add_breadcrumb(crumb);
 }
-
-
 
 static void send_envelope(sentry_envelope_t *envelope, void *unused_data) {
     (void)unused_data;
@@ -150,13 +164,13 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNI
     sentry_options_set_debug(options, g_transport_options.debug);
     sentry_options_set_dsn(options, (*env)->GetStringUTFChars(env, dsn, 0));
 
-    if (release != NULL) {
+    if (release) {
         sentry_options_set_release(options, (*env)->GetStringUTFChars(env, release, 0));
     }
-    if (environment != NULL) {
+    if (environment) {
         sentry_options_set_environment(options, (*env)->GetStringUTFChars(env, environment, 0));
     }
-    if (dist != NULL) {
+    if (dist) {
         sentry_options_set_dist(options, (*env)->GetStringUTFChars(env, dist, 0));
     }
     // session tracking is enabled by default, but the Android SDK already handles it
