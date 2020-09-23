@@ -11,20 +11,25 @@ struct transport_options {
 
 struct transport_options g_transport_options;
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetTag(JNIEnv *env, jclass cls, jstring key, jstring value) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetTag(JNIEnv *env, jclass cls, jstring key,
+                                                         jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
     sentry_set_tag(charKey, charValue);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveTag(JNIEnv *env, jclass cls, jstring key) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveTag(JNIEnv *env, jclass cls, jstring key) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
 
     sentry_remove_tag(charKey);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetExtra(JNIEnv *env, jclass cls, jstring key, jstring value) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetExtra(JNIEnv *env, jclass cls, jstring key,
+                                                           jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
@@ -32,7 +37,9 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeSetExtr
     sentry_set_extra(charKey, sentryValue);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveExtra(JNIEnv *env, jclass cls, jstring key) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveExtra(JNIEnv *env, jclass cls,
+                                                              jstring key) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
 
     sentry_remove_extra(charKey);
@@ -72,6 +79,116 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveU
         JNIEnv *env,
         jclass cls) {
     sentry_remove_user();
+}
+
+void transform_data_from_java(JNIEnv *env, sentry_value_t crumb, jobject data) {
+    sentry_value_t rvData = sentry_value_new_object();
+
+    jclass mapClass = (*env)->FindClass(env, "java/util/Map");
+    if (!mapClass) {
+        return;
+    }
+
+    jmethodID entrySet =
+            (*env)->GetMethodID(env, mapClass, "entrySet", "()Ljava/util/Set;");
+    if (!entrySet) {
+        return;
+    }
+
+    jobject set = (*env)->CallObjectMethod(env, data, entrySet);
+    if (!set) {
+        return;
+    }
+
+    jclass setClass = (*env)->FindClass(env, "java/util/Set");
+    if (!setClass) {
+        return;
+    }
+
+    jmethodID iterator =
+            (*env)->GetMethodID(env, setClass, "iterator", "()Ljava/util/Iterator;");
+    if (!iterator) {
+        return;
+    }
+
+    jobject iter = (*env)->CallObjectMethod(env, set, iterator);
+    if (!iter) {
+        return;
+    }
+
+    jclass iteratorClass = (*env)->FindClass(env, "java/util/Iterator");
+    if (!iteratorClass) {
+        return;
+    }
+
+    jmethodID hasNext = (*env)->GetMethodID(env, iteratorClass, "hasNext", "()Z");
+    if (!hasNext) {
+        return;
+    }
+
+    jmethodID next =
+            (*env)->GetMethodID(env, iteratorClass, "next",
+                                "()Ljava/lang/Object;");
+    if (!next) {
+        return;
+    }
+
+    jclass entryClass = (*env)->FindClass(env,
+                                          "java/util/Map$Entry");
+    if (!entryClass) {
+        return;
+    }
+
+    jmethodID getKey =
+            (*env)->GetMethodID(env, entryClass, "getKey",
+                                "()Ljava/lang/Object;");
+    if (!getKey) {
+        return;
+    }
+
+    jmethodID getValue = (*env)->GetMethodID(env, entryClass,
+                                             "getValue",
+                                             "()Ljava/lang/Object;");
+    if (!getValue) {
+        return;
+    }
+
+    // Iterate over the entry Set
+    while ((*env)->CallBooleanMethod(env, iter, hasNext)) {
+        jobject entry = (*env)->CallObjectMethod(env, iter,
+                                                 next);
+        jstring key = (jstring) (*env)->CallObjectMethod(env,
+                                                         entry,
+                                                         getKey);
+        // TODO: value can be object e this would make it harder
+        jstring value = (jstring) (*env)->CallObjectMethod(env,
+                                                           entry,
+                                                           getValue);
+        const char *keyStr = (*env)->GetStringUTFChars(env, key,
+                                                       NULL);
+        if (!keyStr) {  // Out of memory
+            break;
+        }
+        const char *valueStr = (*env)->GetStringUTFChars(env,
+                                                         value,
+                                                         NULL);
+        if (!valueStr) {  // Out of memory
+            (*env)->ReleaseStringUTFChars(env, key, keyStr);
+            break;
+        }
+
+        sentry_value_set_by_key(
+                rvData, keyStr,
+                sentry_value_new_string(valueStr));
+
+        (*env)->DeleteLocalRef(env, entry);
+        (*env)->ReleaseStringUTFChars(env, key, keyStr);
+        (*env)->DeleteLocalRef(env, key);
+        (*env)->ReleaseStringUTFChars(env, value, valueStr);
+        (*env)->DeleteLocalRef(env, value);
+    }
+
+    sentry_value_set_by_key(crumb, "data", rvData);
 }
 
 JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBreadcrumb(
@@ -115,88 +232,15 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
                 crumb, "timestamp", sentry_value_new_string(charTimestamp));
     }
 
-    // TODO: make this a method
     if (data) {
-        sentry_value_t rvData = sentry_value_new_object();
-
-        jclass mapClass = (*env)->FindClass(env, "java/util/Map");
-        if (mapClass) {
-            jmethodID entrySet =
-                    (*env)->GetMethodID(env, mapClass, "entrySet", "()Ljava/util/Set;");
-            if (entrySet) {
-                jobject set = (*env)->CallObjectMethod(env, data, entrySet);
-
-                if (set) {
-                    jclass setClass = (*env)->FindClass(env, "java/util/Set");
-
-                    if (setClass) {
-                        jmethodID iterator =
-                                (*env)->GetMethodID(env, setClass, "iterator", "()Ljava/util/Iterator;");
-
-                        if (iterator) {
-                            jobject iter = (*env)->CallObjectMethod(env, set, iterator);
-
-                            if (iter) {
-                                jclass iteratorClass = (*env)->FindClass(env, "java/util/Iterator");
-
-                                if (iteratorClass) {
-                                    jmethodID hasNext = (*env)->GetMethodID(env, iteratorClass, "hasNext", "()Z");
-
-                                    if (hasNext) {
-                                        jmethodID next =
-                                                (*env)->GetMethodID(env, iteratorClass, "next", "()Ljava/lang/Object;");
-
-                                        if (next) {
-                                            jclass entryClass = (*env)->FindClass(env, "java/util/Map$Entry");
-                                            if (entryClass) {
-                                                jmethodID getKey =
-                                                        (*env)->GetMethodID(env, entryClass, "getKey", "()Ljava/lang/Object;");
-
-                                                jmethodID getValue =(*env)->GetMethodID(env, entryClass, "getValue", "()Ljava/lang/Object;");
-
-                                                // Iterate over the entry Set
-                                                while ((*env)->CallBooleanMethod(env, iter, hasNext)) {
-                                                    jobject entry = (*env)->CallObjectMethod(env, iter, next);
-                                                    jstring key = (jstring) (*env)->CallObjectMethod(env, entry, getKey);
-                                                    // TODO: value can be object e this would make it harder
-                                                    jstring value = (jstring) (*env)->CallObjectMethod(env, entry, getValue);
-                                                    const char* keyStr = (*env)->GetStringUTFChars(env, key, NULL);
-                                                    if (!keyStr) {  // Out of memory
-                                                        return;
-                                                    }
-                                                    const char* valueStr = (*env)->GetStringUTFChars(env, value, NULL);
-                                                    if (!valueStr) {  // Out of memory
-                                                        (*env)->ReleaseStringUTFChars(env, key, keyStr);
-                                                        return;
-                                                    }
-
-                                                    sentry_value_set_by_key(
-                                                            rvData, keyStr, sentry_value_new_string(valueStr));
-
-                                                    (*env)->DeleteLocalRef(env, entry);
-                                                    (*env)->ReleaseStringUTFChars(env, key, keyStr);
-                                                    (*env)->DeleteLocalRef(env, key);
-                                                    (*env)->ReleaseStringUTFChars(env, value, valueStr);
-                                                    (*env)->DeleteLocalRef(env, value);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        sentry_value_set_by_key(crumb, "data", rvData);
+        transform_data_from_java(env, crumb, data);
     }
 
     sentry_add_breadcrumb(crumb);
 }
 
 static void send_envelope(sentry_envelope_t *envelope, void *unused_data) {
-    (void)unused_data;
+    (void) unused_data;
     char envelope_id_str[40];
     char outbox_path[4096];
 
@@ -209,27 +253,35 @@ static void send_envelope(sentry_envelope_t *envelope, void *unused_data) {
     sentry_envelope_write_to_file(envelope, outbox_path);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls, jobject sentry_sdk_options) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls,
+                                                      jobject sentry_sdk_options) {
     jclass options_cls = (*env)->GetObjectClass(env, sentry_sdk_options);
 
-    jmethodID outbox_path_mid = (*env)->GetMethodID(env, options_cls, "getOutboxPath", "()Ljava/lang/String;");
-    jstring outbox_path = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, outbox_path_mid);
-    strncpy(g_transport_options.outbox_path, (*env)->GetStringUTFChars(env, outbox_path, 0), sizeof(g_transport_options.outbox_path));
+    jmethodID outbox_path_mid = (*env)->GetMethodID(env, options_cls, "getOutboxPath",
+                                                    "()Ljava/lang/String;");
+    jstring outbox_path = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options,
+                                                             outbox_path_mid);
+    strncpy(g_transport_options.outbox_path, (*env)->GetStringUTFChars(env, outbox_path, 0),
+            sizeof(g_transport_options.outbox_path));
 
     jmethodID dsn_mid = (*env)->GetMethodID(env, options_cls, "getDsn", "()Ljava/lang/String;");
-    jstring dsn = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, dsn_mid);
+    jstring dsn = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, dsn_mid);
 
     jmethodID is_debug_mid = (*env)->GetMethodID(env, options_cls, "isDebug", "()Z");
     g_transport_options.debug = (*env)->CallBooleanMethod(env, sentry_sdk_options, is_debug_mid);
 
-    jmethodID release_mid = (*env)->GetMethodID(env, options_cls, "getRelease", "()Ljava/lang/String;");
-    jstring release = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, release_mid);
+    jmethodID release_mid = (*env)->GetMethodID(env, options_cls, "getRelease",
+                                                "()Ljava/lang/String;");
+    jstring release = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, release_mid);
 
-    jmethodID environment_mid = (*env)->GetMethodID(env, options_cls, "getEnvironment", "()Ljava/lang/String;");
-    jstring environment = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, environment_mid);
+    jmethodID environment_mid = (*env)->GetMethodID(env, options_cls, "getEnvironment",
+                                                    "()Ljava/lang/String;");
+    jstring environment = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options,
+                                                             environment_mid);
 
     jmethodID dist_mid = (*env)->GetMethodID(env, options_cls, "getDist", "()Ljava/lang/String;");
-    jstring dist = (jstring)(*env)->CallObjectMethod(env, sentry_sdk_options, dist_mid);
+    jstring dist = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, dist_mid);
 
     g_transport_options.env = env;
     g_transport_options.cls = cls;
