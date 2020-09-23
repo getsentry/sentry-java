@@ -125,8 +125,9 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the data map
    */
+  @ApiStatus.Internal
   @NotNull
-  Map<String, Object> getData() {
+  public Map<String, Object> getData() {
     return data;
   }
 

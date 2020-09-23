@@ -80,7 +80,9 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
         jstring level,
         jstring message,
         jstring category,
-        jstring type) {
+        jstring type,
+        jstring timestamp,
+        jobject data) {
     if (!level && !message && !category && !type) {
         return;
     }
@@ -104,6 +106,90 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
         const char *charLevel = (*env)->GetStringUTFChars(env, level, 0);
         sentry_value_set_by_key(
                 crumb, "level", sentry_value_new_string(charLevel));
+    }
+
+    // overwrite timestamp that is already created on sentry_value_new_breadcrumb
+    if (timestamp) {
+        const char *charTimestamp = (*env)->GetStringUTFChars(env, timestamp, 0);
+        sentry_value_set_by_key(
+                crumb, "timestamp", sentry_value_new_string(charTimestamp));
+    }
+
+    // TODO: make this a method
+    if (data) {
+        sentry_value_t rvData = sentry_value_new_object();
+
+        jclass mapClass = (*env)->FindClass(env, "java/util/Map");
+        if (mapClass) {
+            jmethodID entrySet =
+                    (*env)->GetMethodID(env, mapClass, "entrySet", "()Ljava/util/Set;");
+            if (entrySet) {
+                jobject set = (*env)->CallObjectMethod(env, data, entrySet);
+
+                if (set) {
+                    jclass setClass = (*env)->FindClass(env, "java/util/Set");
+
+                    if (setClass) {
+                        jmethodID iterator =
+                                (*env)->GetMethodID(env, setClass, "iterator", "()Ljava/util/Iterator;");
+
+                        if (iterator) {
+                            jobject iter = (*env)->CallObjectMethod(env, set, iterator);
+
+                            if (iter) {
+                                jclass iteratorClass = (*env)->FindClass(env, "java/util/Iterator");
+
+                                if (iteratorClass) {
+                                    jmethodID hasNext = (*env)->GetMethodID(env, iteratorClass, "hasNext", "()Z");
+
+                                    if (hasNext) {
+                                        jmethodID next =
+                                                (*env)->GetMethodID(env, iteratorClass, "next", "()Ljava/lang/Object;");
+
+                                        if (next) {
+                                            jclass entryClass = (*env)->FindClass(env, "java/util/Map$Entry");
+                                            if (entryClass) {
+                                                jmethodID getKey =
+                                                        (*env)->GetMethodID(env, entryClass, "getKey", "()Ljava/lang/Object;");
+
+                                                jmethodID getValue =(*env)->GetMethodID(env, entryClass, "getValue", "()Ljava/lang/Object;");
+
+                                                // Iterate over the entry Set
+                                                while ((*env)->CallBooleanMethod(env, iter, hasNext)) {
+                                                    jobject entry = (*env)->CallObjectMethod(env, iter, next);
+                                                    jstring key = (jstring) (*env)->CallObjectMethod(env, entry, getKey);
+                                                    // TODO: value can be object e this would make it harder
+                                                    jstring value = (jstring) (*env)->CallObjectMethod(env, entry, getValue);
+                                                    const char* keyStr = (*env)->GetStringUTFChars(env, key, NULL);
+                                                    if (!keyStr) {  // Out of memory
+                                                        return;
+                                                    }
+                                                    const char* valueStr = (*env)->GetStringUTFChars(env, value, NULL);
+                                                    if (!valueStr) {  // Out of memory
+                                                        (*env)->ReleaseStringUTFChars(env, key, keyStr);
+                                                        return;
+                                                    }
+
+                                                    sentry_value_set_by_key(
+                                                            rvData, keyStr, sentry_value_new_string(valueStr));
+
+                                                    (*env)->DeleteLocalRef(env, entry);
+                                                    (*env)->ReleaseStringUTFChars(env, key, keyStr);
+                                                    (*env)->DeleteLocalRef(env, key);
+                                                    (*env)->ReleaseStringUTFChars(env, value, valueStr);
+                                                    (*env)->DeleteLocalRef(env, value);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        sentry_value_set_by_key(crumb, "data", rvData);
     }
 
     sentry_add_breadcrumb(crumb);

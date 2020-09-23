@@ -1,9 +1,11 @@
 package io.sentry.android.ndk;
 
 import io.sentry.Breadcrumb;
+import io.sentry.DateUtils;
 import io.sentry.IScopeObserver;
 import io.sentry.protocol.User;
 import java.util.Locale;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
 public final class NdkScopeObserver implements IScopeObserver {
   @Override
   public void setUser(final @Nullable User user) {
-    // Unset user from the scope
     if (user == null) {
+      // remove user if its null
       nativeRemoveUser();
     } else {
       nativeSetUser(user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
@@ -26,7 +28,15 @@ public final class NdkScopeObserver implements IScopeObserver {
     if (crumb.getLevel() != null) {
       level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
     }
-    nativeAddBreadcrumb(level, crumb.getMessage(), crumb.getCategory(), crumb.getType());
+    final String timestamp = DateUtils.getTimestamp(crumb.getTimestamp());
+
+    nativeAddBreadcrumb(
+        level,
+        crumb.getMessage(),
+        crumb.getCategory(),
+        crumb.getType(),
+        timestamp,
+        crumb.getData());
   }
 
   @Override
@@ -64,5 +74,10 @@ public final class NdkScopeObserver implements IScopeObserver {
 
   // TODO: missing data field
   public static native void nativeAddBreadcrumb(
-      String level, String message, String category, String type);
+      String level,
+      String message,
+      String category,
+      String type,
+      String timestamp,
+      Map<String, Object> data);
 }

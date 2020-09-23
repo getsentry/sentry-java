@@ -955,10 +955,20 @@ public class SentryOptions {
     this.sendDefaultPii = sendDefaultPii;
   }
 
+  /**
+   * Adds a Scope observer
+   *
+   * @param observer the Observer
+   */
   public void addScopeObserver(final @NotNull IScopeObserver observer) {
     observers.add(observer);
   }
 
+  /**
+   * Returns the list of Scope observers
+   *
+   * @return the Scope observer list
+   */
   public @NotNull List<IScopeObserver> getScopeObservers() {
     return observers;
   }
