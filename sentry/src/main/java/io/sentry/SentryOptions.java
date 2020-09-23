@@ -952,7 +952,7 @@ public class SentryOptions {
     this.sendDefaultPii = sendDefaultPii;
   }
 
-  private final List<IScopeObserver> observers = new ArrayList<>() ;
+  private final List<IScopeObserver> observers = new ArrayList<>();
 
   public void addScopeObserver(IScopeObserver observer) {
     observers.add(observer);

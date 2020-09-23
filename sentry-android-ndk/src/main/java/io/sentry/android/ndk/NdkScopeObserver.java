@@ -1,11 +1,11 @@
 package io.sentry.android.ndk;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import io.sentry.Breadcrumb;
 import io.sentry.IScopeObserver;
 import io.sentry.protocol.User;
+import java.util.Locale;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NdkScopeObserver implements IScopeObserver {
   @Override
@@ -24,11 +24,7 @@ public class NdkScopeObserver implements IScopeObserver {
     if (crumb.getLevel() != null) {
       level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
     }
-    nativeAddBreadcrumb(
-      level,
-      crumb.getMessage(),
-      crumb.getCategory(),
-      crumb.getType());
+    nativeAddBreadcrumb(level, crumb.getMessage(), crumb.getCategory(), crumb.getType());
   }
 
   @Override
@@ -37,7 +33,10 @@ public class NdkScopeObserver implements IScopeObserver {
   }
 
   public static native void nativeSetTag(String key, String value);
-  public static native void nativeSetUser(String id, String email, String ipAddress, String username);
-  public static native void nativeAddBreadcrumb(String id, String email, String ipAddress, String username);
 
+  public static native void nativeSetUser(
+      String id, String email, String ipAddress, String username);
+
+  public static native void nativeAddBreadcrumb(
+      String id, String email, String ipAddress, String username);
 }
