@@ -159,10 +159,18 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
     }
   }
 
+  public @NotNull Level getMinimumBreadcrumbLevel() {
+    return minimumBreadcrumbLevel;
+  }
+
   public void setMinimumEventLevel(final @Nullable Level minimumEventLevel) {
     if (minimumEventLevel != null) {
       this.minimumEventLevel = minimumEventLevel;
     }
+  }
+
+  public @NotNull Level getMinimumEventLevel() {
+    return minimumEventLevel;
   }
 
   @ApiStatus.Internal
