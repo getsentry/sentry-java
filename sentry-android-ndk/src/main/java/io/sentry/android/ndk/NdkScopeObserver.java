@@ -72,7 +72,6 @@ public final class NdkScopeObserver implements IScopeObserver {
 
   public static native void nativeRemoveUser();
 
-  // TODO: missing data field
   public static native void nativeAddBreadcrumb(
       String level,
       String message,
