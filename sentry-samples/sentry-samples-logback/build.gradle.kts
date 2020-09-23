@@ -1,6 +1,11 @@
 plugins {
     java
+    application
     id(Config.QualityPlugins.gradleVersions)
+}
+
+application {
+    mainClassName = "io.sentry.samples.logback.Main"
 }
 
 configure<JavaPluginConvention> {
