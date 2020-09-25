@@ -25,6 +25,6 @@ public final class SentryNdk {
   public static void init(@NotNull final SentryOptions options) {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     initSentryNative(options);
-    options.addScopeObserver(new NdkScopeObserver());
+    options.addScopeObserver(new NdkScopeObserver(options));
   }
 }

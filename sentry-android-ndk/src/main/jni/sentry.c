@@ -81,115 +81,130 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeRemoveU
     sentry_remove_user();
 }
 
-void transform_data_from_java(JNIEnv *env, sentry_value_t crumb, jobject data) {
-    sentry_value_t rvData = sentry_value_new_object();
-
-    jclass mapClass = (*env)->FindClass(env, "java/util/Map");
-    if (!mapClass) {
-        return;
-    }
-
-    jmethodID entrySet =
-            (*env)->GetMethodID(env, mapClass, "entrySet", "()Ljava/util/Set;");
-    if (!entrySet) {
-        return;
-    }
-
-    jobject set = (*env)->CallObjectMethod(env, data, entrySet);
-    if (!set) {
-        return;
-    }
-
-    jclass setClass = (*env)->FindClass(env, "java/util/Set");
-    if (!setClass) {
-        return;
-    }
-
-    jmethodID iterator =
-            (*env)->GetMethodID(env, setClass, "iterator", "()Ljava/util/Iterator;");
-    if (!iterator) {
-        return;
-    }
-
-    jobject iter = (*env)->CallObjectMethod(env, set, iterator);
-    if (!iter) {
-        return;
-    }
-
-    jclass iteratorClass = (*env)->FindClass(env, "java/util/Iterator");
-    if (!iteratorClass) {
-        return;
-    }
-
-    jmethodID hasNext = (*env)->GetMethodID(env, iteratorClass, "hasNext", "()Z");
-    if (!hasNext) {
-        return;
-    }
-
-    jmethodID next =
-            (*env)->GetMethodID(env, iteratorClass, "next",
-                                "()Ljava/lang/Object;");
-    if (!next) {
-        return;
-    }
-
-    jclass entryClass = (*env)->FindClass(env,
-                                          "java/util/Map$Entry");
-    if (!entryClass) {
-        return;
-    }
-
-    jmethodID getKey =
-            (*env)->GetMethodID(env, entryClass, "getKey",
-                                "()Ljava/lang/Object;");
-    if (!getKey) {
-        return;
-    }
-
-    jmethodID getValue = (*env)->GetMethodID(env, entryClass,
-                                             "getValue",
-                                             "()Ljava/lang/Object;");
-    if (!getValue) {
-        return;
-    }
-
-    // Iterate over the entry Set
-    while ((*env)->CallBooleanMethod(env, iter, hasNext)) {
-        jobject entry = (*env)->CallObjectMethod(env, iter,
-                                                 next);
-        jstring key = (jstring) (*env)->CallObjectMethod(env,
-                                                         entry,
-                                                         getKey);
-        // TODO: value can be object e this would make it harder
-        jstring value = (jstring) (*env)->CallObjectMethod(env,
-                                                           entry,
-                                                           getValue);
-        const char *keyStr = (*env)->GetStringUTFChars(env, key,
-                                                       NULL);
-        if (!keyStr) {  // Out of memory
-            break;
-        }
-        const char *valueStr = (*env)->GetStringUTFChars(env,
-                                                         value,
-                                                         NULL);
-        if (!valueStr) {  // Out of memory
-            (*env)->ReleaseStringUTFChars(env, key, keyStr);
-            break;
-        }
-
-        sentry_value_set_by_key(
-                rvData, keyStr,
-                sentry_value_new_string(valueStr));
-
-        (*env)->DeleteLocalRef(env, entry);
-        (*env)->ReleaseStringUTFChars(env, key, keyStr);
-        (*env)->DeleteLocalRef(env, key);
-        (*env)->ReleaseStringUTFChars(env, value, valueStr);
-        (*env)->DeleteLocalRef(env, value);
-    }
-
-    sentry_value_set_by_key(crumb, "data", rvData);
-}
+//void transform_data_from_java(JNIEnv *env, sentry_value_t crumb, jobject data) {
+//    sentry_value_t rvData = sentry_value_new_object();
+//
+//    jclass mapClass = (*env)->FindClass(env, "java/util/Map");
+//    if (!mapClass) {
+//        return;
+//    }
+//
+//    jmethodID entrySet =
+//            (*env)->GetMethodID(env, mapClass, "entrySet", "()Ljava/util/Set;");
+//    if (!entrySet) {
+//        return;
+//    }
+//
+//    jobject set = (*env)->CallObjectMethod(env, data, entrySet);
+//    if (!set) {
+//        return;
+//    }
+//
+//    jclass setClass = (*env)->FindClass(env, "java/util/Set");
+//    if (!setClass) {
+//        return;
+//    }
+//
+//    jmethodID iterator =
+//            (*env)->GetMethodID(env, setClass, "iterator", "()Ljava/util/Iterator;");
+//    if (!iterator) {
+//        return;
+//    }
+//
+//    jobject iter = (*env)->CallObjectMethod(env, set, iterator);
+//    if (!iter) {
+//        return;
+//    }
+//
+//    jclass iteratorClass = (*env)->FindClass(env, "java/util/Iterator");
+//    if (!iteratorClass) {
+//        return;
+//    }
+//
+//    jmethodID hasNext = (*env)->GetMethodID(env, iteratorClass, "hasNext", "()Z");
+//    if (!hasNext) {
+//        return;
+//    }
+//
+//    jmethodID next =
+//            (*env)->GetMethodID(env, iteratorClass, "next",
+//                                "()Ljava/lang/Object;");
+//    if (!next) {
+//        return;
+//    }
+//
+//    jclass entryClass = (*env)->FindClass(env,
+//                                          "java/util/Map$Entry");
+//    if (!entryClass) {
+//        return;
+//    }
+//
+//    jmethodID getKey =
+//            (*env)->GetMethodID(env, entryClass, "getKey",
+//                                "()Ljava/lang/Object;");
+//    if (!getKey) {
+//        return;
+//    }
+//
+//    jmethodID getValue = (*env)->GetMethodID(env, entryClass,
+//                                             "getValue",
+//                                             "()Ljava/lang/Object;");
+//    if (!getValue) {
+//        return;
+//    }
+//
+//    // Iterate over the entry Set
+//    while ((*env)->CallBooleanMethod(env, iter, hasNext)) {
+//        jobject entry = (*env)->CallObjectMethod(env, iter,
+//                                                 next);
+//        jstring key = (jstring) (*env)->CallObjectMethod(env,
+//                                                         entry,
+//                                                         getKey);
+//        // TODO: value can be object e this would make it harder
+//        jobject value = (*env)->CallObjectMethod(env,
+//                                                           entry,
+//                                                           getValue);
+//        const char *keyStr = (*env)->GetStringUTFChars(env, key,
+//                                                       NULL);
+//        if (!keyStr) {  // Out of memory
+//            break;
+//        }
+//
+//        jclass booleanClass = (*env)->FindClass(env, "java/lang/Boolean");
+//        if (!booleanClass) {
+//            return;
+//        }
+//        jclass stringClass = (*env)->FindClass(env, "java/lang/String");
+//        if (!stringClass) {
+//            return;
+//        }
+//
+//        if ((*env)-> IsInstanceOf(env, value, booleanClass)) {
+//            jboolean boolValue = (jboolean)value;
+//
+//            // its boolean
+//            sentry_value_set_by_key(
+//                    rvData, keyStr,
+//                    sentry_value_new_bool(boolValue));
+//        }
+//
+//        if ((*env)-> IsInstanceOf(env, value, stringClass)) {
+//            jstring stringValue = (jstring)value;
+//
+//            // its boolean
+//            sentry_value_set_by_key(
+//                    rvData, keyStr,
+//                    sentry_value_new_string(stringValue));
+//        }
+//
+//        (*env)->DeleteLocalRef(env, entry);
+//        (*env)->ReleaseStringUTFChars(env, key, keyStr);
+//        (*env)->DeleteLocalRef(env, key);
+//        (*env)->DeleteLocalRef(env, value);
+//    }
+//
+//    sentry_value_set_by_key(crumb, "data", rvData);
+//}
 
 JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBreadcrumb(
         JNIEnv *env,
@@ -199,7 +214,7 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
         jstring category,
         jstring type,
         jstring timestamp,
-        jobject data) {
+        jstring data) {
     if (!level && !message && !category && !type) {
         return;
     }
@@ -225,15 +240,21 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NdkScopeObserver_nativeAddBrea
                 crumb, "level", sentry_value_new_string(charLevel));
     }
 
-    // overwrite timestamp that is already created on sentry_value_new_breadcrumb
     if (timestamp) {
+        // overwrite timestamp that is already created on sentry_value_new_breadcrumb
         const char *charTimestamp = (*env)->GetStringUTFChars(env, timestamp, 0);
         sentry_value_set_by_key(
                 crumb, "timestamp", sentry_value_new_string(charTimestamp));
     }
 
     if (data) {
-        transform_data_from_java(env, crumb, data);
+        const char *charData = (*env)->GetStringUTFChars(env, data, 0);
+
+        // we create an object because the Java layer parses it as a Map
+        sentry_value_t dataObject = sentry_value_new_object();
+        sentry_value_set_by_key(dataObject, "data", sentry_value_new_string(charData));
+
+        sentry_value_set_by_key(crumb, "data", dataObject);
     }
 
     sentry_add_breadcrumb(crumb);

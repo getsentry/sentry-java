@@ -209,6 +209,9 @@ public class SentryOptions {
   /** list of scope observers */
   private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
 
+  /** Enable the Java -> NDK Scope sync */
+  private boolean enableScopeSync;
+
   /**
    * Adds an event processor
    *
@@ -971,6 +974,24 @@ public class SentryOptions {
    */
   public @NotNull List<IScopeObserver> getScopeObservers() {
     return observers;
+  }
+
+  /**
+   * Returns if the Java -> NDK Scope sync is enabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableScopeSync() {
+    return enableScopeSync;
+  }
+
+  /**
+   * Enables or not the Java -> NDK Scope sync
+   *
+   * @param enableScopeSync true if enabled or false otherwise
+   */
+  public void setEnableScopeSync(boolean enableScopeSync) {
+    this.enableScopeSync = enableScopeSync;
   }
 
   /** The BeforeSend callback */
