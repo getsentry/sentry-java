@@ -196,9 +196,6 @@ public class SentryOptions {
   /** read timeout in milliseconds */
   private int readTimeoutMillis = 5000;
 
-  /** whether to ignore TLS errors */
-  private boolean bypassSecurity = false;
-
   /** Reads and caches envelope files in the disk */
   private @NotNull IEnvelopeCache envelopeDiskCache = NoOpEnvelopeCache.getInstance();
 
@@ -874,24 +871,6 @@ public class SentryOptions {
    */
   public void setReadTimeoutMillis(int readTimeoutMillis) {
     this.readTimeoutMillis = readTimeoutMillis;
-  }
-
-  /**
-   * Returns whether to ignore TLS errors
-   *
-   * @return the bypassSecurity
-   */
-  public boolean isBypassSecurity() {
-    return bypassSecurity;
-  }
-
-  /**
-   * Sets whether to ignore TLS errors
-   *
-   * @param bypassSecurity the bypassSecurity
-   */
-  public void setBypassSecurity(boolean bypassSecurity) {
-    this.bypassSecurity = bypassSecurity;
   }
 
   /**

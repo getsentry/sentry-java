@@ -78,7 +78,6 @@ public class HttpTransport implements ITransport {
   private final @NotNull ISerializer serializer;
   private final int connectionTimeout;
   private final int readTimeout;
-  private final boolean bypassSecurity;
   private final @NotNull URL envelopeUrl;
   private final SSLSocketFactory sslSocketFactory;
   private final HostnameVerifier hostnameVerifier;
@@ -103,7 +102,6 @@ public class HttpTransport implements ITransport {
    *     is sent
    * @param connectionTimeoutMillis connection timeout in milliseconds
    * @param readTimeoutMillis read timeout in milliseconds
-   * @param bypassSecurity whether to ignore TLS errors
    * @param sslSocketFactory custom sslSocketFactory for self-signed certificate trust
    * @param hostnameVerifier custom hostnameVerifier for self-signed certificate trust
    * @param sentryUrl sentryUrl which is the parsed DSN
@@ -113,7 +111,6 @@ public class HttpTransport implements ITransport {
       final @NotNull IConnectionConfigurator connectionConfigurator,
       final int connectionTimeoutMillis,
       final int readTimeoutMillis,
-      final boolean bypassSecurity,
       final SSLSocketFactory sslSocketFactory,
       final HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl) {
@@ -122,7 +119,6 @@ public class HttpTransport implements ITransport {
         connectionConfigurator,
         connectionTimeoutMillis,
         readTimeoutMillis,
-        bypassSecurity,
         sslSocketFactory,
         hostnameVerifier,
         sentryUrl,
@@ -134,7 +130,6 @@ public class HttpTransport implements ITransport {
       final @NotNull IConnectionConfigurator connectionConfigurator,
       final int connectionTimeoutMillis,
       final int readTimeoutMillis,
-      final boolean bypassSecurity,
       final SSLSocketFactory sslSocketFactory,
       final HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl,
@@ -145,7 +140,6 @@ public class HttpTransport implements ITransport {
     this.connectionTimeout = connectionTimeoutMillis;
     this.readTimeout = readTimeoutMillis;
     this.options = options;
-    this.bypassSecurity = bypassSecurity;
     this.sslSocketFactory = sslSocketFactory;
     this.hostnameVerifier = hostnameVerifier;
     this.currentDateProvider =
@@ -244,9 +238,6 @@ public class HttpTransport implements ITransport {
     connection.setConnectTimeout(connectionTimeout);
     connection.setReadTimeout(readTimeout);
 
-    if (bypassSecurity && connection instanceof HttpsURLConnection) {
-      ((HttpsURLConnection) connection).setHostnameVerifier((__, ___) -> true);
-    }
     if(connection instanceof HttpsURLConnection && hostnameVerifier!=null){
       ((HttpsURLConnection) connection).setHostnameVerifier(hostnameVerifier);
     }
