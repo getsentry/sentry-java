@@ -29,6 +29,8 @@ final class HttpTransportFactory {
         options.getConnectionTimeoutMillis(),
         options.getReadTimeoutMillis(),
         options.isBypassSecurity(),
+        options.getSslSocketFactory(),
+        options.getHostnameVerifier(),
         sentryUrl);
   }
 }
