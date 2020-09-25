@@ -6,6 +6,7 @@ import io.sentry.IScopeObserver;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.User;
+import io.sentry.util.Objects;
 import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -18,7 +19,7 @@ public final class NdkScopeObserver implements IScopeObserver {
   private final @NotNull SentryOptions options;
 
   public NdkScopeObserver(final @NotNull SentryOptions options) {
-    this.options = options;
+    this.options = Objects.requireNonNull(options, "The SentryOptions object is required.");
   }
 
   @Override
@@ -62,7 +63,7 @@ public final class NdkScopeObserver implements IScopeObserver {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @Nullable String value) {
+  public void setTag(final @NotNull String key, final @NotNull String value) {
     try {
       nativeSetTag(key, value);
     } catch (Exception e) {
@@ -80,7 +81,7 @@ public final class NdkScopeObserver implements IScopeObserver {
   }
 
   @Override
-  public void setExtra(final @NotNull String key, final @Nullable String value) {
+  public void setExtra(final @NotNull String key, final @NotNull String value) {
     try {
       nativeSetExtra(key, value);
     } catch (Exception e) {

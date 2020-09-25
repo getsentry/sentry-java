@@ -204,8 +204,17 @@ public final class GsonSerializer implements ISerializer {
     writer.flush();
   }
 
+  /**
+   * Serialize a Map to a String
+   *
+   * @param data the data Map
+   * @return the serialized String
+   * @throws Exception the Exception if there was a problem during serialization
+   */
   @Override
   public String serialize(final @NotNull Map<String, Object> data) throws Exception {
+    Objects.requireNonNull(data, "The SentryEnvelope object is required.");
+
     return gson.toJson(data);
   }
 }
