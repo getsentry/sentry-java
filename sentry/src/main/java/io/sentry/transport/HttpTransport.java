@@ -31,11 +31,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPOutputStream;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,8 +77,8 @@ public class HttpTransport implements ITransport {
   private final int connectionTimeout;
   private final int readTimeout;
   private final @NotNull URL envelopeUrl;
-  private final SSLSocketFactory sslSocketFactory;
-  private final HostnameVerifier hostnameVerifier;
+  private final @Nullable SSLSocketFactory sslSocketFactory;
+  private final @Nullable HostnameVerifier hostnameVerifier;
 
   private final @NotNull SentryOptions options;
 
@@ -111,8 +109,8 @@ public class HttpTransport implements ITransport {
       final @NotNull IConnectionConfigurator connectionConfigurator,
       final int connectionTimeoutMillis,
       final int readTimeoutMillis,
-      final SSLSocketFactory sslSocketFactory,
-      final HostnameVerifier hostnameVerifier,
+      final @Nullable SSLSocketFactory sslSocketFactory,
+      final @Nullable HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl) {
     this(
         options,
@@ -130,8 +128,8 @@ public class HttpTransport implements ITransport {
       final @NotNull IConnectionConfigurator connectionConfigurator,
       final int connectionTimeoutMillis,
       final int readTimeoutMillis,
-      final SSLSocketFactory sslSocketFactory,
-      final HostnameVerifier hostnameVerifier,
+      final @Nullable SSLSocketFactory sslSocketFactory,
+      final @Nullable HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl,
       final @NotNull ICurrentDateProvider currentDateProvider) {
     this.proxy = options.getProxy();
@@ -238,10 +236,10 @@ public class HttpTransport implements ITransport {
     connection.setConnectTimeout(connectionTimeout);
     connection.setReadTimeout(readTimeout);
 
-    if(connection instanceof HttpsURLConnection && hostnameVerifier!=null){
+    if (connection instanceof HttpsURLConnection && hostnameVerifier != null) {
       ((HttpsURLConnection) connection).setHostnameVerifier(hostnameVerifier);
     }
-    if(connection instanceof HttpsURLConnection && sslSocketFactory!=null){
+    if (connection instanceof HttpsURLConnection && sslSocketFactory != null) {
       ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory);
     }
 

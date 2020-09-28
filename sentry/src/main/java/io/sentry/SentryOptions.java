@@ -12,12 +12,11 @@ import java.io.File;
 import java.net.Proxy;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocketFactory;
 
 /** Sentry SDK options */
 @Open
@@ -205,11 +204,11 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
-  /** HostnameVerifier for self-signed certificate trust**/
-  private HostnameVerifier hostnameVerifier = null;
+  /** HostnameVerifier for self-signed certificate trust* */
+  private @Nullable HostnameVerifier hostnameVerifier;
 
-  /** SSLSocketFactory for self-signed certificate trust **/
-  private SSLSocketFactory sslSocketFactory = null;
+  /** SSLSocketFactory for self-signed certificate trust * */
+  private @Nullable SSLSocketFactory sslSocketFactory;
 
   /**
    * Adds an event processor
@@ -926,7 +925,7 @@ public class SentryOptions {
    *
    * @return SSLSocketFactory object or null
    */
-  public SSLSocketFactory getSslSocketFactory() {
+  public @Nullable SSLSocketFactory getSslSocketFactory() {
     return sslSocketFactory;
   }
 
@@ -935,7 +934,7 @@ public class SentryOptions {
    *
    * @param sslSocketFactory SSLSocketFactory object
    */
-  public void setSslSocketFactory(SSLSocketFactory sslSocketFactory) {
+  public void setSslSocketFactory(final @Nullable SSLSocketFactory sslSocketFactory) {
     this.sslSocketFactory = sslSocketFactory;
   }
 
@@ -944,17 +943,14 @@ public class SentryOptions {
    *
    * @return HostnameVerifier objecr or null
    */
-  public HostnameVerifier getHostnameVerifier() {
+  public @Nullable HostnameVerifier getHostnameVerifier() {
     return hostnameVerifier;
   }
 
-  /**
-   * Set HostnameVerifier
-   */
-  public void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+  /** Set HostnameVerifier */
+  public void setHostnameVerifier(final @Nullable HostnameVerifier hostnameVerifier) {
     this.hostnameVerifier = hostnameVerifier;
   }
-
 
   /**
    * Sets the SdkVersion object

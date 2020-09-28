@@ -16,6 +16,8 @@ import java.net.HttpURLConnection
 import java.net.Proxy
 import java.net.URI
 import java.net.URL
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLSocketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,9 +32,10 @@ class HttpTransportTest {
         var requestUpdater = IConnectionConfigurator {}
         var connectionTimeout = 1000
         var readTimeout = 500
-        var bypassSecurity = false
         val connection = mock<HttpURLConnection>()
         val currentDateProvider = mock<ICurrentDateProvider>()
+        var sslSocketFactory: SSLSocketFactory? = null
+        var hostnameVerifier: HostnameVerifier? = null
 
         init {
             whenever(connection.outputStream).thenReturn(mock())
@@ -44,7 +47,7 @@ class HttpTransportTest {
             options.setSerializer(serializer)
             options.proxy = proxy
 
-            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, bypassSecurity, dsn, currentDateProvider) {
+            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, sslSocketFactory, hostnameVerifier, dsn, currentDateProvider) {
                 override fun open(): HttpURLConnection {
                     return connection
                 }
