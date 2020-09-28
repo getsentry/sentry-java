@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -144,5 +145,20 @@ class SentryOptionsTest {
     @Test
     fun `when options is initialized, attachStacktrace is true`() {
         assertTrue(SentryOptions().isAttachStacktrace)
+    }
+
+    @Test
+    fun `when options is initialized, enableScopeSync is false`() {
+        assertFalse(SentryOptions().isEnableScopeSync)
+    }
+
+    @Test
+    fun `when adds scope observer, observer list has it`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+
+        assertTrue(options.scopeObservers.contains(observer))
     }
 }

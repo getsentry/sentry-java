@@ -1,5 +1,10 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -397,5 +402,157 @@ class ScopeTest {
 
         assertNull(start.duration)
         assertNotNull(end.duration)
+    }
+
+    @Test
+    fun `Scope set user sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        val user = User()
+        scope.user = user
+        verify(observer).setUser(eq(user))
+    }
+
+    @Test
+    fun `Scope set user wont sync scopes if disabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.user = User()
+        verify(observer, never()).setUser(any())
+    }
+
+    @Test
+    fun `Scope add breadcrumb sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        val breadrumb = Breadcrumb()
+        scope.addBreadcrumb(breadrumb)
+        verify(observer).addBreadcrumb(eq(breadrumb))
+    }
+
+    @Test
+    fun `Scope add breadcrumb wont sync scopes if disabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.addBreadcrumb(Breadcrumb())
+        verify(observer, never()).addBreadcrumb(any())
+    }
+
+    @Test
+    fun `Scope set tag sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.setTag("a", "b")
+        verify(observer).setTag(eq("a"), eq("b"))
+    }
+
+    @Test
+    fun `Scope set tag wont sync scopes if disabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.setTag("a", "b")
+        verify(observer, never()).setTag(any(), any())
+    }
+
+    @Test
+    fun `Scope remove tag sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.removeTag("a")
+        verify(observer).removeTag(eq("a"))
+    }
+
+    @Test
+    fun `Scope remove tag wont sync scopes if disabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.removeTag("a")
+        verify(observer, never()).removeTag(any())
+    }
+
+    @Test
+    fun `Scope set extra sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.setExtra("a", "b")
+        verify(observer).setExtra(eq("a"), eq("b"))
+    }
+
+    @Test
+    fun `Scope set extra wont sync scopes if disabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.setExtra("a", "b")
+        verify(observer, never()).setExtra(any(), any())
+    }
+
+    @Test
+    fun `Scope remove extra sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.removeExtra("a")
+        verify(observer).removeExtra(eq("a"))
+    }
+
+    @Test
+    fun `Scope remove extra wont sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.removeExtra("a")
+        verify(observer, never()).removeExtra(any())
     }
 }

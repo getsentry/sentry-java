@@ -70,7 +70,6 @@ class SentryAutoConfigurationTest {
             "sentry.read-timeout-millis=10",
             "sentry.shutdown-timeout=20",
             "sentry.flush-timeout-millis=30",
-            "sentry.bypass-security=true",
             "sentry.debug=true",
             "sentry.diagnostic-level=INFO",
             "sentry.sentry-client-name=my-client",
@@ -89,7 +88,6 @@ class SentryAutoConfigurationTest {
             assertThat(options.readTimeoutMillis).isEqualTo(10)
             assertThat(options.shutdownTimeout).isEqualTo(20)
             assertThat(options.flushTimeoutMillis).isEqualTo(30)
-            assertThat(options.isBypassSecurity).isTrue()
             assertThat(options.isDebug).isTrue()
             assertThat(options.diagnosticLevel).isEqualTo(SentryLevel.INFO)
             assertThat(options.maxBreadcrumbs).isEqualTo(100)
