@@ -3,6 +3,9 @@ package io.sentry.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import io.sentry.ILogger;
+import io.sentry.SystemOutLogger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,13 +29,14 @@ public final class PropertiesProviderFactory {
    * @return the properties provider
    */
   public static @NotNull PropertiesProvider create() {
+    final ILogger logger = new SystemOutLogger();
     final List<PropertiesProvider> providers = new ArrayList<>();
     providers.add(new SystemPropertyPropertiesProvider());
     providers.add(new EnvironmentVariablePropertiesProvider());
 
     final String systemPropertyLocation = System.getProperty("sentry.properties.file");
     if (systemPropertyLocation != null) {
-      final Properties properties = new FilesystemPropertiesLoader(systemPropertyLocation).load();
+      final Properties properties = new FilesystemPropertiesLoader(systemPropertyLocation, logger).load();
       if (properties != null) {
         providers.add(new SimplePropertiesProvider(properties));
       }
@@ -41,13 +45,13 @@ public final class PropertiesProviderFactory {
     final String environmentVariablesLocation = System.getenv("SENTRY_PROPERTIES_FILE");
     if (environmentVariablesLocation != null) {
       final Properties properties =
-          new FilesystemPropertiesLoader(environmentVariablesLocation).load();
+          new FilesystemPropertiesLoader(environmentVariablesLocation, logger).load();
       if (properties != null) {
         providers.add(new SimplePropertiesProvider(properties));
       }
     }
 
-    final Properties properties = new ClasspathPropertiesLoader().load();
+    final Properties properties = new ClasspathPropertiesLoader(logger).load();
     if (properties != null) {
       providers.add(new SimplePropertiesProvider(properties));
     }

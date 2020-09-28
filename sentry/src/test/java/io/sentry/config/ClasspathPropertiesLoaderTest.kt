@@ -2,7 +2,7 @@ package io.sentry.config
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import java.io.ByteArrayInputStream
+import io.sentry.NoOpLogger
 import java.io.IOException
 import java.nio.charset.Charset
 import kotlin.test.Test
@@ -13,7 +13,7 @@ import kotlin.test.assertNull
 class ClasspathPropertiesLoaderTest {
     private class Fixture(fileName: String = "sentry.properties", content: String? = null, throws: Boolean = false) {
         val classLoader = mock<ClassLoader>()
-        val loader = ClasspathPropertiesLoader(fileName, classLoader)
+        val loader = ClasspathPropertiesLoader(fileName, classLoader, NoOpLogger.getInstance())
 
         init {
             if (content != null) {

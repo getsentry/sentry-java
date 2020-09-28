@@ -64,6 +64,9 @@ tasks {
         dependsOn(jacocoTestCoverageVerification)
         dependsOn(jacocoTestReport)
     }
+    test {
+        environment["SENTRY_TEST_PROPERTY"] = "some-value"
+    }
 }
 
 buildConfig {

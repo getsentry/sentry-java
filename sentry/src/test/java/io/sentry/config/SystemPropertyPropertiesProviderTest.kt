@@ -1,6 +1,5 @@
 package io.sentry.config
 
-import kotlin.random.Random
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

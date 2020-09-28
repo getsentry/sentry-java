@@ -1,8 +1,8 @@
 package io.sentry.config
 
-import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.Test
 
 class EnvironmentVariablePropertiesProviderTest {
     private val provider = EnvironmentVariablePropertiesProvider()

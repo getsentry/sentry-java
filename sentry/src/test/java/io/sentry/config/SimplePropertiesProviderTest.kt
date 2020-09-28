@@ -1,9 +1,9 @@
 package io.sentry.config
 
-import org.junit.Test
-import java.util.*
+import java.util.Properties
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.Test
 
 class SimplePropertiesProviderTest {
 

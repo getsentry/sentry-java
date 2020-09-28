@@ -5,15 +5,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Loads {@link Properties} from file system location. */
 final class FilesystemPropertiesLoader implements PropertiesLoader {
   private final @NotNull String filePath;
+  private final @NotNull ILogger logger;
 
-  public FilesystemPropertiesLoader(@NotNull String filePath) {
+  public FilesystemPropertiesLoader(@NotNull String filePath, @NotNull ILogger logger) {
     this.filePath = filePath;
+    this.logger = logger;
   }
 
   @Override
@@ -28,7 +33,7 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
         }
       }
     } catch (IOException e) {
-      // TODO: log error
+      logger.log(SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
       return null;
     }
     return null;
