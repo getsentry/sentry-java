@@ -269,4 +269,16 @@ class SentryAppenderTest {
             })
         }
     }
+
+    @Test
+    fun `uses options set in properties file`() {
+        fixture = Fixture()
+        fixture.logger.error("some event")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertEquals("release from sentry.properties", event.release)
+            })
+        }
+    }
 }
