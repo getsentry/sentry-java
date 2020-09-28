@@ -16,6 +16,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
+
 /** Sentry SDK options */
 @Open
 public class SentryOptions {
@@ -193,9 +196,6 @@ public class SentryOptions {
   /** read timeout in milliseconds */
   private int readTimeoutMillis = 5000;
 
-  /** whether to ignore TLS errors */
-  private boolean bypassSecurity = false;
-
   /** Reads and caches envelope files in the disk */
   private @NotNull IEnvelopeCache envelopeDiskCache = NoOpEnvelopeCache.getInstance();
 
@@ -204,6 +204,12 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
+
+  /** HostnameVerifier for self-signed certificate trust**/
+  private HostnameVerifier hostnameVerifier = null;
+
+  /** SSLSocketFactory for self-signed certificate trust **/
+  private SSLSocketFactory sslSocketFactory = null;
 
   /**
    * Adds an event processor
@@ -868,24 +874,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns whether to ignore TLS errors
-   *
-   * @return the bypassSecurity
-   */
-  public boolean isBypassSecurity() {
-    return bypassSecurity;
-  }
-
-  /**
-   * Sets whether to ignore TLS errors
-   *
-   * @param bypassSecurity the bypassSecurity
-   */
-  public void setBypassSecurity(boolean bypassSecurity) {
-    this.bypassSecurity = bypassSecurity;
-  }
-
-  /**
    * Returns the EnvelopeCache interface
    *
    * @return the EnvelopeCache object
@@ -932,6 +920,41 @@ public class SentryOptions {
   public @Nullable SdkVersion getSdkVersion() {
     return sdkVersion;
   }
+
+  /**
+   * Returns SSLSocketFactory
+   *
+   * @return SSLSocketFactory object or null
+   */
+  public SSLSocketFactory getSslSocketFactory() {
+    return sslSocketFactory;
+  }
+
+  /**
+   * Set custom SSLSocketFactory that is trusted to self-signed certificates
+   *
+   * @param sslSocketFactory SSLSocketFactory object
+   */
+  public void setSslSocketFactory(SSLSocketFactory sslSocketFactory) {
+    this.sslSocketFactory = sslSocketFactory;
+  }
+
+  /**
+   * Returns HostnameVerifier
+   *
+   * @return HostnameVerifier objecr or null
+   */
+  public HostnameVerifier getHostnameVerifier() {
+    return hostnameVerifier;
+  }
+
+  /**
+   * Set HostnameVerifier
+   */
+  public void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+    this.hostnameVerifier = hostnameVerifier;
+  }
+
 
   /**
    * Sets the SdkVersion object
