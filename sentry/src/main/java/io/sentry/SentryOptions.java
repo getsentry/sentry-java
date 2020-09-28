@@ -2,6 +2,7 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.config.PropertiesProvider;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
@@ -204,6 +205,23 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
+
+  /**
+   * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
+   *
+   * @param propertiesProvider the properties provider
+   * @return the sentry options
+   */
+  public static SentryOptions from(PropertiesProvider propertiesProvider) {
+    final SentryOptions options = new SentryOptions();
+    options.setDsn(propertiesProvider.getProperty("dsn"));
+    options.setEnvironment(propertiesProvider.getProperty("environment"));
+    options.setRelease(propertiesProvider.getProperty("release"));
+    options.setDist(propertiesProvider.getProperty("dist"));
+    options.setServerName(propertiesProvider.getProperty("servername"));
+    // TODO: which properties should be set?
+    return options;
+  }
 
   /**
    * Adds an event processor

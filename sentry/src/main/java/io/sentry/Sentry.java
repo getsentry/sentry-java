@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.io.File;
@@ -55,7 +56,7 @@ public final class Sentry {
 
   /** Initializes the SDK */
   public static void init() {
-    init(new SentryOptions(), GLOBAL_HUB_DEFAULT_MODE);
+    init(SentryOptions.from(PropertiesProviderFactory.create()), GLOBAL_HUB_DEFAULT_MODE);
   }
 
   /**
