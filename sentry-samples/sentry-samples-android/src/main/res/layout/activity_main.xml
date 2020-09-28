@@ -22,9 +22,19 @@
         android:text="@string/capture_exception"/>
 
     <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/breadcrumb"
-        android:text="@string/breadcrumb"/>
+      android:layout_height="wrap_content"
+      android:id="@+id/breadcrumb"
+      android:text="@string/breadcrumb"/>
+
+    <Button android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:id="@+id/set_user"
+      android:text="@string/set_user"/>
+
+    <Button android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:id="@+id/unset_user"
+      android:text="@string/unset_user"/>
 
     <Button android:layout_width="wrap_content"
         android:layout_height="wrap_content"

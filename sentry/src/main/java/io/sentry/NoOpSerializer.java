@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Map;
 
 /** No-op implementation of ISerializer */
 final class NoOpSerializer implements ISerializer {
@@ -39,4 +40,9 @@ final class NoOpSerializer implements ISerializer {
 
   @Override
   public void serialize(SentryEnvelope envelope, Writer outputStream) throws Exception {}
+
+  @Override
+  public String serialize(Map<String, Object> data) throws Exception {
+    return null;
+  }
 }

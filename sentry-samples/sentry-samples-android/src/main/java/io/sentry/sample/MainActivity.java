@@ -33,11 +33,26 @@ public class MainActivity extends AppCompatActivity {
           Sentry.setExtra("extra", "extra");
           Sentry.setFingerprint(Collections.singletonList("fingerprint"));
           Sentry.setTransaction("transaction");
-          User user = new User();
-          user.setUsername("username");
-          Sentry.setUser(user);
-          Sentry.setTag("tag", "tag");
           Sentry.captureException(new Exception("Some exception with scope."));
+        });
+
+    binding.unsetUser.setOnClickListener(
+        view -> {
+          Sentry.setTag("user_set", "null");
+          Sentry.setUser(null);
+        });
+
+    binding.setUser.setOnClickListener(
+        view -> {
+          Sentry.setTag("user_set", "instance");
+          User user = new User();
+          user.setUsername("username_from_java");
+          // works with some null properties?
+          // user.setId("id_from_java");
+          user.setEmail("email_from_java");
+          // Use the client's IP address
+          user.setIpAddress("{{auto}}");
+          Sentry.setUser(user);
         });
 
     binding.nativeCrash.setOnClickListener(view -> NativeSample.crash());

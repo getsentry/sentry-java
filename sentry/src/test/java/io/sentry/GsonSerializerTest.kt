@@ -412,6 +412,16 @@ class GsonSerializerTest {
         })
     }
 
+    @Test
+    fun `when serializing a data map, data should be stringfied`() {
+        val data = mapOf("a" to "b")
+        val expected = "{\"a\":\"b\"}"
+
+        val dataJson = serializer.serialize(data)
+
+        assertEquals(expected, dataJson)
+    }
+
     private fun assertSessionData(expectedSession: Session?) {
         assertNotNull(expectedSession)
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)

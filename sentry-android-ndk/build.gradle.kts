@@ -10,10 +10,12 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
+var sentryNativeSrc: String = "sentry-native"
+
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
 
-    val sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
+    sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
         "sentry-native-local"
     } else {
         "sentry-native"
@@ -106,12 +108,14 @@ dependencies {
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.kotlinTestJunit)
+
+    testImplementation(Config.TestLibs.mockitoKotlin)
 }
 
 val initNative = tasks.register<Exec>("initNative") {
     logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
     commandLine("git", "submodule", "update", "--init", "--recursive")
-    outputs.dir("${project.projectDir}/sentry-native")
+    outputs.dir("${project.projectDir}/$sentryNativeSrc")
 }
 
 tasks.named("preBuild") {
