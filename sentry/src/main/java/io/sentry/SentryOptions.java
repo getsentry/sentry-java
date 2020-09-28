@@ -10,6 +10,7 @@ import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
 import java.net.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -204,6 +205,12 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
+
+  /** list of scope observers */
+  private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
+
+  /** Enable the Java to NDK Scope sync */
+  private boolean enableScopeSync;
 
   /**
    * Adds an event processor
@@ -949,6 +956,43 @@ public class SentryOptions {
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  /**
+   * Adds a Scope observer
+   *
+   * @param observer the Observer
+   */
+  public void addScopeObserver(final @NotNull IScopeObserver observer) {
+    observers.add(observer);
+  }
+
+  /**
+   * Returns the list of Scope observers
+   *
+   * @return the Scope observer list
+   */
+  @NotNull
+  List<IScopeObserver> getScopeObservers() {
+    return observers;
+  }
+
+  /**
+   * Returns if the Java to NDK Scope sync is enabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableScopeSync() {
+    return enableScopeSync;
+  }
+
+  /**
+   * Enables or not the Java to NDK Scope sync
+   *
+   * @param enableScopeSync true if enabled or false otherwise
+   */
+  public void setEnableScopeSync(boolean enableScopeSync) {
+    this.enableScopeSync = enableScopeSync;
   }
 
   /** The BeforeSend callback */
