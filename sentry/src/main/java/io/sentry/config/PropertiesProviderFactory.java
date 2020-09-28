@@ -1,11 +1,10 @@
 package io.sentry.config;
 
+import io.sentry.ILogger;
+import io.sentry.SystemOutLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-import io.sentry.ILogger;
-import io.sentry.SystemOutLogger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +35,8 @@ public final class PropertiesProviderFactory {
 
     final String systemPropertyLocation = System.getProperty("sentry.properties.file");
     if (systemPropertyLocation != null) {
-      final Properties properties = new FilesystemPropertiesLoader(systemPropertyLocation, logger).load();
+      final Properties properties =
+          new FilesystemPropertiesLoader(systemPropertyLocation, logger).load();
       if (properties != null) {
         providers.add(new SimplePropertiesProvider(properties));
       }

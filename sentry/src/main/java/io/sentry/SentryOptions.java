@@ -219,6 +219,12 @@ public class SentryOptions {
   private boolean enableScopeSync;
 
   /**
+   * Enables loading additional options from external locations like {@code sentry.properties} file
+   * or environment variables, system properties.
+   */
+  private boolean enableProperties;
+
+  /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
    * @param propertiesProvider the properties provider
@@ -1032,6 +1038,25 @@ public class SentryOptions {
     this.enableScopeSync = enableScopeSync;
   }
 
+  /**
+   * Returns if loading properties from external sources is enabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableProperties() {
+    return enableProperties;
+  }
+
+  /**
+   * Enables loading options from external sources like sentry.properties file or environment
+   * variables, system properties.
+   *
+   * @param enableProperties true if enabled or false otherwise
+   */
+  public void setEnableProperties(boolean enableProperties) {
+    this.enableProperties = enableProperties;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1076,6 +1101,30 @@ public class SentryOptions {
 
     setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
+  }
+
+  /**
+   * Merges with another {@link SentryOptions} object. Used when loading additional options from
+   * external locations.
+   *
+   * @param options options loaded from external locations
+   */
+  void merge(SentryOptions options) {
+    if (options.getDsn() != null) {
+      setDsn(options.getDsn());
+    }
+    if (options.getEnvironment() != null) {
+      setEnvironment(options.getEnvironment());
+    }
+    if (options.getRelease() != null) {
+      setRelease(options.getRelease());
+    }
+    if (options.getDist() != null) {
+      setDist(options.getDist());
+    }
+    if (options.getServerName() != null) {
+      setServerName(options.getServerName());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {

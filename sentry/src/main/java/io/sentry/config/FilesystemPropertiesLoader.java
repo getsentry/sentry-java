@@ -1,13 +1,12 @@
 package io.sentry.config;
 
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import io.sentry.ILogger;
-import io.sentry.SentryLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +32,8 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
         }
       }
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
+      logger.log(
+          SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
       return null;
     }
     return null;

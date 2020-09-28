@@ -1,11 +1,10 @@
 package io.sentry.config;
 
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import io.sentry.ILogger;
-import io.sentry.SentryLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +14,8 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
   private final @NotNull ClassLoader classLoader;
   private final @NotNull ILogger logger;
 
-  public ClasspathPropertiesLoader(@NotNull String fileName, @NotNull ClassLoader classLoader, @NotNull ILogger logger) {
+  public ClasspathPropertiesLoader(
+      @NotNull String fileName, @NotNull ClassLoader classLoader, @NotNull ILogger logger) {
     this.fileName = fileName;
     this.classLoader = classLoader;
     this.logger = logger;
@@ -34,7 +34,11 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
         return properties;
       }
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, e, "Failed to load Sentry configuration from classpath resource: %s", fileName);
+      logger.log(
+          SentryLevel.ERROR,
+          e,
+          "Failed to load Sentry configuration from classpath resource: %s",
+          fileName);
       return null;
     }
     return null;

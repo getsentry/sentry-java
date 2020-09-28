@@ -56,7 +56,7 @@ public final class Sentry {
 
   /** Initializes the SDK */
   public static void init() {
-    init(SentryOptions.from(PropertiesProviderFactory.create()), GLOBAL_HUB_DEFAULT_MODE);
+    init(options -> options.setEnableProperties(true), GLOBAL_HUB_DEFAULT_MODE);
   }
 
   /**
@@ -174,6 +174,10 @@ public final class Sentry {
   }
 
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
+    if (options.isEnableProperties()) {
+      options.merge(SentryOptions.from(PropertiesProviderFactory.create()));
+    }
+
     final String dsn = options.getDsn();
     if (dsn == null) {
       throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");

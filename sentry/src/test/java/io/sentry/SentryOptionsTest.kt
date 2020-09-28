@@ -161,4 +161,23 @@ class SentryOptionsTest {
 
         assertTrue(options.scopeObservers.contains(observer))
     }
+
+    @Test
+    fun `copies options from another SentryOptions instance`() {
+        val externalOptions = SentryOptions()
+        externalOptions.dsn = "http://key@localhost/proj"
+        externalOptions.dist = "distribution"
+        externalOptions.environment = "environment"
+        externalOptions.release = "release"
+        externalOptions.serverName = "serverName"
+        val options = SentryOptions()
+
+        options.merge(externalOptions)
+
+        assertEquals("http://key@localhost/proj", options.dsn)
+        assertEquals("distribution", options.dist)
+        assertEquals("environment", options.environment)
+        assertEquals("release", options.release)
+        assertEquals("serverName", options.serverName)
+    }
 }
