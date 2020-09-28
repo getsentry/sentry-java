@@ -972,7 +972,8 @@ public class SentryOptions {
    *
    * @return the Scope observer list
    */
-  public @NotNull List<IScopeObserver> getScopeObservers() {
+  @NotNull
+  List<IScopeObserver> getScopeObservers() {
     return observers;
   }
 
