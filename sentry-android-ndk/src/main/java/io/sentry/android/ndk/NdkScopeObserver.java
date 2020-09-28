@@ -17,9 +17,15 @@ import org.jetbrains.annotations.Nullable;
 public final class NdkScopeObserver implements IScopeObserver {
 
   private final @NotNull SentryOptions options;
+  private final @NotNull INativeScope nativeScope;
 
   public NdkScopeObserver(final @NotNull SentryOptions options) {
+    this(options, new NativeScope());
+  }
+
+  NdkScopeObserver(final @NotNull SentryOptions options, final @NotNull INativeScope nativeScope) {
     this.options = Objects.requireNonNull(options, "The SentryOptions object is required.");
+    this.nativeScope = Objects.requireNonNull(nativeScope, "The NativeScope object is required.");
   }
 
   @Override
@@ -27,11 +33,11 @@ public final class NdkScopeObserver implements IScopeObserver {
     try {
       if (user == null) {
         // remove user if its null
-        nativeRemoveUser();
+        nativeScope.removeUser();
       } else {
-        nativeSetUser(user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
+        nativeScope.setUser(user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setUser has an error.");
     }
   }
@@ -55,9 +61,9 @@ public final class NdkScopeObserver implements IScopeObserver {
         options.getLogger().log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
       }
 
-      nativeAddBreadcrumb(
+      nativeScope.addBreadcrumb(
           level, crumb.getMessage(), crumb.getCategory(), crumb.getType(), timestamp, data);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addBreadcrumb has an error.");
     }
   }
@@ -65,8 +71,8 @@ public final class NdkScopeObserver implements IScopeObserver {
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     try {
-      nativeSetTag(key, value);
-    } catch (Exception e) {
+      nativeScope.setTag(key, value);
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTag(%s) has an error.", key);
     }
   }
@@ -74,8 +80,8 @@ public final class NdkScopeObserver implements IScopeObserver {
   @Override
   public void removeTag(final @NotNull String key) {
     try {
-      nativeRemoveTag(key);
-    } catch (Exception e) {
+      nativeScope.removeTag(key);
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync removeTag(%s) has an error.", key);
     }
   }
@@ -83,8 +89,8 @@ public final class NdkScopeObserver implements IScopeObserver {
   @Override
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     try {
-      nativeSetExtra(key, value);
-    } catch (Exception e) {
+      nativeScope.setExtra(key, value);
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setExtra(%s) has an error.", key);
     }
   }
@@ -92,27 +98,11 @@ public final class NdkScopeObserver implements IScopeObserver {
   @Override
   public void removeExtra(final @NotNull String key) {
     try {
-      nativeRemoveExtra(key);
-    } catch (Exception e) {
+      nativeScope.removeExtra(key);
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
     }
   }
-
-  public static native void nativeSetTag(String key, String value);
-
-  public static native void nativeRemoveTag(String key);
-
-  public static native void nativeSetExtra(String key, String value);
-
-  public static native void nativeRemoveExtra(String key);
-
-  public static native void nativeSetUser(
-      String id, String email, String ipAddress, String username);
-
-  public static native void nativeRemoveUser();
-
-  public static native void nativeAddBreadcrumb(
-      String level, String message, String category, String type, String timestamp, String data);
 }
