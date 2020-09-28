@@ -387,7 +387,7 @@ class SentryClientTest {
         val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
         }
-        val transport = HttpTransport(sentryOptions, mock(), 500, 500, false, URL("https://key@sentry.io/proj"))
+        val transport = HttpTransport(sentryOptions, mock(), 500, 500, null, null, URL("https://key@sentry.io/proj"))
         sentryOptions.setTransport(transport)
 
         val connection = mock<AsyncConnection>()
