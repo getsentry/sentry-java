@@ -9,19 +9,20 @@ import org.jetbrains.annotations.Nullable;
 /** Loads {@link Properties} from the `sentry.properties` file located on the classpath. */
 final class ClasspathPropertiesLoader implements PropertiesLoader {
   private final @NotNull String fileName;
+  private final @NotNull ClassLoader classLoader;
 
-  public ClasspathPropertiesLoader(@NotNull String fileName) {
+  public ClasspathPropertiesLoader(@NotNull String fileName, @NotNull ClassLoader classLoader) {
     this.fileName = fileName;
+    this.classLoader = classLoader;
   }
 
   public ClasspathPropertiesLoader() {
-    this("sentry.properties");
+    this("sentry.properties", ClasspathPropertiesLoader.class.getClassLoader());
   }
 
   @Override
   public @Nullable Properties load() {
-    try (InputStream inputStream =
-        ClasspathPropertiesLoader.class.getClassLoader().getResourceAsStream(fileName)) {
+    try (InputStream inputStream = classLoader.getResourceAsStream(fileName)) {
       if (inputStream != null) {
         final Properties properties = new Properties();
         properties.load(inputStream);
