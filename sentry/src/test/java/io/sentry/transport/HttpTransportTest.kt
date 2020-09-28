@@ -3,6 +3,7 @@ package io.sentry.transport
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ISerializer
@@ -12,11 +13,11 @@ import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.protocol.User
 import java.io.IOException
-import java.net.HttpURLConnection
 import java.net.Proxy
 import java.net.URI
 import java.net.URL
 import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLSocketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,13 +27,13 @@ import kotlin.test.assertTrue
 class HttpTransportTest {
 
     private class Fixture {
-        val dsn: URL = URI.create("http://key@localhost/proj").toURL()
+        val dsn: URL = URI.create("https://key@localhost/proj").toURL()
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
         var requestUpdater = IConnectionConfigurator {}
         var connectionTimeout = 1000
         var readTimeout = 500
-        val connection = mock<HttpURLConnection>()
+        val connection = mock<HttpsURLConnection>()
         val currentDateProvider = mock<ICurrentDateProvider>()
         var sslSocketFactory: SSLSocketFactory? = null
         var hostnameVerifier: HostnameVerifier? = null
@@ -40,15 +41,19 @@ class HttpTransportTest {
         init {
             whenever(connection.outputStream).thenReturn(mock())
             whenever(connection.inputStream).thenReturn(mock())
+            whenever(connection.setHostnameVerifier(any())).thenCallRealMethod()
+            whenever(connection.setSSLSocketFactory(any())).thenCallRealMethod()
         }
 
         fun getSUT(): HttpTransport {
             val options = SentryOptions()
             options.setSerializer(serializer)
             options.proxy = proxy
+            options.sslSocketFactory = sslSocketFactory
+            options.hostnameVerifier = hostnameVerifier
 
             return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, sslSocketFactory, hostnameVerifier, dsn, currentDateProvider) {
-                override fun open(): HttpURLConnection {
+                override fun open(): HttpsURLConnection {
                     return connection
                 }
             }
@@ -266,6 +271,46 @@ class HttpTransportTest {
 
         transport.send(createEnvelope())
         assertTrue(transport.isRetryAfter("event"))
+    }
+
+    @Test
+    fun `When SSLSocketFactory is given, set to connection`() {
+        val factory = mock<SSLSocketFactory>()
+        fixture.sslSocketFactory = factory
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.connection).sslSocketFactory = eq(factory)
+    }
+
+    @Test
+    fun `When SSLSocketFactory is not given, do not set to connection`() {
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.connection, never()).sslSocketFactory = any()
+    }
+
+    @Test
+    fun `When HostnameVerifier is given, set to connection`() {
+        val hostname = mock<HostnameVerifier>()
+        fixture.hostnameVerifier = hostname
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.connection).hostnameVerifier = eq(hostname)
+    }
+
+    @Test
+    fun `When HostnameVerifier is not given, do not set to connection`() {
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.connection, never()).hostnameVerifier = any()
     }
 
     private fun createSession(): Session {
