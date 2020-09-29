@@ -230,7 +230,7 @@ public class SentryOptions {
    * @param propertiesProvider the properties provider
    * @return the sentry options
    */
-  public static SentryOptions from(PropertiesProvider propertiesProvider) {
+  public static @NotNull SentryOptions from(final @NotNull PropertiesProvider propertiesProvider) {
     final SentryOptions options = new SentryOptions();
     options.setDsn(propertiesProvider.getProperty("dsn"));
     options.setEnvironment(propertiesProvider.getProperty("environment"));
@@ -1109,7 +1109,7 @@ public class SentryOptions {
    *
    * @param options options loaded from external locations
    */
-  void merge(SentryOptions options) {
+  void merge(final @NotNull SentryOptions options) {
     if (options.getDsn() != null) {
       setDsn(options.getDsn());
     }
