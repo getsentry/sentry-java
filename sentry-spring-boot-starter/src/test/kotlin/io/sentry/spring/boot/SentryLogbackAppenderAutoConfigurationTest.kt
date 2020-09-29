@@ -11,6 +11,7 @@ import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 
 class SentryLogbackAppenderAutoConfigurationTest {
@@ -18,6 +19,8 @@ class SentryLogbackAppenderAutoConfigurationTest {
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(SentryLogbackAppenderAutoConfiguration::class.java, SentryAutoConfiguration::class.java))
         .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+
+    private val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
 
     @BeforeTest
     fun `reset Logback context`() {
@@ -29,7 +32,6 @@ class SentryLogbackAppenderAutoConfigurationTest {
     fun `configures SentryAppender`() {
         contextRunner
             .run {
-                val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
                 assertThat(rootLogger.getAppenders(SentryAppender::class.java)).hasSize(1)
             }
     }
@@ -38,8 +40,6 @@ class SentryLogbackAppenderAutoConfigurationTest {
     fun `sets SentryAppender properties`() {
         contextRunner.withPropertyValues("sentry.logging.minimum-event-level=info", "sentry.logging.minimum-breadcrumb-level=debug")
             .run {
-                val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
-
                 val appenders = rootLogger.getAppenders(SentryAppender::class.java)
                 assertThat(appenders).hasSize(1)
                 val sentryAppender = appenders[0] as SentryAppender
@@ -53,7 +53,6 @@ class SentryLogbackAppenderAutoConfigurationTest {
     fun `does not configure SentryAppender when logging is disabled`() {
         contextRunner.withPropertyValues("sentry.logging.enabled=false")
             .run {
-                val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
                 assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
             }
     }
@@ -61,7 +60,6 @@ class SentryLogbackAppenderAutoConfigurationTest {
     @Test
     fun `does not configure SentryAppender when appender is already configured`() {
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
-        val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
         val sentryAppender = SentryAppender()
         sentryAppender.name = "customAppender"
         sentryAppender.context = loggerContext
@@ -73,6 +71,24 @@ class SentryLogbackAppenderAutoConfigurationTest {
                 val appenders = rootLogger.getAppenders(SentryAppender::class.java)
                 assertThat(appenders).hasSize(1)
                 assertThat(appenders.first().name).isEqualTo("customAppender")
+            }
+    }
+
+    @Test
+    fun `does not configure SentryAppender when logback is not on the classpath`() {
+        contextRunner
+            .withClassLoader(FilteredClassLoader(LoggerContext::class.java))
+            .run {
+                assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
+            }
+    }
+
+    @Test
+    fun `does not configure SentryAppender when sentry-logback module is not on the classpath`() {
+        contextRunner
+            .withClassLoader(FilteredClassLoader(SentryAppender::class.java))
+            .run {
+                assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
             }
     }
 }
