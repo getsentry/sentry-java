@@ -2,6 +2,7 @@ package io.sentry.config;
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -29,9 +30,11 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
   public @Nullable Properties load() {
     try (InputStream inputStream = classLoader.getResourceAsStream(fileName)) {
       if (inputStream != null) {
-        final Properties properties = new Properties();
-        properties.load(inputStream);
-        return properties;
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
+          final Properties properties = new Properties();
+          properties.load(bufferedInputStream);
+          return properties;
+        }
       }
     } catch (IOException e) {
       logger.log(

@@ -2,6 +2,7 @@ package io.sentry.config;
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,7 +26,7 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
     try {
       final File f = new File(filePath);
       if (f.isFile() && f.canRead()) {
-        try (InputStream is = new FileInputStream(f)) {
+        try (InputStream is = new BufferedInputStream(new FileInputStream(f))) {
           final Properties properties = new Properties();
           properties.load(is);
           return properties;
