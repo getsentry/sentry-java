@@ -6,9 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 /** {@link PropertiesProvider} implementation that delegates to {@link Properties}. */
 final class SimplePropertiesProvider implements PropertiesProvider {
-  private final Properties properties;
+  private final @NotNull Properties properties;
 
-  public SimplePropertiesProvider(Properties properties) {
+  public SimplePropertiesProvider(final @NotNull Properties properties) {
     this.properties = properties;
   }
 
