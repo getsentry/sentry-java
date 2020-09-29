@@ -10,8 +10,11 @@ import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
 import java.net.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -193,9 +196,6 @@ public class SentryOptions {
   /** read timeout in milliseconds */
   private int readTimeoutMillis = 5000;
 
-  /** whether to ignore TLS errors */
-  private boolean bypassSecurity = false;
-
   /** Reads and caches envelope files in the disk */
   private @NotNull IEnvelopeCache envelopeDiskCache = NoOpEnvelopeCache.getInstance();
 
@@ -204,6 +204,18 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
+
+  /** HostnameVerifier for self-signed certificate trust* */
+  private @Nullable HostnameVerifier hostnameVerifier;
+
+  /** SSLSocketFactory for self-signed certificate trust * */
+  private @Nullable SSLSocketFactory sslSocketFactory;
+
+  /** list of scope observers */
+  private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
+
+  /** Enable the Java to NDK Scope sync */
+  private boolean enableScopeSync;
 
   /**
    * Adds an event processor
@@ -868,24 +880,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns whether to ignore TLS errors
-   *
-   * @return the bypassSecurity
-   */
-  public boolean isBypassSecurity() {
-    return bypassSecurity;
-  }
-
-  /**
-   * Sets whether to ignore TLS errors
-   *
-   * @param bypassSecurity the bypassSecurity
-   */
-  public void setBypassSecurity(boolean bypassSecurity) {
-    this.bypassSecurity = bypassSecurity;
-  }
-
-  /**
    * Returns the EnvelopeCache interface
    *
    * @return the EnvelopeCache object
@@ -934,6 +928,38 @@ public class SentryOptions {
   }
 
   /**
+   * Returns SSLSocketFactory
+   *
+   * @return SSLSocketFactory object or null
+   */
+  public @Nullable SSLSocketFactory getSslSocketFactory() {
+    return sslSocketFactory;
+  }
+
+  /**
+   * Set custom SSLSocketFactory that is trusted to self-signed certificates
+   *
+   * @param sslSocketFactory SSLSocketFactory object
+   */
+  public void setSslSocketFactory(final @Nullable SSLSocketFactory sslSocketFactory) {
+    this.sslSocketFactory = sslSocketFactory;
+  }
+
+  /**
+   * Returns HostnameVerifier
+   *
+   * @return HostnameVerifier objecr or null
+   */
+  public @Nullable HostnameVerifier getHostnameVerifier() {
+    return hostnameVerifier;
+  }
+
+  /** Set HostnameVerifier */
+  public void setHostnameVerifier(final @Nullable HostnameVerifier hostnameVerifier) {
+    this.hostnameVerifier = hostnameVerifier;
+  }
+
+  /**
    * Sets the SdkVersion object
    *
    * @param sdkVersion the SdkVersion object or null
@@ -949,6 +975,43 @@ public class SentryOptions {
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  /**
+   * Adds a Scope observer
+   *
+   * @param observer the Observer
+   */
+  public void addScopeObserver(final @NotNull IScopeObserver observer) {
+    observers.add(observer);
+  }
+
+  /**
+   * Returns the list of Scope observers
+   *
+   * @return the Scope observer list
+   */
+  @NotNull
+  List<IScopeObserver> getScopeObservers() {
+    return observers;
+  }
+
+  /**
+   * Returns if the Java to NDK Scope sync is enabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableScopeSync() {
+    return enableScopeSync;
+  }
+
+  /**
+   * Enables or not the Java to NDK Scope sync
+   *
+   * @param enableScopeSync true if enabled or false otherwise
+   */
+  public void setEnableScopeSync(boolean enableScopeSync) {
+    this.enableScopeSync = enableScopeSync;
   }
 
   /** The BeforeSend callback */

@@ -22,6 +22,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
+        android:allowNativeHeapPointerTagging="false"
+        android:extractNativeLibs="true"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
         <activity android:name=".MainActivity">
@@ -55,6 +57,9 @@
 
         <!--    how to disable the NDK-->
         <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
+
+        <!--    how to enable the NDK Scope Sync -->
+        <meta-data android:name="io.sentry.ndk.scope-sync.enable" android:value="true" />
 
         <!--    how to set a custom release-->
         <!--    <meta-data android:name="io.sentry.release" android:value="io.sentry.samples.android@1.1.0+2" />-->

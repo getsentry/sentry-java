@@ -35,6 +35,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(project(":sentry"))
     api(project(":sentry-spring"))
+    implementation(project(":sentry-logback"))
     implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.servletApi)

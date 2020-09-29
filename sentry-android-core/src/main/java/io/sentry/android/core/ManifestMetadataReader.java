@@ -28,6 +28,7 @@ final class ManifestMetadataReader {
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
+  static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
   static final String RELEASE = "io.sentry.release";
   static final String ENVIRONMENT = "io.sentry.environment";
   static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
@@ -126,6 +127,11 @@ final class ManifestMetadataReader {
         final boolean ndk = metadata.getBoolean(NDK_ENABLE, options.isEnableNdk());
         options.getLogger().log(SentryLevel.DEBUG, "NDK read: %s", ndk);
         options.setEnableNdk(ndk);
+
+        final boolean ndkScopeSync =
+            metadata.getBoolean(NDK_SCOPE_SYNC_ENABLE, options.isEnableScopeSync());
+        options.getLogger().log(SentryLevel.DEBUG, "ndkScopeSync read: %s", ndkScopeSync);
+        options.setEnableScopeSync(ndkScopeSync);
 
         final String release = metadata.getString(RELEASE, options.getRelease());
         options.getLogger().log(SentryLevel.DEBUG, "release read: %s", release);
