@@ -2,27 +2,17 @@ package io.sentry.config
 
 import io.sentry.NoOpLogger
 import java.nio.charset.Charset
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
 class FilesystemPropertiesLoaderTest {
 
+    @get:Rule
     var folder = TemporaryFolder()
-
-    @BeforeTest
-    fun `create temporary folder`() {
-        folder.create()
-    }
-
-    @AfterTest
-    fun `delete temporary folder`() {
-        folder.delete()
-    }
 
     @Test
     fun `returns properties when file is found`() {
