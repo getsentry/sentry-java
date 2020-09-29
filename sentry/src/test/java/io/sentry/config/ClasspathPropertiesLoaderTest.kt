@@ -11,24 +11,28 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class ClasspathPropertiesLoaderTest {
-    private class Fixture(fileName: String = "sentry.properties", content: String? = null, throws: Boolean = false) {
+    private class Fixture {
         val classLoader = mock<ClassLoader>()
-        val loader = ClasspathPropertiesLoader(fileName, classLoader, NoOpLogger.getInstance())
+        lateinit var loader: ClasspathPropertiesLoader
 
-        init {
+        fun getSut(fileName: String = "sentry.properties", content: String? = null, throws: Boolean = false): ClasspathPropertiesLoader {
+            loader = ClasspathPropertiesLoader(fileName, classLoader, NoOpLogger.getInstance())
             if (content != null) {
                 whenever(classLoader.getResourceAsStream(fileName)).thenReturn(content.byteInputStream(Charset.defaultCharset()))
             }
             if (throws) {
                 whenever(classLoader.getResourceAsStream(fileName)).thenAnswer { throw IOException() }
             }
+            return loader
         }
     }
 
+    private val fixture = Fixture()
+
     @Test
     fun `loads properties from classpath`() {
-        val fixture = Fixture(content = "dsn=some-dsn")
-        val properties = fixture.loader.load()
+        val sut = fixture.getSut(content = "dsn=some-dsn")
+        val properties = sut.load()
         assertNotNull(properties)
         assertEquals(1, properties.size)
         assertEquals("some-dsn", properties["dsn"])
@@ -36,22 +40,22 @@ class ClasspathPropertiesLoaderTest {
 
     @Test
     fun `returns null if properties not found on the classpath`() {
-        val fixture = Fixture()
-        val properties = fixture.loader.load()
+        val sut = fixture.getSut()
+        val properties = sut.load()
         assertNull(properties)
     }
 
     @Test
     fun `returns null if opening file throws an exception`() {
-        val fixture = Fixture(throws = true)
-        val properties = fixture.loader.load()
+        val sut = fixture.getSut(throws = true)
+        val properties = sut.load()
         assertNull(properties)
     }
 
     @Test
     fun `returns null if property not found in file on the classpath`() {
-        val fixture = Fixture(content = "dsn=some-dsn")
-        val properties = fixture.loader.load()
+        val sut = fixture.getSut(content = "dsn=some-dsn")
+        val properties = sut.load()
         assertNotNull(properties)
         assertNull(properties["sample.rate"])
     }
