@@ -6,15 +6,18 @@ import com.nhaarman.mockitokotlin2.verify
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.rules.TemporaryFolder
+
 class SentryTest {
 
     @BeforeTest
+    @AfterTest
     fun beforeTest() {
         Sentry.close()
     }
