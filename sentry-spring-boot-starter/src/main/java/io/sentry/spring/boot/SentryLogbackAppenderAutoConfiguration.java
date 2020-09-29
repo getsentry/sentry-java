@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 /** Auto-configures {@link SentryAppender}. */
 @Configuration
 @Open
-@ConditionalOnClass(LoggerContext.class)
+@ConditionalOnClass({LoggerContext.class, SentryAppender.class})
 @ConditionalOnProperty(name = "sentry.logging.enabled", havingValue = "true", matchIfMissing = true)
 public class SentryLogbackAppenderAutoConfiguration implements InitializingBean {
 
