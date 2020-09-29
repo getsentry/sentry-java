@@ -12,7 +12,8 @@ import org.springframework.context.annotation.Import;
  * <ul>
  *   <li>creates bean of type {@link io.sentry.SentryOptions}
  *   <li>registers {@link io.sentry.IHub} for sending Sentry events
- *   <li>registers {@link SentryRequestFilter} for attaching request information to Sentry events
+ *   <li>registers {@link SentrySpringRequestListener} for attaching request information to Sentry
+ *       events
  *   <li>registers {@link SentryExceptionResolver} to send Sentry event for any uncaught exception
  *       in Spring MVC flow.
  * </ul>

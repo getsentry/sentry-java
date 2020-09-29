@@ -21,9 +21,9 @@ public class SentryWebConfiguration {
   }
 
   @Bean
-  public @NotNull SentryRequestFilter sentryRequestFilter(
+  public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
       final @NotNull IHub sentryHub, final @NotNull SentryOptions sentryOptions) {
-    return new SentryRequestFilter(sentryHub, sentryOptions);
+    return new SentrySpringRequestListener(sentryHub, sentryOptions);
   }
 
   @Bean
