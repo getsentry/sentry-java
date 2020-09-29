@@ -47,6 +47,15 @@ class EnableSentryTest {
     }
 
     @Test
+    fun `enables external configuration on SentryOptions`() {
+        contextRunner.run {
+            assertThat(it).hasSingleBean(SentryOptions::class.java)
+            val options = it.getBean(SentryOptions::class.java)
+            assertThat(options.isEnableExternalConfiguration).isTrue()
+        }
+    }
+
+    @Test
     fun `creates Sentry Hub`() {
         contextRunner.run {
             assertThat(it).hasSingleBean(IHub::class.java)

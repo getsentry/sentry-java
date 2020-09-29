@@ -38,6 +38,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
       builder.addPropertyReference("transport", "mockTransport");
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
+    builder.addPropertyValue("enableExternalConfiguration", true);
     builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
     if (annotationAttributes.containsKey("sendDefaultPii")) {
