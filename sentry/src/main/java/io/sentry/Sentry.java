@@ -56,7 +56,7 @@ public final class Sentry {
 
   /** Initializes the SDK */
   public static void init() {
-    init(options -> options.setEnableProperties(true), GLOBAL_HUB_DEFAULT_MODE);
+    init(options -> options.setEnableExternalConfiguration(true), GLOBAL_HUB_DEFAULT_MODE);
   }
 
   /**
@@ -174,7 +174,7 @@ public final class Sentry {
   }
 
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
-    if (options.isEnableProperties()) {
+    if (options.isEnableExternalConfiguration()) {
       options.merge(SentryOptions.from(PropertiesProviderFactory.create()));
     }
 

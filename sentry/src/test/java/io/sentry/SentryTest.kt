@@ -123,7 +123,7 @@ class SentryTest {
         try {
             // initialize Sentry with empty DSN and enable loading properties from external sources
             Sentry.init {
-                it.isEnableProperties = true
+                it.isEnableExternalConfiguration = true
             }
             assertTrue(HubAdapter.getInstance().isEnabled)
         } finally {

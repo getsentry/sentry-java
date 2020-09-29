@@ -98,7 +98,7 @@ public final class SentryAppender extends AbstractAppender {
     try {
       Sentry.init(
           options -> {
-            options.setEnableProperties(true);
+            options.setEnableExternalConfiguration(true);
             options.setDsn(dsn);
             options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
             options.setSdkVersion(createSdkVersion(options));

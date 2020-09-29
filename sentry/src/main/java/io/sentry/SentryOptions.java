@@ -222,7 +222,7 @@ public class SentryOptions {
    * Enables loading additional options from external locations like {@code sentry.properties} file
    * or environment variables, system properties.
    */
-  private boolean enableProperties;
+  private boolean enableExternalConfiguration;
 
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
@@ -1043,18 +1043,18 @@ public class SentryOptions {
    *
    * @return true if enabled or false otherwise
    */
-  public boolean isEnableProperties() {
-    return enableProperties;
+  public boolean isEnableExternalConfiguration() {
+    return enableExternalConfiguration;
   }
 
   /**
    * Enables loading options from external sources like sentry.properties file or environment
    * variables, system properties.
    *
-   * @param enableProperties true if enabled or false otherwise
+   * @param enableExternalConfiguration true if enabled or false otherwise
    */
-  public void setEnableProperties(boolean enableProperties) {
-    this.enableProperties = enableProperties;
+  public void setEnableExternalConfiguration(boolean enableExternalConfiguration) {
+    this.enableExternalConfiguration = enableExternalConfiguration;
   }
 
   /** The BeforeSend callback */
