@@ -237,7 +237,6 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
-    // TODO: which properties should be set?
     return options;
   }
 
