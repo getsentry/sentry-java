@@ -978,7 +978,11 @@ public class SentryOptions {
     return hostnameVerifier;
   }
 
-  /** Set HostnameVerifier */
+  /**
+   * Set custom HostnameVerifier
+   *
+   * @param hostnameVerifier the HostnameVerifier
+   */
   public void setHostnameVerifier(final @Nullable HostnameVerifier hostnameVerifier) {
     this.hostnameVerifier = hostnameVerifier;
   }
