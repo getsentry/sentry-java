@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.io.File;
@@ -55,7 +56,7 @@ public final class Sentry {
 
   /** Initializes the SDK */
   public static void init() {
-    init(new SentryOptions(), GLOBAL_HUB_DEFAULT_MODE);
+    init(options -> options.setEnableExternalConfiguration(true), GLOBAL_HUB_DEFAULT_MODE);
   }
 
   /**
@@ -173,6 +174,10 @@ public final class Sentry {
   }
 
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
+    if (options.isEnableExternalConfiguration()) {
+      options.merge(SentryOptions.from(PropertiesProviderFactory.create()));
+    }
+
     final String dsn = options.getDsn();
     if (dsn == null) {
       throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");

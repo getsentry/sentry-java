@@ -28,19 +28,23 @@ import org.jetbrains.annotations.Nullable;
 
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
 public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-  private @Nullable SentryOptions options;
+  private @NotNull SentryOptions options = new SentryOptions();
   private @Nullable ITransport transport;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
 
   @Override
   public void start() {
-    if (options != null && options.getDsn() != null) {
-      options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
-      options.setSdkVersion(createSdkVersion(options));
-      Optional.ofNullable(transport).ifPresent(options::setTransport);
+    options.setEnableExternalConfiguration(true);
+    options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
+    options.setSdkVersion(createSdkVersion(options));
+    Optional.ofNullable(transport).ifPresent(options::setTransport);
+    try {
       Sentry.init(options);
+    } catch (IllegalArgumentException e) {
+      addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
     }
+
     super.start();
   }
 

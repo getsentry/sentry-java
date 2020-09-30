@@ -2,6 +2,7 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.config.PropertiesProvider;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
@@ -216,6 +217,28 @@ public class SentryOptions {
 
   /** Enable the Java to NDK Scope sync */
   private boolean enableScopeSync;
+
+  /**
+   * Enables loading additional options from external locations like {@code sentry.properties} file
+   * or environment variables, system properties.
+   */
+  private boolean enableExternalConfiguration;
+
+  /**
+   * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
+   *
+   * @param propertiesProvider the properties provider
+   * @return the sentry options
+   */
+  public static @NotNull SentryOptions from(final @NotNull PropertiesProvider propertiesProvider) {
+    final SentryOptions options = new SentryOptions();
+    options.setDsn(propertiesProvider.getProperty("dsn"));
+    options.setEnvironment(propertiesProvider.getProperty("environment"));
+    options.setRelease(propertiesProvider.getProperty("release"));
+    options.setDist(propertiesProvider.getProperty("dist"));
+    options.setServerName(propertiesProvider.getProperty("servername"));
+    return options;
+  }
 
   /**
    * Adds an event processor
@@ -1014,6 +1037,25 @@ public class SentryOptions {
     this.enableScopeSync = enableScopeSync;
   }
 
+  /**
+   * Returns if loading properties from external sources is enabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableExternalConfiguration() {
+    return enableExternalConfiguration;
+  }
+
+  /**
+   * Enables loading options from external sources like sentry.properties file or environment
+   * variables, system properties.
+   *
+   * @param enableExternalConfiguration true if enabled or false otherwise
+   */
+  public void setEnableExternalConfiguration(boolean enableExternalConfiguration) {
+    this.enableExternalConfiguration = enableExternalConfiguration;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1058,6 +1100,30 @@ public class SentryOptions {
 
     setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
+  }
+
+  /**
+   * Merges with another {@link SentryOptions} object. Used when loading additional options from
+   * external locations.
+   *
+   * @param options options loaded from external locations
+   */
+  void merge(final @NotNull SentryOptions options) {
+    if (options.getDsn() != null) {
+      setDsn(options.getDsn());
+    }
+    if (options.getEnvironment() != null) {
+      setEnvironment(options.getEnvironment());
+    }
+    if (options.getRelease() != null) {
+      setRelease(options.getRelease());
+    }
+    if (options.getDist() != null) {
+      setDist(options.getDist());
+    }
+    if (options.getServerName() != null) {
+      setServerName(options.getServerName());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {

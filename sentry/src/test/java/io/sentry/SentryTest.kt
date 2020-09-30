@@ -6,14 +6,18 @@ import com.nhaarman.mockitokotlin2.verify
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.rules.TemporaryFolder
+
 class SentryTest {
 
     @BeforeTest
+    @AfterTest
     fun beforeTest() {
         Sentry.close()
     }
@@ -107,6 +111,27 @@ class SentryTest {
             it.setLogger(logger)
         }
         verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
+    }
+
+    @Test
+    fun `initializes Sentry using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.writeText("dsn=http://key@localhost/proj")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            // initialize Sentry with empty DSN and enable loading properties from external sources
+            Sentry.init {
+                it.isEnableExternalConfiguration = true
+            }
+            assertTrue(HubAdapter.getInstance().isEnabled)
+        } finally {
+            temporaryFolder.delete()
+        }
     }
 
     private fun getTempPath(): String {
