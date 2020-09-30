@@ -25,8 +25,9 @@ class MainEventProcessorTest {
                 version = "1.2.3"
             }
         }
-        fun getSut(attachThreads: Boolean = true): MainEventProcessor {
+        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
+            sentryOptions.isAttachStacktrace = attachStackTrace
             return MainEventProcessor(sentryOptions)
         }
     }
@@ -132,7 +133,7 @@ class MainEventProcessorTest {
 
     @Test
     fun `when processing an event and attach threads is disabled, threads should not be set`() {
-        val sut = fixture.getSut(false)
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
 
         var event = SentryEvent()
         event = sut.process(event, null)
@@ -148,6 +149,16 @@ class MainEventProcessorTest {
         event = sut.process(event, null)
 
         assertNotNull(event.threads)
+    }
+
+    @Test
+    fun `when processing an event and attach threads is disabled, but attach threads is enabled, current thread should be set`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = true)
+
+        var event = SentryEvent()
+        event = sut.process(event, null)
+
+        assertEquals(1, event.threads.count())
     }
 
     @Test

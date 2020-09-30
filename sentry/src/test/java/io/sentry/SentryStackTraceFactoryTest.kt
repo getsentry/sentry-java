@@ -12,7 +12,8 @@ class SentryStackTraceFactoryTest {
     @Test
     fun `when getStackFrames is called passing a valid Array, not empty result`() {
         val stacktrace = Thread.currentThread().stackTrace
-        val count = stacktrace.size
+        // count the stack traces but ignores the test class which is io.sentry package
+        val count = stacktrace.size - 1
         assertEquals(count, sut.getStackFrames(stacktrace)!!.count())
     }
 
@@ -55,9 +56,9 @@ class SentryStackTraceFactoryTest {
     //region inAppExcludes
     @Test
     fun `when getStackFrames is called passing a valid inAppExcludes, inApp should be false if prefix matches it`() {
-        val element = generateStackTrace("io.sentry.MyActivity")
+        val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
-        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), null)
+        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
         assertFalse(sentryElements!!.first().isInApp)
@@ -67,7 +68,7 @@ class SentryStackTraceFactoryTest {
     fun `when getStackFrames is called passing a valid inAppExcludes, inApp should be false if prefix doesnt matches it`() {
         val element = generateStackTrace("io.myapp.MyActivity")
         val elements = arrayOf(element)
-        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), null)
+        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
         assertFalse(sentryElements!!.first().isInApp)
@@ -75,7 +76,7 @@ class SentryStackTraceFactoryTest {
 
     @Test
     fun `when getStackFrames is called passing an invalid inAppExcludes, inApp should be false`() {
-        val element = generateStackTrace("io.sentry.MyActivity")
+        val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
@@ -87,9 +88,9 @@ class SentryStackTraceFactoryTest {
     //region inAppIncludes
     @Test
     fun `when getStackFrames is called passing a valid inAppIncludes, inApp should be true if prefix matches it`() {
-        val element = generateStackTrace("io.sentry.MyActivity")
+        val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
-        val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.sentry"))
+        val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.mysentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
         assertTrue(sentryElements!!.first().isInApp)
@@ -99,7 +100,7 @@ class SentryStackTraceFactoryTest {
     fun `when getStackFrames is called passing a valid inAppIncludes, inApp should be false if prefix doesnt matches it`() {
         val element = generateStackTrace("io.myapp.MyActivity")
         val elements = arrayOf(element)
-        val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.sentry"))
+        val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.mysentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
         assertFalse(sentryElements!!.first().isInApp)
@@ -107,7 +108,7 @@ class SentryStackTraceFactoryTest {
 
     @Test
     fun `when getStackFrames is called passing an invalid inAppIncludes, inApp should be false`() {
-        val element = generateStackTrace("io.sentry.MyActivity")
+        val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
@@ -118,9 +119,9 @@ class SentryStackTraceFactoryTest {
 
     @Test
     fun `when getStackFrames is called passing a valid inAppIncludes and inAppExcludes, inApp should take precedence`() {
-        val element = generateStackTrace("io.sentry.MyActivity")
+        val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
-        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), listOf("io.sentry"))
+        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry"), listOf("io.mysentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
         assertTrue(sentryElements!!.first().isInApp)
@@ -128,17 +129,28 @@ class SentryStackTraceFactoryTest {
 
     @Test
     fun `when class is defined in the app, inApp is true`() {
-        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry.not"), listOf("io.sentry.inApp"))
-        assertTrue(sentryStackTraceFactory.isInApp("io.sentry.inApp.ClassName"))
-        assertTrue(sentryStackTraceFactory.isInApp("io.sentry.inApp.somePackage.ClassName"))
-        assertFalse(sentryStackTraceFactory.isInApp("io.sentry.not.ClassName"))
-        assertFalse(sentryStackTraceFactory.isInApp("io.sentry.not.somePackage.ClassName"))
+        val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry.not"), listOf("io.mysentry.inApp"))
+        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.ClassName"))
+        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.somePackage.ClassName"))
+        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.ClassName"))
+        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.somePackage.ClassName"))
     }
 
     @Test
     fun `when class is not in the list, is not inApp`() {
-        val sentryStackTraceFactory = SentryStackTraceFactory(listOf(), listOf("io.sentry"))
+        val sentryStackTraceFactory = SentryStackTraceFactory(listOf(), listOf("io.mysentry"))
         assertFalse(sentryStackTraceFactory.isInApp("com.getsentry"))
+    }
+
+    @Test
+    fun `when getStackFrames is called, remove sentry classes`() {
+        val stacktrace = Thread.currentThread().stackTrace
+        val sentryElement = StackTraceElement("io.sentry.element", "test", "test.java", 1)
+        stacktrace.plusElement(sentryElement)
+
+        assertNull(sut.getStackFrames(stacktrace)!!.find {
+            it.module.startsWith("io.sentry")
+        })
     }
 
     private fun generateStackTrace(className: String?) =

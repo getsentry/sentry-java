@@ -5,6 +5,7 @@ import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +33,22 @@ final class SentryThreadFactory {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
     this.options = Objects.requireNonNull(options, "The SentryOptions is required");
+  }
+
+  /**
+   * Converts the current thread to a SentryThread, it assumes its being called from the captured
+   * thread.
+   *
+   * @param mechanismThreadIds list of threadIds that came from exception mechanism
+   * @return a list of SentryThread with a single item or null
+   */
+  @Nullable
+  List<SentryThread> getCurrentThread(final @Nullable List<Long> mechanismThreadIds) {
+    final Map<Thread, StackTraceElement[]> threads = new HashMap<>();
+    final Thread currentThread = Thread.currentThread();
+    threads.put(currentThread, currentThread.getStackTrace());
+
+    return getCurrentThreads(threads, mechanismThreadIds);
   }
 
   /**
