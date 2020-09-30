@@ -152,7 +152,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when processing an event and attach threads is disabled, but attach threads is enabled, current thread should be set`() {
+    fun `when processing an event and attach threads is disabled, but attach stacktrace is enabled, current thread should be set`() {
         val sut = fixture.getSut(attachThreads = false, attachStackTrace = true)
 
         var event = SentryEvent()
