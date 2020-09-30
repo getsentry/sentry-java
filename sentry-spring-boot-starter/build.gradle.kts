@@ -35,7 +35,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(project(":sentry"))
     api(project(":sentry-spring"))
-    implementation(project(":sentry-logback"))
+    compileOnly(project(":sentry-logback"))
     implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.servletApi)
@@ -50,6 +50,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
+    testImplementation(project(":sentry-logback"))
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
