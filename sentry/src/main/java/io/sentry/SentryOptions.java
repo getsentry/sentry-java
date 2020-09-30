@@ -159,12 +159,13 @@ public class SentryOptions {
   /** Sets the distribution. Think about it together with release and environment */
   private @Nullable String dist;
 
-  /** When enabled, threads are automatically attached to all logged events. */
+  /** When enabled, all the threads are automatically attached to all logged events. */
   private boolean attachThreads;
 
   /**
    * When enabled, stack traces are automatically attached to all threads logged. Stack traces are
-   * always attached to exceptions but when this is set stack traces are also sent with threads
+   * always attached to exceptions but when this is set stack traces are also sent with threads. If
+   * no threads are logged, we log the current thread automatically.
    */
   private boolean attachStacktrace = true;
 

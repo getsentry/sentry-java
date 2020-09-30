@@ -37,7 +37,7 @@ final class SentryStackTraceFactory {
       for (StackTraceElement item : elements) {
         if (item != null) {
 
-          // we don't want to add our own stack traces
+          // we don't want to add our own frames
           final String className = item.getClassName();
           if (className.startsWith("io.sentry.")) {
             continue;

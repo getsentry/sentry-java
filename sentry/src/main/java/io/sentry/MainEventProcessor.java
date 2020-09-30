@@ -80,21 +80,21 @@ public final class MainEventProcessor implements EventProcessor {
       event.setSdk(options.getSdkVersion());
     }
 
-    // collecting threadIds that came from the exception mechanism, so we can mark threads as
-    // crashed properly
-    List<Long> mechanismThreadIds = null;
-    if (event.getExceptions() != null) {
-      for (SentryException item : event.getExceptions()) {
-        if (item.getMechanism() != null && item.getThreadId() != null) {
-          if (mechanismThreadIds == null) {
-            mechanismThreadIds = new ArrayList<>();
+    if (event.getThreads() == null) {
+      // collecting threadIds that came from the exception mechanism, so we can mark threads as
+      // crashed properly
+      List<Long> mechanismThreadIds = null;
+      if (event.getExceptions() != null) {
+        for (SentryException item : event.getExceptions()) {
+          if (item.getMechanism() != null && item.getThreadId() != null) {
+            if (mechanismThreadIds == null) {
+              mechanismThreadIds = new ArrayList<>();
+            }
+            mechanismThreadIds.add(item.getThreadId());
           }
-          mechanismThreadIds.add(item.getThreadId());
         }
       }
-    }
 
-    if (event.getThreads() == null) {
       if (options.isAttachThreads()) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
       } else if (options.isAttachStacktrace()) {
