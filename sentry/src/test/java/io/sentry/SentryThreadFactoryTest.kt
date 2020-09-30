@@ -3,8 +3,8 @@ package io.sentry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -23,7 +23,7 @@ class SentryThreadFactoryTest {
     fun `when getCurrentThreads is called, not empty result`() {
         val sut = fixture.getSut()
         val threads = sut.getCurrentThreads(null)
-        assertNotSame(0, threads!!.count())
+        assertNotEquals(0, threads!!.count())
     }
 
     @Test
@@ -81,5 +81,12 @@ class SentryThreadFactoryTest {
         val threads = sut.getCurrentThreads(threadList, threadIds)
 
         assertNotNull(threads!!.firstOrNull { it.isCrashed })
+    }
+
+    @Test
+    fun `when getCurrentThread is called, returns current thread`() {
+        val sut = fixture.getSut()
+        val threads = sut.getCurrentThread(null)
+        assertEquals(1, threads!!.count())
     }
 }

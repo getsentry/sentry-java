@@ -36,10 +36,17 @@ final class SentryStackTraceFactory {
       sentryStackFrames = new ArrayList<>();
       for (StackTraceElement item : elements) {
         if (item != null) {
+
+          // we don't want to add our own frames
+          final String className = item.getClassName();
+          if (className.startsWith("io.sentry.")) {
+            continue;
+          }
+
           final SentryStackFrame sentryStackFrame = new SentryStackFrame();
           // https://docs.sentry.io/development/sdk-dev/features/#in-app-frames
-          sentryStackFrame.setInApp(isInApp(item.getClassName()));
-          sentryStackFrame.setModule(item.getClassName());
+          sentryStackFrame.setInApp(isInApp(className));
+          sentryStackFrame.setModule(className);
           sentryStackFrame.setFunction(item.getMethodName());
           sentryStackFrame.setFilename(item.getFileName());
           // Protocol doesn't accept negative line numbers.

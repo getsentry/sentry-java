@@ -80,11 +80,11 @@ public final class MainEventProcessor implements EventProcessor {
       event.setSdk(options.getSdkVersion());
     }
 
-    if (event.getThreads() == null && options.isAttachThreads()) {
+    if (event.getThreads() == null) {
+      // collecting threadIds that came from the exception mechanism, so we can mark threads as
+      // crashed properly
       List<Long> mechanismThreadIds = null;
       if (event.getExceptions() != null) {
-        // collecting threadIds that came from the exception mechanism, so we can mark threads as
-        // crashed properly
         for (SentryException item : event.getExceptions()) {
           if (item.getMechanism() != null && item.getThreadId() != null) {
             if (mechanismThreadIds == null) {
@@ -95,7 +95,12 @@ public final class MainEventProcessor implements EventProcessor {
         }
       }
 
-      event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
+      if (options.isAttachThreads()) {
+        event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
+      } else if (options.isAttachStacktrace()) {
+        // when attachStacktrace is enabled, we attach only the current thread and its stack traces
+        event.setThreads(sentryThreadFactory.getCurrentThread(mechanismThreadIds));
+      }
     }
   }
 }
