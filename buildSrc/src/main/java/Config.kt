@@ -21,7 +21,6 @@ object Config {
     object Android {
         private val sdkVersion = 30
 
-        val buildToolsVersion = "29.0.3"
         val minSdkVersion = 14
         val minSdkVersionNdk = 16
         val targetSdkVersion = sdkVersion
@@ -72,7 +71,7 @@ object Config {
         val androidxJunit = "androidx.test.ext:junit:1.1.2"
         val robolectric = "org.robolectric:robolectric:4.4"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:3.5.10"
+        val mockitoInline = "org.mockito:mockito-inline:3.5.13"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
     }
 
