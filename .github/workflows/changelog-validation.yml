@@ -1,0 +1,31 @@
+name: changelog
+
+on: [pull_request]
+
+jobs:
+  validate-changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Ensure Changelog.md was modified
+        shell: pwsh
+        run: |
+          $merge_base = git merge-base HEAD origin/${{ github.base_ref }}
+          $changes = git --no-pager diff --name-only HEAD $merge_base
+
+          echo 'Changed files:'
+          echo $changes
+
+          $contains_changelog = $changes -split '\n' -contains 'CHANGELOG.md'
+
+          if (-not $contains_changelog) {
+            echo '::error::Changelog has not been modified!'
+            exit 1
+          }
+
+          exit 0
