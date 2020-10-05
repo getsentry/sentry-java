@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
+import io.sentry.IHub
 import io.sentry.logback.SentryAppender
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -18,7 +19,6 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(SentryLogbackAppenderAutoConfiguration::class.java, SentryAutoConfiguration::class.java))
-        .withPropertyValues("sentry.dsn=http://key@localhost/proj")
 
     private val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
 
@@ -29,8 +29,16 @@ class SentryLogbackAppenderAutoConfigurationTest {
     }
 
     @Test
-    fun `configures SentryAppender`() {
+    fun `hub is not created when auto-configuration dsn is not set`() {
         contextRunner
+            .run {
+                assertThat(it).doesNotHaveBean(IHub::class.java)
+            }
+    }
+
+    @Test
+    fun `configures SentryAppender`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(rootLogger.getAppenders(SentryAppender::class.java)).hasSize(1)
             }
@@ -38,7 +46,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     @Test
     fun `sets SentryAppender properties`() {
-        contextRunner.withPropertyValues("sentry.logging.minimum-event-level=info", "sentry.logging.minimum-breadcrumb-level=debug")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.minimum-event-level=info", "sentry.logging.minimum-breadcrumb-level=debug")
             .run {
                 val appenders = rootLogger.getAppenders(SentryAppender::class.java)
                 assertThat(appenders).hasSize(1)
@@ -66,7 +74,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
         sentryAppender.start()
         rootLogger.addAppender(sentryAppender)
 
-        contextRunner
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 val appenders = rootLogger.getAppenders(SentryAppender::class.java)
                 assertThat(appenders).hasSize(1)
@@ -76,7 +84,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     @Test
     fun `does not configure SentryAppender when logback is not on the classpath`() {
-        contextRunner
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(LoggerContext::class.java))
             .run {
                 assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
@@ -85,7 +93,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     @Test
     fun `does not configure SentryAppender when sentry-logback module is not on the classpath`() {
-        contextRunner
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(SentryAppender::class.java))
             .run {
                 assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
