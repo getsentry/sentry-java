@@ -1,3 +1,7 @@
+# 3.0.1
+
+* Auto-Configure `inAppIncludes` in Spring Boot integration
+
 # 3.0.0
 
 # Java + Android
