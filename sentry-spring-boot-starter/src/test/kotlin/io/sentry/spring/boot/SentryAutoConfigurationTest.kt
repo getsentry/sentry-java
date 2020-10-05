@@ -1,5 +1,6 @@
 package io.sentry.spring.boot
 
+import com.acme.MainBootClass
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
@@ -202,6 +203,16 @@ class SentryAutoConfigurationTest {
                         assertThat(event.release).isEqualTo("my-release")
                     })
                 }
+            }
+    }
+
+    @Test
+    fun `sets inAppIncludes on SentryOptions from a class annotated with @SpringBootApplication`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(MainBootClass::class.java)
+            .run {
+                assertThat(it.getBean(SentryProperties::class.java).inAppIncludes)
+                    .containsOnly("com.acme")
             }
     }
 
