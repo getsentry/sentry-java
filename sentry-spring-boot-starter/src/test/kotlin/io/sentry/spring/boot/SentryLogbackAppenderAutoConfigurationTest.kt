@@ -29,10 +29,10 @@ class SentryLogbackAppenderAutoConfigurationTest {
     }
 
     @Test
-    fun `hub is not created when auto-configuration dsn is not set`() {
+    fun `does not configure SentryAppender when auto-configuration dsn is not set`() {
         contextRunner
             .run {
-                assertThat(it).doesNotHaveBean(IHub::class.java)
+                assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
             }
     }
 
