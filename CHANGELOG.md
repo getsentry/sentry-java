@@ -1,3 +1,7 @@
+# 3.0.1
+
+* fix: Don't require `sentry.dsn` to be set when using `io.sentry:sentry-spring-boot-starter` and `io.sentry:sentry-logback` together
+
 # 3.0.0
 
 # Java + Android

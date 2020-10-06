@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 @Open
 @ConditionalOnClass({LoggerContext.class, SentryAppender.class})
 @ConditionalOnProperty(name = "sentry.logging.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(SentryProperties.class)
 public class SentryLogbackAppenderAutoConfiguration implements InitializingBean {
 
   @Autowired private SentryProperties sentryProperties;
