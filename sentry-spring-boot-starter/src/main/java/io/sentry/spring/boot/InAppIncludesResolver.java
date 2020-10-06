@@ -20,7 +20,7 @@ import org.springframework.context.ApplicationContextAware;
  */
 @Open
 class InAppIncludesResolver implements ApplicationContextAware {
-  @Nullable private ApplicationContext applicationContext;
+  private @Nullable ApplicationContext applicationContext;
 
   @Nullable
   List<String> resolveInAppIncludes() {
