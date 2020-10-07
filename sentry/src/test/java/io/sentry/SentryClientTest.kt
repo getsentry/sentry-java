@@ -606,12 +606,13 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val scope = Scope(fixture.sentryOptions)
-        scope.setContexts("key", "value")
+        scope.setContexts("key", "abc")
         scope.startSession().current
         sut.captureEvent(SentryEvent(), scope, null)
         verify(fixture.connection).send(check {
             val event = getEventFromData(it.items.first().data)
-            assertEquals("value", event.contexts["key"])
+            val map = event.contexts["key"] as Map<*, *>
+            assertEquals("abc", map["value"])
         }, anyOrNull())
     }
 
