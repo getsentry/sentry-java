@@ -1,7 +1,8 @@
-# 3.0.1
+# 3.1.0
 
 * fix: Don't require `sentry.dsn` to be set when using `io.sentry:sentry-spring-boot-starter` and `io.sentry:sentry-logback` together #965
 * Auto-Configure `inAppIncludes` in Spring Boot integration #966
+* Enhancement: make getThrowable public and improve set contexts #967
 * Bump: Android Gradle Plugin 4.0.2 #968
 
 # 3.0.0

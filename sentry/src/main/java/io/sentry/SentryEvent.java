@@ -14,7 +14,10 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryEvent implements IUnknownPropertiesConsumer {
   private SentryId eventId;
   private final Date timestamp;
-  private transient Throwable throwable;
+
+  /** The captured Throwable */
+  private transient @Nullable Throwable throwable;
+
   private Message message;
   private String serverName;
   private String platform;
@@ -43,7 +46,12 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this.timestamp = timestamp;
   }
 
-  public SentryEvent(Throwable throwable) {
+  /**
+   * SentryEvent ctor with the captured Throwable
+   *
+   * @param throwable the Throwable or null
+   */
+  public SentryEvent(final @Nullable Throwable throwable) {
     this();
     this.throwable = throwable;
   }
@@ -66,9 +74,12 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     return (Date) timestamp.clone();
   }
 
-  @Nullable
-  @ApiStatus.Internal
-  public Throwable getThrowable() {
+  /**
+   * Returns the captured Throwable or null
+   *
+   * @return the Throwable or null
+   */
+  public @Nullable Throwable getThrowable() {
     return throwable;
   }
 
@@ -144,7 +155,12 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this.eventId = eventId;
   }
 
-  public void setThrowable(Throwable throwable) {
+  /**
+   * Sets the Throwable
+   *
+   * @param throwable the Throwable or null
+   */
+  public void setThrowable(final @Nullable Throwable throwable) {
     this.throwable = throwable;
   }
 
