@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.User;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -334,6 +335,42 @@ public final class Scope implements Cloneable {
    */
   public void setContexts(final @NotNull String key, final @NotNull Object value) {
     this.contexts.put(key, value);
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull Boolean value) {
+    final Map<String, Boolean> map = new HashMap<>();
+    map.put("value", value);
+    setContexts(key, map);
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull String value) {
+    final Map<String, String> map = new HashMap<>();
+    map.put("value", value);
+    setContexts(key, map);
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull Number value) {
+    final Map<String, Number> map = new HashMap<>();
+    map.put("value", value);
+    setContexts(key, map);
   }
 
   /**
