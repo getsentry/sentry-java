@@ -374,6 +374,15 @@ public final class Scope implements Cloneable {
   }
 
   /**
+   * Removes a value from the Scope's contexts
+   *
+   * @param key the Key
+   */
+  public void removeContexts(final @NotNull String key) {
+    contexts.remove(key);
+  }
+
+  /**
    * Creates a breadcrumb list with the max number of breadcrumbs
    *
    * @param maxBreadcrumb the max number of breadcrumbs

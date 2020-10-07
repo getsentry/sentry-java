@@ -5,7 +5,6 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
-import io.sentry.IHub
 import io.sentry.logback.SentryAppender
 import kotlin.test.BeforeTest
 import kotlin.test.Test
