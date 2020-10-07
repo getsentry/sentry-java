@@ -46,7 +46,8 @@ public class SentryAutoConfiguration {
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
         final @NotNull ObjectProvider<SentryUserProvider> sentryUserProviders,
-        final @NotNull ObjectProvider<ITransport> transport) {
+        final @NotNull ObjectProvider<ITransport> transport,
+        final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
         beforeBreadcrumbCallback.ifAvailable(options::setBeforeBreadcrumb);
@@ -58,7 +59,13 @@ public class SentryAutoConfiguration {
                     new SentryUserProviderEventProcessor(sentryUserProvider)));
         transportGate.ifAvailable(options::setTransportGate);
         transport.ifAvailable(options::setTransport);
+        inAppPackagesResolver.resolveInAppIncludes().forEach(options::addInAppInclude);
       };
+    }
+
+    @Bean
+    public @NotNull InAppIncludesResolver inAppPackagesResolver() {
+      return new InAppIncludesResolver();
     }
 
     @Bean
