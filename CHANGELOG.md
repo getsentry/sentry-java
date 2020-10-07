@@ -1,6 +1,7 @@
 # 3.0.1
 
 * fix: Don't require `sentry.dsn` to be set when using `io.sentry:sentry-spring-boot-starter` and `io.sentry:sentry-logback` together
+* Enhancement: make getThrowable public and improve set contexts #967
 
 # 3.0.0
 
