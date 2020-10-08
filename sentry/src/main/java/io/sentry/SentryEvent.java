@@ -11,8 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent implements IUnknownPropertiesConsumer {
-  private SentryId eventId;
+public final class SentryEvent extends SentryItem implements IUnknownPropertiesConsumer {
   private final Date timestamp;
 
   /** The captured Throwable */
@@ -42,7 +41,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   private DebugMeta debugMeta;
 
   SentryEvent(SentryId eventId, final Date timestamp) {
-    this.eventId = eventId;
+    super(eventId);
     this.timestamp = timestamp;
   }
 
@@ -63,10 +62,6 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   @TestOnly
   public SentryEvent(final Date timestamp) {
     this(new SentryId(), timestamp);
-  }
-
-  public SentryId getEventId() {
-    return eventId;
   }
 
   @SuppressWarnings("JdkObsolete")
@@ -149,10 +144,6 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
 
   public void setExceptions(List<SentryException> exception) {
     this.exception = new SentryValues<>(exception);
-  }
-
-  public void setEventId(SentryId eventId) {
-    this.eventId = eventId;
   }
 
   /**
@@ -376,5 +367,10 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
    */
   public boolean isErrored() {
     return exception != null && !exception.getValues().isEmpty();
+  }
+
+  @Override
+  public SentryItemType sentryItemType() {
+    return SentryItemType.Event;
   }
 }

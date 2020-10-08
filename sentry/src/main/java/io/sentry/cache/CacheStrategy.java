@@ -174,7 +174,7 @@ abstract class CacheStrategy {
         if (currentSession.getSessionId().equals(session.getSessionId())) {
           session.setInitAsTrue();
           try {
-            newSessionItem = SentryEnvelopeItem.fromSession(serializer, session);
+            newSessionItem = SentryEnvelopeItem.from(serializer, session);
             // remove item from envelope items so we can replace with the new one that has the
             // init flag true
             itemsIterator.remove();

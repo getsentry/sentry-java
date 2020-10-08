@@ -67,7 +67,7 @@ class HttpTransportTest {
         val transport = fixture.getSUT()
         whenever(fixture.connection.responseCode).thenReturn(200)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
         val result = transport.send(envelope)
 
@@ -84,7 +84,7 @@ class HttpTransportTest {
         whenever(fixture.connection.responseCode).thenReturn(429)
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
         val result = transport.send(envelope)
 
@@ -100,7 +100,7 @@ class HttpTransportTest {
         throwOnEnvelopeSerialize()
         whenever(fixture.connection.responseCode).thenReturn(1234)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
         val result = transport.send(envelope)
 
@@ -117,7 +117,7 @@ class HttpTransportTest {
         whenever(fixture.connection.responseCode).thenReturn(429)
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
 
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
         val result = transport.send(envelope)
 
@@ -134,7 +134,7 @@ class HttpTransportTest {
         whenever(fixture.connection.responseCode).thenThrow(IOException())
 
         val session = Session("123", User(), "env", "release")
-        val envelope = SentryEnvelope.fromSession(fixture.serializer, session, null)
+        val envelope = SentryEnvelope.from(fixture.serializer, session, null)
 
         val result = transport.send(envelope)
 
@@ -327,6 +327,6 @@ class HttpTransportTest {
     }
 
     private fun createEnvelope(event: SentryEvent = SentryEvent()): SentryEnvelope {
-        return SentryEnvelope.fromEvent(fixture.serializer, event, null)
+        return SentryEnvelope.from(fixture.serializer, event, null)
     }
 }

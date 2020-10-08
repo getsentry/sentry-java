@@ -374,7 +374,7 @@ class GsonSerializerTest {
     @Test
     fun `When serializing an envelope, all the values should be set`() {
         val session = createSessionMockData()
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, null)
+        val sentryEnvelope = SentryEnvelope.from(serializer, session, null)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values
@@ -391,7 +391,7 @@ class GsonSerializerTest {
             addIntegration("TestIntegration")
             addPackage("abc", "4.5.6")
         }
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, version)
+        val sentryEnvelope = SentryEnvelope.from(serializer, session, version)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values

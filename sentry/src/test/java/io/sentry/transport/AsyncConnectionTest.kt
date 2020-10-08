@@ -10,10 +10,11 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.CachedEvent
+import io.sentry.ConvertibleToEnvelopeItem
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
-import io.sentry.SentryEvent
+import io.sentry.SentryItemType
 import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.cache.IEnvelopeCache
@@ -53,7 +54,7 @@ class AsyncConnectionTest {
     @Test
     fun `successful send discards the envelope from cache`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any())).thenReturn(TransportResult.success())
 
@@ -73,7 +74,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores envelope in cache if sending is not allowed`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(false)
 
         // when
@@ -87,7 +88,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores envelope after unsuccessful send`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any())).thenReturn(TransportResult.error(500))
 
@@ -111,7 +112,7 @@ class AsyncConnectionTest {
     @Test
     fun `stores envelope after send failure`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any())).thenThrow(IOException())
 
@@ -131,9 +132,9 @@ class AsyncConnectionTest {
     @Test
     fun `when event is retry after, do not submit runnable`() {
         // given
-        val ev = mock<SentryEvent>()
+        val ev = ConvertibleToEnvelopeItem { SentryItemType.Event }
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
-        val envelope = SentryEnvelope.fromEvent(fixture.sentryOptions.serializer, ev, null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
         fixture.getSUT().send(envelope)
@@ -145,9 +146,9 @@ class AsyncConnectionTest {
     @Test
     fun `when event is not retry after, submit runnable`() {
         // given
-        val ev = mock<SentryEvent>()
+        val ev = ConvertibleToEnvelopeItem { SentryItemType.Event }
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(false)
-        val envelope = SentryEnvelope.fromEvent(fixture.sentryOptions.serializer, ev, null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
         fixture.getSUT().send(envelope)
@@ -159,7 +160,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after, do not submit runnable`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -172,7 +173,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after and cached, discard session`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -185,7 +186,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is retry after but not cached, do nothing`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
 
         // when
@@ -198,7 +199,7 @@ class AsyncConnectionTest {
     @Test
     fun `when session is not retry after, submit runnable`() {
         // given
-        val envelope = SentryEnvelope.fromSession(fixture.sentryOptions.serializer, createSession(), null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(false)
 
         // when
@@ -210,8 +211,8 @@ class AsyncConnectionTest {
 
     @Test
     fun `When envelopes have retry after items, ignore them and send others`() {
-        val sessionItem = SentryEnvelopeItem.fromSession(fixture.sentryOptions.serializer, mock())
-        val eventItem = SentryEnvelopeItem.fromEvent(fixture.sentryOptions.serializer, mock())
+        val sessionItem = SentryEnvelopeItem.from(fixture.sentryOptions.serializer, { SentryItemType.Session })
+        val eventItem = SentryEnvelopeItem.from(fixture.sentryOptions.serializer, { SentryItemType.Event })
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(sessionItem, eventItem))
 
         whenever(fixture.transport.isRetryAfter(eq("event"))).thenReturn(false)
@@ -227,9 +228,9 @@ class AsyncConnectionTest {
     @Test
     fun `when event is retry after and cached, discard session`() {
         // given
-        val ev = mock<SentryEvent>()
+        val ev = ConvertibleToEnvelopeItem { SentryItemType.Event }
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
-        val envelope = SentryEnvelope.fromEvent(fixture.sentryOptions.serializer, ev, null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
         fixture.getSUT().send(envelope, CachedEvent())
@@ -241,9 +242,9 @@ class AsyncConnectionTest {
     @Test
     fun `when event is retry after but not cached, do nothing`() {
         // given
-        val ev = mock<SentryEvent>()
+        val ev = ConvertibleToEnvelopeItem { SentryItemType.Event }
         whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
-        val envelope = SentryEnvelope.fromEvent(fixture.sentryOptions.serializer, ev, null)
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
         fixture.getSUT().send(envelope)

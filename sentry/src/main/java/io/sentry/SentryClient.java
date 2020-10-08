@@ -125,21 +125,20 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryEvent event, final @Nullable Session session) throws IOException {
+      final @Nullable SentryItem item, final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
-    if (event != null) {
-      final SentryEnvelopeItem eventItem =
-          SentryEnvelopeItem.fromEvent(options.getSerializer(), event);
+    if (item != null) {
+      final SentryEnvelopeItem eventItem = SentryEnvelopeItem.from(options.getSerializer(), item);
       envelopeItems.add(eventItem);
-      sentryId = event.getEventId();
+      sentryId = item.getEventId();
     }
 
     if (session != null) {
       final SentryEnvelopeItem sessionItem =
-          SentryEnvelopeItem.fromSession(options.getSerializer(), session);
+          SentryEnvelopeItem.from(options.getSerializer(), session);
       envelopeItems.add(sessionItem);
     }
 
@@ -253,8 +252,7 @@ public final class SentryClient implements ISentryClient {
 
     SentryEnvelope envelope;
     try {
-      envelope =
-          SentryEnvelope.fromSession(options.getSerializer(), session, options.getSdkVersion());
+      envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
       return;

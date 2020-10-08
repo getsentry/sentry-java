@@ -33,10 +33,7 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
-  public void serialize(SentryEvent event, Writer writer) {}
-
-  @Override
-  public void serialize(Session session, Writer writer) throws IOException {}
+  public <T> void serialize(T event, Writer writer) throws IOException {}
 
   @Override
   public void serialize(SentryEnvelope envelope, Writer outputStream) throws Exception {}

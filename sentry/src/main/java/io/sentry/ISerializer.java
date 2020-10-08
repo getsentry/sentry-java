@@ -13,9 +13,7 @@ public interface ISerializer {
 
   SentryEnvelope deserializeEnvelope(InputStream inputStream);
 
-  void serialize(SentryEvent event, Writer writer) throws IOException;
-
-  void serialize(Session session, Writer writer) throws IOException;
+  <T> void serialize(T event, Writer writer) throws IOException;
 
   void serialize(SentryEnvelope envelope, Writer writer) throws Exception;
 

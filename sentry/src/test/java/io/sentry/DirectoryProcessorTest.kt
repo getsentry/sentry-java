@@ -56,10 +56,10 @@ class DirectoryProcessorTest {
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
 //        val session = createSession()
-//        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.fromSession(fixture.serializer, session, null))
+//        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.from(fixture.serializer, session, null))
 //        whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         val event = SentryEvent()
-        val envelope = SentryEnvelope.fromEvent(fixture.serializer, event, null)
+        val envelope = SentryEnvelope.from(fixture.serializer, event, null)
 
         whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
         whenever(fixture.serializer.deserializeEvent(any())).thenReturn(event)

@@ -136,37 +136,14 @@ public final class GsonSerializer implements ISerializer {
     }
   }
 
-  /**
-   * Serialize a SentryEvent to a stream Writer (JSON)
-   *
-   * @param event the SentryEvent
-   * @param writer the Writer
-   * @throws IOException an IOException
-   */
   @Override
-  public void serialize(final @NotNull SentryEvent event, final @NotNull Writer writer)
+  public <T> void serialize(final @NotNull T event, final @NotNull Writer writer)
       throws IOException {
     Objects.requireNonNull(event, "The SentryEvent object is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
-
-    gson.toJson(event, SentryEvent.class, writer);
-    writer.flush();
-  }
-
-  /**
-   * Serialize a Session to a stream Writer (JSON)
-   *
-   * @param session the Session
-   * @param writer the Writer
-   * @throws IOException an IOException
-   */
-  @Override
-  public void serialize(final @NotNull Session session, final @NotNull Writer writer)
-      throws IOException {
-    Objects.requireNonNull(session, "The Session object is required.");
-    Objects.requireNonNull(writer, "The Writer object is required.");
-
-    gson.toJson(session, Session.class, writer);
+    // TODO: check if debug level is enabled
+    logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(event));
+    gson.toJson(event, event.getClass(), writer);
     writer.flush();
   }
 

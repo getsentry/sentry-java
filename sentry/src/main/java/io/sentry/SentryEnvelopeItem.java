@@ -54,28 +54,6 @@ public final class SentryEnvelopeItem {
     return header;
   }
 
-  public static @NotNull SentryEnvelopeItem fromSession(
-      final @NotNull ISerializer serializer, final @NotNull Session session) throws IOException {
-    Objects.requireNonNull(serializer, "ISerializer is required.");
-    Objects.requireNonNull(session, "Session is required.");
-
-    final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-                serializer.serialize(session, writer);
-                return stream.toByteArray();
-              }
-            });
-
-    SentryEnvelopeItemHeader itemHeader =
-        new SentryEnvelopeItemHeader(
-            SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
-
-    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
-  }
-
   public @Nullable SentryEvent getEvent(final @NotNull ISerializer serializer) throws Exception {
     if (header == null || header.getType() != SentryItemType.Event) {
       return null;
@@ -86,24 +64,24 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  public static @NotNull SentryEnvelopeItem fromEvent(
-      final @NotNull ISerializer serializer, final @NotNull SentryEvent event) throws IOException {
-    Objects.requireNonNull(serializer, "ISerializer is required.");
-    Objects.requireNonNull(event, "SentryEvent is required.");
+  public static @NotNull SentryEnvelopeItem from(
+      final @NotNull ISerializer serializer, final @NotNull ConvertibleToEnvelopeItem item)
+      throws IOException {
+    Objects.requireNonNull(item, "SentryEvent is required.");
 
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-                serializer.serialize(event, writer);
+                serializer.serialize(item, writer);
                 return stream.toByteArray();
               }
             });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryItemType.Event, () -> cachedItem.getBytes().length, "application/json", null);
+            item.sentryItemType(), () -> cachedItem.getBytes().length, "application/json", null);
 
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }

@@ -53,27 +53,14 @@ public final class SentryEnvelope {
     this.items = items;
   }
 
-  public static @NotNull SentryEnvelope fromSession(
+  public static @NotNull SentryEnvelope from(
       final @NotNull ISerializer serializer,
-      final @NotNull Session session,
+      final @NotNull ConvertibleToEnvelopeItem convertibleToEnvelopeItem,
       final @Nullable SdkVersion sdkVersion)
       throws IOException {
     Objects.requireNonNull(serializer, "Serializer is required.");
-    Objects.requireNonNull(session, "session is required.");
+    Objects.requireNonNull(convertibleToEnvelopeItem, "convertibleToEnvelopeItem is required.");
 
-    return new SentryEnvelope(
-        null, sdkVersion, SentryEnvelopeItem.fromSession(serializer, session));
-  }
-
-  public static @NotNull SentryEnvelope fromEvent(
-      final @NotNull ISerializer serializer,
-      final @NotNull SentryEvent event,
-      final @Nullable SdkVersion sdkVersion)
-      throws IOException {
-    Objects.requireNonNull(serializer, "Serializer is required.");
-    Objects.requireNonNull(event, "Event is required.");
-
-    return new SentryEnvelope(
-        event.getEventId(), sdkVersion, SentryEnvelopeItem.fromEvent(serializer, event));
+    return new SentryEnvelope(null, sdkVersion, SentryEnvelopeItem.from(serializer, convertibleToEnvelopeItem));
   }
 }
