@@ -1,5 +1,7 @@
 package io.sentry;
 
+import org.jetbrains.annotations.Nullable;
+
 /** Sentry SDK internal logging interface. */
 public interface ILogger {
 
@@ -30,4 +32,14 @@ public interface ILogger {
    * @param args the formatting arguments
    */
   void log(SentryLevel level, Throwable throwable, String message, Object... args);
+
+  /**
+   * Whether this logger is enabled for the specified SentryLevel.
+   *
+   * @param level The SentryLevel to test against.
+   * @return True if a log message would be recorded for the level. Otherwise false.
+   */
+  default boolean isEnabled(final @Nullable SentryLevel level) {
+    return true;
+  }
 }

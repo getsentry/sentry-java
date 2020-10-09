@@ -3,7 +3,7 @@ package io.sentry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class SentryItemTypeTest {
+class SentryBaseEventTypeTest {
 
     @Test
     fun `Session enum type has a session type string`() {

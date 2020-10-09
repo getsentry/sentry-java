@@ -61,6 +61,7 @@ public final class SentryEnvelope {
     Objects.requireNonNull(serializer, "Serializer is required.");
     Objects.requireNonNull(convertibleToEnvelopeItem, "convertibleToEnvelopeItem is required.");
 
-    return new SentryEnvelope(null, sdkVersion, SentryEnvelopeItem.from(serializer, convertibleToEnvelopeItem));
+    return new SentryEnvelope(
+        null, sdkVersion, SentryEnvelopeItem.from(serializer, convertibleToEnvelopeItem));
   }
 }

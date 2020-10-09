@@ -137,13 +137,17 @@ public final class GsonSerializer implements ISerializer {
   }
 
   @Override
-  public <T> void serialize(final @NotNull T event, final @NotNull Writer writer)
+  public <T> void serialize(final @NotNull T entity, final @NotNull Writer writer)
       throws IOException {
-    Objects.requireNonNull(event, "The SentryEvent object is required.");
+    Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
-    // TODO: check if debug level is enabled
-    logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(event));
-    gson.toJson(event, event.getClass(), writer);
+
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));
+    } else {
+      gson.toJson(entity, entity.getClass(), writer);
+    }
+
     writer.flush();
   }
 

@@ -29,6 +29,7 @@ public final class DiagnosticLogger implements ILogger {
    * @param level The SentryLevel to test against.
    * @return True if a log message would be recorded for the level. Otherwise false.
    */
+  @Override
   public boolean isEnabled(final @Nullable SentryLevel level) {
     final SentryLevel diagLevel = options.getDiagnosticLevel();
     if (level == null) {
