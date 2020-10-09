@@ -13,6 +13,8 @@ import io.sentry.adapters.SentryIdDeserializerAdapter;
 import io.sentry.adapters.SentryIdSerializerAdapter;
 import io.sentry.adapters.SentryLevelDeserializerAdapter;
 import io.sentry.adapters.SentryLevelSerializerAdapter;
+import io.sentry.adapters.SpanIdDeserializerAdapter;
+import io.sentry.adapters.SpanIdSerializerAdapter;
 import io.sentry.adapters.TimeZoneDeserializerAdapter;
 import io.sentry.adapters.TimeZoneSerializerAdapter;
 import io.sentry.protocol.Contexts;
@@ -90,6 +92,8 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
         .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
         .registerTypeAdapter(Session.class, new SessionAdapter(logger))
+        .registerTypeAdapter(SpanId.class, new SpanIdDeserializerAdapter(logger))
+        .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
         .create();
   }
 
@@ -144,9 +148,8 @@ public final class GsonSerializer implements ISerializer {
 
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));
-    } else {
-      gson.toJson(entity, entity.getClass(), writer);
     }
+    gson.toJson(entity, entity.getClass(), writer);
 
     writer.flush();
   }

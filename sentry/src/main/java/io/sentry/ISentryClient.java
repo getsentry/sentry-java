@@ -178,4 +178,6 @@ public interface ISentryClient {
   default SentryId captureEnvelope(SentryEnvelope envelope) {
     return captureEnvelope(envelope, null);
   }
+
+  SentryId captureTransaction(Transaction transaction, Scope scope, Object hint);
 }

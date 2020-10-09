@@ -106,4 +106,9 @@ final class NoOpHub implements IHub {
   public IHub clone() {
     return instance;
   }
+
+  @Override
+  public SentryId captureTransaction(Transaction transaction, Object hint) {
+      return SentryId.EMPTY_ID;
+  }
 }

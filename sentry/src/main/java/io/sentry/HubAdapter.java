@@ -146,4 +146,9 @@ public final class HubAdapter implements IHub {
   public IHub clone() {
     return Sentry.getCurrentHub().clone();
   }
+
+  @Override
+  public SentryId captureTransaction(Transaction transaction, Object hint) {
+    return Sentry.captureTransaction(transaction, hint);
+  }
 }

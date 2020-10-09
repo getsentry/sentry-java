@@ -484,6 +484,10 @@ public final class Sentry {
     getCurrentHub().endSession();
   }
 
+  public static SentryId captureTransaction(Transaction transaction, Object hint) {
+    return getCurrentHub().captureTransaction(transaction, hint);
+  }
+
   /**
    * Configuration options callback
    *

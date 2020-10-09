@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent extends SentryBaseEvent implements IUnknownPropertiesConsumer {
+public final class SentryEvent extends SentryBaseEvent<Contexts> implements IUnknownPropertiesConsumer {
   private final Date timestamp;
 
   /** The captured Throwable */
@@ -30,8 +30,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   private String environment;
   private User user;
   private Request request;
-  private SdkVersion sdk;
-  private Contexts contexts = new Contexts();
   private List<String> fingerprint;
   private List<Breadcrumb> breadcrumbs;
   private Map<String, String> tags;
@@ -57,6 +55,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public SentryEvent() {
     this(new SentryId(), DateUtils.getCurrentDateTimeOrNull());
+    this.setContexts(new Contexts());
   }
 
   @TestOnly
@@ -195,14 +194,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.request = request;
   }
 
-  public SdkVersion getSdk() {
-    return sdk;
-  }
-
-  public void setSdk(SdkVersion sdk) {
-    this.sdk = sdk;
-  }
-
   public List<String> getFingerprints() {
     return fingerprint;
   }
@@ -284,14 +275,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
       return extra.get(key);
     }
     return null;
-  }
-
-  public Contexts getContexts() {
-    return contexts;
-  }
-
-  public void setContexts(Contexts contexts) {
-    this.contexts = contexts;
   }
 
   @ApiStatus.Internal

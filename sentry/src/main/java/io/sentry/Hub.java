@@ -601,4 +601,33 @@ public final class Hub implements IHub {
     }
     return clone;
   }
+
+  @Override
+  public SentryId captureTransaction(Transaction transaction, Object hint) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.WARNING, "Instance is disabled and this 'captureTransaction' call is a no-op.");
+    } else if (transaction == null) {
+      options.getLogger().log(SentryLevel.WARNING, "captureTransaction called with null parameter.");
+    } else {
+      try {
+        final StackItem item = stack.peek();
+        if (item != null) {
+          sentryId = item.client.captureTransaction(transaction, item.scope, hint);
+        } else {
+          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureTransaction");
+        }
+      } catch (Exception e) {
+        options
+          .getLogger()
+          .log(
+            SentryLevel.ERROR, "Error while capturing event with id: " + transaction.getEventId(), e);
+      }
+    }
+    this.lastEventId = sentryId;
+    return sentryId;
+  }
 }

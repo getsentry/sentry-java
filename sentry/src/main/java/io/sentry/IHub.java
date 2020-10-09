@@ -249,4 +249,6 @@ public interface IHub {
    * @return the cloned Hub
    */
   IHub clone();
+
+  SentryId captureTransaction(Transaction transaction, Object hint);
 }

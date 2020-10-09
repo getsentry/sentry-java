@@ -957,6 +957,48 @@ class HubTest {
     }
     //endregion
 
+    //region captureTransaction tests
+    @Test
+    fun `when captureTransaction is called and event is null, lastEventId is empty`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        sut.captureTransaction(null, null)
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    }
+
+    @Test
+    fun `when captureTransaction is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureTransaction(Transaction(), null)
+        verify(mockClient, never()).captureTransaction(any(), any(), any())
+    }
+
+    @Test
+    fun `when captureTransaction, captureTransaction on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.captureTransaction(Transaction(), null)
+        verify(mockClient).captureTransaction(any(), any(), eq(null))
+    }
+    //endregion
+
     @Test
     fun `Hub should close the sentry executor processor on close call`() {
         val executor = mock<ISentryExecutorService>()
