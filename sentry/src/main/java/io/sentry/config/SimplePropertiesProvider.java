@@ -1,6 +1,8 @@
 package io.sentry.config;
 
 import java.util.Properties;
+
+import io.sentry.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +16,6 @@ final class SimplePropertiesProvider implements PropertiesProvider {
 
   @Override
   public @Nullable String getProperty(@NotNull String property) {
-    return properties.getProperty(property);
+    return StringUtils.removeSurrounding(properties.getProperty(property), "\"");
   }
 }

@@ -1,6 +1,8 @@
 package io.sentry.config;
 
 import java.util.Locale;
+
+import io.sentry.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,7 +15,7 @@ final class EnvironmentVariablePropertiesProvider implements PropertiesProvider 
 
   @Override
   public @Nullable String getProperty(@NotNull String property) {
-    return System.getenv(
-        PREFIX + "_" + property.replace(".", "_").toUpperCase(Locale.getDefault()));
+    return StringUtils.removeSurrounding(System.getenv(
+        PREFIX + "_" + property.replace(".", "_").toUpperCase(Locale.getDefault())), "\"");
   }
 }
