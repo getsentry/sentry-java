@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * An item sent to Sentry in the envelope. Can be either {@link SentryEvent} or the Performance
  * transaction.
  */
-public abstract class SentryBaseEvent<T extends ConcurrentHashMap<String, Object>> implements ConvertibleToEnvelopeItem {
+public abstract class SentryBaseEvent<T extends ConcurrentHashMap<String, Object>> {
   private @Nullable SentryId eventId;
   private T contexts;
   private @Nullable SdkVersion sdk;

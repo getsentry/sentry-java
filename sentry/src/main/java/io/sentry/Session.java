@@ -8,12 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Session implements ConvertibleToEnvelopeItem {
-
-  @Override
-  public SentryItemType sentryItemType() {
-    return SentryItemType.Session;
-  }
+public final class Session {
 
   /** Session state */
   public enum State {

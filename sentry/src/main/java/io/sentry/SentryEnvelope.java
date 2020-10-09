@@ -55,13 +55,13 @@ public final class SentryEnvelope {
 
   public static @NotNull SentryEnvelope from(
       final @NotNull ISerializer serializer,
-      final @NotNull ConvertibleToEnvelopeItem convertibleToEnvelopeItem,
+      final @NotNull Object obj,
       final @Nullable SdkVersion sdkVersion)
       throws IOException {
     Objects.requireNonNull(serializer, "Serializer is required.");
-    Objects.requireNonNull(convertibleToEnvelopeItem, "convertibleToEnvelopeItem is required.");
+    Objects.requireNonNull(obj, "obj is required.");
 
     return new SentryEnvelope(
-        null, sdkVersion, SentryEnvelopeItem.from(serializer, convertibleToEnvelopeItem));
+        null, sdkVersion, SentryEnvelopeItem.from(serializer, obj));
   }
 }

@@ -12,6 +12,18 @@ public enum SentryItemType {
 
   private final String itemType;
 
+  public static SentryItemType resolve(Object obj) {
+    if (obj instanceof SentryEvent) {
+      return Event;
+    } else if (obj instanceof Transaction) {
+      return Transaction;
+    } else if (obj instanceof Session) {
+      return Session;
+    } else {
+      return Attachment;
+    }
+  }
+
   SentryItemType(final String itemType) {
     this.itemType = itemType;
   }

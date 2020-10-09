@@ -351,9 +351,4 @@ public final class SentryEvent extends SentryBaseEvent<Contexts> implements IUnk
   public boolean isErrored() {
     return exception != null && !exception.getValues().isEmpty();
   }
-
-  @Override
-  public SentryItemType sentryItemType() {
-    return SentryItemType.Event;
-  }
 }

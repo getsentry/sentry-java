@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 
-public final class Transaction extends SentryBaseEvent<TransactionContexts> implements ConvertibleToEnvelopeItem {
+public final class Transaction extends SentryBaseEvent<TransactionContexts> {
   /**
    * The transaction name.
    */
@@ -50,10 +50,5 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
 
   public @Nullable Date getTimestamp() {
     return timestamp;
-  }
-
-  @Override
-  public SentryItemType sentryItemType() {
-    return SentryItemType.Transaction;
   }
 }
