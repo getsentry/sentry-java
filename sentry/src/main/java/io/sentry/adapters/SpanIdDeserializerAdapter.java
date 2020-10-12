@@ -28,7 +28,7 @@ public final class SpanIdDeserializerAdapter implements JsonDeserializer<SpanId>
     try {
       return json == null ? null : new SpanId(json.getAsString());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing SentryId", e);
+      logger.log(SentryLevel.ERROR, "Error when deserializing SpanId", e);
     }
     return null;
   }

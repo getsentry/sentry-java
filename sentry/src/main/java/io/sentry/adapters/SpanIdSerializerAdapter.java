@@ -27,7 +27,7 @@ public final class SpanIdSerializerAdapter implements JsonSerializer<SpanId> {
     try {
       return src == null ? null : new JsonPrimitive(src.toString());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing SentryId", e);
+      logger.log(SentryLevel.ERROR, "Error when serializing SpanId", e);
     }
     return null;
   }
