@@ -15,6 +15,8 @@ import io.sentry.adapters.SentryLevelDeserializerAdapter;
 import io.sentry.adapters.SentryLevelSerializerAdapter;
 import io.sentry.adapters.SpanIdDeserializerAdapter;
 import io.sentry.adapters.SpanIdSerializerAdapter;
+import io.sentry.adapters.SpanStatusDeserializerAdapter;
+import io.sentry.adapters.SpanStatusSerializerAdapter;
 import io.sentry.adapters.TimeZoneDeserializerAdapter;
 import io.sentry.adapters.TimeZoneSerializerAdapter;
 import io.sentry.protocol.Contexts;
@@ -94,6 +96,8 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(Session.class, new SessionAdapter(logger))
         .registerTypeAdapter(SpanId.class, new SpanIdDeserializerAdapter(logger))
         .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
+        .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
+        .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
         .create();
   }
 

@@ -21,19 +21,48 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> {
    */
   private @Nullable Date timestamp;
 
-  public Transaction(@Nullable String transaction) {
-    this.transaction = transaction;
-    this.startTimestamp = DateUtils.getCurrentDateTime();
-    final TransactionContexts contexts = new TransactionContexts();
-    final Trace trace = new Trace();
-    trace.setTraceId(new SentryId());
-    trace.setSpanId(new SpanId());
-    contexts.setTrace(trace);
-    this.setContexts(contexts);
-  }
-
+  /**
+   * Creates unnamed transaction.
+   */
   public Transaction() {
     this(null);
+  }
+
+  /**
+   * Creates transaction with name.
+   * @param name - transaction name
+   */
+  public Transaction(final @Nullable String name) {
+    this.transaction = name;
+  }
+
+  /**
+   * Creates transaction with name and contexts.
+   *
+   * @param name - transaction name
+   * @param contexts - transaction contexts
+   */
+  public Transaction(final @Nullable String name, final @Nullable TransactionContexts contexts) {
+    this.transaction = name;
+    this.startTimestamp = DateUtils.getCurrentDateTime();
+    if (contexts == null) {
+      this.setContexts(new TransactionContexts());
+    } else {
+      this.setContexts(contexts);
+    }
+    if (this.getContexts().getTrace() == null) {
+      this.getContexts().setTrace(new Trace());
+    }
+    this.getContexts().getTrace().setTraceId(new SentryId());
+    this.getContexts().getTrace().setSpanId(new SpanId());
+  }
+
+  /**
+   * Sets transaction name.
+   * @param name - transaction name
+   */
+  public void setName(@Nullable String name) {
+    this.transaction = name;
   }
 
   public void finish() {
