@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.diffplug.spotless.LineEnding
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -53,6 +54,20 @@ allprojects {
         withType<JavaCompile> {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
         }
+    }
+}
+
+subprojects {
+    if (!this.name.contains("sample") && this.name != "sentry-test-support") {
+        apply<DistributionPlugin>()
+
+        configure<DistributionContainer> {
+            this.getByName("main").contents {
+                from("build/libs")
+                from("build/publications/maven")
+            }
+        }
+        tasks.named("distZip").dependsOn("publishToMavenLocal")
     }
 }
 

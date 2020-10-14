@@ -5,6 +5,17 @@ plugins {
     kotlin("android")
     id(Config.Deploy.novodaBintray)
     id(Config.QualityPlugins.gradleVersions)
+    distribution
+}
+
+// overwrite distributions config from the root project
+distributions {
+    main {
+        contents {
+            from("build/outputs/aar")
+            from("build/publications/release")
+        }
+    }
 }
 
 android {
