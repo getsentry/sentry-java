@@ -251,4 +251,5 @@ public interface IHub {
   IHub clone();
 
   SentryId captureTransaction(Transaction transaction, Object hint);
+  Transaction startTransaction(TransactionContexts transactionContexts);
 }

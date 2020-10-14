@@ -29,10 +29,14 @@ class SentryTest {
             it.dsn = "https://9eda1857f9344d51821b656ba3557780@o420886.ingest.sentry.io/5339853"
             it.isDebug = true
         }
-
-        val transaction = Transaction("newtranxs2")
+        val contexts = TransactionContexts()
+        contexts.trace = Trace()
+        contexts.trace.op = "http"
+        contexts.trace.description = "some request"
+        contexts.trace.status = SpanStatus.OK
+        contexts.trace.setTag("myTag", "myValue")
+        val transaction = Transaction("newtranxs4", contexts)
         transaction.sdk = SentryOptions().sdkVersion
-
         Thread.sleep(100)
         transaction.finish()
         Sentry.captureTransaction(transaction, null)

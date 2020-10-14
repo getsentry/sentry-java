@@ -630,4 +630,9 @@ public final class Hub implements IHub {
     this.lastEventId = sentryId;
     return sentryId;
   }
+
+  @Override
+  public Transaction startTransaction(TransactionContexts transactionContexts) {
+    return null;
+  }
 }
