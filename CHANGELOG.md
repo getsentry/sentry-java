@@ -1,3 +1,7 @@
+# 3.1.1
+
+* fix: fix setting up Sentry in Spring Webflux annotation by changing the scope of Spring WebMvc related dependencies
+
 # 3.1.0
 
 * fix: Don't require `sentry.dsn` to be set when using `io.sentry:sentry-spring-boot-starter` and `io.sentry:sentry-logback` together #965
