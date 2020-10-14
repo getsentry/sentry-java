@@ -4,7 +4,8 @@
 * Auto-Configure `inAppIncludes` in Spring Boot integration #966
 * Enhancement: make getThrowable public and improve set contexts #967
 * Bump: Android Gradle Plugin 4.0.2 #968
-* Enhancement: accepted quoted values in properties from external configuration
+* Enhancement: accepted quoted values in properties from external configuration #972
+* fix: remove chunked streaming mode #974
 
 # 3.0.0
 
