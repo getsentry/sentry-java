@@ -1,8 +1,7 @@
 package io.sentry.config;
 
-import java.util.Properties;
-
 import io.sentry.util.StringUtils;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
