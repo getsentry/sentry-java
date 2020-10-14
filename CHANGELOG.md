@@ -6,6 +6,7 @@
 * Bump: Android Gradle Plugin 4.0.2 #968
 * Enhancement: accepted quoted values in properties from external configuration #972
 * fix: remove chunked streaming mode #974
+* fix: Android 11 + targetSdkVersion 30 crashes Sentry on start #977
 
 # 3.0.0
 
