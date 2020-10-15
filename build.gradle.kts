@@ -71,7 +71,15 @@ subprojects {
                 from("build/publications/release")
             }
         }
-        tasks.named("distZip").dependsOn("publishToMavenLocal")
+        tasks.named("distZip").configure {
+            this.dependsOn("publishToMavenLocal")
+            this.doLast {
+                val distributionFilePath = "${this.project.buildDir}/distributions/${this.project.name}-${this.project.version}.zip"
+                val file = File(distributionFilePath)
+                if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
+                if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
+            }
+        }
     }
 }
 
