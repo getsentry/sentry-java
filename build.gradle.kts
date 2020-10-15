@@ -63,8 +63,12 @@ subprojects {
 
         configure<DistributionContainer> {
             this.getByName("main").contents {
+                // non android modules
                 from("build/libs")
                 from("build/publications/maven")
+                // android modules
+                from("build/outputs/aar")
+                from("build/publications/release")
             }
         }
         tasks.named("distZip").dependsOn("publishToMavenLocal")
