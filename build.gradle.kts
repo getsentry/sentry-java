@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.diffplug.spotless.LineEnding
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
