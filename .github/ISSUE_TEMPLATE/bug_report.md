@@ -14,7 +14,7 @@ _Platform:_
 - [ ]  NDK -> If yes, which NDK/CMake version?
 - [ ]  React-Native -> If yes, which version?
 - [ ]  Timber -> If yes, which version?
-- [ ]  Log4j -> If yes, which version?
+- [ ]  Log4j2 -> If yes, which version?
 - [ ]  Logback -> If yes, which version?
 - [ ]  Spring -> If yes, which version?
 
