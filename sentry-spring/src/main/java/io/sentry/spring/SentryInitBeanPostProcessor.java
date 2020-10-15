@@ -24,6 +24,7 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
       if (applicationContext != null) {
         applicationContext
             .getBeanProvider(SentryUserProvider.class)
+            .orderedStream()
             .forEach(
                 sentryUserProvider ->
                     options.addEventProcessor(

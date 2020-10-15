@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.annotation.Order;
 
 /** Registers Spring Web specific Sentry beans. */
 @Configuration
@@ -15,6 +16,7 @@ public class SentryWebConfiguration {
 
   @Bean
   @Lazy
+  @Order(0)
   public @NotNull HttpServletRequestSentryUserProvider httpServletRequestSentryUserProvider(
       final @NotNull SentryOptions sentryOptions) {
     return new HttpServletRequestSentryUserProvider(sentryOptions);
