@@ -18,6 +18,8 @@ import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 
 class SentryUserProviderEventProcessorIntegrationTest {
 
@@ -69,6 +71,19 @@ class SentryUserProviderEventProcessorIntegrationTest {
             }
     }
 
+    @Test
+    fun `when custom SentryUserProvider bean with higher order is configured, it's added before HttpServletRequestSentryUserProvider`() {
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfig::class.java, SentryHighestOrderUserProviderConfiguration::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                val userProviderEventProcessors = options.eventProcessors.filterIsInstance<SentryUserProviderEventProcessor>()
+                assertEquals(2, userProviderEventProcessors.size)
+                assertTrue(userProviderEventProcessors[0].sentryUserProvider is CustomSentryUserProvider)
+                assertTrue(userProviderEventProcessors[1].sentryUserProvider is HttpServletRequestSentryUserProvider)
+            }
+    }
+
     @EnableSentry(dsn = "http://key@localhost/proj")
     open class AppConfig {
 
@@ -80,6 +95,14 @@ class SentryUserProviderEventProcessorIntegrationTest {
     open class SentryUserProviderConfiguration {
 
         @Bean
+        open fun userProvider() = CustomSentryUserProvider()
+    }
+
+    @Configuration
+    open class SentryHighestOrderUserProviderConfiguration {
+
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
         open fun userProvider() = CustomSentryUserProvider()
     }
 

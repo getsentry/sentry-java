@@ -1,5 +1,6 @@
 # 3.1.1
 
+* fix: Make sure HttpServletRequestSentryUserProvider runs by default before custom SentryUserProvider beans
 * fix: fix setting up Sentry in Spring Webflux annotation by changing the scope of Spring WebMvc related dependencies
 
 # 3.1.0

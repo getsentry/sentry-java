@@ -45,7 +45,7 @@ public class SentryAutoConfiguration {
         final @NotNull List<EventProcessor> eventProcessors,
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
-        final @NotNull ObjectProvider<SentryUserProvider> sentryUserProviders,
+        final @NotNull List<SentryUserProvider> sentryUserProviders,
         final @NotNull ObjectProvider<ITransport> transport,
         final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
