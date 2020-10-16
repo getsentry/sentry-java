@@ -1,0 +1,16 @@
+minVersion: "0.12.0"
+github:
+  owner: getsentry
+  repo: sentry-java
+changelogPolicy: simple
+requireNames:
+  - /^sentry-craft.*\.tgz$/
+statusProvider:
+  name: github
+targets:
+  - name: bintray
+  - name: github
+  - name: registry
+    type: sdk
+    config:
+      canonical: "maven:io.sentry:sentry"

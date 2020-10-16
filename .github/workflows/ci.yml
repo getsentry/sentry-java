@@ -74,6 +74,7 @@ jobs:
         with:
           name: artifacts
           path: ./*/build/distributions/*.zip
+
 release:
   ## Only run on a release branch
   if: github.event_name == 'push' && contains(github.ref, 'refs/heads/release')
