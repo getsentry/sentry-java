@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.test.checkEvent
@@ -27,8 +28,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 class SentryAppenderTest {
-    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
-        val transport = mock<ITransport>()
+    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val transport: ITransport = mock<ITransport>()) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
 
@@ -55,11 +55,30 @@ class SentryAppenderTest {
     @AfterTest
     fun `stop logback`() {
         fixture.loggerContext.stop()
+        Sentry.close()
     }
 
     @BeforeTest
     fun `clear MDC`() {
         MDC.clear()
+    }
+
+    @Test
+    fun `does not initialize Sentry if Sentry is already enabled`() {
+        val transport = mock<ITransport>()
+        Sentry.init {
+            it.dsn = "http://key@localhost/proj"
+            it.environment = "manual-environment"
+            it.setTransport(transport)
+        }
+        fixture = Fixture(transport = transport)
+        fixture.logger.error("testing environment field")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertEquals("manual-environment", event.environment)
+            })
+        }
     }
 
     @Test
