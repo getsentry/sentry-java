@@ -4,7 +4,7 @@ github:
   repo: sentry-java
 changelogPolicy: simple
 requireNames:
-  - /^sentry-craft.*\.tgz$/
+  - /^sentry-.*\.zip$/
 statusProvider:
   name: github
 targets:

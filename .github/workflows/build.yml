@@ -69,10 +69,12 @@ jobs:
       #    arguments: --stop
       - name: Make stop
         run: make stop
-      - name: Archive artifacts
+      - name: Archive packages
+        # We need artifacts from only one the builds
+        if: ${{ matrix.os }} == ubuntu-latest
         uses: actions/upload-artifact@v2
         with:
-          name: artifacts
+          name: packages
           path: ./*/build/distributions/*.zip
 
   release:
@@ -82,7 +84,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - name: Download Artifacts
+      - name: Download packages
         uses: actions/download-artifact@v2
         with:
           name: artifacts
