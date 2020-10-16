@@ -95,17 +95,19 @@ public final class SentryAppender extends AbstractAppender {
 
   @Override
   public void start() {
-    try {
-      Sentry.init(
-          options -> {
-            options.setEnableExternalConfiguration(true);
-            options.setDsn(dsn);
-            options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
-            options.setSdkVersion(createSdkVersion(options));
-            Optional.ofNullable(transport).ifPresent(options::setTransport);
-          });
-    } catch (IllegalArgumentException e) {
-      LOGGER.info("Failed to init Sentry during appender initialization: " + e.getMessage());
+    if (!Sentry.isEnabled()) {
+      try {
+        Sentry.init(
+            options -> {
+              options.setEnableExternalConfiguration(true);
+              options.setDsn(dsn);
+              options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
+              options.setSdkVersion(createSdkVersion(options));
+              Optional.ofNullable(transport).ifPresent(options::setTransport);
+            });
+      } catch (IllegalArgumentException e) {
+        LOGGER.info("Failed to init Sentry during appender initialization: " + e.getMessage());
+      }
     }
     super.start();
   }

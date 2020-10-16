@@ -1,5 +1,6 @@
 # 3.1.1
 
+* fix: Prevent Logback and Log4j2 integrations from re-initializing Sentry when Sentry is already initialized
 * Enhancement: Bind logging related SentryProperties to Slf4j Level instead of Logback to improve Log4j2 compatibility
 * fix: Make sure HttpServletRequestSentryUserProvider runs by default before custom SentryUserProvider beans
 * fix: fix setting up Sentry in Spring Webflux annotation by changing the scope of Spring WebMvc related dependencies
