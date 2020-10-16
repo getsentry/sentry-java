@@ -65,6 +65,11 @@ For example, if you had `sentry-native` checked-out in a sibling directory to th
 which will be picked up by `gradle` and used instead of the git submodule.
 This directory is also included in `.gitignore` not to be shown as pending changes.
 
+# Android: Note on multiple crash reporting SDKs
+
+Installing multiple crash reporting SDKs isn't supported. They race each other on taking the signal handler (for native crashes) and it often results in only 1 of the SDKs capturing the error. This is also due to the limitations of what can run there (like allocating memory etc) and how long the app lives.
+This limitation also affects the Java layer, given that the operating system will kill the app before more than one SDK is able to process the crash and save the error to storage.
+
 # Resources
 
 * [![Java Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=java%20docs)](https://docs.sentry.io/platforms/java/)
