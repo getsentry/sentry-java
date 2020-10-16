@@ -456,7 +456,7 @@ public final class Hub implements IHub {
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Instance is disabled and this 'addBreadcrumb' call is a no-op.");
+              "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
@@ -523,7 +523,7 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'withScope' call is a no-op.");
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
