@@ -52,9 +52,11 @@ object Config {
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
+        val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
         val servletApi = "javax.servlet:javax.servlet-api"
+        val springWebflux = "org.springframework:spring-webflux"
     }
 
     object AnnotationProcessors {
