@@ -23,6 +23,8 @@ android {
 
         versionName = project.version.toString()
         versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
+
+        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
     buildTypes {
@@ -46,13 +48,13 @@ android {
         unitTests.apply {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
-            all(KotlinClosure1<Any, Test>({
-                (this as Test).also { testTask ->
-                    testTask.extensions
-                            .getByType(JacocoTaskExtension::class.java)
-                            .isIncludeNoLocationClasses = true
-                }
-            }, this))
+//            all(KotlinClosure1<Any, Test>({
+//                (this as Test).also { testTask ->
+//                    testTask.extensions
+//                            .getByType(JacocoTaskExtension::class.java)
+//                            .isIncludeNoLocationClasses = true
+//                }
+//            }, this))
         }
     }
 

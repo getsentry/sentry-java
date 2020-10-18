@@ -28,7 +28,7 @@ android {
         }
 
         ndk {
-            setAbiFilters(Config.Android.abiFilters)
+            abiFilters.addAll(Config.Android.abiFilters)
             ndkVersion = Config.Android.ndkVersion
         }
     }
@@ -49,7 +49,7 @@ android {
     externalNativeBuild {
         cmake {
             version = Config.Android.cmakeVersion
-            setPath("CMakeLists.txt")
+            path("CMakeLists.txt")
         }
     }
 
@@ -64,10 +64,10 @@ android {
 
     buildTypes {
         getByName("debug") {
-            manifestPlaceholders = mapOf(
+            addManifestPlaceholders(mapOf(
                 "sentryDebug" to true,
                 "sentryEnvironment" to "debug"
-            )
+            ))
         }
         getByName("release") {
             isMinifyEnabled = true
@@ -75,10 +75,10 @@ android {
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             isShrinkResources = true
 
-            manifestPlaceholders = mapOf(
+            addManifestPlaceholders(mapOf(
                 "sentryDebug" to false,
                 "sentryEnvironment" to "release"
-            )
+            ))
         }
     }
 

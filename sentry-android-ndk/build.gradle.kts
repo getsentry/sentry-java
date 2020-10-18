@@ -6,7 +6,7 @@ plugins {
     kotlin("android")
     jacoco
     id(Config.Deploy.novodaBintray)
-    id(Config.NativePlugins.nativeBundleExport)
+//    id(Config.NativePlugins.nativeBundleExport)
     id(Config.QualityPlugins.gradleVersions)
 }
 
@@ -39,15 +39,17 @@ android {
         }
 
         ndk {
-            setAbiFilters(Config.Android.abiFilters)
+            abiFilters.addAll(Config.Android.abiFilters)
             ndkVersion = Config.Android.ndkVersion
         }
+
+        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
     externalNativeBuild {
         cmake {
             version = Config.Android.cmakeVersion
-            setPath("CMakeLists.txt")
+            path("CMakeLists.txt")
         }
     }
 
@@ -72,13 +74,13 @@ android {
         unitTests.apply {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
-            all(KotlinClosure1<Any, Test>({
-                (this as Test).also { testTask ->
-                    testTask.extensions
-                        .getByType(JacocoTaskExtension::class.java)
-                        .isIncludeNoLocationClasses = true
-                }
-            }, this))
+//            all(KotlinClosure1<Any, Test>({
+//                (this as Test).also { testTask ->
+//                    testTask.extensions
+//                        .getByType(JacocoTaskExtension::class.java)
+//                        .isIncludeNoLocationClasses = true
+//                }
+//            }, this))
         }
     }
 
@@ -90,13 +92,23 @@ android {
         isCheckReleaseBuilds = false
     }
 
-    nativeBundleExport {
-        headerDir = "${project.projectDir}/$sentryNativeSrc/include"
-    }
+//    nativeBundleExport {
+//        headerDir = "${project.projectDir}/$sentryNativeSrc/include"
+//    }
 
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+    }
+
+    buildFeatures {
+        prefabPublishing = true
+    }
+
+    prefab {
+        create("sentry-android") {
+            headers = "$sentryNativeSrc/include"
+        }
     }
 }
 
