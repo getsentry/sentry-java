@@ -16,13 +16,13 @@ class SentryReactiveErrorAttributesTest {
 
     @Test
     fun `Capture exception with Request Hub`() {
-        exchange.attributes[SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME] = iHub
+        exchange.attributes[SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME] = hub
 
         val errorAttributes = SentryReactiveErrorAttributes()
         val exception = RuntimeException("Sample Exception")
         errorAttributes.storeErrorInformation(exception, exchange)
 
-        verify(iHub).captureException(exception)
+        verify(hub).captureException(exception)
     }
 
     @Test
