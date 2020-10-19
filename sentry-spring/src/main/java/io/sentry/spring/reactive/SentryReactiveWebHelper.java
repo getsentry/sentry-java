@@ -13,9 +13,9 @@ public final class SentryReactiveWebHelper {
   private static final ILogger LOGGER = new SystemOutLogger();
 
   public static void withRequestHub(ServerWebExchange exchange, Consumer<IHub> hubConsumer) {
-    Object ihub = exchange.getAttributes().get(REQUEST_HUB_ATTR_NAME);
-    if (ihub instanceof IHub) {
-      hubConsumer.accept((IHub) ihub);
+    Object hub = exchange.getAttributes().get(REQUEST_HUB_ATTR_NAME);
+    if (hub instanceof IHub) {
+      hubConsumer.accept((IHub) hub);
     } else {
       LOGGER.log(SentryLevel.ERROR, "No Hub configured in ServerWebExchange");
     }
