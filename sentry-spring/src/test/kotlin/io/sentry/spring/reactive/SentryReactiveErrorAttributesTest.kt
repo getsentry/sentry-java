@@ -32,6 +32,6 @@ class SentryReactiveErrorAttributesTest {
         val exception = RuntimeException("Sample Exception")
         errorAttributes.storeErrorInformation(exception, exchange)
 
-        verify(iHub, Mockito.never()).captureException(exception)
+        verify(hub, never()).captureException(exception)
     }
 }
