@@ -12,7 +12,7 @@ class SentryReactiveErrorAttributesTest {
 
     private val request = MockServerHttpRequest.get("http://example.com").build()
     private val exchange = MockServerWebExchange.from(request)
-    private val iHub = mock<IHub>()
+    private val hub = mock<IHub>()
 
     @Test
     fun `Capture exception with Request Hub`() {
