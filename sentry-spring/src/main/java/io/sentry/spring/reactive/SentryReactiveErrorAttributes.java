@@ -9,7 +9,7 @@ public class SentryReactiveErrorAttributes extends DefaultErrorAttributes {
 
   @Override
   public void storeErrorInformation(Throwable error, ServerWebExchange exchange) {
-    SentryReactiveWebHelper.withRequestHub(exchange, iHub -> iHub.captureException(error));
+    SentryReactiveWebHelper.withRequestHub(exchange, hub -> hub.captureException(error));
     super.storeErrorInformation(error, exchange);
   }
 }
