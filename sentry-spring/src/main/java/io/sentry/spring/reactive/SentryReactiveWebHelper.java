@@ -17,7 +17,7 @@ public final class SentryReactiveWebHelper {
     if (ihub instanceof IHub) {
       hubConsumer.accept((IHub) ihub);
     } else {
-      LOGGER.log(SentryLevel.WARNING, "No Hub configured in ServerWebExchange");
+      LOGGER.log(SentryLevel.ERROR, "No Hub configured in ServerWebExchange");
     }
   }
 }
