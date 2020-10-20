@@ -13,6 +13,8 @@ import org.assertj.core.api.Assertions
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.server.MockServerWebExchange
 import org.springframework.web.server.WebFilterChain
+import reactor.core.publisher.Mono
+import reactor.test.StepVerifier
 
 class SentryReactiveWebFilterTest {
 
@@ -28,6 +30,7 @@ class SentryReactiveWebFilterTest {
         val chain = mock<WebFilterChain>()
 
         init {
+            whenever(chain.filter(webExchange)).thenReturn(Mono.empty())
             whenever(baseHub.clone()).thenReturn(hub)
         }
     }
@@ -58,5 +61,14 @@ class SentryReactiveWebFilterTest {
         fixture.filter.filter(fixture.webExchange, fixture.chain)
         val iHub = fixture.webExchange.getAttribute<IHub>(SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME)
         Assertions.assertThat(iHub).isSameAs(fixture.hub)
+    }
+
+    @Test
+    fun `Pop scope on terminate signal`() {
+        fixture.filter
+            .filter(fixture.webExchange, fixture.chain)
+            .`as` { StepVerifier.create(it) }
+            .verifyComplete()
+        verify(fixture.hub).popScope()
     }
 }

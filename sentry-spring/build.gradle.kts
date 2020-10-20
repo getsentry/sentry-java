@@ -55,6 +55,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.TestLibs.reactorTest)
 }
 
 configure<SourceSetContainer> {

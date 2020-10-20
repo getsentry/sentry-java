@@ -42,7 +42,7 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
         });
 
     exchange.getAttributes().put(SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME, hub);
-    return chain.filter(exchange);
+    return chain.filter(exchange).doFinally(_signal -> hub.popScope());
   }
 
   @Override

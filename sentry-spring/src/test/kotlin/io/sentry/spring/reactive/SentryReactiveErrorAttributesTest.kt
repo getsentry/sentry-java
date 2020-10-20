@@ -1,10 +1,10 @@
 package io.sentry.spring.reactive
 
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
 import kotlin.test.Test
-import org.mockito.Mockito
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.server.MockServerWebExchange
 

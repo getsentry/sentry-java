@@ -75,6 +75,7 @@ object Config {
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
         val mockitoInline = "org.mockito:mockito-inline:3.5.13"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
+        val reactorTest = "io.projectreactor:reactor-test"
     }
 
     object QualityPlugins {
