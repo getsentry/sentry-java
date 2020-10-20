@@ -11,6 +11,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.reactive.SentryWebFluxConfiguration;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import java.util.List;
@@ -93,6 +94,13 @@ public class SentryAutoConfiguration {
     @Import(SentryWebConfiguration.class)
     @Open
     static class SentryWebMvcConfiguration {}
+
+    /** Registers beans specific to Spring Web Flux. */
+    @Configuration
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+    @Import(SentryWebFluxConfiguration.class)
+    @Open
+    static class SentryReactiveWebConfiguration {}
 
     private static @NotNull SdkVersion createSdkVersion(
         final @NotNull SentryOptions sentryOptions) {
