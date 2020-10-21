@@ -22,7 +22,7 @@ distZip:
 	./gradlew distZip
 
 # deep clean, build and deploy to bintray, jcenter and maven central
-release: clean compile dryRelease doRelease distZip
+release: clean compile dryRelease distZip
 
 # check for dependencies update
 update:
