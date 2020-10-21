@@ -18,9 +18,9 @@ class SentryReactiveErrorAttributesTest {
     fun `Capture exception with Request Hub`() {
         exchange.attributes[SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME] = hub
 
-        val errorAttributes = SentryReactiveErrorAttributes()
+        val errorAttributes = SentryReactiveExceptionHandler()
         val exception = RuntimeException("Sample Exception")
-        errorAttributes.storeErrorInformation(exception, exchange)
+        errorAttributes.handle(exchange, exception)
 
         verify(hub).captureException(exception)
     }
@@ -28,9 +28,9 @@ class SentryReactiveErrorAttributesTest {
     @Test
     fun `Should not throw exception when there is no hub`() {
 
-        val errorAttributes = SentryReactiveErrorAttributes()
+        val errorAttributes = SentryReactiveExceptionHandler()
         val exception = RuntimeException("Sample Exception")
-        errorAttributes.storeErrorInformation(exception, exchange)
+        errorAttributes.handle(exchange, exception)
 
         verify(hub, never()).captureException(exception)
     }

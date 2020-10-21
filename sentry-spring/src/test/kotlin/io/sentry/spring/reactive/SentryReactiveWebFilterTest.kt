@@ -1,5 +1,6 @@
 package io.sentry.spring.reactive
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -21,12 +22,13 @@ class SentryReactiveWebFilterTest {
     private class Fixture {
         val baseHub = mock<IHub>()
         val hub = mock<IHub>()
-        val filter = SentryReactiveWebFilter(baseHub, SentryOptions())
-        val request = MockServerHttpRequest
+        val userProvider = mock<SentryReactiveUserProvider>()
+        val filter = SentryReactiveWebFilter(baseHub, SentryOptions(), listOf(userProvider))
+        val request: MockServerHttpRequest = MockServerHttpRequest
             .post("http://localhost:8080/some-uri")
             .build()
         val event = mock<ServletRequestEvent>()
-        val webExchange = MockServerWebExchange.from(request)
+        val webExchange: MockServerWebExchange = MockServerWebExchange.from(request)
         val chain = mock<WebFilterChain>()
 
         init {
@@ -61,6 +63,12 @@ class SentryReactiveWebFilterTest {
         fixture.filter.filter(fixture.webExchange, fixture.chain)
         val iHub = fixture.webExchange.getAttribute<IHub>(SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME)
         Assertions.assertThat(iHub).isSameAs(fixture.hub)
+    }
+
+    @Test
+    fun `adds event processors when request gets initialized`() {
+        fixture.filter.filter(fixture.webExchange, fixture.chain)
+        verify(fixture.hub).configureScope(any())
     }
 
     @Test

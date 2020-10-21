@@ -8,6 +8,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -25,10 +26,15 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
 
   private final @NotNull IHub baseHub;
   private final @NotNull SentryOptions options;
+  private final @NotNull List<SentryReactiveUserProvider> sentryUserProviders;
 
-  public SentryReactiveWebFilter(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public SentryReactiveWebFilter(
+      final @NotNull IHub hub,
+      final @NotNull SentryOptions options,
+      final @NotNull List<SentryReactiveUserProvider> sentryUserProviders) {
     this.baseHub = Objects.requireNonNull(hub, "hub is required");
     this.options = Objects.requireNonNull(options, "options are required");
+    this.sentryUserProviders = Objects.requireNonNull(sentryUserProviders, "options are required");
   }
 
   @Override
@@ -41,6 +47,8 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
 
     hub.configureScope(
         scope -> {
+          sentryUserProviders.forEach(
+              provider -> new SentryReactiveWebUserProviderProcessor(exchange, provider));
           scope.addEventProcessor(new SentryReactiveWebRequestProcessor(request, options));
         });
 

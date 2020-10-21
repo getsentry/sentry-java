@@ -3,33 +3,36 @@ package io.sentry.spring.reactive;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryOptions;
-import io.sentry.spring.HttpServletRequestSentryUserProvider;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 
-/** Registers Spring Web specific Sentry beans. */
-// @Configuration
+/** Registers Spring Web Flux specific Sentry beans. */
+@Configuration
 @Open
 public class SentryWebFluxConfiguration {
 
   @Bean
   @Lazy
   @Order(0)
-  public @NotNull HttpServletRequestSentryUserProvider httpServletRequestSentryUserProvider(
+  public @NotNull WebfluxRequestSentryUserProvider webfluxRequestSentryUserProvider(
       final @NotNull SentryOptions sentryOptions) {
-    return new HttpServletRequestSentryUserProvider(sentryOptions);
+    return new WebfluxRequestSentryUserProvider(sentryOptions);
   }
 
   @Bean
   public @NotNull SentryReactiveWebFilter sentryReactiveWebFilter(
-      final @NotNull IHub sentryHub, final @NotNull SentryOptions sentryOptions) {
-    return new SentryReactiveWebFilter(sentryHub, sentryOptions);
+      final @NotNull IHub hub,
+      final @NotNull SentryOptions options,
+      final @NotNull List<SentryReactiveUserProvider> userProviders) {
+    return new SentryReactiveWebFilter(hub, options, userProviders);
   }
 
   @Bean
-  public @NotNull SentryReactiveErrorAttributes sentryReactiveErrorAttributes() {
-    return new SentryReactiveErrorAttributes();
+  public @NotNull SentryReactiveExceptionHandler sentryReactiveErrorAttributes() {
+    return new SentryReactiveExceptionHandler();
   }
 }
