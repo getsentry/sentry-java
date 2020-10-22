@@ -19,7 +19,7 @@
  * To execute the script two environment vairables that are used by Maven have to be present: BINTRAY_USERNAME, BINTRAY_API_KEY
  *
  * Example usage (assuming that the script is executed from the `<project-root>/scripts` directory and the distribution files are in `<project-root>/dist`):
- * $ kotlinc -script release.kts -- -d ../dist -s  -repositoryUrl https://api.bintray.com/maven/sentry/sentry-java/sentry-java/ | sh
+ * $ kotlinc -script release.kts -- -d ../dist  -repositoryUrl https://api.bintray.com/maven/sentry/sentry-java/sentry-java/ | sh
  *
  */
 import java.io.File
@@ -65,7 +65,7 @@ File(path)
         val sourcesFile = "$path/$module-sources.jar"
         val pomFile = "$path/pom-default.xml"
 
-        val command = "mvn deploy:deploy-file -Dfile=$file -Dfiles=$javadocFile,$sourcesFile -Dclassifiers=sources,javadoc -Dtypes=jar,jar -DpomFile=$pomFile -DrepositoryId=$repositoryId -Durl=$repositoryUrl\\;publish\\=$publish --settings $settingsPath"
+        val command = "./mvnw deploy:deploy-file -Dfile=$file -Dfiles=$javadocFile,$sourcesFile -Dclassifiers=sources,javadoc -Dtypes=jar,jar -DpomFile=$pomFile -DrepositoryId=$repositoryId -Durl=$repositoryUrl\\;publish\\=$publish --settings $settingsPath"
         println(command)
     }
 
