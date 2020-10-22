@@ -25,14 +25,13 @@ public class SentryWebFluxConfiguration {
 
   @Bean
   public @NotNull SentryReactiveWebFilter sentryReactiveWebFilter(
-      final @NotNull IHub hub,
-      final @NotNull SentryOptions options,
-      final @NotNull List<SentryReactiveUserProvider> userProviders) {
-    return new SentryReactiveWebFilter(hub, options, userProviders);
+      final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    return new SentryReactiveWebFilter(hub, options);
   }
 
   @Bean
-  public @NotNull SentryReactiveExceptionHandler sentryReactiveErrorAttributes() {
-    return new SentryReactiveExceptionHandler();
+  public @NotNull SentryReactiveExceptionHandler sentryReactiveErrorAttributes(
+      final @NotNull List<SentryReactiveUserProvider> userProviders) {
+    return new SentryReactiveExceptionHandler(userProviders);
   }
 }

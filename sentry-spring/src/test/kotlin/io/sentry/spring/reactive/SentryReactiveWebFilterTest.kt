@@ -23,7 +23,7 @@ class SentryReactiveWebFilterTest {
         val baseHub = mock<IHub>()
         val hub = mock<IHub>()
         val userProvider = mock<SentryReactiveUserProvider>()
-        val filter = SentryReactiveWebFilter(baseHub, SentryOptions(), listOf(userProvider))
+        val filter = SentryReactiveWebFilter(baseHub, SentryOptions())
         val request: MockServerHttpRequest = MockServerHttpRequest
             .post("http://localhost:8080/some-uri")
             .build()

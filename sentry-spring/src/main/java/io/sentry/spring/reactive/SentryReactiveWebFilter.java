@@ -1,14 +1,12 @@
 package io.sentry.spring.reactive;
 
 import static io.sentry.spring.reactive.SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME;
-import static io.sentry.spring.reactive.WebfluxRequestSentryUserProvider.REQUEST_PRINCIPAL_ATTR_NAME;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -26,15 +24,10 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
 
   private final @NotNull IHub baseHub;
   private final @NotNull SentryOptions options;
-  private final @NotNull List<SentryReactiveUserProvider> sentryUserProviders;
 
-  public SentryReactiveWebFilter(
-      final @NotNull IHub hub,
-      final @NotNull SentryOptions options,
-      final @NotNull List<SentryReactiveUserProvider> sentryUserProviders) {
+  public SentryReactiveWebFilter(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     this.baseHub = Objects.requireNonNull(hub, "hub is required");
     this.options = Objects.requireNonNull(options, "options are required");
-    this.sentryUserProviders = Objects.requireNonNull(sentryUserProviders, "options are required");
   }
 
   @Override
@@ -47,17 +40,11 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
 
     hub.configureScope(
         scope -> {
-          sentryUserProviders.forEach(
-              provider -> new SentryReactiveWebUserProviderProcessor(exchange, provider));
           scope.addEventProcessor(new SentryReactiveWebRequestProcessor(request, options));
         });
 
     exchange.getAttributes().put(REQUEST_HUB_ATTR_NAME, hub);
-    return exchange
-        .getPrincipal()
-        .doOnNext(principal -> exchange.getAttributes().put(REQUEST_PRINCIPAL_ATTR_NAME, principal))
-        .then(chain.filter(exchange))
-        .doFinally(_signal -> hub.popScope());
+    return chain.filter(exchange).doFinally(_signal -> hub.popScope());
   }
 
   @Override

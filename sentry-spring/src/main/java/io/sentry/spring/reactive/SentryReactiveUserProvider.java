@@ -1,8 +1,8 @@
 package io.sentry.spring.reactive;
 
 import io.sentry.protocol.User;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 /**
  * Provides user information that's set on {@link io.sentry.SentryEvent}.
@@ -11,6 +11,6 @@ import org.springframework.web.server.ServerWebExchange;
  */
 @FunctionalInterface
 public interface SentryReactiveUserProvider {
-  @Nullable
-  User provideUser(ServerWebExchange request);
+
+  Mono<User> provideUser(ServerWebExchange request);
 }
