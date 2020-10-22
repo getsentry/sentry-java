@@ -34,4 +34,21 @@ public final class StringUtils {
 
     return str.substring(0, 1).toUpperCase(Locale.ROOT) + str.substring(1).toLowerCase(Locale.ROOT);
   }
+
+  /**
+   * Removes character specified by the delimiter parameter from the beginning and the end of the
+   * string.
+   *
+   * @param str the String to remove surrounding string from
+   * @param delimiter the String that is meant to be removed
+   * @return a string without delimiter character at the beginning and the end of the string
+   */
+  public static @Nullable String removeSurrounding(
+      @Nullable final String str, @Nullable final String delimiter) {
+    if (str != null && delimiter != null && str.startsWith(delimiter) && str.endsWith(delimiter)) {
+      return str.substring(delimiter.length(), str.length() - delimiter.length());
+    } else {
+      return str;
+    }
+  }
 }

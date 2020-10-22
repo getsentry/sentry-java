@@ -10,7 +10,7 @@ class SimplePropertiesProviderTest {
     @Test
     fun `when system property is set resolves property`() {
         val properties = Properties()
-        properties["some-property"] = "some-value"
+        properties["some-property"] = "\"some-value\""
         val provider = SimplePropertiesProvider(properties)
 
         val result = provider.getProperty("some-property")

@@ -12,22 +12,31 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.protocol.User
+import io.sentry.spring.HttpServletRequestSentryUserProvider
+import io.sentry.spring.SentryUserProvider
+import io.sentry.spring.SentryUserProviderEventProcessor
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
+import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
-import org.springframework.boot.test.context.runner.ApplicationContextRunner
+import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 
 class SentryAutoConfigurationTest {
 
-    private val contextRunner = ApplicationContextRunner()
+    private val contextRunner = WebApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
 
     @Test
@@ -216,6 +225,32 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `when custom SentryUserProvider bean is configured, it's added after HttpServletRequestSentryUserProvider`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withConfiguration(UserConfigurations.of(SentryUserProviderConfiguration::class.java))
+            .run {
+                val options = it.getBean(SentryProperties::class.java)
+                val userProviderEventProcessors = options.eventProcessors.filterIsInstance<SentryUserProviderEventProcessor>()
+                assertEquals(2, userProviderEventProcessors.size)
+                assertTrue(userProviderEventProcessors[0].sentryUserProvider is HttpServletRequestSentryUserProvider)
+                assertTrue(userProviderEventProcessors[1].sentryUserProvider is CustomSentryUserProvider)
+            }
+    }
+
+    @Test
+    fun `when custom SentryUserProvider bean with higher order is configured, it's added before HttpServletRequestSentryUserProvider`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withConfiguration(UserConfigurations.of(SentryHighestOrderUserProviderConfiguration::class.java))
+            .run {
+                val options = it.getBean(SentryProperties::class.java)
+                val userProviderEventProcessors = options.eventProcessors.filterIsInstance<SentryUserProviderEventProcessor>()
+                assertEquals(2, userProviderEventProcessors.size)
+                assertTrue(userProviderEventProcessors[0].sentryUserProvider is CustomSentryUserProvider)
+                assertTrue(userProviderEventProcessors[1].sentryUserProvider is HttpServletRequestSentryUserProvider)
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
@@ -294,6 +329,29 @@ class SentryAutoConfigurationTest {
             val git = mock<GitProperties>()
             whenever(git.commitId).thenReturn("git-commit-id")
             return git
+        }
+    }
+
+    @Configuration
+    open class SentryUserProviderConfiguration {
+
+        @Bean
+        open fun userProvider() = CustomSentryUserProvider()
+    }
+
+    @Configuration
+    open class SentryHighestOrderUserProviderConfiguration {
+
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
+        open fun userProvider() = CustomSentryUserProvider()
+    }
+
+    open class CustomSentryUserProvider : SentryUserProvider {
+        override fun provideUser(): User? {
+            val user = User()
+            user.username = "john.smith"
+            return user
         }
     }
 }

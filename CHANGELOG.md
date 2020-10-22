@@ -1,9 +1,23 @@
+# 3.1.2
+
+* Enhancement: Set environment to "production" by default.
+
+# 3.1.1
+
+* fix: Prevent Logback and Log4j2 integrations from re-initializing Sentry when Sentry is already initialized
+* Enhancement: Bind logging related SentryProperties to Slf4j Level instead of Logback to improve Log4j2 compatibility
+* fix: Make sure HttpServletRequestSentryUserProvider runs by default before custom SentryUserProvider beans
+* fix: fix setting up Sentry in Spring Webflux annotation by changing the scope of Spring WebMvc related dependencies
+
 # 3.1.0
 
 * fix: Don't require `sentry.dsn` to be set when using `io.sentry:sentry-spring-boot-starter` and `io.sentry:sentry-logback` together #965
 * Auto-Configure `inAppIncludes` in Spring Boot integration #966
 * Enhancement: make getThrowable public and improve set contexts #967
 * Bump: Android Gradle Plugin 4.0.2 #968
+* Enhancement: accepted quoted values in properties from external configuration #972
+* fix: remove chunked streaming mode #974
+* fix: Android 11 + targetSdkVersion 30 crashes Sentry on start #977
 
 # 3.0.0
 

@@ -65,7 +65,7 @@ tasks {
         dependsOn(jacocoTestReport)
     }
     test {
-        environment["SENTRY_TEST_PROPERTY"] = "some-value"
+        environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     }
 }
 

@@ -7,6 +7,7 @@ import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +43,8 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
   }
 
   @NotNull
-  SentryUserProvider getSentryUserProvider() {
+  @ApiStatus.Internal
+  public SentryUserProvider getSentryUserProvider() {
     return sentryUserProvider;
   }
 }

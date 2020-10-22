@@ -37,8 +37,8 @@ dependencies {
     api(project(":sentry-spring"))
     compileOnly(project(":sentry-logback"))
     implementation(Config.Libs.springBootStarter)
-    implementation(Config.Libs.springWeb)
-    implementation(Config.Libs.servletApi)
+    compileOnly(Config.Libs.springWeb)
+    compileOnly(Config.Libs.servletApi)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)

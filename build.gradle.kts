@@ -56,6 +56,32 @@ allprojects {
     }
 }
 
+subprojects {
+    if (!this.name.contains("sample") && this.name != "sentry-test-support") {
+        apply<DistributionPlugin>()
+
+        configure<DistributionContainer> {
+            this.getByName("main").contents {
+                // non android modules
+                from("build/libs")
+                from("build/publications/maven")
+                // android modules
+                from("build/outputs/aar")
+                from("build/publications/release")
+            }
+        }
+        tasks.named("distZip").configure {
+            this.dependsOn("publishToMavenLocal")
+            this.doLast {
+                val distributionFilePath = "${this.project.buildDir}/distributions/${this.project.name}-${this.project.version}.zip"
+                val file = File(distributionFilePath)
+                if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
+                if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
+            }
+        }
+    }
+}
+
 spotless {
     lineEndings = LineEnding.UNIX
     java {

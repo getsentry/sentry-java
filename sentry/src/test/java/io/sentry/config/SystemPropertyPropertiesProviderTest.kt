@@ -15,7 +15,7 @@ class SystemPropertyPropertiesProviderTest {
 
     @Test
     fun `when system property is set resolves property`() {
-        System.setProperty("sentry.dsn", "some-dsn")
+        System.setProperty("sentry.dsn", "\"some-dsn\"")
         val result = provider.getProperty("dsn")
         assertEquals("some-dsn", result)
     }

@@ -35,16 +35,17 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
 
   @Override
   public void start() {
-    options.setEnableExternalConfiguration(true);
-    options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
-    options.setSdkVersion(createSdkVersion(options));
-    Optional.ofNullable(transport).ifPresent(options::setTransport);
-    try {
-      Sentry.init(options);
-    } catch (IllegalArgumentException e) {
-      addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
+    if (!Sentry.isEnabled()) {
+      options.setEnableExternalConfiguration(true);
+      options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
+      options.setSdkVersion(createSdkVersion(options));
+      Optional.ofNullable(transport).ifPresent(options::setTransport);
+      try {
+        Sentry.init(options);
+      } catch (IllegalArgumentException e) {
+        addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
+      }
     }
-
     super.start();
   }
 

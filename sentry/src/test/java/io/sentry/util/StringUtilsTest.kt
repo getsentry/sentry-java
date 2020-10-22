@@ -54,4 +54,24 @@ class StringUtilsTest {
     fun `capitalize returns itself if empty`() {
         assertEquals("", StringUtils.capitalize(""))
     }
+
+    @Test
+    fun `removeSurrounding returns null if argument is null`() {
+        assertNull(StringUtils.removeSurrounding(null, "\""))
+    }
+
+    @Test
+    fun `removeSurrounding returns itself if delimiter is null`() {
+        assertEquals("test", StringUtils.removeSurrounding("test", null))
+    }
+
+    @Test
+    fun `removeSurrounding returns itself if first char is different from the last char`() {
+        assertEquals("'test$", StringUtils.removeSurrounding("'test$", "'"))
+    }
+
+    @Test
+    fun `removeSurrounding returns trimmed string if first char is the same as the last char and equal to delimiter`() {
+        assertEquals("test", StringUtils.removeSurrounding("\"test\"", "\""))
+    }
 }

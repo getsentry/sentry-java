@@ -1,5 +1,6 @@
 package io.sentry.spring.boot;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -36,8 +37,10 @@ public class SentryLogbackAppenderAutoConfiguration implements InitializingBean 
       sentryAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
 
       Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
+          .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
           .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
       Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
+          .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
           .ifPresent(sentryAppender::setMinimumEventLevel);
 
       sentryAppender.start();
