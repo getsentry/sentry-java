@@ -1,3 +1,7 @@
+# 3.1.2
+
+* Enhancement: Set environment to "production" by default.
+
 # 3.1.1
 
 * fix: Prevent Logback and Log4j2 integrations from re-initializing Sentry when Sentry is already initialized

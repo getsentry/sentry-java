@@ -17,7 +17,6 @@ class MainEventProcessorTest {
         private val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             release = "release"
-            environment = "environment"
             dist = "dist"
             serverName = "server"
             sdkVersion = SdkVersion().apply {
@@ -25,9 +24,10 @@ class MainEventProcessorTest {
                 version = "1.2.3"
             }
         }
-        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true): MainEventProcessor {
+        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment"): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
+            sentryOptions.environment = environment
             return MainEventProcessor(sentryOptions)
         }
     }
@@ -169,6 +169,31 @@ class MainEventProcessorTest {
         assertNotNull(event.sdk)
         assertEquals(event.sdk.name, "test")
         assertEquals(event.sdk.version, "1.2.3")
+    }
+
+    @Test
+    fun `when event and SentryOptions do not have environment set, sets "production" as environment`() {
+        val sut = fixture.getSut(environment = null)
+        val event = SentryEvent()
+        sut.process(event, null)
+        assertEquals("production", event.environment)
+    }
+
+    @Test
+    fun `when event has environment set, does not overwrite environment`() {
+        val sut = fixture.getSut(environment = null)
+        val event = SentryEvent()
+        event.environment = "staging"
+        sut.process(event, null)
+        assertEquals("staging", event.environment)
+    }
+
+    @Test
+    fun `when event does not have environment set and SentryOptions have environment set, uses environment from SentryOptions`() {
+        val sut = fixture.getSut(environment = "custom")
+        val event = SentryEvent()
+        sut.process(event, null)
+        assertEquals("custom", event.environment)
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {
