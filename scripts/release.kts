@@ -19,7 +19,7 @@
  * To execute the script two environment variables that are used by Maven have to be present: BINTRAY_USERNAME, BINTRAY_API_KEY
  *
  * Example usage (assuming that the script is executed from the `<project-root>/scripts` directory and the distribution files are in `<project-root>/dist`):
- * $ kotlinc -script release.kts -- -d ../dist  -repositoryUrl https://api.bintray.com/maven/sentry/sentry-java/sentry-java/ | sh
+ * $ kotlinc -script release.kts -- -d ../dist  -javaRepositoryUrl https://api.bintray.com/maven/sentry/sentry-java/sentry-java/ -androidRepositoryUrl https://api.bintray.com/maven/sentry/sentry-android/sentry-java/ | sh
  *
  */
 import java.io.File
@@ -35,9 +35,14 @@ val path = argOrDefault("d", ".")
 val settingsPath = argOrDefault("s", "./settings.xml")
 
 /**
- * Bintray repository URL.
+ * Bintray repository URL for non-Android projects.
  */
-val repositoryUrl = requiredArg("repositoryUrl")
+val javaRepositoryUrl = requiredArg("javaRepositoryUrl")
+
+/**
+ * Bintray repository URL for Android projects.
+ */
+val androidRepositoryUrl = requiredArg("androidRepositoryUrl")
 
 /**
  * Maven server id in the settings.xml file.
@@ -55,11 +60,16 @@ File(path)
         val path = folder.path
         val module = folder.name
 
-        val androidFile = folder.listFiles { file -> file.name.contains("release") && file.extension == "aar" }.firstOrNull()
-        val file = if (androidFile != null) {
-            androidFile.path
+        val file:String
+        val repositoryUrl:String
+
+        val androidFile = folder.listFiles { it -> it.name.contains("release") && it.extension == "aar" }.firstOrNull()
+        if (androidFile != null) {
+            file = androidFile.path
+            repositoryUrl = androidRepositoryUrl
         } else {
-            "$path/$module.jar"
+            file = "$path/$module.jar"
+            repositoryUrl = javaRepositoryUrl
         }
         val javadocFile = "$path/$module-javadoc.jar"
         val sourcesFile = "$path/$module-sources.jar"
