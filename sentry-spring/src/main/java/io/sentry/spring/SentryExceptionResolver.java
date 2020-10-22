@@ -23,9 +23,11 @@ import org.springframework.web.servlet.ModelAndView;
 @Open
 public class SentryExceptionResolver implements HandlerExceptionResolver, Ordered {
   private final @NotNull IHub hub;
+  private final @NotNull Integer order;
 
-  public SentryExceptionResolver(final @NotNull IHub hub) {
+  public SentryExceptionResolver(final @NotNull IHub hub, final @NotNull Integer order) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.order = order;
   }
 
   @Override
@@ -49,7 +51,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
 
   @Override
   public int getOrder() {
-    // ensure this resolver runs first so that all exceptions are reported
-    return Integer.MIN_VALUE;
+    // determines whether all exceptions are reported or only uncaught exceptions
+    return order;
   }
 }

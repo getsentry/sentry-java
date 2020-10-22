@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryOptions;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -29,7 +30,8 @@ public class SentryWebConfiguration {
   }
 
   @Bean
-  public @NotNull SentryExceptionResolver sentryExceptionResolver(final @NotNull IHub sentryHub) {
-    return new SentryExceptionResolver(sentryHub);
+  public @NotNull SentryExceptionResolver sentryExceptionResolver(final @NotNull IHub sentryHub,
+      @Value("${sentry.exceptionResolverOrder:-2147483648}") final @NotNull Integer order) {
+    return new SentryExceptionResolver(sentryHub, order);
   }
 }
