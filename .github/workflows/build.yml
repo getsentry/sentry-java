@@ -108,6 +108,7 @@ jobs:
 
 
   build-and-deploy-javadocs:
+    name: Build and deploy Javadocs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
