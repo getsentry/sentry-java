@@ -1,4 +1,3 @@
-import com.novoda.gradle.release.PublishExtension
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
@@ -6,7 +5,6 @@ plugins {
     kotlin("android")
     jacoco
     id(Config.QualityPlugins.errorProne)
-    id(Config.Deploy.novodaBintray)
     id(Config.QualityPlugins.gradleVersions)
 }
 
@@ -93,27 +91,4 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-}
-
-// TODO: move thse blocks to parent gradle file, DRY
-configure<PublishExtension> {
-    userOrg = Config.Sentry.userOrg
-    groupId = project.group.toString()
-    publishVersion = project.version.toString()
-    desc = Config.Sentry.description
-    website = Config.Sentry.website
-    repoName = Config.Sentry.androidRepoName
-    setLicences(Config.Sentry.licence)
-    setLicenceUrls(Config.Sentry.licenceUrl)
-    issueTracker = Config.Sentry.issueTracker
-    repository = Config.Sentry.repository
-    sign = Config.Deploy.sign
-    artifactId = project.name
-    uploadName = "${project.group}:${project.name}"
-    devId = Config.Sentry.userOrg
-    devName = Config.Sentry.devName
-    devEmail = Config.Sentry.devEmail
-    scmConnection = Config.Sentry.scmConnection
-    scmDevConnection = Config.Sentry.scmDevConnection
-    scmUrl = Config.Sentry.scmUrl
 }

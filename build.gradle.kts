@@ -1,4 +1,6 @@
 import com.diffplug.spotless.LineEnding
+import com.novoda.gradle.release.PublishExtension
+import com.novoda.gradle.release.ReleasePlugin
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -78,6 +80,30 @@ subprojects {
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
             }
+        }
+
+        apply<ReleasePlugin>()
+
+        configure<PublishExtension> {
+            userOrg = Config.Sentry.userOrg
+            groupId = project.group.toString()
+            publishVersion = project.version.toString()
+            desc = Config.Sentry.description
+            website = Config.Sentry.website
+            repoName = Config.Sentry.javaRepoName
+            setLicences(Config.Sentry.licence)
+            setLicenceUrls(Config.Sentry.licenceUrl)
+            issueTracker = Config.Sentry.issueTracker
+            repository = Config.Sentry.repository
+            sign = Config.Deploy.sign
+            artifactId = project.name
+            uploadName = "${project.group}:${project.name}"
+            devId = Config.Sentry.userOrg
+            devName = Config.Sentry.devName
+            devEmail = Config.Sentry.devEmail
+            scmConnection = Config.Sentry.scmConnection
+            scmDevConnection = Config.Sentry.scmDevConnection
+            scmUrl = Config.Sentry.scmUrl
         }
     }
 }
