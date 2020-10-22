@@ -107,6 +107,8 @@ jobs:
 
 
   build-and-deploy-javadocs:
+    ## Only run on a release branch
+    if: github.event_name == 'push' && contains(github.ref, 'refs/heads/release')
     name: Build and deploy Javadocs
     runs-on: ubuntu-latest
     steps:
