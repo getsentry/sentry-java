@@ -16,7 +16,7 @@
  *  ├── sentry-spring-3.1.2-SNAPSHOT
  *  └── sentry-spring-boot-starter-3.1.2-SNAPSHOT
  *
- * To execute the script two environment vairables that are used by Maven have to be present: BINTRAY_USERNAME, BINTRAY_API_KEY
+ * To execute the script two environment variables that are used by Maven have to be present: BINTRAY_USERNAME, BINTRAY_API_KEY
  *
  * Example usage (assuming that the script is executed from the `<project-root>/scripts` directory and the distribution files are in `<project-root>/dist`):
  * $ kotlinc -script release.kts -- -d ../dist -s  -repositoryUrl https://api.bintray.com/maven/sentry/sentry-java/sentry-java/ | sh
