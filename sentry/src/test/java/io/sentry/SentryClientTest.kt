@@ -20,6 +20,7 @@ import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.transport.AsyncConnection
+import io.sentry.transport.Connection
 import io.sentry.transport.HttpTransport
 import io.sentry.transport.ITransportGate
 import java.io.ByteArrayInputStream
@@ -637,6 +638,20 @@ class SentryClientTest {
         fixture.sentryOptions.addEventProcessor { _, _ -> throw RuntimeException() }
         val sut = fixture.getSut()
         sut.captureEvent(SentryEvent())
+    }
+
+    @Test
+    fun `transactions are sent using connection`() {
+        fixture.connection = mock()
+        val sut = fixture.getSut()
+        val transaction = Transaction()
+        transaction.setName("a-transaction")
+        sut.captureTransaction(transaction, null, null)
+        verify(fixture.connection).send(check {
+            val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
+            assertNotNull(transaction)
+            assertEquals("a-transaction", transaction.transaction)
+        }, eq(null))
     }
 
     private fun createScope(): Scope {

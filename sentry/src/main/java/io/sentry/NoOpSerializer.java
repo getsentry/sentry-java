@@ -28,6 +28,11 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
+  public Transaction deserializeTransaction(Reader reader) {
+      return null;
+  }
+
+  @Override
   public SentryEnvelope deserializeEnvelope(InputStream inputStream) {
     return null;
   }

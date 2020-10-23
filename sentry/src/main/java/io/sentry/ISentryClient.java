@@ -180,4 +180,8 @@ public interface ISentryClient {
   }
 
   SentryId captureTransaction(Transaction transaction, Scope scope, Object hint);
+
+  default SentryId captureTransaction(Transaction transaction) {
+    return captureTransaction(transaction, null, null);
+  }
 }

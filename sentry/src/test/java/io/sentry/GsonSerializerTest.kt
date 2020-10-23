@@ -422,6 +422,31 @@ class GsonSerializerTest {
         assertEquals(expected, dataJson)
     }
 
+    @Test
+    fun `deserializes transaction`() {
+        val json = """{
+                          "transaction": "a-transaction",
+                          "type": "transaction",
+                          "platform": "java",
+                          "start_timestamp": "2020-10-23T10:24:01.791Z",
+                          "event_id": "3367f5196c494acaae85bbbd535379ac",
+                          "contexts": {
+                            "trace": {
+                              "trace_id": "b156a475de54423d9c1571df97ec7eb6",
+                              "span_id": "0a53026963414893"
+                            }
+                          }
+                        }"""
+        val transaction = serializer.deserializeTransaction(StringReader(json))
+        assertEquals("a-transaction", transaction.transaction)
+        assertNotNull(transaction.startTimestamp)
+        assertNotNull(transaction.timestamp)
+        assertNotNull(transaction.contexts)
+        assertNotNull(transaction.contexts.trace)
+        assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace.traceId.toString())
+        assertEquals("0a53026963414893", transaction.contexts.trace.spanId.toString())
+    }
+
     private fun assertSessionData(expectedSession: Session?) {
         assertNotNull(expectedSession)
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)

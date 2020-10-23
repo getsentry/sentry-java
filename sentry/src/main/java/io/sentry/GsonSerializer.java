@@ -19,6 +19,8 @@ import io.sentry.adapters.SpanStatusDeserializerAdapter;
 import io.sentry.adapters.SpanStatusSerializerAdapter;
 import io.sentry.adapters.TimeZoneDeserializerAdapter;
 import io.sentry.adapters.TimeZoneSerializerAdapter;
+import io.sentry.adapters.TransactionContextsDeserializerAdapter;
+import io.sentry.adapters.TransactionContextsSerializerAdapter;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
@@ -98,6 +100,8 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
+        .registerTypeAdapter(TransactionContexts.class, new TransactionContextsSerializerAdapter(logger))
+        .registerTypeAdapter(TransactionContexts.class, new TransactionContextsDeserializerAdapter(logger))
         .create();
   }
 
@@ -125,6 +129,13 @@ public final class GsonSerializer implements ISerializer {
     Objects.requireNonNull(reader, "The Reader object is required.");
 
     return gson.fromJson(reader, Session.class);
+  }
+
+  @Override
+  public Transaction deserializeTransaction(Reader reader) {
+    Objects.requireNonNull(reader, "The Reader object is required.");
+
+    return gson.fromJson(reader, Transaction.class);
   }
 
   /**

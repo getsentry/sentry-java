@@ -64,6 +64,16 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public @Nullable Transaction getTransaction(final @NotNull ISerializer serializer) throws Exception {
+    if (header == null || header.getType() != SentryItemType.Transaction) {
+      return null;
+    }
+    try (final Reader eventReader =
+           new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserializeTransaction(eventReader);
+    }
+  }
+
   public static @NotNull SentryEnvelopeItem from(
       final @NotNull ISerializer serializer, final @NotNull Object item) throws IOException {
     Objects.requireNonNull(item, "SentryEvent is required.");

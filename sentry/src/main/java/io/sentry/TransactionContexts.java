@@ -8,7 +8,6 @@ public final class TransactionContexts extends ConcurrentHashMap<String, Object>
   private static final long serialVersionUID = 252445813254943011L;
 
   public TransactionContexts() {
-    this(new Trace());
   }
 
   public TransactionContexts(final @NotNull Trace trace) {

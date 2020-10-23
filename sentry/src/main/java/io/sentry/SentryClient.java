@@ -281,51 +281,20 @@ public final class SentryClient implements ISentryClient {
   public SentryId captureTransaction(Transaction transaction, Scope scope, Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", transaction.getEventId());
-
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
-      // Event has already passed through here before it was cached
-      // Going through again could be reading data that is no longer relevant
-      // i.e proguard id, app version, threads
-      //      event = applyScope(event, scope, hint);
-
-      if (transaction == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
-      }
-    } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event was cached so not applying scope: %s",
-              transaction.getEventId());
-    }
-
-    //    event = processEvent(event, hint, options.getEventProcessors());
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
     Session session = null;
 
-    if (transaction != null) {
-      //      session = updateSessionData(event, hint, scope);
-
-      if (!sample()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event %s was dropped due to sampling decision.",
-                transaction.getEventId());
-        // setting event as null to not be sent as its been discarded by sample rate
-        transaction = null;
-      }
-    }
-
-    if (transaction != null) {
-      //      event = executeBeforeSend(event, hint);
-
-      if (transaction == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
-      }
+    // TODO: use separate sampling strategy
+    if (!sample()) {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.DEBUG,
+          "Transaction %s was dropped due to sampling decision.",
+          transaction.getEventId());
+      // setting transaction as null to not be sent as its been discarded by sample rate
+      transaction = null;
     }
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -341,7 +310,7 @@ public final class SentryClient implements ISentryClient {
         connection.send(envelope, hint);
       }
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
 
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;

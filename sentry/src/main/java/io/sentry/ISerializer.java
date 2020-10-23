@@ -11,6 +11,8 @@ public interface ISerializer {
 
   Session deserializeSession(Reader reader);
 
+  Transaction deserializeTransaction(Reader reader);
+
   SentryEnvelope deserializeEnvelope(InputStream inputStream);
 
   <T> void serialize(T entity, Writer writer) throws IOException;
