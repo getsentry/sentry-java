@@ -31,7 +31,7 @@ public class SentryWebConfiguration {
 
   @Bean
   public @NotNull SentryExceptionResolver sentryExceptionResolver(final @NotNull IHub sentryHub,
-      @Value("${sentry.exceptionResolverOrder:-2147483648}") final @NotNull Integer order) {
+      @Value("${sentry.exceptionResolverOrder:-2147483648}") final int order) {
     return new SentryExceptionResolver(sentryHub, order);
   }
 }
