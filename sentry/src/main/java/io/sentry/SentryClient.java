@@ -281,18 +281,20 @@ public final class SentryClient implements ISentryClient {
   public SentryId captureTransaction(Transaction transaction, Scope scope, Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
     Session session = null;
 
     // TODO: use separate sampling strategy
     if (!sample()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.DEBUG,
-          "Transaction %s was dropped due to sampling decision.",
-          transaction.getEventId());
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction %s was dropped due to sampling decision.",
+              transaction.getEventId());
       // setting transaction as null to not be sent as its been discarded by sample rate
       transaction = null;
     }

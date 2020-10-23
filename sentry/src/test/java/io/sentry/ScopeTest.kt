@@ -49,6 +49,10 @@ class ScopeTest {
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
 
+        val transaction = Transaction()
+        transaction.setName("transaction-name")
+        scope.tx = transaction
+
         val clone = scope.clone()
 
         assertNotNull(clone)
@@ -60,6 +64,7 @@ class ScopeTest {
         assertNotSame(scope.tags, clone.tags)
         assertNotSame(scope.extras, clone.extras)
         assertNotSame(scope.eventProcessors, clone.eventProcessors)
+        assertNotSame(scope.tx, clone.tx)
     }
 
     @Test
@@ -84,6 +89,10 @@ class ScopeTest {
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
 
+        val transaction = Transaction()
+        transaction.setName("transaction-name")
+        scope.tx = transaction
+
         val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
@@ -94,6 +103,7 @@ class ScopeTest {
         assertEquals("abc", clone.fingerprint.first())
 
         assertEquals("message", clone.breadcrumbs.first().message)
+        assertEquals("transaction-name", clone.tx.transaction)
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])

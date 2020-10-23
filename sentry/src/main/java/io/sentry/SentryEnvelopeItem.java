@@ -64,12 +64,13 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  public @Nullable Transaction getTransaction(final @NotNull ISerializer serializer) throws Exception {
+  public @Nullable Transaction getTransaction(final @NotNull ISerializer serializer)
+      throws Exception {
     if (header == null || header.getType() != SentryItemType.Transaction) {
       return null;
     }
     try (final Reader eventReader =
-           new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
       return serializer.deserializeTransaction(eventReader);
     }
   }

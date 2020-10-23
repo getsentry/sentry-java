@@ -100,8 +100,10 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
-        .registerTypeAdapter(TransactionContexts.class, new TransactionContextsSerializerAdapter(logger))
-        .registerTypeAdapter(TransactionContexts.class, new TransactionContextsDeserializerAdapter(logger))
+        .registerTypeAdapter(
+            TransactionContexts.class, new TransactionContextsSerializerAdapter(logger))
+        .registerTypeAdapter(
+            TransactionContexts.class, new TransactionContextsDeserializerAdapter(logger))
         .create();
   }
 

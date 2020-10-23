@@ -9,14 +9,14 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.Trace;
 import io.sentry.TransactionContexts;
+import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Type;
-
 @ApiStatus.Internal
-public final class TransactionContextsDeserializerAdapter implements JsonDeserializer<TransactionContexts> {
+public final class TransactionContextsDeserializerAdapter
+    implements JsonDeserializer<TransactionContexts> {
 
   private final @NotNull ILogger logger;
 
@@ -25,7 +25,8 @@ public final class TransactionContextsDeserializerAdapter implements JsonDeseria
   }
 
   @Override
-  public TransactionContexts deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public TransactionContexts deserialize(
+      JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
     try {
       if (json != null && !json.isJsonNull()) {

@@ -20,7 +20,6 @@ import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.transport.AsyncConnection
-import io.sentry.transport.Connection
 import io.sentry.transport.HttpTransport
 import io.sentry.transport.ITransportGate
 import java.io.ByteArrayInputStream

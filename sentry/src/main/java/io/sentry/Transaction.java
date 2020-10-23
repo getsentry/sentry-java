@@ -4,7 +4,7 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Transaction extends SentryBaseEvent<TransactionContexts> {
+public final class Transaction extends SentryBaseEvent<TransactionContexts> implements Cloneable {
   /** The transaction name. */
   private @Nullable String transaction;
 
@@ -66,5 +66,12 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> {
 
   public @Nullable Date getTimestamp() {
     return timestamp;
+  }
+
+  @Override
+  protected Transaction clone() throws CloneNotSupportedException {
+    final Transaction clone = (Transaction) super.clone();
+    clone.setContexts(this.getContexts().clone());
+    return clone;
   }
 }

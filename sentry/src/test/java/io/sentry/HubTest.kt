@@ -26,6 +26,7 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -1007,6 +1008,19 @@ class HubTest {
         val transaction = hub.startTransaction(contexts)
 
         assertEquals(contexts, transaction.contexts)
+    }
+
+    @Test
+    fun `when startTransaction, attaches transaction to the scope`() {
+        val hub = generateHub()
+        val contexts = TransactionContexts()
+
+        val transaction = hub.startTransaction(contexts)
+
+        hub.configureScope {
+            assertNotNull(it.tx)
+            assertEquals(transaction, it.tx)
+        }
     }
 
     @Test

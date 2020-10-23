@@ -637,8 +637,21 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public Transaction startTransaction(TransactionContexts transactionContexts) {
-    // todo: attach transaction to scope
-    return new Transaction(transactionContexts);
+  public @Nullable Transaction startTransaction(TransactionContexts transactionContexts) {
+    Transaction transaction = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        transaction = new Transaction(transactionContexts);
+        item.scope.setTx(transaction);
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");
+      }
+    }
+    return transaction;
   }
 }

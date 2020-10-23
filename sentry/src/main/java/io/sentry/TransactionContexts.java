@@ -1,15 +1,13 @@
 package io.sentry;
 
 import io.sentry.protocol.Contexts;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public final class TransactionContexts extends Contexts {
   private static final long serialVersionUID = 252445813254943011L;
 
-  public TransactionContexts() {
-  }
+  public TransactionContexts() {}
 
   public TransactionContexts(final @NotNull Trace trace) {
     this.setTrace(trace);

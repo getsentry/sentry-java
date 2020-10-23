@@ -29,7 +29,7 @@ final class NoOpSerializer implements ISerializer {
 
   @Override
   public Transaction deserializeTransaction(Reader reader) {
-      return null;
+    return null;
   }
 
   @Override

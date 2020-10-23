@@ -22,6 +22,9 @@ public final class Scope implements Cloneable {
   /** Scope's transaction */
   private @Nullable String transaction;
 
+  /** Scope's {@link Transaction}. */
+  private @Nullable Transaction tx;
+
   /** Scope's user */
   private @Nullable User user;
 
@@ -98,6 +101,14 @@ public final class Scope implements Cloneable {
    */
   public void setTransaction(@Nullable String transaction) {
     this.transaction = transaction;
+  }
+
+  public Transaction getTx() {
+    return tx;
+  }
+
+  public void setTx(Transaction tx) {
+    this.tx = tx;
   }
 
   /**
@@ -447,6 +458,9 @@ public final class Scope implements Cloneable {
     clone.extra = extraClone;
 
     clone.contexts = contexts.clone();
+
+    final Transaction txRef = tx;
+    clone.tx = txRef != null ? txRef.clone() : null;
 
     return clone;
   }

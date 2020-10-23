@@ -1,9 +1,8 @@
 package io.sentry.protocol;
 
+import com.jakewharton.nopen.annotation.Open;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.jakewharton.nopen.annotation.Open;
 import org.jetbrains.annotations.NotNull;
 
 @Open
@@ -81,7 +80,7 @@ public class Contexts extends ConcurrentHashMap<String, Object> implements Clone
         } else if (Device.TYPE.equals(entry.getKey()) && value instanceof Device) {
           clone.setDevice(((Device) value).clone());
         } else if (OperatingSystem.TYPE.equals(entry.getKey())
-          && value instanceof OperatingSystem) {
+            && value instanceof OperatingSystem) {
           clone.setOperatingSystem(((OperatingSystem) value).clone());
         } else if (SentryRuntime.TYPE.equals(entry.getKey()) && value instanceof SentryRuntime) {
           clone.setRuntime(((SentryRuntime) value).clone());

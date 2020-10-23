@@ -429,6 +429,7 @@ class GsonSerializerTest {
                           "type": "transaction",
                           "platform": "java",
                           "start_timestamp": "2020-10-23T10:24:01.791Z",
+                          "timestamp": "2020-10-23T10:24:02.791Z",
                           "event_id": "3367f5196c494acaae85bbbd535379ac",
                           "contexts": {
                             "trace": {

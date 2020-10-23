@@ -8,14 +8,14 @@ import com.google.gson.JsonSerializer;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.TransactionContexts;
+import java.lang.reflect.Type;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Type;
-import java.util.Map;
-
 @ApiStatus.Internal
-public final class TransactionContextsSerializerAdapter implements JsonSerializer<TransactionContexts> {
+public final class TransactionContextsSerializerAdapter
+    implements JsonSerializer<TransactionContexts> {
 
   private final @NotNull ILogger logger;
 
@@ -24,7 +24,8 @@ public final class TransactionContextsSerializerAdapter implements JsonSerialize
   }
 
   @Override
-  public JsonElement serialize(TransactionContexts src, Type typeOfSrc, JsonSerializationContext context) {
+  public JsonElement serialize(
+      TransactionContexts src, Type typeOfSrc, JsonSerializationContext context) {
     if (src == null) {
       return null;
     }
