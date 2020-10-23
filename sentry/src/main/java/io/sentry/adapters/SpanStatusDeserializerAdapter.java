@@ -6,12 +6,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import java.lang.reflect.Type;
+import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Type;
 
 @ApiStatus.Internal
 public final class SpanStatusDeserializerAdapter implements JsonDeserializer<SpanStatus> {
@@ -26,7 +25,7 @@ public final class SpanStatusDeserializerAdapter implements JsonDeserializer<Spa
   public SpanStatus deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
     try {
-      return json == null ? null : SpanStatus.valueOf(json.getAsString().toUpperCase());
+      return json == null ? null : SpanStatus.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error when deserializing SpanStatus", e);
     }

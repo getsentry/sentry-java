@@ -65,8 +65,7 @@ public final class SentryEnvelopeItem {
   }
 
   public static @NotNull SentryEnvelopeItem from(
-      final @NotNull ISerializer serializer, final @NotNull Object item)
-      throws IOException {
+      final @NotNull ISerializer serializer, final @NotNull Object item) throws IOException {
     Objects.requireNonNull(item, "SentryEvent is required.");
 
     final CachedItem cachedItem =
@@ -81,7 +80,10 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-          SentryItemType.resolve(item), () -> cachedItem.getBytes().length, "application/json", null);
+            SentryItemType.resolve(item),
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
 
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }

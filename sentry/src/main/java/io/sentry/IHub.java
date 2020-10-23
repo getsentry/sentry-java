@@ -250,6 +250,20 @@ public interface IHub {
    */
   IHub clone();
 
+  /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @param hint the hint
+   * @return transaction's id
+   */
   SentryId captureTransaction(Transaction transaction, Object hint);
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @return created transaction
+   */
   Transaction startTransaction(TransactionContexts transactionContexts);
 }

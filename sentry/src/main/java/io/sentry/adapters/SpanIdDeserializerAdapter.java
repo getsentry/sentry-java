@@ -7,11 +7,9 @@ import com.google.gson.JsonParseException;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SpanId;
-import io.sentry.protocol.SentryId;
+import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Type;
 
 @ApiStatus.Internal
 public final class SpanIdDeserializerAdapter implements JsonDeserializer<SpanId> {

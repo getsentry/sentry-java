@@ -2,39 +2,46 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.util.CollectionUtils;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class Trace implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "trace";
 
+  /** Determines which trace the Span belongs to. */
   private SentryId traceId;
+
+  /** The span id. */
   private SpanId spanId;
 
-  /**
-   * Short code identifying the type of operation the span is measuring.
-   */
+  /** Short code identifying the type of operation the span is measuring. */
   private @Nullable String op;
 
   /**
-   * Longer description of the span's operation, which uniquely identifies the span but is consistent across instances of the span.
+   * Longer description of the span's operation, which uniquely identifies the span but is
+   * consistent across instances of the span.
    */
   private @Nullable String description;
 
-  /**
-   * Describes the status of the Transaction.
-   */
+  /** Describes the status of the Transaction. */
   private @Nullable SpanStatus status;
 
-  /**
-   * A map or list of tags for this event. Each tag must be less than 200 characters.
-   */
+  /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   private @Nullable Map<String, String> tags;
 
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
+
+  public Trace(final @NotNull SentryId traceId, final @NotNull SpanId spanId) {
+    this.traceId = traceId;
+    this.spanId = spanId;
+  }
+
+  public Trace() {
+    this(new SentryId(), new SpanId());
+  }
 
   public SentryId getTraceId() {
     return traceId;

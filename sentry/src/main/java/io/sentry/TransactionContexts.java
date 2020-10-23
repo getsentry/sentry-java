@@ -1,13 +1,14 @@
 package io.sentry;
 
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-public final class TransactionContexts extends ConcurrentHashMap<String, Object> implements Cloneable {
+public final class TransactionContexts extends ConcurrentHashMap<String, Object>
+    implements Cloneable {
   private static final long serialVersionUID = 252445813254943011L;
 
   public TransactionContexts() {
+    this(new Trace());
   }
 
   public TransactionContexts(final @NotNull Trace trace) {

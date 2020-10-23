@@ -1000,6 +1000,16 @@ class HubTest {
     //endregion
 
     @Test
+    fun `when startTransaction, creates transaction`() {
+        val hub = generateHub()
+        val contexts = TransactionContexts()
+
+        val transaction = hub.startTransaction(contexts)
+
+        assertEquals(contexts, transaction.contexts)
+    }
+
+    @Test
     fun `Hub should close the sentry executor processor on close call`() {
         val executor = mock<ISentryExecutorService>()
         val options = SentryOptions().apply {

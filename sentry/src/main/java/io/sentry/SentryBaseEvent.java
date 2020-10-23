@@ -2,10 +2,9 @@ package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An item sent to Sentry in the envelope. Can be either {@link SentryEvent} or the Performance

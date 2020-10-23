@@ -125,7 +125,8 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent<?> event, final @Nullable Session session) throws IOException {
+      final @Nullable SentryBaseEvent<?> event, final @Nullable Session session)
+      throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -286,38 +287,41 @@ public final class SentryClient implements ISentryClient {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
       // i.e proguard id, app version, threads
-//      event = applyScope(event, scope, hint);
+      //      event = applyScope(event, scope, hint);
 
       if (transaction == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
       }
     } else {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", transaction.getEventId());
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Event was cached so not applying scope: %s",
+              transaction.getEventId());
     }
 
-//    event = processEvent(event, hint, options.getEventProcessors());
+    //    event = processEvent(event, hint, options.getEventProcessors());
 
     Session session = null;
 
     if (transaction != null) {
-//      session = updateSessionData(event, hint, scope);
+      //      session = updateSessionData(event, hint, scope);
 
       if (!sample()) {
         options
-          .getLogger()
-          .log(
-            SentryLevel.DEBUG,
-            "Event %s was dropped due to sampling decision.",
-            transaction.getEventId());
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event %s was dropped due to sampling decision.",
+                transaction.getEventId());
         // setting event as null to not be sent as its been discarded by sample rate
         transaction = null;
       }
     }
 
     if (transaction != null) {
-//      event = executeBeforeSend(event, hint);
+      //      event = executeBeforeSend(event, hint);
 
       if (transaction == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");

@@ -6,12 +6,11 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import java.lang.reflect.Type;
+import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Type;
 
 @ApiStatus.Internal
 public final class SpanStatusSerializerAdapter implements JsonSerializer<SpanStatus> {
@@ -25,7 +24,7 @@ public final class SpanStatusSerializerAdapter implements JsonSerializer<SpanSta
   @Override
   public JsonElement serialize(SpanStatus src, Type typeOfSrc, JsonSerializationContext context) {
     try {
-      return src == null ? null : new JsonPrimitive(src.name().toLowerCase());
+      return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error when serializing SpanStatus", e);
     }

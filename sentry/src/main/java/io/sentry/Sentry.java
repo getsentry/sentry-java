@@ -484,8 +484,25 @@ public final class Sentry {
     getCurrentHub().endSession();
   }
 
+  /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @param hint the hint
+   * @return transaction's id
+   */
   public static SentryId captureTransaction(Transaction transaction, Object hint) {
     return getCurrentHub().captureTransaction(transaction, hint);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @return created transaction
+   */
+  public static Transaction startTransaction(TransactionContexts transactionContexts) {
+    return getCurrentHub().startTransaction(transactionContexts);
   }
 
   /**

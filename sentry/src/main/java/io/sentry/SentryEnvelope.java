@@ -61,7 +61,6 @@ public final class SentryEnvelope {
     Objects.requireNonNull(serializer, "Serializer is required.");
     Objects.requireNonNull(obj, "obj is required.");
 
-    return new SentryEnvelope(
-        null, sdkVersion, SentryEnvelopeItem.from(serializer, obj));
+    return new SentryEnvelope(null, sdkVersion, SentryEnvelopeItem.from(serializer, obj));
   }
 }

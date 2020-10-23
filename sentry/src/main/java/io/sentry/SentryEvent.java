@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent extends SentryBaseEvent<Contexts> implements IUnknownPropertiesConsumer {
+public final class SentryEvent extends SentryBaseEvent<Contexts>
+    implements IUnknownPropertiesConsumer {
   private final Date timestamp;
 
   /** The captured Throwable */
@@ -41,6 +42,7 @@ public final class SentryEvent extends SentryBaseEvent<Contexts> implements IUnk
   SentryEvent(SentryId eventId, final Date timestamp) {
     super(eventId);
     this.timestamp = timestamp;
+    this.setContexts(new Contexts());
   }
 
   /**
@@ -55,7 +57,6 @@ public final class SentryEvent extends SentryBaseEvent<Contexts> implements IUnk
 
   public SentryEvent() {
     this(new SentryId(), DateUtils.getCurrentDateTimeOrNull());
-    this.setContexts(new Contexts());
   }
 
   @TestOnly

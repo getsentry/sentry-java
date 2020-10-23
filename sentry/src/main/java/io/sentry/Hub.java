@@ -454,9 +454,7 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'pushScope' call is a no-op.");
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
@@ -523,7 +521,9 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'configureScope' call is a no-op.");
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
@@ -607,11 +607,14 @@ public final class Hub implements IHub {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING, "Instance is disabled and this 'captureTransaction' call is a no-op.");
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureTransaction' call is a no-op.");
     } else if (transaction == null) {
-      options.getLogger().log(SentryLevel.WARNING, "captureTransaction called with null parameter.");
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "captureTransaction called with null parameter.");
     } else {
       try {
         final StackItem item = stack.peek();
@@ -622,9 +625,11 @@ public final class Hub implements IHub {
         }
       } catch (Exception e) {
         options
-          .getLogger()
-          .log(
-            SentryLevel.ERROR, "Error while capturing event with id: " + transaction.getEventId(), e);
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing event with id: " + transaction.getEventId(),
+                e);
       }
     }
     this.lastEventId = sentryId;
@@ -633,6 +638,7 @@ public final class Hub implements IHub {
 
   @Override
   public Transaction startTransaction(TransactionContexts transactionContexts) {
-    return null;
+    // todo: attach transaction to scope
+    return new Transaction(transactionContexts);
   }
 }
