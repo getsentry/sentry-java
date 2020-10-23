@@ -20,7 +20,7 @@ public class SentryProperties extends SentryOptions {
   private @NotNull Logging logging = new Logging();
 
   /** Report all or only uncaught web exceptions. */
-  private Integer exceptionResolverOrder = Ordered.HIGHEST_PRECEDENCE;
+  private int exceptionResolverOrder = Ordered.HIGHEST_PRECEDENCE;
 
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
@@ -38,11 +38,11 @@ public class SentryProperties extends SentryOptions {
     this.logging = logging;
   }
 
-  public Integer getExceptionResolverOrder() {
+  public int getExceptionResolverOrder() {
     return exceptionResolverOrder;
   }
 
-  public void setExceptionResolverOrder(Integer exceptionResolverOrder) {
+  public void setExceptionResolverOrder(int exceptionResolverOrder) {
     this.exceptionResolverOrder = exceptionResolverOrder;
   }
 
