@@ -112,7 +112,7 @@ public final class Trace implements IUnknownPropertiesConsumer, Cloneable {
   }
 
   @Override
-  protected Object clone() throws CloneNotSupportedException {
+  protected Trace clone() throws CloneNotSupportedException {
     final Trace clone = (Trace) super.clone();
 
     clone.unknown = CollectionUtils.shallowCopy(unknown);

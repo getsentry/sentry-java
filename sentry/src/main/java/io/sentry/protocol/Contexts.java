@@ -2,12 +2,15 @@ package io.sentry.protocol;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.jakewharton.nopen.annotation.Open;
 import org.jetbrains.annotations.NotNull;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
+@Open
+public class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
   private static final long serialVersionUID = 252445813254943011L;
 
-  private <T> T toContextType(String key, Class<T> clazz) {
+  protected <T> T toContextType(String key, Class<T> clazz) {
     Object item = get(key);
     return clazz.isInstance(item) ? clazz.cast(item) : null;
   }
@@ -63,7 +66,11 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   @Override
   public @NotNull Contexts clone() throws CloneNotSupportedException {
     final Contexts clone = new Contexts();
+    cloneInto(clone);
+    return clone;
+  }
 
+  protected void cloneInto(Contexts clone) throws CloneNotSupportedException {
     for (Map.Entry<String, Object> entry : entrySet()) {
       if (entry != null) {
         Object value = entry.getValue();
@@ -74,7 +81,7 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
         } else if (Device.TYPE.equals(entry.getKey()) && value instanceof Device) {
           clone.setDevice(((Device) value).clone());
         } else if (OperatingSystem.TYPE.equals(entry.getKey())
-            && value instanceof OperatingSystem) {
+          && value instanceof OperatingSystem) {
           clone.setOperatingSystem(((OperatingSystem) value).clone());
         } else if (SentryRuntime.TYPE.equals(entry.getKey()) && value instanceof SentryRuntime) {
           clone.setRuntime(((SentryRuntime) value).clone());
@@ -85,7 +92,5 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
         }
       }
     }
-
-    return clone;
   }
 }
