@@ -18,8 +18,6 @@ import reactor.core.publisher.Mono;
  * RequestContextHolder}.
  */
 public final class WebfluxRequestSentryUserProvider implements SentryReactiveUserProvider {
-  static final String REQUEST_PRINCIPAL_ATTR_NAME =
-      "WebfluxRequestSentryUserProvider.REQUEST_PRINCIPAL_ATTR_NAME";
 
   private final @NotNull SentryOptions options;
 
@@ -28,7 +26,7 @@ public final class WebfluxRequestSentryUserProvider implements SentryReactiveUse
   }
 
   @Override
-  public Mono<User> provideUser(ServerWebExchange exchange) {
+  public Mono<User> provideUser(final @NotNull ServerWebExchange exchange) {
     if (options.isSendDefaultPii()) {
       return exchange
           .getPrincipal()
@@ -38,13 +36,14 @@ public final class WebfluxRequestSentryUserProvider implements SentryReactiveUse
     return Mono.empty();
   }
 
-  private static User requestUser(ServerWebExchange exchange) {
+  private static User requestUser(final @NotNull ServerWebExchange exchange) {
     final User user = new User();
     user.setIpAddress(toIpAddress(exchange.getRequest()));
     return user;
   }
 
-  private static User requestUser(ServerWebExchange exchange, Principal principal) {
+  private static User requestUser(
+      final @NotNull ServerWebExchange exchange, final @NotNull Principal principal) {
     final User user = requestUser(exchange);
     user.setUsername(principal.getName());
     return user;

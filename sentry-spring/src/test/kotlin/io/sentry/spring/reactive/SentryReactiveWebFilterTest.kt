@@ -10,7 +10,8 @@ import io.sentry.IHub
 import io.sentry.SentryOptions
 import javax.servlet.ServletRequestEvent
 import kotlin.test.Test
-import org.assertj.core.api.Assertions
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.server.MockServerWebExchange
 import org.springframework.web.server.WebFilterChain
@@ -22,7 +23,6 @@ class SentryReactiveWebFilterTest {
     private class Fixture {
         val baseHub = mock<IHub>()
         val hub = mock<IHub>()
-        val userProvider = mock<SentryReactiveUserProvider>()
         val filter = SentryReactiveWebFilter(baseHub, SentryOptions())
         val request: MockServerHttpRequest = MockServerHttpRequest
             .post("http://localhost:8080/some-uri")
@@ -52,17 +52,17 @@ class SentryReactiveWebFilterTest {
         fixture.filter.filter(fixture.webExchange, fixture.chain)
 
         verify(fixture.hub).addBreadcrumb(check { it: Breadcrumb ->
-            Assertions.assertThat(it.getData("url")).isEqualTo("/some-uri")
-            Assertions.assertThat(it.getData("method")).isEqualTo("POST")
-            Assertions.assertThat(it.type).isEqualTo("http")
+            assertEquals("/some-uri", it.getData("url"))
+            assertEquals("POST", it.getData("method"))
+            assertEquals("http", it.type)
         })
     }
 
     @Test
     fun `Add the cloned Hub as Exchange attribute`() {
         fixture.filter.filter(fixture.webExchange, fixture.chain)
-        val iHub = fixture.webExchange.getAttribute<IHub>(SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME)
-        Assertions.assertThat(iHub).isSameAs(fixture.hub)
+        val hub = fixture.webExchange.getAttribute<IHub>(SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME)
+        assertSame(fixture.hub, hub)
     }
 
     @Test
