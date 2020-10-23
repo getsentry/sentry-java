@@ -90,7 +90,7 @@ subprojects {
             publishVersion = project.version.toString()
             desc = Config.Sentry.description
             website = Config.Sentry.website
-            repoName = if (project.name.contains("android")) Config.Sentry.androidRepoName else Config.Sentry.javaRepoName
+            repoName = if (project.name.contains("android")) Config.Sentry.androidBintrayRepoName else Config.Sentry.javaBintrayRepoName
             setLicences(Config.Sentry.licence)
             setLicenceUrls(Config.Sentry.licenceUrl)
             issueTracker = Config.Sentry.issueTracker
