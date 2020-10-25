@@ -1,6 +1,7 @@
 package io.sentry.spring.reactive;
 
 import static io.sentry.spring.reactive.SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME;
+import static io.sentry.spring.reactive.WebfluxRequestSentryUserProvider.USER_ATTR;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
@@ -21,6 +22,8 @@ import reactor.core.publisher.Mono;
  */
 @Open
 public class SentryReactiveWebFilter implements WebFilter, Ordered {
+  // Ensure that this filter is called after spring-security filters (order -100)
+  private static final int WEB_FILTER_ORDER = -90;
 
   private final @NotNull IHub baseHub;
   private final @NotNull SentryOptions options;
@@ -44,11 +47,15 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
         });
 
     exchange.getAttributes().put(REQUEST_HUB_ATTR_NAME, hub);
-    return chain.filter(exchange).doFinally(_signal -> hub.popScope());
+
+    return exchange
+        .getPrincipal()
+        .doOnNext(principal -> exchange.getAttributes().put(USER_ATTR, principal))
+        .then(chain.filter(exchange).doFinally(_signal -> hub.popScope()));
   }
 
   @Override
   public int getOrder() {
-    return Ordered.HIGHEST_PRECEDENCE;
+    return WEB_FILTER_ORDER;
   }
 }

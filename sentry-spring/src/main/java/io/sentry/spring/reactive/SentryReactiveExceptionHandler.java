@@ -2,6 +2,7 @@ package io.sentry.spring.reactive;
 
 import static io.sentry.spring.reactive.SentryReactiveWebHelper.withRequestHub;
 import static reactor.core.publisher.Flux.fromIterable;
+import static reactor.core.publisher.Mono.defer;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
@@ -39,8 +40,11 @@ public class SentryReactiveExceptionHandler implements WebExceptionHandler, Orde
   }
 
   private static Mono<Void> captureAndContinue(ServerWebExchange exchange, Throwable ex) {
-    withRequestHub(exchange, hub -> hub.captureException(ex));
-    return Mono.error(ex);
+    return defer(
+        () -> {
+          withRequestHub(exchange, hub -> hub.captureException(ex));
+          return Mono.error(ex);
+        });
   }
 
   private static void addEventProcessors(IHub hub, List<User> users) {
@@ -53,6 +57,6 @@ public class SentryReactiveExceptionHandler implements WebExceptionHandler, Orde
   @Override
   public int getOrder() {
     // ensure this resolver runs with the highest precedence so that all exceptions are reported
-    return Ordered.HIGHEST_PRECEDENCE;
+    return -90;
   }
 }

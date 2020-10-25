@@ -7,6 +7,7 @@ import io.sentry.IHub
 import kotlin.test.Test
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.server.MockServerWebExchange
+import reactor.test.StepVerifier
 
 class SentryReactiveErrorAttributesTest {
 
@@ -20,7 +21,9 @@ class SentryReactiveErrorAttributesTest {
 
         val errorAttributes = SentryReactiveExceptionHandler(emptyList())
         val exception = RuntimeException("Sample Exception")
-        errorAttributes.handle(exchange, exception)
+
+        StepVerifier.create(errorAttributes.handle(exchange, exception))
+            .verifyError()
 
         verify(hub).captureException(exception)
     }
@@ -30,7 +33,8 @@ class SentryReactiveErrorAttributesTest {
 
         val errorAttributes = SentryReactiveExceptionHandler(emptyList())
         val exception = RuntimeException("Sample Exception")
-        errorAttributes.handle(exchange, exception)
+        StepVerifier.create(errorAttributes.handle(exchange, exception))
+            .verifyError()
 
         verify(hub, never()).captureException(exception)
     }
