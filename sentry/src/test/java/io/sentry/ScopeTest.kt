@@ -96,7 +96,6 @@ class ScopeTest {
         val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
-        assertEquals("transaction", clone.transaction)
 
         assertEquals("123", clone.user?.id)
 
@@ -155,7 +154,6 @@ class ScopeTest {
         scope.addEventProcessor(processor)
 
         assertEquals(SentryLevel.DEBUG, clone.level)
-        assertEquals("transaction", clone.transaction)
 
         assertEquals("123", clone.user?.id)
 

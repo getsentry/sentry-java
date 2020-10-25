@@ -239,7 +239,6 @@ class SentryClientTest {
         assertEquals("extra", event.extras["extra"])
         assertEquals("tags", event.tags["tags"])
         assertEquals("fp", event.fingerprints[0])
-        assertEquals("transaction", event.transaction)
         assertEquals("id", event.user.id)
         assertEquals(SentryLevel.FATAL, event.level)
     }

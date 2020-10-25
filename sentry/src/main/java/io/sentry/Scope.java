@@ -19,9 +19,6 @@ public final class Scope implements Cloneable {
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
 
-  /** Scope's transaction */
-  private @Nullable String transaction;
-
   /** Scope's {@link Transaction}. */
   private @Nullable Transaction tx;
 
@@ -91,7 +88,8 @@ public final class Scope implements Cloneable {
    * @return the transaction
    */
   public @Nullable String getTransaction() {
-    return transaction;
+    final Transaction tx = this.getTx();
+    return tx != null ? tx.getTransaction() : null;
   }
 
   /**
@@ -100,7 +98,10 @@ public final class Scope implements Cloneable {
    * @param transaction the transaction
    */
   public void setTransaction(@Nullable String transaction) {
-    this.transaction = transaction;
+    final Transaction tx = this.getTx();
+    if (tx != null) {
+      tx.setName(transaction);
+    }
   }
 
   public Transaction getTx() {
@@ -238,7 +239,7 @@ public final class Scope implements Cloneable {
   /** Resets the Scope to its default state */
   public void clear() {
     level = null;
-    transaction = null;
+    tx = null;
     user = null;
     fingerprint.clear();
     breadcrumbs.clear();
