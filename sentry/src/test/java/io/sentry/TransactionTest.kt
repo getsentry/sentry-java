@@ -74,4 +74,15 @@ class TransactionTest {
         assertNotSame(transaction.contexts, clone.contexts)
         assertNotSame(transaction.contexts.trace, clone.contexts.trace)
     }
+
+    @Test
+    fun `returns sentry-trace header`() {
+        val transaction = Transaction()
+        transaction.contexts = TransactionContexts()
+        val trace = Trace()
+        transaction.contexts.trace = trace
+
+        assertNotNull(transaction.toTraceparent())
+        assertEquals("${trace.traceId}-${trace.spanId}", transaction.toTraceparent())
+    }
 }

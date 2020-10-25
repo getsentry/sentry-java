@@ -4,7 +4,7 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Transaction extends SentryBaseEvent<TransactionContexts> implements Cloneable {
+public final class Transaction extends SentryBaseEvent<TransactionContexts> implements ISpan, Cloneable {
   /** The transaction name. */
   private @Nullable String transaction;
 
@@ -52,6 +52,17 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
     this.transaction = name;
   }
 
+  @Override
+  public ISpan startChild() {
+    return null;
+  }
+
+  @Override
+  public String toTraceparent() {
+    return String.format("%s-%s", getContexts().getTrace().getTraceId(), getContexts().getTrace().getSpanId());
+  }
+
+  @Override
   public void finish() {
     this.timestamp = DateUtils.getCurrentDateTime();
   }
