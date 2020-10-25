@@ -17,7 +17,7 @@ class TraceTest {
     fun `sets tag`() {
         val trace = Trace()
         trace.setTag("tagName", "tagValue")
-        assertEquals("tagValue", trace.tags["tagName"])
+        assertEquals("tagValue", trace.tags!!["tagName"])
     }
 
     @Test

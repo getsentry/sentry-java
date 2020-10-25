@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
@@ -420,6 +421,35 @@ class GsonSerializerTest {
         val dataJson = serializer.serialize(data)
 
         assertEquals(expected, dataJson)
+    }
+
+    @Test
+    fun `serializes transaction`() {
+        val contexts = TransactionContexts()
+        contexts.trace = Trace()
+        contexts.trace.op = "http"
+        contexts.trace.description = "some request"
+        contexts.trace.status = SpanStatus.OK
+        contexts.trace.setTag("myTag", "myValue")
+        val transaction = Transaction("transaction-name", contexts, mock())
+
+        val stringWriter = StringWriter()
+        serializer.serialize(transaction, stringWriter)
+
+        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        assertEquals("transaction-name", element["transaction"].asString)
+        assertEquals("java", element["platform"].asString)
+        assertEquals("transaction", element["type"].asString)
+        assertNotNull(element["start_timestamp"].asString)
+        assertNotNull(element["event_id"].asString)
+        assertNotNull(element["spans"].asJsonArray)
+        val jsonTrace = element["contexts"].asJsonObject["trace"]
+        assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
+        assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
+        assertEquals("http", jsonTrace.asJsonObject["op"].asString)
+        assertEquals("some request", jsonTrace.asJsonObject["description"].asString)
+        assertEquals("ok", jsonTrace.asJsonObject["status"].asString)
+        assertEquals("myValue", jsonTrace.asJsonObject["tags"].asJsonObject["myTag"].asString)
     }
 
     @Test

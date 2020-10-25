@@ -53,7 +53,7 @@ class TransactionTest {
         assertEquals(transaction.contexts.trace.description, clone.contexts.trace.description)
         assertEquals(transaction.contexts.trace.status, clone.contexts.trace.status)
         assertEquals(transaction.contexts.trace.unknown["unknown-key"], clone.contexts.trace.unknown["unknown-key"])
-        assertEquals(transaction.contexts.trace.tags["tag1"], clone.contexts.trace.tags["tag1"])
+        assertEquals(transaction.contexts.trace.tags!!["tag1"], clone.contexts.trace.tags!!["tag1"])
     }
 
     @Test

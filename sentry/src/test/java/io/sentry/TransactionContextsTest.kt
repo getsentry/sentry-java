@@ -6,7 +6,7 @@ import io.sentry.protocol.Device
 import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryRuntime
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
