@@ -61,8 +61,8 @@ class SentryReactiveWebFilterTest {
     @Test
     fun `Add the cloned Hub as Exchange attribute`() {
         fixture.filter.filter(fixture.webExchange, fixture.chain)
-        val hub = fixture.webExchange.getAttribute<IHub>(SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME)
-        assertSame(fixture.hub, hub)
+        val adapter = fixture.webExchange.getAttribute<SentryReactiveHubAdapter>(SentryReactiveWebHelper.REQUEST_HUB_ADAPTER_NAME)
+        assertSame(fixture.hub, adapter.hub)
     }
 
     @Test

@@ -1,15 +1,17 @@
 package io.sentry.spring.reactive
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import org.springframework.core.Ordered
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.server.MockServerWebExchange
 import reactor.test.StepVerifier
 
-class SentryReactiveErrorAttributesTest {
+class SentryReactiveExceptionHandlerTest {
 
     private val request = MockServerHttpRequest.get("http://example.com").build()
     private val exchange = MockServerWebExchange.from(request)
@@ -17,25 +19,21 @@ class SentryReactiveErrorAttributesTest {
 
     @Test
     fun `Capture exception with Request Hub`() {
-        exchange.attributes[SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME] = hub
+        val adapter = SentryReactiveHubAdapter(hub, emptyList(), exchange)
+        exchange.attributes[SentryReactiveWebHelper.REQUEST_HUB_ADAPTER_NAME] = adapter
 
-        val errorAttributes = SentryReactiveExceptionHandler()
+        val exceptionHandler = SentryReactiveExceptionHandler()
         val exception = RuntimeException("Sample Exception")
 
-        StepVerifier.create(errorAttributes.handle(exchange, exception))
+        StepVerifier.create(exceptionHandler.handle(exchange, exception))
             .verifyError()
 
-        verify(hub).captureException(exception)
+        verify(hub).captureEvent(any())
     }
 
     @Test
-    fun `Should not throw exception when there is no hub`() {
-
-        val errorAttributes = SentryReactiveExceptionHandler()
-        val exception = RuntimeException("Sample Exception")
-        StepVerifier.create(errorAttributes.handle(exchange, exception))
-            .verifyError()
-
-        verify(hub, never()).captureException(exception)
+    fun `Should indicate highest precedence order`() {
+        val exceptionHandler = SentryReactiveExceptionHandler()
+        assertEquals(Ordered.HIGHEST_PRECEDENCE, exceptionHandler.order)
     }
 }

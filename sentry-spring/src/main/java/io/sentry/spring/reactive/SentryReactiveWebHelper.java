@@ -7,11 +7,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 public final class SentryReactiveWebHelper {
-  static final String REQUEST_HUB_ATTR_NAME = "SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME";
+  static final String REQUEST_HUB_ADAPTER_NAME = "SentryReactiveWebHelper.REQUEST_HUB_ADAPTER_NAME";
 
   public static SentryReactiveHubAdapter getSentryReactiveHubAdapter(
       final @NotNull ServerWebExchange exchange) {
-    return (SentryReactiveHubAdapter) exchange.getAttributes().get(REQUEST_HUB_ATTR_NAME);
+    return (SentryReactiveHubAdapter) exchange.getAttributes().get(REQUEST_HUB_ADAPTER_NAME);
   }
 
   public static Mono<Void> captureWithRequestHub(
@@ -22,7 +22,6 @@ public final class SentryReactiveWebHelper {
 
   public static Mono<Void> captureWithRequestHub(final @NotNull Consumer<IHub> hubConsumer) {
     return SentryReactiveHubContextHolder.getHubContext()
-        .flatMap(
-            sentryReactiveHubAdapter -> sentryReactiveHubAdapter.captureWith(hubConsumer));
+        .flatMap(sentryReactiveHubAdapter -> sentryReactiveHubAdapter.captureWith(hubConsumer));
   }
 }

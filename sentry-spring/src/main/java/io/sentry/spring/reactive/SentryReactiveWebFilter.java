@@ -1,7 +1,7 @@
 package io.sentry.spring.reactive;
 
 import static io.sentry.spring.reactive.SentryReactiveHubContextHolder.*;
-import static io.sentry.spring.reactive.SentryReactiveWebHelper.REQUEST_HUB_ATTR_NAME;
+import static io.sentry.spring.reactive.SentryReactiveWebHelper.REQUEST_HUB_ADAPTER_NAME;
 import static io.sentry.spring.reactive.WebfluxRequestSentryUserProvider.USER_ATTR;
 
 import com.jakewharton.nopen.annotation.Open;
@@ -56,7 +56,7 @@ public class SentryReactiveWebFilter implements WebFilter, Ordered {
           scope.addEventProcessor(new SentryReactiveWebRequestProcessor(request, options));
         });
 
-    exchange.getAttributes().put(REQUEST_HUB_ATTR_NAME, hubAdapter);
+    exchange.getAttributes().put(REQUEST_HUB_ADAPTER_NAME, hubAdapter);
 
     return exchange
         .getPrincipal()
