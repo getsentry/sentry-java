@@ -5,9 +5,12 @@ import io.sentry.protocol.Browser
 import io.sentry.protocol.Device
 import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
+import java.lang.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
@@ -50,5 +53,21 @@ class TransactionContextsTest {
         assertNotSame(contexts, clone)
         assertEquals(contexts["some-property"], clone["some-property"])
         assertEquals(contexts.trace.op, clone.trace.op)
+    }
+
+    @Test
+    fun `creates context from correct traceparent header`() {
+        val traceId = SentryId()
+        val spanId = SpanId()
+        val contexts = TransactionContexts.fromTraceparent("$traceId-$spanId")
+        assertEquals(contexts.trace.traceId, traceId)
+        assertEquals(contexts.trace.spanId, spanId)
+    }
+
+    @Test
+    fun `when traceparent header is incorrect throws exception`() {
+        val sentryId = SentryId()
+        val ex = assertFailsWith<IllegalArgumentException> { TransactionContexts.fromTraceparent("$sentryId") }
+        assertEquals("Traceparent header does not conform to expected format: $sentryId", ex.message)
     }
 }

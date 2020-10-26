@@ -1,16 +1,31 @@
 package io.sentry;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.UUID;
 
 public final class SpanId {
-  private final String value;
+  private final @NotNull String value;
 
-  public SpanId(String value) {
+  public SpanId(final @NotNull String value) {
     this.value = value;
   }
 
   public SpanId() {
     this(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SpanId spanId = (SpanId) o;
+    return value.equals(spanId.value);
+  }
+
+  @Override
+  public int hashCode() {
+    return value.hashCode();
   }
 
   @Override
