@@ -1,3 +1,7 @@
+# 3.2
+
+* Feature: Performance monitoring
+
 # 3.1.2
 
 * Enhancement: Set environment to "production" by default.
