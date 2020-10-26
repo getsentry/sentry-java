@@ -2,15 +2,16 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 public final class TransactionContexts extends Contexts {
   private static final long serialVersionUID = 252445813254943011L;
 
-  public TransactionContexts() {}
+  public TransactionContexts() {
+    this(new Trace());
+  }
 
-  public TransactionContexts(final @NotNull Trace trace) {
+  private TransactionContexts(final @NotNull Trace trace) {
     this.setTrace(trace);
   }
 
@@ -26,6 +27,7 @@ public final class TransactionContexts extends Contexts {
       throw new IllegalArgumentException(
           "Traceparent header does not conform to expected format: " + traceparent);
     }
+    // set parentSpanId with spanId from the header, spanId should be new.
     return new TransactionContexts(new Trace(new SentryId(parts[0]), new SpanId(parts[1])));
   }
 
@@ -35,23 +37,5 @@ public final class TransactionContexts extends Contexts {
 
   public void setTrace(final @NotNull Trace trace) {
     this.put(Trace.TYPE, trace);
-  }
-
-  @Override
-  public @NotNull TransactionContexts clone() throws CloneNotSupportedException {
-    final TransactionContexts clone = new TransactionContexts();
-
-    super.cloneInto(clone);
-
-    for (final Map.Entry<String, Object> entry : entrySet()) {
-      if (entry != null) {
-        final Object value = entry.getValue();
-        if (Trace.TYPE.equals(entry.getKey()) && value instanceof Trace) {
-          clone.setTrace(((Trace) value).clone());
-        }
-      }
-    }
-
-    return clone;
   }
 }

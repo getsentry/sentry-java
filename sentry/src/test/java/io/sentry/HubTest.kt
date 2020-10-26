@@ -636,7 +636,7 @@ class HubTest {
             scope = it
         }
 
-        hub.startTransaction(TransactionContexts(Trace()))
+        hub.startTransaction(TransactionContexts())
 
         hub.setTransaction("test")
         assertEquals("test", scope?.transactionName)

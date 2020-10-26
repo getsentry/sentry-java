@@ -460,9 +460,6 @@ public final class Scope implements Cloneable {
 
     clone.contexts = contexts.clone();
 
-    final Transaction txRef = transaction;
-    clone.transaction = txRef != null ? txRef.clone() : null;
-
     return clone;
   }
 

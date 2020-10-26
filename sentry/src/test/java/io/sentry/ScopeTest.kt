@@ -63,7 +63,6 @@ class ScopeTest {
         assertNotSame(scope.tags, clone.tags)
         assertNotSame(scope.extras, clone.extras)
         assertNotSame(scope.eventProcessors, clone.eventProcessors)
-        assertNotSame(scope.transaction, clone.transaction)
     }
 
     @Test

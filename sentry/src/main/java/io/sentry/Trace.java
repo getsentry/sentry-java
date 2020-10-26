@@ -1,12 +1,11 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
-import io.sentry.util.CollectionUtils;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
-public final class Trace extends SpanContext implements IUnknownPropertiesConsumer, Cloneable {
+public final class Trace extends SpanContext implements IUnknownPropertiesConsumer {
   public static final String TYPE = "trace";
 
   /** Determines which trace the Span belongs to. */
@@ -54,15 +53,5 @@ public final class Trace extends SpanContext implements IUnknownPropertiesConsum
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  @Override
-  protected Trace clone() throws CloneNotSupportedException {
-    final Trace clone = (Trace) super.clone();
-
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
-    clone.tags = CollectionUtils.shallowCopy(tags);
-
-    return clone;
   }
 }

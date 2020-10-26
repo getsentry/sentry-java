@@ -7,8 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Transaction extends SentryBaseEvent<TransactionContexts>
-    implements ISpan, Cloneable {
+public final class Transaction extends SentryBaseEvent<TransactionContexts> implements ISpan {
   /** The transaction name. */
   private @Nullable String transaction;
 
@@ -22,7 +21,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
   private @Nullable Date timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
-  private final List<Span> spans = new CopyOnWriteArrayList<>();
+  private final @NotNull List<Span> spans = new CopyOnWriteArrayList<>();
 
   /**
    * A hub this transaction is attached to. Marked as transient to be ignored during JSON
@@ -38,7 +37,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
 
   /** Creates unnamed transaction. */
   Transaction() {
-    this(null, new TransactionContexts(new Trace()), NoOpHub.getInstance());
+    this(null, new TransactionContexts(), NoOpHub.getInstance());
   }
 
   /**
@@ -47,7 +46,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
    * @param contexts - transaction context
    * @param hub - the hub transaction is attached to
    */
-  public Transaction(final @NotNull TransactionContexts contexts, final @NotNull IHub hub) {
+  Transaction(final @NotNull TransactionContexts contexts, final @NotNull IHub hub) {
     this(null, contexts, hub);
   }
 
@@ -57,7 +56,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
    * @param name - transaction name
    * @param contexts - transaction contexts
    */
-  public Transaction(
+  Transaction(
       final @Nullable String name,
       final @NotNull TransactionContexts contexts,
       final @NotNull IHub hub) {
@@ -139,12 +138,5 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
   @NotNull
   List<Span> getSpans() {
     return spans;
-  }
-
-  @Override
-  protected Transaction clone() throws CloneNotSupportedException {
-    final Transaction clone = (Transaction) super.clone();
-    clone.setContexts(this.getContexts().clone());
-    return clone;
   }
 }
