@@ -1,8 +1,7 @@
 package io.sentry;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 
 public final class SpanId {
   private final @NotNull String value;

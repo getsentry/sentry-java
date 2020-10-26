@@ -1,9 +1,8 @@
 package io.sentry;
 
 import io.sentry.protocol.Contexts;
-import java.util.Map;
-
 import io.sentry.protocol.SentryId;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 public final class TransactionContexts extends Contexts {
@@ -24,7 +23,8 @@ public final class TransactionContexts extends Contexts {
   public static @NotNull TransactionContexts fromTraceparent(final @NotNull String traceparent) {
     final String[] parts = traceparent.split("-", -1);
     if (parts.length < 2) {
-      throw new IllegalArgumentException("Traceparent header does not conform to expected format: " + traceparent);
+      throw new IllegalArgumentException(
+          "Traceparent header does not conform to expected format: " + traceparent);
     }
     return new TransactionContexts(new Trace(new SentryId(parts[0]), new SpanId(parts[1])));
   }
