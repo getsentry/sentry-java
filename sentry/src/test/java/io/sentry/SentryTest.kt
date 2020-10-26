@@ -22,27 +22,6 @@ class SentryTest {
         Sentry.close()
     }
 
-    // todo: remove this test
-    @Test
-    fun `foo`() {
-        Sentry.init {
-            it.dsn = "https://9eda1857f9344d51821b656ba3557780@o420886.ingest.sentry.io/5339853"
-            it.isDebug = true
-        }
-        val contexts = TransactionContexts()
-        contexts.trace = Trace()
-        contexts.trace.op = "http"
-        contexts.trace.description = "some request"
-        contexts.trace.status = SpanStatus.OK
-        contexts.trace.setTag("myTag", "myValue")
-        val transaction = Transaction("newtranxs4", contexts)
-        transaction.sdk = SentryOptions().sdkVersion
-        Thread.sleep(100)
-        transaction.finish()
-        Sentry.captureTransaction(transaction, null)
-        Sentry.captureException(RuntimeException("oops"))
-    }
-
     @Test
     fun `outboxDir should be created at initialization`() {
         var sentryOptions: SentryOptions? = null

@@ -103,11 +103,11 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
     return String.format("%s-%s", getTraceId(), getSpanId());
   }
 
-  private @NotNull SpanId getSpanId() {
+  @NotNull SpanId getSpanId() {
     return getContexts().getTrace().getSpanId();
   }
 
-  private @NotNull SentryId getTraceId() {
+  @NotNull SentryId getTraceId() {
     return getContexts().getTrace().getTraceId();
   }
 
@@ -132,6 +132,10 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts>
 
   public @Nullable Date getTimestamp() {
     return timestamp;
+  }
+
+  @NotNull List<Span> getSpans() {
+    return spans;
   }
 
   @Override

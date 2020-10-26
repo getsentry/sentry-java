@@ -1,5 +1,7 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -31,6 +33,14 @@ class TransactionTest {
         val transaction = Transaction()
         transaction.finish()
         assertNotNull(transaction.timestamp)
+    }
+
+    @Test
+    fun `when transaction is finished, transaction is captured`() {
+        val hub = mock<IHub>()
+        val transaction = Transaction(TransactionContexts(), hub)
+        transaction.finish()
+        verify(hub).captureTransaction(transaction, null)
     }
 
     @Test
@@ -84,5 +94,36 @@ class TransactionTest {
 
         assertNotNull(transaction.toTraceparent())
         assertEquals("${trace.traceId}-${trace.spanId}", transaction.toTraceparent())
+    }
+
+    @Test
+    fun `starting child creates a new span`() {
+        val transaction = Transaction()
+        val span = transaction.startChild()
+        assertNotNull(span)
+        assertNotNull(span.spanId)
+        assertNotNull(span.startTimestamp)
+    }
+
+    @Test
+    fun `starting child adds a span to transaction`() {
+        val transaction = Transaction()
+        val span = transaction.startChild()
+        assertEquals(1, transaction.spans.size)
+        assertEquals(span, transaction.spans.first())
+    }
+
+    @Test
+    fun `span created with startChild has parent span id the same as transaction span id`() {
+        val transaction = Transaction()
+        val span = transaction.startChild()
+        assertEquals(transaction.spanId, span.parentSpanId)
+    }
+
+    @Test
+    fun `span created with startChild has the same trace id as transaction`() {
+        val transaction = Transaction()
+        val span = transaction.startChild()
+        assertEquals(transaction.traceId, span.traceId)
     }
 }
