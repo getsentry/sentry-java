@@ -114,6 +114,7 @@ final class SentryExceptionFactory {
     Thread thread;
 
     Throwable currentThrowable = throwable;
+    Throwable lastThrowable = throwable;
 
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
@@ -128,10 +129,18 @@ final class SentryExceptionFactory {
         exceptionMechanism = null;
         thread = Thread.currentThread();
       }
-
+      lastThrowable = currentThrowable;
       SentryException exception = getSentryException(currentThrowable, exceptionMechanism, thread);
       exceptions.addFirst(exception);
       currentThrowable = currentThrowable.getCause();
+    }
+
+    // Add complete error information for Reactor/webflux
+    if (lastThrowable != null && lastThrowable.getSuppressed() != null) {
+      for (Throwable suppressed : lastThrowable.getSuppressed()) {
+        SentryException exception = getSentryException(suppressed, null, Thread.currentThread());
+        exceptions.addFirst(exception);
+      }
     }
 
     return exceptions;

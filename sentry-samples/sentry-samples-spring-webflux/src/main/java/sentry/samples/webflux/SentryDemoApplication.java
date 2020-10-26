@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot;
+package sentry.samples.webflux;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

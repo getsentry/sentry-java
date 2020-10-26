@@ -2,10 +2,7 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.SentryEvent;
-import io.sentry.SentryLevel;
-import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.protocol.Mechanism;
+import io.sentry.spring.common.CaptureHelper;
 import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,13 +32,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
       final @Nullable Object handler,
       final @NotNull Exception ex) {
 
-    final Mechanism mechanism = new Mechanism();
-    mechanism.setHandled(false);
-    final Throwable throwable =
-        new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
-    final SentryEvent event = new SentryEvent(throwable);
-    event.setLevel(SentryLevel.FATAL);
-    hub.captureEvent(event);
+    CaptureHelper.captureUnhandled(hub, ex);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
     return null;

@@ -1,5 +1,6 @@
 package io.sentry.spring;
 
+import io.sentry.spring.common.SentryConfiguration;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -19,7 +20,7 @@ import org.springframework.context.annotation.Import;
  * </ul>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Import({SentryHubRegistrar.class, SentryInitBeanPostProcessor.class, SentryWebConfiguration.class})
+@Import({SentryHubRegistrar.class, SentryInitBeanPostProcessor.class, SentryConfiguration.class})
 @Target(ElementType.TYPE)
 public @interface EnableSentry {
 

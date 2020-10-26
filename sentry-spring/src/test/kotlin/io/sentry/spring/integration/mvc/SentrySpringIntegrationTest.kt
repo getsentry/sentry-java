@@ -1,9 +1,10 @@
-package io.sentry.spring
+package io.sentry.spring.integration.mvc
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Sentry
+import io.sentry.spring.EnableSentry
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException

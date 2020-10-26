@@ -36,7 +36,6 @@ dependencies {
     api(project(":sentry"))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.springBootStarterWebflux)
     compileOnly(Config.Libs.servletApi)
 
     compileOnly(Config.CompileOnly.nopen)

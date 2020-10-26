@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot;
+package sentry.samples.webflux;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;

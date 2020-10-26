@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot;
+package sentry.samples.webflux;
 
 public class Person {
   private final String firstName;

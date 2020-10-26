@@ -18,4 +18,6 @@ include("sentry-android",
     "sentry-samples:sentry-samples-logback",
     "sentry-samples:sentry-samples-servlet",
     "sentry-samples:sentry-samples-spring",
+    "sentry-samples:sentry-samples-spring-webflux",
+    "sentry-samples:sentry-samples-webflux",
     "sentry-samples:sentry-samples-spring-boot")
