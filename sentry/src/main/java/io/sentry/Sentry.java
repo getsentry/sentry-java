@@ -498,11 +498,22 @@ public final class Sentry {
   /**
    * Creates a Transaction bound to the current hub and returns the instance.
    *
+   * @param name the transaction name
+   * @return created transaction
+   */
+  public static Transaction startTransaction(final String name) {
+    return startTransaction(name, new TransactionContexts());
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  public static Transaction startTransaction(TransactionContexts transactionContexts) {
-    return getCurrentHub().startTransaction(transactionContexts);
+  public static Transaction startTransaction(
+      final String name, final TransactionContexts transactionContexts) {
+    return getCurrentHub().startTransaction(name, transactionContexts);
   }
 
   /**

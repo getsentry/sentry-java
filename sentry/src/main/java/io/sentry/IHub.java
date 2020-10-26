@@ -262,8 +262,19 @@ public interface IHub {
   /**
    * Creates a Transaction bound to the current hub and returns the instance.
    *
+   * @param name the transaction name
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  Transaction startTransaction(TransactionContexts transactionContexts);
+  Transaction startTransaction(String name, TransactionContexts transactionContexts);
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param name the transaction name
+   * @return created transaction
+   */
+  default Transaction startTransaction(String name) {
+    return startTransaction(name, new TransactionContexts());
+  }
 }

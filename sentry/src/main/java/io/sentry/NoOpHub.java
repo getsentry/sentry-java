@@ -113,7 +113,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public Transaction startTransaction(TransactionContexts transactionContexts) {
+  public Transaction startTransaction(String name, TransactionContexts transactionContexts) {
     return null;
   }
 }

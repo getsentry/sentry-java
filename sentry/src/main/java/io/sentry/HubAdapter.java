@@ -153,7 +153,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public Transaction startTransaction(TransactionContexts transactionContexts) {
-    return Sentry.startTransaction(transactionContexts);
+  public Transaction startTransaction(String name, TransactionContexts transactionContexts) {
+    return Sentry.startTransaction(name, transactionContexts);
   }
 }

@@ -636,9 +636,8 @@ class HubTest {
             scope = it
         }
 
-        hub.startTransaction(TransactionContexts())
+        hub.startTransaction("test")
 
-        hub.setTransaction("test")
         assertEquals("test", scope?.transactionName)
     }
     //endregion
@@ -1019,7 +1018,7 @@ class HubTest {
         val hub = generateHub()
         val contexts = TransactionContexts()
 
-        val transaction = hub.startTransaction(contexts)
+        val transaction = hub.startTransaction("name", contexts)
 
         assertEquals(contexts, transaction.contexts)
     }
@@ -1029,7 +1028,7 @@ class HubTest {
         val hub = generateHub()
         val contexts = TransactionContexts()
 
-        val transaction = hub.startTransaction(contexts)
+        val transaction = hub.startTransaction("name", contexts)
 
         hub.configureScope {
             assertNotNull(it.transaction)

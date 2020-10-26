@@ -37,7 +37,7 @@ class TransactionTest {
     @Test
     fun `when transaction is finished, transaction is captured`() {
         val hub = mock<IHub>()
-        val transaction = Transaction(TransactionContexts(), hub)
+        val transaction = Transaction("name", TransactionContexts(), hub)
         transaction.finish()
         verify(hub).captureTransaction(transaction, null)
     }

@@ -637,7 +637,8 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable Transaction startTransaction(TransactionContexts transactionContexts) {
+  public @Nullable Transaction startTransaction(
+      final String name, final TransactionContexts transactionContexts) {
     Transaction transaction = null;
     if (!isEnabled()) {
       options
@@ -646,7 +647,7 @@ public final class Hub implements IHub {
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
-        transaction = new Transaction(transactionContexts, this);
+        transaction = new Transaction(name, transactionContexts, this);
         item.scope.setTransaction(transaction);
       } else {
         options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");

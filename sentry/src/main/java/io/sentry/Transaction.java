@@ -11,9 +11,6 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   /** The transaction name. */
   private @Nullable String transaction;
 
-  @SuppressWarnings("UnusedVariable")
-  private @NotNull final String platform = "java";
-
   /** The moment in time when span was started. */
   private @NotNull Date startTimestamp;
 
@@ -34,20 +31,12 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   private @NotNull final String type = "transaction";
 
   /** The {@code platform} property is required in JSON payload sent to Sentry. */
+  @SuppressWarnings("UnusedVariable")
+  private @NotNull final String platform = "java";
 
   /** Creates unnamed transaction. */
   Transaction() {
     this(null, new TransactionContexts(), NoOpHub.getInstance());
-  }
-
-  /**
-   * Creates unnamed transaction with context attached to a hub.
-   *
-   * @param contexts - transaction context
-   * @param hub - the hub transaction is attached to
-   */
-  Transaction(final @NotNull TransactionContexts contexts, final @NotNull IHub hub) {
-    this(null, contexts, hub);
   }
 
   /**
@@ -71,7 +60,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    *
    * @param name - transaction name
    */
-  public void setName(final @Nullable String name) {
+  void setName(final @Nullable String name) {
     this.transaction = name;
   }
 
@@ -123,15 +112,18 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    *
    * @return transaction name.
    */
-  public @Nullable String getTransaction() {
+  @Nullable
+  String getTransaction() {
     return transaction;
   }
 
-  public @NotNull Date getStartTimestamp() {
+  @NotNull
+  Date getStartTimestamp() {
     return startTimestamp;
   }
 
-  public @Nullable Date getTimestamp() {
+  @Nullable
+  Date getTimestamp() {
     return timestamp;
   }
 
