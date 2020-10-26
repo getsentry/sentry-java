@@ -465,6 +465,9 @@ class GsonSerializerTest {
                             "trace": {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
                               "span_id": "0a53026963414893"
+                            },
+                            "custom": {
+                              "some-key": "some-value"
                             }
                           }
                         }"""
@@ -476,6 +479,8 @@ class GsonSerializerTest {
         assertNotNull(transaction.contexts.trace)
         assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace.traceId.toString())
         assertEquals("0a53026963414893", transaction.contexts.trace.spanId.toString())
+        assertNotNull(transaction.contexts["custom"])
+        assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
     }
 
     private fun assertSessionData(expectedSession: Session?) {
