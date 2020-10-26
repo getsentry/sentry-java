@@ -29,7 +29,6 @@ class ScopeTest {
         user.others = others
 
         scope.user = user
-        scope.transaction = "transaction"
 
         val fingerprints = mutableListOf("abc", "def")
         scope.fingerprint = fingerprints
@@ -51,7 +50,7 @@ class ScopeTest {
 
         val transaction = Transaction()
         transaction.setName("transaction-name")
-        scope.tx = transaction
+        scope.transaction = transaction
 
         val clone = scope.clone()
 
@@ -64,7 +63,7 @@ class ScopeTest {
         assertNotSame(scope.tags, clone.tags)
         assertNotSame(scope.extras, clone.extras)
         assertNotSame(scope.eventProcessors, clone.eventProcessors)
-        assertNotSame(scope.tx, clone.tx)
+        assertNotSame(scope.transaction, clone.transaction)
     }
 
     @Test
@@ -77,7 +76,6 @@ class ScopeTest {
         user.id = "123"
 
         scope.user = user
-        scope.transaction = "transaction"
 
         val fingerprints = mutableListOf("abc")
         scope.fingerprint = fingerprints
@@ -91,7 +89,7 @@ class ScopeTest {
 
         val transaction = Transaction()
         transaction.setName("transaction-name")
-        scope.tx = transaction
+        scope.transaction = transaction
 
         val clone = scope.clone()
 
@@ -102,7 +100,7 @@ class ScopeTest {
         assertEquals("abc", clone.fingerprint.first())
 
         assertEquals("message", clone.breadcrumbs.first().message)
-        assertEquals("transaction-name", clone.tx.transaction)
+        assertEquals("transaction-name", clone.transaction.transaction)
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
@@ -118,7 +116,6 @@ class ScopeTest {
         user.id = "123"
 
         scope.user = user
-        scope.transaction = "transaction"
 
         val fingerprints = mutableListOf("abc")
         scope.fingerprint = fingerprints
@@ -138,7 +135,8 @@ class ScopeTest {
         scope.level = SentryLevel.FATAL
         user.id = "456"
 
-        scope.transaction = "newTransaction"
+        scope.transaction = Transaction()
+        scope.transaction.setName("newTransaction")
 
         // because you can only set a new list to scope
         val newFingerprints = mutableListOf("def", "ghf")
@@ -168,6 +166,7 @@ class ScopeTest {
         assertEquals("extra", clone.extras["extra"])
         assertEquals(1, clone.extras.size)
         assertEquals(1, clone.eventProcessors.size)
+        assertNull(clone.transaction)
     }
 
     @Test

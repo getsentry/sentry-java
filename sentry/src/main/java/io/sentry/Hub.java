@@ -647,7 +647,7 @@ public final class Hub implements IHub {
       final StackItem item = stack.peek();
       if (item != null) {
         transaction = new Transaction(transactionContexts, this);
-        item.scope.setTx(transaction);
+        item.scope.setTransaction(transaction);
       } else {
         options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");
       }

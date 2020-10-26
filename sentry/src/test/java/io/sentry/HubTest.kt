@@ -613,7 +613,7 @@ class HubTest {
         hub.close()
 
         hub.setTransaction("test")
-        assertNull(scope?.transaction)
+        assertNull(scope?.transactionName)
     }
 
     @Test
@@ -625,7 +625,7 @@ class HubTest {
         }
 
         hub.setTransaction("test")
-        assertNull(scope?.transaction)
+        assertNull(scope?.transactionName)
     }
 
     @Test
@@ -639,7 +639,7 @@ class HubTest {
         hub.startTransaction(TransactionContexts(Trace()))
 
         hub.setTransaction("test")
-        assertEquals("test", scope?.transaction)
+        assertEquals("test", scope?.transactionName)
     }
     //endregion
 
@@ -1032,8 +1032,8 @@ class HubTest {
         val transaction = hub.startTransaction(contexts)
 
         hub.configureScope {
-            assertNotNull(it.tx)
-            assertEquals(transaction, it.tx)
+            assertNotNull(it.transaction)
+            assertEquals(transaction, it.transaction)
         }
     }
 

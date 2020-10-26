@@ -325,7 +325,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
       if (event.getTransaction() == null) {
-        event.setTransaction(scope.getTransaction());
+        event.setTransaction(scope.getTransactionName());
       }
       if (event.getUser() == null) {
         event.setUser(scope.getUser());
