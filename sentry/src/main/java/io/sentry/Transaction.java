@@ -12,7 +12,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   private @Nullable String transaction;
 
   /** The moment in time when span was started. */
-  private @NotNull Date startTimestamp;
+  private final @NotNull Date startTimestamp;
 
   /** The moment in time when span has ended. */
   private @Nullable Date timestamp;
@@ -88,7 +88,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
 
   @Override
   public String toTraceparent() {
-    return String.format("%s-%s", getTraceId(), getSpanId());
+    return this.getContexts().getTrace().toTraceparent();
   }
 
   @NotNull

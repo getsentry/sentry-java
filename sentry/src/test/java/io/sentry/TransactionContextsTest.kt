@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 
 class TransactionContextsTest {
 
@@ -13,7 +14,8 @@ class TransactionContextsTest {
         val spanId = SpanId()
         val contexts = TransactionContexts.fromTraceparent("$traceId-$spanId")
         assertEquals(contexts.trace.traceId, traceId)
-        assertEquals(contexts.trace.spanId, spanId)
+        assertEquals(contexts.trace.parentSpanId, spanId)
+        assertNotNull(contexts.trace.spanId)
     }
 
     @Test

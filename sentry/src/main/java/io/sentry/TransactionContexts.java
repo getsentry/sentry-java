@@ -27,8 +27,8 @@ public final class TransactionContexts extends Contexts {
       throw new IllegalArgumentException(
           "Traceparent header does not conform to expected format: " + traceparent);
     }
-    // set parentSpanId with spanId from the header, spanId should be new.
-    return new TransactionContexts(new Trace(new SentryId(parts[0]), new SpanId(parts[1])));
+    return new TransactionContexts(
+        new Trace(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));
   }
 
   public Trace getTrace() {
