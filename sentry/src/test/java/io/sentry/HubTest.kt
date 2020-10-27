@@ -994,7 +994,7 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureTransaction(Transaction(), null)
+        sut.captureTransaction(Transaction("name"), null)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
     }
 
@@ -1008,7 +1008,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(Transaction(), null)
+        sut.captureTransaction(Transaction("name"), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
     //endregion
@@ -1031,8 +1031,8 @@ class HubTest {
         val transaction = hub.startTransaction("name", contexts)
 
         hub.configureScope {
-            assertNotNull(it.transaction)
-            assertEquals(transaction, it.transaction)
+            assertNotNull(it.span)
+            assertEquals(transaction, it.span)
         }
     }
 

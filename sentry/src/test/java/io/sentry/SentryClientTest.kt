@@ -642,9 +642,7 @@ class SentryClientTest {
     fun `transactions are sent using connection`() {
         fixture.connection = mock()
         val sut = fixture.getSut()
-        val transaction = Transaction()
-        transaction.setName("a-transaction")
-        sut.captureTransaction(transaction, null, null)
+        sut.captureTransaction(Transaction("a-transaction"), null, null)
         verify(fixture.connection).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)
@@ -660,7 +658,7 @@ class SentryClientTest {
             setExtra("extra", "extra")
             setTag("tags", "tags")
             fingerprint.add("fp")
-            transaction = Transaction()
+            setTransaction(Transaction("name"))
             level = SentryLevel.FATAL
             user = User().apply {
                 id = "id"

@@ -35,8 +35,8 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   private @NotNull final String platform = "java";
 
   /** Creates unnamed transaction. */
-  Transaction() {
-    this(null, new TransactionContexts(), NoOpHub.getInstance());
+  Transaction(final @NotNull String name) {
+    this(name, new TransactionContexts(), NoOpHub.getInstance());
   }
 
   /**
@@ -60,7 +60,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    *
    * @param name - transaction name
    */
-  void setName(final @Nullable String name) {
+  void setName(final @NotNull String name) {
     this.transaction = name;
   }
 

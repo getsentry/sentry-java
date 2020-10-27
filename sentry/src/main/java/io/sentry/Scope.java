@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.User;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -83,32 +84,52 @@ public final class Scope implements Cloneable {
   }
 
   /**
-   * Returns the Scope's transaction
+   * Returns the Scope's transaction name.
    *
    * @return the transaction
    */
   public @Nullable String getTransactionName() {
-    final Transaction tx = this.getTransaction();
+    final Transaction tx = this.transaction;
     return tx != null ? tx.getTransaction() : null;
   }
 
   /**
-   * Sets the Scope's transaction
+   * Sets the Scope's transaction.
    *
    * @param transaction the transaction
    */
-  public void setTransaction(@Nullable String transaction) {
-    final Transaction tx = this.getTransaction();
+  public void setTransaction(@NotNull String transaction) {
+    final Transaction tx = this.transaction;
     if (tx != null) {
       tx.setName(transaction);
     }
   }
 
-  public Transaction getTransaction() {
+  /**
+   * Returns current active Span or Transaction.
+   *
+   * @return current active Span or Transaction or null if transaction has not been set.
+   */
+  @SuppressWarnings("JdkObsolete")
+  public ISpan getSpan() {
+    if (transaction != null && !transaction.getSpans().isEmpty()) {
+      final List<Span> spans = new ArrayList<>(transaction.getSpans());
+      Collections.reverse(spans);
+      for (final Span span : spans) {
+        if (!span.isFinished()) {
+          return span;
+        }
+      }
+    }
     return transaction;
   }
 
-  public void setTransaction(Transaction transaction) {
+  /**
+   * Sets the current active transaction
+   *
+   * @param transaction the transaction
+   */
+  public void setTransaction(final @NotNull Transaction transaction) {
     this.transaction = transaction;
   }
 

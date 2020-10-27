@@ -44,4 +44,8 @@ public final class Span extends Trace implements ISpan {
   public void finish() {
     this.timestamp = DateUtils.getCurrentDateTime();
   }
+
+  boolean isFinished() {
+    return this.timestamp != null;
+  }
 }
