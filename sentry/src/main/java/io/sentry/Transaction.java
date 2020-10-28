@@ -1,9 +1,10 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,8 +19,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   private @Nullable Date timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
-  private final @NotNull List<Span> spans = new CopyOnWriteArrayList<>();
-
+  private final @NotNull List<Span> spans = new ArrayList<>();
   /**
    * A hub this transaction is attached to. Marked as transient to be ignored during JSON
    * serialization.
@@ -124,7 +124,19 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   }
 
   @NotNull
-  List<Span> getSpans() {
+  Collection<Span> getSpans() {
     return spans;
+  }
+
+  /** @return the latest span that is not finished or null if not found. */
+  @Nullable
+  Span getLatestActiveSpan() {
+    final List<Span> spans = new ArrayList<>(this.spans);
+    for (int i = spans.size() - 1; i >= 0; i--) {
+      if (!spans.get(i).isFinished()) {
+        return spans.get(i);
+      }
+    }
+    return null;
   }
 }

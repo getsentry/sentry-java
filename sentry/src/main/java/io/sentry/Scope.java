@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.User;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -113,12 +112,10 @@ public final class Scope implements Cloneable {
   @SuppressWarnings("JdkObsolete")
   public ISpan getSpan() {
     if (transaction != null && !transaction.getSpans().isEmpty()) {
-      final List<Span> spans = new ArrayList<>(transaction.getSpans());
-      Collections.reverse(spans);
-      for (final Span span : spans) {
-        if (!span.isFinished()) {
-          return span;
-        }
+      final Span span = transaction.getLatestActiveSpan();
+
+      if (span != null) {
+        return span;
       }
     }
     return transaction;
