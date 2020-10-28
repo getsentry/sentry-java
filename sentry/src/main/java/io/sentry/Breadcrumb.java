@@ -39,7 +39,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param timestamp the timestamp
    */
-  Breadcrumb(final @Nullable Date timestamp) {
+  public Breadcrumb(final @Nullable Date timestamp) {
     this.timestamp = timestamp;
   }
 
