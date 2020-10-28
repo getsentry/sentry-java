@@ -13,9 +13,9 @@ class TransactionContextsTest {
         val traceId = SentryId()
         val spanId = SpanId()
         val contexts = TransactionContexts.fromSentryTrace("$traceId-$spanId")
-        assertEquals(contexts.trace.traceId, traceId)
-        assertEquals(contexts.trace.parentSpanId, spanId)
-        assertNotNull(contexts.trace.spanId)
+        assertEquals(contexts.traceContext.traceId, traceId)
+        assertEquals(contexts.traceContext.parentSpanId, spanId)
+        assertNotNull(contexts.traceContext.spanId)
     }
 
     @Test

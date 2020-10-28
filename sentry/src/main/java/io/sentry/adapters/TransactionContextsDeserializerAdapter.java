@@ -7,7 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.Trace;
+import io.sentry.TraceContext;
 import io.sentry.TransactionContexts;
 import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
@@ -36,10 +36,11 @@ public final class TransactionContextsDeserializerAdapter
         if (jsonObject != null && !jsonObject.isJsonNull()) {
           for (final String key : jsonObject.keySet()) {
             switch (key) {
-              case Trace.TYPE:
-                final Trace trace = parseObject(context, jsonObject, key, Trace.class);
-                if (trace != null) {
-                  contexts.setTrace(trace);
+              case TraceContext.TYPE:
+                final TraceContext traceContext =
+                    parseObject(context, jsonObject, key, TraceContext.class);
+                if (traceContext != null) {
+                  contexts.setTraceContext(traceContext);
                 }
                 break;
               default:

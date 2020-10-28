@@ -426,11 +426,11 @@ class GsonSerializerTest {
     @Test
     fun `serializes transaction`() {
         val contexts = TransactionContexts()
-        contexts.trace = Trace()
-        contexts.trace.op = "http"
-        contexts.trace.description = "some request"
-        contexts.trace.status = SpanStatus.OK
-        contexts.trace.setTag("myTag", "myValue")
+        contexts.traceContext = TraceContext()
+        contexts.traceContext.op = "http"
+        contexts.traceContext.description = "some request"
+        contexts.traceContext.status = SpanStatus.OK
+        contexts.traceContext.setTag("myTag", "myValue")
         val transaction = Transaction("transaction-name", contexts, mock())
 
         val stringWriter = StringWriter()
@@ -474,9 +474,9 @@ class GsonSerializerTest {
         assertNotNull(transaction.startTimestamp)
         assertNotNull(transaction.timestamp)
         assertNotNull(transaction.contexts)
-        assertNotNull(transaction.contexts.trace)
-        assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace.traceId.toString())
-        assertEquals("0a53026963414893", transaction.contexts.trace.spanId.toString())
+        assertNotNull(transaction.contexts.traceContext)
+        assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.traceContext.traceId.toString())
+        assertEquals("0a53026963414893", transaction.contexts.traceContext.spanId.toString())
         assertNotNull(transaction.contexts["custom"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
     }

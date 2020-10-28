@@ -84,17 +84,17 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
 
   @Override
   public String toSentryTrace() {
-    return this.getContexts().getTrace().toSentryTrace();
+    return this.getContexts().getTraceContext().toSentryTrace();
   }
 
   @NotNull
   SpanId getSpanId() {
-    return getContexts().getTrace().getSpanId();
+    return getContexts().getTraceContext().getSpanId();
   }
 
   @NotNull
   SentryId getTraceId() {
-    return getContexts().getTrace().getTraceId();
+    return getContexts().getTraceContext().getTraceId();
   }
 
   @Override

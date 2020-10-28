@@ -5,7 +5,7 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Span extends Trace implements ISpan {
+public final class Span extends TraceContext implements ISpan {
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;

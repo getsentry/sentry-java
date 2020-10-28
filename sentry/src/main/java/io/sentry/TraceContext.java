@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Open
-public class Trace {
+public class TraceContext {
   public static final String TYPE = "trace";
 
   /** Determines which trace the Span belongs to. */
@@ -35,11 +35,11 @@ public class Trace {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @Nullable Map<String, String> tags;
 
-  public Trace() {
+  public TraceContext() {
     this(new SentryId(), new SpanId(), null);
   }
 
-  public Trace(
+  public TraceContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId) {

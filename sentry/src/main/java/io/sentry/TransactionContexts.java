@@ -8,11 +8,11 @@ public final class TransactionContexts extends Contexts {
   private static final long serialVersionUID = 252445813254943011L;
 
   public TransactionContexts() {
-    this(new Trace());
+    this(new TraceContext());
   }
 
-  private TransactionContexts(final @NotNull Trace trace) {
-    this.setTrace(trace);
+  private TransactionContexts(final @NotNull TraceContext traceContext) {
+    this.setTraceContext(traceContext);
   }
 
   /**
@@ -28,14 +28,14 @@ public final class TransactionContexts extends Contexts {
       throw new InvalidSentryTraceHeaderException(sentryTrace);
     }
     return new TransactionContexts(
-        new Trace(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));
+        new TraceContext(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));
   }
 
-  public Trace getTrace() {
-    return toContextType(Trace.TYPE, Trace.class);
+  public TraceContext getTraceContext() {
+    return toContextType(TraceContext.TYPE, TraceContext.class);
   }
 
-  public void setTrace(final @NotNull Trace trace) {
-    this.put(Trace.TYPE, trace);
+  public void setTraceContext(final @NotNull TraceContext traceContext) {
+    this.put(TraceContext.TYPE, traceContext);
   }
 }

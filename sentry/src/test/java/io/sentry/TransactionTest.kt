@@ -47,7 +47,7 @@ class TransactionTest {
         val transaction = Transaction("name")
 
         assertNotNull(transaction.toSentryTrace())
-        assertEquals("${transaction.contexts.trace.traceId}-${transaction.contexts.trace.spanId}", transaction.toSentryTrace())
+        assertEquals("${transaction.contexts.traceContext.traceId}-${transaction.contexts.traceContext.spanId}", transaction.toSentryTrace())
     }
 
     @Test
