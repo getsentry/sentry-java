@@ -438,7 +438,6 @@ class GsonSerializerTest {
 
         val element = JsonParser().parse(stringWriter.toString()).asJsonObject
         assertEquals("transaction-name", element["transaction"].asString)
-        assertEquals("java", element["platform"].asString)
         assertEquals("transaction", element["type"].asString)
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
@@ -457,7 +456,6 @@ class GsonSerializerTest {
         val json = """{
                           "transaction": "a-transaction",
                           "type": "transaction",
-                          "platform": "java",
                           "start_timestamp": "2020-10-23T10:24:01.791Z",
                           "timestamp": "2020-10-23T10:24:02.791Z",
                           "event_id": "3367f5196c494acaae85bbbd535379ac",

@@ -30,10 +30,6 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
-  /** The {@code platform} property is required in JSON payload sent to Sentry. */
-  @SuppressWarnings("UnusedVariable")
-  private @NotNull final String platform = "java";
-
   /** Creates unnamed transaction. */
   Transaction(final @NotNull String name) {
     this(name, new TransactionContexts(), NoOpHub.getInstance());
