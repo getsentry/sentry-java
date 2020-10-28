@@ -46,8 +46,8 @@ class TransactionTest {
     fun `returns sentry-trace header`() {
         val transaction = Transaction("name")
 
-        assertNotNull(transaction.toSentryHeader())
-        assertEquals("${transaction.contexts.trace.traceId}-${transaction.contexts.trace.spanId}", transaction.toSentryHeader())
+        assertNotNull(transaction.toSentryTrace())
+        assertEquals("${transaction.contexts.trace.traceId}-${transaction.contexts.trace.spanId}", transaction.toSentryTrace())
     }
 
     @Test

@@ -16,16 +16,16 @@ public final class TransactionContexts extends Contexts {
   }
 
   /**
-   * Creates {@link TransactionContexts} from sentry-header.
+   * Creates {@link TransactionContexts} from sentry-trace header.
    *
-   * @param sentryHeader - the sentryHeader header
+   * @param sentryTrace - the sentry-trace header
    * @return the transaction contexts
    */
-  public static @NotNull TransactionContexts fromSentryHeader(final @NotNull String sentryHeader)
+  public static @NotNull TransactionContexts fromSentryTrace(final @NotNull String sentryTrace)
       throws InvalidSentryTraceHeaderException {
-    final String[] parts = sentryHeader.split("-", -1);
+    final String[] parts = sentryTrace.split("-", -1);
     if (parts.length < 2) {
-      throw new InvalidSentryTraceHeaderException(sentryHeader);
+      throw new InvalidSentryTraceHeaderException(sentryTrace);
     }
     return new TransactionContexts(
         new Trace(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));
