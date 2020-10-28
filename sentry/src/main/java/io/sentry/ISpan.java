@@ -14,7 +14,7 @@ public interface ISpan {
    *
    * @return string containing sentry-trace header.
    */
-  String toTraceparent();
+  String toSentryHeader();
 
   /** Sets span timestamp marking this span as finished. */
   void finish();

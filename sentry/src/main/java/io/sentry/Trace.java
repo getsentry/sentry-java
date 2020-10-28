@@ -48,7 +48,7 @@ public class Trace {
     this.parentSpanId = parentSpanId;
   }
 
-  public @NotNull String toTraceparent() {
+  public @NotNull String toSentryHeader() {
     return String.format("%s-%s", traceId, spanId);
   }
 

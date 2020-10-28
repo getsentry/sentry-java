@@ -87,8 +87,8 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   }
 
   @Override
-  public String toTraceparent() {
-    return this.getContexts().getTrace().toTraceparent();
+  public String toSentryHeader() {
+    return this.getContexts().getTrace().toSentryHeader();
   }
 
   @NotNull

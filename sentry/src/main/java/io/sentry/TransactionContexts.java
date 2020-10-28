@@ -16,16 +16,16 @@ public final class TransactionContexts extends Contexts {
   }
 
   /**
-   * Creates {@link TransactionContexts} from traceparent header.
+   * Creates {@link TransactionContexts} from sentry-header.
    *
-   * @param traceparent - the traceparent header
+   * @param sentryHeader - the sentryHeader header
    * @return the transaction contexts
    */
-  public static @NotNull TransactionContexts fromTraceparent(final @NotNull String traceparent) {
-    final String[] parts = traceparent.split("-", -1);
+  public static @NotNull TransactionContexts fromSentryHeader(final @NotNull String sentryHeader) {
+    final String[] parts = sentryHeader.split("-", -1);
     if (parts.length < 2) {
       throw new IllegalArgumentException(
-          "Traceparent header does not conform to expected format: " + traceparent);
+          "sentry-header does not conform to expected format: " + sentryHeader);
     }
     return new TransactionContexts(
         new Trace(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));

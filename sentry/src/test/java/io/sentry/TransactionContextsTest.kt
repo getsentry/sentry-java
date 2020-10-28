@@ -9,19 +9,19 @@ import kotlin.test.assertNotNull
 class TransactionContextsTest {
 
     @Test
-    fun `creates context from correct traceparent header`() {
+    fun `creates context from correct sentry-header`() {
         val traceId = SentryId()
         val spanId = SpanId()
-        val contexts = TransactionContexts.fromTraceparent("$traceId-$spanId")
+        val contexts = TransactionContexts.fromSentryHeader("$traceId-$spanId")
         assertEquals(contexts.trace.traceId, traceId)
         assertEquals(contexts.trace.parentSpanId, spanId)
         assertNotNull(contexts.trace.spanId)
     }
 
     @Test
-    fun `when traceparent header is incorrect throws exception`() {
+    fun `when sentry-header is incorrect throws exception`() {
         val sentryId = SentryId()
-        val ex = assertFailsWith<IllegalArgumentException> { TransactionContexts.fromTraceparent("$sentryId") }
-        assertEquals("Traceparent header does not conform to expected format: $sentryId", ex.message)
+        val ex = assertFailsWith<IllegalArgumentException> { TransactionContexts.fromSentryHeader("$sentryId") }
+        assertEquals("sentry-header header does not conform to expected format: $sentryId", ex.message)
     }
 }
