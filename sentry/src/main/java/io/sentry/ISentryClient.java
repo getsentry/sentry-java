@@ -142,6 +142,13 @@ public interface ISentryClient {
   }
 
   /**
+   * Captures a manually created user feedback and sends it to Sentry.
+   *
+   * @param userFeedback The user feedback to send to Sentry.
+   */
+  void captureUserFeedback(UserFeedback userFeedback);
+
+  /**
    * Captures a session. This method transform a session to an envelope and forwards to
    * captureEnvelope
    *

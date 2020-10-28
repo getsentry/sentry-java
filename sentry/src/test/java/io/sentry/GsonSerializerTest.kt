@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryId
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -29,20 +30,24 @@ class GsonSerializerTest {
     private val serializer = GsonSerializer(mock(), EnvelopeReader())
 
     private fun serializeToString(ev: SentryEvent): String {
-        val wrt = StringWriter()
-        serializer.serialize(ev, wrt)
-        return wrt.toString()
+        return serializeToString { wrt -> serializer.serialize(ev, wrt) }
     }
 
     private fun serializeToString(session: Session): String {
-        val wrt = StringWriter()
-        serializer.serialize(session, wrt)
-        return wrt.toString()
+        return serializeToString { wrt -> serializer.serialize(session, wrt) }
     }
 
     private fun serializeToString(envelope: SentryEnvelope): String {
+        return serializeToString { wrt -> serializer.serialize(envelope, wrt) }
+    }
+
+    private fun serializeToString(userFeedback: UserFeedback): String {
+        return serializeToString { wrt -> serializer.serialize(userFeedback, wrt) }
+    }
+
+    private fun serializeToString(serialize: (StringWriter) -> Unit): String {
         val wrt = StringWriter()
-        serializer.serialize(envelope, wrt)
+        serialize(wrt)
         return wrt.toString()
     }
 
@@ -422,6 +427,28 @@ class GsonSerializerTest {
         assertEquals(expected, dataJson)
     }
 
+    @Test
+    fun `serializing user feedback`() {
+        val actual =  serializeToString(userFeedback)
+
+        val expected = "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
+            "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `deserializing user feedback`() {
+        val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
+            "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
+        val actual = serializer.deserializeUserFeedback(StringReader(jsonUserFeedback))
+
+        assertEquals(userFeedback.eventId, actual.eventId)
+        assertEquals(userFeedback.name, actual.name)
+        assertEquals(userFeedback.email, actual.email)
+        assertEquals(userFeedback.comments, actual.comments)
+    }
+
     private fun assertSessionData(expectedSession: Session?) {
         assertNotNull(expectedSession)
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
@@ -472,4 +499,17 @@ class GsonSerializerTest {
             "debug",
             "io.sentry@1.0+123"
         )
+
+    private val userFeedback: UserFeedback get()  {
+        val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
+        val userFeedback = UserFeedback(eventId)
+        userFeedback.apply {
+            name = "John"
+            email = "john@me.com"
+            comments = "comment"
+        }
+
+        return userFeedback
+    }
 }
+

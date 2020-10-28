@@ -108,6 +108,28 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
+  public static SentryEnvelopeItem fromUserFeedback(
+    final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(userFeedback, "UserFeedback is required.");
+
+    final CachedItem cachedItem =
+      new CachedItem(
+        () -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+               final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+            serializer.serialize(userFeedback, writer);
+            return stream.toByteArray();
+          }
+        });
+
+    SentryEnvelopeItemHeader itemHeader =
+      new SentryEnvelopeItemHeader(
+        SentryItemType.User_Report, () -> cachedItem.getBytes().length, "application/json", null);
+
+    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+  }
+
   private static class CachedItem {
     private @Nullable byte[] bytes;
     private final @Nullable Callable<byte[]> dataFactory;

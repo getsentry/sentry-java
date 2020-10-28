@@ -23,6 +23,11 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
+  public UserFeedback deserializeUserFeedback(Reader reader) {
+    return null;
+  }
+
+  @Override
   public Session deserializeSession(Reader reader) {
     return null;
   }
@@ -37,6 +42,9 @@ final class NoOpSerializer implements ISerializer {
 
   @Override
   public void serialize(Session session, Writer writer) throws IOException {}
+
+  @Override
+  public void serialize(UserFeedback userFeedback, Writer writer) throws IOException { }
 
   @Override
   public void serialize(SentryEnvelope envelope, Writer outputStream) throws Exception {}

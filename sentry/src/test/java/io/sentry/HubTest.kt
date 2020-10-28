@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
@@ -16,6 +17,8 @@ import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.`when`
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -121,8 +124,7 @@ class HubTest {
     fun `when beforeBreadcrumb returns null, crumb is dropped`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
-        options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback {
-            _: Breadcrumb, _: Any? -> null }
+        options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> null }
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
@@ -235,13 +237,7 @@ class HubTest {
 
     @Test
     fun `when flush is called on disabled client, no-op`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
         sut.close()
 
         sut.flush(1000)
@@ -250,13 +246,7 @@ class HubTest {
 
     @Test
     fun `when flush is called, client flush gets called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         sut.flush(1000)
         verify(mockClient).flush(1000)
@@ -276,13 +266,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
         sut.close()
 
         sut.captureEvent(SentryEvent())
@@ -291,13 +275,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called with a valid argument, captureEvent on the client should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
         val hint = { }
@@ -307,13 +285,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and session tracking is disabled, it should not capture a session`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
         val hint = { }
@@ -324,13 +296,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called but no session started, it should not capture a session`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
         val hint = { }
@@ -354,13 +320,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
         sut.close()
 
         sut.captureMessage("test")
@@ -369,13 +329,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called with a valid message, captureMessage on the client should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         sut.captureMessage("test")
         verify(mockClient).captureMessage(any(), any(), any())
@@ -383,13 +337,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called, level is INFO by default`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
         sut.captureMessage("test")
         verify(mockClient).captureMessage(eq("test"), eq(SentryLevel.INFO), any())
     }
@@ -409,13 +357,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
         sut.close()
 
         sut.captureException(Throwable())
@@ -424,13 +366,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a valid argument and hint, captureException on the client should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         sut.captureException(Throwable(), Object())
         verify(mockClient).captureException(any(), any(), any())
@@ -438,29 +374,65 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a valid argument but no hint, captureException on the client should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         sut.captureException(Throwable())
         verify(mockClient).captureException(any(), any(), isNull())
     }
     //endregion
 
+    //region captureUserFeedback tests
+
+    @Test
+    fun `when captureUserFeedback is called it is forwarded to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.captureUserFeedback(userFeedback)
+
+        val captor = ArgumentCaptor.forClass(UserFeedback::class.java)
+        verify(mockClient).captureUserFeedback(captor.capture())
+
+        val actual = captor.value
+        assertEquals(userFeedback.eventId, actual.eventId)
+        assertEquals(userFeedback.email, actual.email)
+        assertEquals(userFeedback.name, actual.name)
+        assertEquals(userFeedback.comments, actual.comments)
+    }
+
+    @Test
+    fun `when captureUserFeedback is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.close()
+
+        sut.captureUserFeedback(userFeedback)
+        verify(mockClient, never()).captureUserFeedback(any())
+    }
+    @Test
+    fun `when captureUserFeedback is called and client throws, don't crash`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        `when`(mockClient.captureUserFeedback(any())).doThrow(InvalidDsnException(""))
+
+        sut.captureUserFeedback(userFeedback)
+    }
+
+    private val userFeedback: UserFeedback get()  {
+        val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
+        val userFeedback = UserFeedback(eventId)
+        userFeedback.apply {
+            name = "John"
+            email = "john@me.com"
+            comments = "comment"
+        }
+
+        return userFeedback
+    }
+
+    //endregion
+
     //region close tests
     @Test
     fun `when close is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
         sut.close()
 
         sut.close()
@@ -469,13 +441,7 @@ class HubTest {
 
     @Test
     fun `when close is called and client is alive, close on the client should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut, mockClient) = getEnabledHub()
 
         sut.close()
         verify(mockClient).close()
@@ -485,13 +451,7 @@ class HubTest {
     //region withScope tests
     @Test
     fun `when withScope is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut) = getEnabledHub()
 
         val scopeCallback = mock<ScopeCallback>()
         sut.close()
@@ -502,13 +462,7 @@ class HubTest {
 
     @Test
     fun `when withScope is called with alive client, run should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut) = getEnabledHub()
 
         val scopeCallback = mock<ScopeCallback>()
 
@@ -520,13 +474,7 @@ class HubTest {
     //region configureScope tests
     @Test
     fun `when configureScope is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut) = getEnabledHub()
 
         val scopeCallback = mock<ScopeCallback>()
         sut.close()
@@ -537,13 +485,7 @@ class HubTest {
 
     @Test
     fun `when configureScope is called with alive client, run should be called`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
+        val (sut) = getEnabledHub()
 
         val scopeCallback = mock<ScopeCallback>()
 
@@ -977,5 +919,16 @@ class HubTest {
             setSerializer(mock())
         }
         return Hub(options)
+    }
+
+    private fun getEnabledHub(): Pair<Hub, ISentryClient> {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        return Pair(sut, mockClient)
     }
 }

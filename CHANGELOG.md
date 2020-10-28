@@ -1,5 +1,6 @@
 # 3.1.2
 
+* feat: Manually capturing User Feedback
 * Enhancement: Set environment to "production" by default.
 
 # 3.1.1

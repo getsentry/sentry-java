@@ -2,6 +2,7 @@
   <string name="app_name">Sentry sample</string>
   <string name="crash_from_java">Crash from Java (UncaughtException)</string>
   <string name="send_message">Send Message</string>
+  <string name="send_user_feedback">Send User Feedback</string>
   <string name="capture_exception">Capture Exception</string>
   <string name="breadcrumb">Breadcrumb</string>
   <string name="set_user">Set user</string>
