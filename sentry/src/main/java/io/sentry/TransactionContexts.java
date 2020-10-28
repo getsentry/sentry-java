@@ -21,11 +21,11 @@ public final class TransactionContexts extends Contexts {
    * @param sentryHeader - the sentryHeader header
    * @return the transaction contexts
    */
-  public static @NotNull TransactionContexts fromSentryHeader(final @NotNull String sentryHeader) {
+  public static @NotNull TransactionContexts fromSentryHeader(final @NotNull String sentryHeader)
+      throws InvalidSentryTraceHeaderException {
     final String[] parts = sentryHeader.split("-", -1);
     if (parts.length < 2) {
-      throw new IllegalArgumentException(
-          "sentry-header does not conform to expected format: " + sentryHeader);
+      throw new InvalidSentryTraceHeaderException(sentryHeader);
     }
     return new TransactionContexts(
         new Trace(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));

@@ -114,6 +114,7 @@ final class NoOpHub implements IHub {
 
   /**
    * Creates no-op transaction.
+   *
    * @param name the transaction name
    * @param transactionContexts the transaction contexts
    * @return the transaction

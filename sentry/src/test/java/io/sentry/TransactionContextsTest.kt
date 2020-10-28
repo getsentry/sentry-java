@@ -21,7 +21,7 @@ class TransactionContextsTest {
     @Test
     fun `when sentry-header is incorrect throws exception`() {
         val sentryId = SentryId()
-        val ex = assertFailsWith<IllegalArgumentException> { TransactionContexts.fromSentryHeader("$sentryId") }
-        assertEquals("sentry-header header does not conform to expected format: $sentryId", ex.message)
+        val ex = assertFailsWith<InvalidSentryTraceHeaderException> { TransactionContexts.fromSentryHeader("$sentryId") }
+        assertEquals("sentry-trace header does not conform to expected format: $sentryId", ex.message)
     }
 }
