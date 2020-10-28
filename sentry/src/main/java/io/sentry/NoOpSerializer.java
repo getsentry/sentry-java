@@ -1,5 +1,7 @@
 package io.sentry;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -18,22 +20,22 @@ final class NoOpSerializer implements ISerializer {
   private NoOpSerializer() {}
 
   @Override
-  public SentryEvent deserializeEvent(Reader reader) {
+  public @Nullable SentryEvent deserializeEvent(Reader reader) {
     return null;
   }
 
   @Override
-  public Session deserializeSession(Reader reader) {
+  public @Nullable Session deserializeSession(Reader reader) {
     return null;
   }
 
   @Override
-  public Transaction deserializeTransaction(Reader reader) {
+  public @Nullable Transaction deserializeTransaction(Reader reader) {
     return null;
   }
 
   @Override
-  public SentryEnvelope deserializeEnvelope(InputStream inputStream) {
+  public @Nullable SentryEnvelope deserializeEnvelope(InputStream inputStream) {
     return null;
   }
 
@@ -44,7 +46,7 @@ final class NoOpSerializer implements ISerializer {
   public void serialize(SentryEnvelope envelope, Writer outputStream) throws Exception {}
 
   @Override
-  public String serialize(Map<String, Object> data) throws Exception {
+  public @Nullable String serialize(Map<String, Object> data) throws Exception {
     return null;
   }
 }
