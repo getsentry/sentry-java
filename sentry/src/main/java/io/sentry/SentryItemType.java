@@ -16,7 +16,7 @@ public enum SentryItemType {
   public static SentryItemType resolve(Object obj) {
     if (obj instanceof SentryEvent) {
       return Event;
-    } else if (obj instanceof Transaction) {
+    } else if (obj instanceof SentryTransaction) {
       return Transaction;
     } else if (obj instanceof Session) {
       return Session;

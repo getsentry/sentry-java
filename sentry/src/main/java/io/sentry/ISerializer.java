@@ -13,13 +13,11 @@ public interface ISerializer {
 
   Session deserializeSession(Reader reader);
 
-  Transaction deserializeTransaction(Reader reader);
+  SentryTransaction deserializeTransaction(Reader reader);
 
   SentryEnvelope deserializeEnvelope(InputStream inputStream);
 
   <T> void serialize(T entity, Writer writer) throws IOException;
-
-  void serialize(UserFeedback userFeedback, Writer writer) throws IOException;
 
   void serialize(SentryEnvelope envelope, Writer writer) throws Exception;
 

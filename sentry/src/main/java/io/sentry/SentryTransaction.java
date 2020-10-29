@@ -9,7 +9,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Transaction extends SentryBaseEvent<TransactionContexts> implements ISpan {
+public final class SentryTransaction extends SentryBaseEvent<TransactionContexts> implements ISpan {
   /** The transaction name. */
   private @Nullable String transaction;
 
@@ -32,7 +32,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   private @NotNull final String type = "transaction";
 
   /** Creates transaction. */
-  Transaction(final @NotNull String name) {
+  SentryTransaction(final @NotNull String name) {
     this(name, new TransactionContexts(), NoOpHub.getInstance());
   }
 
@@ -42,7 +42,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    * @param name - transaction name
    * @param contexts - transaction contexts
    */
-  Transaction(
+  SentryTransaction(
       final @NotNull String name,
       final @NotNull TransactionContexts contexts,
       final @NotNull IHub hub) {

@@ -266,7 +266,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  SentryId captureTransaction(Transaction transaction, Object hint);
+  SentryId captureTransaction(SentryTransaction transaction, Object hint);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance.
@@ -275,7 +275,7 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  Transaction startTransaction(String name, TransactionContexts transactionContexts);
+  SentryTransaction startTransaction(String name, TransactionContexts transactionContexts);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance.
@@ -283,7 +283,7 @@ public interface IHub {
    * @param name the transaction name
    * @return created transaction
    */
-  default Transaction startTransaction(String name) {
+  default SentryTransaction startTransaction(String name) {
     return startTransaction(name, new TransactionContexts());
   }
 }

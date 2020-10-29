@@ -500,7 +500,7 @@ public final class Sentry {
    * @param hint the hint
    * @return transaction's id
    */
-  public static SentryId captureTransaction(Transaction transaction, Object hint) {
+  public static SentryId captureTransaction(SentryTransaction transaction, Object hint) {
     return getCurrentHub().captureTransaction(transaction, hint);
   }
 
@@ -510,7 +510,7 @@ public final class Sentry {
    * @param name the transaction name
    * @return created transaction
    */
-  public static Transaction startTransaction(final @NotNull String name) {
+  public static SentryTransaction startTransaction(final @NotNull String name) {
     return startTransaction(name, new TransactionContexts());
   }
 
@@ -520,7 +520,7 @@ public final class Sentry {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  public static Transaction startTransaction(
+  public static SentryTransaction startTransaction(
       final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
     return getCurrentHub().startTransaction(name, transactionContexts);
   }

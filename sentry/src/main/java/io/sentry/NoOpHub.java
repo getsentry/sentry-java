@@ -42,7 +42,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) { }
+  public void captureUserFeedback(UserFeedback userFeedback) {}
 
   @Override
   public void startSession() {}
@@ -113,7 +113,7 @@ final class NoOpHub implements IHub {
 
   @Override
   public SentryId captureTransaction(
-      final @NotNull Transaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -125,8 +125,8 @@ final class NoOpHub implements IHub {
    * @return the transaction
    */
   @Override
-  public Transaction startTransaction(
+  public SentryTransaction startTransaction(
       final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
-    return new Transaction(name, transactionContexts, this);
+    return new SentryTransaction(name, transactionContexts, this);
   }
 }

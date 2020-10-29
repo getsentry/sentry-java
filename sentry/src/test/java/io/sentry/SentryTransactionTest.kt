@@ -7,29 +7,29 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class TransactionTest {
+class SentryTransactionTest {
 
     @Test
     fun `when transaction is created, startTimestamp is set`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         assertNotNull(transaction.startTimestamp)
     }
 
     @Test
     fun `when transaction is created, timestamp is not set`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         assertNull(transaction.timestamp)
     }
 
     @Test
     fun `when transaction is created, context is set`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         assertNotNull(transaction.contexts)
     }
 
     @Test
     fun `when transaction is finished, timestamp is set`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         transaction.finish()
         assertNotNull(transaction.timestamp)
     }
@@ -37,14 +37,14 @@ class TransactionTest {
     @Test
     fun `when transaction is finished, transaction is captured`() {
         val hub = mock<IHub>()
-        val transaction = Transaction("name", TransactionContexts(), hub)
+        val transaction = SentryTransaction("name", TransactionContexts(), hub)
         transaction.finish()
         verify(hub).captureTransaction(transaction, null)
     }
 
     @Test
     fun `returns sentry-trace header`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
 
         assertNotNull(transaction.toSentryTrace())
         assertEquals("${transaction.contexts.traceContext.traceId}-${transaction.contexts.traceContext.spanId}", transaction.toSentryTrace())
@@ -52,7 +52,7 @@ class TransactionTest {
 
     @Test
     fun `starting child creates a new span`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         val span = transaction.startChild()
         assertNotNull(span)
         assertNotNull(span.spanId)
@@ -61,7 +61,7 @@ class TransactionTest {
 
     @Test
     fun `starting child adds a span to transaction`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         val span = transaction.startChild()
         assertEquals(1, transaction.spans.size)
         assertEquals(span, transaction.spans.first())
@@ -69,35 +69,35 @@ class TransactionTest {
 
     @Test
     fun `span created with startChild has parent span id the same as transaction span id`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         val span = transaction.startChild()
         assertEquals(transaction.spanId, span.parentSpanId)
     }
 
     @Test
     fun `span created with startChild has the same trace id as transaction`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         val span = transaction.startChild()
         assertEquals(transaction.traceId, span.traceId)
     }
 
     @Test
     fun `setting op sets op on TraceContext`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         transaction.setOp("op")
         assertEquals("op", transaction.contexts.traceContext.op)
     }
 
     @Test
     fun `setting description sets description on TraceContext`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         transaction.setDescription("desc")
         assertEquals("desc", transaction.contexts.traceContext.description)
     }
 
     @Test
     fun `setting status sets status on TraceContext`() {
-        val transaction = Transaction("name")
+        val transaction = SentryTransaction("name")
         transaction.setStatus(SpanStatus.ALREADY_EXISTS)
         assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.traceContext.status)
     }

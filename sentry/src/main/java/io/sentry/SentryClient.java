@@ -187,24 +187,33 @@ public final class SentryClient implements ISentryClient {
   public void captureUserFeedback(UserFeedback userFeedback) {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
 
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
 
     try {
       final SentryEnvelope envelope = buildEnvelope(userFeedback);
       connection.send(envelope);
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing user feedback %s failed.", userFeedback.getEventId());
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              e,
+              "Capturing user feedback %s failed.",
+              userFeedback.getEventId());
     }
   }
 
   private SentryEnvelope buildEnvelope(@NotNull UserFeedback userFeedback) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
-    final SentryEnvelopeItem userFeedbackItem = SentryEnvelopeItem.fromUserFeedback(options.getSerializer(), userFeedback);
+    final SentryEnvelopeItem userFeedbackItem =
+        SentryEnvelopeItem.fromUserFeedback(options.getSerializer(), userFeedback);
     envelopeItems.add(userFeedbackItem);
 
     final SentryEnvelopeHeader envelopeHeader =
-      new SentryEnvelopeHeader(userFeedback.getEventId(), options.getSdkVersion());
+        new SentryEnvelopeHeader(userFeedback.getEventId(), options.getSdkVersion());
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -304,7 +313,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureTransaction(Transaction transaction, Scope scope, Object hint) {
+  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
     options

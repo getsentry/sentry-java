@@ -192,20 +192,27 @@ public final class Hub implements IHub {
   public void captureUserFeedback(UserFeedback userFeedback) {
     if (!isEnabled()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING, "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
     } else {
       try {
         final StackItem item = stack.peek();
         if (item != null) {
           item.client.captureUserFeedback(userFeedback);
         } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
+          options
+              .getLogger()
+              .log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
         }
       } catch (Exception e) {
-        options.getLogger().log(SentryLevel.ERROR,
-          "Error while capturing captureUserFeedback: " + userFeedback.toString(), e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing captureUserFeedback: " + userFeedback.toString(),
+                e);
       }
     }
   }
@@ -627,7 +634,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public SentryId captureTransaction(
-      final @NotNull Transaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -660,9 +667,9 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable Transaction startTransaction(
+  public @Nullable SentryTransaction startTransaction(
       final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
-    Transaction transaction = null;
+    SentryTransaction transaction = null;
     if (!isEnabled()) {
       options
           .getLogger()
@@ -670,7 +677,7 @@ public final class Hub implements IHub {
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
-        transaction = new Transaction(name, transactionContexts, this);
+        transaction = new SentryTransaction(name, transactionContexts, this);
         item.scope.setTransaction(transaction);
       } else {
         options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");

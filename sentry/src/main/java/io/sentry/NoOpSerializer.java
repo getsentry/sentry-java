@@ -34,7 +34,7 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
-  public @Nullable Transaction deserializeTransaction(Reader reader) {
+  public @Nullable SentryTransaction deserializeTransaction(Reader reader) {
     return null;
   }
 

@@ -436,7 +436,7 @@ class GsonSerializerTest {
         contexts.traceContext.description = "some request"
         contexts.traceContext.status = SpanStatus.OK
         contexts.traceContext.setTag("myTag", "myValue")
-        val transaction = Transaction("transaction-name", contexts, mock())
+        val transaction = SentryTransaction("transaction-name", contexts, mock())
 
         val stringWriter = StringWriter()
         serializer.serialize(transaction, stringWriter)
@@ -488,7 +488,7 @@ class GsonSerializerTest {
 
     @Test
     fun `serializing user feedback`() {
-        val actual =  serializeToString(userFeedback)
+        val actual = serializeToString(userFeedback)
 
         val expected = "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
             "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
@@ -559,7 +559,7 @@ class GsonSerializerTest {
             "io.sentry@1.0+123"
         )
 
-    private val userFeedback: UserFeedback get()  {
+    private val userFeedback: UserFeedback get() {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
         return UserFeedback(eventId).apply {
             name = "John"
@@ -568,4 +568,3 @@ class GsonSerializerTest {
         }
     }
 }
-

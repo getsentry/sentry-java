@@ -17,12 +17,12 @@ public final class Span extends TraceContext implements ISpan {
    * A transaction this span is attached to. Marked as transient to be ignored during JSON
    * serialization.
    */
-  private final transient @NotNull Transaction transaction;
+  private final transient @NotNull SentryTransaction transaction;
 
   Span(
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
-      final @NotNull Transaction transaction) {
+      final @NotNull SentryTransaction transaction) {
     super(traceId, new SpanId(), parentSpanId);
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();

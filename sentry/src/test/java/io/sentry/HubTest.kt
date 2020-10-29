@@ -413,7 +413,7 @@ class HubTest {
         sut.captureUserFeedback(userFeedback)
     }
 
-    private val userFeedback: UserFeedback get()  {
+    private val userFeedback: UserFeedback get() {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
         return UserFeedback(eventId).apply {
             name = "John"
@@ -919,7 +919,7 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureTransaction(Transaction("name"), null)
+        sut.captureTransaction(SentryTransaction("name"), null)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
     }
 
@@ -933,7 +933,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(Transaction("name"), null)
+        sut.captureTransaction(SentryTransaction("name"), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
 
@@ -945,7 +945,7 @@ class HubTest {
         options.setSerializer(mock())
         val sut = Hub(options)
 
-        sut.captureTransaction(Transaction("name"), null)
+        sut.captureTransaction(SentryTransaction("name"), null)
         sut.configureScope {
             assertNull(it.transaction)
         }

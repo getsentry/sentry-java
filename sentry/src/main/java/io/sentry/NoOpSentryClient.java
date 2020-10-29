@@ -30,7 +30,7 @@ final class NoOpSentryClient implements ISentryClient {
   public void flush(long timeoutMillis) {}
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) { }
+  public void captureUserFeedback(UserFeedback userFeedback) {}
 
   @Override
   public void captureSession(Session session, @Nullable Object hint) {}
@@ -41,7 +41,7 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureTransaction(Transaction transaction, Scope scope, Object hint) {
+  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
     return SentryId.EMPTY_ID;
   }
 }

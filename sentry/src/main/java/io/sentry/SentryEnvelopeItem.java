@@ -64,7 +64,7 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  public @Nullable Transaction getTransaction(final @NotNull ISerializer serializer)
+  public @Nullable SentryTransaction getTransaction(final @NotNull ISerializer serializer)
       throws Exception {
     if (header == null || header.getType() != SentryItemType.Transaction) {
       return null;
@@ -100,23 +100,26 @@ public final class SentryEnvelopeItem {
   }
 
   public static SentryEnvelopeItem fromUserFeedback(
-    final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
+      final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
     Objects.requireNonNull(userFeedback, "UserFeedback is required.");
 
     final CachedItem cachedItem =
-      new CachedItem(
-        () -> {
-          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-               final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-            serializer.serialize(userFeedback, writer);
-            return stream.toByteArray();
-          }
-        });
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(userFeedback, writer);
+                return stream.toByteArray();
+              }
+            });
 
     SentryEnvelopeItemHeader itemHeader =
-      new SentryEnvelopeItemHeader(
-        SentryItemType.UserFeedback, () -> cachedItem.getBytes().length, "application/json", null);
+        new SentryEnvelopeItemHeader(
+            SentryItemType.UserFeedback,
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
 
     return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
   }
