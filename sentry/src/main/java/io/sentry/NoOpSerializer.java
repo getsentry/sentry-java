@@ -24,6 +24,11 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
+  public UserFeedback deserializeUserFeedback(Reader reader) {
+    return null;
+  }
+
+  @Override
   public @Nullable Session deserializeSession(Reader reader) {
     return null;
   }

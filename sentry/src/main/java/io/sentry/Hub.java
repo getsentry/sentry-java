@@ -189,6 +189,28 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void captureUserFeedback(UserFeedback userFeedback) {
+    if (!isEnabled()) {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.WARNING, "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
+    } else {
+      try {
+        final StackItem item = stack.peek();
+        if (item != null) {
+          item.client.captureUserFeedback(userFeedback);
+        } else {
+          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
+        }
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR,
+          "Error while capturing captureUserFeedback: " + userFeedback.toString(), e);
+      }
+    }
+  }
+
+  @Override
   public void startSession() {
     if (!isEnabled()) {
       options

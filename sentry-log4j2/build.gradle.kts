@@ -1,11 +1,8 @@
-import com.novoda.gradle.release.PublishExtension
-
 plugins {
     `java-library`
     kotlin("jvm")
     jacoco
     id(Config.QualityPlugins.errorProne)
-    id(Config.Deploy.novodaBintray)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
@@ -77,27 +74,4 @@ buildConfig {
 val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
     dependsOn(generateBuildConfig)
-}
-
-// TODO: move these blocks to parent gradle file, DRY
-configure<PublishExtension> {
-    userOrg = Config.Sentry.userOrg
-    groupId = project.group.toString()
-    publishVersion = project.version.toString()
-    desc = Config.Sentry.description
-    website = Config.Sentry.website
-    repoName = Config.Sentry.javaRepoName
-    setLicences(Config.Sentry.licence)
-    setLicenceUrls(Config.Sentry.licenceUrl)
-    issueTracker = Config.Sentry.issueTracker
-    repository = Config.Sentry.repository
-    sign = Config.Deploy.sign
-    artifactId = project.name
-    uploadName = "${project.group}:${project.name}"
-    devId = Config.Sentry.userOrg
-    devName = Config.Sentry.devName
-    devEmail = Config.Sentry.devEmail
-    scmConnection = Config.Sentry.scmConnection
-    scmDevConnection = Config.Sentry.scmDevConnection
-    scmUrl = Config.Sentry.scmUrl
 }

@@ -121,6 +121,19 @@ public final class GsonSerializer implements ISerializer {
   }
 
   /**
+   * Deserialize UserFeedback from a stream Reader (JSON)
+   *
+   * @param reader the Reader
+   * @return the UserFeedback class or null
+   */
+  @Override
+  public UserFeedback deserializeUserFeedback(Reader reader) {
+    Objects.requireNonNull(reader, "The Reader object is required.");
+
+    return gson.fromJson(reader, UserFeedback.class);
+  }
+
+  /**
    * Deserialize a Session from a stream Reader (JSON)
    *
    * @param reader the Reader
@@ -168,6 +181,22 @@ public final class GsonSerializer implements ISerializer {
     }
     gson.toJson(entity, entity.getClass(), writer);
 
+    writer.flush();
+  }
+
+  /**
+   * Serialize UserFeedback to a stream Writer (JSON)
+   *
+   * @param userFeedback the Session
+   * @param writer the Writer
+   * @throws IOException an IOException
+   */
+  @Override
+  public void serialize(UserFeedback userFeedback, Writer writer) throws IOException {
+    Objects.requireNonNull(userFeedback, "The UserFeedback object is required.");
+    Objects.requireNonNull(writer, "The Writer object is required.");
+
+    gson.toJson(userFeedback, UserFeedback.class, writer);
     writer.flush();
   }
 

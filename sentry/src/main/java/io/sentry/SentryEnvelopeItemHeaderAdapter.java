@@ -31,7 +31,7 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
 
     if (!SentryItemType.Unknown.equals(value.getType())) {
       writer.name("type");
-      writer.value(value.getType().name().toLowerCase(Locale.ROOT));
+      writer.value(value.getType().getItemType().toLowerCase(Locale.ROOT));
     }
 
     writer.name("length");

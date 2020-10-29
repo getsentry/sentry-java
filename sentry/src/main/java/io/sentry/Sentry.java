@@ -294,6 +294,15 @@ public final class Sentry {
   }
 
   /**
+   * Captures a manually created user feedback and sends it to Sentry.
+   *
+   * @param userFeedback The user feedback to send to Sentry.
+   */
+  public static void captureUserFeedback(UserFeedback userFeedback) {
+    getCurrentHub().captureUserFeedback(userFeedback);
+  }
+
+  /**
    * Adds a breadcrumb to the current Scope
    *
    * @param breadcrumb the breadcrumb
