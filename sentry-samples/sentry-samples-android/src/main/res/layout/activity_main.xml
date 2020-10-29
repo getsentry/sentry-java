@@ -16,7 +16,13 @@
         android:id="@+id/send_message"
         android:text="@string/send_message"/>
 
-    <Button android:layout_width="wrap_content"
+  <Button
+    android:id="@+id/send_user_feedback"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/send_user_feedback" />
+
+  <Button android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/capture_exception"
         android:text="@string/capture_exception"/>

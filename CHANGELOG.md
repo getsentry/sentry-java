@@ -1,5 +1,6 @@
 # 3.1.2
 
+* feat: Manually capturing User Feedback
 * Enhancement: Set environment to "production" by default.
 * Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
 

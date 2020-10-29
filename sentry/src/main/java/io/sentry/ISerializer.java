@@ -9,6 +9,8 @@ import java.util.Map;
 public interface ISerializer {
   SentryEvent deserializeEvent(Reader reader);
 
+  UserFeedback deserializeUserFeedback(Reader reader);
+
   Session deserializeSession(Reader reader);
 
   SentryEnvelope deserializeEnvelope(InputStream inputStream);
@@ -16,6 +18,8 @@ public interface ISerializer {
   void serialize(SentryEvent event, Writer writer) throws IOException;
 
   void serialize(Session session, Writer writer) throws IOException;
+
+  void serialize(UserFeedback userFeedback, Writer writer) throws IOException;
 
   void serialize(SentryEnvelope envelope, Writer writer) throws Exception;
 
