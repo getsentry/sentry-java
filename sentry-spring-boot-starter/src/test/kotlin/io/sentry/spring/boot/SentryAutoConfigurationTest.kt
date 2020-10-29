@@ -16,6 +16,7 @@ import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SentryUserProviderEventProcessor
+import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
@@ -92,7 +93,8 @@ class SentryAutoConfigurationTest {
             "sentry.dist=my-dist",
             "sentry.attach-threads=true",
             "sentry.attach-stacktrace=true",
-            "sentry.server-name=host-001"
+            "sentry.server-name=host-001",
+            "sentry.enable-tracing=true"
         ).run {
             val options = it.getBean(SentryOptions::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -110,6 +112,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isAttachThreads).isEqualTo(true)
             assertThat(options.isAttachStacktrace).isEqualTo(true)
             assertThat(options.serverName).isEqualTo("host-001")
+            assertThat(options.isEnableTracing).isTrue()
         }
     }
 
@@ -248,6 +251,22 @@ class SentryAutoConfigurationTest {
                 assertEquals(2, userProviderEventProcessors.size)
                 assertTrue(userProviderEventProcessors[0].sentryUserProvider is CustomSentryUserProvider)
                 assertTrue(userProviderEventProcessors[1].sentryUserProvider is HttpServletRequestSentryUserProvider)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled, creates tracing filter`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .run {
+                assertThat(it).hasSingleBean(SentryTracingFilter::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is disabled, does not create tracing filter`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
+            .run {
+                assertThat(it).doesNotHaveBean(SentryTracingFilter::class.java)
             }
     }
 

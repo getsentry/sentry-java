@@ -3,7 +3,6 @@ package io.sentry.spring;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
-import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
@@ -16,12 +15,12 @@ import org.springframework.core.Ordered;
 @Open
 public class SentrySpringRequestListener implements ServletRequestListener, Ordered {
   private final @NotNull IHub hub;
-  private final @NotNull SentryOptions options;
+  private final @NotNull SentryRequestResolver requestResolver;
 
   public SentrySpringRequestListener(
-      final @NotNull IHub hub, final @NotNull SentryOptions options) {
+      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.options = Objects.requireNonNull(options, "options are required");
+    this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver are required");
   }
 
   @Override
@@ -40,7 +39,8 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
 
       hub.configureScope(
           scope -> {
-            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request, options));
+            scope.addEventProcessor(
+                new SentryRequestHttpServletRequestProcessor(request, requestResolver));
           });
     }
   }

@@ -37,6 +37,7 @@ dependencies {
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
+    compileOnly(Config.Libs.springBootStarterAop)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)

@@ -8,9 +8,11 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.tracing.SentryTracingFilter;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import java.util.List;
@@ -92,7 +94,15 @@ public class SentryAutoConfiguration {
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @Import(SentryWebConfiguration.class)
     @Open
-    static class SentryWebMvcConfiguration {}
+    static class SentryWebMvcConfiguration {
+
+      @Bean
+      @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+      public @NotNull SentryTracingFilter sentryTracingFilter(
+          final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
+        return new SentryTracingFilter(hub, sentryRequestResolver);
+      }
+    }
 
     private static @NotNull SdkVersion createSdkVersion(
         final @NotNull SentryOptions sentryOptions) {

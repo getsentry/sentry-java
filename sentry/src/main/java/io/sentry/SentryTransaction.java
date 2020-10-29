@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +43,8 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    * @param name - transaction name
    * @param contexts - transaction contexts
    */
-  SentryTransaction(
+  @ApiStatus.Internal
+  public SentryTransaction(
       final @NotNull String name,
       final @NotNull TransactionContexts contexts,
       final @NotNull IHub hub) {
@@ -141,7 +143,8 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    * @return transaction name.
    */
   @Nullable
-  String getTransaction() {
+  @ApiStatus.Internal
+  public String getTransaction() {
     return transaction;
   }
 
