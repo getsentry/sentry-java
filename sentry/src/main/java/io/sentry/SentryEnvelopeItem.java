@@ -125,7 +125,7 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
       new SentryEnvelopeItemHeader(
-        SentryItemType.User_Report, () -> cachedItem.getBytes().length, "application/json", null);
+        SentryItemType.UserFeedback, () -> cachedItem.getBytes().length, "application/json", null);
 
     return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
   }
