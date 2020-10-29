@@ -356,7 +356,7 @@ class SentryClientTest {
 
     private fun assertEnvelopeItemDataForUserFeedback(item: SentryEnvelopeItem) {
         val stream = ByteArrayOutputStream()
-        val writer = BufferedWriter(OutputStreamWriter(stream, Charset.forName("UTF-8")))
+        val writer = stream.bufferedWriter(Charset.forName("UTF-8"))
         fixture.sentryOptions.serializer.serialize(userFeedback, writer)
         val expectedData = stream.toByteArray()
         assertTrue(Arrays.equals(expectedData, item.data))
