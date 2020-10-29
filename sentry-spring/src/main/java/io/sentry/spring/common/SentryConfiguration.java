@@ -32,6 +32,9 @@ public class SentryConfiguration implements ImportBeanDefinitionRegistrar {
   private static final String REACTIVE_WEB_APPLICATION_CLASS =
       "org.springframework.web.reactive.DispatcherHandler";
 
+  private static final String APPLICATION_TYPE_PROPERTY = "spring.main.web-application-type";
+  private static final String APPLICATION_PROPERTY_REACTIVE = "REACTIVE";
+
   private @NotNull final Environment environment;
 
   public SentryConfiguration(final @NotNull Environment environment) {
@@ -84,11 +87,14 @@ public class SentryConfiguration implements ImportBeanDefinitionRegistrar {
     }
   }
 
-  private static ApplicationType deduceFromClasspath() {
-    if (isPresent(SERVLET_WEB_APPLICATION_CLASS)) {
-      return ApplicationType.SERVLET;
-    } else if (isPresent(REACTIVE_WEB_APPLICATION_CLASS)) {
+  private ApplicationType deduceFromClasspath() {
+    final String property = environment.getProperty(APPLICATION_TYPE_PROPERTY);
+    if (isPresent(REACTIVE_WEB_APPLICATION_CLASS)
+        && (!isPresent(SERVLET_WEB_APPLICATION_CLASS)
+            || APPLICATION_PROPERTY_REACTIVE.equalsIgnoreCase(property))) {
       return ApplicationType.REACTIVE;
+    } else if (isPresent(SERVLET_WEB_APPLICATION_CLASS)) {
+      return ApplicationType.SERVLET;
     } else {
       return ApplicationType.NONE;
     }
