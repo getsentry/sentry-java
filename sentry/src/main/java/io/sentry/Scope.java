@@ -254,6 +254,21 @@ public final class Scope implements Cloneable {
     breadcrumbs.clear();
   }
 
+  /** Clears the transaction. */
+  public void clearTransaction() {
+    transaction = null;
+  }
+
+  /**
+   * Returns active transaction or null if there is no active transaction.
+   *
+   * @return the transaction
+   */
+  @Nullable
+  Transaction getTransaction() {
+    return this.transaction;
+  }
+
   /** Resets the Scope to its default state */
   public void clear() {
     level = null;
@@ -264,6 +279,7 @@ public final class Scope implements Cloneable {
     tags.clear();
     extra.clear();
     eventProcessors.clear();
+    clearTransaction();
   }
 
   /**

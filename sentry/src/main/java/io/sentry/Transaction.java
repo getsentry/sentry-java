@@ -104,6 +104,35 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   }
 
   /**
+   * Sets transaction operation.
+   *
+   * @param op - operation
+   */
+  @Override
+  public void setOp(@Nullable String op) {
+    this.getContexts().getTraceContext().setOp(op);
+  }
+
+  /**
+   * Sets transaction description.
+   *
+   * @param description - the description.
+   */
+  @Override
+  public void setDescription(@Nullable String description) {
+    this.getContexts().getTraceContext().setDescription(description);
+  }
+
+  /**
+   * Sets transaction status.
+   *
+   * @param spanStatus - the status
+   */
+  public void setStatus(@Nullable SpanStatus spanStatus) {
+    this.getContexts().getTraceContext().setStatus(spanStatus);
+  }
+
+  /**
    * Returns the transaction name.
    *
    * @return transaction name.

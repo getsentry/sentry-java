@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +15,7 @@ public abstract class SentryBaseEvent<T extends ConcurrentHashMap<String, Object
   private @Nullable SentryId eventId;
   private T contexts;
   private @Nullable SdkVersion sdk;
+  private @Nullable Request request;
 
   protected SentryBaseEvent(final @NotNull SentryId eventId) {
     this.eventId = eventId;
@@ -46,5 +48,13 @@ public abstract class SentryBaseEvent<T extends ConcurrentHashMap<String, Object
 
   public void setSdk(@Nullable SdkVersion sdk) {
     this.sdk = sdk;
+  }
+
+  public Request getRequest() {
+    return request;
+  }
+
+  public void setRequest(Request request) {
+    this.request = request;
   }
 }

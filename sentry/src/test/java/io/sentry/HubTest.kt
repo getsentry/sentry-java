@@ -1011,6 +1011,20 @@ class HubTest {
         sut.captureTransaction(Transaction("name"), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
+
+    @Test
+    fun `when captureTransaction, scope transaction is cleared`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+
+        sut.captureTransaction(Transaction("name"), null)
+        sut.configureScope {
+            assertNull(it.transaction)
+        }
+    }
     //endregion
 
     @Test

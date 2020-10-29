@@ -30,7 +30,6 @@ public final class SentryEvent extends SentryBaseEvent<Contexts>
   private String transaction;
   private String environment;
   private User user;
-  private Request request;
   private List<String> fingerprint;
   private List<Breadcrumb> breadcrumbs;
   private Map<String, String> tags;
@@ -185,14 +184,6 @@ public final class SentryEvent extends SentryBaseEvent<Contexts>
 
   public void setUser(User user) {
     this.user = user;
-  }
-
-  public Request getRequest() {
-    return request;
-  }
-
-  public void setRequest(Request request) {
-    this.request = request;
   }
 
   public List<String> getFingerprints() {

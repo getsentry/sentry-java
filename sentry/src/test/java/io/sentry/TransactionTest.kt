@@ -80,4 +80,25 @@ class TransactionTest {
         val span = transaction.startChild()
         assertEquals(transaction.traceId, span.traceId)
     }
+
+    @Test
+    fun `setting op sets op on TraceContext`() {
+        val transaction = Transaction("name")
+        transaction.setOp("op")
+        assertEquals("op", transaction.contexts.traceContext.op)
+    }
+
+    @Test
+    fun `setting description sets description on TraceContext`() {
+        val transaction = Transaction("name")
+        transaction.setDescription("desc")
+        assertEquals("desc", transaction.contexts.traceContext.description)
+    }
+
+    @Test
+    fun `setting status sets status on TraceContext`() {
+        val transaction = Transaction("name")
+        transaction.setStatus(SpanStatus.ALREADY_EXISTS)
+        assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.traceContext.status)
+    }
 }
