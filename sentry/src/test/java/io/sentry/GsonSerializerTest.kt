@@ -502,14 +502,11 @@ class GsonSerializerTest {
 
     private val userFeedback: UserFeedback get()  {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-        val userFeedback = UserFeedback(eventId)
-        userFeedback.apply {
+        return UserFeedback(eventId).apply {
             name = "John"
             email = "john@me.com"
             comments = "comment"
         }
-
-        return userFeedback
     }
 }
 

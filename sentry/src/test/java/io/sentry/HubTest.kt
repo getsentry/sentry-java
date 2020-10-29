@@ -3,6 +3,7 @@ package io.sentry
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
@@ -17,8 +18,6 @@ import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.`when`
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -388,14 +387,12 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         sut.captureUserFeedback(userFeedback)
 
-        val captor = ArgumentCaptor.forClass(UserFeedback::class.java)
-        verify(mockClient).captureUserFeedback(captor.capture())
-
-        val actual = captor.value
-        assertEquals(userFeedback.eventId, actual.eventId)
-        assertEquals(userFeedback.email, actual.email)
-        assertEquals(userFeedback.name, actual.name)
-        assertEquals(userFeedback.comments, actual.comments)
+        verify(mockClient).captureUserFeedback(check {
+            assertEquals(userFeedback.eventId, it.eventId)
+            assertEquals(userFeedback.email, it.email)
+            assertEquals(userFeedback.name, it.name)
+            assertEquals(userFeedback.comments, it.comments)
+        })
     }
 
     @Test
@@ -410,21 +407,18 @@ class HubTest {
     fun `when captureUserFeedback is called and client throws, don't crash`() {
         val (sut, mockClient) = getEnabledHub()
 
-        `when`(mockClient.captureUserFeedback(any())).doThrow(InvalidDsnException(""))
+        whenever(mockClient.captureUserFeedback(any())).doThrow(InvalidDsnException(""))
 
         sut.captureUserFeedback(userFeedback)
     }
 
     private val userFeedback: UserFeedback get()  {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-        val userFeedback = UserFeedback(eventId)
-        userFeedback.apply {
+        return UserFeedback(eventId).apply {
             name = "John"
             email = "john@me.com"
             comments = "comment"
         }
-
-        return userFeedback
     }
 
     //endregion

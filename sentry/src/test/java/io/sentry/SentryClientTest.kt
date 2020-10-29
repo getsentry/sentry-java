@@ -22,8 +22,6 @@ import io.sentry.protocol.User
 import io.sentry.transport.AsyncConnection
 import io.sentry.transport.HttpTransport
 import io.sentry.transport.ITransportGate
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.`when`
 import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -343,19 +341,17 @@ class SentryClientTest {
 
         sut.captureUserFeedback(userFeedback)
 
-        val captor = ArgumentCaptor.forClass(SentryEnvelope::class.java)
-        verify(fixture.connection).send(captor.capture())
+        verify(fixture.connection).send(check { actual ->
+            assertEquals(userFeedback.eventId, actual.header.eventId)
+            assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
-        val actual = captor.value
-        assertEquals(userFeedback.eventId, actual.header.eventId)
-        assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
+            assertEquals(1, actual.items.count())
+            val item = actual.items.first()
+            assertEquals(SentryItemType.UserFeedback, item.header.type)
+            assertEquals("application/json", item.header.contentType)
 
-        assertEquals(1, actual.items.count())
-        val item = actual.items.first()
-        assertEquals(SentryItemType.User_Report, item.header.type)
-        assertEquals("application/json", item.header.contentType)
-
-        assertEnvelopeItemDataForUserFeedback(item)
+            assertEnvelopeItemDataForUserFeedback(item)
+        })
     }
 
     private fun assertEnvelopeItemDataForUserFeedback(item: SentryEnvelopeItem) {
@@ -371,7 +367,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val exception = IOException("No connection")
-        `when`(fixture.connection.send(any())).thenThrow(exception)
+        whenever(fixture.connection.send(any())).thenThrow(exception)
 
         val logger = mock<ILogger>()
         fixture.sentryOptions.setLogger(logger)
