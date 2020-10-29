@@ -21,7 +21,24 @@ public final class UserFeedback {
    * @param eventId The eventId of the event to which the user feedback is associated.
    */
   public UserFeedback(SentryId eventId) {
+    this(eventId, null, null, null);
+  }
+
+  /**
+   * Initializes SentryUserFeedback and sets the required eventId.
+   * @param eventId The eventId of the event to which the user feedback is associated.
+   * @param name the name of the user.
+   * @param email the email of the user.
+   * @param comments comments of the user about what happened.
+   */
+  public UserFeedback(SentryId eventId,
+                      @Nullable String name,
+                      @Nullable String email,
+                      @Nullable String comments) {
     this.eventId = eventId;
+    this.name = name;
+    this.email = email;
+    this.comments = comments;
   }
 
   /**
