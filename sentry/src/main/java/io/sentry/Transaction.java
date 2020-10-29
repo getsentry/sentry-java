@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -30,7 +31,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
-  /** Creates unnamed transaction. */
+  /** Creates transaction. */
   Transaction(final @NotNull String name) {
     this(name, new TransactionContexts(), NoOpHub.getInstance());
   }
@@ -42,13 +43,13 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    * @param contexts - transaction contexts
    */
   Transaction(
-      final @Nullable String name,
+      final @NotNull String name,
       final @NotNull TransactionContexts contexts,
       final @NotNull IHub hub) {
-    this.transaction = name;
+    this.transaction = Objects.requireNonNull(name, "name is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
-    this.hub = hub;
-    this.setContexts(contexts);
+    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.setContexts(Objects.requireNonNull(contexts, "contexts are required"));
   }
 
   /**
@@ -57,6 +58,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    * @param name - transaction name
    */
   void setName(final @NotNull String name) {
+    Objects.requireNonNull(name, "name is required");
     this.transaction = name;
   }
 
@@ -77,6 +79,7 @@ public final class Transaction extends SentryBaseEvent<TransactionContexts> impl
    * @return a new transaction span
    */
   Span startChild(final @NotNull SpanId parentSpanId) {
+    Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     final Span span = new Span(getTraceId(), parentSpanId, this);
     this.spans.add(span);
     return span;

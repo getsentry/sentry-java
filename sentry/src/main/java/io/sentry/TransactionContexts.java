@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 public final class TransactionContexts extends Contexts {
@@ -31,11 +32,12 @@ public final class TransactionContexts extends Contexts {
         new TraceContext(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));
   }
 
-  public TraceContext getTraceContext() {
+  public @NotNull TraceContext getTraceContext() {
     return toContextType(TraceContext.TYPE, TraceContext.class);
   }
 
   public void setTraceContext(final @NotNull TraceContext traceContext) {
+    Objects.requireNonNull(traceContext, "traceContext is required");
     this.put(TraceContext.TYPE, traceContext);
   }
 }

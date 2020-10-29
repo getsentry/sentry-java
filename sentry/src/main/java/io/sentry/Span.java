@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Objects;
 import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +24,7 @@ public final class Span extends TraceContext implements ISpan {
       final @NotNull SpanId parentSpanId,
       final @NotNull Transaction transaction) {
     super(traceId, new SpanId(), parentSpanId);
-    this.transaction = transaction;
+    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
   }
 

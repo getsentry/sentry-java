@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.Objects;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
@@ -7,7 +8,7 @@ public final class SpanId {
   private final @NotNull String value;
 
   public SpanId(final @NotNull String value) {
-    this.value = value;
+    this.value = Objects.requireNonNull(value, "value is required");
   }
 
   public SpanId() {

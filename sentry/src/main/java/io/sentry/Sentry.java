@@ -501,7 +501,7 @@ public final class Sentry {
    * @param name the transaction name
    * @return created transaction
    */
-  public static Transaction startTransaction(final String name) {
+  public static Transaction startTransaction(final @NotNull String name) {
     return startTransaction(name, new TransactionContexts());
   }
 
@@ -512,7 +512,7 @@ public final class Sentry {
    * @return created transaction
    */
   public static Transaction startTransaction(
-      final String name, final TransactionContexts transactionContexts) {
+      final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
     return getCurrentHub().startTransaction(name, transactionContexts);
   }
 

@@ -179,8 +179,22 @@ public interface ISentryClient {
     return captureEnvelope(envelope, null);
   }
 
+  /**
+   * Captures a transaction.
+   *
+   * @param transaction the {@link Transaction} to send
+   * @param scope An optional scope to be applied to the event.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @return The Id (SentryId object) of the event
+   */
   SentryId captureTransaction(Transaction transaction, Scope scope, Object hint);
 
+  /**
+   * Captures a transaction without scope nor hint.
+   *
+   * @param transaction the {@link Transaction} to send
+   * @return The Id (SentryId object) of the event
+   */
   default SentryId captureTransaction(Transaction transaction) {
     return captureTransaction(transaction, null, null);
   }

@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class NoOpHub implements IHub {
@@ -108,7 +109,8 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryId captureTransaction(Transaction transaction, Object hint) {
+  public SentryId captureTransaction(
+      final @NotNull Transaction transaction, final @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -120,7 +122,8 @@ final class NoOpHub implements IHub {
    * @return the transaction
    */
   @Override
-  public Transaction startTransaction(String name, TransactionContexts transactionContexts) {
+  public Transaction startTransaction(
+      final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
     return new Transaction(name, transactionContexts, this);
   }
 }

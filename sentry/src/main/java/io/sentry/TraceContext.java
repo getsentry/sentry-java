@@ -2,6 +2,7 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -43,8 +44,8 @@ public class TraceContext {
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId) {
-    this.traceId = traceId;
-    this.spanId = spanId;
+    this.traceId = Objects.requireNonNull(traceId, "traceId is required");
+    this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.parentSpanId = parentSpanId;
   }
 
@@ -52,22 +53,25 @@ public class TraceContext {
     return String.format("%s-%s", traceId, spanId);
   }
 
-  public void setOp(String op) {
+  public void setOp(@Nullable String op) {
     this.op = op;
   }
 
-  public void setTag(final String name, final String value) {
+  public void setTag(final @NotNull String name, final @NotNull String value) {
+    Objects.requireNonNull(name, "name is required");
+    Objects.requireNonNull(value, "value is required");
+
     if (this.tags == null) {
       this.tags = new ConcurrentHashMap<>();
     }
     this.tags.put(name, value);
   }
 
-  public void setDescription(String description) {
+  public void setDescription(@Nullable String description) {
     this.description = description;
   }
 
-  public void setStatus(SpanStatus status) {
+  public void setStatus(@Nullable SpanStatus status) {
     this.status = status;
   }
 
@@ -86,19 +90,19 @@ public class TraceContext {
     return parentSpanId;
   }
 
-  public String getOp() {
+  public @Nullable String getOp() {
     return op;
   }
 
-  public String getDescription() {
+  public @Nullable String getDescription() {
     return description;
   }
 
-  public SpanStatus getStatus() {
+  public @Nullable SpanStatus getStatus() {
     return status;
   }
 
-  public Map<String, String> getTags() {
+  public @Nullable Map<String, String> getTags() {
     return tags;
   }
 }

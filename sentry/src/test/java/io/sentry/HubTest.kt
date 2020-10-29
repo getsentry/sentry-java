@@ -973,17 +973,6 @@ class HubTest {
 
     //region captureTransaction tests
     @Test
-    fun `when captureTransaction is called and event is null, lastEventId is empty`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        sut.captureTransaction(null, null)
-        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
-    }
-
-    @Test
     fun `when captureTransaction is called on disabled client, do nothing`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath

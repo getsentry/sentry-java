@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -257,6 +258,7 @@ public interface IHub {
    * @param hint the hint
    * @return transaction's id
    */
+  @ApiStatus.Internal
   SentryId captureTransaction(Transaction transaction, Object hint);
 
   /**

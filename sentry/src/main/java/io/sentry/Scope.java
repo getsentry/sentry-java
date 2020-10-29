@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.User;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,7 +128,7 @@ public final class Scope implements Cloneable {
    * @param transaction the transaction
    */
   public void setTransaction(final @NotNull Transaction transaction) {
-    this.transaction = transaction;
+    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
   }
 
   /**

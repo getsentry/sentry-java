@@ -602,8 +602,12 @@ public final class Hub implements IHub {
     return clone;
   }
 
+  @ApiStatus.Internal
   @Override
-  public SentryId captureTransaction(Transaction transaction, Object hint) {
+  public SentryId captureTransaction(
+      final @NotNull Transaction transaction, final @Nullable Object hint) {
+    Objects.requireNonNull(transaction, "transaction is required");
+
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -611,10 +615,6 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
-    } else if (transaction == null) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "captureTransaction called with null parameter.");
     } else {
       try {
         final StackItem item = stack.peek();
@@ -639,7 +639,7 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable Transaction startTransaction(
-      final String name, final TransactionContexts transactionContexts) {
+      final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
     Transaction transaction = null;
     if (!isEnabled()) {
       options
