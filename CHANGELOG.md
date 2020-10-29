@@ -1,6 +1,7 @@
 # 3.1.2
 
 * Enhancement: Set environment to "production" by default.
+* Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
 * Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions
 
 # 3.1.1
