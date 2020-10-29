@@ -51,9 +51,12 @@ object Config {
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
+        val springAop = "org.springframework:spring-aop"
+        val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api"
     }
 

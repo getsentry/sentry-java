@@ -33,6 +33,8 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(project(":sentry"))
     compileOnly(Config.Libs.springWeb)
+    compileOnly(Config.Libs.springAop)
+    compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApi)
 
     compileOnly(Config.CompileOnly.nopen)
