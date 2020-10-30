@@ -156,4 +156,3 @@ gradle.projectsEvaluated {
             }
     }
 }
-

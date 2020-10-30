@@ -192,20 +192,27 @@ public final class Hub implements IHub {
   public void captureUserFeedback(UserFeedback userFeedback) {
     if (!isEnabled()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING, "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
     } else {
       try {
         final StackItem item = stack.peek();
         if (item != null) {
           item.client.captureUserFeedback(userFeedback);
         } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
+          options
+              .getLogger()
+              .log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
         }
       } catch (Exception e) {
-        options.getLogger().log(SentryLevel.ERROR,
-          "Error while capturing captureUserFeedback: " + userFeedback.toString(), e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing captureUserFeedback: " + userFeedback.toString(),
+                e);
       }
     }
   }
@@ -476,9 +483,7 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'pushScope' call is a no-op.");
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
@@ -545,7 +550,9 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'configureScope' call is a no-op.");
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {

@@ -24,15 +24,16 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendMessage.setOnClickListener(view -> Sentry.captureMessage("Some message."));
 
-    binding.sendUserFeedback.setOnClickListener(view -> {
-      SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
+    binding.sendUserFeedback.setOnClickListener(
+        view -> {
+          SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
 
-      UserFeedback userFeedback = new UserFeedback(sentryId);
-      userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
-      userFeedback.setEmail("john@me.com");
-      userFeedback.setName("John Me");
-      Sentry.captureUserFeedback(userFeedback);
-    });
+          UserFeedback userFeedback = new UserFeedback(sentryId);
+          userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
+          userFeedback.setEmail("john@me.com");
+          userFeedback.setName("John Me");
+          Sentry.captureUserFeedback(userFeedback);
+        });
 
     binding.captureException.setOnClickListener(
         view ->

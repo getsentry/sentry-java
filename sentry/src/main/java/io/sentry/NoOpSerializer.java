@@ -44,7 +44,7 @@ final class NoOpSerializer implements ISerializer {
   public void serialize(Session session, Writer writer) throws IOException {}
 
   @Override
-  public void serialize(UserFeedback userFeedback, Writer writer) throws IOException { }
+  public void serialize(UserFeedback userFeedback, Writer writer) throws IOException {}
 
   @Override
   public void serialize(SentryEnvelope envelope, Writer outputStream) throws Exception {}

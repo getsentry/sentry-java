@@ -22,12 +22,10 @@ import io.sentry.protocol.User
 import io.sentry.transport.AsyncConnection
 import io.sentry.transport.HttpTransport
 import io.sentry.transport.ITransportGate
-import java.io.BufferedWriter
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
 import java.io.InputStreamReader
-import java.io.ByteArrayInputStream
 import java.lang.RuntimeException
 import java.net.URL
 import java.nio.charset.Charset
@@ -376,7 +374,7 @@ class SentryClientTest {
 
         verify(logger)
             .log(SentryLevel.WARNING, exception,
-                "Capturing user feedback %s failed.", userFeedback.eventId);
+                "Capturing user feedback %s failed.", userFeedback.eventId)
     }
 
     @Test
@@ -726,7 +724,7 @@ class SentryClientTest {
         return Session("dis", User(), "env", release)
     }
 
-    private val userFeedback: UserFeedback get()  {
+    private val userFeedback: UserFeedback get() {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
         val userFeedback = UserFeedback(eventId)
         userFeedback.apply {

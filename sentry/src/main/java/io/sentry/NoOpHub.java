@@ -41,7 +41,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) { }
+  public void captureUserFeedback(UserFeedback userFeedback) {}
 
   @Override
   public void startSession() {}
