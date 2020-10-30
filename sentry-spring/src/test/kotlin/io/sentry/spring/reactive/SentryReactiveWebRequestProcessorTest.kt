@@ -8,9 +8,22 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.springframework.http.MediaType
+import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 
 class SentryReactiveWebRequestProcessorTest {
+
+    private class Fixture {
+        fun getSut(
+            request: ServerHttpRequest,
+            isSendDefaultPii: Boolean = false
+        ): SentryReactiveWebRequestProcessor {
+            val sentryOptions = SentryOptions()
+            sentryOptions.isSendDefaultPii = isSendDefaultPii
+            return SentryReactiveWebRequestProcessor(request, sentryOptions)
+        }
+    }
+    private val fixture = Fixture()
 
     @Test
     fun `attaches basic information from HTTP request to SentryEvent`() {
@@ -18,7 +31,7 @@ class SentryReactiveWebRequestProcessorTest {
             .header("some-header", "some-header value")
             .accept(MediaType.APPLICATION_JSON)
             .build()
-        val eventProcessor = SentryReactiveWebRequestProcessor(request, SentryOptions())
+        val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -38,7 +51,7 @@ class SentryReactiveWebRequestProcessorTest {
             .header("another-header", "another value")
             .header("another-header", "another value2")
             .build()
-        val eventProcessor = SentryReactiveWebRequestProcessor(request, SentryOptions())
+        val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -55,9 +68,7 @@ class SentryReactiveWebRequestProcessorTest {
             .header("Cookie", "name2=value2")
             .accept(MediaType.APPLICATION_JSON)
             .build()
-        val sentryOptions = SentryOptions()
-        sentryOptions.isSendDefaultPii = true
-        val eventProcessor = SentryReactiveWebRequestProcessor(request, sentryOptions)
+        val eventProcessor = fixture.getSut(request, true)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -70,9 +81,7 @@ class SentryReactiveWebRequestProcessorTest {
         val request = MockServerHttpRequest.get("http://example.com?param1=xyz")
             .header("Cookie", "name=value")
             .build()
-        val sentryOptions = SentryOptions()
-        sentryOptions.isSendDefaultPii = false
-        val eventProcessor = SentryReactiveWebRequestProcessor(request, sentryOptions)
+        val eventProcessor = fixture.getSut(request, false)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -89,9 +98,7 @@ class SentryReactiveWebRequestProcessorTest {
             .header("Authorization", "Token")
             .header("Cookie", "some cookies")
             .build()
-        val sentryOptions = SentryOptions()
-        sentryOptions.isSendDefaultPii = false
-        val eventProcessor = SentryReactiveWebRequestProcessor(request, sentryOptions)
+        val eventProcessor = fixture.getSut(request, false)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
