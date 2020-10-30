@@ -1,8 +1,10 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.argThat
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.SentryId
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
@@ -16,6 +18,8 @@ import org.junit.rules.TemporaryFolder
 
 class SentryTest {
 
+    private val dsn = "http://key@localhost/proj"
+
     @BeforeTest
     @AfterTest
     fun beforeTest() {
@@ -26,7 +30,7 @@ class SentryTest {
     fun `outboxDir should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
             it.cacheDirPath = getTempPath()
             sentryOptions = it
         }
@@ -40,7 +44,7 @@ class SentryTest {
     fun `envelopesDir should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
             it.cacheDirPath = getTempPath()
             sentryOptions = it
         }
@@ -54,7 +58,7 @@ class SentryTest {
     fun `Init sets SystemOutLogger if logger is NoOp and debug is enabled`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
             it.cacheDirPath = getTempPath()
             sentryOptions = it
             it.isDebug = true
@@ -67,7 +71,7 @@ class SentryTest {
     fun `Init sets GsonSerializer if serializer is NoOp`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
             it.cacheDirPath = getTempPath()
             sentryOptions = it
         }
@@ -78,7 +82,7 @@ class SentryTest {
     @Test
     fun `scope changes are isolated to a thread`() {
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
         }
         Sentry.configureScope {
             it.setTag("a", "a")
@@ -103,10 +107,10 @@ class SentryTest {
     fun `warns about multiple Sentry initializations`() {
         val logger = mock<ILogger>()
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
         }
         Sentry.init {
-            it.dsn = "http://key@localhost/proj"
+            it.dsn = dsn
             it.isDebug = true
             it.setLogger(logger)
         }
@@ -132,6 +136,21 @@ class SentryTest {
         } finally {
             temporaryFolder.delete()
         }
+    }
+
+    @Test
+    fun `captureUserFeedback gets forwarded to client`() {
+        Sentry.init { it.dsn = dsn }
+
+        val client = mock<ISentryClient>()
+        Sentry.getCurrentHub().bindClient(client)
+
+        val userFeedback = UserFeedback(SentryId.EMPTY_ID)
+        Sentry.captureUserFeedback(userFeedback)
+
+        verify(client).captureUserFeedback(argThat {
+            eventId == userFeedback.eventId
+        })
     }
 
     private fun getTempPath(): String {

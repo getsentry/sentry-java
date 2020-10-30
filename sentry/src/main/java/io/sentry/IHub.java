@@ -92,6 +92,13 @@ public interface IHub {
     return captureException(throwable, null);
   }
 
+  /**
+   * Captures a manually created user feedback and sends it to Sentry.
+   *
+   * @param userFeedback The user feedback to send to Sentry.
+   */
+  void captureUserFeedback(UserFeedback userFeedback);
+
   /** Starts a new session. If there's a running session, it ends it before starting the new one. */
   void startSession();
 

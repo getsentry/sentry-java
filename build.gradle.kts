@@ -1,4 +1,6 @@
 import com.diffplug.spotless.LineEnding
+import com.novoda.gradle.release.PublishExtension
+import com.novoda.gradle.release.ReleasePlugin
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -79,6 +81,30 @@ subprojects {
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
             }
         }
+
+        apply<ReleasePlugin>()
+
+        configure<PublishExtension> {
+            userOrg = Config.Sentry.userOrg
+            groupId = project.group.toString()
+            publishVersion = project.version.toString()
+            desc = Config.Sentry.description
+            website = Config.Sentry.website
+            repoName = if (project.name.contains("android")) Config.Sentry.androidBintrayRepoName else Config.Sentry.javaBintrayRepoName
+            setLicences(Config.Sentry.licence)
+            setLicenceUrls(Config.Sentry.licenceUrl)
+            issueTracker = Config.Sentry.issueTracker
+            repository = Config.Sentry.repository
+            sign = Config.Deploy.sign
+            artifactId = project.name
+            uploadName = "${project.group}:${project.name}"
+            devId = Config.Sentry.userOrg
+            devName = Config.Sentry.devName
+            devEmail = Config.Sentry.devEmail
+            scmConnection = Config.Sentry.scmConnection
+            scmDevConnection = Config.Sentry.scmDevConnection
+            scmUrl = Config.Sentry.scmUrl
+        }
     }
 }
 
@@ -103,3 +129,31 @@ spotless {
 tasks.named("build") {
     dependsOn(":spotlessApply")
 }
+
+gradle.projectsEvaluated {
+    tasks.create("aggregateJavadocs", Javadoc::class.java) {
+        setDestinationDir(file("$buildDir/docs/javadoc"))
+        title = "${project.name} $version API"
+        val opts = options as StandardJavadocDocletOptions
+        opts.quiet()
+        opts.encoding = "UTF-8"
+        opts.memberLevel = JavadocMemberLevel.PROTECTED
+        opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
+        opts.links = listOf(
+            "https://docs.oracle.com/javase/8/docs/api/",
+            "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
+            "https://docs.spring.io/spring-boot/docs/current/api/"
+        )
+        subprojects
+            .filter { !it.name.contains("sample") }
+            .forEach { proj ->
+                proj.tasks.withType<Javadoc>().forEach { javadocTask ->
+                    source += javadocTask.source
+                    classpath += javadocTask.classpath
+                    excludes += javadocTask.excludes
+                    includes += javadocTask.includes
+                }
+            }
+    }
+}
+
