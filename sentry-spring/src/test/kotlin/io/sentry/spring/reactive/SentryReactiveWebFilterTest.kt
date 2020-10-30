@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryOptions
-import javax.servlet.ServletRequestEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -23,13 +22,15 @@ class SentryReactiveWebFilterTest {
     private class Fixture {
         val baseHub = mock<IHub>()
         val hub = mock<IHub>()
-        val filter = SentryReactiveWebFilter(baseHub, SentryOptions(), emptyList())
         val request: MockServerHttpRequest = MockServerHttpRequest
             .post("http://localhost:8080/some-uri")
             .build()
-        val event = mock<ServletRequestEvent>()
         val webExchange: MockServerWebExchange = MockServerWebExchange.from(request)
         val chain = mock<WebFilterChain>()
+
+        fun getSut() : SentryReactiveWebFilter {
+            return SentryReactiveWebFilter(baseHub, SentryOptions(), emptyList())
+        }
 
         init {
             whenever(chain.filter(webExchange)).thenReturn(Mono.empty())
@@ -41,7 +42,7 @@ class SentryReactiveWebFilterTest {
 
     @Test
     fun `clones hub when request arrives`() {
-        fixture.filter.filter(fixture.webExchange, fixture.chain)
+        fixture.getSut().filter(fixture.webExchange, fixture.chain)
 
         verify(fixture.baseHub).clone()
         verify(fixture.hub).pushScope()
@@ -49,7 +50,7 @@ class SentryReactiveWebFilterTest {
 
     @Test
     fun `adds breadcrumb when request gets initialized`() {
-        fixture.filter.filter(fixture.webExchange, fixture.chain)
+        fixture.getSut().filter(fixture.webExchange, fixture.chain)
 
         verify(fixture.hub).addBreadcrumb(check { it: Breadcrumb ->
             assertEquals("/some-uri", it.getData("url"))
@@ -60,20 +61,20 @@ class SentryReactiveWebFilterTest {
 
     @Test
     fun `Add the cloned Hub as Exchange attribute`() {
-        fixture.filter.filter(fixture.webExchange, fixture.chain)
+        fixture.getSut().filter(fixture.webExchange, fixture.chain)
         val adapter = fixture.webExchange.getAttribute<SentryReactiveHubAdapter>(SentryReactiveWebHelper.REQUEST_HUB_ADAPTER_NAME)
         assertSame(fixture.hub, adapter.hub)
     }
 
     @Test
     fun `adds event processors when request gets initialized`() {
-        fixture.filter.filter(fixture.webExchange, fixture.chain)
+        fixture.getSut().filter(fixture.webExchange, fixture.chain)
         verify(fixture.hub).configureScope(any())
     }
 
     @Test
     fun `Pop scope on terminate signal`() {
-        fixture.filter
+        fixture.getSut()
             .filter(fixture.webExchange, fixture.chain)
             .`as` { StepVerifier.create(it) }
             .verifyComplete()
