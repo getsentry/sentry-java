@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @Open
 public class TraceContext {
@@ -86,7 +87,8 @@ public class TraceContext {
   }
 
   @Nullable
-  SpanId getParentSpanId() {
+  @TestOnly
+  public SpanId getParentSpanId() {
     return parentSpanId;
   }
 

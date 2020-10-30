@@ -9,8 +9,10 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
+import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContexts
+import io.sentry.protocol.SentryId
 import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
 import kotlin.test.Test
@@ -26,14 +28,16 @@ class SentryTracingFilterTest {
         val chain = mock<FilterChain>()
         val requestResolver = SentryRequestResolver(SentryOptions())
 
-        init {
+        fun getSut(sentryTraceHeader: String? = null): SentryTracingFilter {
             request.requestURI = "/some-uri"
             request.method = "POST"
             response.status = 200
-            whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, TransactionContexts(), hub) }
+            if (sentryTraceHeader != null) {
+                request.addHeader("sentry-trace", sentryTraceHeader)
+            }
+            whenever(hub.startTransaction(any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as TransactionContexts, hub) }
+            return SentryTracingFilter(hub, requestResolver)
         }
-
-        fun getSut() = SentryTracingFilter(hub, requestResolver)
     }
 
     private val fixture = Fixture()
@@ -50,6 +54,29 @@ class SentryTracingFilterTest {
             assertThat(it.contexts.traceContext.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.traceContext.op).isEqualTo("http")
             assertThat(it.request).isNotNull()
+        }, eq(null))
+    }
+
+    @Test
+    fun `when sentry trace is not present, transaction does not have parentSpanId set`() {
+        val filter = fixture.getSut()
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.hub).captureTransaction(check {
+            assertThat(it.contexts.traceContext.parentSpanId).isNull()
+        }, eq(null))
+    }
+
+    @Test
+    fun `when sentry trace is present, transaction has parentSpanId set`() {
+        val parentSpanId = SpanId()
+        val filter = fixture.getSut(sentryTraceHeader = "${SentryId()}-$parentSpanId")
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.hub).captureTransaction(check {
+            assertThat(it.contexts.traceContext.parentSpanId).isEqualTo(parentSpanId)
         }, eq(null))
     }
 }
