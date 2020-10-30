@@ -3,6 +3,7 @@
 * feat: Manually capturing User Feedback
 * Enhancement: Set environment to "production" by default.
 * Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
+* feat: Support for spring-webflux integration 
 
 # 3.1.1
 
