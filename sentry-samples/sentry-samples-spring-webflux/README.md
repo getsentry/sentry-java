@@ -1,4 +1,4 @@
-# Sentry Sample Spring Boot
+# Sentry Sample Spring WebFlux
 
 Sample application showing how to use Sentry with Spring Webflux.
 
