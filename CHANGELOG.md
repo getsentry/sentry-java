@@ -4,7 +4,8 @@
 * Enhancement: Set environment to "production" by default.
 * Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
 * feat: Support for spring-webflux integration 
-
+* ref: Validate event id on user feedback submission
+ 
 # 3.1.1
 
 * fix: Prevent Logback and Log4j2 integrations from re-initializing Sentry when Sentry is already initialized
