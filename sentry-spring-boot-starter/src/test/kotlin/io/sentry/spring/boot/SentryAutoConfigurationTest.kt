@@ -16,7 +16,6 @@ import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SentryUserProviderEventProcessor
-import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
@@ -258,7 +257,7 @@ class SentryAutoConfigurationTest {
     fun `when tracing is enabled, creates tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
             .run {
-                assertThat(it).hasSingleBean(SentryTracingFilter::class.java)
+                assertThat(it).hasBean("sentryTracingFilter")
             }
     }
 
@@ -266,7 +265,7 @@ class SentryAutoConfigurationTest {
     fun `when tracing is disabled, does not create tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
             .run {
-                assertThat(it).doesNotHaveBean(SentryTracingFilter::class.java)
+                assertThat(it).doesNotHaveBean("sentryTracingFilter")
             }
     }
 

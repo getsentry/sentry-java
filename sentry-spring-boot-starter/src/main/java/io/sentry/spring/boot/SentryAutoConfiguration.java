@@ -23,9 +23,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 
 @Configuration
 @ConditionalOnProperty(name = "sentry.dsn")
@@ -98,9 +100,12 @@ public class SentryAutoConfiguration {
 
       @Bean
       @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
-      public @NotNull SentryTracingFilter sentryTracingFilter(
+      public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
           final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
-        return new SentryTracingFilter(hub, sentryRequestResolver);
+        FilterRegistrationBean<SentryTracingFilter> filter =
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub, sentryRequestResolver));
+        filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return filter;
       }
     }
 

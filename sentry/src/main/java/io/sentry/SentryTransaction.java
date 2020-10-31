@@ -59,7 +59,7 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    *
    * @param name - transaction name
    */
-  void setName(final @NotNull String name) {
+  public void setName(final @NotNull String name) {
     Objects.requireNonNull(name, "name is required");
     this.transaction = name;
   }

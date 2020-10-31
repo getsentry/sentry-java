@@ -19,6 +19,7 @@ import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.web.servlet.HandlerMapping
 
 class SentryTracingFilterTest {
     private class Fixture {
@@ -29,12 +30,13 @@ class SentryTracingFilterTest {
         val requestResolver = SentryRequestResolver(SentryOptions())
 
         fun getSut(sentryTraceHeader: String? = null): SentryTracingFilter {
-            request.requestURI = "/some-uri"
+            request.requestURI = "/product/12"
             request.method = "POST"
-            response.status = 200
+            request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
             }
+            response.status = 200
             whenever(hub.startTransaction(any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as TransactionContexts, hub) }
             return SentryTracingFilter(hub, requestResolver)
         }
@@ -50,7 +52,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
         verify(fixture.hub).captureTransaction(check {
-            assertThat(it.transaction).isEqualTo("POST /some-uri")
+            assertThat(it.transaction).isEqualTo("POST /product/{id}")
             assertThat(it.contexts.traceContext.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.traceContext.op).isEqualTo("http")
             assertThat(it.request).isNotNull()
