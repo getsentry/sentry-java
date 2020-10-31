@@ -28,7 +28,7 @@ class SentryReactiveWebFilterTest {
         val webExchange: MockServerWebExchange = MockServerWebExchange.from(request)
         val chain = mock<WebFilterChain>()
 
-        fun getSut() : SentryReactiveWebFilter {
+        fun getSut(): SentryReactiveWebFilter {
             return SentryReactiveWebFilter(baseHub, SentryOptions(), emptyList())
         }
 
@@ -79,5 +79,11 @@ class SentryReactiveWebFilterTest {
             .`as` { StepVerifier.create(it) }
             .verifyComplete()
         verify(fixture.hub).popScope()
+    }
+
+    @Test
+    fun `Should indicate right precedence`() {
+        // should be greater than WebFluxSecurityConfiguration.WEB_FILTER_CHAIN_FILTER_ORDER
+        assertEquals(-90, fixture.getSut().order)
     }
 }
