@@ -3,6 +3,7 @@ package io.sentry.spring.boot;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryTraceHeader;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.net.URI;
@@ -44,6 +45,9 @@ class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterce
     span.setDescription(
         request.getMethodValue() + " " + ensureLeadingSlash(urlTemplate.get().poll()));
     span.setOp("http");
+
+    final SentryTraceHeader sentryTraceHeader = activeSpan.toSentryTrace();
+    request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
     try {
       return execution.execute(request, body);
     } finally {

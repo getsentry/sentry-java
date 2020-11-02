@@ -11,6 +11,7 @@ import io.sentry.SentryTransaction
 import io.sentry.TransactionContexts
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.core.IsNull
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.MockRestServiceServer
@@ -35,11 +36,16 @@ class SentrySpanRestTemplateCustomizerTest {
                 whenever(hub.configureScope(any())).thenAnswer {
                     (it.arguments[0] as ScopeCallback).run(scope)
                 }
-            }
 
-            mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-                .andRespond(MockRestResponseCreators.withSuccess("OK", MediaType.APPLICATION_JSON))
+                mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
+                    .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+                    .andExpect(MockRestRequestMatchers.header("sentry-trace", IsNull.notNullValue()))
+                    .andRespond(MockRestResponseCreators.withSuccess("OK", MediaType.APPLICATION_JSON))
+            } else {
+                mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
+                    .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+                    .andRespond(MockRestResponseCreators.withSuccess("OK", MediaType.APPLICATION_JSON))
+            }
 
             return restTemplate
         }

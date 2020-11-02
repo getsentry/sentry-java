@@ -50,8 +50,8 @@ public class TraceContext {
     this.parentSpanId = parentSpanId;
   }
 
-  public @NotNull String toSentryTrace() {
-    return String.format("%s-%s", traceId, spanId);
+  public @NotNull SentryTraceHeader toSentryTrace() {
+    return new SentryTraceHeader(traceId, spanId);
   }
 
   public void setOp(@Nullable String op) {

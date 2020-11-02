@@ -3,6 +3,7 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.InvalidSentryTraceHeaderException;
+import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContexts;
 import io.sentry.spring.SentryRequestResolver;
@@ -31,8 +32,6 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
   private static final String TRANSACTION_OP = "http";
 
-  private static final String SENTRY_TRACE_HEADER = "sentry-trace";
-
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
 
@@ -49,7 +48,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
-    final String sentryTraceHeader = httpRequest.getHeader(SENTRY_TRACE_HEADER);
+    final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
     final io.sentry.SentryTransaction transaction =
         startTransaction(
@@ -74,7 +73,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     TransactionContexts contexts;
     if (sentryTraceHeader != null) {
       try {
-        contexts = TransactionContexts.fromSentryTrace(sentryTraceHeader);
+        contexts = TransactionContexts.fromSentryTrace(new SentryTraceHeader(sentryTraceHeader));
       } catch (InvalidSentryTraceHeaderException e) {
         contexts = new TransactionContexts();
       }
