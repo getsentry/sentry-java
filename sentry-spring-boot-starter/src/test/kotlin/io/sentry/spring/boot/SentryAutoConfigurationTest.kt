@@ -16,9 +16,11 @@ import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SentryUserProviderEventProcessor
+import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
+import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -29,6 +31,7 @@ import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguratio
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
+import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
@@ -262,10 +265,34 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `when tracing is set, does not create tracing filter`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).doesNotHaveBean("sentryTracingFilter")
+            }
+    }
+
+    @Test
     fun `when tracing is disabled, does not create tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
             .run {
                 assertThat(it).doesNotHaveBean("sentryTracingFilter")
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and sentryTracignFilter already exists, does not create tracing filter`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withUserConfiguration(CustomSentryTracingFilter::class.java)
+            .run {
+                assertThat(it).hasBean("sentryTracingFilter")
+                val filter = it.getBean("sentryTracingFilter")
+
+                if (filter is FilterRegistrationBean<*>) {
+                    assertThat(filter.filter).isNotInstanceOf(SentryTracingFilter::class.java)
+                } else {
+                    assertThat(filter).isNotInstanceOf(SentryTracingFilter::class.java)
+                }
             }
     }
 
@@ -363,6 +390,13 @@ class SentryAutoConfigurationTest {
         @Bean
         @Order(Ordered.HIGHEST_PRECEDENCE)
         open fun userProvider() = CustomSentryUserProvider()
+    }
+
+    @Configuration
+    open class CustomSentryTracingFilter {
+
+        @Bean
+        open fun sentryTracingFilter() = mock<Filter>()
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {

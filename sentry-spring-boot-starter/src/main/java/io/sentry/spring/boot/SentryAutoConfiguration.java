@@ -100,6 +100,7 @@ public class SentryAutoConfiguration {
 
       @Bean
       @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+      @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
           final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
         FilterRegistrationBean<SentryTracingFilter> filter =
