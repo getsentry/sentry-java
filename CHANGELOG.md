@@ -1,6 +1,7 @@
 # 3.2
 
 * Feature: Performance monitoring
+* Feature: Performance Spring Boot auto-configuration 
 
 # 3.1.2
 
