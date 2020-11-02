@@ -12,6 +12,8 @@ import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.tracing.SentrySpan;
+import io.sentry.spring.tracing.SentrySpanAdvice;
 import io.sentry.spring.tracing.SentryTracingFilter;
 import io.sentry.spring.tracing.SentryTransaction;
 import io.sentry.spring.tracing.SentryTransactionAdvice;
@@ -23,6 +25,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;
+import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
@@ -38,6 +41,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 @Configuration
 @ConditionalOnProperty(name = "sentry.dsn")
@@ -151,6 +156,33 @@ public class SentryAutoConfiguration {
           final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut
                   sentryTransactionPointcut) {
         return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice(hub));
+      }
+
+      /**
+       * Pointcut around which spans are created.
+       *
+       * <p>This bean is can be replaced with user defined pointcut by specifying a {@link Pointcut}
+       * bean with name "sentrySpanPointcut".
+       *
+       * @return pointcut used by {@link SentrySpanAdvice}.
+       */
+      @Bean
+      @ConditionalOnMissingBean(name = "sentrySpanPointcut")
+      public @NotNull Pointcut sentrySpanPointcut() {
+        return new ComposablePointcut(new AnnotationMatchingPointcut(Component.class))
+            .union(new AnnotationMatchingPointcut(Service.class))
+            .union(new AnnotationMatchingPointcut(null, SentrySpan.class));
+      }
+
+      @Bean
+      public @NotNull Advice sentrySpanAdvice(final @NotNull IHub hub) {
+        return new SentrySpanAdvice(hub);
+      }
+
+      @Bean
+      public @NotNull Advisor sentrySpanAdvisor(
+          IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
+        return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice(hub));
       }
     }
 

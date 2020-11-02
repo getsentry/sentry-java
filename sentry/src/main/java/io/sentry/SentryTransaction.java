@@ -9,6 +9,7 @@ import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 public final class SentryTransaction extends SentryBaseEvent<TransactionContexts> implements ISpan {
   /** The transaction name. */
@@ -159,7 +160,8 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
   }
 
   @NotNull
-  Collection<Span> getSpans() {
+  @TestOnly
+  public Collection<Span> getSpans() {
     return spans;
   }
 

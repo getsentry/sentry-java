@@ -333,10 +333,52 @@ class SentryAutoConfigurationTest {
     @Test
     fun `when tracing is enabled and custom sentryTransactionPointcut is provided, sentryTransactionPointcut bean is not created`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
-            .withUserConfiguration(CustomSentryTransactionPointcutConfiguration::class.java)
+            .withUserConfiguration(CustomSentryPerformancePointcutConfiguration::class.java)
             .run {
                 assertThat(it).hasBean("sentryTransactionPointcut")
                 val pointcut = it.getBean("sentryTransactionPointcut")
+                assertThat(pointcut).isInstanceOf(NameMatchMethodPointcut::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled creates AOP beans to support @SentrySpan`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .run {
+                assertThat(it).hasBean("sentrySpanPointcut")
+                assertThat(it).hasBean("sentrySpanAdvice")
+                assertThat(it).hasBean("sentrySpanAdvisor")
+            }
+    }
+
+    @Test
+    fun `when tracing is disabled, does not create AOP beans to support @Span`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
+            .run {
+                assertThat(it).doesNotHaveBean("sentrySpanPointcut")
+                assertThat(it).doesNotHaveBean("sentrySpanAdvice")
+                assertThat(it).doesNotHaveBean("sentrySpanAdvisor")
+            }
+    }
+
+    @Test
+    fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentrySpan`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean("sentrySpanPointcut")
+                assertThat(it).doesNotHaveBean("sentrySpanAdvice")
+                assertThat(it).doesNotHaveBean("sentrySpanAdvisor")
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and custom sentrySpanPointcut is provided, sentrySpanPointcut bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withUserConfiguration(CustomSentryPerformancePointcutConfiguration::class.java)
+            .run {
+                assertThat(it).hasBean("sentrySpanPointcut")
+                val pointcut = it.getBean("sentrySpanPointcut")
                 assertThat(pointcut).isInstanceOf(NameMatchMethodPointcut::class.java)
             }
     }
@@ -445,10 +487,13 @@ class SentryAutoConfigurationTest {
     }
 
     @Configuration
-    open class CustomSentryTransactionPointcutConfiguration {
+    open class CustomSentryPerformancePointcutConfiguration {
 
         @Bean
         open fun sentryTransactionPointcut() = NameMatchMethodPointcut()
+
+        @Bean
+        open fun sentrySpanPointcut() = NameMatchMethodPointcut()
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {
