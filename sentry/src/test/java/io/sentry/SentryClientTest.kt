@@ -336,6 +336,15 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureUserFeedback with empty id, envelope is not sent`() {
+        val sut = fixture.getSut()
+
+        sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
+
+        verify(fixture.connection, never()).send(any())
+    }
+
+    @Test
     fun `when captureUserFeedback, envelope is sent`() {
         val sut = fixture.getSut()
 
