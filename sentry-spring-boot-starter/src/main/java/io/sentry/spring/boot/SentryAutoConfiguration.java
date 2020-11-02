@@ -13,11 +13,21 @@ import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
+import io.sentry.spring.tracing.SentryTransaction;
+import io.sentry.spring.tracing.SentryTransactionAdvice;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import java.util.List;
+import org.aopalliance.aop.Advice;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.aop.Advisor;
+import org.springframework.aop.Pointcut;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -107,6 +117,40 @@ public class SentryAutoConfiguration {
             new FilterRegistrationBean<>(new SentryTracingFilter(hub, sentryRequestResolver));
         filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return filter;
+      }
+    }
+
+    @Configuration
+    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+    @ConditionalOnClass(ProceedingJoinPoint.class)
+    @Open
+    static class SentryPerformanceAspectsConfiguration {
+
+      /**
+       * Pointcut around which transactions are created.
+       *
+       * <p>This bean is can be replaced with user defined pointcut by specifying a {@link Pointcut}
+       * bean with name "sentryTransactionPointcut".
+       *
+       * @return pointcut used by {@link SentryTransactionAdvice}.
+       */
+      @Bean
+      @ConditionalOnMissingBean(name = "sentryTransactionPointcut")
+      public @NotNull Pointcut sentryTransactionPointcut() {
+        return new AnnotationMatchingPointcut(null, SentryTransaction.class);
+      }
+
+      @Bean
+      public @NotNull Advice sentryTransactionAdvice(final @NotNull IHub hub) {
+        return new SentryTransactionAdvice(hub);
+      }
+
+      @Bean
+      public @NotNull Advisor sentryTransactionAdvisor(
+          final @NotNull IHub hub,
+          final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut
+                  sentryTransactionPointcut) {
+        return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice(hub));
       }
     }
 

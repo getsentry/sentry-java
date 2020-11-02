@@ -24,12 +24,15 @@ import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
+import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
+import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
@@ -281,7 +284,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when tracing is enabled and sentryTracignFilter already exists, does not create tracing filter`() {
+    fun `when tracing is enabled and sentryTracingFilter already exists, does not create tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
             .withUserConfiguration(CustomSentryTracingFilter::class.java)
             .run {
@@ -293,6 +296,48 @@ class SentryAutoConfigurationTest {
                 } else {
                     assertThat(filter).isNotInstanceOf(SentryTracingFilter::class.java)
                 }
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled creates AOP beans to support @SentryTransaction`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .run {
+                assertThat(it).hasBean("sentryTransactionPointcut")
+                assertThat(it).hasBean("sentryTransactionAdvice")
+                assertThat(it).hasBean("sentryTransactionAdvisor")
+            }
+    }
+
+    @Test
+    fun `when tracing is disabled, does not create AOP beans to support @SentryTransaction`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
+            .run {
+                assertThat(it).doesNotHaveBean("sentryTransactionPointcut")
+                assertThat(it).doesNotHaveBean("sentryTransactionAdvice")
+                assertThat(it).doesNotHaveBean("sentryTransactionAdvisor")
+            }
+    }
+
+    @Test
+    fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentryTransaction`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean("sentryTransactionPointcut")
+                assertThat(it).doesNotHaveBean("sentryTransactionAdvice")
+                assertThat(it).doesNotHaveBean("sentryTransactionAdvisor")
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and custom sentryTransactionPointcut is provided, sentryTransactionPointcut bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withUserConfiguration(CustomSentryTransactionPointcutConfiguration::class.java)
+            .run {
+                assertThat(it).hasBean("sentryTransactionPointcut")
+                val pointcut = it.getBean("sentryTransactionPointcut")
+                assertThat(pointcut).isInstanceOf(NameMatchMethodPointcut::class.java)
             }
     }
 
@@ -397,6 +442,13 @@ class SentryAutoConfigurationTest {
 
         @Bean
         open fun sentryTracingFilter() = mock<Filter>()
+    }
+
+    @Configuration
+    open class CustomSentryTransactionPointcutConfiguration {
+
+        @Bean
+        open fun sentryTransactionPointcut() = NameMatchMethodPointcut()
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {

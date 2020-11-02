@@ -51,6 +51,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterSecurity)
+    testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.TestLibs.awaitility)
 }
 
