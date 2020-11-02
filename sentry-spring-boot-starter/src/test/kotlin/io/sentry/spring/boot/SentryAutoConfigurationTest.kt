@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.web.client.RestTemplate
 
 class SentryAutoConfigurationTest {
 
@@ -380,6 +381,23 @@ class SentryAutoConfigurationTest {
                 assertThat(it).hasBean("sentrySpanPointcut")
                 val pointcut = it.getBean("sentrySpanPointcut")
                 assertThat(pointcut).isInstanceOf(NameMatchMethodPointcut::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and RestTemplate is on the classpath, SentrySpanRestTemplateCustomizer bean is created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .run {
+                assertThat(it).hasSingleBean(SentrySpanRestTemplateCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and RestTemplate is not on the classpath, SentrySpanRestTemplateCustomizer bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
             }
     }
 

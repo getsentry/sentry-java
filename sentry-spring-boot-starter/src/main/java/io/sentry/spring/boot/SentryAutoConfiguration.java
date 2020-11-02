@@ -30,10 +30,12 @@ import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -43,6 +45,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @ConditionalOnProperty(name = "sentry.dsn")
@@ -183,6 +186,17 @@ public class SentryAutoConfiguration {
       public @NotNull Advisor sentrySpanAdvisor(
           IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
         return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice(hub));
+      }
+    }
+
+    @Configuration
+    @AutoConfigureBefore(RestTemplateAutoConfiguration.class)
+    @ConditionalOnClass(RestTemplate.class)
+    @Open
+    static class SentryPerformanceRestTemplateConfiguration {
+      @Bean
+      public SentrySpanRestTemplateCustomizer metricsRestTemplateCustomizer(IHub hub) {
+        return new SentrySpanRestTemplateCustomizer(hub);
       }
     }
 
