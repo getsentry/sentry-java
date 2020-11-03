@@ -187,6 +187,10 @@ public final class SentryClient implements ISentryClient {
   public void captureUserFeedback(UserFeedback userFeedback) {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
 
+    if (SentryId.EMPTY_ID.equals(userFeedback.getEventId())) {
+      options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
+      return;
+    }
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
