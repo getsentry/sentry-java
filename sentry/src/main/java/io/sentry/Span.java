@@ -23,7 +23,7 @@ public final class Span extends TraceContext implements ISpan {
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
       final @NotNull SentryTransaction transaction) {
-    super(traceId, new SpanId(), parentSpanId);
+    super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
   }
