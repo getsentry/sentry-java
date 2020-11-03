@@ -191,7 +191,9 @@ public final class SentryClient implements ISentryClient {
       options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
       return;
     }
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
 
     try {
       final SentryEnvelope envelope = buildEnvelope(userFeedback);
