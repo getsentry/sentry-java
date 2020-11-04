@@ -5,6 +5,8 @@ import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
 public final class SpanId {
+  public static final SpanId EMPTY_ID = new SpanId(new UUID(0, 0).toString());
+
   private final @NotNull String value;
 
   public SpanId(final @NotNull String value) {
@@ -12,7 +14,11 @@ public final class SpanId {
   }
 
   public SpanId() {
-    this(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+    this(UUID.randomUUID());
+  }
+
+  private SpanId(final @NotNull UUID uuid) {
+    this(uuid.toString().replace("-", "").substring(0, 16));
   }
 
   @Override

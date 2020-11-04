@@ -540,6 +540,15 @@ public final class Sentry {
   }
 
   /**
+   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   *
+   * @return trace header or null
+   */
+  public static @Nullable SentryTraceHeader traceHeaders() {
+    return getCurrentHub().traceHeaders();
+  }
+
+  /**
    * Configuration options callback
    *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.

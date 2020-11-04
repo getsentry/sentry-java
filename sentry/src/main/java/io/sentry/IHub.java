@@ -299,4 +299,12 @@ public interface IHub {
   default SentryTransaction startTransaction(final @NotNull String name) {
     return startTransaction(name, (SamplingContext) null);
   }
+
+  /**
+   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   *
+   * @return trace header or null
+   */
+  @Nullable
+  SentryTraceHeader traceHeaders();
 }

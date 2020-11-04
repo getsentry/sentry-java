@@ -134,4 +134,9 @@ final class NoOpHub implements IHub {
   public SentryTransaction startTransaction(String name, SamplingContext samplingContext) {
     return new SentryTransaction(name, new TransactionContexts(), this);
   }
+
+  @Override
+  public @NotNull SentryTraceHeader traceHeaders() {
+    return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
+  }
 }

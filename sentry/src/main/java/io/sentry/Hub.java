@@ -701,4 +701,26 @@ public final class Hub implements IHub {
     return this.startTransaction(
         name, new TransactionContexts(tracingSampler.sample(samplingContext)));
   }
+
+  @Override
+  public @Nullable SentryTraceHeader traceHeaders() {
+    SentryTraceHeader traceHeader = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        final ISpan span = item.scope.getSpan();
+        if (span != null) {
+          traceHeader = span.toSentryTrace();
+        }
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when 'traceHeaders'");
+      }
+    }
+    return traceHeader;
+  }
 }
