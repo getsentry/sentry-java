@@ -12,6 +12,10 @@ public final class TransactionContexts extends Contexts {
     this(new TraceContext());
   }
 
+  public TransactionContexts(final boolean sampled) {
+    this(new TraceContext(sampled));
+  }
+
   private TransactionContexts(final @NotNull TraceContext traceContext) {
     this.setTraceContext(traceContext);
   }
@@ -25,11 +29,12 @@ public final class TransactionContexts extends Contexts {
   public static @NotNull TransactionContexts fromSentryTrace(final @NotNull String sentryTrace)
       throws InvalidSentryTraceHeaderException {
     final String[] parts = sentryTrace.split("-", -1);
-    if (parts.length < 2) {
+    if (parts.length < 3) {
       throw new InvalidSentryTraceHeaderException(sentryTrace);
     }
     return new TransactionContexts(
-        new TraceContext(new SentryId(parts[0]), new SpanId(), new SpanId(parts[1])));
+        new TraceContext(
+            new SentryId(parts[0]), new SpanId(), new SpanId(parts[1]), "1".equals(parts[2])));
   }
 
   public @NotNull TraceContext getTraceContext() {

@@ -9,13 +9,22 @@ import kotlin.test.assertNotNull
 class TransactionContextsTest {
 
     @Test
-    fun `creates context from correct sentry-trace header`() {
+    fun `creates context from correct not sampled sentry-trace header`() {
         val traceId = SentryId()
         val spanId = SpanId()
-        val contexts = TransactionContexts.fromSentryTrace("$traceId-$spanId")
+        val contexts = TransactionContexts.fromSentryTrace("$traceId-$spanId-0")
         assertEquals(contexts.traceContext.traceId, traceId)
         assertEquals(contexts.traceContext.parentSpanId, spanId)
+        assertEquals(contexts.traceContext.isSampled, false)
         assertNotNull(contexts.traceContext.spanId)
+    }
+
+    @Test
+    fun `creates context from correct sampled sentry-trace header`() {
+        val traceId = SentryId()
+        val spanId = SpanId()
+        val contexts = TransactionContexts.fromSentryTrace("$traceId-$spanId-1")
+        assertEquals(contexts.traceContext.isSampled, true)
     }
 
     @Test

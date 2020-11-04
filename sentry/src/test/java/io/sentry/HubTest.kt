@@ -28,6 +28,7 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -924,7 +925,7 @@ class HubTest {
     }
 
     @Test
-    fun `when captureTransaction, captureTransaction on the client should be called`() {
+    fun `when captureTransaction and transaction is sampled, captureTransaction on the client should be called`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
@@ -933,8 +934,22 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name"), null)
+        sut.captureTransaction(SentryTransaction("name", TransactionContexts(true), NoOpHub.getInstance()), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
+    }
+
+    @Test
+    fun `when captureTransaction and transaction is not sampled, captureTransaction on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.captureTransaction(SentryTransaction("name", TransactionContexts(false), NoOpHub.getInstance()), null)
+        verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
     }
 
     @Test
@@ -965,13 +980,26 @@ class HubTest {
     @Test
     fun `when startTransaction, attaches transaction to the scope`() {
         val hub = generateHub()
-        val contexts = TransactionContexts()
 
-        val transaction = hub.startTransaction("name", contexts)
+        val transaction = hub.startTransaction("name")
 
         hub.configureScope {
             assertNotNull(it.span)
             assertEquals(transaction, it.span)
+        }
+    }
+
+    @Test
+    fun `when startTransaction and no tracing sampling is configured, event is not sampled`() {
+        val hub = generateHub()
+
+        val transaction = hub.startTransaction("name")
+
+        hub.configureScope {
+            assertNotNull(it.span)
+            assertEquals(transaction, it.span)
+            assertNotNull(it.transaction)
+            assertFalse(it.transaction!!.isSampled)
         }
     }
 
