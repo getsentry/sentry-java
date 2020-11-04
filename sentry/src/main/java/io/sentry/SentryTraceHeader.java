@@ -9,19 +9,23 @@ public final class SentryTraceHeader {
 
   private final @NotNull SentryId traceId;
   private final @NotNull SpanId spanId;
+  private final boolean sampled;
 
-  public SentryTraceHeader(final @NotNull SentryId traceId, final @NotNull SpanId spanId) {
+  public SentryTraceHeader(
+      final @NotNull SentryId traceId, final @NotNull SpanId spanId, final boolean sampled) {
     this.traceId = traceId;
     this.spanId = spanId;
+    this.sampled = sampled;
   }
 
   public SentryTraceHeader(final @NotNull String value) throws InvalidSentryTraceHeaderException {
     final String[] parts = value.split("-", -1);
-    if (parts.length < 2) {
+    if (parts.length < 3) {
       throw new InvalidSentryTraceHeaderException(value);
     }
     this.traceId = new SentryId(parts[0]);
     this.spanId = new SpanId(parts[1]);
+    this.sampled = "1".equals(parts[2]);
   }
 
   public @NotNull String getName() {
@@ -29,7 +33,7 @@ public final class SentryTraceHeader {
   }
 
   public @NotNull String getValue() {
-    return String.format("%s-%s", traceId, spanId);
+    return String.format("%s-%s-%s", traceId, spanId, sampled ? "1" : "0");
   }
 
   public @NotNull SentryId getTraceId() {
@@ -38,5 +42,9 @@ public final class SentryTraceHeader {
 
   public @NotNull SpanId getSpanId() {
     return spanId;
+  }
+
+  public boolean isSampled() {
+    return sampled;
   }
 }

@@ -511,7 +511,7 @@ public final class Sentry {
    * @return created transaction
    */
   public static SentryTransaction startTransaction(final @NotNull String name) {
-    return startTransaction(name, new TransactionContexts());
+    return getCurrentHub().startTransaction(name);
   }
 
   /**
@@ -523,6 +523,20 @@ public final class Sentry {
   public static SentryTransaction startTransaction(
       final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
     return getCurrentHub().startTransaction(name, transactionContexts);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * sampling context or {@link SentryOptions#getTracesSampleRate()} the decision if transaction is
+   * sampled will be taken by {@link TracingSampler}.
+   *
+   * @param name the transaction name
+   * @param samplingContext the sampling context
+   * @return created transaction.
+   */
+  public static SentryTransaction startTransaction(
+      final @NotNull String name, final @NotNull SamplingContext samplingContext) {
+    return getCurrentHub().startTransaction(name, samplingContext);
   }
 
   /**

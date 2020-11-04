@@ -103,6 +103,10 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
     return getContexts().getTraceContext().getTraceId();
   }
 
+  boolean isSampled() {
+    return getContexts().getTraceContext().isSampled();
+  }
+
   @Override
   public void finish() {
     this.timestamp = DateUtils.getCurrentDateTime();

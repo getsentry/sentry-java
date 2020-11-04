@@ -35,10 +35,11 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
+                whenever(hub.startTransaction(any(), any<TransactionContexts>())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as TransactionContexts, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as TransactionContexts, hub) }
-            return SentryTracingFilter(hub, requestResolver)
+            whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, TransactionContexts(), hub) }
+            return SentryTracingFilter(hub, SentryOptions(), requestResolver)
         }
     }
 
@@ -73,7 +74,7 @@ class SentryTracingFilterTest {
     @Test
     fun `when sentry trace is present, transaction has parentSpanId set`() {
         val parentSpanId = SpanId()
-        val filter = fixture.getSut(sentryTraceHeader = "${SentryId()}-$parentSpanId")
+        val filter = fixture.getSut(sentryTraceHeader = "${SentryId()}-$parentSpanId-1")
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 

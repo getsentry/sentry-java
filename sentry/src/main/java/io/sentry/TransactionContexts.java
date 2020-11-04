@@ -11,6 +11,10 @@ public final class TransactionContexts extends Contexts {
     this(new TraceContext());
   }
 
+  public TransactionContexts(final boolean sampled) {
+    this(new TraceContext(sampled));
+  }
+
   private TransactionContexts(final @NotNull TraceContext traceContext) {
     this.setTraceContext(traceContext);
   }
@@ -24,7 +28,11 @@ public final class TransactionContexts extends Contexts {
   public static @NotNull TransactionContexts fromSentryTrace(
       final @NotNull SentryTraceHeader sentryTrace) {
     return new TransactionContexts(
-        new TraceContext(sentryTrace.getTraceId(), new SpanId(), sentryTrace.getSpanId()));
+        new TraceContext(
+            sentryTrace.getTraceId(),
+            new SpanId(),
+            sentryTrace.getSpanId(),
+            sentryTrace.isSampled()));
   }
 
   public @NotNull TraceContext getTraceContext() {

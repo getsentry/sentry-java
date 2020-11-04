@@ -3,6 +3,8 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.InvalidSentryTraceHeaderException;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContexts;
@@ -33,11 +35,15 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private static final String TRANSACTION_OP = "http";
 
   private final @NotNull IHub hub;
+  private final @NotNull SentryOptions options;
   private final @NotNull SentryRequestResolver requestResolver;
 
   public SentryTracingFilter(
-      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+      final @NotNull IHub hub,
+      final @NotNull SentryOptions options,
+      final @NotNull SentryRequestResolver requestResolver) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.options = Objects.requireNonNull(options, "options is required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
   }
 
@@ -70,16 +76,17 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private io.sentry.SentryTransaction startTransaction(
       final @NotNull String name, final @Nullable String sentryTraceHeader) {
-    TransactionContexts contexts;
     if (sentryTraceHeader != null) {
       try {
-        contexts = TransactionContexts.fromSentryTrace(new SentryTraceHeader(sentryTraceHeader));
+        final TransactionContexts contexts =
+            TransactionContexts.fromSentryTrace(new SentryTraceHeader(sentryTraceHeader));
+        return hub.startTransaction(name, contexts);
       } catch (InvalidSentryTraceHeaderException e) {
-        contexts = new TransactionContexts();
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
-    } else {
-      contexts = new TransactionContexts();
     }
-    return hub.startTransaction(name, contexts);
+    return hub.startTransaction(name);
   }
 }

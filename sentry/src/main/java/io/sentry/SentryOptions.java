@@ -138,6 +138,19 @@ public class SentryOptions {
   private @Nullable Double sampleRate;
 
   /**
+   * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
+   * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
+   * transactions will be sent. Transactions are picked randomly. Default is null (disabled)
+   */
+  private @Nullable Double tracesSampleRate;
+
+  /**
+   * This function is called by {@link TracingSampler} to determine if transaction is sampled -
+   * meant to be sent to Sentry.
+   */
+  private @Nullable TracesSamplerCallback tracesSampler;
+
+  /**
    * A list of string prefixes of module names that do not belong to the app, but rather third-party
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
    * default.
@@ -622,6 +635,49 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the traces sample rate Default is null (disabled)
+   *
+   * @return the sample rate
+   */
+  public @Nullable Double getTracesSampleRate() {
+    return tracesSampleRate;
+  }
+
+  /**
+   * Sets the tracesSampleRate Can be anything between 0.01 and 1.0 or null (default), to disable
+   * it.
+   *
+   * @param sampleRate the sample rate
+   */
+  public void setTracesSampleRate(Double sampleRate) {
+    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + sampleRate
+              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+    }
+    this.tracesSampleRate = sampleRate;
+  }
+
+  /**
+   * Returns the callback used to determine if transaction is sampled.
+   *
+   * @return the callback
+   */
+  public @Nullable TracesSamplerCallback getTracesSampler() {
+    return tracesSampler;
+  }
+
+  /**
+   * Sets the callback used to determine if transaction is sampled.
+   *
+   * @param tracesSampler the callback
+   */
+  public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
+    this.tracesSampler = tracesSampler;
+  }
+
+  /**
    * the list of inApp excludes
    *
    * @return the inApp excludes list
@@ -1098,6 +1154,20 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
+  }
+
+  /** The traces sampler callback. */
+  public interface TracesSamplerCallback {
+
+    /**
+     * Calculates the sampling value used to determine if transaction is going to be sent to Sentry
+     * backend.
+     *
+     * @param samplingContext the sampling context
+     * @return sampling value
+     */
+    @NotNull
+    Double sample(@NotNull SamplingContext samplingContext);
   }
 
   /** SentryOptions ctor It adds and set default things */

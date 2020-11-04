@@ -29,6 +29,7 @@ public final class Hub implements IHub {
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
   private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
+  private final @NotNull TracingSampler tracingSampler;
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -40,6 +41,7 @@ public final class Hub implements IHub {
     validateOptions(options);
 
     this.options = options;
+    this.tracingSampler = new TracingSampler(options);
     if (rootStackItem != null) {
       this.stack.push(rootStackItem);
     }
@@ -644,6 +646,13 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
+    } else if (!transaction.isSampled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction %s was dropped due to sampling decision.",
+              transaction.getEventId());
     } else {
       try {
         final StackItem item = stack.peek();
@@ -684,5 +693,12 @@ public final class Hub implements IHub {
       }
     }
     return transaction;
+  }
+
+  @Override
+  public @Nullable SentryTransaction startTransaction(
+      final @NotNull String name, final @Nullable SamplingContext samplingContext) {
+    return this.startTransaction(
+        name, new TransactionContexts(tracingSampler.sample(samplingContext)));
   }
 }
