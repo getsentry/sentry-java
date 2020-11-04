@@ -1,3 +1,7 @@
+# vNext
+
+* Increase max cached events to 30 (#1029)
+
 # 3.1.2
 
 * feat: Manually capturing User Feedback
