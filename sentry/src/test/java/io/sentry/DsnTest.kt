@@ -73,4 +73,10 @@ class DsnTest {
         val ex = assertFailsWith<InvalidDsnException> { Dsn("https://:secret@host/path/id") }
         assertEquals("java.lang.IllegalArgumentException: Invalid DSN: No public key provided.", ex.message)
     }
+
+    @Test
+    fun `dsn is normalized`() {
+        val dsn = Dsn("http://key@host//id")
+        assertEquals("http://host/api/id", dsn.sentryUri.toURL().toString())
+    }
 }
