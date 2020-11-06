@@ -40,7 +40,8 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
     builder.addPropertyValue("enableExternalConfiguration", true);
-    builder.addPropertyValue("exceptionResolverOrder", annotationAttributes.getNumber("exceptionResolverOrder"));
+    builder.addPropertyValue(
+        "exceptionResolverOrder", annotationAttributes.getNumber("exceptionResolverOrder"));
     builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
     if (annotationAttributes.containsKey("sendDefaultPii")) {
@@ -59,7 +60,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private void registerSentryExceptionResolver(
-          BeanDefinitionRegistry registry, AnnotationAttributes annotationAttributes) {
+      BeanDefinitionRegistry registry, AnnotationAttributes annotationAttributes) {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryExceptionResolver.class);
     builder.addConstructorArgReference("sentryHub");

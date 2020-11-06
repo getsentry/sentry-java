@@ -27,5 +27,4 @@ public class SentryWebConfiguration {
       final @NotNull IHub sentryHub, final @NotNull SentryOptions sentryOptions) {
     return new SentrySpringRequestListener(sentryHub, sentryOptions);
   }
-
 }

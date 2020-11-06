@@ -94,13 +94,12 @@ public class SentryAutoConfiguration {
     @Import(SentryWebConfiguration.class)
     @Open
     static class SentryWebMvcConfiguration {
-        @Bean
-        @ConditionalOnMissingBean
-        public @NotNull SentryExceptionResolver sentryExceptionResolver(
-            final @NotNull IHub sentryHub,
-            final @NotNull SentryProperties options) {
-          return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
-        }
+      @Bean
+      @ConditionalOnMissingBean
+      public @NotNull SentryExceptionResolver sentryExceptionResolver(
+          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
+        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+      }
     }
 
     private static @NotNull SdkVersion createSdkVersion(
