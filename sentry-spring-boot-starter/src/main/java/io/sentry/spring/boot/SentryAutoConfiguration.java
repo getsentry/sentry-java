@@ -8,6 +8,7 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
@@ -92,7 +93,15 @@ public class SentryAutoConfiguration {
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @Import(SentryWebConfiguration.class)
     @Open
-    static class SentryWebMvcConfiguration {}
+    static class SentryWebMvcConfiguration {
+        @Bean
+        @ConditionalOnMissingBean
+        public @NotNull SentryExceptionResolver sentryExceptionResolver(
+            final @NotNull IHub sentryHub,
+            final @NotNull SentryProperties options) {
+          return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+        }
+    }
 
     private static @NotNull SdkVersion createSdkVersion(
         final @NotNull SentryOptions sentryOptions) {
