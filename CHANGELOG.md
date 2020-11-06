@@ -1,9 +1,16 @@
-# 3.1.2
+# vNext
 
-* Enhancement: Set environment to "production" by default.
-* Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
+* Increase max cached events to 30 (#1029)
+* Normalize DSN URI (#1030)
 * Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions
 
+# 3.1.2
+
+* feat: Manually capturing User Feedback
+* Enhancement: Set environment to "production" by default.
+* Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
+* ref: Validate event id on user feedback submission
+ 
 # 3.1.1
 
 * fix: Prevent Logback and Log4j2 integrations from re-initializing Sentry when Sentry is already initialized

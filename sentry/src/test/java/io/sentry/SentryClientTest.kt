@@ -23,10 +23,13 @@ import io.sentry.transport.AsyncConnection
 import io.sentry.transport.HttpTransport
 import io.sentry.transport.ITransportGate
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.RuntimeException
 import java.net.URL
+import java.nio.charset.Charset
+import java.util.Arrays
 import java.util.UUID
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -47,6 +50,8 @@ class SentryClientTest {
                 name = "test"
                 version = "1.2.3"
             }
+            isDebug = true
+            setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(mock(), envelopeReader))
         }
         var connection: AsyncConnection = mock()
@@ -326,6 +331,59 @@ class SentryClientTest {
         val allEvents = 10
         (0..allEvents).forEach { _ -> sut.captureEvent(SentryEvent()) }
         assertEquals(allEvents, mockingDetails(fixture.connection).invocations.size - 1) // 1 extra invocation outside .send()
+    }
+
+    @Test
+    fun `when captureUserFeedback with empty id, envelope is not sent`() {
+        val sut = fixture.getSut()
+
+        sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
+
+        verify(fixture.connection, never()).send(any())
+    }
+
+    @Test
+    fun `when captureUserFeedback, envelope is sent`() {
+        val sut = fixture.getSut()
+
+        sut.captureUserFeedback(userFeedback)
+
+        verify(fixture.connection).send(check { actual ->
+            assertEquals(userFeedback.eventId, actual.header.eventId)
+            assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
+
+            assertEquals(1, actual.items.count())
+            val item = actual.items.first()
+            assertEquals(SentryItemType.UserFeedback, item.header.type)
+            assertEquals("application/json", item.header.contentType)
+
+            assertEnvelopeItemDataForUserFeedback(item)
+        })
+    }
+
+    private fun assertEnvelopeItemDataForUserFeedback(item: SentryEnvelopeItem) {
+        val stream = ByteArrayOutputStream()
+        val writer = stream.bufferedWriter(Charset.forName("UTF-8"))
+        fixture.sentryOptions.serializer.serialize(userFeedback, writer)
+        val expectedData = stream.toByteArray()
+        assertTrue(Arrays.equals(expectedData, item.data))
+    }
+
+    @Test
+    fun `when captureUserFeedback and connection throws, log exception`() {
+        val sut = fixture.getSut()
+
+        val exception = IOException("No connection")
+        whenever(fixture.connection.send(any())).thenThrow(exception)
+
+        val logger = mock<ILogger>()
+        fixture.sentryOptions.setLogger(logger)
+
+        sut.captureUserFeedback(userFeedback)
+
+        verify(logger)
+            .log(SentryLevel.WARNING, exception,
+                "Capturing user feedback %s failed.", userFeedback.eventId)
     }
 
     @Test
@@ -673,6 +731,18 @@ class SentryClientTest {
 
     private fun createSession(release: String = "rel"): Session {
         return Session("dis", User(), "env", release)
+    }
+
+    private val userFeedback: UserFeedback get() {
+        val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
+        val userFeedback = UserFeedback(eventId)
+        userFeedback.apply {
+            name = "John"
+            email = "john@me.com"
+            comments = "comment"
+        }
+
+        return userFeedback
     }
 
     internal class CustomTransportGate : ITransportGate {
