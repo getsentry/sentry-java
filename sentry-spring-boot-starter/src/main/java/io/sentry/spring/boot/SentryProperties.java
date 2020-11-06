@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.event.Level;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.core.Ordered;
 
 /** Configuration for Sentry integration. */
 @ConfigurationProperties("sentry")
@@ -18,9 +17,6 @@ public class SentryProperties extends SentryOptions {
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
-
-  /** Report all or only uncaught web exceptions. */
-  private int exceptionResolverOrder = Ordered.HIGHEST_PRECEDENCE;
 
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
@@ -36,14 +32,6 @@ public class SentryProperties extends SentryOptions {
 
   public void setLogging(@NotNull Logging logging) {
     this.logging = logging;
-  }
-
-  public int getExceptionResolverOrder() {
-    return exceptionResolverOrder;
-  }
-
-  public void setExceptionResolverOrder(int exceptionResolverOrder) {
-    this.exceptionResolverOrder = exceptionResolverOrder;
   }
 
   @Open
