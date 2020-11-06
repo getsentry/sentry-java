@@ -999,7 +999,7 @@ class HubTest {
             assertNotNull(it.span)
             assertEquals(transaction, it.span)
             assertNotNull(it.transaction)
-            assertFalse(it.transaction!!.isSampled)
+            assertFalse(it.transaction!!.isSampled!!)
         }
     }
 

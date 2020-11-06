@@ -1,29 +1,37 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Arbitrary data used by {@link io.sentry.SentryOptions.TracesSamplerCallback} to determine if
- * transaction is going to be sampled.
+ * Context used by {@link io.sentry.SentryOptions.TracesSamplerCallback} to determine if transaction
+ * is going to be sampled.
  */
 public final class SamplingContext {
-  private final @NotNull Map<String, Object> data = new HashMap<>();
+  private final @NotNull TransactionContexts transactionContexts;
+  private final @Nullable CustomSamplingContext customSamplingContext;
+  private final @Nullable Boolean parentSampled;
 
-  public void put(final @NotNull String key, final @Nullable Object value) {
-    Objects.requireNonNull(key, "key is required");
-    this.data.put(key, value);
+  public SamplingContext(
+      final @NotNull TransactionContexts transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final @Nullable Boolean parentSampled) {
+    this.transactionContexts =
+        Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+    this.customSamplingContext = customSamplingContext;
+    this.parentSampled = parentSampled;
   }
 
-  public Object get(final @NotNull String key) {
-    Objects.requireNonNull(key, "key is required");
-    return this.data.get(key);
+  public @Nullable CustomSamplingContext getCustomSamplingContext() {
+    return customSamplingContext;
   }
 
-  public Map<String, Object> getData() {
-    return data;
+  public @NotNull TransactionContexts getTransactionContexts() {
+    return transactionContexts;
+  }
+
+  public @Nullable Boolean getParentSampled() {
+    return parentSampled;
   }
 }

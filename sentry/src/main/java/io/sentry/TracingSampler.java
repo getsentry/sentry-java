@@ -21,14 +21,20 @@ final class TracingSampler {
   }
 
   boolean sample(final @Nullable SamplingContext samplingContext) {
-    double sampling;
-    if (options.getTracesSampler() != null && samplingContext != null) {
-      sampling = options.getTracesSampler().sample(samplingContext);
+    if (samplingContext != null && samplingContext.getTransactionContexts().getSampled() != null) {
+      return samplingContext.getTransactionContexts().getSampled();
+    } else if (samplingContext != null && options.getTracesSampler() != null) {
+      return sample(options.getTracesSampler().sample(samplingContext));
+    } else if (samplingContext != null && samplingContext.getParentSampled() != null) {
+      return samplingContext.getParentSampled();
     } else if (options.getTracesSampleRate() != null) {
-      sampling = options.getTracesSampleRate();
+      return sample(options.getTracesSampleRate());
     } else {
-      sampling = 0.0; // transaction is dropped
+      return false;
     }
-    return !(sampling < random.nextDouble());
+  }
+
+  private boolean sample(final @NotNull Double aDouble) {
+    return !(aDouble < random.nextDouble());
   }
 }

@@ -131,7 +131,8 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryTransaction startTransaction(String name, SamplingContext samplingContext) {
-    return new SentryTransaction(name, new TransactionContexts(), this);
+  public SentryTransaction startTransaction(
+      String name, TransactionContexts transactionContexts, SamplingContext samplingContext) {
+    return new SentryTransaction(name, transactionContexts, this);
   }
 }

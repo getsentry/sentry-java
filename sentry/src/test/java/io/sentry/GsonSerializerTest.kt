@@ -431,7 +431,6 @@ class GsonSerializerTest {
     @Test
     fun `serializes transaction`() {
         val contexts = TransactionContexts()
-        contexts.traceContext = TraceContext(false)
         contexts.traceContext.op = "http"
         contexts.traceContext.description = "some request"
         contexts.traceContext.status = SpanStatus.OK

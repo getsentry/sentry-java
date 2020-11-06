@@ -646,13 +646,13 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
-    } else if (!transaction.isSampled()) {
+    } else if (!Boolean.TRUE.equals(transaction.isSampled())) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.DEBUG,
-          "Transaction %s was dropped due to sampling decision.",
-          transaction.getEventId());
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction %s was dropped due to sampling decision.",
+              transaction.getEventId());
     } else {
       try {
         final StackItem item = stack.peek();
@@ -696,9 +696,12 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
-      final @NotNull String name, final @Nullable SamplingContext samplingContext) {
-    return this.startTransaction(
-        name, new TransactionContexts(tracingSampler.sample(samplingContext)));
+  public SentryTransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull TransactionContexts transactionContexts,
+      final @Nullable SamplingContext samplingContext) {
+    boolean samplingDecision = tracingSampler.sample(samplingContext);
+    transactionContexts.setSampled(samplingDecision);
+    return this.startTransaction(name, transactionContexts);
   }
 }

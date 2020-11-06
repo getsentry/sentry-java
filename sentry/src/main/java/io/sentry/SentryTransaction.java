@@ -86,8 +86,8 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
   }
 
   @Override
-  public String toSentryTrace() {
-    return this.getContexts().getTraceContext().toSentryTrace();
+  public SentryTraceHeader toSentryTrace() {
+    return new SentryTraceHeader(getTraceId(), getSpanId(), getContexts().getSampled());
   }
 
   @NotNull
@@ -100,8 +100,9 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
     return getContexts().getTraceContext().getTraceId();
   }
 
-  boolean isSampled() {
-    return getContexts().getTraceContext().isSampled();
+  @Nullable
+  Boolean isSampled() {
+    return getContexts().getSampled();
   }
 
   @Override

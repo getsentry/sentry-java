@@ -21,9 +21,6 @@ public class TraceContext {
   /** Id of a parent span. */
   private final @Nullable SpanId parentSpanId;
 
-  /** If trace is sampled. */
-  private final transient boolean sampled;
-
   /** Short code identifying the type of operation the span is measuring. */
   protected @Nullable String op;
 
@@ -39,28 +36,18 @@ public class TraceContext {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @Nullable Map<String, String> tags;
 
-  /** Creates a not sampled trace context. */
+  /** Creates trace context with defered sampling decision. */
   public TraceContext() {
-    this(false);
-  }
-
-  public TraceContext(boolean sampled) {
-    this(new SentryId(), new SpanId(), null, sampled);
+    this(new SentryId(), new SpanId(), null);
   }
 
   public TraceContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
-      final @Nullable SpanId parentSpanId,
-      final boolean sampled) {
+      final @Nullable SpanId parentSpanId) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.parentSpanId = parentSpanId;
-    this.sampled = sampled;
-  }
-
-  public @NotNull String toSentryTrace() {
-    return String.format("%s-%s-%s", traceId, spanId, sampled ? "1" : "0");
   }
 
   public void setOp(@Nullable String op) {
@@ -98,10 +85,6 @@ public class TraceContext {
   @Nullable
   SpanId getParentSpanId() {
     return parentSpanId;
-  }
-
-  public boolean isSampled() {
-    return sampled;
   }
 
   public @Nullable String getOp() {

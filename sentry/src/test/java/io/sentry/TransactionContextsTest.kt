@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class TransactionContextsTest {
 
@@ -12,10 +13,10 @@ class TransactionContextsTest {
     fun `creates context from correct not sampled sentry-trace header`() {
         val traceId = SentryId()
         val spanId = SpanId()
-        val contexts = TransactionContexts.fromSentryTrace("$traceId-$spanId-0")
-        assertEquals(contexts.traceContext.traceId, traceId)
-        assertEquals(contexts.traceContext.parentSpanId, spanId)
-        assertEquals(contexts.traceContext.isSampled, false)
+        val contexts = TransactionContexts.fromSentryTrace(SentryTraceHeader("$traceId-$spanId-0"))
+        assertEquals(traceId, contexts.traceContext.traceId)
+        assertEquals(spanId, contexts.traceContext.parentSpanId)
+        assertEquals(false, contexts.sampled)
         assertNotNull(contexts.traceContext.spanId)
     }
 
@@ -23,14 +24,22 @@ class TransactionContextsTest {
     fun `creates context from correct sampled sentry-trace header`() {
         val traceId = SentryId()
         val spanId = SpanId()
-        val contexts = TransactionContexts.fromSentryTrace("$traceId-$spanId-1")
-        assertEquals(contexts.traceContext.isSampled, true)
+        val contexts = TransactionContexts.fromSentryTrace(SentryTraceHeader("$traceId-$spanId-1"))
+        assertEquals(true, contexts.sampled)
+    }
+
+    @Test
+    fun `creates context from correct sentry-trace header without sampling decision`() {
+        val traceId = SentryId()
+        val spanId = SpanId()
+        val contexts = TransactionContexts.fromSentryTrace(SentryTraceHeader("$traceId-$spanId"))
+        assertNull(contexts.sampled)
     }
 
     @Test
     fun `when sentry-trace header is incorrect throws exception`() {
         val sentryId = SentryId()
-        val ex = assertFailsWith<InvalidSentryTraceHeaderException> { TransactionContexts.fromSentryTrace("$sentryId") }
+        val ex = assertFailsWith<InvalidSentryTraceHeaderException> { TransactionContexts.fromSentryTrace(SentryTraceHeader("$sentryId")) }
         assertEquals("sentry-trace header does not conform to expected format: $sentryId", ex.message)
     }
 }

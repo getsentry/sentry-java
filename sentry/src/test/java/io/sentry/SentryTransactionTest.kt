@@ -4,7 +4,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -31,7 +30,7 @@ class SentryTransactionTest {
     @Test
     fun `when transaction is created, by default is not sampled`() {
         val transaction = SentryTransaction("name")
-        assertFalse(transaction.isSampled)
+        assertNull(transaction.isSampled)
     }
 
     @Test
@@ -54,7 +53,6 @@ class SentryTransactionTest {
         val transaction = SentryTransaction("name")
 
         assertNotNull(transaction.toSentryTrace())
-        assertEquals("${transaction.contexts.traceContext.traceId}-${transaction.contexts.traceContext.spanId}-0", transaction.toSentryTrace())
     }
 
     @Test

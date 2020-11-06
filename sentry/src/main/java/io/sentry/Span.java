@@ -23,7 +23,7 @@ public final class Span extends TraceContext implements ISpan {
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
       final @NotNull SentryTransaction transaction) {
-    super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
+    super(traceId, new SpanId(), parentSpanId);
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
   }
@@ -39,6 +39,11 @@ public final class Span extends TraceContext implements ISpan {
   @Override
   public @NotNull Span startChild() {
     return transaction.startChild(super.getSpanId());
+  }
+
+  @Override
+  public SentryTraceHeader toSentryTrace() {
+    return transaction.toSentryTrace();
   }
 
   @Override
