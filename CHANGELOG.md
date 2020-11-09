@@ -1,6 +1,8 @@
-# 3.2
+# vNext
 
-* Feature: Performance monitoring
+* Increase max cached events to 30 (#1029)
+* Normalize DSN URI (#1030)
+* feat: Performance monitoring (#971)
 
 # 3.1.2
 

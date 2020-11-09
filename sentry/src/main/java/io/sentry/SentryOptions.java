@@ -106,8 +106,8 @@ public class SentryOptions {
   /** The cache dir. path for caching offline events */
   private @Nullable String cacheDirPath;
 
-  /** The cache dir. size for capping the number of events Default is 10 */
-  private int cacheDirSize = 10;
+  /** The cache dir. size for capping the number of events Default is 30 */
+  private int cacheDirSize = 30;
 
   /** Max. queue size before flushing events/envelopes to the disk */
   private int maxQueueSize = cacheDirSize;
