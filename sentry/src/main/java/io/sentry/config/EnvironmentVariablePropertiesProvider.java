@@ -15,7 +15,7 @@ final class EnvironmentVariablePropertiesProvider implements PropertiesProvider 
   @Override
   public @Nullable String getProperty(@NotNull String property) {
     return StringUtils.removeSurrounding(
-        System.getenv(PREFIX + "_" + property.replace(".", "_").toUpperCase(Locale.getDefault())),
+        System.getenv(PREFIX + "_" + property.replace(".", "_").toUpperCase(Locale.ROOT)),
         "\"");
   }
 }
