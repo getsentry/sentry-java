@@ -1,4 +1,4 @@
-§package io.sentry.transport;
+package io.sentry.transport;
 
 import java.net.Authenticator;
 import org.jetbrains.annotations.NotNull;
