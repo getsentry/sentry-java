@@ -708,6 +708,18 @@ class SentryClientTest {
         }, eq(null))
     }
 
+    @Test
+    fun `when scope has an active span, trace context is applied to an event`() {
+        val event = SentryEvent()
+        val sut = fixture.getSut()
+        val scope = createScope()
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        sut.captureEvent(event, scope)
+        assertNotNull(event.contexts.trace)
+        assertEquals(event.contexts.trace, transaction.contexts.trace)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
@@ -716,7 +728,6 @@ class SentryClientTest {
             setExtra("extra", "extra")
             setTag("tags", "tags")
             fingerprint.add("fp")
-            setTransaction(SentryTransaction("name"))
             level = SentryLevel.FATAL
             user = User().apply {
                 id = "id"
