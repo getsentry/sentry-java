@@ -133,6 +133,10 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
     this.getContexts().getTrace().setDescription(description);
   }
 
+  public @Nullable String getDescription() {
+    return this.getContexts().getTrace().getDescription();
+  }
+
   @Override
   public @NotNull SpanContext getSpanContext() {
     return this.getContexts().getTrace();

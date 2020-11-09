@@ -92,6 +92,12 @@ public class SentryOptions {
   private @Nullable BeforeSendCallback beforeSend;
 
   /**
+   * This function is called with an SDK specific transaction object and can return a modified
+   * transaction object or nothing to skip reporting the transaction
+   */
+  private @Nullable BeforeTransactionCallback beforeTransaction;
+
+  /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
    * to the scope. When nothing is returned from the function, the breadcrumb is dropped
    */
@@ -477,6 +483,24 @@ public class SentryOptions {
    */
   public void setBeforeBreadcrumb(@Nullable BeforeBreadcrumbCallback beforeBreadcrumb) {
     this.beforeBreadcrumb = beforeBreadcrumb;
+  }
+
+  /**
+   * Returns the beforeTransaction callback
+   *
+   * @return the beforeTransaction callback or null if not set
+   */
+  public @Nullable BeforeTransactionCallback getBeforeTransaction() {
+    return beforeTransaction;
+  }
+
+  /**
+   * Sets the beforeTransaction callback
+   *
+   * @param beforeTransaction the beforeTransaction callback
+   */
+  public void setBeforeTransaction(final @Nullable BeforeTransactionCallback beforeTransaction) {
+    this.beforeTransaction = beforeTransaction;
   }
 
   /**
@@ -1143,6 +1167,21 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
+  }
+
+  /** The BeforeTransaction callback */
+  public interface BeforeTransactionCallback {
+
+    /**
+     * Mutates or drop an event before being sent
+     *
+     * @param transaction the event
+     * @param hint the hint, usually the source of the transaction
+     * @return the original transaction or the mutated transaction or null if transaction was
+     *     dropped
+     */
+    @Nullable
+    SentryTransaction execute(@NotNull SentryTransaction transaction, @Nullable Object hint);
   }
 
   /** The traces sampler callback. */
