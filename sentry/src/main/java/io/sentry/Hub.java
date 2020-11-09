@@ -667,7 +667,7 @@ public final class Hub implements IHub {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "Error while capturing event with id: " + transaction.getEventId(),
+                "Error while capturing transaction with id: " + transaction.getEventId(),
                 e);
       }
     }
@@ -682,14 +682,14 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'startTransaction' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
         transaction = new SentryTransaction(name, transactionContexts, this);
         item.scope.setTransaction(transaction);
       } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
       }
     }
     return transaction;
