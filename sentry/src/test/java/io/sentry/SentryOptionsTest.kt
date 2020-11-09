@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.config.PropertiesProviderFactory
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,6 +10,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.rules.TemporaryFolder
 
 class SentryOptionsTest {
     @Test
@@ -170,6 +172,7 @@ class SentryOptionsTest {
         externalOptions.environment = "environment"
         externalOptions.release = "release"
         externalOptions.serverName = "serverName"
+        externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -179,5 +182,33 @@ class SentryOptionsTest {
         assertEquals("environment", options.environment)
         assertEquals("release", options.release)
         assertEquals("serverName", options.serverName)
+        assertNotNull(options.proxy)
+        assertEquals("example.com", options.proxy!!.host)
+        assertEquals("8090", options.proxy!!.port)
+    }
+
+    @Test
+    fun `creates options with proxy using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("proxy.host=proxy.example.com\n")
+        file.appendText("proxy.port=9090\n")
+        file.appendText("proxy.user=some-user\n")
+        file.appendText("proxy.pass=some-pass")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.proxy)
+            assertEquals("proxy.example.com", options.proxy!!.host)
+            assertEquals("9090", options.proxy!!.port)
+            assertEquals("some-user", options.proxy!!.user)
+            assertEquals("some-pass", options.proxy!!.pass)
+        } finally {
+            temporaryFolder.delete()
+        }
     }
 }

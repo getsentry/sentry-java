@@ -2,6 +2,7 @@
 
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
+* Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
 
 # 3.1.2
 
