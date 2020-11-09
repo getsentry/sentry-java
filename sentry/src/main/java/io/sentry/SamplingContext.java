@@ -9,12 +9,12 @@ import org.jetbrains.annotations.Nullable;
  * is going to be sampled.
  */
 public final class SamplingContext {
-  private final @NotNull TransactionContexts transactionContexts;
+  private final @NotNull SpanContext transactionContexts;
   private final @Nullable CustomSamplingContext customSamplingContext;
   private final @Nullable Boolean parentSampled;
 
   public SamplingContext(
-      final @NotNull TransactionContexts transactionContexts,
+      final @NotNull SpanContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext,
       final @Nullable Boolean parentSampled) {
     this.transactionContexts =
@@ -27,7 +27,7 @@ public final class SamplingContext {
     return customSamplingContext;
   }
 
-  public @NotNull TransactionContexts getTransactionContexts() {
+  public @NotNull SpanContext getTransactionContexts() {
     return transactionContexts;
   }
 

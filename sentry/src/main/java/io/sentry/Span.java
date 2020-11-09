@@ -6,7 +6,7 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Span extends TraceContext implements ISpan {
+public final class Span extends SpanContext implements ISpan {
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;
@@ -23,7 +23,7 @@ public final class Span extends TraceContext implements ISpan {
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
       final @NotNull SentryTransaction transaction) {
-    super(traceId, new SpanId(), parentSpanId);
+    super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
   }
@@ -49,6 +49,11 @@ public final class Span extends TraceContext implements ISpan {
   @Override
   public void finish() {
     this.timestamp = DateUtils.getCurrentDateTime();
+  }
+
+  @Override
+  public @NotNull SpanContext getSpanContext() {
+    return transaction.getSpanContext();
   }
 
   boolean isFinished() {

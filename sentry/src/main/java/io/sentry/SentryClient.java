@@ -125,8 +125,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent<?> event, final @Nullable Session session)
-      throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();

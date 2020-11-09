@@ -42,32 +42,32 @@ class TracingSamplerTest {
     @Test
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns lower number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.1, tracesSamplerResult = 0.2)
-        assertTrue(sampler.sample(SamplingContext(TransactionContexts(), CustomSamplingContext(), null)))
+        assertTrue(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), null)))
     }
 
     @Test
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns greater number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.9, tracesSamplerResult = 0.2)
-        assertFalse(sampler.sample(SamplingContext(TransactionContexts(), CustomSamplingContext(), null)))
+        assertFalse(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), null)))
     }
 
     @Test
     fun `when tracesSampleRate is not set, and tracesSampler is not set returns false`() {
         val sampler = fixture.getSut(randomResult = 0.1)
-        assertFalse(sampler.sample(SamplingContext(TransactionContexts(), CustomSamplingContext(), null)))
+        assertFalse(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), null)))
     }
 
     @Test
     fun `when parentSampled is set, sampler uses it as a sampling decision`() {
         val sampler = fixture.getSut()
-        assertFalse(sampler.sample(SamplingContext(TransactionContexts(), CustomSamplingContext(), false)))
-        assertTrue(sampler.sample(SamplingContext(TransactionContexts(), CustomSamplingContext(), true)))
+        assertFalse(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), false)))
+        assertTrue(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), true)))
     }
 
     @Test
-    fun `when tracing decision is set on TransactionContexts, sampler uses it as a sampling decision`() {
+    fun `when tracing decision is set on SpanContext, sampler uses it as a sampling decision`() {
         val sampler = fixture.getSut()
-        assertFalse(sampler.sample(SamplingContext(TransactionContexts(false), CustomSamplingContext(), null)))
-        assertTrue(sampler.sample(SamplingContext(TransactionContexts(true), CustomSamplingContext(), null)))
+        assertFalse(sampler.sample(SamplingContext(SpanContext(false), CustomSamplingContext(), null)))
+        assertTrue(sampler.sample(SamplingContext(SpanContext(true), CustomSamplingContext(), null)))
     }
 }

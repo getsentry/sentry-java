@@ -934,7 +934,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", TransactionContexts(true), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction("name", SpanContext(true), NoOpHub.getInstance()), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
 
@@ -948,7 +948,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", TransactionContexts(false), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction("name", SpanContext(false), NoOpHub.getInstance()), null)
         verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
     }
 
@@ -970,11 +970,11 @@ class HubTest {
     @Test
     fun `when startTransaction, creates transaction`() {
         val hub = generateHub()
-        val contexts = TransactionContexts()
+        val contexts = SpanContext()
 
         val transaction = hub.startTransaction("name", contexts)
 
-        assertEquals(contexts, transaction.contexts)
+        assertEquals(contexts, transaction.contexts.trace)
     }
 
     @Test

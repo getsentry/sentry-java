@@ -1,9 +1,9 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,9 +11,9 @@ import org.jetbrains.annotations.Nullable;
  * An item sent to Sentry in the envelope. Can be either {@link SentryEvent} or the Performance
  * transaction.
  */
-public abstract class SentryBaseEvent<T extends ConcurrentHashMap<String, Object>> {
+public abstract class SentryBaseEvent {
   private @Nullable SentryId eventId;
-  private T contexts;
+  private Contexts contexts;
   private @Nullable SdkVersion sdk;
   private @Nullable Request request;
 
@@ -33,11 +33,11 @@ public abstract class SentryBaseEvent<T extends ConcurrentHashMap<String, Object
     this.eventId = eventId;
   }
 
-  public T getContexts() {
+  public Contexts getContexts() {
     return contexts;
   }
 
-  public void setContexts(T contexts) {
+  public void setContexts(Contexts contexts) {
     this.contexts = contexts;
   }
 

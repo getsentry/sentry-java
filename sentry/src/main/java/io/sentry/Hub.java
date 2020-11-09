@@ -677,7 +677,7 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable SentryTransaction startTransaction(
-      final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
+      final @NotNull String name, final @NotNull SpanContext transactionContexts) {
     SentryTransaction transaction = null;
     if (!isEnabled()) {
       options
@@ -698,7 +698,7 @@ public final class Hub implements IHub {
   @Override
   public SentryTransaction startTransaction(
       final @NotNull String name,
-      final @NotNull TransactionContexts transactionContexts,
+      final @NotNull SpanContext transactionContexts,
       final @Nullable SamplingContext samplingContext) {
     boolean samplingDecision = tracingSampler.sample(samplingContext);
     transactionContexts.setSampled(samplingDecision);

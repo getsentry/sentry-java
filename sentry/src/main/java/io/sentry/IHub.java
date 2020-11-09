@@ -275,7 +275,7 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  SentryTransaction startTransaction(String name, TransactionContexts transactionContexts);
+  SentryTransaction startTransaction(String name, SpanContext transactionContexts);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
@@ -287,7 +287,7 @@ public interface IHub {
    * @return created transaction.
    */
   default SentryTransaction startTransaction(String name, SamplingContext samplingContext) {
-    return startTransaction(name, new TransactionContexts(), samplingContext);
+    return startTransaction(name, new SpanContext(), samplingContext);
   }
 
   /**
@@ -301,7 +301,7 @@ public interface IHub {
    * @return created transaction.
    */
   SentryTransaction startTransaction(
-      String name, TransactionContexts transactionContexts, SamplingContext samplingContext);
+      String name, SpanContext transactionContexts, SamplingContext samplingContext);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
