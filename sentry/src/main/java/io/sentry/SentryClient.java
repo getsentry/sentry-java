@@ -325,23 +325,7 @@ public final class SentryClient implements ISentryClient {
 
     Session session = null;
 
-    // TODO: use separate sampling strategy
-    if (!sample()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction %s was dropped due to sampling decision.",
-              transaction.getEventId());
-      // setting transaction as null to not be sent as its been discarded by sample rate
-      transaction = null;
-    }
-
-    SentryId sentryId = SentryId.EMPTY_ID;
-
-    if (transaction != null) {
-      sentryId = transaction.getEventId();
-    }
+    SentryId sentryId = transaction.getEventId();
 
     try {
       final SentryEnvelope envelope = buildEnvelope(transaction, session);
