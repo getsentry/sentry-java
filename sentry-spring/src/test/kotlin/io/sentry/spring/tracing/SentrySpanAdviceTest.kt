@@ -17,16 +17,12 @@ import org.aopalliance.aop.Advice
 import org.junit.runner.RunWith
 import org.springframework.aop.Advisor
 import org.springframework.aop.Pointcut
-import org.springframework.aop.support.ComposablePointcut
 import org.springframework.aop.support.DefaultPointcutAdvisor
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
-import org.springframework.context.annotation.Import
-import org.springframework.stereotype.Component
-import org.springframework.stereotype.Service
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
 
@@ -36,9 +32,6 @@ class SentrySpanAdviceTest {
 
     @Autowired
     lateinit var sampleService: SampleService
-
-    @Autowired
-    lateinit var serviceAnnotatedComponent: ServiceAnnotatedComponent
 
     @Autowired
     lateinit var hub: IHub
@@ -90,25 +83,8 @@ class SentrySpanAdviceTest {
         assertEquals(1, result)
     }
 
-    @Test
-    fun `when pointcut matching method is not annotated with @SentrySpan, attaches span to existing transaction and sets Span description as className dot methodName`() {
-        val scope = Scope(SentryOptions())
-        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
-        scope.setTransaction(tx)
-
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
-        val result = serviceAnnotatedComponent.hello()
-        assertEquals(10, result)
-        assertEquals(1, tx.spans.size)
-        assertEquals("ServiceAnnotatedComponent.hello", tx.spans.first().description)
-        assertNull(tx.spans.first().op)
-    }
-
     @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
-    @Import(ServiceAnnotatedComponent::class)
     open class Config {
 
         @Bean
@@ -119,9 +95,7 @@ class SentrySpanAdviceTest {
 
         @Bean
         open fun sentrySpanPointcut(): Pointcut {
-            return ComposablePointcut(AnnotationMatchingPointcut(Component::class.java))
-                .union(AnnotationMatchingPointcut(Service::class.java))
-                .union(AnnotationMatchingPointcut(null, SentrySpan::class.java))
+            return AnnotationMatchingPointcut(null, SentrySpan::class.java)
         }
 
         @Bean
@@ -142,11 +116,5 @@ class SentrySpanAdviceTest {
 
         @SentrySpan
         open fun methodWithoutSpanDescriptionSet() = 2
-    }
-
-    @Service
-    open class ServiceAnnotatedComponent {
-
-        open fun hello() = 10
     }
 }

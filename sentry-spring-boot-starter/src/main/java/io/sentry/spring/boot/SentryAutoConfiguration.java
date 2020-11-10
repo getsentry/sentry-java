@@ -25,7 +25,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;
-import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
@@ -43,8 +42,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
@@ -175,9 +172,7 @@ public class SentryAutoConfiguration {
       @Bean
       @ConditionalOnMissingBean(name = "sentrySpanPointcut")
       public @NotNull Pointcut sentrySpanPointcut() {
-        return new ComposablePointcut(new AnnotationMatchingPointcut(Component.class))
-            .union(new AnnotationMatchingPointcut(Service.class))
-            .union(new AnnotationMatchingPointcut(null, SentrySpan.class));
+        return new AnnotationMatchingPointcut(null, SentrySpan.class);
       }
 
       @Bean
