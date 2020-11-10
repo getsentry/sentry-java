@@ -9,10 +9,12 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
+import io.sentry.SpanStatus
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.core.IsNull
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers
@@ -27,7 +29,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val transaction = SentryTransaction("aTransaction", SpanContext(), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
-        fun getSut(isTransactionActive: Boolean): RestTemplate {
+        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK): RestTemplate {
             customizer.customize(restTemplate)
 
             if (isTransactionActive) {
@@ -40,11 +42,11 @@ class SentrySpanRestTemplateCustomizerTest {
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
                     .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
                     .andExpect(MockRestRequestMatchers.header("sentry-trace", IsNull.notNullValue()))
-                    .andRespond(MockRestResponseCreators.withSuccess("OK", MediaType.APPLICATION_JSON))
+                    .andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
             } else {
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
                     .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-                    .andRespond(MockRestResponseCreators.withSuccess("OK", MediaType.APPLICATION_JSON))
+                    .andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
             }
 
             return restTemplate
@@ -62,6 +64,20 @@ class SentrySpanRestTemplateCustomizerTest {
         val span = fixture.transaction.spans.first()
         assertThat(span.op).isEqualTo("http")
         assertThat(span.description).isEqualTo("GET /test/{id}")
+        assertThat(span.status).isEqualTo(SpanStatus.OK)
+        fixture.mockServer.verify()
+    }
+
+    @Test
+    fun `when transaction is active and response code is not 2xx, creates span with error status around RestTemplate HTTP call`() {
+        try {
+            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject("/test/{id}", String::class.java, 123)
+        } catch (e: Throwable) {}
+        assertThat(fixture.transaction.spans).hasSize(1)
+        val span = fixture.transaction.spans.first()
+        assertThat(span.op).isEqualTo("http")
+        assertThat(span.description).isEqualTo("GET /test/{id}")
+        assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
         fixture.mockServer.verify()
     }
 

@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.net.URI;
@@ -49,7 +50,9 @@ class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterce
     final SentryTraceHeader sentryTraceHeader = activeSpan.toSentryTrace();
     request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
     try {
-      return execution.execute(request, body);
+      final ClientHttpResponse response = execution.execute(request, body);
+      span.setStatus(SpanStatus.fromHttpStatusCode(response.getRawStatusCode()));
+      return response;
     } finally {
       span.finish();
       if (urlTemplate.get().isEmpty()) {

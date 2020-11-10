@@ -18,7 +18,7 @@ class SpanStatusTest {
 
     @Test
     fun `converts http status code to first SpanStatus matching specific code`() {
-        assertEquals(SpanStatus.UNKNOWN, SpanStatus.fromHttpStatusCode(500))
+        assertEquals(SpanStatus.INTERNAL_ERROR, SpanStatus.fromHttpStatusCode(500))
     }
 
     @Test
