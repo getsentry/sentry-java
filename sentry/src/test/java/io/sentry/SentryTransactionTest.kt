@@ -4,7 +4,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -31,7 +30,7 @@ class SentryTransactionTest {
     @Test
     fun `when transaction is created, by default is not sampled`() {
         val transaction = SentryTransaction("name")
-        assertFalse(transaction.isSampled)
+        assertNull(transaction.isSampled)
     }
 
     @Test
@@ -44,7 +43,7 @@ class SentryTransactionTest {
     @Test
     fun `when transaction is finished, transaction is captured`() {
         val hub = mock<IHub>()
-        val transaction = SentryTransaction("name", TransactionContexts(), hub)
+        val transaction = SentryTransaction("name", SpanContext(), hub)
         transaction.finish()
         verify(hub).captureTransaction(transaction, null)
     }
@@ -54,7 +53,6 @@ class SentryTransactionTest {
         val transaction = SentryTransaction("name")
 
         assertNotNull(transaction.toSentryTrace())
-        assertEquals("${transaction.contexts.traceContext.traceId}-${transaction.contexts.traceContext.spanId}-0", transaction.toSentryTrace().value)
     }
 
     @Test
@@ -92,20 +90,20 @@ class SentryTransactionTest {
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setOp("op")
-        assertEquals("op", transaction.contexts.traceContext.op)
+        assertEquals("op", transaction.contexts.trace!!.op)
     }
 
     @Test
     fun `setting description sets description on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setDescription("desc")
-        assertEquals("desc", transaction.contexts.traceContext.description)
+        assertEquals("desc", transaction.contexts.trace!!.description)
     }
 
     @Test
     fun `setting status sets status on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setStatus(SpanStatus.ALREADY_EXISTS)
-        assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.traceContext.status)
+        assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.trace!!.status)
     }
 }

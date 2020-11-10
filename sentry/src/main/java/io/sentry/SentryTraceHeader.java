@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Represents HTTP header "sentry-trace". */
 public final class SentryTraceHeader {
@@ -9,10 +10,12 @@ public final class SentryTraceHeader {
 
   private final @NotNull SentryId traceId;
   private final @NotNull SpanId spanId;
-  private final boolean sampled;
+  private final @Nullable Boolean sampled;
 
   public SentryTraceHeader(
-      final @NotNull SentryId traceId, final @NotNull SpanId spanId, final boolean sampled) {
+      final @NotNull SentryId traceId,
+      final @NotNull SpanId spanId,
+      final @Nullable Boolean sampled) {
     this.traceId = traceId;
     this.spanId = spanId;
     this.sampled = sampled;
@@ -20,12 +23,15 @@ public final class SentryTraceHeader {
 
   public SentryTraceHeader(final @NotNull String value) throws InvalidSentryTraceHeaderException {
     final String[] parts = value.split("-", -1);
-    if (parts.length < 3) {
+    if (parts.length < 2) {
       throw new InvalidSentryTraceHeaderException(value);
+    } else if (parts.length == 3) {
+      this.sampled = "1".equals(parts[2]);
+    } else {
+      this.sampled = null;
     }
     this.traceId = new SentryId(parts[0]);
     this.spanId = new SpanId(parts[1]);
-    this.sampled = "1".equals(parts[2]);
   }
 
   public @NotNull String getName() {
@@ -33,7 +39,11 @@ public final class SentryTraceHeader {
   }
 
   public @NotNull String getValue() {
-    return String.format("%s-%s-%s", traceId, spanId, sampled ? "1" : "0");
+    if (sampled != null) {
+      return String.format("%s-%s-%s", traceId, spanId, sampled ? "1" : "0");
+    } else {
+      return String.format("%s-%s", traceId, spanId);
+    }
   }
 
   public @NotNull SentryId getTraceId() {
@@ -44,7 +54,7 @@ public final class SentryTraceHeader {
     return spanId;
   }
 
-  public boolean isSampled() {
+  public @Nullable Boolean isSampled() {
     return sampled;
   }
 }

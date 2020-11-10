@@ -646,7 +646,7 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
-    } else if (!transaction.isSampled()) {
+    } else if (!Boolean.TRUE.equals(transaction.isSampled())) {
       options
           .getLogger()
           .log(
@@ -667,7 +667,7 @@ public final class Hub implements IHub {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "Error while capturing event with id: " + transaction.getEventId(),
+                "Error while capturing transaction with id: " + transaction.getEventId(),
                 e);
       }
     }
@@ -677,29 +677,34 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable SentryTransaction startTransaction(
-      final @NotNull String name, final @NotNull TransactionContexts transactionContexts) {
+      final @NotNull String name, final @NotNull SpanContext transactionContexts) {
     SentryTransaction transaction = null;
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'startTransaction' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
         transaction = new SentryTransaction(name, transactionContexts, this);
         item.scope.setTransaction(transaction);
       } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
       }
     }
     return transaction;
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
-      final @NotNull String name, final @Nullable SamplingContext samplingContext) {
-    return this.startTransaction(
-        name, new TransactionContexts(tracingSampler.sample(samplingContext)));
+  public SentryTransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull SpanContext transactionContexts,
+      final @Nullable SamplingContext samplingContext) {
+    boolean samplingDecision = tracingSampler.sample(samplingContext);
+    transactionContexts.setSampled(samplingDecision);
+    return this.startTransaction(name, transactionContexts);
   }
 
   @Override

@@ -9,9 +9,9 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
+import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.SpanStatus
-import io.sentry.TransactionContexts
 import io.sentry.protocol.SentryId
 import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
@@ -35,10 +35,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any(), any<TransactionContexts>())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as TransactionContexts, hub) }
+                whenever(hub.startTransaction(any(), any<SpanContext>())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as SpanContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, TransactionContexts(), hub) }
+            whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
             return SentryTracingFilter(hub, SentryOptions(), requestResolver)
         }
     }
@@ -54,8 +54,8 @@ class SentryTracingFilterTest {
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
-            assertThat(it.contexts.traceContext.status).isEqualTo(SpanStatus.OK)
-            assertThat(it.contexts.traceContext.op).isEqualTo("http")
+            assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+            assertThat(it.contexts.trace!!.op).isEqualTo("http")
             assertThat(it.request).isNotNull()
         }, eq(null))
     }
@@ -67,7 +67,7 @@ class SentryTracingFilterTest {
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
         verify(fixture.hub).captureTransaction(check {
-            assertThat(it.contexts.traceContext.parentSpanId).isNull()
+            assertThat(it.contexts.trace!!.parentSpanId).isNull()
         }, eq(null))
     }
 
@@ -79,7 +79,7 @@ class SentryTracingFilterTest {
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
         verify(fixture.hub).captureTransaction(check {
-            assertThat(it.contexts.traceContext.parentSpanId).isEqualTo(parentSpanId)
+            assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
         }, eq(null))
     }
 }

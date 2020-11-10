@@ -1,5 +1,6 @@
 package io.sentry;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Represents performance monitoring Span. */
@@ -34,4 +35,7 @@ public interface ISpan {
    * @param description - the description.
    */
   void setDescription(@Nullable String description);
+
+  @NotNull
+  SpanContext getSpanContext();
 }

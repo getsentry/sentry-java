@@ -6,8 +6,8 @@ import io.sentry.InvalidSentryTraceHeaderException;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanContext;
 import io.sentry.SpanStatus;
-import io.sentry.TransactionContexts;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.util.Objects;
 import java.io.IOException;
@@ -78,8 +78,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull String name, final @Nullable String sentryTraceHeader) {
     if (sentryTraceHeader != null) {
       try {
-        final TransactionContexts contexts =
-            TransactionContexts.fromSentryTrace(new SentryTraceHeader(sentryTraceHeader));
+        final SpanContext contexts =
+            SpanContext.fromSentryTrace(new SentryTraceHeader(sentryTraceHeader));
         return hub.startTransaction(name, contexts);
       } catch (InvalidSentryTraceHeaderException e) {
         options

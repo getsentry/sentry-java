@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryTransaction extends SentryBaseEvent<TransactionContexts> implements ISpan {
+public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   /** The transaction name. */
   private @Nullable String transaction;
 
@@ -35,7 +36,7 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
 
   /** Creates transaction. */
   SentryTransaction(final @NotNull String name) {
-    this(name, new TransactionContexts(), NoOpHub.getInstance());
+    this(name, new SpanContext(), NoOpHub.getInstance());
   }
 
   /**
@@ -44,15 +45,16 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    * @param name - transaction name
    * @param contexts - transaction contexts
    */
-  @ApiStatus.Internal
+  @TestOnly
   public SentryTransaction(
-      final @NotNull String name,
-      final @NotNull TransactionContexts contexts,
-      final @NotNull IHub hub) {
+      final @NotNull String name, final @NotNull SpanContext contexts, final @NotNull IHub hub) {
+    Objects.requireNonNull(contexts, "contexts are required");
     this.transaction = Objects.requireNonNull(name, "name is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.setContexts(Objects.requireNonNull(contexts, "contexts are required"));
+    Contexts ctx = new Contexts();
+    ctx.setTrace(contexts);
+    this.setContexts(ctx);
   }
 
   /**
@@ -90,21 +92,22 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
 
   @Override
   public SentryTraceHeader toSentryTrace() {
-    return this.getContexts().getTraceContext().toSentryTrace();
+    return new SentryTraceHeader(getTraceId(), getSpanId(), isSampled());
   }
 
   @NotNull
   SpanId getSpanId() {
-    return getContexts().getTraceContext().getSpanId();
+    return getContexts().getTrace().getSpanId();
   }
 
   @NotNull
   SentryId getTraceId() {
-    return getContexts().getTraceContext().getTraceId();
+    return getContexts().getTrace().getTraceId();
   }
 
-  boolean isSampled() {
-    return getContexts().getTraceContext().isSampled();
+  @Nullable
+  Boolean isSampled() {
+    return getContexts().getTrace().getSampled();
   }
 
   @Override
@@ -120,7 +123,7 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    */
   @Override
   public void setOp(@Nullable String op) {
-    this.getContexts().getTraceContext().setOp(op);
+    this.getContexts().getTrace().setOp(op);
   }
 
   /**
@@ -130,7 +133,16 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    */
   @Override
   public void setDescription(@Nullable String description) {
-    this.getContexts().getTraceContext().setDescription(description);
+    this.getContexts().getTrace().setDescription(description);
+  }
+
+  public @Nullable String getDescription() {
+    return this.getContexts().getTrace().getDescription();
+  }
+
+  @Override
+  public @NotNull SpanContext getSpanContext() {
+    return this.getContexts().getTrace();
   }
 
   /**
@@ -139,7 +151,7 @@ public final class SentryTransaction extends SentryBaseEvent<TransactionContexts
    * @param spanStatus - the status
    */
   public void setStatus(@Nullable SpanStatus spanStatus) {
-    this.getContexts().getTraceContext().setStatus(spanStatus);
+    this.getContexts().getTrace().setStatus(spanStatus);
   }
 
   /**

@@ -11,7 +11,7 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
-import io.sentry.TransactionContexts
+import io.sentry.SpanContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.aopalliance.aop.Advice
@@ -40,7 +40,7 @@ class SentryTransactionAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, TransactionContexts(), hub) }
+        whenever(hub.startTransaction(any())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
     }
 
     @Test
@@ -48,7 +48,7 @@ class SentryTransactionAdviceTest {
         sampleService.methodWithTransactionNameSet()
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("customName")
-            assertThat(it.contexts.traceContext.op).isEqualTo("bean")
+            assertThat(it.contexts.trace!!.op).isEqualTo("bean")
         }, eq(null))
     }
 
@@ -57,14 +57,14 @@ class SentryTransactionAdviceTest {
         sampleService.methodWithoutTransactionNameSet()
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
-            assertThat(it.contexts.traceContext.op).isNull()
+            assertThat(it.contexts.trace!!.op).isNull()
         }, eq(null))
     }
 
     @Test
     fun `when transaction is already active, does not start new transaction`() {
         val scope = Scope(SentryOptions())
-        scope.setTransaction(io.sentry.SentryTransaction("aTransaction", TransactionContexts(), hub))
+        scope.setTransaction(io.sentry.SentryTransaction("aTransaction", SpanContext(), hub))
 
         whenever(hub.configureScope(any())).thenAnswer {
             (it.arguments[0] as ScopeCallback).run(scope)

@@ -125,8 +125,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent<?> event, final @Nullable Session session)
-      throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -326,22 +325,12 @@ public final class SentryClient implements ISentryClient {
 
     Session session = null;
 
-    // TODO: use separate sampling strategy
-    if (!sample()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction %s was dropped due to sampling decision.",
-              transaction.getEventId());
-      // setting transaction as null to not be sent as its been discarded by sample rate
-      transaction = null;
-    }
+    SentryId sentryId = transaction.getEventId();
 
-    SentryId sentryId = SentryId.EMPTY_ID;
+    transaction = executeBeforeTransaction(transaction, hint);
 
-    if (transaction != null) {
-      sentryId = transaction.getEventId();
+    if (transaction == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
     }
 
     try {
@@ -410,6 +399,11 @@ public final class SentryClient implements ISentryClient {
       if (scope.getLevel() != null) {
         event.setLevel(scope.getLevel());
       }
+      // Set trace data from active span to connect events with transactions
+      final ISpan span = scope.getSpan();
+      if (event.getContexts().getTrace() == null && span != null) {
+        event.getContexts().setTrace(span.getSpanContext());
+      }
 
       event = processEvent(event, hint, scope.getEventProcessors());
     }
@@ -439,6 +433,22 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
+  }
+
+  private @Nullable SentryTransaction executeBeforeTransaction(
+      @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    final SentryOptions.BeforeTransactionCallback beforeTransaction =
+        options.getBeforeTransaction();
+    if (beforeTransaction != null) {
+      try {
+        transaction = beforeTransaction.execute(transaction, hint);
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "The BeforeTransaction callback threw an exception.", e);
+      }
+    }
+    return transaction;
   }
 
   @Override

@@ -1,9 +1,12 @@
 package io.sentry.protocol;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.SpanContext;
+import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Open
 public class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
@@ -12,6 +15,15 @@ public class Contexts extends ConcurrentHashMap<String, Object> implements Clone
   protected <T> T toContextType(String key, Class<T> clazz) {
     Object item = get(key);
     return clazz.isInstance(item) ? clazz.cast(item) : null;
+  }
+
+  public @Nullable SpanContext getTrace() {
+    return toContextType(SpanContext.TYPE, SpanContext.class);
+  }
+
+  public void setTrace(final @Nullable SpanContext traceContext) {
+    Objects.requireNonNull(traceContext, "traceContext is required");
+    this.put(SpanContext.TYPE, traceContext);
   }
 
   public App getApp() {
@@ -86,6 +98,8 @@ public class Contexts extends ConcurrentHashMap<String, Object> implements Clone
           clone.setRuntime(((SentryRuntime) value).clone());
         } else if (Gpu.TYPE.equals(entry.getKey()) && value instanceof Gpu) {
           clone.setGpu(((Gpu) value).clone());
+        } else if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
+          clone.setTrace(((SpanContext) value).clone());
         } else {
           clone.put(entry.getKey(), value);
         }

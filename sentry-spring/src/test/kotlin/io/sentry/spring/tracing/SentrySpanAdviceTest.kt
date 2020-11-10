@@ -8,7 +8,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
-import io.sentry.TransactionContexts
+import io.sentry.SpanContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,13 +45,13 @@ class SentrySpanAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, TransactionContexts(), hub) }
+        whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
     }
 
     @Test
     fun `when method is annotated with @SentrySpan with properties set, attaches span to existing transaction`() {
         val scope = Scope(SentryOptions())
-        val tx = SentryTransaction("aTransaction", TransactionContexts(), hub)
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
         whenever(hub.configureScope(any())).thenAnswer {
@@ -67,7 +67,7 @@ class SentrySpanAdviceTest {
     @Test
     fun `when method is annotated with @SentrySpan without properties set, attaches span to existing transaction and sets Span description as className dot methodName`() {
         val scope = Scope(SentryOptions())
-        val tx = SentryTransaction("aTransaction", TransactionContexts(), hub)
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
         whenever(hub.configureScope(any())).thenAnswer {
@@ -93,7 +93,7 @@ class SentrySpanAdviceTest {
     @Test
     fun `when pointcut matching method is not annotated with @SentrySpan, attaches span to existing transaction and sets Span description as className dot methodName`() {
         val scope = Scope(SentryOptions())
-        val tx = SentryTransaction("aTransaction", TransactionContexts(), hub)
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
         whenever(hub.configureScope(any())).thenAnswer {

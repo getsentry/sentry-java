@@ -8,7 +8,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
-import io.sentry.TransactionContexts
+import io.sentry.SpanContext
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.core.IsNull
@@ -24,7 +24,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplate()
         var mockServer = MockRestServiceServer.createServer(restTemplate)
-        val transaction = SentryTransaction("aTransaction", TransactionContexts(), hub)
+        val transaction = SentryTransaction("aTransaction", SpanContext(), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean): RestTemplate {

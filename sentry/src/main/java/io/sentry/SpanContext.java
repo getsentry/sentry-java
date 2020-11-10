@@ -2,6 +2,7 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @Open
-public class TraceContext {
+public class SpanContext implements Cloneable {
   public static final String TYPE = "trace";
 
   /** Determines which trace the Span belongs to. */
@@ -23,7 +24,7 @@ public class TraceContext {
   private final @Nullable SpanId parentSpanId;
 
   /** If trace is sampled. */
-  private final transient boolean sampled;
+  private transient @Nullable Boolean sampled;
 
   /** Short code identifying the type of operation the span is measuring. */
   protected @Nullable String op;
@@ -40,28 +41,35 @@ public class TraceContext {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @Nullable Map<String, String> tags;
 
-  /** Creates a not sampled trace context. */
-  public TraceContext() {
-    this(false);
+  /**
+   * Creates {@link SpanContext} from sentry-trace header.
+   *
+   * @param sentryTrace - the sentry-trace header
+   * @return the transaction contexts
+   */
+  public static @NotNull SpanContext fromSentryTrace(final @NotNull SentryTraceHeader sentryTrace) {
+    return new SpanContext(
+        sentryTrace.getTraceId(), new SpanId(), sentryTrace.getSpanId(), sentryTrace.isSampled());
   }
 
-  public TraceContext(boolean sampled) {
+  public SpanContext(@Nullable Boolean sampled) {
     this(new SentryId(), new SpanId(), null, sampled);
   }
 
-  public TraceContext(
+  /** Creates trace context with defered sampling decision. */
+  public SpanContext() {
+    this(new SentryId(), new SpanId(), null, null);
+  }
+
+  public SpanContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId,
-      final boolean sampled) {
+      final @Nullable Boolean sampled) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.parentSpanId = parentSpanId;
     this.sampled = sampled;
-  }
-
-  public @NotNull SentryTraceHeader toSentryTrace() {
-    return new SentryTraceHeader(traceId, spanId, sampled);
   }
 
   public void setOp(@Nullable String op) {
@@ -102,10 +110,6 @@ public class TraceContext {
     return parentSpanId;
   }
 
-  public boolean isSampled() {
-    return sampled;
-  }
-
   public @Nullable String getOp() {
     return op;
   }
@@ -120,5 +124,20 @@ public class TraceContext {
 
   public @Nullable Map<String, String> getTags() {
     return tags;
+  }
+
+  public @Nullable Boolean getSampled() {
+    return sampled;
+  }
+
+  public void setSampled(Boolean sampled) {
+    this.sampled = sampled;
+  }
+
+  @Override
+  public SpanContext clone() throws CloneNotSupportedException {
+    final SpanContext clone = (SpanContext) super.clone();
+    clone.tags = CollectionUtils.shallowCopy(tags);
+    return clone;
   }
 }
