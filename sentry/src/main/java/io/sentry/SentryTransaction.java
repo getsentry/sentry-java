@@ -150,6 +150,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    *
    * @param spanStatus - the status
    */
+  @Override
   public void setStatus(@Nullable SpanStatus spanStatus) {
     this.getContexts().getTrace().setStatus(spanStatus);
   }

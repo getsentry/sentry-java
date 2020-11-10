@@ -3,6 +3,7 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +46,12 @@ public class SentrySpanAdvice implements MethodInterceptor {
         span.setOp(sentrySpan.op());
       }
       try {
-        return invocation.proceed();
+        final Object result = invocation.proceed();
+        span.setStatus(SpanStatus.OK);
+        return result;
+      } catch (Throwable e) {
+        span.setStatus(SpanStatus.INTERNAL_ERROR);
+        throw e;
       } finally {
         span.finish();
       }

@@ -9,6 +9,8 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
+import io.sentry.SpanStatus
+import java.lang.RuntimeException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -74,6 +76,34 @@ class SentrySpanAdviceTest {
     }
 
     @Test
+    fun `when method is annotated with @SentrySpan and returns, attached span has status OK`() {
+        val scope = Scope(SentryOptions())
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
+        scope.setTransaction(tx)
+
+        whenever(hub.configureScope(any())).thenAnswer {
+            (it.arguments[0] as ScopeCallback).run(scope)
+        }
+        sampleService.methodWithSpanDescriptionSet()
+        assertEquals(SpanStatus.OK, tx.spans.first().status)
+    }
+
+    @Test
+    fun `when method is annotated with @SentrySpan and throws exception, attached span has status INTERNAL_ERROR`() {
+        val scope = Scope(SentryOptions())
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
+        scope.setTransaction(tx)
+
+        whenever(hub.configureScope(any())).thenAnswer {
+            (it.arguments[0] as ScopeCallback).run(scope)
+        }
+        try {
+            sampleService.methodThrowingException()
+        } catch (e: Exception) { }
+        assertEquals(SpanStatus.INTERNAL_ERROR, tx.spans.first().status)
+    }
+
+    @Test
     fun `when method is annotated with @SentrySpan and there is no active transaction, span is not created and method is executed`() {
         val scope = Scope(SentryOptions())
         whenever(hub.configureScope(any())).thenAnswer {
@@ -116,5 +146,10 @@ class SentrySpanAdviceTest {
 
         @SentrySpan
         open fun methodWithoutSpanDescriptionSet() = 2
+
+        @SentrySpan
+        open fun methodThrowingException() {
+            throw RuntimeException("ex")
+        }
     }
 }

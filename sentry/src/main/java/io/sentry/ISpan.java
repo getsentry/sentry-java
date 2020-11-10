@@ -36,6 +36,13 @@ public interface ISpan {
    */
   void setDescription(@Nullable String description);
 
+  /**
+   * Sets span status.
+   *
+   * @param status - the status.
+   */
+  void setStatus(@Nullable SpanStatus status);
+
   @NotNull
   SpanContext getSpanContext();
 }
