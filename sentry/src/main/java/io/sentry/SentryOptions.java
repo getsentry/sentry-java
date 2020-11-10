@@ -26,6 +26,9 @@ public class SentryOptions {
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
+  /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
+  private static final String PROXY_PORT_DEFAULT = "80";
+
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
    * means just adding data OR return null in case the event will be dropped and not sent.
@@ -241,9 +244,9 @@ public class SentryOptions {
     final String proxyHost = propertiesProvider.getProperty("proxy.host");
     final String proxyUser = propertiesProvider.getProperty("proxy.user");
     final String proxyPass = propertiesProvider.getProperty("proxy.pass");
-    final String proxyPort = propertiesProvider.getProperty("proxy.port");
+    final String proxyPort = propertiesProvider.getProperty("proxy.port", PROXY_PORT_DEFAULT);
 
-    if (proxyHost != null && proxyPort != null) {
+    if (proxyHost != null) {
       options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
     }
     return options;

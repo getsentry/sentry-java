@@ -211,4 +211,24 @@ class SentryOptionsTest {
             temporaryFolder.delete()
         }
     }
+
+    @Test
+    fun `when proxy port is not set default proxy port is used`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("proxy.host=proxy.example.com\n")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.proxy)
+            assertEquals("proxy.example.com", options.proxy!!.host)
+            assertEquals("80", options.proxy!!.port)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
 }
