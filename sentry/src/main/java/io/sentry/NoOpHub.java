@@ -117,22 +117,13 @@ final class NoOpHub implements IHub {
     return SentryId.EMPTY_ID;
   }
 
-  /**
-   * Creates no-op transaction.
-   *
-   * @param name the transaction name
-   * @param transactionContexts the transaction contexts
-   * @return the transaction
-   */
   @Override
-  public SentryTransaction startTransaction(
-      final @NotNull String name, final @NotNull SpanContext transactionContexts) {
-    return new SentryTransaction(name, transactionContexts, this);
+  public SentryTransaction startTransaction(TransactionContext transactionContexts) {
+    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
   }
 
   @Override
-  public SentryTransaction startTransaction(
-      String name, SpanContext transactionContexts, SamplingContext samplingContext) {
-    return new SentryTransaction(name, transactionContexts, this);
+  public SentryTransaction startTransaction(TransactionContext transactionContexts, SamplingContext samplingContext) {
+    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
   }
 }

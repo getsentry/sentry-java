@@ -42,32 +42,32 @@ class TracingSamplerTest {
     @Test
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns lower number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.1, tracesSamplerResult = 0.2)
-        assertTrue(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), null)))
+        assertTrue(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext(), null)))
     }
 
     @Test
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns greater number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.9, tracesSamplerResult = 0.2)
-        assertFalse(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), null)))
+        assertFalse(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext(), null)))
     }
 
     @Test
     fun `when tracesSampleRate is not set, and tracesSampler is not set returns false`() {
         val sampler = fixture.getSut(randomResult = 0.1)
-        assertFalse(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), null)))
+        assertFalse(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext(), null)))
     }
 
     @Test
     fun `when parentSampled is set, sampler uses it as a sampling decision`() {
         val sampler = fixture.getSut()
-        assertFalse(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), false)))
-        assertTrue(sampler.sample(SamplingContext(SpanContext(), CustomSamplingContext(), true)))
+        assertFalse(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext(), false)))
+        assertTrue(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext(), true)))
     }
 
     @Test
     fun `when tracing decision is set on SpanContext, sampler uses it as a sampling decision`() {
         val sampler = fixture.getSut()
-        assertFalse(sampler.sample(SamplingContext(SpanContext(false), CustomSamplingContext(), null)))
-        assertTrue(sampler.sample(SamplingContext(SpanContext(true), CustomSamplingContext(), null)))
+        assertFalse(sampler.sample(SamplingContext(TransactionContext("name", false), CustomSamplingContext(), null)))
+        assertTrue(sampler.sample(SamplingContext(TransactionContext("name", true), CustomSamplingContext(), null)))
     }
 }

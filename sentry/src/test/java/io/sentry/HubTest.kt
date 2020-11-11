@@ -970,9 +970,9 @@ class HubTest {
     @Test
     fun `when startTransaction, creates transaction`() {
         val hub = generateHub()
-        val contexts = SpanContext()
+        val contexts = TransactionContext("name")
 
-        val transaction = hub.startTransaction("name", contexts)
+        val transaction = hub.startTransaction(contexts)
 
         assertEquals(contexts, transaction.contexts.trace)
     }

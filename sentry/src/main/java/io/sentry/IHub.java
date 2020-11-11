@@ -271,11 +271,10 @@ public interface IHub {
   /**
    * Creates a Transaction bound to the current hub and returns the instance.
    *
-   * @param name the transaction name
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  SentryTransaction startTransaction(String name, SpanContext transactionContexts);
+  SentryTransaction startTransaction(TransactionContext transactionContexts);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
@@ -287,7 +286,7 @@ public interface IHub {
    * @return created transaction.
    */
   default SentryTransaction startTransaction(String name, SamplingContext samplingContext) {
-    return startTransaction(name, new SpanContext(), samplingContext);
+    return startTransaction(new TransactionContext(name), samplingContext);
   }
 
   /**
@@ -295,13 +294,11 @@ public interface IHub {
    * transaction and sampling contexts the decision if transaction is sampled will be taken by
    * {@link TracingSampler}.
    *
-   * @param name the transaction name
    * @param transactionContexts the transaction context
    * @param samplingContext the sampling context
    * @return created transaction.
    */
-  SentryTransaction startTransaction(
-      String name, SpanContext transactionContexts, SamplingContext samplingContext);
+  SentryTransaction startTransaction(TransactionContext transactionContexts, SamplingContext samplingContext);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
@@ -312,6 +309,6 @@ public interface IHub {
    * @return created transaction
    */
   default SentryTransaction startTransaction(final @NotNull String name) {
-    return startTransaction(name, (SamplingContext) null);
+    return startTransaction(name, null);
   }
 }
