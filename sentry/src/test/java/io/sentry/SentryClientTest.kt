@@ -709,7 +709,7 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when scope has an active span, trace context is applied to an event`() {
+    fun `when scope's active span is a transaction, transaction context is applied to an event`() {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
@@ -717,7 +717,20 @@ class SentryClientTest {
         scope.setTransaction(transaction)
         sut.captureEvent(event, scope)
         assertNotNull(event.contexts.trace)
-        assertEquals(event.contexts.trace, transaction.contexts.trace)
+        assertEquals(transaction.contexts.trace, event.contexts.trace)
+    }
+
+    @Test
+    fun `when scope's active span is a span, span is applied to an event`() {
+        val event = SentryEvent()
+        val sut = fixture.getSut()
+        val scope = createScope()
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        val span = transaction.startChild()
+        sut.captureEvent(event, scope)
+        assertNotNull(event.contexts.trace)
+        assertEquals(span, event.contexts.trace)
     }
 
     private fun createScope(): Scope {

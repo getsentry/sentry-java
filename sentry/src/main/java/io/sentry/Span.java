@@ -19,6 +19,9 @@ public final class Span extends SpanContext implements ISpan {
    */
   private final transient @NotNull SentryTransaction transaction;
 
+  /** A throwable thrown during the execution of the span. */
+  private transient @Nullable Throwable throwable;
+
   Span(
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
@@ -53,10 +56,20 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return transaction.getSpanContext();
+    return this;
   }
 
   boolean isFinished() {
     return this.timestamp != null;
+  }
+
+  @Override
+  public void setThrowable(final @Nullable Throwable throwable) {
+    this.throwable = throwable;
+  }
+
+  @Override
+  public @Nullable Throwable getThrowable() {
+    return throwable;
   }
 }

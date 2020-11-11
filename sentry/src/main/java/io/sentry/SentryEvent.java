@@ -14,9 +14,6 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryEvent extends SentryBaseEvent implements IUnknownPropertiesConsumer {
   private final Date timestamp;
 
-  /** The captured Throwable */
-  private transient @Nullable Throwable throwable;
-
   private Message message;
   private String serverName;
   private String platform;
@@ -65,15 +62,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   @SuppressWarnings("JdkObsolete")
   public Date getTimestamp() {
     return (Date) timestamp.clone();
-  }
-
-  /**
-   * Returns the captured Throwable or null
-   *
-   * @return the Throwable or null
-   */
-  public @Nullable Throwable getThrowable() {
-    return throwable;
   }
 
   public Message getMessage() {
@@ -142,15 +130,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setExceptions(List<SentryException> exception) {
     this.exception = new SentryValues<>(exception);
-  }
-
-  /**
-   * Sets the Throwable
-   *
-   * @param throwable the Throwable or null
-   */
-  public void setThrowable(final @Nullable Throwable throwable) {
-    this.throwable = throwable;
   }
 
   public SentryLevel getLevel() {
