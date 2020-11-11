@@ -68,9 +68,6 @@ public class SentryOptions {
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
 
-  /** Turns tracing on or off. Default is disabled. */
-  private boolean enableTracing;
-
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
 
@@ -408,14 +405,6 @@ public class SentryOptions {
    */
   public void setEnableNdk(boolean enableNdk) {
     this.enableNdk = enableNdk;
-  }
-
-  public boolean isEnableTracing() {
-    return enableTracing;
-  }
-
-  public void setEnableTracing(boolean enableTracing) {
-    this.enableTracing = enableTracing;
   }
 
   /**
