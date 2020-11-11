@@ -327,12 +327,6 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    transaction = executeBeforeTransaction(transaction, hint);
-
-    if (transaction == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
-    }
-
     try {
       final SentryEnvelope envelope = buildEnvelope(transaction, session);
 
@@ -433,22 +427,6 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
-  }
-
-  private @Nullable SentryTransaction executeBeforeTransaction(
-      @NotNull SentryTransaction transaction, final @Nullable Object hint) {
-    final SentryOptions.BeforeTransactionCallback beforeTransaction =
-        options.getBeforeTransaction();
-    if (beforeTransaction != null) {
-      try {
-        transaction = beforeTransaction.execute(transaction, hint);
-      } catch (Exception e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "The BeforeTransaction callback threw an exception.", e);
-      }
-    }
-    return transaction;
   }
 
   @Override
