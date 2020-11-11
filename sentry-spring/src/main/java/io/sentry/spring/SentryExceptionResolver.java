@@ -4,9 +4,12 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryTransaction;
+import io.sentry.SpanContext;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +44,13 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
         new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
     final SentryEvent event = new SentryEvent(throwable);
     event.setLevel(SentryLevel.FATAL);
+    final SentryTransaction sentryTransaction = resolveActiveTransaction();
+    if (sentryTransaction != null) {
+      final SpanContext spanContext = sentryTransaction.getSpanContext(ex);
+      if (spanContext != null) {
+        event.getContexts().setTrace(spanContext);
+      }
+    }
     hub.captureEvent(event);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
@@ -51,5 +61,20 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
   public int getOrder() {
     // ensure this resolver runs first so that all exceptions are reported
     return Integer.MIN_VALUE;
+  }
+
+  private @Nullable SentryTransaction resolveActiveTransaction() {
+    final AtomicReference<SentryTransaction> spanRef = new AtomicReference<>();
+
+    hub.configureScope(
+        scope -> {
+          final SentryTransaction transaction = scope.getTransaction();
+
+          if (transaction != null) {
+            spanRef.set(transaction);
+          }
+        });
+
+    return spanRef.get();
   }
 }

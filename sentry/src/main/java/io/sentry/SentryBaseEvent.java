@@ -17,6 +17,9 @@ public abstract class SentryBaseEvent {
   private @Nullable SdkVersion sdk;
   private @Nullable Request request;
 
+  /** The captured Throwable */
+  protected transient @Nullable Throwable throwable;
+
   protected SentryBaseEvent(final @NotNull SentryId eventId) {
     this.eventId = eventId;
   }
@@ -56,5 +59,23 @@ public abstract class SentryBaseEvent {
 
   public void setRequest(Request request) {
     this.request = request;
+  }
+
+  /**
+   * Returns the captured Throwable or null
+   *
+   * @return the Throwable or null
+   */
+  public @Nullable Throwable getThrowable() {
+    return throwable;
+  }
+
+  /**
+   * Sets the Throwable
+   *
+   * @param throwable the Throwable or null
+   */
+  public void setThrowable(final @Nullable Throwable throwable) {
+    this.throwable = throwable;
   }
 }

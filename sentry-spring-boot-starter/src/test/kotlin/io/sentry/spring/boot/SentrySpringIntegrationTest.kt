@@ -2,6 +2,7 @@ package io.sentry.spring.boot
 
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Sentry
+import io.sentry.spring.tracing.SentrySpan
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
@@ -28,6 +29,7 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
+import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
@@ -36,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true"]
 )
 class SentrySpringIntegrationTest {
 
@@ -110,13 +112,26 @@ class SentrySpringIntegrationTest {
             })
         }
     }
+
+    @Test
+    fun `attaches span context to events triggered within transaction`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.contexts.trace).isNotNull()
+            })
+        }
+    }
 }
 
 @SpringBootApplication
 open class App
 
 @RestController
-class HelloController {
+class HelloController(private val helloService: HelloService) {
     private val logger = LoggerFactory.getLogger(HelloController::class.java)
 
     @GetMapping("/hello")
@@ -129,9 +144,23 @@ class HelloController {
         throw RuntimeException("something went wrong")
     }
 
+    @GetMapping("/performance")
+    fun performance() {
+        helloService.throws()
+    }
+
     @GetMapping("/logging")
     fun logging() {
         logger.error("event from logger")
+    }
+}
+
+@Service
+open class HelloService {
+
+    @SentrySpan
+    open fun throws() {
+        throw RuntimeException("something went wrong")
     }
 }
 

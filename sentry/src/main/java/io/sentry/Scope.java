@@ -266,7 +266,7 @@ public final class Scope implements Cloneable {
    * @return the transaction
    */
   @Nullable
-  SentryTransaction getTransaction() {
+  public SentryTransaction getTransaction() {
     return this.transaction;
   }
 

@@ -90,7 +90,7 @@ class SentrySpanAdviceTest {
     }
 
     @Test
-    fun `when method is annotated with @SentrySpan and throws exception, attached span has status INTERNAL_ERROR`() {
+    fun `when method is annotated with @SentrySpan and throws exception, attached span has throwable set and INTERNAL_ERROR status`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
@@ -98,10 +98,14 @@ class SentrySpanAdviceTest {
         whenever(hub.configureScope(any())).thenAnswer {
             (it.arguments[0] as ScopeCallback).run(scope)
         }
+        var throwable: Throwable? = null
         try {
             sampleService.methodThrowingException()
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            throwable = e
+        }
         assertEquals(SpanStatus.INTERNAL_ERROR, tx.spans.first().status)
+        assertEquals(throwable, tx.spans.first().throwable)
     }
 
     @Test

@@ -43,6 +43,26 @@ public interface ISpan {
    */
   void setStatus(@Nullable SpanStatus status);
 
+  /**
+   * Sets the throwable that was thrown during the execution of the span.
+   *
+   * @param throwable - the throwable.
+   */
+  void setThrowable(@Nullable Throwable throwable);
+
+  /**
+   * Gets the throwable that was thrown during the execution of the span.
+   *
+   * @return throwable or {@code null} if none
+   */
+  @Nullable
+  Throwable getThrowable();
+
+  /**
+   * Gets the span context.
+   *
+   * @return the span context
+   */
   @NotNull
   SpanContext getSpanContext();
 }

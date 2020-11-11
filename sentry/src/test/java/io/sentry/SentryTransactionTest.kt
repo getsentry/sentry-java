@@ -106,4 +106,30 @@ class SentryTransactionTest {
         transaction.setStatus(SpanStatus.ALREADY_EXISTS)
         assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.trace!!.status)
     }
+
+    @Test
+    fun `when transaction has throwable set, returns transaction context`() {
+        val transaction = SentryTransaction("name")
+        val ex = RuntimeException()
+        transaction.setThrowable(ex)
+        assertEquals(transaction.contexts.trace, transaction.getSpanContext(ex))
+    }
+
+    @Test
+    fun `when transaction has a span with throwable, returns span`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild()
+        val ex = RuntimeException()
+        span.throwable = ex
+        assertEquals(span, transaction.getSpanContext(ex))
+    }
+
+    @Test
+    fun `when neither transaction nor spans match throwable, returns null`() {
+        val transaction = SentryTransaction("name")
+        transaction.throwable = RuntimeException()
+        val span = transaction.startChild()
+        span.throwable = RuntimeException()
+        assertNull(transaction.getSpanContext(RuntimeException()))
+    }
 }

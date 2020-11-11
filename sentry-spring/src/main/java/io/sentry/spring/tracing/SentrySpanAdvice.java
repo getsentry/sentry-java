@@ -51,6 +51,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
         return result;
       } catch (Throwable e) {
         span.setStatus(SpanStatus.INTERNAL_ERROR);
+        span.setThrowable(e);
         throw e;
       } finally {
         span.finish();
