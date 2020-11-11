@@ -25,8 +25,8 @@ final class TracingSampler {
       return samplingContext.getTransactionContexts().getSampled();
     } else if (samplingContext != null && options.getTracesSampler() != null) {
       return sample(options.getTracesSampler().sample(samplingContext));
-    } else if (samplingContext != null && samplingContext.getParentSampled() != null) {
-      return samplingContext.getParentSampled();
+    } else if (samplingContext != null && samplingContext.getTransactionContexts().getParentSampled() != null) {
+      return samplingContext.getTransactionContexts().getParentSampled();
     } else if (options.getTracesSampleRate() != null) {
       return sample(options.getTracesSampleRate());
     } else {

@@ -9,29 +9,22 @@ import org.jetbrains.annotations.Nullable;
  * is going to be sampled.
  */
 public final class SamplingContext {
-  private final @NotNull SpanContext transactionContexts;
+  private final @NotNull TransactionContext transactionContexts;
   private final @Nullable CustomSamplingContext customSamplingContext;
-  private final @Nullable Boolean parentSampled;
 
   public SamplingContext(
-      final @NotNull SpanContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final @Nullable Boolean parentSampled) {
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext) {
     this.transactionContexts =
         Objects.requireNonNull(transactionContexts, "transactionContexts is required");
     this.customSamplingContext = customSamplingContext;
-    this.parentSampled = parentSampled;
   }
 
   public @Nullable CustomSamplingContext getCustomSamplingContext() {
     return customSamplingContext;
   }
 
-  public @NotNull SpanContext getTransactionContexts() {
+  public @NotNull TransactionContext getTransactionContexts() {
     return transactionContexts;
-  }
-
-  public @Nullable Boolean getParentSampled() {
-    return parentSampled;
   }
 }

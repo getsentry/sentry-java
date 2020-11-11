@@ -39,6 +39,10 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
     this(name, new SpanContext(), NoOpHub.getInstance());
   }
 
+  SentryTransaction(final @NotNull TransactionContext transactionContext, final @NotNull IHub hub) {
+    this(transactionContext.getName(), transactionContext, hub);
+  }
+
   /**
    * Creates transaction with name and contexts.
    *

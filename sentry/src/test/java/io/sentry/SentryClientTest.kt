@@ -722,34 +722,6 @@ class SentryClientTest {
         assertEquals(event.contexts.trace, transaction.contexts.trace)
     }
 
-    @Test
-    fun `when transaction is captured, before send callback is triggered`() {
-        val transaction = SentryTransaction("name")
-        val expected = SentryTransaction("name").apply {
-            description = "desc"
-        }
-        fixture.sentryOptions.setBeforeTransaction { _, _ -> expected }
-        val sut = fixture.getSut()
-
-        sut.captureTransaction(transaction)
-
-        verify(fixture.connection).send(check {
-            val tx = getTransactionFromData(it.items.first().data)
-            assertEquals("desc", tx.description)
-        }, anyOrNull())
-        verifyNoMoreInteractions(fixture.connection)
-    }
-
-    @Test
-    fun `when transaction is captured and before send callback returns null, transaction is not sent`() {
-        fixture.sentryOptions.setBeforeTransaction { _, _ -> null }
-        val sut = fixture.getSut()
-
-        sut.captureTransaction(SentryTransaction("name"))
-
-        verifyZeroInteractions(fixture.connection)
-    }
-
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
