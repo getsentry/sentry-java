@@ -16,9 +16,14 @@ public final class TransactionContext extends SpanContext {
    * @param sentryTrace - the sentry-trace header
    * @return the transaction contexts
    */
-  public static @NotNull TransactionContext fromSentryTrace(final @NotNull String name, final @NotNull SentryTraceHeader sentryTrace) {
-    return new TransactionContext(name,
-      sentryTrace.getTraceId(), new SpanId(), sentryTrace.getSpanId(), sentryTrace.isSampled());
+  public static @NotNull TransactionContext fromSentryTrace(
+      final @NotNull String name, final @NotNull SentryTraceHeader sentryTrace) {
+    return new TransactionContext(
+        name,
+        sentryTrace.getTraceId(),
+        new SpanId(),
+        sentryTrace.getSpanId(),
+        sentryTrace.isSampled());
   }
 
   public TransactionContext(final @NotNull String name) {
@@ -26,7 +31,12 @@ public final class TransactionContext extends SpanContext {
     this.parentSampled = null;
   }
 
-  public TransactionContext(final @NotNull String name, final @NotNull SentryId traceId, final @NotNull SpanId spanId, final @Nullable SpanId parentSpanId, final @Nullable Boolean parentSampled) {
+  public TransactionContext(
+      final @NotNull String name,
+      final @NotNull SentryId traceId,
+      final @NotNull SpanId spanId,
+      final @Nullable SpanId parentSpanId,
+      final @Nullable Boolean parentSampled) {
     super(traceId, spanId, parentSpanId, null);
     this.name = Objects.requireNonNull(name, "name is required");
     this.parentSampled = parentSampled;

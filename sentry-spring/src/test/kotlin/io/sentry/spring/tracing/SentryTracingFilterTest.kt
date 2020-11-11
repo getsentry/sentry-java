@@ -12,6 +12,7 @@ import io.sentry.SentryTransaction
 import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.SpanStatus
+import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
 import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
@@ -35,10 +36,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any(), any<SpanContext>())).thenAnswer { SentryTransaction(it.arguments[0] as String, it.arguments[1] as SpanContext, hub) }
+                whenever(hub.startTransaction(any<TransactionContext>())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+            whenever(hub.startTransaction(any<String>())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
             return SentryTracingFilter(hub, SentryOptions(), requestResolver)
         }
     }

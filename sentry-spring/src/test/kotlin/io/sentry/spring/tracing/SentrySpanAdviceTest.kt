@@ -10,6 +10,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
 import io.sentry.SpanStatus
+import io.sentry.TransactionContext
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -40,7 +41,7 @@ class SentrySpanAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+        whenever(hub.startTransaction(any<TransactionContext>())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
     }
 
     @Test

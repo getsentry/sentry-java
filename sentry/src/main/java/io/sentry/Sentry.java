@@ -520,7 +520,8 @@ public final class Sentry {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  public static SentryTransaction startTransaction(final @NotNull TransactionContext transactionContexts) {
+  public static SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts) {
     return getCurrentHub().startTransaction(transactionContexts);
   }
 

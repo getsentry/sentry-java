@@ -40,7 +40,7 @@ class SentryTransactionAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+        whenever(hub.startTransaction(any<String>())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
     }
 
     @Test
