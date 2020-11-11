@@ -1,6 +1,5 @@
 package io.sentry.protocol;
 
-import com.jakewharton.nopen.annotation.Open;
 import io.sentry.SpanContext;
 import io.sentry.util.Objects;
 import java.util.Map;
@@ -8,11 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Open
-public class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
+public final class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
   private static final long serialVersionUID = 252445813254943011L;
 
-  protected <T> T toContextType(String key, Class<T> clazz) {
+  private <T> T toContextType(String key, Class<T> clazz) {
     Object item = get(key);
     return clazz.isInstance(item) ? clazz.cast(item) : null;
   }
@@ -77,11 +75,6 @@ public class Contexts extends ConcurrentHashMap<String, Object> implements Clone
   @Override
   public @NotNull Contexts clone() throws CloneNotSupportedException {
     final Contexts clone = new Contexts();
-    cloneInto(clone);
-    return clone;
-  }
-
-  protected void cloneInto(Contexts clone) throws CloneNotSupportedException {
     for (Map.Entry<String, Object> entry : entrySet()) {
       if (entry != null) {
         Object value = entry.getValue();
@@ -105,5 +98,6 @@ public class Contexts extends ConcurrentHashMap<String, Object> implements Clone
         }
       }
     }
+    return clone;
   }
 }
