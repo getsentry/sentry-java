@@ -40,17 +40,6 @@ public class SpanContext implements Cloneable {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @Nullable Map<String, String> tags;
 
-  /**
-   * Creates {@link SpanContext} from sentry-trace header.
-   *
-   * @param sentryTrace - the sentry-trace header
-   * @return the transaction contexts
-   */
-  public static @NotNull SpanContext fromSentryTrace(final @NotNull SentryTraceHeader sentryTrace) {
-    return new SpanContext(
-        sentryTrace.getTraceId(), new SpanId(), sentryTrace.getSpanId(), sentryTrace.isSampled());
-  }
-
   public SpanContext(@Nullable Boolean sampled) {
     this(new SentryId(), new SpanId(), null, sampled);
   }
