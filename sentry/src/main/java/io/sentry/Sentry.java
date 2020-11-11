@@ -530,12 +530,12 @@ public final class Sentry {
    * TracingSampler}.
    *
    * @param name the transaction name
-   * @param samplingContext the sampling context
+   * @param customSamplingContext the sampling context
    * @return created transaction.
    */
   public static SentryTransaction startTransaction(
-      final @NotNull String name, final @NotNull SamplingContext samplingContext) {
-    return getCurrentHub().startTransaction(name, samplingContext);
+      final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(name, customSamplingContext);
   }
 
   /**
@@ -544,13 +544,13 @@ public final class Sentry {
    * {@link TracingSampler}.
    *
    * @param transactionContexts the transaction context
-   * @param samplingContext the sampling context
+   * @param customSamplingContext the sampling context
    * @return created transaction.
    */
   public static SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
-      final @NotNull SamplingContext samplingContext) {
-    return getCurrentHub().startTransaction(transactionContexts, samplingContext);
+      final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
   }
 
   /**

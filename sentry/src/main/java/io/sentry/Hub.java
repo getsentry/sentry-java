@@ -697,7 +697,8 @@ public final class Hub implements IHub {
   @Override
   public SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
-      final @Nullable SamplingContext samplingContext) {
+      final @Nullable CustomSamplingContext customSamplingContext) {
+    final SamplingContext samplingContext = new SamplingContext(transactionContexts, customSamplingContext, null); // todo: parentSampled
     boolean samplingDecision = tracingSampler.sample(samplingContext);
     transactionContexts.setSampled(samplingDecision);
     return this.startTransaction(transactionContexts);

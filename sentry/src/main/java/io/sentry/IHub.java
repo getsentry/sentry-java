@@ -282,11 +282,11 @@ public interface IHub {
    * TracingSampler}.
    *
    * @param name the transaction name
-   * @param samplingContext the sampling context
+   * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  default SentryTransaction startTransaction(String name, SamplingContext samplingContext) {
-    return startTransaction(new TransactionContext(name), samplingContext);
+  default SentryTransaction startTransaction(String name, CustomSamplingContext customSamplingContext) {
+    return startTransaction(new TransactionContext(name), customSamplingContext);
   }
 
   /**
@@ -295,10 +295,10 @@ public interface IHub {
    * {@link TracingSampler}.
    *
    * @param transactionContexts the transaction context
-   * @param samplingContext the sampling context
+   * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  SentryTransaction startTransaction(TransactionContext transactionContexts, SamplingContext samplingContext);
+  SentryTransaction startTransaction(TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
