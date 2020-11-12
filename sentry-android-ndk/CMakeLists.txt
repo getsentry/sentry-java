@@ -4,6 +4,7 @@ project(Sentry-Android LANGUAGES C CXX)
 # Add sentry-android shared library
 add_library(sentry-android SHARED src/main/jni/sentry.c)
 
+set(BUILD_SHARED_LIBS ON)
 set(SENTRY_BUILD_SHARED_LIBS ON)
 
 # Adding sentry-native submodule subdirectory

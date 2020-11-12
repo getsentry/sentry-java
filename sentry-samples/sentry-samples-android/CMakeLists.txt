@@ -3,6 +3,7 @@ project(Sentry-Sample LANGUAGES C CXX)
 
 add_library(native-sample SHARED src/main/cpp/native-sample.cpp)
 
+set(BUILD_SHARED_LIBS ON)
 set(SENTRY_BUILD_SHARED_LIBS ON)
 
 add_subdirectory(../../sentry-android-ndk/${SENTRY_NATIVE_SRC} sentry_build)
