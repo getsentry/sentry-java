@@ -1,5 +1,6 @@
 # vNext
 
+* Update to sentry-native 0.4.4 and fix shared library builds (#1039)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
 * fix: use neutral Locale for String operations #1033
