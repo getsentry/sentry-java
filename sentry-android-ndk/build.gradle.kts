@@ -38,8 +38,6 @@ android {
 
         ndk {
             ndkVersion = Config.Android.ndkVersion
-
-            // AGP 4.1
             abiFilters.addAll(Config.Android.abiFilters)
         }
 
@@ -50,8 +48,6 @@ android {
     externalNativeBuild {
         cmake {
             version = Config.Android.cmakeVersion
-
-            // for AGP 4.1
             path("CMakeLists.txt")
         }
     }
