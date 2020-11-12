@@ -1,6 +1,6 @@
 # vNext
 
-* Fix: NDK integration should be a shared lib instead of a static lib #1038
+* Bump: AGP 4.1.1
 * Fix: use neutral Locale for String operations #1033
 * Update to sentry-native 0.4.4 and fix shared library builds (#1039)
 
