@@ -1,4 +1,4 @@
-name: changelog
+name: "Validate changelog"
 
 on: [pull_request]
 
