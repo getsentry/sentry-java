@@ -18,5 +18,4 @@ jobs:
         with:
           java-version: 1.8
       - name: Check formatting with Spotless
-        run: |
-          ./gradlew spotlessJavaCheck spotlessKotlinCheck
+        run: make checkFormat
