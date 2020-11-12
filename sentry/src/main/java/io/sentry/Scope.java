@@ -110,7 +110,6 @@ public final class Scope implements Cloneable {
    *
    * @return current active Span or Transaction or null if transaction has not been set.
    */
-  @SuppressWarnings("JdkObsolete")
   public ISpan getSpan() {
     if (transaction != null && !transaction.getSpans().isEmpty()) {
       final Span span = transaction.getLatestActiveSpan();
