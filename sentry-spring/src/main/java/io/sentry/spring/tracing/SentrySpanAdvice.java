@@ -29,19 +29,20 @@ public class SentrySpanAdvice implements MethodInterceptor {
 
   @Override
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
-    final Method mostSpecificMethod =
-        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
-
     final ISpan activeSpan = resolveActiveSpan();
 
     if (activeSpan == null) {
       // there is no active transaction, we do not start new span
       return invocation.proceed();
     } else {
+      final Method mostSpecificMethod =
+        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
+      final Class<?> targetClass = invocation.getMethod().getDeclaringClass();
       final ISpan span = activeSpan.startChild();
+
       final SentrySpan sentrySpan =
           AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
-      span.setDescription(resolveSpanDescription(mostSpecificMethod, sentrySpan));
+      span.setDescription(resolveSpanDescription(targetClass, mostSpecificMethod, sentrySpan));
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.op())) {
         span.setOp(sentrySpan.op());
       }
@@ -59,9 +60,10 @@ public class SentrySpanAdvice implements MethodInterceptor {
     }
   }
 
-  private String resolveSpanDescription(Method method, @Nullable SentrySpan sentrySpan) {
+  private String resolveSpanDescription(
+      Class<?> targetClass, Method method, @Nullable SentrySpan sentrySpan) {
     return sentrySpan == null || StringUtils.isEmpty(sentrySpan.value())
-        ? method.getDeclaringClass().getSimpleName() + "." + method.getName()
+        ? targetClass.getSimpleName() + "." + method.getName()
         : sentrySpan.value();
   }
 
