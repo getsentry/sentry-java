@@ -19,8 +19,6 @@ JNIEXPORT void JNICALL Java_io_sentry_sample_NativeSample_message(JNIEnv *env, j
             /*  logger */ "custom",
             /* message */ "It works!"
     );
-    // this fails, event is never captured
-    // SENTRY_WITH_OPTIONS (options) always return null
     sentry_capture_event(event);
 }
 
