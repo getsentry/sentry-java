@@ -28,7 +28,6 @@ android {
         }
 
         ndk {
-//            setAbiFilters(Config.Android.abiFilters)
             ndkVersion = Config.Android.ndkVersion
 
             // AGP 4.1
@@ -52,7 +51,6 @@ android {
     externalNativeBuild {
         cmake {
             version = Config.Android.cmakeVersion
-//            setPath("CMakeLists.txt")
 
             // for AGP 4.1
             path("CMakeLists.txt")

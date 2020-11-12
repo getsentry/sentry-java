@@ -16,6 +16,8 @@ public final class SentryNdk {
     // See
     // https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-dependency-resolution
     System.loadLibrary("log");
+    // looks like sentry is built as a static lib and the final 'so' is not generated
+//    System.loadLibrary("sentry");
     System.loadLibrary("sentry-android");
   }
 
