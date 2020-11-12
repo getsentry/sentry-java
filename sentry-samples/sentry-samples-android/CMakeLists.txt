@@ -3,6 +3,9 @@ project(Sentry-Sample LANGUAGES C CXX)
 
 add_library(native-sample SHARED src/main/cpp/native-sample.cpp)
 
+# make sure that we build it as a shared lib instead of a static lib
+set(SENTRY_BUILD_SHARED_LIBS ON)
+
 add_subdirectory(../../sentry-android-ndk/${SENTRY_NATIVE_SRC} sentry_build)
 
 find_library(LOG_LIB log)
