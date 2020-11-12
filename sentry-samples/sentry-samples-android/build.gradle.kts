@@ -28,10 +28,11 @@ android {
         }
 
         ndk {
-            ndkVersion = Config.Android.ndkVersion
             abiFilters.addAll(Config.Android.abiFilters)
         }
     }
+
+    ndkVersion = Config.Android.ndkVersion
 
     buildFeatures {
         // Determines whether to support View Binding.
@@ -48,7 +49,6 @@ android {
 
     externalNativeBuild {
         cmake {
-            version = Config.Android.cmakeVersion
             path("CMakeLists.txt")
         }
     }

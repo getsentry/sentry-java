@@ -37,7 +37,6 @@ android {
         }
 
         ndk {
-            ndkVersion = Config.Android.ndkVersion
             abiFilters.addAll(Config.Android.abiFilters)
         }
 
@@ -45,9 +44,10 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
+    ndkVersion = Config.Android.ndkVersion
+
     externalNativeBuild {
         cmake {
-            version = Config.Android.cmakeVersion
             path("CMakeLists.txt")
         }
     }

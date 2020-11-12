@@ -25,7 +25,7 @@ object Config {
         val minSdkVersionNdk = 16
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
-        val cmakeVersion = "3.10.2"
+        // CMake: Projects that don't set a specific CMake version are built with CMake 3.10.2
         val ndkVersion = "21.3.6528147"
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
     }
