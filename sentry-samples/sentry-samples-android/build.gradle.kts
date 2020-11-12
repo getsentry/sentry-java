@@ -28,8 +28,11 @@ android {
         }
 
         ndk {
-            setAbiFilters(Config.Android.abiFilters)
+//            setAbiFilters(Config.Android.abiFilters)
             ndkVersion = Config.Android.ndkVersion
+
+            // AGP 4.1
+            abiFilters.addAll(Config.Android.abiFilters)
         }
     }
 
@@ -49,7 +52,10 @@ android {
     externalNativeBuild {
         cmake {
             version = Config.Android.cmakeVersion
-            setPath("CMakeLists.txt")
+//            setPath("CMakeLists.txt")
+
+            // for AGP 4.1
+            path("CMakeLists.txt")
         }
     }
 
@@ -64,10 +70,10 @@ android {
 
     buildTypes {
         getByName("debug") {
-            manifestPlaceholders = mapOf(
+            addManifestPlaceholders(mapOf(
                 "sentryDebug" to true,
                 "sentryEnvironment" to "debug"
-            )
+            ))
         }
         getByName("release") {
             isMinifyEnabled = true
@@ -75,10 +81,10 @@ android {
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             isShrinkResources = true
 
-            manifestPlaceholders = mapOf(
+            addManifestPlaceholders(mapOf(
                 "sentryDebug" to false,
                 "sentryEnvironment" to "release"
-            )
+            ))
         }
     }
 

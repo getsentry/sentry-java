@@ -4,7 +4,7 @@ all: clean compile update dryRelease
 
 # deep clean
 clean:
-	./gradlew clean cleanBuildCache
+	./gradlew clean
 
 # build and run tests
 compile:

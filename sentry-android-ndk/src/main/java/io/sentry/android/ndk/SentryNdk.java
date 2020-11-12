@@ -16,7 +16,6 @@ public final class SentryNdk {
     // See
     // https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-dependency-resolution
     System.loadLibrary("log");
-    System.loadLibrary("sentry");
     System.loadLibrary("sentry-android");
   }
 

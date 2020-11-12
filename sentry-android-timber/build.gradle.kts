@@ -21,6 +21,9 @@ android {
 
         versionName = project.version.toString()
         versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
+
+        // for AGP 4.1
+        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
     buildTypes {
@@ -44,13 +47,6 @@ android {
         unitTests.apply {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
-            all(KotlinClosure1<Any, Test>({
-                (this as Test).also { testTask ->
-                    testTask.extensions
-                            .getByType(JacocoTaskExtension::class.java)
-                            .isIncludeNoLocationClasses = true
-                }
-            }, this))
         }
     }
 
@@ -60,6 +56,12 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         isCheckReleaseBuilds = false
+    }
+}
+
+tasks.withType<Test> {
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = false
     }
 }
 

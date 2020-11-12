@@ -21,6 +21,9 @@ android {
         versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
 
         buildConfigField("String", "SENTRY_ANDROID_SDK_NAME", "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\"")
+
+        // for AGP 4.1
+        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
     buildTypes {
@@ -44,13 +47,6 @@ android {
         unitTests.apply {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
-            all(KotlinClosure1<Any, Test>({
-                (this as Test).also { testTask ->
-                    testTask.extensions
-                        .getByType(JacocoTaskExtension::class.java)
-                        .isIncludeNoLocationClasses = true
-                }
-            }, this))
         }
     }
 
@@ -65,6 +61,12 @@ android {
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+    }
+}
+
+tasks.withType<Test> {
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = false
     }
 }
 
