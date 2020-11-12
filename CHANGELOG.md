@@ -1,9 +1,14 @@
 # vNext
 
+* Bump: AGP 4.1.1
+* Fix: use neutral Locale for String operations #1033
 * Update to sentry-native 0.4.4 and fix shared library builds (#1039)
+
+# 3.1.3
+
+* Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
-* fix: use neutral Locale for String operations #1033
 
 # 3.1.2
 
