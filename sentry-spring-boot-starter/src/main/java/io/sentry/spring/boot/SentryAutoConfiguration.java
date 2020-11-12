@@ -193,7 +193,7 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryPerformanceRestTemplateConfiguration {
       @Bean
-      public SentrySpanRestTemplateCustomizer metricsRestTemplateCustomizer(IHub hub) {
+      public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
         return new SentrySpanRestTemplateCustomizer(hub);
       }
     }
