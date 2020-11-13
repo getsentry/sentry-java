@@ -4,33 +4,27 @@ import io.sentry.DateUtils;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.environment.SentryEnvironment;
-import io.sentry.event.Event;
-import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.MessageInterface;
 import io.sentry.protocol.Message;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.MDC;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.logging.*;
-import java.util.stream.Collectors;
+import java.util.logging.ErrorManager;
+import java.util.logging.Filter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
 
 /**
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
  */
-public class SentryHandler extends Handler {
+public final class SentryHandler extends Handler {
   /**
-   * Name of the {@link Event#extra} property containing the Thread id.
+   * Name of the {@link SentryEvent} extra property containing the Thread id.
    */
   public static final String THREAD_ID = "Sentry-ThreadId";
   /**
@@ -51,12 +45,12 @@ public class SentryHandler extends Handler {
 
 
   /**
-   * Transforms a {@link Level} into an {@link Event.Level}.
+   * Transforms a {@link Level} into an {@link SentryLevel}.
    *
    * @param level original level as defined in JUL.
    * @return log level used within sentry.
    */
-  protected static SentryLevel getLevel(Level level) {
+  protected static @Nullable SentryLevel getLevel(final @NotNull Level level) {
     if (level.intValue() >= Level.SEVERE.intValue()) {
       return SentryLevel.ERROR;
     } else if (level.intValue() >= Level.WARNING.intValue()) {
@@ -78,8 +72,8 @@ public class SentryHandler extends Handler {
    * @param parameters parameters provided to the logging system.
    * @return the parameters formatted as Strings in a List.
    */
-  protected static List<String> formatMessageParameters(Object[] parameters) {
-    List<String> formattedParameters = new ArrayList<>(parameters.length);
+  protected static @NotNull List<String> formatMessageParameters(final @NotNull Object[] parameters) {
+    final List<String> formattedParameters = new ArrayList<>(parameters.length);
     for (Object parameter : parameters) {
       formattedParameters.add((parameter != null) ? parameter.toString() : null);
     }
@@ -90,13 +84,13 @@ public class SentryHandler extends Handler {
    * Retrieves the properties of the logger.
    */
   protected void retrieveProperties() {
-    LogManager manager = LogManager.getLogManager();
-    String className = SentryHandler.class.getName();
+    final LogManager manager = LogManager.getLogManager();
+    final String className = SentryHandler.class.getName();
     setPrintfStyle(Boolean.parseBoolean(manager.getProperty(className + ".printfStyle")));
     setLevel(parseLevelOrDefault(manager.getProperty(className + ".level")));
   }
 
-  private Level parseLevelOrDefault(String levelName) {
+  private @NotNull Level parseLevelOrDefault(final @NotNull String levelName) {
     try {
       return Level.parse(levelName.trim());
     } catch (RuntimeException e) {
@@ -105,7 +99,7 @@ public class SentryHandler extends Handler {
   }
 
   @Override
-  public void publish(LogRecord record) {
+  public void publish(final @NotNull LogRecord record) {
     // Do not log the event if the current thread is managed by sentry
     if (!isLoggable(record)) {
       return;
@@ -125,53 +119,38 @@ public class SentryHandler extends Handler {
    * @param record Log generated.
    * @return EventBuilder containing details provided by the logging system.
    */
-  protected SentryEvent createEventBuilder(LogRecord record) {
+  protected @NotNull SentryEvent createEventBuilder(final @NotNull LogRecord record) {
     final SentryEvent event =
       new SentryEvent(DateUtils.getDateTime(new Date(record.getMillis())));
     event.setLevel(getLevel(record.getLevel()));
     event.setLogger(record.getLoggerName());
 
     final Message sentryMessage = new Message();
+    sentryMessage.setParams(toParams(record.getParameters()));
 
     String message = record.getMessage();
     if (record.getResourceBundle() != null && record.getResourceBundle().containsKey(record.getMessage())) {
       message = record.getResourceBundle().getString(record.getMessage());
     }
     sentryMessage.setMessage(message);
-
     if (record.getParameters() != null) {
       try {
-        String formatted = formatMessage(message, record.getParameters());
-        sentryMessage.setFormatted(formatted);
+        sentryMessage.setFormatted(formatMessage(message, record.getParameters()));
       } catch (RuntimeException e) {
         // local formatting failed, send message and parameters without formatted string
       }
     }
-
-    sentryMessage.setParams(toParams(record.getParameters()));
     event.setMessage(sentryMessage);
 
-    Throwable throwable = record.getThrown();
+    final Throwable throwable = record.getThrown();
     if (throwable != null) {
       event.setThrowable(throwable);
     }
-
-//    Map<String, String> mdc = MDC.getMDCAdapter().getCopyOfContextMap();
-//    if (mdc != null) {
-//      for (Map.Entry<String, String> mdcEntry : mdc.entrySet()) {
-//        if (Sentry.getStoredClient().getMdcTags().contains(mdcEntry.getKey())) {
-//          eventBuilder.withTag(mdcEntry.getKey(), mdcEntry.getValue());
-//        } else {
-//          eventBuilder.withExtra(mdcEntry.getKey(), mdcEntry.getValue());
-//        }
-//      }
-//    }
-
     event.setExtra(THREAD_ID, record.getThreadID());
     return event;
   }
 
-  private @NotNull List<String> toParams(@Nullable Object[] arguments) {
+  private @NotNull List<String> toParams(final @Nullable Object[] arguments) {
     final List<String> result = new ArrayList<>();
     if (arguments != null) {
       for (Object argument : arguments) {
@@ -191,7 +170,7 @@ public class SentryHandler extends Handler {
    * @param parameters Array of parameters for the message.
    * @return Formatted message.
    */
-  protected String formatMessage(String message, Object[] parameters) {
+  protected String formatMessage(final @NotNull String message, final @Nullable Object[] parameters) {
     String formatted;
     if (printfStyle) {
       formatted = String.format(message, parameters);
@@ -214,14 +193,14 @@ public class SentryHandler extends Handler {
     }
   }
 
-  public void setPrintfStyle(boolean printfStyle) {
+  public void setPrintfStyle(final boolean printfStyle) {
     this.printfStyle = printfStyle;
   }
 
-  private class DropSentryFilter implements Filter {
+  private static final class DropSentryFilter implements Filter {
     @Override
-    public boolean isLoggable(LogRecord record) {
-      String loggerName = record.getLoggerName();
+    public boolean isLoggable(final @NotNull LogRecord record) {
+      final String loggerName = record.getLoggerName();
       return loggerName == null || !loggerName.startsWith("io.sentry");
     }
   }
