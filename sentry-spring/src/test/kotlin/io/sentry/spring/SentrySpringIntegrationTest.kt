@@ -8,6 +8,7 @@ import io.sentry.Sentry
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.Before
@@ -38,7 +39,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
-import java.time.Duration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -117,7 +117,7 @@ class SentrySpringIntegrationTest {
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
         await.during(Duration.ofSeconds(2)).untilAsserted {
-            verifyZeroInteractions(transport);
+            verifyZeroInteractions(transport)
         }
     }
 }
