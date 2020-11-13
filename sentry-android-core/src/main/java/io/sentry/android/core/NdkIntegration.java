@@ -4,11 +4,8 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.protocol.DebugImage;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
-import java.util.List;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -49,11 +46,6 @@ public final class NdkIntegration implements Integration {
         method.invoke(null, args);
 
         options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
-
-        if (options instanceof SentryAndroidOptions) {
-          List<DebugImage> debugImages = ((SentryAndroidOptions) options).getDebugImagesLoader().getDebugImages();
-          options.getLogger().log(SentryLevel.DEBUG, "test %d", debugImages.size());
-        }
       } catch (NoSuchMethodException e) {
         options.setEnableNdk(false);
         options

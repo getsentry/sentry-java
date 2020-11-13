@@ -1,11 +1,10 @@
 package io.sentry.android.core;
 
+import io.sentry.protocol.DebugImage;
 import java.util.List;
 
-import io.sentry.protocol.DebugImage;
-
 public interface IDebugImagesLoader {
-    List<DebugImage> getDebugImages();
+  List<DebugImage> getDebugImages();
 
-    void clearDebugImages();
+  void clearDebugImages();
 }

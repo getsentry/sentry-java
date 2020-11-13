@@ -215,13 +215,13 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls, j
 }
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_ModuleLoader_nativeClearModuleList(JNIEnv *env, jclass cls) {
+Java_io_sentry_android_ndk_DebugImagesLoader_nativeClearModuleList(JNIEnv *env, jclass cls) {
     sentry_clear_modulecache();
 }
 
 // TODO: jobjectArray?
 JNIEXPORT jobjectArray JNICALL
-Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(JNIEnv *env, jclass cls) {
+Java_io_sentry_android_ndk_DebugImagesLoader_nativeGetModuleList(JNIEnv *env, jclass cls) {
     sentry_value_t image_list_t = sentry_get_modules_list();
     jobjectArray image_list = NULL;
 
