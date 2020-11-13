@@ -222,13 +222,39 @@ Java_io_sentry_android_ndk_ModuleLoader_nativeClearModuleList(JNIEnv *env, jclas
 // TODO: jobjectArray?
 JNIEXPORT jobjectArray JNICALL
 Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(JNIEnv *env, jclass cls) {
-    sentry_value_t module_list = sentry_get_modules_list();
+    sentry_value_t image_list_t = sentry_get_modules_list();
+    jobjectArray image_list = NULL;
 
-//    if (module_list) {
-    // TODO: convert it
+    if (sentry_value_get_type(image_list_t) == SENTRY_VALUE_TYPE_LIST) {
+        size_t len_t = sentry_value_get_length(image_list_t);
 
-    sentry_value_decref(module_list);
-//    }
+        jclass image_class = (*env)->FindClass(env, "io/sentry/protocol/DebugImage");
+        image_list = (*env)->NewObjectArray(env, len_t, image_class, NULL);
 
-    return NULL;
+        jmethodID image_addr_method = (*env)->GetMethodID(env, image_class, "setImageAddr",
+                                                          "(Ljava/lang/String;)V");
+        jmethodID image_addr_ctor = (*env)->GetMethodID(env, image_class, "<init>",
+                                                        "()V");
+
+        for (size_t i = 0; i < len_t; i++) {
+            sentry_value_t image_t = sentry_value_get_by_index(image_list_t, i);
+
+            if (!sentry_value_is_null(image_t)) {
+
+                sentry_value_t image_addr_t = sentry_value_get_by_key(image_t, "image_addr");
+                if (!sentry_value_is_null(image_addr_t)) {
+                    jobject image = (*env)->NewObject(env, image_class, image_addr_ctor);
+
+                    const char *image_addr_v = sentry_value_as_string(image_addr_t);
+                    jstring image_addr = (*env)->NewStringUTF(env, image_addr_v);
+
+                    (*env)->CallVoidMethod(env, image, image_addr_method, image_addr);
+                }
+            }
+        }
+
+        sentry_value_decref(image_list_t);
+    }
+
+    return image_list;
 }

@@ -36,7 +36,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
         }
 
         try {
-            List<Object> list = moduleLoader.getModuleList();
+            List<DebugImage> list = moduleLoader.getModuleList();
             options.getLogger().log(SentryLevel.DEBUG, "list size %d", list.size());
         } catch (Exception e) {
             options.getLogger().log(SentryLevel.ERROR, e, "getDebugImages");
