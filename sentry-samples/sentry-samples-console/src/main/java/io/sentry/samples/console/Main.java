@@ -69,14 +69,15 @@ public class Main {
           options.setTracesSampleRate(0.5);
 
           // Determine traces sample rate based on the sampling context
-          options.setTracesSampler(context -> {
-            // only 10% of transactions with "/product" prefix will be collected
-             if (!context.getTransactionContexts().getName().startsWith("/products")) {
-               return 0.1;
-             } else {
-               return 0.5;
-             }
-          });
+          options.setTracesSampler(
+              context -> {
+                // only 10% of transactions with "/product" prefix will be collected
+                if (!context.getTransactionContexts().getName().startsWith("/products")) {
+                  return 0.1;
+                } else {
+                  return 0.5;
+                }
+              });
         });
 
     Sentry.addBreadcrumb(
@@ -135,7 +136,8 @@ public class Main {
 
     // Performance feature
     //
-    // Transactions collect execution time of the piece of code that's executed between the start and finish of transaction.
+    // Transactions collect execution time of the piece of code that's executed between the start
+    // and finish of transaction.
     SentryTransaction transaction = Sentry.startTransaction("transaction name");
     // Transactions can contain one or more Spans
     Span outerSpan = transaction.startChild();
@@ -149,7 +151,8 @@ public class Main {
     // Finish the span and mark the end time of the span execution.
     // Note: finishing spans does not sent them to Sentry
     innerSpan.finish();
-    // Every SentryEvent reported during the execution of the transaction or a span, will have trace context attached
+    // Every SentryEvent reported during the execution of the transaction or a span, will have trace
+    // context attached
     Sentry.captureMessage("this message is connected to the outerSpan");
     outerSpan.finish();
     // marks transaction as finished and sends it together with all child spans to Sentry

@@ -19,6 +19,8 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
+    implementation(Config.Libs.springBootStarterAop)
+    implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
