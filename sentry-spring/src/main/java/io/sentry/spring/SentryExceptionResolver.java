@@ -51,7 +51,6 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
 
   @Override
   public int getOrder() {
-    // determines whether all exceptions are reported or only uncaught exceptions
     return order;
   }
 }
