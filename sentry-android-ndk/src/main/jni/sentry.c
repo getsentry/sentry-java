@@ -46,7 +46,8 @@ Java_io_sentry_android_ndk_NativeScope_nativeRemoveExtra(JNIEnv *env, jclass cls
     sentry_remove_extra(charKey);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeSetUser(
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NativeScope_nativeSetUser(
         JNIEnv *env,
         jclass cls,
         jstring id,
@@ -76,11 +77,13 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeSetUser(
     sentry_set_user(user);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeRemoveUser(JNIEnv *env, jclass cls) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NativeScope_nativeRemoveUser(JNIEnv *env, jclass cls) {
     sentry_remove_user();
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeAddBreadcrumb(
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_NativeScope_nativeAddBreadcrumb(
         JNIEnv *env,
         jclass cls,
         jstring level,
@@ -211,16 +214,14 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls, j
     sentry_init(options);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_ModuleLoader_nativeClearModuleList(
-        JNIEnv *env,
-        jclass cls) {
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_ModuleLoader_nativeClearModuleList(JNIEnv *env, jclass cls) {
     sentry_clear_modulecache();
 }
 
 // TODO: jobjectArray?
-JNIEXPORT jobjectArray JNICALL Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(
-        JNIEnv *env,
-        jclass cls) {
+JNIEXPORT jobjectArray JNICALL
+Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(JNIEnv *env, jclass cls) {
     sentry_value_t module_list = sentry_get_modules_list();
 
 //    if (module_list) {
