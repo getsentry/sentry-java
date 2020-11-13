@@ -13,39 +13,90 @@ import org.jetbrains.annotations.TestOnly;
 public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "device";
 
+  /** Name of the device. */
   private String name;
+  /** Manufacturer of the device. */
   private String manufacturer;
+  /** Brand of the device. */
   private String brand;
+  /**
+   * Family of the device model.
+   *
+   * <p>This is usually the common part of model names across generations. For instance, `iPhone`
+   * would be a reasonable family, so would be `Samsung Galaxy`.
+   */
   private String family;
+  /**
+   * Device model.
+   *
+   * <p>This, for example, can be `Samsung Galaxy S3`.
+   */
   private String model;
+  /**
+   * Device model (internal identifier).
+   *
+   * <p>An internal hardware revision to identify the device exactly.
+   */
   private String modelId;
 
+  /** Native cpu architecture of the device. */
   @ApiStatus.ScheduledForRemoval @Deprecated private String arch;
 
+  /** Native cpu architecture of the device. */
   private String[] archs;
+  /**
+   * Current battery level in %.
+   *
+   * <p>If the device has a battery, this can be a floating point value defining the battery level
+   * (in the range 0-100).
+   */
   private Float batteryLevel;
+  /** Whether the device was charging or not. */
   private Boolean charging;
+  /** Whether the device was online or not. */
   private Boolean online;
+  /**
+   * Current screen orientation.
+   *
+   * <p>This can be a string `portrait` or `landscape` to define the orientation of a device.
+   */
   private DeviceOrientation orientation;
+  /** Simulator/prod indicator. */
   private Boolean simulator;
+  /** Total memory available in bytes. */
   private Long memorySize;
+  /** How much memory is still available in bytes. */
   private Long freeMemory;
+  /** How much memory is usable for the app in bytes. */
   private Long usableMemory;
+  /** Whether the device was low on memory. */
   private Boolean lowMemory;
+  /** Total storage size of the device in bytes. */
   private Long storageSize;
+  /** How much storage is free in bytes. */
   private Long freeStorage;
+  /** Total size of the attached external storage in bytes (eg: android SDK card). */
   private Long externalStorageSize;
+  /** Free size of the attached external storage in bytes (eg: android SDK card). */
   private Long externalFreeStorage;
-
+  /**
+   * Device screen resolution.
+   *
+   * <p>(e.g.: 800x600, 3040x1444)
+   */
   @ApiStatus.ScheduledForRemoval @Deprecated private String screenResolution;
 
   private Integer screenWidthPixels;
   private Integer screenHeightPixels;
-
+  /** Device screen density. */
   private Float screenDensity;
+  /** Screen density as dots-per-inch. */
   private Integer screenDpi;
+  /** Indicator when the device was booted. */
   private Date bootTime;
+  /** Timezone of the device. */
   private TimeZone timezone;
+
   private String id;
   private String language;
   private String connectionType;
@@ -107,8 +158,8 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   /**
    * Returns the arch String
    *
-   * @deprecated use {@link #getArchs} instead.
    * @return device architecture
+   * @deprecated use {@link #getArchs} instead.
    */
   @ApiStatus.ScheduledForRemoval
   @Deprecated
@@ -117,8 +168,8 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   }
 
   /**
-   * @deprecated use {@link #setArchs} instead.
    * @param arch device architecture
+   * @deprecated use {@link #setArchs} instead.
    */
   @ApiStatus.ScheduledForRemoval
   @Deprecated
@@ -233,8 +284,8 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   /**
    * Returns the screenResolution String
    *
-   * @deprecated use {@link #getScreenWidthPixels , #getScreenHeightPixels} instead.
    * @return screen resolution largest + smallest
+   * @deprecated use {@link #getScreenWidthPixels , #getScreenHeightPixels} instead.
    */
   @ApiStatus.ScheduledForRemoval
   @Deprecated
@@ -243,8 +294,8 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   }
 
   /**
-   * @deprecated use {@link #setScreenWidthPixels} , #getScreenHeightPixels} instead.
    * @param screenResolution screen resolution largest + smallest
+   * @deprecated use {@link #setScreenWidthPixels} , #getScreenHeightPixels} instead.
    */
   @ApiStatus.ScheduledForRemoval
   @Deprecated
@@ -342,11 +393,6 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
     this.batteryTemperature = batteryTemperature;
   }
 
-  public enum DeviceOrientation {
-    PORTRAIT,
-    LANDSCAPE
-  }
-
   @TestOnly
   Map<String, Object> getUnknown() {
     return unknown;
@@ -377,5 +423,10 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
     clone.unknown = CollectionUtils.shallowCopy(unknown);
 
     return clone;
+  }
+
+  public enum DeviceOrientation {
+    PORTRAIT,
+    LANDSCAPE
   }
 }

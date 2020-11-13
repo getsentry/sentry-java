@@ -11,8 +11,17 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "runtime";
 
+  /** Runtime name. */
   private String name;
+  /** Runtime version string. */
   private String version;
+  /**
+   * Unprocessed runtime info.
+   *
+   * <p>An unprocessed description string obtained by the runtime. For some well-known runtimes,
+   * Sentry will attempt to parse `name` and `version` from this string, if they are not explicitly
+   * given.
+   */
   private String rawDescription;
 
   @SuppressWarnings("unused")

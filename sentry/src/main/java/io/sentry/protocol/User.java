@@ -2,29 +2,38 @@ package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.util.CollectionUtils;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-/** The user affected by an event. */
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Information about the user who triggered an event.
+ *
+ * <p>```json { "user": { "id": "unique_id", "username": "my_user", "email": "foo@example.com",
+ * "ip_address": "127.0.0.1", "subscription": "basic" } } ```
+ */
 public final class User implements Cloneable, IUnknownPropertiesConsumer {
 
-  /** User's email */
+  /** Email address of the user. */
   private @Nullable String email;
 
-  /** User's id */
+  /** Unique identifier of the user. */
   private @Nullable String id;
 
-  /** User's username */
+  /** Username of the user. */
   private @Nullable String username;
 
-  /** User's ipAddress */
+  /** Remote IP address of the user. Defaults to "{{auto}}". */
   private @Nullable String ipAddress;
 
-  /** User's others map */
+  /**
+   * Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). All
+   * data from `self.other` should end up here after store normalization.
+   */
   private @Nullable Map<String, String> other;
 
   /** unknown fields, only internal usage. */

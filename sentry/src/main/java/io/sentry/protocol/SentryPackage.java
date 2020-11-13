@@ -4,8 +4,11 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 
+/** An installed and loaded package as part of the Sentry SDK. */
 public final class SentryPackage implements IUnknownPropertiesConsumer {
+  /** Name of the package. */
   private String name;
+  /** Version of the package. */
   private String version;
 
   @SuppressWarnings("unused")

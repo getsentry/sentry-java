@@ -10,7 +10,9 @@ import org.jetbrains.annotations.TestOnly;
 
 public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "browser";
+  /** Display name of the browser application. */
   private String name;
+  /** Version string of the browser. */
   private String version;
 
   @SuppressWarnings("unused")

@@ -11,14 +11,27 @@ import org.jetbrains.annotations.TestOnly;
 public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "gpu";
 
+  /** The name of the graphics device. */
   private String name;
+  /** The PCI identifier of the graphics device. */
   private Integer id;
+  /** The PCI vendor identifier of the graphics device. */
   private Integer vendorId;
+  /** The vendor name as reported by the graphics device. */
   private String vendorName;
+  /** The total GPU memory available in Megabytes. */
   private Integer memorySize;
+  /**
+   * The device low-level API type.
+   *
+   * <p>Examples: `"Apple Metal"` or `"Direct3D11"`
+   */
   private String apiType;
+  /** Whether the GPU has multi-threaded rendering or not. */
   private Boolean multiThreadedRendering;
+  /** The Version of the graphics device. */
   private String version;
+  /** The Non-Power-Of-Two support. */
   private String npotSupport;
 
   @SuppressWarnings("unused")
