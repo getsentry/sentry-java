@@ -61,7 +61,7 @@ jobs:
 
       - name: Archive packages
         # We need artifacts from only one the builds
-        if: ${{ matrix.os }} == ubuntu-latest
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v2
         with:
           name: packages
