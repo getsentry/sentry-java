@@ -225,9 +225,6 @@ public class SentryOptions {
    */
   private boolean enableExternalConfiguration;
 
-  /** Report all or only uncaught web exceptions. */
-  private int exceptionResolverOrder = Integer.MIN_VALUE;
-
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1062,26 +1059,6 @@ public class SentryOptions {
    */
   public void setEnableExternalConfiguration(boolean enableExternalConfiguration) {
     this.enableExternalConfiguration = enableExternalConfiguration;
-  }
-
-  /**
-   * Returns the order used for Spring SentryExceptionResolver, which determines whether all web
-   * exceptions are reported, or only uncaught exceptions.
-   *
-   * @return order to use for Spring SentryExceptionResolver
-   */
-  public int getExceptionResolverOrder() {
-    return exceptionResolverOrder;
-  }
-
-  /**
-   * Sets the order to use for Spring SentryExceptionResolver, which determines whether all web
-   * exceptions are reported, or only uncaught exceptions.
-   *
-   * @param exceptionResolverOrder order to use for Spring SentryExceptionResolver
-   */
-  public void setExceptionResolverOrder(int exceptionResolverOrder) {
-    this.exceptionResolverOrder = exceptionResolverOrder;
   }
 
   /** The BeforeSend callback */

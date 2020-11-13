@@ -20,7 +20,6 @@ class EnableSentryTest {
                 val options = it.getBean(SentryOptions::class.java)
                 assertThat(options.dsn).isEqualTo("http://key@localhost/proj")
                 assertThat(options.isSendDefaultPii).isTrue()
-                assertThat(options.exceptionResolverOrder).isEqualTo(Integer.MIN_VALUE)
             }
 
         ApplicationContextRunner()
@@ -30,15 +29,6 @@ class EnableSentryTest {
                 val options = it.getBean(SentryOptions::class.java)
                 assertThat(options.dsn).isEmpty()
                 assertThat(options.isSendDefaultPii).isFalse()
-            }
-
-        ApplicationContextRunner()
-            .withConfiguration(UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java))
-            .run {
-                assertThat(it).hasSingleBean(SentryOptions::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.dsn).isEqualTo("http://key@localhost/proj")
-                assertThat(options.exceptionResolverOrder).isEqualTo(Integer.MAX_VALUE)
             }
     }
 
@@ -86,6 +76,16 @@ class EnableSentryTest {
             assertThat(it).getBean(SentryExceptionResolver::class.java)
                 .hasFieldOrPropertyWithValue("order", Integer.MIN_VALUE)
         }
+    }
+
+    @Test
+    fun `creates SentryExceptionResolver with order set in the @EnableSentry annotation`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java))
+            .run {
+                assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
+                assertThat(it).getBean(SentryExceptionResolver::class.java)
+                    .hasFieldOrPropertyWithValue("order", Integer.MAX_VALUE)
+            }
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")
