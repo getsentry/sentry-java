@@ -4,6 +4,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -33,6 +34,10 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
+
+  // TODO: does it make sense to add directly on SentryOptions?
+  // it is still used only by Android
+  private @Nullable IDebugImagesLoader debugImagesLoader;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -169,5 +174,13 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
+  }
+
+  public @Nullable IDebugImagesLoader getDebugImagesLoader() {
+    return debugImagesLoader;
+  }
+
+  public void setDebugImagesLoader(@Nullable IDebugImagesLoader debugImagesLoader) {
+    this.debugImagesLoader = debugImagesLoader;
   }
 }

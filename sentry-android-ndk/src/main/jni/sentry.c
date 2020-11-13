@@ -13,7 +13,7 @@ struct transport_options g_transport_options;
 
 JNIEXPORT void JNICALL
 Java_io_sentry_android_ndk_NativeScope_nativeSetTag(JNIEnv *env, jclass cls, jstring key,
-                                                         jstring value) {
+                                                    jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
@@ -29,7 +29,7 @@ Java_io_sentry_android_ndk_NativeScope_nativeRemoveTag(JNIEnv *env, jclass cls, 
 
 JNIEXPORT void JNICALL
 Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(JNIEnv *env, jclass cls, jstring key,
-                                                           jstring value) {
+                                                      jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
@@ -39,7 +39,7 @@ Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(JNIEnv *env, jclass cls, j
 
 JNIEXPORT void JNICALL
 Java_io_sentry_android_ndk_NativeScope_nativeRemoveExtra(JNIEnv *env, jclass cls,
-                                                              jstring key) {
+                                                         jstring key) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
 
     sentry_remove_extra(charKey);
@@ -211,4 +211,25 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls,
     sentry_options_set_auto_session_tracking(options, 0);
 
     sentry_init(options);
+}
+
+JNIEXPORT void JNICALL Java_io_sentry_android_ndk_ModuleLoader_nativeClearModuleList(
+        JNIEnv *env,
+        jclass cls) {
+    sentry_clear_modulecache();
+}
+
+// TODO: jobjectArray?
+JNIEXPORT jobjectArray JNICALL Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(
+        JNIEnv *env,
+        jclass cls) {
+    sentry_value_t module_list = sentry_get_modules_list();
+
+//    if (module_list) {
+    // TODO: convert it
+
+    sentry_value_decref(module_list);
+//    }
+
+    return NULL;
 }

@@ -1,6 +1,8 @@
 package io.sentry.android.ndk;
 
 import io.sentry.SentryOptions;
+import io.sentry.android.core.SentryAndroidOptions;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,5 +28,9 @@ public final class SentryNdk {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     initSentryNative(options);
     options.addScopeObserver(new NdkScopeObserver(options));
+
+    if (options instanceof SentryAndroidOptions) {
+      ((SentryAndroidOptions)options).setDebugImagesLoader(new DebugImagesLoader(options, new ModuleLoader()));
+    }
   }
 }
