@@ -2,13 +2,12 @@ package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.util.CollectionUtils;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Information about the user who triggered an event.
