@@ -240,16 +240,21 @@ Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(JNIEnv *env, jclass 
             sentry_value_t image_t = sentry_value_get_by_index(image_list_t, i);
 
             if (!sentry_value_is_null(image_t)) {
+                jobject image = (*env)->NewObject(env, image_class, image_addr_ctor);
+
+                // TODO: if all the fields are null, we should not SetObjectArrayElement
+                // or sentry-native do not add fully null item?
 
                 sentry_value_t image_addr_t = sentry_value_get_by_key(image_t, "image_addr");
                 if (!sentry_value_is_null(image_addr_t)) {
-                    jobject image = (*env)->NewObject(env, image_class, image_addr_ctor);
 
                     const char *image_addr_v = sentry_value_as_string(image_addr_t);
                     jstring image_addr = (*env)->NewStringUTF(env, image_addr_v);
 
                     (*env)->CallVoidMethod(env, image, image_addr_method, image_addr);
                 }
+
+                (*env)->SetObjectArrayElement(env, image_list, i, image);
             }
         }
 
