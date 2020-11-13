@@ -29,7 +29,8 @@ public final class SentryNdk {
     options.addScopeObserver(new NdkScopeObserver(options));
 
     if (options instanceof SentryAndroidOptions) {
-      ((SentryAndroidOptions) options).setDebugImagesLoader(new DebugImagesLoader(options));
+      ((SentryAndroidOptions) options)
+          .setDebugImagesLoader(new DebugImagesLoader(options, new NativeModuleListLoader()));
     }
   }
 }

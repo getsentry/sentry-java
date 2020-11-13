@@ -9,19 +9,31 @@ import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 final class DebugImagesLoader implements IDebugImagesLoader {
 
   private final @NotNull SentryOptions options;
 
+  private final @NotNull IModuleListLoader moduleListLoader;
+
   private static @Nullable List<DebugImage> debugImages;
 
   private static final @NotNull Object debugImagesLock = new Object();
 
-  DebugImagesLoader(final @NotNull SentryOptions options) {
+  DebugImagesLoader(
+      final @NotNull SentryOptions options, final @NotNull IModuleListLoader moduleListLoader) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
+    this.moduleListLoader =
+        Objects.requireNonNull(moduleListLoader, "The ModuleListLoader is required.");
   }
 
+  /**
+   * Returns the list of debug images loaded by sentry-native. If NDK is disabled this is a NoOp and
+   * it returns null;
+   *
+   * @return the list or null.
+   */
   @Override
   public @Nullable List<DebugImage> getDebugImages() {
     if (!options.isEnableNdk()) {
@@ -31,7 +43,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
     synchronized (debugImagesLock) {
       if (debugImages == null) {
         try {
-          final DebugImage[] debugImagesArr = nativeGetModuleList();
+          final DebugImage[] debugImagesArr = moduleListLoader.getModuleList();
           if (debugImagesArr != null) {
             debugImages = Arrays.asList(debugImagesArr);
             options
@@ -46,6 +58,10 @@ final class DebugImagesLoader implements IDebugImagesLoader {
     return debugImages;
   }
 
+  /**
+   * Clears the caching of debug images on sentry-native and here. If NDK is disabled this is a
+   * NoOp.
+   */
   @Override
   public void clearDebugImages() {
     if (!options.isEnableNdk()) {
@@ -54,7 +70,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
 
     synchronized (debugImagesLock) {
       try {
-        nativeClearModuleList();
+        moduleListLoader.clearModuleList();
 
         options.getLogger().log(SentryLevel.INFO, "Debug images cleared.");
       } catch (Exception e) {
@@ -64,7 +80,9 @@ final class DebugImagesLoader implements IDebugImagesLoader {
     }
   }
 
-  public static native DebugImage[] nativeGetModuleList();
-
-  public static native void nativeClearModuleList();
+  @VisibleForTesting
+  @Nullable
+  List<DebugImage> getCachedDebugImages() {
+    return debugImages;
+  }
 }
