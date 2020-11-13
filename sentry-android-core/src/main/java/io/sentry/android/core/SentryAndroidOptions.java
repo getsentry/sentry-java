@@ -35,8 +35,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
-  // TODO: does it make sense to add directly on SentryOptions?
-  // it is still used only by Android
+  /** Interface that loads the debug images list from sentry-native */
   private @Nullable IDebugImagesLoader debugImagesLoader;
 
   public SentryAndroidOptions() {
@@ -176,10 +175,20 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppLifecycleBreadcrumbs = enable;
   }
 
+  /**
+   * Returns the Debug image loader
+   *
+   * @return the image loader or null
+   */
   public @Nullable IDebugImagesLoader getDebugImagesLoader() {
     return debugImagesLoader;
   }
 
+  /**
+   * Sets the image loader
+   *
+   * @param debugImagesLoader the image loader or null
+   */
   public void setDebugImagesLoader(@Nullable IDebugImagesLoader debugImagesLoader) {
     this.debugImagesLoader = debugImagesLoader;
   }

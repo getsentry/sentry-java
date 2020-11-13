@@ -19,6 +19,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
 
   private static @Nullable List<DebugImage> debugImages;
 
+  /** we need to lock it because it could be called from different threads */
   private static final @NotNull Object debugImagesLock = new Object();
 
   DebugImagesLoader(
