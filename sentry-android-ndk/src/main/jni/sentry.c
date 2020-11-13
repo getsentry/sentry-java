@@ -12,8 +12,11 @@ struct transport_options {
 struct transport_options g_transport_options;
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_NativeScope_nativeSetTag(JNIEnv *env, jclass cls, jstring key,
-                                                    jstring value) {
+Java_io_sentry_android_ndk_NativeScope_nativeSetTag(
+        JNIEnv *env,
+        jclass cls,
+        jstring key,
+        jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
@@ -28,8 +31,7 @@ Java_io_sentry_android_ndk_NativeScope_nativeRemoveTag(JNIEnv *env, jclass cls, 
 }
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(JNIEnv *env, jclass cls, jstring key,
-                                                      jstring value) {
+Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(JNIEnv *env, jclass cls, jstring key, jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
@@ -38,8 +40,7 @@ Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(JNIEnv *env, jclass cls, j
 }
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_NativeScope_nativeRemoveExtra(JNIEnv *env, jclass cls,
-                                                         jstring key) {
+Java_io_sentry_android_ndk_NativeScope_nativeRemoveExtra(JNIEnv *env, jclass cls, jstring key) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
 
     sentry_remove_extra(charKey);
@@ -75,9 +76,7 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeSetUser(
     sentry_set_user(user);
 }
 
-JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeRemoveUser(
-        JNIEnv *env,
-        jclass cls) {
+JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeRemoveUser(JNIEnv *env, jclass cls) {
     sentry_remove_user();
 }
 
@@ -150,8 +149,7 @@ static void send_envelope(const sentry_envelope_t *envelope, void *unused_data) 
 }
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls,
-                                                      jobject sentry_sdk_options) {
+Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls, jobject sentry_sdk_options) {
     jclass options_cls = (*env)->GetObjectClass(env, sentry_sdk_options);
 
     jmethodID outbox_path_mid = (*env)->GetMethodID(env, options_cls, "getOutboxPath",
