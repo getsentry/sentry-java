@@ -242,6 +242,18 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeGetModuleList(JNIEnv *en
         jmethodID image_addr_ctor = (*env)->GetMethodID(env, image_class, "<init>",
                                                         "()V");
 
+        jmethodID type_method = (*env)->GetMethodID(env, image_class, "setType",
+                                                         "(Ljava/lang/String;)V");
+
+        jmethodID debug_id_method = (*env)->GetMethodID(env, image_class, "setDebugId",
+                                                    "(Ljava/lang/String;)V");
+
+        jmethodID code_id_method = (*env)->GetMethodID(env, image_class, "setCodeId",
+                                                        "(Ljava/lang/String;)V");
+
+        jmethodID debug_file_method = (*env)->GetMethodID(env, image_class, "setDebugFile",
+                                                       "(Ljava/lang/String;)V");
+
         for (size_t i = 0; i < len_t; i++) {
             sentry_value_t image_t = sentry_value_get_by_index(image_list_t, i);
 
@@ -251,28 +263,65 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeGetModuleList(JNIEnv *en
                 sentry_value_t image_addr_t = sentry_value_get_by_key(image_t, "image_addr");
                 if (!sentry_value_is_null(image_addr_t)) {
 
-                    const char *image_addr_v = sentry_value_as_string(image_addr_t);
-                    jstring image_addr = (*env)->NewStringUTF(env, image_addr_v);
+                    const char *value_v = sentry_value_as_string(image_addr_t);
+                    jstring value = (*env)->NewStringUTF(env, value_v);
 
-                    (*env)->CallVoidMethod(env, image, image_addr_method, image_addr);
+                    (*env)->CallVoidMethod(env, image, image_addr_method, value);
                 }
 
                 sentry_value_t image_size_t = sentry_value_get_by_key(image_t, "image_size");
                 if (!sentry_value_is_null(image_size_t)) {
 
-                    int32_t image_size_v = sentry_value_as_int32(image_size_t);
-                    jlong image_size = (jlong)image_size_v;
+                    int32_t value_v = sentry_value_as_int32(image_size_t);
+                    jlong value = (jlong)value_v;
 
-                    (*env)->CallVoidMethod(env, image, image_size_method, image_size);
+                    (*env)->CallVoidMethod(env, image, image_size_method, value);
                 }
 
                 sentry_value_t code_file_t = sentry_value_get_by_key(image_t, "code_file");
                 if (!sentry_value_is_null(code_file_t)) {
 
-                    const char *code_file_v = sentry_value_as_string(code_file_t);
-                    jstring code_file = (*env)->NewStringUTF(env, code_file_v);
+                    const char *value_v = sentry_value_as_string(code_file_t);
+                    jstring value = (*env)->NewStringUTF(env, value_v);
 
-                    (*env)->CallVoidMethod(env, image, code_file_method, code_file);
+                    (*env)->CallVoidMethod(env, image, code_file_method, value);
+                }
+
+                sentry_value_t code_type_t = sentry_value_get_by_key(image_t, "type");
+                if (!sentry_value_is_null(code_type_t)) {
+
+                    const char *value_v = sentry_value_as_string(code_type_t);
+                    jstring value = (*env)->NewStringUTF(env, value_v);
+
+                    (*env)->CallVoidMethod(env, image, type_method, value);
+                }
+
+                sentry_value_t debug_id_t = sentry_value_get_by_key(image_t, "debug_id");
+                if (!sentry_value_is_null(code_type_t)) {
+
+                    const char *value_v = sentry_value_as_string(debug_id_t);
+                    jstring value = (*env)->NewStringUTF(env, value_v);
+
+                    (*env)->CallVoidMethod(env, image, debug_id_method, value);
+                }
+
+                sentry_value_t code_id_t = sentry_value_get_by_key(image_t, "code_id");
+                if (!sentry_value_is_null(code_id_t)) {
+
+                    const char *value_v = sentry_value_as_string(code_id_t);
+                    jstring value = (*env)->NewStringUTF(env, value_v);
+
+                    (*env)->CallVoidMethod(env, image, code_id_method, value);
+                }
+
+                // not needed on Android, but keeping for forward compatibility
+                sentry_value_t debug_file_t = sentry_value_get_by_key(image_t, "debug_file");
+                if (!sentry_value_is_null(debug_file_t)) {
+
+                    const char *value_v = sentry_value_as_string(debug_file_t);
+                    jstring value = (*env)->NewStringUTF(env, value_v);
+
+                    (*env)->CallVoidMethod(env, image, debug_file_method, value);
                 }
 
                 (*env)->SetObjectArrayElement(env, image_list, i, image);
