@@ -15,6 +15,7 @@ public class TodoController {
 
   @GetMapping("/todo/{id}")
   Todo todo(@PathVariable Long id) {
-    return restTemplate.getForObject("https://jsonplaceholder.typicode.com/todos/{id}", Todo.class, id);
+    return restTemplate.getForObject(
+        "https://jsonplaceholder.typicode.com/todos/{id}", Todo.class, id);
   }
 }
