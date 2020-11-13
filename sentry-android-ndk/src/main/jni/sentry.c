@@ -219,7 +219,6 @@ Java_io_sentry_android_ndk_DebugImagesLoader_nativeClearModuleList(JNIEnv *env, 
     sentry_clear_modulecache();
 }
 
-// TODO: jobjectArray?
 JNIEXPORT jobjectArray JNICALL
 Java_io_sentry_android_ndk_DebugImagesLoader_nativeGetModuleList(JNIEnv *env, jclass cls) {
     sentry_value_t image_list_t = sentry_get_modules_list();
@@ -248,9 +247,6 @@ Java_io_sentry_android_ndk_DebugImagesLoader_nativeGetModuleList(JNIEnv *env, jc
 
             if (!sentry_value_is_null(image_t)) {
                 jobject image = (*env)->NewObject(env, image_class, image_addr_ctor);
-
-                // TODO: if all the fields are null, we should not SetObjectArrayElement
-                // or sentry-native do not add fully null item?
 
                 sentry_value_t image_addr_t = sentry_value_get_by_key(image_t, "image_addr");
                 if (!sentry_value_is_null(image_addr_t)) {
