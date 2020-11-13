@@ -31,7 +31,11 @@ Java_io_sentry_android_ndk_NativeScope_nativeRemoveTag(JNIEnv *env, jclass cls, 
 }
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(JNIEnv *env, jclass cls, jstring key, jstring value) {
+Java_io_sentry_android_ndk_NativeScope_nativeSetExtra(
+        JNIEnv *env,
+        jclass cls,
+        jstring key,
+        jstring value) {
     const char *charKey = (*env)->GetStringUTFChars(env, key, 0);
     const char *charValue = (*env)->GetStringUTFChars(env, value, 0);
 
@@ -152,7 +156,10 @@ static void send_envelope(const sentry_envelope_t *envelope, void *unused_data) 
 }
 
 JNIEXPORT void JNICALL
-Java_io_sentry_android_ndk_SentryNdk_initSentryNative(JNIEnv *env, jclass cls, jobject sentry_sdk_options) {
+Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
+        JNIEnv *env,
+        jclass cls,
+        jobject sentry_sdk_options) {
     jclass options_cls = (*env)->GetObjectClass(env, sentry_sdk_options);
 
     jmethodID outbox_path_mid = (*env)->GetMethodID(env, options_cls, "getOutboxPath",
@@ -237,22 +244,22 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeGetModuleList(JNIEnv *en
                                                           "(J)V");
 
         jmethodID code_file_method = (*env)->GetMethodID(env, image_class, "setCodeFile",
-                                                          "(Ljava/lang/String;)V");
+                                                         "(Ljava/lang/String;)V");
 
         jmethodID image_addr_ctor = (*env)->GetMethodID(env, image_class, "<init>",
                                                         "()V");
 
         jmethodID type_method = (*env)->GetMethodID(env, image_class, "setType",
-                                                         "(Ljava/lang/String;)V");
-
-        jmethodID debug_id_method = (*env)->GetMethodID(env, image_class, "setDebugId",
                                                     "(Ljava/lang/String;)V");
 
-        jmethodID code_id_method = (*env)->GetMethodID(env, image_class, "setCodeId",
+        jmethodID debug_id_method = (*env)->GetMethodID(env, image_class, "setDebugId",
                                                         "(Ljava/lang/String;)V");
 
-        jmethodID debug_file_method = (*env)->GetMethodID(env, image_class, "setDebugFile",
+        jmethodID code_id_method = (*env)->GetMethodID(env, image_class, "setCodeId",
                                                        "(Ljava/lang/String;)V");
+
+        jmethodID debug_file_method = (*env)->GetMethodID(env, image_class, "setDebugFile",
+                                                          "(Ljava/lang/String;)V");
 
         for (size_t i = 0; i < len_t; i++) {
             sentry_value_t image_t = sentry_value_get_by_index(image_list_t, i);
@@ -273,7 +280,7 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeGetModuleList(JNIEnv *en
                 if (!sentry_value_is_null(image_size_t)) {
 
                     int32_t value_v = sentry_value_as_int32(image_size_t);
-                    jlong value = (jlong)value_v;
+                    jlong value = (jlong) value_v;
 
                     (*env)->CallVoidMethod(env, image, image_size_method, value);
                 }
