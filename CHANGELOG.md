@@ -3,6 +3,7 @@
 * Bump: AGP 4.1.1
 * Fix: use neutral Locale for String operations #1033
 * Update to sentry-native 0.4.4 and fix shared library builds (#1039)
+* Feat: Expose a Module (Debug images) Loader for Android thru sentry-native #1043
 
 # 3.1.3
 
