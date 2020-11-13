@@ -75,6 +75,14 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
     this.imageSize = imageSize;
   }
 
+  /**
+   * for sentry-native compat.
+   * @param imageSize the image size as primitive type
+   */
+  public void setImageSize(long imageSize) {
+    this.imageSize = imageSize;
+  }
+
   public String getArch() {
     return arch;
   }

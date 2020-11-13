@@ -233,6 +233,13 @@ Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(JNIEnv *env, jclass 
 
         jmethodID image_addr_method = (*env)->GetMethodID(env, image_class, "setImageAddr",
                                                           "(Ljava/lang/String;)V");
+
+        jmethodID image_size_method = (*env)->GetMethodID(env, image_class, "setImageSize",
+                                                          "(J)V");
+
+        jmethodID code_file_method = (*env)->GetMethodID(env, image_class, "setCodeFile",
+                                                          "(Ljava/lang/String;)V");
+
         jmethodID image_addr_ctor = (*env)->GetMethodID(env, image_class, "<init>",
                                                         "()V");
 
@@ -252,6 +259,24 @@ Java_io_sentry_android_ndk_ModuleLoader_nativeGetModuleList(JNIEnv *env, jclass 
                     jstring image_addr = (*env)->NewStringUTF(env, image_addr_v);
 
                     (*env)->CallVoidMethod(env, image, image_addr_method, image_addr);
+                }
+
+                sentry_value_t image_size_t = sentry_value_get_by_key(image_t, "image_size");
+                if (!sentry_value_is_null(image_size_t)) {
+
+                    int32_t image_size_v = sentry_value_as_int32(image_size_t);
+                    jlong image_size = (jlong)image_size_v;
+
+                    (*env)->CallVoidMethod(env, image, image_size_method, image_size);
+                }
+
+                sentry_value_t code_file_t = sentry_value_get_by_key(image_t, "code_file");
+                if (!sentry_value_is_null(code_file_t)) {
+
+                    const char *code_file_v = sentry_value_as_string(code_file_t);
+                    jstring code_file = (*env)->NewStringUTF(env, code_file_v);
+
+                    (*env)->CallVoidMethod(env, image, code_file_method, code_file);
                 }
 
                 (*env)->SetObjectArrayElement(env, image_list, i, image);
