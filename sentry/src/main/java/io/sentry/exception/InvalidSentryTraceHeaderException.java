@@ -1,5 +1,6 @@
-package io.sentry;
+package io.sentry.exception;
 
+import io.sentry.SentryTraceHeader;
 import org.jetbrains.annotations.NotNull;
 
 /**

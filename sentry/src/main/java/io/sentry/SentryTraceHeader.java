@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +22,8 @@ public final class SentryTraceHeader {
     this.sampled = sampled;
   }
 
-  public SentryTraceHeader(final @NotNull String value) throws InvalidSentryTraceHeaderException {
+  public SentryTraceHeader(final @NotNull String value)
+      throws InvalidSentryTraceHeaderException {
     final String[] parts = value.split("-", -1);
     if (parts.length < 2) {
       throw new InvalidSentryTraceHeaderException(value);

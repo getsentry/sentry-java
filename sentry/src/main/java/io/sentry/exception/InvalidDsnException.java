@@ -1,4 +1,4 @@
-package io.sentry;
+package io.sentry.exception;
 
 public final class InvalidDsnException extends RuntimeException {
   private static final long serialVersionUID = 412945154259913013L;
@@ -18,7 +18,7 @@ public final class InvalidDsnException extends RuntimeException {
     this.dsn = dsn;
   }
 
-  InvalidDsnException(String dsn, Throwable cause) {
+  public InvalidDsnException(String dsn, Throwable cause) {
     super(cause);
     this.dsn = dsn;
   }

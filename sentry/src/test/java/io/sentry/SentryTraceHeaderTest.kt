@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.exception.InvalidSentryTraceHeaderException
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
