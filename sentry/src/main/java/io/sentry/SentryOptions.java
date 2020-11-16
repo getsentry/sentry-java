@@ -614,12 +614,7 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
+    this.validateRate(sampleRate);
     this.sampleRate = sampleRate;
   }
 
@@ -636,16 +631,11 @@ public class SentryOptions {
    * Sets the tracesSampleRate Can be anything between 0.01 and 1.0 or null (default), to disable
    * it.
    *
-   * @param sampleRate the sample rate
+   * @param tracesSampleRate the sample rate
    */
-  public void setTracesSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
-    this.tracesSampleRate = sampleRate;
+  public void setTracesSampleRate(Double tracesSampleRate) {
+    this.validateRate(tracesSampleRate);
+    this.tracesSampleRate = tracesSampleRate;
   }
 
   /**
@@ -1210,5 +1200,14 @@ public class SentryOptions {
     sdkVersion.addPackage("maven:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void validateRate(@Nullable Double rate) {
+    if (rate != null && (rate > 1.0 || rate <= 0.0)) {
+      throw new IllegalArgumentException(
+        "The value "
+          + rate
+          + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+    }
   }
 }

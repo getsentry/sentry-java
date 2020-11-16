@@ -44,7 +44,6 @@ public abstract class SentryBaseEvent {
     this.contexts = contexts;
   }
 
-  // todo: add @nullable
   public SdkVersion getSdk() {
     return sdk;
   }

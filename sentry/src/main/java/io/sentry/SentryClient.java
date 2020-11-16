@@ -316,7 +316,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
+  public SentryId captureTransaction(final @NotNull SentryTransaction transaction, final @NotNull Scope scope, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
     options
@@ -332,6 +332,8 @@ public final class SentryClient implements ISentryClient {
 
       if (envelope != null) {
         connection.send(envelope, hint);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
       }
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);

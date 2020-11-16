@@ -55,12 +55,23 @@ public final class SentryEnvelope {
 
   public static @NotNull SentryEnvelope from(
       final @NotNull ISerializer serializer,
-      final @NotNull Object obj,
+      final @NotNull Object item,
       final @Nullable SdkVersion sdkVersion)
       throws IOException {
     Objects.requireNonNull(serializer, "Serializer is required.");
-    Objects.requireNonNull(obj, "obj is required.");
+    Objects.requireNonNull(item, "item is required.");
 
-    return new SentryEnvelope(null, sdkVersion, SentryEnvelopeItem.from(serializer, obj));
+    return new SentryEnvelope(null, sdkVersion, SentryEnvelopeItem.from(serializer, item));
+  }
+
+  public static @NotNull SentryEnvelope from(
+    final @NotNull ISerializer serializer,
+    final @NotNull SentryBaseEvent event,
+    final @Nullable SdkVersion sdkVersion)
+    throws IOException {
+    Objects.requireNonNull(serializer, "Serializer is required.");
+    Objects.requireNonNull(event, "item is required.");
+
+    return new SentryEnvelope(event.getEventId(), sdkVersion, SentryEnvelopeItem.from(serializer, event));
   }
 }

@@ -635,7 +635,7 @@ public final class Hub implements IHub {
 
   @ApiStatus.Internal
   @Override
-  public SentryId captureTransaction(
+  public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
@@ -698,7 +698,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public SentryTransaction startTransaction(
+  public @Nullable SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext) {
     final SamplingContext samplingContext =

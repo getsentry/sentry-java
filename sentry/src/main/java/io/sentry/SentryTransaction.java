@@ -4,7 +4,6 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -177,7 +176,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   }
 
   @NotNull
-  Collection<Span> getSpans() {
+  List<Span> getSpans() {
     return spans;
   }
 

@@ -98,7 +98,7 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
-  public void setTransaction(@NotNull String transaction) {
+  public void setTransaction(final @NotNull String transaction) {
     final SentryTransaction tx = this.transaction;
     if (tx != null) {
       tx.setName(transaction);
@@ -110,7 +110,7 @@ public final class Scope implements Cloneable {
    *
    * @return current active Span or Transaction or null if transaction has not been set.
    */
-  public ISpan getSpan() {
+  @Nullable ISpan getSpan() {
     if (transaction != null && !transaction.getSpans().isEmpty()) {
       final Span span = transaction.getLatestActiveSpan();
 

@@ -13,12 +13,12 @@ public enum SentryItemType {
 
   private final String itemType;
 
-  public static SentryItemType resolve(Object obj) {
-    if (obj instanceof SentryEvent) {
+  public static SentryItemType resolve(Object item) {
+    if (item instanceof SentryEvent) {
       return Event;
-    } else if (obj instanceof SentryTransaction) {
+    } else if (item instanceof SentryTransaction) {
       return Transaction;
-    } else if (obj instanceof Session) {
+    } else if (item instanceof Session) {
       return Session;
     } else {
       return Attachment;

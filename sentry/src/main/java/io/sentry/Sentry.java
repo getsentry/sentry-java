@@ -500,7 +500,7 @@ public final class Sentry {
    * @param hint the hint
    * @return transaction's id
    */
-  public static SentryId captureTransaction(SentryTransaction transaction, Object hint) {
+  public static @NotNull SentryId captureTransaction(final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     return getCurrentHub().captureTransaction(transaction, hint);
   }
 
@@ -508,9 +508,9 @@ public final class Sentry {
    * Creates a Transaction bound to the current hub and returns the instance.
    *
    * @param name the transaction name
-   * @return created transaction
+   * @return created transaction or {@code null} if {@link Hub} is disabled.
    */
-  public static SentryTransaction startTransaction(final @NotNull String name) {
+  public static @Nullable SentryTransaction startTransaction(final @NotNull String name) {
     return getCurrentHub().startTransaction(name);
   }
 
@@ -520,7 +520,7 @@ public final class Sentry {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  public static SentryTransaction startTransaction(
+  public static @Nullable SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return getCurrentHub().startTransaction(transactionContexts);
   }
@@ -534,7 +534,7 @@ public final class Sentry {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  public static SentryTransaction startTransaction(
+  public static @Nullable SentryTransaction startTransaction(
       final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
     return getCurrentHub().startTransaction(name, customSamplingContext);
   }
@@ -548,7 +548,7 @@ public final class Sentry {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  public static SentryTransaction startTransaction(
+  public static @Nullable SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @NotNull CustomSamplingContext customSamplingContext) {
     return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
