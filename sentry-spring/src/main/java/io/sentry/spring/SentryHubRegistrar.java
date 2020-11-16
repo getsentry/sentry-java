@@ -58,7 +58,8 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private void registerSentryExceptionResolver(
-      final @NotNull BeanDefinitionRegistry registry, final @NotNull AnnotationAttributes annotationAttributes) {
+      final @NotNull BeanDefinitionRegistry registry,
+      final @NotNull AnnotationAttributes annotationAttributes) {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryExceptionResolver.class);
     builder.addConstructorArgReference("sentryHub");
