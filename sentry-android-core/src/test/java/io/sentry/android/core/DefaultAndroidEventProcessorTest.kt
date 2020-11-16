@@ -147,7 +147,7 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `When userId is already set, do not overwrite`() {
+    fun `When user is already set, do not overwrite it`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
         val user = User()
         var event = SentryEvent().apply {
