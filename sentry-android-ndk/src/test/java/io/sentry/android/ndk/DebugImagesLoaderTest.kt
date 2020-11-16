@@ -43,7 +43,7 @@ class DebugImagesLoaderTest {
     }
 
     @Test
-    fun `get images returns cached list if alreadu called`() {
+    fun `get images returns cached list if already called`() {
         val sut = fixture.getSut()
         whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf())
         assertNotNull(sut.debugImages)
