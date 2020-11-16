@@ -6,6 +6,7 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,7 +21,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   private @Nullable Date timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
-  private final @NotNull List<Span> spans = new ArrayList<>();
+  private final @NotNull List<Span> spans = new CopyOnWriteArrayList<>();
   /**
    * A hub this transaction is attached to. Marked as transient to be ignored during JSON
    * serialization.
