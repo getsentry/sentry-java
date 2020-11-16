@@ -6,6 +6,7 @@
 * Added java doc to protocol classes based on sentry-data-schemes project (#1045)
 * Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
 * Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
+* Fix: set userId for hard-crashes if no user is set
 
 # 3.1.3
 
