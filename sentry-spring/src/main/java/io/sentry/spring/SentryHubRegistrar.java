@@ -62,7 +62,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryExceptionResolver.class);
     builder.addConstructorArgReference("sentryHub");
-    Integer order = annotationAttributes.getNumber("exceptionResolverOrder");
+    int order = annotationAttributes.getNumber("exceptionResolverOrder");
     builder.addConstructorArgValue(order);
 
     registry.registerBeanDefinition("sentryExceptionResolver", builder.getBeanDefinition());
