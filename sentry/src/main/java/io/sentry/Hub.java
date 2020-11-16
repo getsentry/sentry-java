@@ -678,6 +678,8 @@ public final class Hub implements IHub {
   @Override
   public @Nullable SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
+    Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+
     SentryTransaction transaction = null;
     if (!isEnabled()) {
       options
