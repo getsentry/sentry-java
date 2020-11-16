@@ -7,7 +7,6 @@
 
 Sentry SDK for Java and Android
 ===========
-[![Travis](https://img.shields.io/travis/getsentry/sentry-java/ref/sentry-java-2?label=Travis)](https://travis-ci.com/getsentry/sentry-java)
 [![AppVeyor](https://img.shields.io/appveyor/build/sentry/sentry-java?label=AppVeyor)](https://ci.appveyor.com/project/sentry/sentry-java)
 [![GH Workflow](https://img.shields.io/github/workflow/status/getsentry/sentry-java/Workflow%20Ubuntu%20macOS?label=GH%20Workflow)](https://github.com/getsentry/sentry-java/actions)
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-java/ref/sentry-java-2?compact_message)](https://ci.appveyor.com/project/sentry/sentry-java/branch/ref/sentry-java-2/tests)

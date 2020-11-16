@@ -1,6 +1,6 @@
-.PHONY: clean compile dryRelease doRelease release update stop
+.PHONY: clean compile dryRelease doRelease release update stop checkFormat
 
-all: clean compile update dryRelease
+all: clean checkFormat compile dryRelease
 
 # deep clean
 clean:
@@ -22,7 +22,7 @@ distZip:
 	./gradlew distZip
 
 # deep clean, build and deploy to bintray, jcenter and maven central
-release: clean compile dryRelease distZip
+release: clean checkFormat compile dryRelease distZip
 
 # check for dependencies update
 update:
@@ -32,3 +32,6 @@ update:
 # don't contain any lock files and are free to be cached.
 stop:
 	./gradlew --stop
+
+checkFormat:
+	./gradlew spotlessJavaCheck spotlessKotlinCheck

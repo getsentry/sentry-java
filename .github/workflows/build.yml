@@ -1,4 +1,4 @@
-name: Workflow Ubuntu macOS
+name: "Workflow Ubuntu macOS"
 on:
   push:
     branches:
@@ -18,7 +18,7 @@ jobs:
       # we want that the matrix keeps running, default is to cancel them if it fails.
       fail-fast: false
       matrix:
-        # TODO: windows-latest
+        # TODO: windows-latest (Currently on appveyor)
         os: [ubuntu-latest, macos-latest]
 
     steps:
@@ -32,11 +32,9 @@ jobs:
           java-version: 1.8
 
       # sudo is required for linux
-
       # required because macOS doesn't have cmake 3.10 installed by default
       - name: Install cmake 3.10.2
         run: sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "cmake;${CMAKE_VERSION}"
-
 
       # use sequential key when bumping dependencies till single lock file is out of preview
       # https://docs.gradle.org/current/userguide/dependency_locking.html#single_lock_file_per_project
@@ -52,30 +50,29 @@ jobs:
           path: ~/.gradle/wrapper/
           key: cache-gradle-wrapper-3
 
-      # uses eskatos/gradle-command-action, so we don't care for ./gradlew or gradlew.bat
-
-      # - name: Clean and Build
-      #   uses: eskatos/gradle-command-action@v1
-      #   with:
-      #     arguments: clean build
+      # Clean, check formatting, build and do a dry release
       - name: Make all
         run: make all
 
       # We stop gradle at the end to make sure the cache folders
       # don't contain any lock files and are free to be cached.
-      # - name: Stop Gradle
-      #   uses: eskatos/gradle-command-action@v1
-      #  with:
-      #    arguments: --stop
       - name: Make stop
         run: make stop
+
       - name: Archive packages
         # We need artifacts from only one the builds
-        if: ${{ matrix.os }} == ubuntu-latest
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v2
         with:
           name: packages
           path: ./*/build/distributions/*.zip
+
+      - name: Upload coverage to Codecov
+        # We need coverage data from only one the builds
+        if: runner.os == 'Linux'
+        uses: codecov/codecov-action@v1
+        with:
+          name: sentry-java
 
   release:
     ## Only run on a release branch
@@ -104,17 +101,3 @@ jobs:
           zeus job update -b $GITHUB_RUN_ID -j $GITHUB_RUN_NUMBER -r $GITHUB_SHA
           zeus upload -b $GITHUB_RUN_ID -j $GITHUB_RUN_NUMBER -t "application/zip+maven" *.zip
           zeus job update --status=passed -b $GITHUB_RUN_ID -j $GITHUB_RUN_NUMBER -r $GITHUB_SHA
-
-  check-formatting:
-    name: Check Formatting
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v2.3.1
-      - name: set up JDK 1.8
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
-      - name: Check formatting with Spotless
-        run: |
-          ./gradlew spotlessJavaCheck spotlessKotlinCheck
