@@ -24,7 +24,7 @@ public final class NdkIntegration implements Integration {
   @Override
   public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
-    SentryAndroidOptions androidOptions =
+    final SentryAndroidOptions androidOptions =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
