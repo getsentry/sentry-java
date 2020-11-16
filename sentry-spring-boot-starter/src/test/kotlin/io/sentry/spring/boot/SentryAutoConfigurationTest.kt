@@ -92,7 +92,11 @@ class SentryAutoConfigurationTest {
             "sentry.dist=my-dist",
             "sentry.attach-threads=true",
             "sentry.attach-stacktrace=true",
-            "sentry.server-name=host-001"
+            "sentry.server-name=host-001",
+            "sentry.proxy.host=example.proxy.com",
+            "sentry.proxy.port=8090",
+            "sentry.proxy.user=proxy-user",
+            "sentry.proxy.pass=proxy-pass"
         ).run {
             val options = it.getBean(SentryOptions::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -110,6 +114,11 @@ class SentryAutoConfigurationTest {
             assertThat(options.isAttachThreads).isEqualTo(true)
             assertThat(options.isAttachStacktrace).isEqualTo(true)
             assertThat(options.serverName).isEqualTo("host-001")
+            assertThat(options.proxy).isNotNull()
+            assertThat(options.proxy!!.host).isEqualTo("example.proxy.com")
+            assertThat(options.proxy!!.port).isEqualTo("8090")
+            assertThat(options.proxy!!.user).isEqualTo("proxy-user")
+            assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
         }
     }
 
