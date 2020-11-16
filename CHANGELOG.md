@@ -10,6 +10,7 @@
 * Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
+* Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions
 * Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
 
 # 3.1.2
