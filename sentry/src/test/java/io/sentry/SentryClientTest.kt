@@ -700,7 +700,7 @@ class SentryClientTest {
     fun `transactions are sent using connection`() {
         fixture.connection = mock()
         val sut = fixture.getSut()
-        sut.captureTransaction(SentryTransaction("a-transaction"), null, null)
+        sut.captureTransaction(SentryTransaction("a-transaction"), mock(), null)
         verify(fixture.connection).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)

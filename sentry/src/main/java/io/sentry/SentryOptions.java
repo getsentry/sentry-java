@@ -1205,9 +1205,9 @@ public class SentryOptions {
   private void validateRate(@Nullable Double rate) {
     if (rate != null && (rate > 1.0 || rate <= 0.0)) {
       throw new IllegalArgumentException(
-        "The value "
-          + rate
-          + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+          "The value "
+              + rate
+              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
     }
   }
 }

@@ -500,7 +500,8 @@ public final class Sentry {
    * @param hint the hint
    * @return transaction's id
    */
-  public static @NotNull SentryId captureTransaction(final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+  public static @NotNull SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     return getCurrentHub().captureTransaction(transaction, hint);
   }
 
