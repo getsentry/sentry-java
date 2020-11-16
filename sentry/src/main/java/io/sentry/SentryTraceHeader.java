@@ -22,8 +22,7 @@ public final class SentryTraceHeader {
     this.sampled = sampled;
   }
 
-  public SentryTraceHeader(final @NotNull String value)
-      throws InvalidSentryTraceHeaderException {
+  public SentryTraceHeader(final @NotNull String value) throws InvalidSentryTraceHeaderException {
     final String[] parts = value.split("-", -1);
     if (parts.length < 2) {
       throw new InvalidSentryTraceHeaderException(value);

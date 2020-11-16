@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.util.Log;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import org.jetbrains.annotations.Nullable;
 
 final class AndroidLogger implements ILogger {
 
@@ -41,6 +42,11 @@ final class AndroidLogger implements ILogger {
         Log.d(tag, message, throwable);
         break;
     }
+  }
+
+  @Override
+  public boolean isEnabled(@Nullable SentryLevel level) {
+    return true;
   }
 
   private int toLogcatLevel(SentryLevel sentryLevel) {
