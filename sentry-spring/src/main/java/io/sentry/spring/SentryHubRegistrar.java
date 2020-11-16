@@ -26,6 +26,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     if (annotationAttributes != null && annotationAttributes.containsKey("dsn")) {
       registerSentryOptions(registry, annotationAttributes);
       registerSentryHubBean(registry);
+      registerSentryExceptionResolver(registry, annotationAttributes);
     }
   }
 
@@ -54,6 +55,18 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     builder.setInitMethodName("getInstance");
 
     registry.registerBeanDefinition("sentryHub", builder.getBeanDefinition());
+  }
+
+  private void registerSentryExceptionResolver(
+      final @NotNull BeanDefinitionRegistry registry,
+      final @NotNull AnnotationAttributes annotationAttributes) {
+    final BeanDefinitionBuilder builder =
+        BeanDefinitionBuilder.genericBeanDefinition(SentryExceptionResolver.class);
+    builder.addConstructorArgReference("sentryHub");
+    int order = annotationAttributes.getNumber("exceptionResolverOrder");
+    builder.addConstructorArgValue(order);
+
+    registry.registerBeanDefinition("sentryExceptionResolver", builder.getBeanDefinition());
   }
 
   private static @NotNull SdkVersion createSdkVersion() {

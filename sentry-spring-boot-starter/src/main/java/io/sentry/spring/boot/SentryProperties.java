@@ -15,6 +15,9 @@ public class SentryProperties extends SentryOptions {
   /** Weather to use Git commit id as a release. */
   private boolean useGitCommitIdAsRelease = true;
 
+  /** Report all or only uncaught web exceptions. */
+  private int exceptionResolverOrder = Integer.MIN_VALUE;
+
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
 
@@ -24,6 +27,26 @@ public class SentryProperties extends SentryOptions {
 
   public void setUseGitCommitIdAsRelease(boolean useGitCommitIdAsRelease) {
     this.useGitCommitIdAsRelease = useGitCommitIdAsRelease;
+  }
+
+  /**
+   * Returns the order used for Spring SentryExceptionResolver, which determines whether all web
+   * exceptions are reported, or only uncaught exceptions.
+   *
+   * @return order to use for Spring SentryExceptionResolver
+   */
+  public int getExceptionResolverOrder() {
+    return exceptionResolverOrder;
+  }
+
+  /**
+   * Sets the order to use for Spring SentryExceptionResolver, which determines whether all web
+   * exceptions are reported, or only uncaught exceptions.
+   *
+   * @param exceptionResolverOrder order to use for Spring SentryExceptionResolver
+   */
+  public void setExceptionResolverOrder(int exceptionResolverOrder) {
+    this.exceptionResolverOrder = exceptionResolverOrder;
   }
 
   public Logging getLogging() {

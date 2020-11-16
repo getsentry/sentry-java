@@ -9,3 +9,7 @@ local.properties
 .cxx
 **/sentry-native-local
 target/
+.classpath
+.project
+.settings/
+bin/
