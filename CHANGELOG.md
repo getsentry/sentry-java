@@ -1,17 +1,17 @@
 # vNext
 
-* Bump: AGP 4.1.1
+* Bump: AGP 4.1.1 (#1040)
 * Fix: use neutral Locale for String operations #1033
 * Update to sentry-native 0.4.4 and fix shared library builds (#1039)
-* Added java doc to protocol classes based on sentry-data-schemes project
+* Added java doc to protocol classes based on sentry-data-schemes project (#1045)
+* Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
+* Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
 
 # 3.1.3
 
 * Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
-* Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions
-* Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
 
 # 3.1.2
 
