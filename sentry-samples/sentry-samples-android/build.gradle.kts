@@ -32,8 +32,6 @@ android {
         }
     }
 
-    ndkVersion = Config.Android.ndkVersion
-
     buildFeatures {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.

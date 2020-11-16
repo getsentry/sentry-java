@@ -44,7 +44,8 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
-    ndkVersion = Config.Android.ndkVersion
+    // we use the default NDK version based on the AGP's version
+    // https://developer.android.com/studio/projects/install-ndk#apply-specific-version
 
     externalNativeBuild {
         cmake {
