@@ -64,7 +64,7 @@ public final class Request implements IUnknownPropertiesConsumer {
    * Request data in any format that makes sense.
    *
    * <p>SDKs should discard large and binary bodies by default. Can be given as string or structural
-   * data of any format.
+   * data of any serializable format.
    */
   private Object data;
   /**

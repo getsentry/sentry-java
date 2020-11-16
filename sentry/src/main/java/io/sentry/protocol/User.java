@@ -26,7 +26,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
   /** Username of the user. */
   private @Nullable String username;
 
-  /** Remote IP address of the user. Defaults to "{{auto}}". */
+  /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
   /**
