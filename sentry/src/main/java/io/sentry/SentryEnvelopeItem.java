@@ -82,7 +82,7 @@ public final class SentryEnvelopeItem {
     }
     try (final Reader eventReader =
         new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
-      return serializer.deserializeEvent(eventReader);
+      return serializer.deserialize(eventReader, SentryEvent.class);
     }
   }
 
@@ -119,7 +119,7 @@ public final class SentryEnvelopeItem {
     }
     try (final Reader eventReader =
         new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
-      return serializer.deserializeTransaction(eventReader);
+      return serializer.deserialize(eventReader, SentryTransaction.class);
     }
   }
 

@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
@@ -62,7 +63,7 @@ class DirectoryProcessorTest {
         val envelope = SentryEnvelope.from(fixture.serializer, event, null)
 
         whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
-        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(event)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
 
         fixture.getSut().processDirectory(file)
         verify(fixture.hub).captureEvent(any(), argWhere { it !is ApplyScopeData })

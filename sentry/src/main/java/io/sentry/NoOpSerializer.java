@@ -19,22 +19,7 @@ final class NoOpSerializer implements ISerializer {
   private NoOpSerializer() {}
 
   @Override
-  public @Nullable SentryEvent deserializeEvent(Reader reader) {
-    return null;
-  }
-
-  @Override
-  public UserFeedback deserializeUserFeedback(Reader reader) {
-    return null;
-  }
-
-  @Override
-  public @Nullable Session deserializeSession(Reader reader) {
-    return null;
-  }
-
-  @Override
-  public @Nullable SentryTransaction deserializeTransaction(Reader reader) {
+  public <T> T deserialize(Reader reader, Class<T> clazz) {
     return null;
   }
 

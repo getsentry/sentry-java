@@ -67,7 +67,7 @@ class OutboxSenderTest {
     fun `when parser is EnvelopeReader and serializer returns SentryEvent, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader()
         val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
-        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(expected)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(expected)
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
@@ -87,7 +87,7 @@ class OutboxSenderTest {
         val event = SentryEvent(SentryId("9ec79c33ec9942ab8353589fcb2e04dc"), Date())
         val expected = SentryEnvelope(SentryId("9ec79c33ec9942ab8353589fcb2e04dc"), null, setOf())
         whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(expected)
-        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(event)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
@@ -103,7 +103,7 @@ class OutboxSenderTest {
     @Test
     fun `when parser is EnvelopeReader and serializer returns a null event, file error logged, no event captured `() {
         fixture.envelopeReader = EnvelopeReader()
-        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(null)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(null)
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
@@ -119,7 +119,7 @@ class OutboxSenderTest {
     fun `when parser is EnvelopeReader and serializer returns a null envelope, file error logged, no event captured `() {
         fixture.envelopeReader = EnvelopeReader()
         whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(null)
-        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(null)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(null)
         val sut = fixture.getSut()
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check

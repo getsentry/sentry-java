@@ -68,7 +68,7 @@ class GsonSerializerTest {
         val expected = UUID.randomUUID().toString().replace("-", "")
         val jsonEvent = "{\"event_id\":\"$expected\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.eventId.toString())
     }
@@ -93,7 +93,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
     }
@@ -105,7 +105,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
     }
@@ -117,7 +117,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
     }
@@ -140,7 +140,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"string\":\"test\",\"int\":1,\"boolean\":true}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals("test", (actual!!.unknown["string"] as JsonPrimitive).asString)
         assertEquals(1, (actual.unknown["int"] as JsonPrimitive).asInt)
@@ -162,7 +162,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"object\":{\"int\":1,\"boolean\":true}}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         val hashMapActual = actual!!.unknown["object"] as JsonObject // gson creates it as JsonObject
 
@@ -215,7 +215,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals("Europe/Vienna", actual!!.contexts.device.timezone.id)
     }
@@ -244,7 +244,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device.orientation)
     }
@@ -269,7 +269,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"level\":\"debug\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(SentryLevel.DEBUG, actual!!.level)
     }
@@ -278,7 +278,7 @@ class GsonSerializerTest {
     fun `when deserializing a event with breadcrumbs containing data, it should become have breadcrumbs`() {
         val jsonEvent = FileFromResources.invoke("event_breadcrumb_data.json")
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(2, actual!!.breadcrumbs.size)
     }
@@ -287,7 +287,7 @@ class GsonSerializerTest {
     fun `when deserializing a event with custom contexts, they should be set in the event contexts`() {
         val jsonEvent = FileFromResources.invoke("event_with_contexts.json")
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
         val obj = actual!!.contexts["object"] as Map<*, *>
         val number = actual.contexts["number"] as Double
         val list = actual.contexts["list"] as List<*>
@@ -316,7 +316,7 @@ class GsonSerializerTest {
     @Test
     fun `when theres a null value, gson wont blow up`() {
         val json = FileFromResources.invoke("event.json")
-        val event = serializer.deserializeEvent(StringReader(json))
+        val event = serializer.deserialize(StringReader(json), SentryEvent::class.java)
         assertNotNull(event)
         assertNull(event.user)
     }
@@ -325,7 +325,7 @@ class GsonSerializerTest {
     fun `When deserializing a Session all the values should be set to the Session object`() {
         val jsonEvent = FileFromResources.invoke("session.json")
 
-        val actual = serializer.deserializeSession(StringReader(jsonEvent))
+        val actual = serializer.deserialize(StringReader(jsonEvent), Session::class.java)
 
         assertSessionData(actual)
     }
@@ -344,7 +344,7 @@ class GsonSerializerTest {
         val session = createSessionMockData()
         val jsonSession = serializeToString(session)
         // reversing, so we can assert values and not a json string
-        val expectedSession = serializer.deserializeSession(StringReader(jsonSession))
+        val expectedSession = serializer.deserialize(StringReader(jsonSession), Session::class.java)
 
         assertSessionData(expectedSession)
     }
@@ -474,7 +474,8 @@ class GsonSerializerTest {
                             }
                           }
                         }"""
-        val transaction = serializer.deserializeTransaction(StringReader(json))
+        val transaction = serializer.deserialize(StringReader(json), SentryTransaction::class.java)
+        assertNotNull(transaction)
         assertEquals("a-transaction", transaction.transaction)
         assertNotNull(transaction.startTimestamp)
         assertNotNull(transaction.timestamp)
@@ -501,8 +502,8 @@ class GsonSerializerTest {
     fun `deserializing user feedback`() {
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
-        val actual = serializer.deserializeUserFeedback(StringReader(jsonUserFeedback))
-
+        val actual = serializer.deserialize(StringReader(jsonUserFeedback), UserFeedback::class.java)
+        assertNotNull(actual)
         assertEquals(userFeedback.eventId, actual.eventId)
         assertEquals(userFeedback.name, actual.name)
         assertEquals(userFeedback.email, actual.email)
@@ -533,7 +534,7 @@ class GsonSerializerTest {
             assertEquals(SentryItemType.Session, it.header.type)
             val reader =
                 InputStreamReader(ByteArrayInputStream(it.data), Charsets.UTF_8)
-            val actualSession = serializer.deserializeSession(reader)
+            val actualSession = serializer.deserialize(reader, Session::class.java)
             assertSessionData(actualSession)
         }
     }
