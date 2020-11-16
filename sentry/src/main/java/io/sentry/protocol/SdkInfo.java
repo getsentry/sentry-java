@@ -4,10 +4,20 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * Holds information about the system SDK.
+ *
+ * <p>This is relevant for iOS and other platforms that have a system SDK. Not to be confused with
+ * the client SDK.
+ */
 public final class SdkInfo implements IUnknownPropertiesConsumer {
+  /** The internal name of the SDK. */
   private String sdkName;
+  /** The major version of the SDK as integer or 0. */
   private Integer versionMajor;
+  /** The minor version of the SDK as integer or 0. */
   private Integer versionMinor;
+  /** The patch version of the SDK as integer or 0. */
   private Integer versionPatchlevel;
 
   @SuppressWarnings("unused")

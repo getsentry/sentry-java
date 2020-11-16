@@ -4,13 +4,41 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 
-/** The Sentry Exception interface. */
+/**
+ * A single exception.
+ *
+ * <p>Multiple values inside of an [event](#typedef-Event) represent chained exceptions and should
+ * be sorted oldest to newest. For example, consider this Python code snippet:
+ *
+ * <p>```python try: raise Exception("random boring invariant was not met!") except Exception as e:
+ * raise ValueError("something went wrong, help!") from e ```
+ *
+ * <p>`Exception` would be described first in the values list, followed by a description of
+ * `ValueError`:
+ *
+ * <p>```json { "exception": { "values": [ {"type": "Exception": "value": "random boring invariant
+ * was not met!"}, {"type": "ValueError", "value": "something went wrong, help!"}, ] } } ```
+ */
 public final class SentryException implements IUnknownPropertiesConsumer {
+  /**
+   * Exception type, e.g. `ValueError`.
+   *
+   * <p>At least one of `type` or `value` is required, otherwise the exception is discarded.
+   */
   private String type;
+  /**
+   * Human readable display value.
+   *
+   * <p>At least one of `type` or `value` is required, otherwise the exception is discarded.
+   */
   private String value;
+  /** The optional module, or package which the exception type lives in. */
   private String module;
+  /** An optional value that refers to a [thread](#typedef-Thread). */
   private Long threadId;
+  /** Stack trace containing frames of this exception. */
   private SentryStackTrace stacktrace;
+  /** Mechanism by which this exception was generated and handled. */
   private Mechanism mechanism;
 
   @SuppressWarnings("unused")
