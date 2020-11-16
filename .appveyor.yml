@@ -12,7 +12,7 @@ install:
   - appveyor DownloadFile "%SDK_TOOLS_URL%" -FileName "%TMP%/sdk-tools.zip"
   - 7z x "%TMP%/sdk-tools.zip" -o"%ANDROID_HOME%" > nul
   - set PATH=%PATH%;"%ANDROID_HOME%\bin"
-#  - yes 2> nul | sdkmanager --licenses > nul
+  - yes 2> nul | sdkmanager --licenses > nul
 #  - yes 2> nul | sdkmanager "platform-tools" "platforms;android-%ANDROID_BUILD_VERSION%" > nul
 cache:
   - "%USERPROFILE%\\.gradle\\caches"
