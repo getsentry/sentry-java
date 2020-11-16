@@ -1,11 +1,16 @@
 package io.sentry;
 
 import io.sentry.protocol.*;
-import java.util.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class SentryEvent implements IUnknownPropertiesConsumer {
   /**
