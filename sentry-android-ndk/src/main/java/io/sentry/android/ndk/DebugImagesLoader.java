@@ -3,6 +3,7 @@ package io.sentry.android.ndk;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.IDebugImagesLoader;
+import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.protocol.DebugImage;
 import io.sentry.util.Objects;
 import java.util.Arrays;
@@ -23,28 +24,24 @@ final class DebugImagesLoader implements IDebugImagesLoader {
   private static final @NotNull Object debugImagesLock = new Object();
 
   DebugImagesLoader(
-      final @NotNull SentryOptions options, final @NotNull IModuleListLoader moduleListLoader) {
-    this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull IModuleListLoader moduleListLoader) {
+    this.options = Objects.requireNonNull(options, "The SentryAndroidOptions is required.");
     this.moduleListLoader =
         Objects.requireNonNull(moduleListLoader, "The ModuleListLoader is required.");
   }
 
   /**
-   * Returns the list of debug images loaded by sentry-native. If NDK is disabled this is a NoOp and
-   * it returns null;
+   * Returns the list of debug images loaded by sentry-native.
    *
    * @return the list or null.
    */
   @Override
-  public @Nullable List<DebugImage> getDebugImages() {
-    if (!options.isEnableNdk()) {
-      return null;
-    }
-
+  public @Nullable List<DebugImage> loadDebugImages() {
     synchronized (debugImagesLock) {
       if (debugImages == null) {
         try {
-          final DebugImage[] debugImagesArr = moduleListLoader.getModuleList();
+          final DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
           if (debugImagesArr != null) {
             debugImages = Arrays.asList(debugImagesArr);
             options
@@ -59,16 +56,9 @@ final class DebugImagesLoader implements IDebugImagesLoader {
     return debugImages;
   }
 
-  /**
-   * Clears the caching of debug images on sentry-native and here. If NDK is disabled this is a
-   * NoOp.
-   */
+  /** Clears the caching of debug images on sentry-native and here. */
   @Override
   public void clearDebugImages() {
-    if (!options.isEnableNdk()) {
-      return;
-    }
-
     synchronized (debugImagesLock) {
       try {
         moduleListLoader.clearModuleList();

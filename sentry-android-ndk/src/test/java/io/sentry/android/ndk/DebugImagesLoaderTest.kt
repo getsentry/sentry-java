@@ -1,10 +1,9 @@
 package io.sentry.android.ndk
 
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.SentryOptions
+import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.protocol.DebugImage
 import java.lang.RuntimeException
 import kotlin.test.Test
@@ -15,10 +14,9 @@ import kotlin.test.assertTrue
 class DebugImagesLoaderTest {
     private class Fixture {
         val nativeLoader = mock<IModuleListLoader>()
-        val options = SentryOptions()
+        val options = SentryAndroidOptions()
 
-        fun getSut(ndk: Boolean = true): DebugImagesLoader {
-            options.isEnableNdk = ndk
+        fun getSut(): DebugImagesLoader {
             return DebugImagesLoader(options, nativeLoader)
         }
     }
@@ -26,57 +24,40 @@ class DebugImagesLoaderTest {
     private val fixture = Fixture()
 
     @Test
-    fun `get images returns null if ndk is disabled`() {
-        val sut = fixture.getSut(false)
+    fun `get images returns image list`() {
+        val sut = fixture.getSut()
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
 
-        assertNull(sut.debugImages)
-        verify(fixture.nativeLoader, never()).moduleList
+        assertNotNull(sut.loadDebugImages())
+        verify(fixture.nativeLoader).loadModuleList()
     }
 
     @Test
-    fun `get images returns image list if ndk is enabled`() {
+    fun `get images returns cached list if already called`() {
         val sut = fixture.getSut()
-        whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf())
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
+        assertNotNull(sut.loadDebugImages())
 
-        assertNotNull(sut.debugImages)
-        verify(fixture.nativeLoader).moduleList
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(DebugImage()))
+        assertTrue(sut.loadDebugImages()!!.isEmpty())
     }
 
     @Test
-    fun `get images returns cached list if alreadu called`() {
+    fun `get images cache values`() {
         val sut = fixture.getSut()
-        whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf())
-        assertNotNull(sut.debugImages)
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
 
-        whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf(DebugImage()))
-        assertTrue(sut.debugImages!!.isEmpty())
-    }
-
-    @Test
-    fun `get images cache values if ndk is enabled`() {
-        val sut = fixture.getSut()
-        whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf())
-
-        sut.debugImages
+        sut.loadDebugImages()
 
         assertNotNull(sut.cachedDebugImages)
     }
 
     @Test
-    fun `clear images returns if ndk is disabled`() {
-        val sut = fixture.getSut(false)
-
-        sut.clearDebugImages()
-
-        verify(fixture.nativeLoader, never()).clearModuleList()
-    }
-
-    @Test
-    fun `clear images if ndk is enabled`() {
+    fun `clear images`() {
         val sut = fixture.getSut()
 
-        whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf())
-        sut.debugImages
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
+        sut.loadDebugImages()
 
         assertNotNull(sut.cachedDebugImages)
 
@@ -89,8 +70,8 @@ class DebugImagesLoaderTest {
     fun `clear images list do not throw if there is an error`() {
         val sut = fixture.getSut()
 
-        whenever(fixture.nativeLoader.moduleList).thenReturn(arrayOf())
-        sut.debugImages
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
+        sut.loadDebugImages()
 
         whenever(fixture.nativeLoader.clearModuleList()).thenThrow(RuntimeException())
         sut.clearDebugImages()

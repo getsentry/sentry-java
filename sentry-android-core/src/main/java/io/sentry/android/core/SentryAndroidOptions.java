@@ -4,7 +4,6 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -36,7 +35,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enableAppComponentBreadcrumbs = true;
 
   /** Interface that loads the debug images list from sentry-native */
-  private @Nullable IDebugImagesLoader debugImagesLoader;
+  private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -178,18 +177,19 @@ public final class SentryAndroidOptions extends SentryOptions {
   /**
    * Returns the Debug image loader
    *
-   * @return the image loader or null
+   * @return the image loader
    */
-  public @Nullable IDebugImagesLoader getDebugImagesLoader() {
+  public @NotNull IDebugImagesLoader getDebugImagesLoader() {
     return debugImagesLoader;
   }
 
   /**
    * Sets the image loader
    *
-   * @param debugImagesLoader the image loader or null
+   * @param debugImagesLoader the image loader
    */
-  public void setDebugImagesLoader(@Nullable IDebugImagesLoader debugImagesLoader) {
-    this.debugImagesLoader = debugImagesLoader;
+  public void setDebugImagesLoader(final @NotNull IDebugImagesLoader debugImagesLoader) {
+    this.debugImagesLoader =
+        debugImagesLoader != null ? debugImagesLoader : NoOpDebugImagesLoader.getInstance();
   }
 }

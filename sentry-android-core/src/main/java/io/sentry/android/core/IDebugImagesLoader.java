@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 /** Used for loading the list of debug images from sentry-native. */
 @ApiStatus.Internal
 public interface IDebugImagesLoader {
-  List<DebugImage> getDebugImages();
+  List<DebugImage> loadDebugImages();
 
   void clearDebugImages();
 }

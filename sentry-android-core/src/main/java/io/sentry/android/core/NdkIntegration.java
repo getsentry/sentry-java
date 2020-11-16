@@ -24,39 +24,44 @@ public final class NdkIntegration implements Integration {
   @Override
   public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
-    Objects.requireNonNull(options, "SentryOptions is required");
+    SentryAndroidOptions androidOptions =
+        Objects.requireNonNull(
+            (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
+            "SentryAndroidOptions is required");
 
-    final boolean enabled = options.isEnableNdk();
-    options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
+    final boolean enabled = androidOptions.isEnableNdk();
+    androidOptions.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
 
     // Note: `hub` isn't used here because the NDK integration writes files to disk which are picked
     // up by another integration (EnvelopeFileObserverIntegration).
     if (enabled && sentryNdkClass != null) {
-      final String cachedDir = options.getCacheDirPath();
+      final String cachedDir = androidOptions.getCacheDirPath();
       if (cachedDir == null || cachedDir.isEmpty()) {
-        options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
-        options.setEnableNdk(false);
+        androidOptions
+            .getLogger()
+            .log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+        androidOptions.setEnableNdk(false);
         return;
       }
 
       try {
-        final Method method = sentryNdkClass.getMethod("init", SentryOptions.class);
+        final Method method = sentryNdkClass.getMethod("init", SentryAndroidOptions.class);
         final Object[] args = new Object[1];
-        args[0] = options;
+        args[0] = androidOptions;
         method.invoke(null, args);
 
-        options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
+        androidOptions.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
       } catch (NoSuchMethodException e) {
-        options.setEnableNdk(false);
-        options
+        androidOptions.setEnableNdk(false);
+        androidOptions
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
       } catch (Throwable e) {
-        options.setEnableNdk(false);
-        options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
+        androidOptions.setEnableNdk(false);
+        androidOptions.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
       }
     } else {
-      options.setEnableNdk(false);
+      androidOptions.setEnableNdk(false);
     }
   }
 

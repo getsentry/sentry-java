@@ -5,8 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 class NativeModuleListLoader implements IModuleListLoader {
   @Override
-  public @Nullable DebugImage[] getModuleList() {
-    return nativeGetModuleList();
+  public @Nullable DebugImage[] loadModuleList() {
+    return nativeLoadModuleList();
   }
 
   @Override
@@ -14,7 +14,7 @@ class NativeModuleListLoader implements IModuleListLoader {
     nativeClearModuleList();
   }
 
-  public static native DebugImage[] nativeGetModuleList();
+  public static native DebugImage[] nativeLoadModuleList();
 
   public static native void nativeClearModuleList();
 }
