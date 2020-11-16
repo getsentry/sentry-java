@@ -25,11 +25,7 @@ object Config {
         val minSdkVersionNdk = 16
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
-        // CMake: Projects that don't set a specific CMake version are built with CMake 3.10.2
 
-        // ndk is set to 21.3.x but I see on the logs the version 21.1.x, not sure if it's a bug
-        // on the Gradle plugin picking up the wrong version.
-        val ndkVersion = "21.3.6528147"
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
     }
 
@@ -132,7 +128,6 @@ object Config {
 
     object Deploy {
         val novodaBintrayPlugin = "com.novoda:bintray-release:1.0.3"
-        val novodaBintray = "com.novoda.bintray-release"
         val sign = true
     }
 
