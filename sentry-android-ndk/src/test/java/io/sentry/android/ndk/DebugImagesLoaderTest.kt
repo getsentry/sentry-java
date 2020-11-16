@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 
 class DebugImagesLoaderTest {
     private class Fixture {
-        val nativeLoader = mock<IModuleListLoader>()
+        val nativeLoader = mock<NativeModuleListLoader>()
         val options = SentryAndroidOptions()
 
         fun getSut(): DebugImagesLoader {

@@ -16,7 +16,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
 
   private final @NotNull SentryOptions options;
 
-  private final @NotNull IModuleListLoader moduleListLoader;
+  private final @NotNull NativeModuleListLoader moduleListLoader;
 
   private static @Nullable List<DebugImage> debugImages;
 
@@ -25,10 +25,10 @@ final class DebugImagesLoader implements IDebugImagesLoader {
 
   DebugImagesLoader(
       final @NotNull SentryAndroidOptions options,
-      final @NotNull IModuleListLoader moduleListLoader) {
+      final @NotNull NativeModuleListLoader moduleListLoader) {
     this.options = Objects.requireNonNull(options, "The SentryAndroidOptions is required.");
     this.moduleListLoader =
-        Objects.requireNonNull(moduleListLoader, "The ModuleListLoader is required.");
+        Objects.requireNonNull(moduleListLoader, "The NativeModuleListLoader is required.");
   }
 
   /**

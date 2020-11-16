@@ -3,13 +3,12 @@ package io.sentry.android.ndk;
 import io.sentry.protocol.DebugImage;
 import org.jetbrains.annotations.Nullable;
 
-final class NativeModuleListLoader implements IModuleListLoader {
-  @Override
+final class NativeModuleListLoader {
+
   public @Nullable DebugImage[] loadModuleList() {
     return nativeLoadModuleList();
   }
 
-  @Override
   public void clearModuleList() {
     nativeClearModuleList();
   }
