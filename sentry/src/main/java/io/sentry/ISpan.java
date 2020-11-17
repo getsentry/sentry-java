@@ -25,9 +25,9 @@ public interface ISpan {
   /**
    * Sets span operation.
    *
-   * @param op - the operation
+   * @param operation - the operation
    */
-  void setOp(@Nullable String op);
+  void setOperation(@Nullable String operation);
 
   /**
    * Sets span description.

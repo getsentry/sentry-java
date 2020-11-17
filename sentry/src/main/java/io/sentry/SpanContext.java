@@ -60,8 +60,8 @@ public class SpanContext implements Cloneable {
     this.sampled = sampled;
   }
 
-  public void setOp(@Nullable String op) {
-    this.op = op;
+  public void setOperation(final @Nullable String operation) {
+    this.op = operation;
   }
 
   public void setTag(final @NotNull String name, final @NotNull String value) {
@@ -93,7 +93,7 @@ public class SpanContext implements Cloneable {
     return parentSpanId;
   }
 
-  public @Nullable String getOp() {
+  public @Nullable String getOperation() {
     return op;
   }
 

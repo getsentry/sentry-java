@@ -124,6 +124,11 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
+      throws IOException {
+    return this.buildEnvelope(event, null);
+  }
+
   private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
@@ -326,12 +331,10 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    Session session = null;
-
     SentryId sentryId = transaction.getEventId();
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(transaction, session);
+      final SentryEnvelope envelope = buildEnvelope(transaction);
 
       if (envelope != null) {
         connection.send(envelope, hint);

@@ -123,8 +123,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @param op - operation
    */
   @Override
-  public void setOp(@Nullable String op) {
-    this.getContexts().getTrace().setOp(op);
+  public void setOperation(@Nullable String op) {
+    this.getContexts().getTrace().setOperation(op);
   }
 
   /**

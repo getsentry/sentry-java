@@ -654,11 +654,11 @@ public final class Hub implements IHub {
               "Transaction %s was dropped due to sampling decision.",
               transaction.getEventId());
     } else {
+      StackItem item = null;
       try {
-        final StackItem item = stack.peek();
+        item = stack.peek();
         if (item != null) {
           sentryId = item.client.captureTransaction(transaction, item.scope, hint);
-          item.scope.clearTransaction();
         } else {
           options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureTransaction");
         }
@@ -669,6 +669,10 @@ public final class Hub implements IHub {
                 SentryLevel.ERROR,
                 "Error while capturing transaction with id: " + transaction.getEventId(),
                 e);
+      } finally {
+        if (item != null) {
+          item.scope.clearTransaction();
+        }
       }
     }
     this.lastEventId = sentryId;
