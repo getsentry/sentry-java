@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URI;
@@ -37,6 +38,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * An implementation of the {@link ITransport} interface that sends the events to the Sentry server
@@ -120,7 +122,8 @@ public class HttpTransport implements ITransport {
         sslSocketFactory,
         hostnameVerifier,
         sentryUrl,
-        CurrentDateProvider.getInstance());
+        CurrentDateProvider.getInstance(),
+        AuthenticatorWrapper.getInstance());
   }
 
   HttpTransport(
@@ -131,8 +134,8 @@ public class HttpTransport implements ITransport {
       final @Nullable SSLSocketFactory sslSocketFactory,
       final @Nullable HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl,
-      final @NotNull ICurrentDateProvider currentDateProvider) {
-    this.proxy = options.getProxy();
+      final @NotNull ICurrentDateProvider currentDateProvider,
+      final @NotNull AuthenticatorWrapper authenticatorWrapper) {
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
     this.connectionTimeout = connectionTimeoutMillis;
@@ -150,6 +153,39 @@ public class HttpTransport implements ITransport {
     } catch (URISyntaxException | MalformedURLException e) {
       throw new IllegalArgumentException("Failed to compose the Sentry's server URL.", e);
     }
+
+    this.proxy = resolveProxy(options.getProxy());
+
+    if (proxy != null && options.getProxy() != null) {
+      final String proxyUser = options.getProxy().getUser();
+      final String proxyPassword = options.getProxy().getPass();
+
+      if (proxyUser != null && proxyPassword != null) {
+        authenticatorWrapper.setDefault(new ProxyAuthenticator(proxyUser, proxyPassword));
+      }
+    }
+  }
+
+  private @Nullable Proxy resolveProxy(final @Nullable SentryOptions.Proxy optionsProxy) {
+    Proxy proxy = null;
+    if (optionsProxy != null) {
+      final String port = optionsProxy.getPort();
+      final String host = optionsProxy.getHost();
+      if (port != null && host != null) {
+        try {
+          InetSocketAddress proxyAddr = new InetSocketAddress(host, Integer.parseInt(port));
+          proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
+        } catch (NumberFormatException e) {
+          logger.log(
+              ERROR,
+              e,
+              "Failed to parse Sentry Proxy port: "
+                  + optionsProxy.getPort()
+                  + ". Proxy is ignored");
+        }
+      }
+    }
+    return proxy;
   }
 
   protected @NotNull HttpURLConnection open() throws IOException {
@@ -469,6 +505,11 @@ public class HttpTransport implements ITransport {
    */
   private boolean isSuccessfulResponseCode(final int responseCode) {
     return responseCode == HTTP_OK;
+  }
+
+  @TestOnly
+  Proxy getProxy() {
+    return proxy;
   }
 
   @Override

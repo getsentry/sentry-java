@@ -12,9 +12,27 @@ import org.jetbrains.annotations.Nullable;
  * transaction.
  */
 public abstract class SentryBaseEvent {
+  /**
+   * Unique identifier of this event.
+   *
+   * <p>Hexadecimal string representing a uuid4 value. The length is exactly 32 characters. Dashes
+   * are not allowed. Has to be lowercase.
+   *
+   * <p>Even though this field is backfilled on the server with a new uuid4, it is strongly
+   * recommended to generate that uuid4 clientside. There are some features like user feedback which
+   * are easier to implement that way, and debugging in case events get lost in your Sentry
+   * installation is also easier.
+   *
+   * <p>Example:
+   *
+   * <p>```json { "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0" } ```
+   */
   private @Nullable SentryId eventId;
+  /** Contexts describing the environment (e.g. device, os or browser). */
   private Contexts contexts;
+  /** Information about the Sentry SDK that generated this event. */
   private @Nullable SdkVersion sdk;
+  /** Information about a web request that occurred during the event. */
   private @Nullable Request request;
 
   /** The captured Throwable */
