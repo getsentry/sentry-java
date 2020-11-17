@@ -7,6 +7,7 @@
 * Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
 * Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
 * Fix: set userId for hard-crashes if no user is set
+* Enhancement: Sentry NDK integration is compiled against default NDK version based on AGP's version
 
 # 3.1.3
 
