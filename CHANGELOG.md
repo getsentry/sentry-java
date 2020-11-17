@@ -6,8 +6,8 @@
 * Added java doc to protocol classes based on sentry-data-schemes project (#1045)
 * Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
 * Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
-* Enhancement: Sentry NDK integration is compiled against default NDK version based on AGP's version
-* Fix: Avoids potential memory leaks on the NDK integration and cleans up obsolete code.
+* Enhancement: Sentry NDK integration is compiled against default NDK version based on AGP's version #1048
+* Fix: Clean up JNI code and properly free strings #1050
 
 # 3.1.3
 
