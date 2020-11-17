@@ -185,9 +185,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   @Nullable
   Span getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.spans);
-    for (int i = spans.size() - 1; i >= 0; i--) {
-      if (!spans.get(i).isFinished()) {
-        return spans.get(i);
+    if (!spans.isEmpty()) {
+      for (int i = spans.size() - 1; i >= 0; i--) {
+        if (!spans.get(i).isFinished()) {
+          return spans.get(i);
+        }
       }
     }
     return null;
