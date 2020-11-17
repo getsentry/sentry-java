@@ -1,12 +1,8 @@
 version: '{build}'
-image: Visual Studio 2017
+image: Visual Studio 2019
 environment:
   ANDROID_HOME: "C:\\android-sdk-windows"
   ANDROID_NDK_HOME: "C:\\android-sdk-windows\\ndk-bundle"
-  ANDROID_BUILD_VERSION: 30
-  ANDROID_TOOLS_VERSION: 30.0.2
-  ANDROID_NDK_VERSION: 21.3.6528147
-  ANDROID_CMAKE_VERSION: 3.10.2.4988404
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   SDK_TOOLS_URL: https://dl.google.com/android/repository/sdk-tools-windows-4333796.zip
 install:
@@ -15,9 +11,6 @@ install:
   - 7z x "%TMP%/sdk-tools.zip" -o"%ANDROID_HOME%" > nul
   - set PATH=%PATH%;"%ANDROID_HOME%\tools\bin"
   - yes 2> nul | sdkmanager --licenses > nul
-  - yes 2> nul | sdkmanager "platform-tools" "platforms;android-%ANDROID_BUILD_VERSION%" > nul
-  - yes 2> nul | sdkmanager "ndk;%ANDROID_NDK_VERSION%" > nul
-  - yes 2> nul | sdkmanager "cmake;%ANDROID_CMAKE_VERSION%" > nul
 cache:
   - "%USERPROFILE%\\.gradle\\caches"
   - "%USERPROFILE%\\.m2\\repository"
