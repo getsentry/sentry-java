@@ -56,6 +56,12 @@ public final class PropertiesProviderFactory {
       providers.add(new SimplePropertiesProvider(properties));
     }
 
+    final Properties runDirectoryProperties =
+        new FilesystemPropertiesLoader("sentry.properties", logger).load();
+    if (runDirectoryProperties != null) {
+      providers.add(new SimplePropertiesProvider(runDirectoryProperties));
+    }
+
     return new CompositePropertiesProvider(providers);
   }
 }
