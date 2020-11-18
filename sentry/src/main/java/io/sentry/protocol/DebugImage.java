@@ -206,6 +206,15 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
     this.imageSize = imageSize;
   }
 
+  /**
+   * Sets the image size.
+   *
+   * @param imageSize the image size.
+   */
+  public void setImageSize(long imageSize) {
+    this.imageSize = imageSize;
+  }
+
   public String getArch() {
     return arch;
   }

@@ -3,7 +3,8 @@
 * Bump: AGP 4.1.1 (#1040)
 * Fix: use neutral Locale for String operations #1033
 * Update to sentry-native 0.4.4 and fix shared library builds (#1039)
-* Added java doc to protocol classes based on sentry-data-schemes project (#1045)
+* Feat: Expose a Module (Debug images) Loader for Android thru sentry-native #1043
+* Enhancement: Added java doc to protocol classes based on sentry-data-schemes project (#1045)
 * Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
 * Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
 * Enhancement: Sentry NDK integration is compiled against default NDK version based on AGP's version #1048
