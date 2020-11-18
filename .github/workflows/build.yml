@@ -7,9 +7,6 @@ on:
     branches:
       - '*'
 
-env:
-  CMAKE_VERSION: "3.10.2.4988404"
-
 jobs:
   build:
     name: Build Job ${{ matrix.os }}
@@ -30,11 +27,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-
-      # sudo is required for linux
-      # required because macOS doesn't have cmake 3.10 installed by default
-      - name: Install cmake 3.10.2
-        run: sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "cmake;${CMAKE_VERSION}"
 
       # use sequential key when bumping dependencies till single lock file is out of preview
       # https://docs.gradle.org/current/userguide/dependency_locking.html#single_lock_file_per_project
