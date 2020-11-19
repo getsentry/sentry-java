@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -34,5 +35,24 @@ class SentryAndroidOptionsTest {
             it.name == "maven:sentry" &&
             it.version == BuildConfig.VERSION_NAME
         })
+    }
+
+    @Test
+    fun `init should set NoOpDebugImagesLoader`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertEquals(NoOpDebugImagesLoader.getInstance(), sentryOptions.debugImagesLoader)
+    }
+
+    @Test
+    fun `set debugImagesLoader accepts non null value`() {
+        val sentryOptions = SentryAndroidOptions().apply {
+            debugImagesLoader = CustomDebugImagesLoader()
+        }
+        assertNotNull(sentryOptions.debugImagesLoader)
+    }
+
+    private class CustomDebugImagesLoader : IDebugImagesLoader {
+        override fun loadDebugImages(): List<DebugImage>? = null
+        override fun clearDebugImages() {}
     }
 }
