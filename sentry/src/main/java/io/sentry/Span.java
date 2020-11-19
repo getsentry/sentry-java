@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +21,7 @@ public final class Span extends SpanContext implements ISpan {
   private final transient @NotNull SentryTransaction transaction;
 
   /** A throwable thrown during the execution of the span. */
-  private transient @Nullable Throwable throwable;
+  private transient @Nullable WeakReference<Throwable> throwable;
 
   Span(
       final @NotNull SentryId traceId,
@@ -65,11 +66,12 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
-    this.throwable = throwable;
+    this.throwable = new WeakReference<>(throwable);
   }
 
   @Override
   public @Nullable Throwable getThrowable() {
-    return throwable;
+    final WeakReference<Throwable> ref = throwable;
+    return ref != null ? ref.get() : null;
   }
 }

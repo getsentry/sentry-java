@@ -135,7 +135,7 @@ JNIEXPORT void JNICALL Java_io_sentry_android_ndk_NativeScope_nativeAddBreadcrum
     sentry_add_breadcrumb(crumb);
 }
 
-static void send_envelope(sentry_envelope_t *envelope, void *unused_data) {
+static void send_envelope(const sentry_envelope_t *envelope, void *unused_data) {
     (void) unused_data;
     char envelope_id_str[40];
     char outbox_path[4096];

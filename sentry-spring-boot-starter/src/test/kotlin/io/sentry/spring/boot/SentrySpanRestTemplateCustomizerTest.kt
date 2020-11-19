@@ -62,7 +62,7 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(result).isEqualTo("OK")
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
-        assertThat(span.op).isEqualTo("http")
+        assertThat(span.operation).isEqualTo("http")
         assertThat(span.description).isEqualTo("GET /test/{id}")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
         fixture.mockServer.verify()
@@ -75,7 +75,7 @@ class SentrySpanRestTemplateCustomizerTest {
         } catch (e: Throwable) {}
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
-        assertThat(span.op).isEqualTo("http")
+        assertThat(span.operation).isEqualTo("http")
         assertThat(span.description).isEqualTo("GET /test/{id}")
         assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
         fixture.mockServer.verify()

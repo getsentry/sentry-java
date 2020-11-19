@@ -89,8 +89,8 @@ class SentryTransactionTest {
     @Test
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
-        transaction.setOp("op")
-        assertEquals("op", transaction.contexts.trace!!.op)
+        transaction.setOperation("op")
+        assertEquals("op", transaction.contexts.trace!!.operation)
     }
 
     @Test

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

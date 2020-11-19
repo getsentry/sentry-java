@@ -57,7 +57,7 @@ class SentrySpanAdviceTest {
         assertEquals(1, result)
         assertEquals(1, tx.spans.size)
         assertEquals("customName", tx.spans.first().description)
-        assertEquals("bean", tx.spans.first().op)
+        assertEquals("bean", tx.spans.first().operation)
     }
 
     @Test
@@ -73,7 +73,7 @@ class SentrySpanAdviceTest {
         assertEquals(2, result)
         assertEquals(1, tx.spans.size)
         assertEquals("SampleService.methodWithoutSpanDescriptionSet", tx.spans.first().description)
-        assertNull(tx.spans.first().op)
+        assertNull(tx.spans.first().operation)
     }
 
     @Test

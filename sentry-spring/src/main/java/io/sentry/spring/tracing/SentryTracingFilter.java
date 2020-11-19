@@ -2,12 +2,12 @@ package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.InvalidSentryTraceHeaderException;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
+import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.util.Objects;
 import java.io.IOException;
@@ -66,7 +66,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
           (String) httpRequest.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
       if (pattern != null) {
         transaction.setName(httpRequest.getMethod() + " " + pattern);
-        transaction.setOp(TRANSACTION_OP);
+        transaction.setOperation(TRANSACTION_OP);
         transaction.setRequest(requestResolver.resolveSentryRequest(httpRequest));
         transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
         transaction.finish();

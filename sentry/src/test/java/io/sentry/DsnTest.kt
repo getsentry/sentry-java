@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.exception.InvalidDsnException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

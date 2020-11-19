@@ -8,6 +8,7 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
@@ -112,6 +113,12 @@ public class SentryAutoConfiguration {
     @Import(SentryWebConfiguration.class)
     @Open
     static class SentryWebMvcConfiguration {
+      @Bean
+      @ConditionalOnMissingBean
+      public @NotNull SentryExceptionResolver sentryExceptionResolver(
+          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
+        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+      }
 
       @Bean
       @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")

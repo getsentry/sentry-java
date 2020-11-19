@@ -66,7 +66,7 @@ public class Main {
 
           // Performance configuration options
           // Set what percentage of traces should be collected
-          options.setTracesSampleRate(0.5);
+          options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
           // Determine traces sample rate based on the sampling context
           options.setTracesSampler(
@@ -144,7 +144,7 @@ public class Main {
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
     Span innerSpan = outerSpan.startChild();
-    innerSpan.setOp("jdbc");
+    innerSpan.setOperation("jdbc");
     innerSpan.setDescription("select * from product where id = :id");
     innerSpan.setStatus(SpanStatus.OK);
     Thread.sleep(300);

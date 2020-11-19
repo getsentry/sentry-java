@@ -10,7 +10,6 @@ import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
-import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,6 +25,9 @@ public class SentryOptions {
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
+
+  /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
+  private static final String PROXY_PORT_DEFAULT = "80";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -251,6 +253,15 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
+
+    final String proxyHost = propertiesProvider.getProperty("proxy.host");
+    final String proxyUser = propertiesProvider.getProperty("proxy.user");
+    final String proxyPass = propertiesProvider.getProperty("proxy.pass");
+    final String proxyPort = propertiesProvider.getProperty("proxy.port", PROXY_PORT_DEFAULT);
+
+    if (proxyHost != null) {
+      options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
+    }
     return options;
   }
 
@@ -614,12 +625,7 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
+    this.validateRate(sampleRate);
     this.sampleRate = sampleRate;
   }
 
@@ -636,16 +642,11 @@ public class SentryOptions {
    * Sets the tracesSampleRate Can be anything between 0.01 and 1.0 or null (default), to disable
    * it.
    *
-   * @param sampleRate the sample rate
+   * @param tracesSampleRate the sample rate
    */
-  public void setTracesSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
-    this.tracesSampleRate = sampleRate;
+  public void setTracesSampleRate(Double tracesSampleRate) {
+    this.validateRate(tracesSampleRate);
+    this.tracesSampleRate = tracesSampleRate;
   }
 
   /**
@@ -1199,6 +1200,9 @@ public class SentryOptions {
     if (options.getServerName() != null) {
       setServerName(options.getServerName());
     }
+    if (options.getProxy() != null) {
+      setProxy(options.getProxy());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -1210,5 +1214,72 @@ public class SentryOptions {
     sdkVersion.addPackage("maven:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void validateRate(@Nullable Double rate) {
+    if (rate != null && (rate > 1.0 || rate <= 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + rate
+              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+    }
+  }
+
+  public static final class Proxy {
+    private @Nullable String host;
+    private @Nullable String port;
+    private @Nullable String user;
+    private @Nullable String pass;
+
+    public Proxy(
+        final @Nullable String host,
+        final @Nullable String port,
+        final @Nullable String user,
+        final @Nullable String pass) {
+      this.host = host;
+      this.port = port;
+      this.user = user;
+      this.pass = pass;
+    }
+
+    public Proxy() {
+      this(null, null, null, null);
+    }
+
+    public Proxy(@Nullable String host, @Nullable String port) {
+      this(host, port, null, null);
+    }
+
+    public @Nullable String getHost() {
+      return host;
+    }
+
+    public void setHost(final @Nullable String host) {
+      this.host = host;
+    }
+
+    public @Nullable String getPort() {
+      return port;
+    }
+
+    public void setPort(final @Nullable String port) {
+      this.port = port;
+    }
+
+    public @Nullable String getUser() {
+      return user;
+    }
+
+    public void setUser(final @Nullable String user) {
+      this.user = user;
+    }
+
+    public @Nullable String getPass() {
+      return pass;
+    }
+
+    public void setPass(final @Nullable String pass) {
+      this.pass = pass;
+    }
   }
 }

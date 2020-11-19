@@ -124,6 +124,11 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
+      throws IOException {
+    return this.buildEnvelope(event, null);
+  }
+
   private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
@@ -316,22 +321,25 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
+  public SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction,
+      final @NotNull Scope scope,
+      final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    Session session = null;
-
     SentryId sentryId = transaction.getEventId();
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(transaction, session);
+      final SentryEnvelope envelope = buildEnvelope(transaction);
 
       if (envelope != null) {
         connection.send(envelope, hint);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
       }
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);

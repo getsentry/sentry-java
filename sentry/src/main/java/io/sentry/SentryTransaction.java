@@ -4,9 +4,9 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +23,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   private @Nullable Date timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
-  private final @NotNull List<Span> spans = new ArrayList<>();
+  private final @NotNull List<Span> spans = new CopyOnWriteArrayList<>();
   /**
    * A hub this transaction is attached to. Marked as transient to be ignored during JSON
    * serialization.
@@ -126,8 +126,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @param op - operation
    */
   @Override
-  public void setOp(@Nullable String op) {
-    this.getContexts().getTrace().setOp(op);
+  public void setOperation(@Nullable String op) {
+    this.getContexts().getTrace().setOperation(op);
   }
 
   /**
@@ -182,7 +182,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
 
   @NotNull
   @TestOnly
-  public Collection<Span> getSpans() {
+  public List<Span> getSpans() {
     return spans;
   }
 
@@ -190,9 +190,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   @Nullable
   Span getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.spans);
-    for (int i = spans.size() - 1; i >= 0; i--) {
-      if (!spans.get(i).isFinished()) {
-        return spans.get(i);
+    if (!spans.isEmpty()) {
+      for (int i = spans.size() - 1; i >= 0; i--) {
+        if (!spans.get(i).isFinished()) {
+          return spans.get(i);
+        }
       }
     }
     return null;

@@ -44,7 +44,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
           AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
       span.setDescription(resolveSpanDescription(targetClass, mostSpecificMethod, sentrySpan));
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.op())) {
-        span.setOp(sentrySpan.op());
+        span.setOperation(sentrySpan.op());
       }
       try {
         final Object result = invocation.proceed();

@@ -77,7 +77,7 @@ public final class SentryEnvelopeItem {
 
   public static @NotNull SentryEnvelopeItem from(
       final @NotNull ISerializer serializer, final @NotNull Object item) throws IOException {
-    Objects.requireNonNull(item, "SentryEvent is required.");
+    Objects.requireNonNull(item, "item is required.");
 
     final CachedItem cachedItem =
         new CachedItem(

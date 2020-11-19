@@ -33,9 +33,4 @@ public class SentryWebConfiguration {
       final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
     return new SentrySpringRequestListener(sentryHub, requestResolver);
   }
-
-  @Bean
-  public @NotNull SentryExceptionResolver sentryExceptionResolver(final @NotNull IHub sentryHub) {
-    return new SentryExceptionResolver(sentryHub);
-  }
 }

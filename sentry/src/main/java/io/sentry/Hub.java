@@ -635,7 +635,7 @@ public final class Hub implements IHub {
 
   @ApiStatus.Internal
   @Override
-  public SentryId captureTransaction(
+  public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
@@ -654,11 +654,11 @@ public final class Hub implements IHub {
               "Transaction %s was dropped due to sampling decision.",
               transaction.getEventId());
     } else {
+      StackItem item = null;
       try {
-        final StackItem item = stack.peek();
+        item = stack.peek();
         if (item != null) {
           sentryId = item.client.captureTransaction(transaction, item.scope, hint);
-          item.scope.clearTransaction();
         } else {
           options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureTransaction");
         }
@@ -669,6 +669,10 @@ public final class Hub implements IHub {
                 SentryLevel.ERROR,
                 "Error while capturing transaction with id: " + transaction.getEventId(),
                 e);
+      } finally {
+        if (item != null) {
+          item.scope.clearTransaction();
+        }
       }
     }
     this.lastEventId = sentryId;
@@ -678,6 +682,8 @@ public final class Hub implements IHub {
   @Override
   public @Nullable SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
+    Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+
     SentryTransaction transaction = null;
     if (!isEnabled()) {
       options
@@ -698,7 +704,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public SentryTransaction startTransaction(
+  public @Nullable SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext) {
     final SamplingContext samplingContext =

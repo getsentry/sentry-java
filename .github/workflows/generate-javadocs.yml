@@ -1,10 +1,7 @@
-name: Generate Javadocs
+name: "Generate Javadocs"
 on:
   release:
     types: [published]
-
-env:
-  CMAKE_VERSION: "3.10.2.4988404"
 
 jobs:
   build-and-deploy-javadocs:

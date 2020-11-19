@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.exception.InvalidDsnException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
@@ -700,7 +701,7 @@ class SentryClientTest {
     fun `transactions are sent using connection`() {
         fixture.connection = mock()
         val sut = fixture.getSut()
-        sut.captureTransaction(SentryTransaction("a-transaction"), null, null)
+        sut.captureTransaction(SentryTransaction("a-transaction"), mock(), null)
         verify(fixture.connection).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)

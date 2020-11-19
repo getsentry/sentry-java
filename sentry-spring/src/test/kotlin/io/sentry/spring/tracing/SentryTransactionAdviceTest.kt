@@ -48,7 +48,7 @@ class SentryTransactionAdviceTest {
         sampleService.methodWithTransactionNameSet()
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("customName")
-            assertThat(it.contexts.trace!!.op).isEqualTo("bean")
+            assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
         }, eq(null))
     }
 
@@ -57,7 +57,7 @@ class SentryTransactionAdviceTest {
         sampleService.methodWithoutTransactionNameSet()
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
-            assertThat(it.contexts.trace!!.op).isNull()
+            assertThat(it.contexts.trace!!.operation).isNull()
         }, eq(null))
     }
 
