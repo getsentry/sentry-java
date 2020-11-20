@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 /** No-op implementation of ISerializer */
 final class NoOpSerializer implements ISerializer {
@@ -18,7 +19,7 @@ final class NoOpSerializer implements ISerializer {
   private NoOpSerializer() {}
 
   @Override
-  public SentryEvent deserializeEvent(Reader reader) {
+  public @Nullable SentryEvent deserializeEvent(Reader reader) {
     return null;
   }
 
@@ -28,29 +29,28 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
-  public Session deserializeSession(Reader reader) {
+  public @Nullable Session deserializeSession(Reader reader) {
     return null;
   }
 
   @Override
-  public SentryEnvelope deserializeEnvelope(InputStream inputStream) {
+  public @Nullable SentryTransaction deserializeTransaction(Reader reader) {
     return null;
   }
 
   @Override
-  public void serialize(SentryEvent event, Writer writer) {}
+  public @Nullable SentryEnvelope deserializeEnvelope(InputStream inputStream) {
+    return null;
+  }
 
   @Override
-  public void serialize(Session session, Writer writer) throws IOException {}
-
-  @Override
-  public void serialize(UserFeedback userFeedback, Writer writer) throws IOException {}
+  public <T> void serialize(T entity, Writer writer) throws IOException {}
 
   @Override
   public void serialize(SentryEnvelope envelope, Writer outputStream) throws Exception {}
 
   @Override
-  public String serialize(Map<String, Object> data) throws Exception {
+  public @Nullable String serialize(Map<String, Object> data) throws Exception {
     return null;
   }
 }

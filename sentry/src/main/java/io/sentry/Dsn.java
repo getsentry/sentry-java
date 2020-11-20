@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.InvalidDsnException;
 import java.net.URI;
 import org.jetbrains.annotations.Nullable;
 

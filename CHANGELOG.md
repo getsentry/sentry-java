@@ -18,6 +18,8 @@
 * Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
+* feat: Performance monitoring (#971)
+* feat: Performance monitoring for Spring Boot applications
 
 # 3.1.2
 

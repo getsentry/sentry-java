@@ -12,7 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/person/")
 public class PersonController {
+  private final PersonService personService;
   private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class);
+
+  public PersonController(PersonService personService) {
+    this.personService = personService;
+  }
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
@@ -22,7 +27,6 @@ public class PersonController {
 
   @PostMapping
   Person create(@RequestBody Person person) {
-    LOGGER.warn("Creating person: {}", person);
-    return person;
+    return personService.create(person);
   }
 }

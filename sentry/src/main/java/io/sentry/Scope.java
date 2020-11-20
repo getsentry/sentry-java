@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.User;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,8 +20,8 @@ public final class Scope implements Cloneable {
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
 
-  /** Scope's transaction */
-  private @Nullable String transaction;
+  /** Scope's {@link SentryTransaction}. */
+  private @Nullable SentryTransaction transaction;
 
   /** Scope's user */
   private @Nullable User user;
@@ -83,21 +84,52 @@ public final class Scope implements Cloneable {
   }
 
   /**
-   * Returns the Scope's transaction
+   * Returns the Scope's transaction name.
    *
    * @return the transaction
    */
-  public @Nullable String getTransaction() {
-    return transaction;
+  public @Nullable String getTransactionName() {
+    final SentryTransaction tx = this.transaction;
+    return tx != null ? tx.getTransaction() : null;
   }
 
   /**
-   * Sets the Scope's transaction
+   * Sets the Scope's transaction.
    *
    * @param transaction the transaction
    */
-  public void setTransaction(@Nullable String transaction) {
-    this.transaction = transaction;
+  public void setTransaction(final @NotNull String transaction) {
+    final SentryTransaction tx = this.transaction;
+    if (tx != null) {
+      tx.setName(transaction);
+    }
+  }
+
+  /**
+   * Returns current active Span or Transaction.
+   *
+   * @return current active Span or Transaction or null if transaction has not been set.
+   */
+  @Nullable
+  public ISpan getSpan() {
+    final SentryTransaction tx = transaction;
+    if (tx != null) {
+      final Span span = tx.getLatestActiveSpan();
+
+      if (span != null) {
+        return span;
+      }
+    }
+    return tx;
+  }
+
+  /**
+   * Sets the current active transaction
+   *
+   * @param transaction the transaction
+   */
+  public void setTransaction(final @NotNull SentryTransaction transaction) {
+    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
   }
 
   /**
@@ -224,6 +256,21 @@ public final class Scope implements Cloneable {
     breadcrumbs.clear();
   }
 
+  /** Clears the transaction. */
+  public void clearTransaction() {
+    transaction = null;
+  }
+
+  /**
+   * Returns active transaction or null if there is no active transaction.
+   *
+   * @return the transaction
+   */
+  @Nullable
+  public SentryTransaction getTransaction() {
+    return this.transaction;
+  }
+
   /** Resets the Scope to its default state */
   public void clear() {
     level = null;
@@ -234,6 +281,7 @@ public final class Scope implements Cloneable {
     tags.clear();
     extra.clear();
     eventProcessors.clear();
+    clearTransaction();
   }
 
   /**

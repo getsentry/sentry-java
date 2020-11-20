@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
@@ -379,7 +380,7 @@ class GsonSerializerTest {
     @Test
     fun `When serializing an envelope, all the values should be set`() {
         val session = createSessionMockData()
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, null)
+        val sentryEnvelope = SentryEnvelope.from(serializer, session, null)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values
@@ -396,7 +397,7 @@ class GsonSerializerTest {
             addIntegration("TestIntegration")
             addPackage("abc", "4.5.6")
         }
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, version)
+        val sentryEnvelope = SentryEnvelope.from(serializer, session, version)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values
@@ -425,6 +426,65 @@ class GsonSerializerTest {
         val dataJson = serializer.serialize(data)
 
         assertEquals(expected, dataJson)
+    }
+
+    @Test
+    fun `serializes transaction`() {
+        val trace = SpanContext()
+        trace.op = "http"
+        trace.description = "some request"
+        trace.status = SpanStatus.OK
+        trace.setTag("myTag", "myValue")
+        val transaction = SentryTransaction("transaction-name", trace, mock())
+
+        val stringWriter = StringWriter()
+        serializer.serialize(transaction, stringWriter)
+
+        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        assertEquals("transaction-name", element["transaction"].asString)
+        assertEquals("transaction", element["type"].asString)
+        assertNotNull(element["start_timestamp"].asString)
+        assertNotNull(element["event_id"].asString)
+        assertNotNull(element["spans"].asJsonArray)
+        val jsonTrace = element["contexts"].asJsonObject["trace"]
+        assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
+        assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
+        assertEquals("http", jsonTrace.asJsonObject["op"].asString)
+        assertEquals("some request", jsonTrace.asJsonObject["description"].asString)
+        assertEquals("ok", jsonTrace.asJsonObject["status"].asString)
+        assertEquals("myValue", jsonTrace.asJsonObject["tags"].asJsonObject["myTag"].asString)
+    }
+
+    @Test
+    fun `deserializes transaction`() {
+        val json = """{
+                          "transaction": "a-transaction",
+                          "type": "transaction",
+                          "start_timestamp": "2020-10-23T10:24:01.791Z",
+                          "timestamp": "2020-10-23T10:24:02.791Z",
+                          "event_id": "3367f5196c494acaae85bbbd535379ac",
+                          "contexts": {
+                            "trace": {
+                              "trace_id": "b156a475de54423d9c1571df97ec7eb6",
+                              "span_id": "0a53026963414893",
+                              "op": "http"
+                            },
+                            "custom": {
+                              "some-key": "some-value"
+                            }
+                          }
+                        }"""
+        val transaction = serializer.deserializeTransaction(StringReader(json))
+        assertEquals("a-transaction", transaction.transaction)
+        assertNotNull(transaction.startTimestamp)
+        assertNotNull(transaction.timestamp)
+        assertNotNull(transaction.contexts)
+        assertNotNull(transaction.contexts.trace)
+        assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace!!.traceId.toString())
+        assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
+        assertEquals("http", transaction.contexts.trace!!.operation)
+        assertNotNull(transaction.contexts["custom"])
+        assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
     }
 
     @Test

@@ -29,6 +29,7 @@ public final class Hub implements IHub {
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
   private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
+  private final @NotNull TracingSampler tracingSampler;
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -40,6 +41,7 @@ public final class Hub implements IHub {
     validateOptions(options);
 
     this.options = options;
+    this.tracingSampler = new TracingSampler(options);
     if (rootStackItem != null) {
       this.stack.push(rootStackItem);
     }
@@ -629,5 +631,108 @@ public final class Hub implements IHub {
       clone.stack.push(cloneItem);
     }
     return clone;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    Objects.requireNonNull(transaction, "transaction is required");
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureTransaction' call is a no-op.");
+    } else if (!Boolean.TRUE.equals(transaction.isSampled())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction %s was dropped due to sampling decision.",
+              transaction.getEventId());
+    } else {
+      StackItem item = null;
+      try {
+        item = stack.peek();
+        if (item != null) {
+          sentryId = item.client.captureTransaction(transaction, item.scope, hint);
+        } else {
+          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureTransaction");
+        }
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing transaction with id: " + transaction.getEventId(),
+                e);
+      } finally {
+        if (item != null) {
+          item.scope.clearTransaction();
+        }
+      }
+    }
+    this.lastEventId = sentryId;
+    return sentryId;
+  }
+
+  @Override
+  public @Nullable SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts) {
+    Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+
+    SentryTransaction transaction = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'startTransaction' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        transaction = new SentryTransaction(transactionContexts, this);
+        item.scope.setTransaction(transaction);
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
+      }
+    }
+    return transaction;
+  }
+
+  @Override
+  public @Nullable SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext) {
+    final SamplingContext samplingContext =
+        new SamplingContext(transactionContexts, customSamplingContext);
+    boolean samplingDecision = tracingSampler.sample(samplingContext);
+    transactionContexts.setSampled(samplingDecision);
+    return this.startTransaction(transactionContexts);
+  }
+
+  @Override
+  public @Nullable SentryTraceHeader traceHeaders() {
+    SentryTraceHeader traceHeader = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        final ISpan span = item.scope.getSpan();
+        if (span != null) {
+          traceHeader = span.toSentryTrace();
+        }
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when 'traceHeaders'");
+      }
+    }
+    return traceHeader;
   }
 }

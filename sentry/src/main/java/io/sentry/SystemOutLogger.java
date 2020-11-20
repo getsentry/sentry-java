@@ -3,6 +3,7 @@ package io.sentry;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** ILogger implementation to System.out. */
 public final class SystemOutLogger implements ILogger {
@@ -62,6 +63,11 @@ public final class SystemOutLogger implements ILogger {
               throwable.toString(),
               captureStackTrace(throwable)));
     }
+  }
+
+  @Override
+  public boolean isEnabled(final @Nullable SentryLevel level) {
+    return true;
   }
 
   private @NotNull String captureStackTrace(final @NotNull Throwable throwable) {

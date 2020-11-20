@@ -1,5 +1,7 @@
 package io.sentry;
 
+import org.jetbrains.annotations.Nullable;
+
 /** No-op implementation of ILogger */
 public final class NoOpLogger implements ILogger {
 
@@ -19,4 +21,9 @@ public final class NoOpLogger implements ILogger {
 
   @Override
   public void log(SentryLevel level, Throwable throwable, String message, Object... args) {}
+
+  @Override
+  public boolean isEnabled(@Nullable SentryLevel level) {
+    return false;
+  }
 }

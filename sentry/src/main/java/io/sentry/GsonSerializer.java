@@ -13,6 +13,10 @@ import io.sentry.adapters.SentryIdDeserializerAdapter;
 import io.sentry.adapters.SentryIdSerializerAdapter;
 import io.sentry.adapters.SentryLevelDeserializerAdapter;
 import io.sentry.adapters.SentryLevelSerializerAdapter;
+import io.sentry.adapters.SpanIdDeserializerAdapter;
+import io.sentry.adapters.SpanIdSerializerAdapter;
+import io.sentry.adapters.SpanStatusDeserializerAdapter;
+import io.sentry.adapters.SpanStatusSerializerAdapter;
 import io.sentry.adapters.TimeZoneDeserializerAdapter;
 import io.sentry.adapters.TimeZoneSerializerAdapter;
 import io.sentry.protocol.Contexts;
@@ -90,6 +94,10 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
         .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
         .registerTypeAdapter(Session.class, new SessionAdapter(logger))
+        .registerTypeAdapter(SpanId.class, new SpanIdDeserializerAdapter(logger))
+        .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
+        .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
+        .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
         .create();
   }
 
@@ -132,6 +140,13 @@ public final class GsonSerializer implements ISerializer {
     return gson.fromJson(reader, Session.class);
   }
 
+  @Override
+  public SentryTransaction deserializeTransaction(Reader reader) {
+    Objects.requireNonNull(reader, "The Reader object is required.");
+
+    return gson.fromJson(reader, SentryTransaction.class);
+  }
+
   /**
    * Deserialize a SentryEnvelope from a InputStream (Envelope+JSON)
    *
@@ -149,53 +164,17 @@ public final class GsonSerializer implements ISerializer {
     }
   }
 
-  /**
-   * Serialize a SentryEvent to a stream Writer (JSON)
-   *
-   * @param event the SentryEvent
-   * @param writer the Writer
-   * @throws IOException an IOException
-   */
   @Override
-  public void serialize(final @NotNull SentryEvent event, final @NotNull Writer writer)
+  public <T> void serialize(final @NotNull T entity, final @NotNull Writer writer)
       throws IOException {
-    Objects.requireNonNull(event, "The SentryEvent object is required.");
+    Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
-    gson.toJson(event, SentryEvent.class, writer);
-    writer.flush();
-  }
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));
+    }
+    gson.toJson(entity, entity.getClass(), writer);
 
-  /**
-   * Serialize a Session to a stream Writer (JSON)
-   *
-   * @param session the Session
-   * @param writer the Writer
-   * @throws IOException an IOException
-   */
-  @Override
-  public void serialize(final @NotNull Session session, final @NotNull Writer writer)
-      throws IOException {
-    Objects.requireNonNull(session, "The Session object is required.");
-    Objects.requireNonNull(writer, "The Writer object is required.");
-
-    gson.toJson(session, Session.class, writer);
-    writer.flush();
-  }
-
-  /**
-   * Serialize UserFeedback to a stream Writer (JSON)
-   *
-   * @param userFeedback the Session
-   * @param writer the Writer
-   * @throws IOException an IOException
-   */
-  @Override
-  public void serialize(UserFeedback userFeedback, Writer writer) throws IOException {
-    Objects.requireNonNull(userFeedback, "The UserFeedback object is required.");
-    Objects.requireNonNull(writer, "The Writer object is required.");
-
-    gson.toJson(userFeedback, UserFeedback.class, writer);
     writer.flush();
   }
 
