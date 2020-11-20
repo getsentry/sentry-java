@@ -8,6 +8,7 @@ import io.sentry.SentryTransaction;
 import io.sentry.SpanContext;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
+import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +27,8 @@ import org.springframework.web.servlet.ModelAndView;
 @Open
 public class SentryExceptionResolver implements HandlerExceptionResolver, Ordered {
   private final @NotNull IHub hub;
+  private final @NotNull TransactionNameProvider transactionNameProvider =
+      new TransactionNameProvider();
   private final int order;
 
   public SentryExceptionResolver(final @NotNull IHub hub, final int order) {
@@ -50,8 +53,11 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     if (sentryTransaction != null) {
       final SpanContext spanContext = sentryTransaction.getSpanContext(ex);
       if (spanContext != null) {
+        // connects the event with a span
         event.getContexts().setTrace(spanContext);
       }
+      // connects the event with transaction
+      event.setTransaction(transactionNameProvider.provideTransactionName(request));
     }
     hub.captureEvent(event);
 

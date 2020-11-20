@@ -34,6 +34,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
   private static final String TRANSACTION_OP = "http";
 
+  private final @NotNull TransactionNameProvider transactionNameProvider =
+      new TransactionNameProvider();
   private final @NotNull IHub hub;
   private final @NotNull SentryOptions options;
   private final @NotNull SentryRequestResolver requestResolver;
@@ -56,16 +58,19 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
     final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
+    // at this stage we are not able to get real transaction name
     final io.sentry.SentryTransaction transaction =
         startTransaction(
             httpRequest.getMethod() + " " + httpRequest.getRequestURI(), sentryTraceHeader);
     try {
       filterChain.doFilter(httpRequest, httpResponse);
     } finally {
-      final String pattern =
-          (String) httpRequest.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-      if (pattern != null) {
-        transaction.setName(httpRequest.getMethod() + " " + pattern);
+      // after all filters run, templated path pattern is available in request attribute
+      final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
+      // if transaction name is not resolved, the request has not been processed by a controller and
+      // we should not report it to Sentry
+      if (transactionName != null) {
+        transaction.setName(transactionName);
         transaction.setOperation(TRANSACTION_OP);
         transaction.setRequest(requestResolver.resolveSentryRequest(httpRequest));
         transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
