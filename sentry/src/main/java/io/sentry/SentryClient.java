@@ -136,14 +136,15 @@ public final class SentryClient implements ISentryClient {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
     if (event != null) {
-      final SentryEnvelopeItem eventItem = SentryEnvelopeItem.from(options.getSerializer(), event);
+      final SentryEnvelopeItem eventItem =
+          SentryEnvelopeItem.fromEvent(options.getSerializer(), event);
       envelopeItems.add(eventItem);
       sentryId = event.getEventId();
     }
 
     if (session != null) {
       final SentryEnvelopeItem sessionItem =
-          SentryEnvelopeItem.from(options.getSerializer(), session);
+          SentryEnvelopeItem.fromSession(options.getSerializer(), session);
       envelopeItems.add(sessionItem);
     }
 
