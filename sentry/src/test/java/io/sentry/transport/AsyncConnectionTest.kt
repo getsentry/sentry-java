@@ -210,8 +210,8 @@ class AsyncConnectionTest {
 
     @Test
     fun `When envelopes have retry after items, ignore them and send others`() {
-        val sessionItem = SentryEnvelopeItem.from(fixture.sentryOptions.serializer, createSession())
-        val eventItem = SentryEnvelopeItem.from(fixture.sentryOptions.serializer, SentryEvent())
+        val sessionItem = SentryEnvelopeItem.fromSession(fixture.sentryOptions.serializer, createSession())
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.sentryOptions.serializer, SentryEvent())
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(sessionItem, eventItem))
 
         whenever(fixture.transport.isRetryAfter(eq("event"))).thenReturn(false)
