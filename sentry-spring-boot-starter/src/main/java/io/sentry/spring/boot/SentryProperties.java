@@ -15,6 +15,9 @@ public class SentryProperties extends SentryOptions {
   /** Weather to use Git commit id as a release. */
   private boolean useGitCommitIdAsRelease = true;
 
+  /** Turns tracing on or off. Default is disabled. */
+  private boolean enableTracing;
+
   /** Report all or only uncaught web exceptions. */
   private int exceptionResolverOrder = Integer.MIN_VALUE;
 
@@ -27,6 +30,14 @@ public class SentryProperties extends SentryOptions {
 
   public void setUseGitCommitIdAsRelease(boolean useGitCommitIdAsRelease) {
     this.useGitCommitIdAsRelease = useGitCommitIdAsRelease;
+  }
+
+  public boolean isEnableTracing() {
+    return enableTracing;
+  }
+
+  public void setEnableTracing(boolean enableTracing) {
+    this.enableTracing = enableTracing;
   }
 
   /**

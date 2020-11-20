@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   /** The transaction name. */
@@ -47,7 +49,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @param name - transaction name
    * @param contexts - transaction contexts
    */
-  SentryTransaction(
+  @TestOnly
+  public SentryTransaction(
       final @NotNull String name, final @NotNull SpanContext contexts, final @NotNull IHub hub) {
     Objects.requireNonNull(contexts, "contexts are required");
     this.transaction = Objects.requireNonNull(name, "name is required");
@@ -63,7 +66,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    *
    * @param name - transaction name
    */
-  void setName(final @NotNull String name) {
+  public void setName(final @NotNull String name) {
     Objects.requireNonNull(name, "name is required");
     this.transaction = name;
   }
@@ -162,7 +165,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @return transaction name.
    */
   @Nullable
-  String getTransaction() {
+  @ApiStatus.Internal
+  public String getTransaction() {
     return transaction;
   }
 
@@ -177,7 +181,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   }
 
   @NotNull
-  List<Span> getSpans() {
+  @TestOnly
+  public List<Span> getSpans() {
     return spans;
   }
 

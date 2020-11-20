@@ -21,7 +21,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("some-header", "some-header value")
             .accept(MediaType.APPLICATION_JSON)
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -42,7 +42,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("another-header", "another value")
             .header("another-header", "another value2")
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -61,7 +61,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = true
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(sentryOptions))
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -77,7 +77,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(sentryOptions))
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -97,7 +97,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(sentryOptions))
         val event = SentryEvent()
 
         eventProcessor.process(event, null)

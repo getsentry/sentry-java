@@ -968,6 +968,7 @@ class HubTest {
     }
     //endregion
 
+    //region startTransaction tests
     @Test
     fun `when startTransaction, creates transaction`() {
         val hub = generateHub()
@@ -1016,6 +1017,24 @@ class HubTest {
         sut.close()
         verify(executor).close(any())
     }
+    //endregion
+
+    //region startTransaction tests
+    @Test
+    fun `when traceHeaders and no transaction is active, traceHeaders are null`() {
+        val hub = generateHub()
+
+        assertNull(hub.traceHeaders())
+    }
+
+    @Test
+    fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
+        val hub = generateHub()
+        hub.startTransaction("aTransaction")
+
+        assertNotNull(hub.traceHeaders())
+    }
+    //endregion
 
     private fun generateHub(): IHub {
         val options = SentryOptions().apply {

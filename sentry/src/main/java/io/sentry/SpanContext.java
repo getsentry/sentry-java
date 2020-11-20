@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @Open
 public class SpanContext implements Cloneable {
@@ -89,7 +90,8 @@ public class SpanContext implements Cloneable {
   }
 
   @Nullable
-  SpanId getParentSpanId() {
+  @TestOnly
+  public SpanId getParentSpanId() {
     return parentSpanId;
   }
 

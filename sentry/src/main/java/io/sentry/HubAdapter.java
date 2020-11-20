@@ -173,4 +173,9 @@ public final class HubAdapter implements IHub {
       String name, CustomSamplingContext customSamplingContext) {
     return Sentry.startTransaction(name, customSamplingContext);
   }
+
+  @Override
+  public @Nullable SentryTraceHeader traceHeaders() {
+    return Sentry.traceHeaders();
+  }
 }

@@ -15,7 +15,7 @@ public interface ISpan {
   /**
    * Returns a string that could be sent as a sentry-trace header.
    *
-   * @return sentry-trace header.
+   * @return SentryTraceHeader.
    */
   SentryTraceHeader toSentryTrace();
 

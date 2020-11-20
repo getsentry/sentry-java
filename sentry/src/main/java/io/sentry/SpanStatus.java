@@ -7,6 +7,11 @@ public enum SpanStatus {
   OK(200, 299),
   /** The operation was cancelled, typically by the caller. */
   CANCELLED(499),
+  /**
+   * Some invariants expected by the underlying system have been broken. This code is reserved for
+   * serious errors.
+   */
+  INTERNAL_ERROR(500),
   /** An unknown error raised by APIs that don't return enough error information. */
   UNKNOWN(500),
   /** An unknown error raised by APIs that don't return enough error information. */
@@ -39,12 +44,6 @@ public enum SpanStatus {
 
   /** The operation is not implemented or is not supported/enabled for this operation. */
   UNIMPLEMENTED(501),
-
-  /**
-   * Some invariants expected by the underlying system have been broken. This code is reserved for
-   * serious errors.
-   */
-  INTERNAL_ERROR(500),
 
   /** The service is currently available e.g. as a transient condition. */
   UNAVAILABLE(503),
