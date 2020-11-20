@@ -141,6 +141,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           event.getEventId());
     }
 
+    // userId should be set even if event is Cached as the userId is static and won't change anyway.
+    if (event.getUser() == null) {
+      event.setUser(getDefaultUser());
+    }
+
     if (event.getContexts().getDevice() == null) {
       event.getContexts().setDevice(getDevice());
     }
@@ -153,10 +158,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // Data to be applied to events that was created in the running process
   private void processNonCachedEvent(final @NotNull SentryEvent event) {
-    if (event.getUser() == null) {
-      event.setUser(getUser());
-    }
-
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
@@ -808,7 +809,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  public @NotNull User getUser() {
+  /**
+   * Sets the default user which contains only the userId.
+   *
+   * @return the User object
+   */
+  public @NotNull User getDefaultUser() {
     User user = new User();
     user.setId(getDeviceId());
 

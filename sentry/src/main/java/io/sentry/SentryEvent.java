@@ -107,12 +107,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   private List<String> fingerprint;
   /** List of breadcrumbs recorded before this event. */
   private List<Breadcrumb> breadcrumbs;
-  /**
-   * Custom tags for this event.
-   *
-   * <p>A map or list of tags for this event. Each tag must be less than 200 characters.
-   */
-  private Map<String, String> tags;
+
   /**
    * Arbitrary extra information set by the user.
    *
@@ -292,34 +287,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void addBreadcrumb(final @Nullable String message) {
     this.addBreadcrumb(new Breadcrumb(message));
-  }
-
-  Map<String, String> getTags() {
-    return tags;
-  }
-
-  public void setTags(Map<String, String> tags) {
-    this.tags = tags;
-  }
-
-  public void removeTag(@NotNull String key) {
-    if (tags != null) {
-      tags.remove(key);
-    }
-  }
-
-  public @Nullable String getTag(final @NotNull String key) {
-    if (tags != null) {
-      return tags.get(key);
-    }
-    return null;
-  }
-
-  public void setTag(String key, String value) {
-    if (tags == null) {
-      tags = new HashMap<>();
-    }
-    tags.put(key, value);
   }
 
   Map<String, Object> getExtras() {
