@@ -65,4 +65,12 @@ public interface ISpan {
    */
   @NotNull
   SpanContext getSpanContext();
+
+  /**
+   * Sets the tag on span or transaction.
+   *
+   * @param key the tag key
+   * @param value the tag value
+   */
+  void setTag(@NotNull String key, @NotNull String value);
 }

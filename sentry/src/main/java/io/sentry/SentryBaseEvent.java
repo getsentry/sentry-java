@@ -4,6 +4,8 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +36,12 @@ public abstract class SentryBaseEvent {
   private @Nullable SdkVersion sdk;
   /** Information about a web request that occurred during the event. */
   private @Nullable Request request;
+  /**
+   * Custom tags for this event.
+   *
+   * <p>A map or list of tags for this event. Each tag must be less than 200 characters.
+   */
+  private Map<String, String> tags;
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
@@ -94,5 +102,33 @@ public abstract class SentryBaseEvent {
    */
   public void setThrowable(final @Nullable Throwable throwable) {
     this.throwable = throwable;
+  }
+
+  Map<String, String> getTags() {
+    return tags;
+  }
+
+  public void setTags(Map<String, String> tags) {
+    this.tags = tags;
+  }
+
+  public void removeTag(@NotNull String key) {
+    if (tags != null) {
+      tags.remove(key);
+    }
+  }
+
+  public @Nullable String getTag(final @NotNull String key) {
+    if (tags != null) {
+      return tags.get(key);
+    }
+    return null;
+  }
+
+  public void setTag(String key, String value) {
+    if (tags == null) {
+      tags = new HashMap<>();
+    }
+    tags.put(key, value);
   }
 }
