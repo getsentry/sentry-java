@@ -39,6 +39,10 @@
         <!--    how to enable Sentry's debug mode-->
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
 
+
+        <!-- how to enable Transactions and set a sampleRate (anything between 0.01 and 1.0), it's disabled by default-->
+        <meta-data android:name="io.sentry.traces-sample-rate" android:value="1.0" />
+
         <!--    how to set a custom debug level-->
         <!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
 

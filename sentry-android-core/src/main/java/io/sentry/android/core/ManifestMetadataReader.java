@@ -18,6 +18,7 @@ final class ManifestMetadataReader {
   static final String DEBUG = "io.sentry.debug";
   static final String DEBUG_LEVEL = "io.sentry.debug.level";
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
+  static final String TRACES_SAMPLE_RATE = "io.sentry.traces-sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
 
@@ -90,6 +91,15 @@ final class ManifestMetadataReader {
           options.getLogger().log(SentryLevel.DEBUG, "sampleRate read: %s", sampleRate);
           if (sampleRate != -1) {
             options.setSampleRate(sampleRate);
+          }
+        }
+
+        if (options.getTracesSampleRate() == null) {
+          // manifest meta-data only reads floats
+          final Double tracerSampleRate = ((Float) metadata.getFloat(TRACES_SAMPLE_RATE, -1)).doubleValue();
+          options.getLogger().log(SentryLevel.DEBUG, "tracerSampleRate read: %s", tracerSampleRate);
+          if (tracerSampleRate != -1) {
+            options.setTracesSampleRate(tracerSampleRate);
           }
         }
 

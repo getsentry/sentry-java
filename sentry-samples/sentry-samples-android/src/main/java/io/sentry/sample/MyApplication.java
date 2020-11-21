@@ -2,14 +2,18 @@ package io.sentry.sample;
 
 import android.app.Application;
 import android.os.StrictMode;
+import io.sentry.*;
 
 // import io.sentry.android.core.SentryAndroid;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
+  SentryTransaction activityTransaction;
 
   @Override
   public void onCreate() {
+    activityTransaction = Sentry.startTransaction("Application");
+
     strictMode();
     super.onCreate();
 
