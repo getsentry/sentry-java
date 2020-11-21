@@ -36,7 +36,7 @@ class EnvelopeCacheTest {
         fun getSUT(): IEnvelopeCache {
             options.cacheDirPath = dir.toAbsolutePath().toFile().absolutePath
 
-            whenever(serializer.deserializeSession(any())).thenAnswer {
+            whenever(serializer.deserialize(any(), eq(Session::class.java))).thenAnswer {
                 Session("dis", User(), "env", "rel")
             }
 
@@ -120,7 +120,7 @@ class EnvelopeCacheTest {
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
-        val session = fixture.serializer.deserializeSession(currentFile.bufferedReader(Charsets.UTF_8))
+        val session = fixture.serializer.deserialize(currentFile.bufferedReader(Charsets.UTF_8), Session::class.java)
         assertNotNull(session)
 
         currentFile.delete()

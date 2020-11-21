@@ -796,12 +796,12 @@ class SentryClientTest {
 
     private fun getEventFromData(data: ByteArray): SentryEvent {
         val inputStream = InputStreamReader(ByteArrayInputStream(data))
-        return fixture.sentryOptions.serializer.deserializeEvent(inputStream)
+        return fixture.sentryOptions.serializer.deserialize(inputStream, SentryEvent::class.java)
     }
 
     private fun getTransactionFromData(data: ByteArray): SentryTransaction {
         val inputStream = InputStreamReader(ByteArrayInputStream(data))
-        return fixture.sentryOptions.serializer.deserializeTransaction(inputStream)
+        return fixture.sentryOptions.serializer.deserialize(inputStream, SentryTransaction::class.java)
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData

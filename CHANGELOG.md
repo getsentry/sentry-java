@@ -1,5 +1,7 @@
 # vNext
 
+* ref: Refactor JSON deserialization (#1047)
+
 # 3.2.0
 
 * Bump: AGP 4.1.1 (#1040)
