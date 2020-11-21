@@ -1,5 +1,6 @@
 # vNext
 
+* Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
 * ref: Refactor JSON deserialization (#1047)
 
 # 3.2.0

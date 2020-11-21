@@ -23,6 +23,7 @@ public final class PropertiesProviderFactory {
    *   <li><code>sentry.properties</code> file which location is resolved from the environment
    *       variable <code>SENTRY_PROPERTIES_FILE</code>
    *   <li><code>sentry.properties</code> located in the root of the classpath
+   *   <li><code>sentry.properties</code> located in the application's current working directory
    * </ul>
    *
    * @return the properties provider
@@ -54,6 +55,12 @@ public final class PropertiesProviderFactory {
     final Properties properties = new ClasspathPropertiesLoader(logger).load();
     if (properties != null) {
       providers.add(new SimplePropertiesProvider(properties));
+    }
+
+    final Properties runDirectoryProperties =
+        new FilesystemPropertiesLoader("sentry.properties", logger).load();
+    if (runDirectoryProperties != null) {
+      providers.add(new SimplePropertiesProvider(runDirectoryProperties));
     }
 
     return new CompositePropertiesProvider(providers);
