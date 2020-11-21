@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -176,6 +177,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         event.setDist(versionCode);
       }
       setAppPackageInfo(app, packageInfo);
+
+      // ideally we cache this into contextData along with other cacheable items
+      isSideLoaded(packageInfo.packageName, event);
     }
 
     event.getContexts().setApp(app);
@@ -889,5 +893,49 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     return null;
+  }
+
+  @SuppressWarnings("deprecation")
+  private void isSideLoaded(final @NotNull String packageName, final @NotNull SentryEvent event) {
+    try {
+      final PackageManager packageManager = context.getPackageManager();
+      if (packageManager == null) {
+        return;
+      }
+
+      //      String installerPackageName;
+      //      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
+
+      // this permission is only granted to system apps, so it won't work for us
+      //        if (!Permissions.hasPermission(context, "android.permission.INSTALL_PACKAGES")) {
+      //          return null;
+      //        }
+
+      //        final InstallSourceInfo sourceInfo =
+      // packageManager.getInstallSourceInfo(appPackage);
+      //        if (sourceInfo == null) {
+      //          return null;
+      //        }
+
+      // if the permission INSTALL_PACKAGES is not available, it returns null,
+      // this makes the API useless as we don't know how to differentiate if it's
+      // because there's no permissions or its installed via adb or system apps.
+      //        installerPackageName = sourceInfo.getInitiatingPackageName();
+      //      } else {
+      final String installerPackageName = packageManager.getInstallerPackageName(packageName);
+      //      }
+
+      // it returns null if its an app installed via adb or system app
+      if (installerPackageName != null) {
+        event.setTag("isSideLoaded", "false");
+        // could be amazon, google play etc
+        event.setTag("installerStore", installerPackageName);
+      } else {
+        event.setTag("isSideLoaded", "true");
+      }
+    } catch (IllegalArgumentException e) {
+      // it'll never be thrown as we are querying its own App's package.
+      logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+    }
   }
 }
