@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.exception.InvalidDsnException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
@@ -244,7 +245,6 @@ class SentryClientTest {
         assertEquals("extra", event.extras["extra"])
         assertEquals("tags", event.tags["tags"])
         assertEquals("fp", event.fingerprints[0])
-        assertEquals("transaction", event.transaction)
         assertEquals("id", event.user.id)
         assertEquals(SentryLevel.FATAL, event.level)
     }
@@ -697,6 +697,43 @@ class SentryClientTest {
         sut.captureEvent(SentryEvent())
     }
 
+    @Test
+    fun `transactions are sent using connection`() {
+        fixture.connection = mock()
+        val sut = fixture.getSut()
+        sut.captureTransaction(SentryTransaction("a-transaction"), mock(), null)
+        verify(fixture.connection).send(check {
+            val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
+            assertNotNull(transaction)
+            assertEquals("a-transaction", transaction.transaction)
+        }, eq(null))
+    }
+
+    @Test
+    fun `when scope's active span is a transaction, transaction context is applied to an event`() {
+        val event = SentryEvent()
+        val sut = fixture.getSut()
+        val scope = createScope()
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        sut.captureEvent(event, scope)
+        assertNotNull(event.contexts.trace)
+        assertEquals(transaction.contexts.trace, event.contexts.trace)
+    }
+
+    @Test
+    fun `when scope's active span is a span, span is applied to an event`() {
+        val event = SentryEvent()
+        val sut = fixture.getSut()
+        val scope = createScope()
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        val span = transaction.startChild()
+        sut.captureEvent(event, scope)
+        assertNotNull(event.contexts.trace)
+        assertEquals(span, event.contexts.trace)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
@@ -705,7 +742,6 @@ class SentryClientTest {
             setExtra("extra", "extra")
             setTag("tags", "tags")
             fingerprint.add("fp")
-            transaction = "transaction"
             level = SentryLevel.FATAL
             user = User().apply {
                 id = "id"
@@ -760,7 +796,12 @@ class SentryClientTest {
 
     private fun getEventFromData(data: ByteArray): SentryEvent {
         val inputStream = InputStreamReader(ByteArrayInputStream(data))
-        return fixture.sentryOptions.serializer.deserializeEvent(inputStream)
+        return fixture.sentryOptions.serializer.deserialize(inputStream, SentryEvent::class.java)
+    }
+
+    private fun getTransactionFromData(data: ByteArray): SentryTransaction {
+        val inputStream = InputStreamReader(ByteArrayInputStream(data))
+        return fixture.sentryOptions.serializer.deserialize(inputStream, SentryTransaction::class.java)
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData

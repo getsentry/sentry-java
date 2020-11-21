@@ -29,7 +29,6 @@ class ScopeTest {
         user.others = others
 
         scope.user = user
-        scope.transaction = "transaction"
 
         val fingerprints = mutableListOf("abc", "def")
         scope.fingerprint = fingerprints
@@ -72,7 +71,6 @@ class ScopeTest {
         user.id = "123"
 
         scope.user = user
-        scope.transaction = "transaction"
 
         val fingerprints = mutableListOf("abc")
         scope.fingerprint = fingerprints
@@ -84,19 +82,23 @@ class ScopeTest {
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
 
+        val transaction = SentryTransaction("transaction-name")
+        scope.setTransaction(transaction)
+
         val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
-        assertEquals("transaction", clone.transaction)
 
         assertEquals("123", clone.user?.id)
 
         assertEquals("abc", clone.fingerprint.first())
 
         assertEquals("message", clone.breadcrumbs.first().message)
+        assertEquals("transaction-name", (clone.span as SentryTransaction).transaction)
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
+        assertEquals(transaction, clone.span)
     }
 
     @Test
@@ -109,7 +111,6 @@ class ScopeTest {
         user.id = "123"
 
         scope.user = user
-        scope.transaction = "transaction"
 
         val fingerprints = mutableListOf("abc")
         scope.fingerprint = fingerprints
@@ -129,7 +130,7 @@ class ScopeTest {
         scope.level = SentryLevel.FATAL
         user.id = "456"
 
-        scope.transaction = "newTransaction"
+        scope.setTransaction(SentryTransaction("newTransaction"))
 
         // because you can only set a new list to scope
         val newFingerprints = mutableListOf("def", "ghf")
@@ -145,7 +146,6 @@ class ScopeTest {
         scope.addEventProcessor(processor)
 
         assertEquals(SentryLevel.DEBUG, clone.level)
-        assertEquals("transaction", clone.transaction)
 
         assertEquals("123", clone.user?.id)
 
@@ -160,6 +160,7 @@ class ScopeTest {
         assertEquals("extra", clone.extras["extra"])
         assertEquals(1, clone.extras.size)
         assertEquals(1, clone.eventProcessors.size)
+        assertNull(clone.span)
     }
 
     @Test
@@ -554,5 +555,42 @@ class ScopeTest {
 
         scope.removeExtra("a")
         verify(observer, never()).removeExtra(any())
+    }
+
+    @Test
+    fun `Scope getTransaction returns the transaction if there is no active span`() {
+        val scope = Scope(SentryOptions())
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        assertEquals(transaction, scope.span)
+    }
+
+    @Test
+    fun `Scope getTransaction returns the current span if there is an unfinished span`() {
+        val scope = Scope(SentryOptions())
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        val span = transaction.startChild()
+        assertEquals(span, scope.span)
+    }
+
+    @Test
+    fun `Scope getTransaction returns the current span if there is a finished span`() {
+        val scope = Scope(SentryOptions())
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        val span = transaction.startChild()
+        span.finish()
+        assertEquals(transaction, scope.span)
+    }
+
+    @Test
+    fun `Scope getTransaction returns the latest span if there is a list of active span`() {
+        val scope = Scope(SentryOptions())
+        val transaction = SentryTransaction("name")
+        scope.setTransaction(transaction)
+        val span = transaction.startChild()
+        val innerSpan = span.startChild()
+        assertEquals(innerSpan, scope.span)
     }
 }

@@ -494,6 +494,77 @@ public final class Sentry {
   }
 
   /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @param hint the hint
+   * @return transaction's id
+   */
+  public static @NotNull SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    return getCurrentHub().captureTransaction(transaction, hint);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param name the transaction name
+   * @return created transaction or {@code null} if {@link Hub} is disabled.
+   */
+  public static @Nullable SentryTransaction startTransaction(final @NotNull String name) {
+    return getCurrentHub().startTransaction(name);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @return created transaction
+   */
+  public static @Nullable SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts) {
+    return getCurrentHub().startTransaction(transactionContexts);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * sampling context the decision if transaction is sampled will be taken by {@link
+   * TracingSampler}.
+   *
+   * @param name the transaction name
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  public static @Nullable SentryTransaction startTransaction(
+      final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(name, customSamplingContext);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * transaction and sampling contexts the decision if transaction is sampled will be taken by
+   * {@link TracingSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  public static @Nullable SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
+  }
+
+  /**
+   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   *
+   * @return trace header or null
+   */
+  public static @Nullable SentryTraceHeader traceHeaders() {
+    return getCurrentHub().traceHeaders();
+  }
+
+  /**
    * Configuration options callback
    *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.

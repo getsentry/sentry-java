@@ -124,8 +124,13 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
+      throws IOException {
+    return this.buildEnvelope(event, null);
+  }
+
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryEvent event, final @Nullable Session session) throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -292,8 +297,7 @@ public final class SentryClient implements ISentryClient {
 
     SentryEnvelope envelope;
     try {
-      envelope =
-          SentryEnvelope.fromSession(options.getSerializer(), session, options.getSdkVersion());
+      envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
       return;
@@ -317,11 +321,42 @@ public final class SentryClient implements ISentryClient {
     return envelope.getHeader().getEventId();
   }
 
+  @Override
+  public SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction,
+      final @NotNull Scope scope,
+      final @Nullable Object hint) {
+    Objects.requireNonNull(transaction, "Transaction is required.");
+
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
+
+    SentryId sentryId = transaction.getEventId();
+
+    try {
+      final SentryEnvelope envelope = buildEnvelope(transaction);
+
+      if (envelope != null) {
+        connection.send(envelope, hint);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
+      }
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
   private @Nullable SentryEvent applyScope(
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
       if (event.getTransaction() == null) {
-        event.setTransaction(scope.getTransaction());
+        event.setTransaction(scope.getTransactionName());
       }
       if (event.getUser() == null) {
         event.setUser(scope.getUser());
@@ -366,6 +401,11 @@ public final class SentryClient implements ISentryClient {
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
         event.setLevel(scope.getLevel());
+      }
+      // Set trace data from active span to connect events with transactions
+      final ISpan span = scope.getSpan();
+      if (event.getContexts().getTrace() == null && span != null) {
+        event.getContexts().setTrace(span.getSpanContext());
       }
 
       event = processEvent(event, hint, scope.getEventProcessors());

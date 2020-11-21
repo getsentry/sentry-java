@@ -262,7 +262,7 @@ abstract class CacheStrategy {
     try (final Reader reader =
         new BufferedReader(
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-      return serializer.deserializeSession(reader);
+      return serializer.deserialize(reader, Session.class);
     } catch (Exception e) {
       options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
     }

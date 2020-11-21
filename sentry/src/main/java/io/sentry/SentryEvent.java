@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent implements IUnknownPropertiesConsumer {
+public final class SentryEvent extends SentryBaseEvent implements IUnknownPropertiesConsumer {
   /**
    * Timestamp when the event was created.
    *
@@ -29,25 +29,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
    * <p>```json { "timestamp": "2011-05-02T17:41:36Z" } { "timestamp": 1304358096.0 } ```
    */
   private final Date timestamp;
-  /**
-   * Unique identifier of this event.
-   *
-   * <p>Hexadecimal string representing a uuid4 value. The length is exactly 32 characters. Dashes
-   * are not allowed. Has to be lowercase.
-   *
-   * <p>Even though this field is backfilled on the server with a new uuid4, it is strongly
-   * recommended to generate that uuid4 clientside. There are some features like user feedback which
-   * are easier to implement that way, and debugging in case events get lost in your Sentry
-   * installation is also easier.
-   *
-   * <p>Example:
-   *
-   * <p>```json { "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0" } ```
-   */
-  private SentryId eventId;
-  /** The captured Throwable */
-  private transient @Nullable Throwable throwable;
-  /** Custom parameterized message for this event. */
+
   private Message message;
   /**
    * Server or device name the event was generated on.
@@ -113,12 +95,6 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   private String environment;
   /** Information about the user who triggered this event. */
   private User user;
-  /** Information about a web request that occurred during the event. */
-  private Request request;
-  /** Information about the Sentry SDK that generated this event. */
-  private SdkVersion sdk;
-  /** Contexts describing the environment (e.g. device, os or browser). */
-  private Contexts contexts = new Contexts();
   /**
    * Manual fingerprint override.
    *
@@ -131,12 +107,7 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   private List<String> fingerprint;
   /** List of breadcrumbs recorded before this event. */
   private List<Breadcrumb> breadcrumbs;
-  /**
-   * Custom tags for this event.
-   *
-   * <p>A map or list of tags for this event. Each tag must be less than 200 characters.
-   */
-  private Map<String, String> tags;
+
   /**
    * Arbitrary extra information set by the user.
    *
@@ -162,8 +133,9 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
   private DebugMeta debugMeta;
 
   SentryEvent(SentryId eventId, final Date timestamp) {
-    this.eventId = eventId;
+    super(eventId);
     this.timestamp = timestamp;
+    this.setContexts(new Contexts());
   }
 
   /**
@@ -185,35 +157,9 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this(new SentryId(), timestamp);
   }
 
-  public SentryId getEventId() {
-    return eventId;
-  }
-
-  public void setEventId(SentryId eventId) {
-    this.eventId = eventId;
-  }
-
   @SuppressWarnings("JdkObsolete")
   public Date getTimestamp() {
     return (Date) timestamp.clone();
-  }
-
-  /**
-   * Returns the captured Throwable or null
-   *
-   * @return the Throwable or null
-   */
-  public @Nullable Throwable getThrowable() {
-    return throwable;
-  }
-
-  /**
-   * Sets the Throwable
-   *
-   * @param throwable the Throwable or null
-   */
-  public void setThrowable(final @Nullable Throwable throwable) {
-    this.throwable = throwable;
   }
 
   public Message getMessage() {
@@ -316,22 +262,6 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
     this.user = user;
   }
 
-  public Request getRequest() {
-    return request;
-  }
-
-  public void setRequest(Request request) {
-    this.request = request;
-  }
-
-  public SdkVersion getSdk() {
-    return sdk;
-  }
-
-  public void setSdk(SdkVersion sdk) {
-    this.sdk = sdk;
-  }
-
   public List<String> getFingerprints() {
     return fingerprint;
   }
@@ -357,34 +287,6 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
 
   public void addBreadcrumb(final @Nullable String message) {
     this.addBreadcrumb(new Breadcrumb(message));
-  }
-
-  Map<String, String> getTags() {
-    return tags;
-  }
-
-  public void setTags(Map<String, String> tags) {
-    this.tags = tags;
-  }
-
-  public void removeTag(@NotNull String key) {
-    if (tags != null) {
-      tags.remove(key);
-    }
-  }
-
-  public @Nullable String getTag(final @NotNull String key) {
-    if (tags != null) {
-      return tags.get(key);
-    }
-    return null;
-  }
-
-  public void setTag(String key, String value) {
-    if (tags == null) {
-      tags = new HashMap<>();
-    }
-    tags.put(key, value);
   }
 
   Map<String, Object> getExtras() {
@@ -413,14 +315,6 @@ public final class SentryEvent implements IUnknownPropertiesConsumer {
       return extra.get(key);
     }
     return null;
-  }
-
-  public Contexts getContexts() {
-    return contexts;
-  }
-
-  public void setContexts(Contexts contexts) {
-    this.contexts = contexts;
   }
 
   @ApiStatus.Internal

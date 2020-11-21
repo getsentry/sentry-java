@@ -15,7 +15,7 @@ import org.springframework.mock.web.MockHttpServletRequest
 class SentrySpringRequestListenerTest {
     private class Fixture {
         val hub = mock<IHub>()
-        val listener = SentrySpringRequestListener(hub, SentryOptions())
+        val listener = SentrySpringRequestListener(hub, SentryRequestResolver(SentryOptions()))
         val request = MockHttpServletRequest()
         val event = mock<ServletRequestEvent>()
 
