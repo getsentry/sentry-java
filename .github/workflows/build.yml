@@ -56,7 +56,7 @@ jobs:
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v2
         with:
-          name: packages
+          name: ${{ github.sha }}
           path: ./*/build/distributions/*.zip
 
       - name: Upload coverage to Codecov
