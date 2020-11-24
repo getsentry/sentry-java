@@ -1,8 +1,13 @@
 # vNext
 
+* Fix: Set current thread only if theres no exceptions
+
+# 4.0.0-alpha.1
+
 * Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
 * Ref: Refactor JSON deserialization (#1047)
-* Fix: Set current thread only if theres no exceptions
+* Feat: Performance monitoring (#971)
+* Feat: Performance monitoring for Spring Boot applications (#971)
 
 # 3.2.0
 
@@ -22,8 +27,6 @@
 * Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
-* feat: Performance monitoring (#971)
-* feat: Performance monitoring for Spring Boot applications
 
 # 3.1.2
 
