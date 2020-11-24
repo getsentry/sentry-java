@@ -269,6 +269,17 @@ public interface IHub {
   SentryId captureTransaction(SentryTransaction transaction, Object hint);
 
   /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @return transaction's id
+   */
+  @ApiStatus.Internal
+  default SentryId captureTransaction(SentryTransaction transaction) {
+    return captureTransaction(transaction, null);
+  }
+
+  /**
    * Creates a Transaction bound to the current hub and returns the instance.
    *
    * @param transactionContexts the transaction contexts

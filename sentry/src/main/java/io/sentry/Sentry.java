@@ -494,18 +494,6 @@ public final class Sentry {
   }
 
   /**
-   * Captures the transaction and enqueues it for sending to Sentry server.
-   *
-   * @param transaction the transaction
-   * @param hint the hint
-   * @return transaction's id
-   */
-  public static @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
-    return getCurrentHub().captureTransaction(transaction, hint);
-  }
-
-  /**
    * Creates a Transaction bound to the current hub and returns the instance.
    *
    * @param name the transaction name
