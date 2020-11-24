@@ -39,7 +39,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public SentryId captureException(Throwable throwable, @Nullable Object hint) {
-    return Sentry.captureException(throwable, hint);
+    return Sentry.getCurrentHub().captureException(throwable, hint);
   }
 
   @Override
@@ -154,7 +154,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public SentryId captureTransaction(SentryTransaction transaction, Object hint) {
-    return Sentry.captureTransaction(transaction, hint);
+    return Sentry.getCurrentHub().captureTransaction(transaction, hint);
   }
 
   @Override
