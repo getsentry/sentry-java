@@ -1,5 +1,7 @@
 # vNext
 
+* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
+
 # 4.0.0-alpha.1
 
 * Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
