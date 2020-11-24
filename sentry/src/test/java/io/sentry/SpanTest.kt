@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,14 +12,14 @@ class SpanTest {
 
     @Test
     fun `finishing span sets the timestamp`() {
-        val span = Span(SentryId(), SpanId(), SentryTransaction("name"))
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         span.finish()
         assertNotNull(span.timestamp)
     }
 
     @Test
     fun `starting a child sets parent span id`() {
-        val span = Span(SentryId(), SpanId(), SentryTransaction("name"))
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         val child = span.startChild()
         assertEquals(span.spanId, child.parentSpanId)
     }

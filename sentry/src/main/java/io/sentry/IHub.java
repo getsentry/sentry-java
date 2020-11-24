@@ -332,4 +332,18 @@ public interface IHub {
    */
   @Nullable
   SentryTraceHeader traceHeaders();
+
+  @ApiStatus.Internal
+  void setSpanContext(@NotNull Throwable throwable, @NotNull SpanContext spanContext);
+
+  /**
+   * Gets the span context for the span that was active while the throwable given by parameter was
+   * thrown.
+   *
+   * @param throwable - the throwable
+   * @return span context or {@code null} if no corresponding span context found.
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SpanContext getSpanContext(Throwable throwable);
 }

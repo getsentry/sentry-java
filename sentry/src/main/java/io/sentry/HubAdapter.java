@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class HubAdapter implements IHub {
@@ -177,5 +178,15 @@ public final class HubAdapter implements IHub {
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
     return Sentry.traceHeaders();
+  }
+
+  @Override
+  public void setSpanContext(@NotNull Throwable t, @NotNull SpanContext sc) {
+    Sentry.getCurrentHub().setSpanContext(t, sc);
+  }
+
+  @Override
+  public @Nullable SpanContext getSpanContext(Throwable ex) {
+    return Sentry.getCurrentHub().getSpanContext(ex);
   }
 }
