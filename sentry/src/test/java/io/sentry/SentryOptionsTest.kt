@@ -173,7 +173,8 @@ class SentryOptionsTest {
         externalOptions.release = "release"
         externalOptions.serverName = "serverName"
         externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
-        externalOptions.tags = mapOf("tag1" to "value1", "tag2" to "value2")
+        externalOptions.setTag("tag1", "value1")
+        externalOptions.setTag("tag2", "value2")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -192,9 +193,11 @@ class SentryOptionsTest {
     @Test
     fun `merging options merges and overwrites existing tag values`() {
         val externalOptions = SentryOptions()
-        externalOptions.tags = mapOf("tag1" to "value1", "tag2" to "value2")
+        externalOptions.setTag("tag1", "value1")
+        externalOptions.setTag("tag2", "value2")
         val options = SentryOptions()
-        options.tags = mapOf("tag2" to "original-options-value", "tag3" to "value3")
+        options.setTag("tag2", "original-options-value")
+        options.setTag("tag3", "value3")
 
         options.merge(externalOptions)
 

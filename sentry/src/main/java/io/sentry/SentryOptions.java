@@ -244,7 +244,7 @@ public class SentryOptions {
   private boolean enableExternalConfiguration;
 
   /** Tags applied to every event and transaction */
-  private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
 
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
@@ -259,7 +259,10 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
-    options.setTags(propertiesProvider.getMap("tags"));
+    final Map<String, String> tags = propertiesProvider.getMap("tags");
+    for (final Map.Entry<String, String> tag : tags.entrySet()) {
+      options.setTag(tag.getKey(), tag.getValue());
+    }
 
     final String proxyHost = propertiesProvider.getProperty("proxy.host");
     final String proxyUser = propertiesProvider.getProperty("proxy.user");
@@ -1135,15 +1138,6 @@ public class SentryOptions {
   }
 
   /**
-   * Sets tags applied to all events and transactions.
-   *
-   * @param tags the tags map
-   */
-  public void setTags(final @NotNull Map<String, String> tags) {
-    this.tags = tags;
-  }
-
-  /**
    * Sets a tag that is applied to all events and transactions.
    *
    * @param key the key
@@ -1239,7 +1233,7 @@ public class SentryOptions {
       setProxy(options.getProxy());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
-    for (Map.Entry<String, String> tag : tags.entrySet()) {
+    for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());
     }
   }

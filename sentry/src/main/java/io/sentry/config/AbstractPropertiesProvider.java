@@ -26,7 +26,7 @@ abstract class AbstractPropertiesProvider implements PropertiesProvider {
   }
 
   @Override
-  public @Nullable String getProperty(@NotNull String property) {
+  public @Nullable String getProperty(final @NotNull String property) {
     return StringUtils.removeSurrounding(properties.getProperty(prefix + property), "\"");
   }
 

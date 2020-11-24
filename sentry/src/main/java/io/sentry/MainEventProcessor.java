@@ -88,7 +88,7 @@ public final class MainEventProcessor implements EventProcessor {
       event.setSdk(options.getSdkVersion());
     }
 
-    for (Map.Entry<String, String> tag : options.getTags().entrySet()) {
+    for (final Map.Entry<String, String> tag : options.getTags().entrySet()) {
       if (event.getTag(tag.getKey()) == null) {
         event.setTag(tag.getKey(), tag.getValue());
       }

@@ -28,7 +28,7 @@ class MainEventProcessorTest {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
             sentryOptions.environment = environment
-            sentryOptions.tags = tags
+            tags.forEach { sentryOptions.setTag(it.key, it.value) }
             return MainEventProcessor(sentryOptions)
         }
     }

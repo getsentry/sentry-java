@@ -30,7 +30,7 @@ final class CompositePropertiesProvider implements PropertiesProvider {
   }
 
   @Override
-  public @NotNull Map<String, String> getMap(@NotNull String property) {
+  public @NotNull Map<String, String> getMap(final @NotNull String property) {
     for (final PropertiesProvider provider : providers) {
       final Map<String, String> result = provider.getMap(property);
       if (!result.isEmpty()) {
