@@ -1,5 +1,7 @@
 # vNext
 
+* Fix: Set current thread only if theres no exceptions
+
 # 4.0.0-alpha.1
 
 * Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
