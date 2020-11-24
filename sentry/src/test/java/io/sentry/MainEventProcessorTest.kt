@@ -24,10 +24,11 @@ class MainEventProcessorTest {
                 version = "1.2.3"
             }
         }
-        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment"): MainEventProcessor {
+        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap()): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
             sentryOptions.environment = environment
+            sentryOptions.tags = tags
             return MainEventProcessor(sentryOptions)
         }
     }
@@ -194,6 +195,25 @@ class MainEventProcessorTest {
         val event = SentryEvent()
         sut.process(event, null)
         assertEquals("custom", event.environment)
+    }
+
+    @Test
+    fun `sets tags from SentryOptions`() {
+        val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
+        val event = SentryEvent()
+        sut.process(event, null)
+        assertEquals("value1", event.tags["tag1"])
+        assertEquals("value2", event.tags["tag2"])
+    }
+
+    @Test
+    fun `when event has a tag set with the same name as SentryOptions tags, the tag value from the event is retained`() {
+        val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
+        val event = SentryEvent()
+        event.setTag("tag2", "event-tag-value")
+        sut.process(event, null)
+        assertEquals("value1", event.tags["tag1"])
+        assertEquals("event-tag-value", event.tags["tag2"])
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {

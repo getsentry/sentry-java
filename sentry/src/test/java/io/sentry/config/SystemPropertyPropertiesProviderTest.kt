@@ -25,4 +25,13 @@ class SystemPropertyPropertiesProviderTest {
         val result = provider.getProperty("dsn")
         assertNull(result)
     }
+
+    @Test
+    fun `resolves map from system properties`() {
+        System.setProperty("sentry.some-property.key1", "\"value1\"")
+        System.setProperty("sentry.some-property.key2", "\"value2\"")
+
+        val result = provider.getMap("some-property")
+        assertEquals(mapOf("key1" to "value1", "key2" to "value2"), result)
+    }
 }

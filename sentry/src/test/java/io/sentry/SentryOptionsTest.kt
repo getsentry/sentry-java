@@ -173,6 +173,7 @@ class SentryOptionsTest {
         externalOptions.release = "release"
         externalOptions.serverName = "serverName"
         externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
+        externalOptions.tags = mapOf("tag1" to "value1", "tag2" to "value2")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -185,6 +186,19 @@ class SentryOptionsTest {
         assertNotNull(options.proxy)
         assertEquals("example.com", options.proxy!!.host)
         assertEquals("8090", options.proxy!!.port)
+        assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
+    }
+
+    @Test
+    fun `merging options merges and overwrites existing tag values`() {
+        val externalOptions = SentryOptions()
+        externalOptions.tags = mapOf("tag1" to "value1", "tag2" to "value2")
+        val options = SentryOptions()
+        options.tags = mapOf("tag2" to "original-options-value", "tag3" to "value3")
+
+        options.merge(externalOptions)
+
+        assertEquals(mapOf("tag1" to "value1", "tag2" to "value2", "tag3" to "value3"), options.tags)
     }
 
     @Test
@@ -227,6 +241,25 @@ class SentryOptionsTest {
             assertNotNull(options.proxy)
             assertEquals("proxy.example.com", options.proxy!!.host)
             assertEquals("80", options.proxy!!.port)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with tags using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("tags.tag1=value1\n")
+        file.appendText("tags.tag2=value2")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         } finally {
             temporaryFolder.delete()
         }

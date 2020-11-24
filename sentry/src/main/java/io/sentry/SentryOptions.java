@@ -11,7 +11,10 @@ import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
@@ -240,6 +243,9 @@ public class SentryOptions {
    */
   private boolean enableExternalConfiguration;
 
+  /** Tags applied to every event and transaction */
+  private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -253,6 +259,7 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
+    options.setTags(propertiesProvider.getMap("tags"));
 
     final String proxyHost = propertiesProvider.getProperty("proxy.host");
     final String proxyUser = propertiesProvider.getProperty("proxy.user");
@@ -1118,6 +1125,34 @@ public class SentryOptions {
     this.enableExternalConfiguration = enableExternalConfiguration;
   }
 
+  /**
+   * Returns tags applied to all events and transactions.
+   *
+   * @return the tags map
+   */
+  public @NotNull Map<String, String> getTags() {
+    return tags;
+  }
+
+  /**
+   * Sets tags applied to all events and transactions.
+   *
+   * @param tags the tags map
+   */
+  public void setTags(final @NotNull Map<String, String> tags) {
+    this.tags = tags;
+  }
+
+  /**
+   * Sets a tag that is applied to all events and transactions.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public void setTag(final @NotNull String key, final @NotNull String value) {
+    this.tags.put(key, value);
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1202,6 +1237,10 @@ public class SentryOptions {
     }
     if (options.getProxy() != null) {
       setProxy(options.getProxy());
+    }
+    final Map<String, String> tags = new HashMap<>(options.getTags());
+    for (Map.Entry<String, String> tag : tags.entrySet()) {
+      this.tags.put(tag.getKey(), tag.getValue());
     }
   }
 

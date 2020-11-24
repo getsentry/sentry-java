@@ -5,6 +5,7 @@ import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,6 +86,12 @@ public final class MainEventProcessor implements EventProcessor {
     }
     if (event.getSdk() == null) {
       event.setSdk(options.getSdkVersion());
+    }
+
+    for (Map.Entry<String, String> tag : options.getTags().entrySet()) {
+      if (event.getTag(tag.getKey()) == null) {
+        event.setTag(tag.getKey(), tag.getValue());
+      }
     }
 
     if (event.getThreads() == null) {
