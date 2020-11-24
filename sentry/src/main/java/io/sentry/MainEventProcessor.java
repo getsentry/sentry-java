@@ -18,24 +18,25 @@ public final class MainEventProcessor implements EventProcessor {
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
 
-  private final SentryOptions options;
-  private final SentryThreadFactory sentryThreadFactory;
-  private final SentryExceptionFactory sentryExceptionFactory;
+  private final @NotNull SentryOptions options;
+  private final @NotNull SentryThreadFactory sentryThreadFactory;
+  private final @NotNull SentryExceptionFactory sentryExceptionFactory;
 
-  MainEventProcessor(final SentryOptions options) {
+  MainEventProcessor(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
 
-    SentryStackTraceFactory sentryStackTraceFactory =
-        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
+    final SentryStackTraceFactory sentryStackTraceFactory =
+        new SentryStackTraceFactory(
+            this.options.getInAppExcludes(), this.options.getInAppIncludes());
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
     sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory, this.options);
   }
 
   MainEventProcessor(
-      final SentryOptions options,
-      final SentryThreadFactory sentryThreadFactory,
-      final SentryExceptionFactory sentryExceptionFactory) {
+      final @NotNull SentryOptions options,
+      final @NotNull SentryThreadFactory sentryThreadFactory,
+      final @NotNull SentryExceptionFactory sentryExceptionFactory) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
     this.sentryThreadFactory =
         Objects.requireNonNull(sentryThreadFactory, "The SentryThreadFactory is required.");
@@ -44,13 +45,14 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(
+      final @NotNull SentryEvent event, final @Nullable Object hint) {
     if (event.getPlatform() == null) {
       // this actually means JVM related.
       event.setPlatform("java");
     }
 
-    Throwable throwable = event.getThrowable();
+    final Throwable throwable = event.getThrowable();
     if (throwable != null) {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
@@ -69,7 +71,7 @@ public final class MainEventProcessor implements EventProcessor {
     return event;
   }
 
-  private void processNonCachedEvent(SentryEvent event) {
+  private void processNonCachedEvent(final @NotNull SentryEvent event) {
     if (event.getRelease() == null) {
       event.setRelease(options.getRelease());
     }
@@ -91,8 +93,12 @@ public final class MainEventProcessor implements EventProcessor {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
       List<Long> mechanismThreadIds = null;
-      if (event.getExceptions() != null) {
-        for (SentryException item : event.getExceptions()) {
+
+      final boolean hasExceptions =
+          event.getExceptions() != null && !event.getExceptions().isEmpty();
+
+      if (hasExceptions) {
+        for (final SentryException item : event.getExceptions()) {
           if (item.getMechanism() != null && item.getThreadId() != null) {
             if (mechanismThreadIds == null) {
               mechanismThreadIds = new ArrayList<>();
@@ -104,9 +110,10 @@ public final class MainEventProcessor implements EventProcessor {
 
       if (options.isAttachThreads()) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
-      } else if (options.isAttachStacktrace()) {
-        // when attachStacktrace is enabled, we attach only the current thread and its stack traces
-        event.setThreads(sentryThreadFactory.getCurrentThread(mechanismThreadIds));
+      } else if (options.isAttachStacktrace() && !hasExceptions) {
+        // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
+        // if there are no exceptions, exceptions have its own stack traces.
+        event.setThreads(sentryThreadFactory.getCurrentThread());
       }
     }
   }
