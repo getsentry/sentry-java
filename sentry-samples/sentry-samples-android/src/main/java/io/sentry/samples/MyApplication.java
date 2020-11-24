@@ -1,4 +1,4 @@
-package io.sentry.sample;
+package io.sentry.samples;
 
 import android.app.Application;
 import android.os.StrictMode;

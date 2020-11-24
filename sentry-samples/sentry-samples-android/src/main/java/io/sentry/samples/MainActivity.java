@@ -1,4 +1,4 @@
-package io.sentry.sample;
+package io.sentry.samples;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -6,7 +6,7 @@ import io.sentry.Sentry;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.sample.databinding.ActivityMainBinding;
+import io.sentry.samples.databinding.ActivityMainBinding;
 import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
