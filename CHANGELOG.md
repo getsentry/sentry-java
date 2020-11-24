@@ -1,4 +1,6 @@
-# vNext
+# 3.2.1
+
+* Fix: Set current thread only if theres no exceptions (#1064)
 
 # 3.2.0
 
