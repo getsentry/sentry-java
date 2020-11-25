@@ -384,7 +384,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   /**
-   * Returns true if this event has any sort of excetion
+   * Returns true if this event has any sort of exception
    *
    * @return true if errored or false otherwise
    */
