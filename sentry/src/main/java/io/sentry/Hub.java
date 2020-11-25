@@ -31,7 +31,8 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
   private final @NotNull TracingSampler tracingSampler;
-  private final @NotNull WeakHashMap<Throwable, SpanContext> throwableToSpanContext = new WeakHashMap<>();
+  private final @NotNull WeakHashMap<Throwable, SpanContext> throwableToSpanContext =
+      new WeakHashMap<>();
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -739,7 +740,8 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void setSpanContext(final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
+  public void setSpanContext(
+      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(spanContext, "spanContext is required");
     this.throwableToSpanContext.put(throwable, spanContext);
