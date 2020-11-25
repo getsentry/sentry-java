@@ -11,7 +11,6 @@ import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.core.NamedThreadLocal;
@@ -37,7 +36,7 @@ class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterce
       @NotNull byte[] body,
       @NotNull ClientHttpRequestExecution execution)
       throws IOException {
-    final ISpan activeSpan = resolveActiveSpan();
+    final ISpan activeSpan = hub.getSpan();
     if (activeSpan == null) {
       return execution.execute(request, body);
     }
@@ -59,22 +58,6 @@ class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterce
         urlTemplate.remove();
       }
     }
-  }
-
-  // TODO: this method ideally gets extracted or moves to Hub itself
-  private @Nullable ISpan resolveActiveSpan() {
-    final AtomicReference<ISpan> spanRef = new AtomicReference<>();
-
-    hub.configureScope(
-        scope -> {
-          final ISpan span = scope.getSpan();
-
-          if (span != null) {
-            spanRef.set(span);
-          }
-        });
-
-    return spanRef.get();
   }
 
   UriTemplateHandler createUriTemplateHandler(final @NotNull UriTemplateHandler delegate) {

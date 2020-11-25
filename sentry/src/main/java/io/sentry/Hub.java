@@ -735,4 +735,22 @@ public final class Hub implements IHub {
     }
     return traceHeader;
   }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    ISpan span = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        span = item.scope.getSpan();
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when getSpan");
+      }
+    }
+    return span;
+  }
 }
