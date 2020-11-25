@@ -32,7 +32,7 @@ public final class Span extends SpanContext implements ISpan {
     super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
-    this.hub = hub;
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   public @NotNull Date getStartTimestamp() {

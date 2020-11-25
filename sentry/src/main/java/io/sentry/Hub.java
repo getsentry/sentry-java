@@ -739,12 +739,15 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void setSpanContext(final @NotNull Throwable t, final @NotNull SpanContext sc) {
-    this.throwableToSpanContext.put(t, sc);
+  public void setSpanContext(final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    Objects.requireNonNull(spanContext, "spanContext is required");
+    this.throwableToSpanContext.put(throwable, spanContext);
   }
 
   @Override
-  public @Nullable SpanContext getSpanContext(final @NotNull Throwable ex) {
-    return this.throwableToSpanContext.get(ex);
+  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    return this.throwableToSpanContext.get(throwable);
   }
 }
