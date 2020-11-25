@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,5 +46,16 @@ class SpanTest {
         val span = transaction.startChild()
         span.finish()
         assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
+        val hub = mock<IHub>()
+        val transaction = SentryTransaction(TransactionContext("name"), hub)
+        val span = transaction.startChild()
+        val ex = RuntimeException()
+        span.throwable = ex
+        span.finish()
+        verify(hub).setSpanContext(ex, span)
     }
 }
