@@ -553,6 +553,15 @@ public final class Sentry {
   }
 
   /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  public static @Nullable ISpan getSpan() {
+    return getCurrentHub().getSpan();
+  }
+
+  /**
    * Configuration options callback
    *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.

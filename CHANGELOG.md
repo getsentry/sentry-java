@@ -1,6 +1,7 @@
 # vNext
 
 * Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
+* Fix: Set current thread only if there are no exceptions
 
 # 4.0.0-alpha.1
 

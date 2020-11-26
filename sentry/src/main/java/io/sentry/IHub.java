@@ -332,4 +332,12 @@ public interface IHub {
    */
   @Nullable
   SentryTraceHeader traceHeaders();
+
+  /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  @Nullable
+  ISpan getSpan();
 }

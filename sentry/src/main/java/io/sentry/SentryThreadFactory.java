@@ -39,16 +39,15 @@ final class SentryThreadFactory {
    * Converts the current thread to a SentryThread, it assumes its being called from the captured
    * thread.
    *
-   * @param mechanismThreadIds list of threadIds that came from exception mechanism
    * @return a list of SentryThread with a single item or null
    */
   @Nullable
-  List<SentryThread> getCurrentThread(final @Nullable List<Long> mechanismThreadIds) {
+  List<SentryThread> getCurrentThread() {
     final Map<Thread, StackTraceElement[]> threads = new HashMap<>();
     final Thread currentThread = Thread.currentThread();
     threads.put(currentThread, currentThread.getStackTrace());
 
-    return getCurrentThreads(threads, mechanismThreadIds);
+    return getCurrentThreads(threads, null);
   }
 
   /**
