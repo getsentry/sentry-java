@@ -111,6 +111,19 @@ class SentrySpringIntegrationTest {
     }
 
     @Test
+    fun `attaches transaction name to events`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.transaction).isEqualTo("GET /throws")
+            })
+        }
+    }
+
+    @Test
     fun `does not send events for handled exceptions`() {
         val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
