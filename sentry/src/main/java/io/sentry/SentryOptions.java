@@ -531,7 +531,7 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the cache dir. size Default is 10
+   * Returns the cache dir. size Default is 30
    *
    * @return the cache dir. size
    */
@@ -540,7 +540,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the cache dir. size Default is 10
+   * Sets the cache dir. size Default is 30
    *
    * @param cacheDirSize the cache dir. size
    */
