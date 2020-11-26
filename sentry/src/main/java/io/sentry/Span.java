@@ -55,9 +55,9 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public void finish() {
-    this.timestamp = DateUtils.getCurrentDateTime();
-    if (this.throwable != null) {
-      hub.setSpanContext(this.throwable, this);
+    timestamp = DateUtils.getCurrentDateTime();
+    if (throwable != null) {
+      hub.setSpanContext(throwable, this);
     }
   }
 
