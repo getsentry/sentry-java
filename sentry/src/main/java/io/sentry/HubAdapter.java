@@ -189,4 +189,9 @@ public final class HubAdapter implements IHub {
   public @Nullable SpanContext getSpanContext(Throwable ex) {
     return Sentry.getCurrentHub().getSpanContext(ex);
   }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    return Sentry.getCurrentHub().getSpan();
+  }
 }

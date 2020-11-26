@@ -740,6 +740,24 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public @Nullable ISpan getSpan() {
+    ISpan span = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        span = item.scope.getSpan();
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when getSpan");
+      }
+    }
+    return span;
+  }
+
+  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
     Objects.requireNonNull(throwable, "throwable is required");

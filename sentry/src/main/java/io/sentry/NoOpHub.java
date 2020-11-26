@@ -140,4 +140,9 @@ final class NoOpHub implements IHub {
   public @Nullable SpanContext getSpanContext(Throwable throwable) {
     return null;
   }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    return null;
+  }
 }

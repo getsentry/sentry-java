@@ -10,6 +10,7 @@ import io.sentry.util.Objects;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Class responsible for reading values from manifest and setting them to the options */
 final class ManifestMetadataReader {
@@ -43,6 +44,8 @@ final class ManifestMetadataReader {
 
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
+
+  static final String ATTACH_THREADS = "io.sentry.attach-threads";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -185,6 +188,11 @@ final class ManifestMetadataReader {
                 UNCAUGHT_EXCEPTION_HANDLER_ENABLE, options.isEnableUncaughtExceptionHandler());
         options.getLogger().log(SentryLevel.DEBUG, "enableUncaughtExceptionHandler read: %s", ndk);
         options.setEnableUncaughtExceptionHandler(enableUncaughtExceptionHandler);
+
+        final boolean attachThreads =
+            metadata.getBoolean(ATTACH_THREADS, options.isAttachThreads());
+        options.getLogger().log(SentryLevel.DEBUG, "attachThreads read: %s", attachThreads);
+        options.setAttachThreads(attachThreads);
       }
       options
           .getLogger()
@@ -228,7 +236,7 @@ final class ManifestMetadataReader {
    * @return the Bundle attached to the PackageManager
    * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
-  private static Bundle getMetadata(final @NotNull Context context)
+  private static @Nullable Bundle getMetadata(final @NotNull Context context)
       throws PackageManager.NameNotFoundException {
     final ApplicationInfo app =
         context

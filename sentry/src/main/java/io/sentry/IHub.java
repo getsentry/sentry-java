@@ -353,4 +353,12 @@ public interface IHub {
   @ApiStatus.Internal
   @Nullable
   SpanContext getSpanContext(Throwable throwable);
+
+  /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  @Nullable
+  ISpan getSpan();
 }

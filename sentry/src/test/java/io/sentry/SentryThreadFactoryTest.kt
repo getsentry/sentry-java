@@ -86,7 +86,7 @@ class SentryThreadFactoryTest {
     @Test
     fun `when getCurrentThread is called, returns current thread`() {
         val sut = fixture.getSut()
-        val threads = sut.getCurrentThread(null)
+        val threads = sut.currentThread
         assertEquals(1, threads!!.count())
     }
 }

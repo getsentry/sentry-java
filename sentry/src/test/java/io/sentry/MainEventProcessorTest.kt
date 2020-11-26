@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.protocol.SdkVersion
+import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -132,7 +133,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when processing an event and attach threads is disabled, threads should not be set`() {
+    fun `when attach threads is disabled, threads should not be set`() {
         val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
 
         var event = SentryEvent()
@@ -142,7 +143,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when processing an event and attach threads is enabled, threads should be set`() {
+    fun `when attach threads is enabled, threads should be set`() {
         val sut = fixture.getSut()
 
         var event = SentryEvent()
@@ -152,13 +153,23 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when processing an event and attach threads is disabled, but attach stacktrace is enabled, current thread should be set`() {
+    fun `when attach threads is disabled, but attach stacktrace is enabled, current thread should be set`() {
         val sut = fixture.getSut(attachThreads = false, attachStackTrace = true)
 
         var event = SentryEvent()
         event = sut.process(event, null)
 
         assertEquals(1, event.threads.count())
+    }
+
+    @Test
+    fun `when attach threads is disabled, but attach stacktrace is enabled and has exceptions, threads should not be set`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = true)
+
+        var event = SentryEvent(RuntimeException("error"))
+        event = sut.process(event, null)
+
+        assertNull(event.threads)
     }
 
     @Test
