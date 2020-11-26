@@ -1,6 +1,7 @@
 # vNext
 
 * Fix: Set current thread only if theres no exceptions
+* Ref: Refactor resolving SpanContext for Throwable (#1068)
 
 # 4.0.0-alpha.1
 

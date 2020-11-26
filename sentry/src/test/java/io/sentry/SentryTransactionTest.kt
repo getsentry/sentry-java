@@ -106,4 +106,11 @@ class SentryTransactionTest {
         transaction.setStatus(SpanStatus.ALREADY_EXISTS)
         assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.trace!!.status)
     }
+
+    @Test
+    fun `setName overwrites the transaction name`() {
+        val transaction = SentryTransaction("initial name")
+        transaction.setName("new name")
+        assertEquals("new name", transaction.transaction)
+    }
 }
