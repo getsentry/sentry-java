@@ -89,7 +89,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @return a new transaction span
    */
   @Override
-  public Span startChild(final @NotNull String operation, final @NotNull String description) {
+  public @NotNull Span startChild(final @NotNull String operation, final @NotNull String description) {
     final Span span = startChild();
     span.setOperation(operation);
     span.setDescription(description);
