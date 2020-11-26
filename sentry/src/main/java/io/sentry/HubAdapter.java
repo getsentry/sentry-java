@@ -178,4 +178,9 @@ public final class HubAdapter implements IHub {
   public @Nullable SentryTraceHeader traceHeaders() {
     return Sentry.traceHeaders();
   }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    return Sentry.getCurrentHub().getSpan();
+  }
 }

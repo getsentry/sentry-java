@@ -1,11 +1,9 @@
 package io.sentry.spring.boot
 
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
-import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
@@ -35,9 +33,7 @@ class SentrySpanRestTemplateCustomizerTest {
             if (isTransactionActive) {
                 val scope = Scope(SentryOptions())
                 scope.setTransaction(transaction)
-                whenever(hub.configureScope(any())).thenAnswer {
-                    (it.arguments[0] as ScopeCallback).run(scope)
-                }
+                whenever(hub.span).thenReturn(transaction)
 
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
                     .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))

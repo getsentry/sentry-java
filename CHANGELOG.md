@@ -1,5 +1,7 @@
 # vNext
 
+* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
+* Fix: Set current thread only if there are no exceptions
 * Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
 
 # 4.0.0-alpha.1
