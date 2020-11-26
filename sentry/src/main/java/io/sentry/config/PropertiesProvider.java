@@ -1,5 +1,6 @@
 package io.sentry.config;
 
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,6 +13,15 @@ public interface PropertiesProvider {
    */
   @Nullable
   String getProperty(@NotNull String property);
+
+  /**
+   * Resolves a map for a property given by it's name.
+   *
+   * @param property - the property name
+   * @return the map or empty map if not found
+   */
+  @NotNull
+  Map<String, String> getMap(final @NotNull String property);
 
   /**
    * Resolves property given by it's name.

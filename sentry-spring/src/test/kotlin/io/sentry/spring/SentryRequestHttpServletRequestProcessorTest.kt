@@ -6,11 +6,13 @@ import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.web.servlet.HandlerMapping
 
 class SentryRequestHttpServletRequestProcessorTest {
 
@@ -107,5 +109,36 @@ class SentryRequestHttpServletRequestProcessorTest {
         assertFalse(event.request.headers.containsKey("authorization"))
         assertFalse(event.request.headers.containsKey("Cookie"))
         assertTrue(event.request.headers.containsKey("some-header"))
+    }
+
+    @Test
+    fun `when event does not have transaction name, sets the transaction name from the current request`() {
+        val request = MockMvcRequestBuilders
+            .get(URI.create("http://example.com?param1=xyz"))
+            .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
+            .buildRequest(MockServletContext())
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
+        val event = SentryEvent()
+
+        eventProcessor.process(event, null)
+
+        assertNotNull(event.transaction)
+        assertEquals("GET /some-path", event.transaction)
+    }
+
+    @Test
+    fun `when event has transaction name set, does not overwrite transaction name with value from the current request`() {
+        val request = MockMvcRequestBuilders
+            .get(URI.create("http://example.com?param1=xyz"))
+            .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
+            .buildRequest(MockServletContext())
+        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
+        val event = SentryEvent()
+        event.transaction = "some-transaction"
+
+        eventProcessor.process(event, null)
+
+        assertNotNull(event.transaction)
+        assertEquals("some-transaction", event.transaction)
     }
 }

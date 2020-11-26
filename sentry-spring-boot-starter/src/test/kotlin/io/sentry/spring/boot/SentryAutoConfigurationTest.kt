@@ -105,7 +105,9 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
-            "sentry.enable-tracing=true"
+            "sentry.enable-tracing=true",
+            "sentry.tags.tag1=tag1-value",
+            "sentry.tags.tag2=tag2-value"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -130,6 +132,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
             assertThat(options.isEnableTracing).isTrue()
+            assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
         }
     }
 
