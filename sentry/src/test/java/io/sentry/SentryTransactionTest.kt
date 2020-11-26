@@ -49,6 +49,16 @@ class SentryTransactionTest {
     }
 
     @Test
+    fun `when transaction with throwable set is finished, span context is associated with throwable`() {
+        val hub = mock<IHub>()
+        val transaction = SentryTransaction("name", SpanContext(), hub)
+        val ex = RuntimeException()
+        transaction.setThrowable(ex)
+        transaction.finish()
+        verify(hub).setSpanContext(ex, transaction.spanContext)
+    }
+
+    @Test
     fun `returns sentry-trace header`() {
         val transaction = SentryTransaction("name")
 
