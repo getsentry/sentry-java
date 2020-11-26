@@ -10,6 +10,7 @@
 * Ref: Refactor JSON deserialization (#1047)
 * Feat: Performance monitoring (#971)
 * Feat: Performance monitoring for Spring Boot applications (#971)
+* Ref: Add more convenient method to start a child span
 
 # 3.2.0
 
