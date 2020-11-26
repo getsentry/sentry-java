@@ -3,6 +3,7 @@
 * Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
 * Fix: Set current thread only if there are no exceptions
 * Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
+* Enhancement: Add more convenient method to start a child span (#1073)
 
 # 4.0.0-alpha.1
 
@@ -10,7 +11,6 @@
 * Ref: Refactor JSON deserialization (#1047)
 * Feat: Performance monitoring (#971)
 * Feat: Performance monitoring for Spring Boot applications (#971)
-* Ref: Add more convenient method to start a child span
 
 # 3.2.0
 
