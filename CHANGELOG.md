@@ -4,6 +4,7 @@
 * Fix: Set current thread only if there are no exceptions
 * Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
 * Enhancement: Add more convenient method to start a child span (#1073)
+* Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)
 
 # 4.0.0-alpha.1
 
