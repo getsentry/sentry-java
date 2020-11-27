@@ -59,6 +59,7 @@ class ScopeTest {
         assertNotSame(scope.tags, clone.tags)
         assertNotSame(scope.extras, clone.extras)
         assertNotSame(scope.eventProcessors, clone.eventProcessors)
+        assertNotSame(scope.attachments, clone.attachments)
     }
 
     @Test
@@ -85,6 +86,10 @@ class ScopeTest {
         val transaction = SentryTransaction("transaction-name")
         scope.setTransaction(transaction)
 
+        val attachment = Attachment("path/log.txt")
+        scope.addAttachment(attachment)
+        attachment.contentType = "application/json" // shallow copy, same reference
+
         val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
@@ -99,6 +104,7 @@ class ScopeTest {
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
         assertEquals(transaction, clone.span)
+        assertEquals(listOf(attachment), clone.attachments)
     }
 
     @Test
@@ -125,6 +131,9 @@ class ScopeTest {
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
 
+        val attachment = Attachment("path/log.txt")
+        scope.addAttachment(attachment)
+
         val clone = scope.clone()
 
         scope.level = SentryLevel.FATAL
@@ -145,6 +154,8 @@ class ScopeTest {
 
         scope.addEventProcessor(processor)
 
+        scope.addAttachment(Attachment("path/image.png"))
+
         assertEquals(SentryLevel.DEBUG, clone.level)
 
         assertEquals("123", clone.user?.id)
@@ -161,6 +172,8 @@ class ScopeTest {
         assertEquals(1, clone.extras.size)
         assertEquals(1, clone.eventProcessors.size)
         assertNull(clone.span)
+
+        assertEquals(listOf(attachment), clone.attachments)
     }
 
     @Test
@@ -592,5 +605,31 @@ class ScopeTest {
         val span = transaction.startChild()
         val innerSpan = span.startChild()
         assertEquals(innerSpan, scope.span)
+    }
+
+    @Test
+    fun `Scope add attachment sync scopes if enabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            isEnableScopeSync = true
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        val attachment = Attachment("")
+        scope.addAttachment(attachment)
+        verify(observer).addAttachment(eq(attachment))
+    }
+
+    @Test
+    fun `Scope add attachment wont sync scopes if disabled`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.addAttachment(Attachment(""))
+        verify(observer, never()).addAttachment(any())
     }
 }

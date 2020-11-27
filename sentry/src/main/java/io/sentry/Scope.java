@@ -55,6 +55,9 @@ public final class Scope implements Cloneable {
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
 
+  /** Scope's attachments */
+  private @NotNull List<Attachment> attachments = new ArrayList<>();
+
   /**
    * Scope's ctor
    *
@@ -431,6 +434,25 @@ public final class Scope implements Cloneable {
   }
 
   /**
+   * Returns the Scopes's attachments
+   *
+   * @return the attachments
+   */
+  public List<Attachment> getAttachments() {
+    return attachments;
+  }
+
+  public void addAttachment(Attachment attachment) {
+    attachments.add(attachment);
+
+    if (options.isEnableScopeSync()) {
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        observer.addAttachment(attachment);
+      }
+    }
+  }
+
+  /**
    * Creates a breadcrumb list with the max number of breadcrumbs
    *
    * @param maxBreadcrumb the max number of breadcrumbs
@@ -495,6 +517,7 @@ public final class Scope implements Cloneable {
     clone.extra = extraClone;
 
     clone.contexts = contexts.clone();
+    clone.attachments = new ArrayList<>(attachments);
 
     return clone;
   }

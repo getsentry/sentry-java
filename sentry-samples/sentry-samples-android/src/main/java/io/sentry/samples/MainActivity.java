@@ -1,13 +1,17 @@
 package io.sentry.samples;
 
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Collections;
+
+import io.sentry.Attachment;
 import io.sentry.Sentry;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.databinding.ActivityMainBinding;
-import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,6 +38,16 @@ public class MainActivity extends AppCompatActivity {
           userFeedback.setName("John Me");
           Sentry.captureUserFeedback(userFeedback);
         });
+
+    binding.sendAttachment.setOnClickListener(
+      view -> {
+        Sentry.withScope(scope -> {
+          String json = "{ \"number\": 10 }";
+          Attachment attachment = new Attachment(json.getBytes(), "log.json");
+          scope.addAttachment(attachment);
+          Sentry.captureException(new Exception("I have an attachment"));
+        });
+      });
 
     binding.captureException.setOnClickListener(
         view ->

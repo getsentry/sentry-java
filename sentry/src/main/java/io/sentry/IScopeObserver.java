@@ -15,4 +15,6 @@ public interface IScopeObserver {
   void setExtra(String key, String value);
 
   void removeExtra(String key);
+
+  void addAttachment(Attachment attachment);
 }

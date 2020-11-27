@@ -1,20 +1,24 @@
 package io.sentry;
 
-import io.sentry.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import io.sentry.util.Objects;
 
 @ApiStatus.Internal
 public final class SentryEnvelopeItem {
@@ -42,7 +46,7 @@ public final class SentryEnvelopeItem {
     this.data = null;
   }
 
-  // TODO: Should be a Stream
+    // TODO: Should be a Stream
   public @NotNull byte[] getData() throws Exception {
     if (data == null && dataFactory != null) {
       data = dataFactory.call();
@@ -146,6 +150,46 @@ public final class SentryEnvelopeItem {
             null);
 
     return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+  }
+
+  public static SentryEnvelopeItem fromAttachment(final @NotNull Attachment attachment) {
+
+    final CachedItem cachedItem =
+      new CachedItem(
+        () -> {
+          if (attachment.getBytes() != null) {
+            return attachment.getBytes();
+          } else {
+            FileInputStream stream = new FileInputStream(attachment.getPath());
+            byte[] bytes = new byte[1024];
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            int length;
+            int offset = 0;
+            while ((length = stream.read(bytes)) != -1) {
+              outputStream.write(bytes, offset, length);
+            }
+            return outputStream.toByteArray();
+          }
+        });
+
+    SentryEnvelopeItemHeader itemHeader =
+      new SentryEnvelopeItemHeader(
+        SentryItemType.Attachment,
+        () -> cachedItem.getBytes().length,
+        attachment.getContentType(),
+        attachment.getFilename());
+
+    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+  }
+
+  public static byte[] readBytes(InputStream inputStream) throws IOException {
+    byte[] b = new byte[1024];
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    int c;
+    while ((c = inputStream.read(b)) != -1) {
+      os.write(b, 0, c);
+    }
+    return os.toByteArray();
   }
 
   private static class CachedItem {

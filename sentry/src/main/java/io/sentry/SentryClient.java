@@ -109,7 +109,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, session);
+      final SentryEnvelope envelope = buildEnvelope(event, session, scope.getAttachments());
 
       if (envelope != null) {
         connection.send(envelope, hint);
@@ -126,11 +126,12 @@ public final class SentryClient implements ISentryClient {
 
   private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
       throws IOException {
-    return this.buildEnvelope(event, null);
+    return this.buildEnvelope(event, null, null);
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable Session session,
+      final @Nullable List<Attachment> attachments) throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -146,6 +147,14 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelopeItem sessionItem =
           SentryEnvelopeItem.fromSession(options.getSerializer(), session);
       envelopeItems.add(sessionItem);
+    }
+
+    if (attachments != null) {
+      for (Attachment attachment : attachments) {
+        final SentryEnvelopeItem attachmentItem =
+          SentryEnvelopeItem.fromAttachment(attachment);
+        envelopeItems.add(attachmentItem);
+      }
     }
 
     if (!envelopeItems.isEmpty()) {
