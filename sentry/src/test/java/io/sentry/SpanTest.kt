@@ -35,7 +35,7 @@ class SpanTest {
 
     @Test
     fun `starting a child creates a new span`() {
-        val span = Span(SentryId(), SpanId(), SentryTransaction("name"))
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         val child = span.startChild("op", "description")
         assertEquals(span.spanId, child.parentSpanId)
         assertEquals("op", child.operation)
