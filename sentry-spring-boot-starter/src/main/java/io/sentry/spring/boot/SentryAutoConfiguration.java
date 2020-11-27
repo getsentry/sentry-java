@@ -62,6 +62,7 @@ public class SentryAutoConfiguration {
         final @NotNull ObjectProvider<SentryOptions.BeforeSendCallback> beforeSendCallback,
         final @NotNull ObjectProvider<SentryOptions.BeforeBreadcrumbCallback>
                 beforeBreadcrumbCallback,
+        final @NotNull ObjectProvider<SentryOptions.TracesSamplerCallback> tracesSamplerCallback,
         final @NotNull List<EventProcessor> eventProcessors,
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
@@ -71,6 +72,7 @@ public class SentryAutoConfiguration {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
         beforeBreadcrumbCallback.ifAvailable(options::setBeforeBreadcrumb);
+        tracesSamplerCallback.ifAvailable(options::setTracesSampler);
         eventProcessors.forEach(options::addEventProcessor);
         integrations.forEach(options::addIntegration);
         sentryUserProviders.forEach(
