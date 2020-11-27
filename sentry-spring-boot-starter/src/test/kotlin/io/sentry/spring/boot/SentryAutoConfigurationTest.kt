@@ -107,6 +107,7 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
             "sentry.enable-tracing=true",
+            "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value"
         ).run {
@@ -133,6 +134,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
             assertThat(options.isEnableTracing).isTrue()
+            assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
         }
     }
