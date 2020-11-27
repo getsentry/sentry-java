@@ -8,6 +8,7 @@ import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
 import io.sentry.IHub
 import io.sentry.Integration
+import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
@@ -27,6 +28,7 @@ import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
+import org.jetbrains.annotations.NotNull
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -415,6 +417,15 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `registers tracesSamplerCallback on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomTracesSamplerCallbackConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).tracesSampler).isInstanceOf(CustomTracesSamplerCallback::class.java)
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
@@ -526,6 +537,17 @@ class SentryAutoConfigurationTest {
 
         @Bean
         open fun sentrySpanPointcut() = NameMatchMethodPointcut()
+    }
+
+    @Configuration
+    open class CustomTracesSamplerCallbackConfiguration {
+
+        @Bean
+        open fun tracingSamplerCallback() = CustomTracesSamplerCallback()
+    }
+
+    class CustomTracesSamplerCallback : SentryOptions.TracesSamplerCallback {
+        override fun sample(samplingContext: SamplingContext) = 1.0
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {
