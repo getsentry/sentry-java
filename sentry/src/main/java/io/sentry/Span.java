@@ -49,6 +49,11 @@ public final class Span extends SpanContext implements ISpan {
   }
 
   @Override
+  public Span startChild(String operation, String description) {
+    return transaction.startChild(super.getSpanId(), operation, description);
+  }
+
+  @Override
   public SentryTraceHeader toSentryTrace() {
     return transaction.toSentryTrace();
   }

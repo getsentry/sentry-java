@@ -13,6 +13,15 @@ public interface ISpan {
   Span startChild();
 
   /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - new span description name
+   * @return a new transaction span
+   */
+  Span startChild(String operation, String description);
+
+  /**
    * Returns a string that could be sent as a sentry-trace header.
    *
    * @return SentryTraceHeader.

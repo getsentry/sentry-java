@@ -143,9 +143,7 @@ public class Main {
     Span outerSpan = transaction.startChild();
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
-    Span innerSpan = outerSpan.startChild();
-    innerSpan.setOperation("jdbc");
-    innerSpan.setDescription("select * from product where id = :id");
+    Span innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
     innerSpan.setStatus(SpanStatus.OK);
     Thread.sleep(300);
     // Finish the span and mark the end time of the span execution.
