@@ -39,10 +39,7 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
    */
   private String modelId;
 
-  /** Native cpu architecture of the device. */
-  @ApiStatus.ScheduledForRemoval @Deprecated private String arch;
-
-  /** Native cpu architecture of the device. */
+  /** Supported CPU architectures of the device. */
   private String[] archs;
   /**
    * Current battery level in %.
@@ -79,14 +76,11 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   private Long externalStorageSize;
   /** Free size of the attached external storage in bytes (eg: android SDK card). */
   private Long externalFreeStorage;
-  /**
-   * Device screen resolution.
-   *
-   * <p>(e.g.: 800x600, 3040x1444)
-   */
-  @ApiStatus.ScheduledForRemoval @Deprecated private String screenResolution;
 
+  /** Device width screen resolution. */
   private Integer screenWidthPixels;
+
+  /** Device Height screen resolution. */
   private Integer screenHeightPixels;
   /** Device screen density. */
   private Float screenDensity;
@@ -153,28 +147,6 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
 
   public void setModelId(String modelId) {
     this.modelId = modelId;
-  }
-
-  /**
-   * Returns the arch String
-   *
-   * @return device architecture
-   * @deprecated use {@link #getArchs} instead.
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public String getArch() {
-    return arch;
-  }
-
-  /**
-   * @param arch device architecture
-   * @deprecated use {@link #setArchs} instead.
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public void setArch(String arch) {
-    this.arch = arch;
   }
 
   public Float getBatteryLevel() {
@@ -279,28 +251,6 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
 
   public void setExternalFreeStorage(Long externalFreeStorage) {
     this.externalFreeStorage = externalFreeStorage;
-  }
-
-  /**
-   * Returns the screenResolution String
-   *
-   * @return screen resolution largest + smallest
-   * @deprecated use {@link #getScreenWidthPixels , #getScreenHeightPixels} instead.
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public String getScreenResolution() {
-    return screenResolution;
-  }
-
-  /**
-   * @param screenResolution screen resolution largest + smallest
-   * @deprecated use {@link #setScreenWidthPixels} , #getScreenHeightPixels} instead.
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public void setScreenResolution(String screenResolution) {
-    this.screenResolution = screenResolution;
   }
 
   public Float getScreenDensity() {

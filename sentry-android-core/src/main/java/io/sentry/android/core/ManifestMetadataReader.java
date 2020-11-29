@@ -8,7 +8,6 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
 import java.util.Locale;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,9 +20,6 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
-
-  @ApiStatus.ScheduledForRemoval @Deprecated
-  static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
 
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
 
@@ -101,14 +97,10 @@ final class ManifestMetadataReader {
         options.getLogger().log(SentryLevel.DEBUG, "anrReportInDebug read: %s", anrReportInDebug);
         options.setAnrReportInDebug(anrReportInDebug);
 
-        // deprecated
-        final long anrTimeoutIntervalMills =
-            metadata.getInt(
-                ANR_TIMEOUT_INTERVAL_MILLS, (int) options.getAnrTimeoutIntervalMillis());
-
-        // reading new values, but deprecated one as fallback
+        // reading new values
         final long anrTimeoutIntervalMillis =
-            metadata.getInt(ANR_TIMEOUT_INTERVAL_MILLIS, (int) anrTimeoutIntervalMills);
+            metadata.getInt(
+                ANR_TIMEOUT_INTERVAL_MILLIS, (int) options.getAnrTimeoutIntervalMillis());
 
         options
             .getLogger()

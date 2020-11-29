@@ -74,9 +74,6 @@ class CacheStrategyTest {
 
     @Test
     fun `do not move init flag if state is not ok`() {
-        val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(mock(), envelopeReader))
-        }
         val sut = fixture.getSUT(3, getOptionsWithRealSerializer())
 
         val files = createTempFilesSortByOldestToNewest()
@@ -173,7 +170,7 @@ class CacheStrategyTest {
     }
 
     private fun saveSessionToFile(file: File, sut: CacheStrategy, state: Session.State = Session.State.Ok, init: Boolean? = true) {
-        val okSession = createSessionMockData(Session.State.Ok, init)
+        val okSession = createSessionMockData(state, init)
         val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
         sut.serializer.serialize(okEnvelope, file.writer())
     }
