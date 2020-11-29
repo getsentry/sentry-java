@@ -87,6 +87,39 @@ class SentryTransactionTest {
     }
 
     @Test
+    fun `starting child with operation and description creates a new span`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertNotNull(span)
+        assertNotNull(span.spanId)
+        assertNotNull(span.startTimestamp)
+        assertEquals("op", span.operation)
+        assertEquals("description", span.description)
+    }
+
+    @Test
+    fun `starting child with operation and description adds a span to transaction`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertEquals(1, transaction.spans.size)
+        assertEquals(span, transaction.spans.first())
+    }
+
+    @Test
+    fun `span created with startChild with operation and description has parent span id the same as transaction span id`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertEquals(transaction.spanId, span.parentSpanId)
+    }
+
+    @Test
+    fun `span created with startChild with operation and description has the same trace id as transaction`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertEquals(transaction.traceId, span.traceId)
+    }
+
+    @Test
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setOperation("op")
