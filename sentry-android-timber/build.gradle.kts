@@ -65,6 +65,10 @@ tasks.withType<Test> {
     }
 }
 
+kotlin {
+    explicitApi()
+}
+
 dependencies {
     api(project(":sentry"))
 

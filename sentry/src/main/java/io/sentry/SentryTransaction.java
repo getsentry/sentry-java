@@ -48,6 +48,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    *
    * @param name - transaction name
    * @param contexts - transaction contexts
+   * @param hub - the hub
    */
   @TestOnly
   public SentryTransaction(
