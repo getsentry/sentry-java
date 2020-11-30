@@ -858,10 +858,6 @@ public final class io/sentry/SpanStatus : java/lang/Enum {
 	public static fun values ()[Lio/sentry/SpanStatus;
 }
 
-public abstract interface class io/sentry/SpanSupplier {
-	public abstract fun get (Lio/sentry/ISpan;)Ljava/lang/Object;
-}
-
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z
