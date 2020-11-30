@@ -3,6 +3,7 @@
 * Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
 * Fix: Set current thread only if there are no exceptions
 * Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
+* Ref: Refactor resolving SpanContext for Throwable (#1068)
 * Enhancement: Add API validator and remove deprecated methods
 * Enhancement: Add more convenient method to start a child span (#1073)
 * Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)

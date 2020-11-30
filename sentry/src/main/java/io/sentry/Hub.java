@@ -8,6 +8,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.util.Deque;
 import java.util.List;
+import java.util.WeakHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +31,8 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
   private final @NotNull TracingSampler tracingSampler;
+  private final @NotNull WeakHashMap<Throwable, SpanContext> throwableToSpanContext =
+      new WeakHashMap<>();
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -752,5 +755,19 @@ public final class Hub implements IHub {
       }
     }
     return span;
+  }
+
+  @Override
+  public void setSpanContext(
+      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    Objects.requireNonNull(spanContext, "spanContext is required");
+    this.throwableToSpanContext.put(throwable, spanContext);
+  }
+
+  @Override
+  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    return this.throwableToSpanContext.get(throwable);
   }
 }
