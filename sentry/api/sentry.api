@@ -1008,6 +1008,7 @@ public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Itera
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {
+	public fun getList (Ljava/lang/String;)Ljava/util/List;
 	public abstract fun getMap (Ljava/lang/String;)Ljava/util/Map;
 	public abstract fun getProperty (Ljava/lang/String;)Ljava/lang/String;
 	public fun getProperty (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
