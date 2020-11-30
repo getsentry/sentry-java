@@ -1,0 +1,22 @@
+public final class io/sentry/android/ndk/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/IScopeObserver {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public fun removeExtra (Ljava/lang/String;)V
+	public fun removeTag (Ljava/lang/String;)V
+	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setUser (Lio/sentry/protocol/User;)V
+}
+
+public final class io/sentry/android/ndk/SentryNdk {
+	public static fun init (Lio/sentry/android/core/SentryAndroidOptions;)V
+}
+

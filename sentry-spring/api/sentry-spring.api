@@ -1,0 +1,99 @@
+public final class io/sentry/spring/BuildConfig {
+	public static final field SENTRY_SPRING_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public abstract interface annotation class io/sentry/spring/EnableSentry : java/lang/annotation/Annotation {
+	public abstract fun dsn ()Ljava/lang/String;
+	public abstract fun exceptionResolverOrder ()I
+	public abstract fun sendDefaultPii ()Z
+}
+
+public final class io/sentry/spring/HttpServletRequestSentryUserProvider : io/sentry/spring/SentryUserProvider {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun provideUser ()Lio/sentry/protocol/User;
+}
+
+public class io/sentry/spring/SentryExceptionResolver : org/springframework/core/Ordered, org/springframework/web/servlet/HandlerExceptionResolver {
+	public fun <init> (Lio/sentry/IHub;I)V
+	public fun getOrder ()I
+	public fun resolveException (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljava/lang/Object;Ljava/lang/Exception;)Lorg/springframework/web/servlet/ModelAndView;
+}
+
+public class io/sentry/spring/SentryHubRegistrar : org/springframework/context/annotation/ImportBeanDefinitionRegistrar {
+	public fun <init> ()V
+	public fun registerBeanDefinitions (Lorg/springframework/core/type/AnnotationMetadata;Lorg/springframework/beans/factory/support/BeanDefinitionRegistry;)V
+}
+
+public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/context/ApplicationContextAware {
+	public fun <init> ()V
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
+}
+
+public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
+	public fun <init> (Ljavax/servlet/http/HttpServletRequest;Lio/sentry/spring/SentryRequestResolver;)V
+	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+}
+
+public class io/sentry/spring/SentryRequestResolver {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun resolveSentryRequest (Ljavax/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
+}
+
+public class io/sentry/spring/SentrySpringRequestListener : javax/servlet/ServletRequestListener, org/springframework/core/Ordered {
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
+	public fun getOrder ()I
+	public fun requestDestroyed (Ljavax/servlet/ServletRequestEvent;)V
+	public fun requestInitialized (Ljavax/servlet/ServletRequestEvent;)V
+}
+
+public abstract interface class io/sentry/spring/SentryUserProvider {
+	public abstract fun provideUser ()Lio/sentry/protocol/User;
+}
+
+public final class io/sentry/spring/SentryUserProviderEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lio/sentry/spring/SentryUserProvider;)V
+	public fun getSentryUserProvider ()Lio/sentry/spring/SentryUserProvider;
+	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+}
+
+public class io/sentry/spring/SentryWebConfiguration {
+	public fun <init> ()V
+	public fun httpServletRequestSentryUserProvider (Lio/sentry/SentryOptions;)Lio/sentry/spring/HttpServletRequestSentryUserProvider;
+	public fun sentryRequestResolver (Lio/sentry/SentryOptions;)Lio/sentry/spring/SentryRequestResolver;
+	public fun sentrySpringRequestListener (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)Lio/sentry/spring/SentrySpringRequestListener;
+}
+
+public abstract interface annotation class io/sentry/spring/tracing/SentrySpan : java/lang/annotation/Annotation {
+	public abstract fun description ()Ljava/lang/String;
+	public abstract fun op ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class io/sentry/spring/tracing/SentrySpanAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/tracing/SentryTracingFilter : org/springframework/web/filter/OncePerRequestFilter {
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/SentryOptions;Lio/sentry/spring/SentryRequestResolver;)V
+	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
+}
+
+public abstract interface annotation class io/sentry/spring/tracing/SentryTransaction : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+	public abstract fun op ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class io/sentry/spring/tracing/SentryTransactionAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring/tracing/TransactionNameProvider {
+	public fun <init> ()V
+	public fun provideTransactionName (Ljavax/servlet/http/HttpServletRequest;)Ljava/lang/String;
+}
+
