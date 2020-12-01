@@ -334,6 +334,27 @@ public interface IHub {
   SentryTraceHeader traceHeaders();
 
   /**
+   * Associates {@link SpanContext} with the {@link Throwable}. Used to determine in which trace the
+   * exception has been thrown in framework integrations.
+   *
+   * @param throwable the throwable
+   * @param spanContext the span context
+   */
+  @ApiStatus.Internal
+  void setSpanContext(@NotNull Throwable throwable, @NotNull SpanContext spanContext);
+
+  /**
+   * Gets the span context for the span that was active while the throwable given by parameter was
+   * thrown.
+   *
+   * @param throwable - the throwable
+   * @return span context or {@code null} if no corresponding span context found.
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SpanContext getSpanContext(Throwable throwable);
+
+  /**
    * Gets the current active transaction or span.
    *
    * @return the active span or null when no active transaction is running

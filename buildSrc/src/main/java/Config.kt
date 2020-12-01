@@ -91,6 +91,8 @@ object Config {
         val detekt = "io.gitlab.arturbosch.detekt"
         val detektVersion = "1.14.2"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
+        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.2.4"
+        val binaryCompatibilityValidator = "binary-compatibility-validator"
     }
 
     object Sentry {

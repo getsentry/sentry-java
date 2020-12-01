@@ -17,6 +17,6 @@ class SpanContextTest {
     fun `sets tag`() {
         val trace = SpanContext()
         trace.setTag("tagName", "tagValue")
-        assertEquals("tagValue", trace.tags!!["tagName"])
+        assertEquals("tagValue", trace.tags["tagName"])
     }
 }

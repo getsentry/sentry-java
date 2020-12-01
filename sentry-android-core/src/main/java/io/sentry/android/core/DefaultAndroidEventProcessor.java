@@ -246,11 +246,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setArchitectures(final @NotNull Device device) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       String[] supportedAbis = Build.SUPPORTED_ABIS;
-      device.setArch(supportedAbis[0]);
       device.setArchs(supportedAbis);
     } else {
       String[] supportedAbis = {getAbi(), getAbi2()};
-      device.setArch(supportedAbis[0]);
       device.setArchs(supportedAbis);
       // we were not checking CPU_ABI2, but I've added to the list now
     }
@@ -335,7 +333,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     DisplayMetrics displayMetrics = getDisplayMetrics();
     if (displayMetrics != null) {
-      setScreenResolution(device, displayMetrics);
       device.setScreenWidthPixels(displayMetrics.widthPixels);
       device.setScreenHeightPixels(displayMetrics.heightPixels);
       device.setScreenDensity(displayMetrics.density);
@@ -369,12 +366,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  @SuppressWarnings("deprecation")
-  private void setScreenResolution(
-      final @NotNull Device device, final @NotNull DisplayMetrics displayMetrics) {
-    device.setScreenResolution(getResolution(displayMetrics));
-  }
-
   private TimeZone getTimeZone() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       LocaleList locales = context.getResources().getConfiguration().getLocales();
@@ -396,12 +387,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       logger.log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
     }
     return null;
-  }
-
-  private @NotNull String getResolution(final @NotNull DisplayMetrics displayMetrics) {
-    int largestSide = Math.max(displayMetrics.widthPixels, displayMetrics.heightPixels);
-    int smallestSide = Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels);
-    return largestSide + "x" + smallestSide;
   }
 
   /**

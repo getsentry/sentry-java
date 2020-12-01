@@ -202,6 +202,29 @@ class ScopeTest {
     }
 
     @Test
+    fun `clear scope resets scope to default state`() {
+        val scope = Scope(SentryOptions())
+        scope.level = SentryLevel.WARNING
+        scope.setTransaction(SentryTransaction(""))
+        scope.user = User()
+        scope.fingerprint = mutableListOf("finger")
+        scope.addBreadcrumb(Breadcrumb())
+        scope.setTag("some", "tag")
+        scope.setExtra("some", "extra")
+        scope.addEventProcessor { event, _ -> event }
+
+        scope.clear()
+
+        assertNull(scope.level)
+        assertNull(scope.transaction)
+        assertEquals(0, scope.fingerprint.size)
+        assertEquals(0, scope.breadcrumbs.size)
+        assertEquals(0, scope.tags.size)
+        assertEquals(0, scope.extras.size)
+        assertEquals(0, scope.eventProcessors.size)
+    }
+
+    @Test
     fun `when adding breadcrumb, executeBreadcrumb will be executed and breadcrumb will be added`() {
         val options = SentryOptions().apply {
             setBeforeBreadcrumb { breadcrumb, _ -> breadcrumb }
