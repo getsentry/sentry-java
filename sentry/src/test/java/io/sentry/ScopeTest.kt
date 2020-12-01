@@ -644,6 +644,9 @@ class ScopeTest {
         val attachment = Attachment("")
         scope.addAttachment(attachment)
         verify(observer).addAttachment(eq(attachment))
+
+        scope.clear()
+        verify(observer).removeAttachment(eq(attachment))
     }
 
     @Test
@@ -656,5 +659,8 @@ class ScopeTest {
 
         scope.addAttachment(Attachment(""))
         verify(observer, never()).addAttachment(any())
+
+        scope.clear()
+        verify(observer, never()).removeAttachment(any())
     }
 }

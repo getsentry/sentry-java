@@ -75,15 +75,6 @@ public final class SentryClient implements ISentryClient {
           .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
-    List<Attachment> attachments;
-    if (scope != null) {
-      attachments = scope.getAttachments();
-    } else {
-      attachments = new ArrayList<>();
-    }
-
-    
-
     event = processEvent(event, hint, options.getEventProcessors());
 
     Session session = null;
@@ -118,9 +109,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-
-
-      final SentryEnvelope envelope = buildEnvelope(event, session, attachments);
+      final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
 
       if (envelope != null) {
         connection.send(envelope, hint);
@@ -135,16 +124,26 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
-      throws IOException {
-    return this.buildEnvelope(event, null, null);
+  private @NotNull List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
+    List<Attachment> attachments;
+    if (scope != null) {
+      attachments = scope.getAttachments();
+    } else {
+      attachments = new ArrayList<>();
+    }
+    return attachments;
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event,
-      final @Nullable Session session,
-      final @Nullable List<Attachment> attachments)
-      throws IOException {
+    final @Nullable SentryBaseEvent event,
+    final @Nullable List<Attachment> attachments) throws IOException {
+    return this.buildEnvelope(event, attachments, null);
+  }
+
+  private @Nullable SentryEnvelope buildEnvelope(
+    final @Nullable SentryBaseEvent event,
+    final @Nullable List<Attachment> attachments,
+    final @Nullable Session session) throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -357,7 +356,7 @@ public final class SentryClient implements ISentryClient {
     SentryId sentryId = transaction.getEventId();
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(transaction);
+      final SentryEnvelope envelope = buildEnvelope(transaction, getAttachmentsFromScope(scope));
 
       if (envelope != null) {
         connection.send(envelope, hint);

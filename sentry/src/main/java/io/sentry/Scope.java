@@ -285,6 +285,14 @@ public final class Scope implements Cloneable {
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
+
+    if (options.isEnableScopeSync()) {
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        for (final Attachment attachment : attachments) {
+          observer.removeAttachment(attachment);
+        }
+      }
+    }
     attachments.clear();
   }
 

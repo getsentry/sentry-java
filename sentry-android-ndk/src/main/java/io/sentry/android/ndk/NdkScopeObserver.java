@@ -111,4 +111,9 @@ public final class NdkScopeObserver implements IScopeObserver {
   public void addAttachment(Attachment attachment) {
     // TODO implement
   }
+
+  @Override
+  public void removeAttachment(Attachment attachment) {
+    // TODO implement
+  }
 }
