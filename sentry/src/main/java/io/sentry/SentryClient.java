@@ -75,6 +75,15 @@ public final class SentryClient implements ISentryClient {
           .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
+    List<Attachment> attachments;
+    if (scope != null) {
+      attachments = scope.getAttachments();
+    } else {
+      attachments = new ArrayList<>();
+    }
+
+    
+
     event = processEvent(event, hint, options.getEventProcessors());
 
     Session session = null;
@@ -109,7 +118,9 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, session, scope.getAttachments());
+
+
+      final SentryEnvelope envelope = buildEnvelope(event, session, attachments);
 
       if (envelope != null) {
         connection.send(envelope, hint);
@@ -130,8 +141,10 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable Session session,
-      final @Nullable List<Attachment> attachments) throws IOException {
+      final @Nullable SentryBaseEvent event,
+      final @Nullable Session session,
+      final @Nullable List<Attachment> attachments)
+      throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -152,7 +165,7 @@ public final class SentryClient implements ISentryClient {
     if (attachments != null) {
       for (Attachment attachment : attachments) {
         final SentryEnvelopeItem attachmentItem =
-          SentryEnvelopeItem.fromAttachment(attachment);
+            SentryEnvelopeItem.fromAttachment(options.getLogger(), attachment);
         envelopeItems.add(attachmentItem);
       }
     }

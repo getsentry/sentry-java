@@ -11,7 +11,7 @@ class AttachmentTest {
         val contentType = "application/json"
         val filename = "logs.txt"
         val bytes = "content".toByteArray()
-        val path = "path/to/${filename}"
+        val path = "path/to/$filename"
     }
 
     private val fixture = Fixture()

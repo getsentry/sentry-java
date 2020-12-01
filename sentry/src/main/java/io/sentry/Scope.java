@@ -285,6 +285,7 @@ public final class Scope implements Cloneable {
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
+    attachments.clear();
   }
 
   /**
@@ -438,7 +439,7 @@ public final class Scope implements Cloneable {
    *
    * @return the attachments
    */
-  public List<Attachment> getAttachments() {
+  public @NotNull List<Attachment> getAttachments() {
     return attachments;
   }
 

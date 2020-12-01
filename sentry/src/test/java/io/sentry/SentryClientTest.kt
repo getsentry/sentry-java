@@ -54,6 +54,7 @@ class SentryClientTest {
             isDebug = true
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(mock(), envelopeReader))
+            setLogger(mock())
         }
         var connection: AsyncConnection = mock()
 

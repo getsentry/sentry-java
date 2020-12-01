@@ -1,9 +1,8 @@
 package io.sentry;
 
+import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.File;
 
 public final class Attachment {
 
@@ -13,12 +12,11 @@ public final class Attachment {
   private String contentType;
 
   /**
-   * We could use Files.probeContentType(path) to determine the content type
-   * of the filename. This needs a path, but file.toPath or Paths.get only work
-   * on above Android API level 26, see
-   * https://developer.android.com/reference/java/nio/file/Paths.
-   * There are also ways via URLConnection, but we don't want to use this in
-   * constructors. Therefore we use the default content type of Sentry.
+   * We could use Files.probeContentType(path) to determine the content type of the filename. This
+   * needs a path, but file.toPath or Paths.get only work on above Android API level 26, see
+   * https://developer.android.com/reference/java/nio/file/Paths. There are also ways via
+   * URLConnection, but we don't want to use this in constructors. Therefore we use the default
+   * content type of Sentry.
    */
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 

@@ -187,6 +187,7 @@ class ScopeTest {
         scope.setTag("some", "tag")
         scope.setExtra("some", "extra")
         scope.addEventProcessor { event, _ -> event }
+        scope.addAttachment(Attachment("path"))
 
         scope.clear()
 
@@ -197,6 +198,7 @@ class ScopeTest {
         assertEquals(0, scope.tags.size)
         assertEquals(0, scope.extras.size)
         assertEquals(0, scope.eventProcessors.size)
+        assertEquals(0, scope.attachments.size)
     }
 
     @Test
