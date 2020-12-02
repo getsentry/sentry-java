@@ -4,6 +4,9 @@ import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * You can use an attachment to store additional files alongside an event or transaction.
+ */
 public final class Attachment {
 
   private @Nullable byte[] bytes;
@@ -20,38 +23,86 @@ public final class Attachment {
    */
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
+  /**
+   * Initializes an Attachment with bytes.
+   *
+   * The file located at the path is read lazily when the SDK captures an event or transaction not
+   * when the attachment is initialized.
+   *
+   * @param bytes The bytes of file.
+   * @param filename The name of the attachment to display in Sentry.
+   */
   public Attachment(@NotNull byte[] bytes, @NotNull String filename) {
     this.bytes = bytes;
     this.filename = filename;
     this.contentType = DEFAULT_CONTENT_TYPE;
   }
 
+  /**
+   * Initializes an Attachment with a path. The filename of the file located at the path is used.
+   *
+   * @param path The path of the file to upload as an attachment.
+   */
   public Attachment(@NotNull String path) {
     this(path, new File(path).getName());
   }
 
+  /**
+   * Initializes an Attachment with a path and a filename.
+   *
+   * The file located at the path is read lazily when the SDK captures an event or transaction not
+   * when the attachment is initialized.
+   *
+   * @param path The path of the file to upload as an attachment.
+   * @param filename The name of the attachment to display in Sentry.
+   */
   public Attachment(@NotNull String path, @NotNull String filename) {
     this.path = path;
     this.filename = filename;
     this.contentType = DEFAULT_CONTENT_TYPE;
   }
 
+  /**
+   * Gets the bytes of the attachment.
+   *
+   * @return the bytes.
+   */
   public @Nullable byte[] getBytes() {
     return bytes;
   }
 
+  /**
+   * Gets the path of the attachment.
+   *
+   * @return the path.
+   */
   public @Nullable String getPath() {
     return path;
   }
 
+  /**
+   * Gets the name of the attachment to display in Sentry.
+   *
+   * @return the filename.
+   */
   public String getFilename() {
     return filename;
   }
 
+  /**
+   * Gets the content type of the attachment. Default is "application/octet-stream".
+   *
+   * @return the content type.
+   */
   public String getContentType() {
     return contentType;
   }
 
+  /**
+   * Sets the content type of the attachment. Default is "application/octet-stream".
+   *
+   * @param contentType the content type of the attachment.
+   */
   public void setContentType(String contentType) {
     this.contentType = contentType;
   }

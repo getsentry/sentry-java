@@ -451,6 +451,12 @@ public final class Scope implements Cloneable {
     return attachments;
   }
 
+  /**
+   * Adds an attachment to the Scope's list of attachments. The SDK adds the attachment to every
+   * event and transaction sent to Sentry.
+   *
+   * @param attachment The attachment to add to the Scope's list of attachments.
+   */
   public void addAttachment(Attachment attachment) {
     attachments.add(attachment);
 
