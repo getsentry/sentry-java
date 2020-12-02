@@ -8,7 +8,9 @@ public final class io/sentry/android/ndk/BuildConfig {
 
 public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/IScopeObserver {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public fun removeAttachment (Lio/sentry/Attachment;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V

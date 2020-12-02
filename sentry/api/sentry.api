@@ -1,3 +1,14 @@
+public final class io/sentry/Attachment {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> ([BLjava/lang/String;)V
+	public fun getBytes ()[B
+	public fun getContentType ()Ljava/lang/String;
+	public fun getFilename ()Ljava/lang/String;
+	public fun getPath ()Ljava/lang/String;
+	public fun setContentType (Ljava/lang/String;)V
+}
+
 public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
@@ -223,7 +234,9 @@ public abstract interface class io/sentry/ILogger {
 }
 
 public abstract interface class io/sentry/IScopeObserver {
+	public abstract fun addAttachment (Lio/sentry/Attachment;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public abstract fun removeAttachment (Lio/sentry/Attachment;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -320,6 +333,7 @@ public final class io/sentry/SamplingContext {
 
 public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
@@ -328,6 +342,7 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/Scope;
 	public synthetic fun clone ()Ljava/lang/Object;
+	public fun getAttachments ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -492,6 +507,7 @@ public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeA
 }
 
 public final class io/sentry/SentryEnvelopeItem {
+	public static fun fromAttachment (Lio/sentry/ILogger;Lio/sentry/Attachment;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
