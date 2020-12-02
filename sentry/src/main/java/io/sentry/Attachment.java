@@ -4,9 +4,7 @@ import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * You can use an attachment to store additional files alongside an event or transaction.
- */
+/** You can use an attachment to store additional files alongside an event or transaction. */
 public final class Attachment {
 
   private @Nullable byte[] bytes;
@@ -26,8 +24,8 @@ public final class Attachment {
   /**
    * Initializes an Attachment with bytes.
    *
-   * The file located at the path is read lazily when the SDK captures an event or transaction not
-   * when the attachment is initialized.
+   * <p>The file located at the path is read lazily when the SDK captures an event or transaction
+   * not when the attachment is initialized.
    *
    * @param bytes The bytes of file.
    * @param filename The name of the attachment to display in Sentry.
@@ -50,8 +48,8 @@ public final class Attachment {
   /**
    * Initializes an Attachment with a path and a filename.
    *
-   * The file located at the path is read lazily when the SDK captures an event or transaction not
-   * when the attachment is initialized.
+   * <p>The file located at the path is read lazily when the SDK captures an event or transaction
+   * not when the attachment is initialized.
    *
    * @param path The path of the file to upload as an attachment.
    * @param filename The name of the attachment to display in Sentry.

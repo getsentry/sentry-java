@@ -135,15 +135,16 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-    final @Nullable SentryBaseEvent event,
-    final @Nullable List<Attachment> attachments) throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable List<Attachment> attachments)
+      throws IOException {
     return this.buildEnvelope(event, attachments, null);
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-    final @Nullable SentryBaseEvent event,
-    final @Nullable List<Attachment> attachments,
-    final @Nullable Session session) throws IOException {
+      final @Nullable SentryBaseEvent event,
+      final @Nullable List<Attachment> attachments,
+      final @Nullable Session session)
+      throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();

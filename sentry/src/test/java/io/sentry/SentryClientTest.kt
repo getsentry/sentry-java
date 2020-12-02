@@ -856,7 +856,6 @@ class SentryClientTest {
                 expectedBytes.contentEquals(attachmentItem.data),
                 "${String(expectedBytes)} is not equal to ${String(attachmentItem.data)}"
             )
-
         }, isNull())
     }
 

@@ -1,9 +1,9 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.eq
 import io.sentry.protocol.User
 import java.io.File
 import java.io.FileNotFoundException
@@ -11,12 +11,12 @@ import java.io.FilePermission
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
 import java.security.Permission
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.AfterTest
 
 class SentryEnvelopeItemTest {
 
