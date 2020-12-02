@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -285,14 +286,6 @@ public final class Scope implements Cloneable {
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
-
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        for (final Attachment attachment : attachments) {
-          observer.removeAttachment(attachment);
-        }
-      }
-    }
     attachments.clear();
   }
 
@@ -447,7 +440,9 @@ public final class Scope implements Cloneable {
    *
    * @return the attachments
    */
-  public @NotNull List<Attachment> getAttachments() {
+  @ApiStatus.Experimental
+  @NotNull
+  List<Attachment> getAttachments() {
     return attachments;
   }
 
@@ -457,14 +452,9 @@ public final class Scope implements Cloneable {
    *
    * @param attachment The attachment to add to the Scope's list of attachments.
    */
+  @ApiStatus.Experimental
   public void addAttachment(Attachment attachment) {
     attachments.add(attachment);
-
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        observer.addAttachment(attachment);
-      }
-    }
   }
 
   /**

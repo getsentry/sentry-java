@@ -1,6 +1,5 @@
 package io.sentry.android.ndk;
 
-import io.sentry.Attachment;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.IScopeObserver;
@@ -105,15 +104,5 @@ public final class NdkScopeObserver implements IScopeObserver {
           .getLogger()
           .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
     }
-  }
-
-  @Override
-  public void addAttachment(Attachment attachment) {
-    // TODO implement
-  }
-
-  @Override
-  public void removeAttachment(Attachment attachment) {
-    // TODO implement
   }
 }

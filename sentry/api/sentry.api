@@ -234,9 +234,7 @@ public abstract interface class io/sentry/ILogger {
 }
 
 public abstract interface class io/sentry/IScopeObserver {
-	public abstract fun addAttachment (Lio/sentry/Attachment;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
-	public abstract fun removeAttachment (Lio/sentry/Attachment;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -342,7 +340,6 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/Scope;
 	public synthetic fun clone ()Ljava/lang/Object;
-	public fun getAttachments ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getSpan ()Lio/sentry/ISpan;

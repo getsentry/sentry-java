@@ -634,38 +634,6 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope add attachment sync scope if enabled`() {
-        val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            isEnableScopeSync = true
-            addScopeObserver(observer)
-        }
-        val scope = Scope(options)
-
-        val attachment = Attachment("")
-        scope.addAttachment(attachment)
-        verify(observer).addAttachment(eq(attachment))
-
-        scope.clear()
-        verify(observer).removeAttachment(eq(attachment))
-    }
-
-    @Test
-    fun `Scope add attachment wont sync scope if disabled`() {
-        val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
-        val scope = Scope(options)
-
-        scope.addAttachment(Attachment(""))
-        verify(observer, never()).addAttachment(any())
-
-        scope.clear()
-        verify(observer, never()).removeAttachment(any())
-    }
-
-    @Test
     fun `attachments are thread safe`() {
         val scope = Scope(SentryOptions())
         assertTrue(scope.attachments is CopyOnWriteArrayList)
