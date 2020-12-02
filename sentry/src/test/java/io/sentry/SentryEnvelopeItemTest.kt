@@ -90,7 +90,7 @@ class SentryEnvelopeItemTest {
     fun `fromAttachment with file permission denied`() {
         val file = File(fixture.filename)
         file.writeBytes(fixture.bytes)
-        file.setReadable(false)
+        assertTrue(file.setReadable(false, false), "Couldn't change file permission.")
 
         val logger = mock<ILogger>()
         val attachment = Attachment(file.absolutePath, "file.txt")
