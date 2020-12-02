@@ -67,7 +67,7 @@ public class io/sentry/spring/SentryWebConfiguration {
 
 public abstract interface annotation class io/sentry/spring/tracing/SentrySpan : java/lang/annotation/Annotation {
 	public abstract fun description ()Ljava/lang/String;
-	public abstract fun op ()Ljava/lang/String;
+	public abstract fun operation ()Ljava/lang/String;
 	public abstract fun value ()Ljava/lang/String;
 }
 
@@ -83,7 +83,7 @@ public class io/sentry/spring/tracing/SentryTracingFilter : org/springframework/
 
 public abstract interface annotation class io/sentry/spring/tracing/SentryTransaction : java/lang/annotation/Annotation {
 	public abstract fun name ()Ljava/lang/String;
-	public abstract fun op ()Ljava/lang/String;
+	public abstract fun operation ()Ljava/lang/String;
 	public abstract fun value ()Ljava/lang/String;
 }
 

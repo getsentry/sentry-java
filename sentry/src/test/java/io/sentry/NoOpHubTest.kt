@@ -1,10 +1,12 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class NoOpHubTest {
@@ -76,4 +78,17 @@ class NoOpHubTest {
     fun `traceHeaders is not null`() {
         assertNotNull(sut.traceHeaders())
     }
+
+    @Test
+    fun `getSpan returns null`() {
+        assertNull(sut.span)
+    }
+
+    @Test
+    fun `getSpanContext returns null`() {
+        assertNull(sut.getSpanContext(RuntimeException()))
+    }
+
+    @Test
+    fun `setSpanContext doesnt throw`() = sut.setSpanContext(RuntimeException(), mock())
 }

@@ -1,5 +1,7 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,14 +13,14 @@ class SpanTest {
 
     @Test
     fun `finishing span sets the timestamp`() {
-        val span = Span(SentryId(), SpanId(), SentryTransaction("name"))
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         span.finish()
         assertNotNull(span.timestamp)
     }
 
     @Test
     fun `starting a child sets parent span id`() {
-        val span = Span(SentryId(), SpanId(), SentryTransaction("name"))
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         val child = span.startChild()
         assertEquals(span.spanId, child.parentSpanId)
     }
@@ -33,7 +35,7 @@ class SpanTest {
 
     @Test
     fun `starting a child creates a new span`() {
-        val span = Span(SentryId(), SpanId(), SentryTransaction("name"))
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         val child = span.startChild("op", "description")
         assertEquals(span.spanId, child.parentSpanId)
         assertEquals("op", child.operation)
@@ -61,5 +63,16 @@ class SpanTest {
         val span = transaction.startChild()
         span.finish()
         assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
+        val hub = mock<IHub>()
+        val transaction = SentryTransaction(TransactionContext("name"), hub)
+        val span = transaction.startChild()
+        val ex = RuntimeException()
+        span.throwable = ex
+        span.finish()
+        verify(hub).setSpanContext(ex, span)
     }
 }

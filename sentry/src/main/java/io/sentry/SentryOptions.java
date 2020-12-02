@@ -275,6 +275,13 @@ public class SentryOptions {
     if (proxyHost != null) {
       options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
     }
+
+    for (final String inAppInclude : propertiesProvider.getList("in-app-includes")) {
+      options.addInAppInclude(inAppInclude);
+    }
+    for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
+      options.addInAppExclude(inAppExclude);
+    }
     return options;
   }
 

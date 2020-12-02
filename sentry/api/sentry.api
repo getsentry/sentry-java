@@ -100,6 +100,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun flush (J)V
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -108,6 +109,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/SpanContext;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
@@ -137,6 +139,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public static fun getInstance ()Lio/sentry/HubAdapter;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -145,6 +148,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/SpanContext;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
@@ -189,6 +193,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun flush (J)V
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
+	public abstract fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public abstract fun isEnabled ()Z
 	public abstract fun popScope ()V
 	public abstract fun pushScope ()V
@@ -197,6 +202,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
+	public abstract fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/SpanContext;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setTransaction (Ljava/lang/String;)V
 	public abstract fun setUser (Lio/sentry/protocol/User;)V
@@ -725,7 +731,6 @@ public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/s
 	public fun finish ()V
 	public fun getDescription ()Ljava/lang/String;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
-	public fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun setDescription (Ljava/lang/String;)V
@@ -1003,6 +1008,7 @@ public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Itera
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {
+	public fun getList (Ljava/lang/String;)Ljava/util/List;
 	public abstract fun getMap (Ljava/lang/String;)Ljava/util/Map;
 	public abstract fun getProperty (Ljava/lang/String;)Ljava/lang/String;
 	public fun getProperty (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;

@@ -272,4 +272,24 @@ class SentryOptionsTest {
     fun `when options is initialized, Gson Serializer is set by default`() {
         assertTrue(SentryOptions().serializer is GsonSerializer)
     }
+
+    @Test
+    fun `creates options with inAppInclude and inAppExclude using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("in-app-includes=org.springframework,com.myapp\n")
+        file.appendText("in-app-excludes=org.jboss,com.microsoft")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertEquals(listOf("org.springframework", "com.myapp"), options.inAppIncludes)
+            assertEquals(listOf("org.jboss", "com.microsoft"), options.inAppExcludes)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
 }

@@ -1059,6 +1059,24 @@ class HubTest {
     }
     // endregion
 
+    //region setSpanContext
+    @Test
+    fun `associates span context with throwable`() {
+        val hub = generateHub()
+        val transaction = hub.startTransaction("aTransaction")
+        val span = transaction.startChild()
+        val exception = RuntimeException()
+        hub.setSpanContext(exception, span)
+        assertEquals(span, hub.getSpanContext(exception))
+    }
+
+    @Test
+    fun `returns null when no span context associated with throwable`() {
+        val hub = generateHub()
+        assertNull(hub.getSpanContext(RuntimeException()))
+    }
+    // endregion
+
     private fun generateHub(): IHub {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"

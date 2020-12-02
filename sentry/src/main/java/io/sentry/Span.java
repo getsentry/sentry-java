@@ -22,13 +22,17 @@ public final class Span extends SpanContext implements ISpan {
   /** A throwable thrown during the execution of the span. */
   private transient @Nullable Throwable throwable;
 
+  private final transient @NotNull IHub hub;
+
   Span(
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
-      final @NotNull SentryTransaction transaction) {
+      final @NotNull SentryTransaction transaction,
+      final @NotNull IHub hub) {
     super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   public @NotNull Date getStartTimestamp() {
@@ -56,7 +60,10 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public void finish() {
-    this.timestamp = DateUtils.getCurrentDateTime();
+    timestamp = DateUtils.getCurrentDateTime();
+    if (throwable != null) {
+      hub.setSpanContext(throwable, this);
+    }
   }
 
   @Override

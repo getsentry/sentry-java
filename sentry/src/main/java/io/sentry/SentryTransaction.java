@@ -106,7 +106,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    */
   Span startChild(final @NotNull SpanId parentSpanId) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
-    final Span span = new Span(getTraceId(), parentSpanId, this);
+    final Span span = new Span(getTraceId(), parentSpanId, this, this.hub);
     this.spans.add(span);
     return span;
   }
@@ -153,6 +153,9 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   @Override
   public void finish() {
     this.timestamp = DateUtils.getCurrentDateTime();
+    if (this.throwable != null) {
+      hub.setSpanContext(this.throwable, this.getSpanContext());
+    }
     this.hub.captureTransaction(this, null);
   }
 
@@ -234,28 +237,5 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
       }
     }
     return null;
-  }
-
-  /**
-   * Gets the span context for the span that was active while the throwable given by parameter was
-   * thrown.
-   *
-   * @param throwable - the throwable
-   * @return span context or {@code null} if no corresponding span context found.
-   */
-  public SpanContext getSpanContext(final @NotNull Throwable throwable) {
-    SpanContext context = null;
-    if (this.throwable == throwable) {
-      context = this.getSpanContext();
-    } else {
-      final List<Span> spans = new ArrayList<>(this.spans);
-      for (int i = spans.size() - 1; i >= 0; i--) {
-        if (throwable == spans.get(i).getThrowable()) {
-          context = spans.get(i);
-          break;
-        }
-      }
-    }
-    return context;
   }
 }
