@@ -200,10 +200,6 @@ public final class Sentry {
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
 
-    if (options.getSerializer() instanceof NoOpSerializer) {
-      options.setSerializer(new GsonSerializer(logger, options.getEnvelopeReader()));
-    }
-
     // this should be after setting serializers
     if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
       final File cacheDir = new File(options.getCacheDirPath());

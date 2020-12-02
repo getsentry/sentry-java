@@ -267,4 +267,9 @@ class SentryOptionsTest {
             temporaryFolder.delete()
         }
     }
+
+    @Test
+    fun `when options is initialized, Gson Serializer is set by default`() {
+        assertTrue(SentryOptions().serializer is GsonSerializer)
+    }
 }
