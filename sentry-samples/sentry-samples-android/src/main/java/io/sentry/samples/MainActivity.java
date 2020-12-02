@@ -8,6 +8,11 @@ import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.databinding.ActivityMainBinding;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.Calendar;
 import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,13 +43,14 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendAttachment.setOnClickListener(
         view -> {
-          Sentry.withScope(
-              scope -> {
-                String json = "{ \"number\": 10 }";
-                Attachment attachment = new Attachment(json.getBytes(), "log.json");
-                scope.addAttachment(attachment);
-                Sentry.captureException(new Exception("I have an attachment"));
-              });
+          Thread thread =
+              new Thread() {
+                public void run() {
+                  captureExceptionWithAttachments();
+                }
+              };
+          // Fire and forget
+          thread.start();
         });
 
     binding.captureException.setOnClickListener(
@@ -99,5 +105,31 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
+  }
+
+  private void captureExceptionWithAttachments() {
+    Sentry.withScope(
+        scope -> {
+          String json = "{ \"number\": 10 }";
+          Attachment attachment = new Attachment(json.getBytes(), "log.json");
+          scope.addAttachment(attachment);
+
+          String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
+          File file = getApplication().getFileStreamPath(fileName);
+          try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream)) {
+
+            for (int i = 0; i < 1024 * 1024 * 2; i++) {
+              outputStreamWriter.write("1");
+            }
+            outputStreamWriter.flush();
+
+            scope.addAttachment(new Attachment(file.getPath()));
+          } catch (IOException e) {
+            Sentry.captureException(e);
+          }
+
+          Sentry.captureException(new Exception("I have an attachment"));
+        });
   }
 }
