@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -199,29 +200,6 @@ class ScopeTest {
         assertEquals(0, scope.extras.size)
         assertEquals(0, scope.eventProcessors.size)
         assertEquals(0, scope.attachments.size)
-    }
-
-    @Test
-    fun `clear scope resets scope to default state`() {
-        val scope = Scope(SentryOptions())
-        scope.level = SentryLevel.WARNING
-        scope.setTransaction(SentryTransaction(""))
-        scope.user = User()
-        scope.fingerprint = mutableListOf("finger")
-        scope.addBreadcrumb(Breadcrumb())
-        scope.setTag("some", "tag")
-        scope.setExtra("some", "extra")
-        scope.addEventProcessor { event, _ -> event }
-
-        scope.clear()
-
-        assertNull(scope.level)
-        assertNull(scope.transaction)
-        assertEquals(0, scope.fingerprint.size)
-        assertEquals(0, scope.breadcrumbs.size)
-        assertEquals(0, scope.tags.size)
-        assertEquals(0, scope.extras.size)
-        assertEquals(0, scope.eventProcessors.size)
     }
 
     @Test
@@ -685,5 +663,17 @@ class ScopeTest {
 
         scope.clear()
         verify(observer, never()).removeAttachment(any())
+    }
+
+    @Test
+    fun `attachments are thread safe`() {
+        val scope = Scope(SentryOptions())
+        assertTrue(scope.attachments is CopyOnWriteArrayList)
+
+        scope.clear()
+        assertTrue(scope.attachments is CopyOnWriteArrayList)
+
+        val cloned = scope.clone()
+        assertTrue(cloned.attachments is CopyOnWriteArrayList)
     }
 }

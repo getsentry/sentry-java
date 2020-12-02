@@ -56,7 +56,7 @@ public final class Scope implements Cloneable {
   private @NotNull Contexts contexts = new Contexts();
 
   /** Scope's attachments */
-  private @NotNull List<Attachment> attachments = new ArrayList<>();
+  private @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
 
   /**
    * Scope's ctor
@@ -526,7 +526,7 @@ public final class Scope implements Cloneable {
     clone.extra = extraClone;
 
     clone.contexts = contexts.clone();
-    clone.attachments = new ArrayList<>(attachments);
+    clone.attachments = new CopyOnWriteArrayList<>(attachments);
 
     return clone;
   }
