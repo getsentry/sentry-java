@@ -135,7 +135,7 @@ class SentrySpanAdviceTest {
 
     open class SampleService {
 
-        @SentrySpan(description = "customName", op = "bean")
+        @SentrySpan(description = "customName", operation = "bean")
         open fun methodWithSpanDescriptionSet() = 1
 
         @SentrySpan

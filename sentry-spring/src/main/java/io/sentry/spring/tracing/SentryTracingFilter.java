@@ -32,7 +32,7 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMappi
 @Open
 public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
-  private static final String TRANSACTION_OP = "http";
+  private static final String TRANSACTION_OP = "http.server";
 
   private final @NotNull TransactionNameProvider transactionNameProvider =
       new TransactionNameProvider();

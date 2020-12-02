@@ -27,7 +27,7 @@ public @interface SentrySpan {
    *
    * @return operation.
    */
-  String op() default "";
+  String operation() default "";
 
   /**
    * Span description.
