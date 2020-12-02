@@ -8,8 +8,6 @@ import io.sentry.protocol.User
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FilePermission
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermissions
 import java.security.Permission
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -92,7 +90,7 @@ class SentryEnvelopeItemTest {
     fun `fromAttachment with file permission denied`() {
         val file = File(fixture.filename)
         file.writeBytes(fixture.bytes)
-        Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("---------"))
+        file.setReadable(false)
 
         val logger = mock<ILogger>()
         val attachment = Attachment(file.absolutePath, "file.txt")
