@@ -17,18 +17,30 @@ public final class DateUtils {
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   private static final String ISO_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
   private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
-      ThreadLocal.withInitial(
-          () -> {
-            final TimeZone tz = TimeZone.getTimeZone(UTC);
-            final SimpleDateFormat simpleDateFormat =
-                new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
-            simpleDateFormat.setTimeZone(tz);
-            return simpleDateFormat;
-          });
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          final TimeZone tz = TimeZone.getTimeZone(UTC);
+          final SimpleDateFormat simpleDateFormat =
+              new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
+          simpleDateFormat.setTimeZone(tz);
+          return simpleDateFormat;
+        }
+      };
   private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS =
-      ThreadLocal.withInitial(() -> new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT));
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
+        }
+      };
   private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT =
-      ThreadLocal.withInitial(() -> new SimpleDateFormat(ISO_FORMAT, Locale.ROOT));
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          return new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
+        }
+      };
 
   private DateUtils() {}
 
