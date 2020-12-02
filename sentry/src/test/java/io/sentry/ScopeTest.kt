@@ -634,7 +634,7 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope add attachment sync scopes if enabled`() {
+    fun `Scope add attachment sync scope if enabled`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             isEnableScopeSync = true
@@ -651,7 +651,7 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope add attachment wont sync scopes if disabled`() {
+    fun `Scope add attachment wont sync scope if disabled`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             addScopeObserver(observer)

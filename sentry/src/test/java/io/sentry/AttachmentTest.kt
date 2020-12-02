@@ -64,7 +64,7 @@ class AttachmentTest {
     }
 
     @Test
-    fun `set content path`() {
+    fun `set content type`() {
         val attachment = Attachment(fixture.path)
         attachment.contentType = fixture.contentType
         assertEquals(fixture.contentType, attachment.contentType)

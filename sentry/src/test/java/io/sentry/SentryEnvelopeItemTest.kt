@@ -64,7 +64,7 @@ class SentryEnvelopeItemTest {
     }
 
     @Test
-    fun `fromAttachment with big file`() {
+    fun `fromAttachment with 2MB file`() {
         val file = File(fixture.filename)
         val twoMB = ByteArray(1024 * 1024 * 2) { 1 }
         file.writeBytes(twoMB)
@@ -109,7 +109,7 @@ class SentryEnvelopeItemTest {
         val logger = mock<ILogger>()
         val attachment = Attachment(file.absolutePath, "file.txt")
 
-        val securityManager = DenyFileReadSecurityManager(fixture.filename)
+        val securityManager = DenyReadFileSecurityManager(fixture.filename)
         System.setSecurityManager(securityManager)
 
         val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
@@ -165,7 +165,7 @@ class SentryEnvelopeItemTest {
     }
 }
 
-private class DenyFileReadSecurityManager(private val filename: String) : SecurityManager() {
+private class DenyReadFileSecurityManager(private val filename: String) : SecurityManager() {
     override fun checkPermission(permission: Permission?) {
         if (permission is FilePermission &&
             permission.name.contains(filename) &&
