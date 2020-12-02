@@ -79,9 +79,7 @@ public class SentryOptions {
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
-  /**
-   * Envelope reader interface
-   */
+  /** Envelope reader interface */
   private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
 
   /** Serializer interface to serialize/deserialize json events */
