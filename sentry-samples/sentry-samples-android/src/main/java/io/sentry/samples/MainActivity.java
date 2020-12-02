@@ -1,4 +1,4 @@
-package io.sentry.sample;
+package io.sentry.samples;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -6,7 +6,7 @@ import io.sentry.Sentry;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.sample.databinding.ActivityMainBinding;
+import io.sentry.samples.databinding.ActivityMainBinding;
 import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,15 +24,16 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendMessage.setOnClickListener(view -> Sentry.captureMessage("Some message."));
 
-    binding.sendUserFeedback.setOnClickListener(view -> {
-      SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
+    binding.sendUserFeedback.setOnClickListener(
+        view -> {
+          SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
 
-      UserFeedback userFeedback = new UserFeedback(sentryId);
-      userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
-      userFeedback.setEmail("john@me.com");
-      userFeedback.setName("John Me");
-      Sentry.captureUserFeedback(userFeedback);
-    });
+          UserFeedback userFeedback = new UserFeedback(sentryId);
+          userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
+          userFeedback.setEmail("john@me.com");
+          userFeedback.setName("John Me");
+          Sentry.captureUserFeedback(userFeedback);
+        });
 
     binding.captureException.setOnClickListener(
         view ->

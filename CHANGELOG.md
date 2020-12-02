@@ -1,3 +1,40 @@
+# vNext
+
+* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
+* Fix: Set current thread only if there are no exceptions
+* Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
+* Ref: Refactor resolving SpanContext for Throwable (#1068)
+* Enhancement: Add API validator and remove deprecated methods
+* Enhancement: Add more convenient method to start a child span (#1073)
+* Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)
+* Enhancement: Resolve in-app-includes and in-app-excludes parameters from the external configuration
+
+# 4.0.0-alpha.1
+
+* Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
+* Ref: Refactor JSON deserialization (#1047)
+* Feat: Performance monitoring (#971)
+* Feat: Performance monitoring for Spring Boot applications (#971)
+
+# 3.2.0
+
+* Bump: AGP 4.1.1 (#1040)
+* Fix: use neutral Locale for String operations #1033
+* Update to sentry-native 0.4.4 and fix shared library builds (#1039)
+* Feat: Expose a Module (Debug images) Loader for Android thru sentry-native #1043
+* Enhancement: Added java doc to protocol classes based on sentry-data-schemes project (#1045)
+* Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
+* Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
+* Enhancement: Sentry NDK integration is compiled against default NDK version based on AGP's version #1048
+* Fix: Clean up JNI code and properly free strings #1050
+* Fix: set userId for hard-crashes if no user is set #1049
+
+# 3.1.3
+
+* Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
+* Increase max cached events to 30 (#1029)
+* Normalize DSN URI (#1030)
+
 # 3.1.2
 
 * feat: Manually capturing User Feedback

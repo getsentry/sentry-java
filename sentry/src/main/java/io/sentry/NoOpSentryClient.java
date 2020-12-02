@@ -30,13 +30,18 @@ final class NoOpSentryClient implements ISentryClient {
   public void flush(long timeoutMillis) {}
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) { }
+  public void captureUserFeedback(UserFeedback userFeedback) {}
 
   @Override
   public void captureSession(Session session, @Nullable Object hint) {}
 
   @Override
   public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
     return SentryId.EMPTY_ID;
   }
 }

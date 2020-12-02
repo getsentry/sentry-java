@@ -118,7 +118,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         try (final Reader eventReader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          SentryEvent event = serializer.deserializeEvent(eventReader);
+          SentryEvent event = serializer.deserialize(eventReader, SentryEvent.class);
           if (event == null) {
             logger.log(
                 SentryLevel.ERROR,

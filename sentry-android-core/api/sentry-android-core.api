@@ -1,0 +1,166 @@
+public final class io/sentry/android/core/ActivityBreadcrumbsIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/app/Application;)V
+	public fun close ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/AppComponentsBreadcrumbsIntegration : android/content/ComponentCallbacks2, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
+	public fun onLowMemory ()V
+	public fun onTrimMemory (I)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> ()V
+	public fun close ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field SENTRY_ANDROID_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/core/BuildInfoProvider : io/sentry/android/core/IBuildInfoProvider {
+	public fun <init> ()V
+	public fun getBuildTags ()Ljava/lang/String;
+	public fun getSdkInfoVersion ()I
+}
+
+public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> ()V
+	public fun close ()V
+	public static fun getOutboxFileObserver ()Lio/sentry/android/core/EnvelopeFileObserverIntegration;
+	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public abstract interface class io/sentry/android/core/IBuildInfoProvider {
+	public abstract fun getBuildTags ()Ljava/lang/String;
+	public abstract fun getSdkInfoVersion ()I
+}
+
+public abstract interface class io/sentry/android/core/IDebugImagesLoader {
+	public abstract fun clearDebugImages ()V
+	public abstract fun loadDebugImages ()Ljava/util/List;
+}
+
+public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration {
+	public static final field SENTRY_NDK_CLASS_NAME Ljava/lang/String;
+	public fun <init> (Ljava/lang/Class;)V
+	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/SentryAndroid {
+	public static fun init (Landroid/content/Context;)V
+	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
+	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/Sentry$OptionsConfiguration;)V
+	public static fun init (Landroid/content/Context;Lio/sentry/Sentry$OptionsConfiguration;)V
+}
+
+public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/SentryOptions {
+	public fun <init> ()V
+	public fun enableAllAutoBreadcrumbs (Z)V
+	public fun getAnrTimeoutIntervalMillis ()J
+	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
+	public fun isAnrEnabled ()Z
+	public fun isAnrReportInDebug ()Z
+	public fun isEnableActivityLifecycleBreadcrumbs ()Z
+	public fun isEnableAppComponentBreadcrumbs ()Z
+	public fun isEnableAppLifecycleBreadcrumbs ()Z
+	public fun isEnableSystemEventBreadcrumbs ()Z
+	public fun setAnrEnabled (Z)V
+	public fun setAnrReportInDebug (Z)V
+	public fun setAnrTimeoutIntervalMillis (J)V
+	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
+	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
+	public fun setEnableAppComponentBreadcrumbs (Z)V
+	public fun setEnableAppLifecycleBreadcrumbs (Z)V
+	public fun setEnableSystemEventBreadcrumbs (Z)V
+}
+
+public final class io/sentry/android/core/SentryInitProvider : android/content/ContentProvider {
+	public fun <init> ()V
+	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
+	public fun delete (Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I
+	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
+	public fun insert (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri;
+	public fun onCreate ()Z
+	public fun query (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;
+	public fun shutdown ()V
+	public fun update (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I
+}
+
+public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : android/hardware/SensorEventListener, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
+	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/util/ConnectivityChecker {
+	public static fun getConnectionStatus (Landroid/content/Context;Lio/sentry/ILogger;)Lio/sentry/android/core/util/ConnectivityChecker$Status;
+	public static fun getConnectionType (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/android/core/IBuildInfoProvider;)Ljava/lang/String;
+}
+
+public final class io/sentry/android/core/util/ConnectivityChecker$Status : java/lang/Enum {
+	public static final field CONNECTED Lio/sentry/android/core/util/ConnectivityChecker$Status;
+	public static final field NOT_CONNECTED Lio/sentry/android/core/util/ConnectivityChecker$Status;
+	public static final field NO_PERMISSION Lio/sentry/android/core/util/ConnectivityChecker$Status;
+	public static final field UNKNOWN Lio/sentry/android/core/util/ConnectivityChecker$Status;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/util/ConnectivityChecker$Status;
+	public static fun values ()[Lio/sentry/android/core/util/ConnectivityChecker$Status;
+}
+
+public final class io/sentry/android/core/util/DeviceOrientations {
+	public static fun getOrientation (I)Lio/sentry/protocol/Device$DeviceOrientation;
+}
+
+public final class io/sentry/android/core/util/MainThreadChecker {
+	public static fun isMainThread ()Z
+	public static fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
+	public static fun isMainThread (Ljava/lang/Thread;)Z
+}
+
+public final class io/sentry/android/core/util/Permissions {
+	public static fun hasPermission (Landroid/content/Context;Ljava/lang/String;)Z
+}
+
+public final class io/sentry/android/core/util/RootChecker {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/IBuildInfoProvider;Lio/sentry/ILogger;)V
+	public fun isDeviceRooted ()Z
+}
+

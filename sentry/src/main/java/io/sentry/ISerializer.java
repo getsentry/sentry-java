@@ -7,19 +7,11 @@ import java.io.Writer;
 import java.util.Map;
 
 public interface ISerializer {
-  SentryEvent deserializeEvent(Reader reader);
-
-  UserFeedback deserializeUserFeedback(Reader reader);
-
-  Session deserializeSession(Reader reader);
+  <T> T deserialize(Reader reader, Class<T> clazz);
 
   SentryEnvelope deserializeEnvelope(InputStream inputStream);
 
-  void serialize(SentryEvent event, Writer writer) throws IOException;
-
-  void serialize(Session session, Writer writer) throws IOException;
-
-  void serialize(UserFeedback userFeedback, Writer writer) throws IOException;
+  <T> void serialize(T entity, Writer writer) throws IOException;
 
   void serialize(SentryEnvelope envelope, Writer writer) throws Exception;
 

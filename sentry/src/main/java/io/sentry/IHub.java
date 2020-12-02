@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -256,4 +257,108 @@ public interface IHub {
    * @return the cloned Hub
    */
   IHub clone();
+
+  /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @param hint the hint
+   * @return transaction's id
+   */
+  @ApiStatus.Internal
+  SentryId captureTransaction(SentryTransaction transaction, Object hint);
+
+  /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @return transaction's id
+   */
+  @ApiStatus.Internal
+  default SentryId captureTransaction(SentryTransaction transaction) {
+    return captureTransaction(transaction, null);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @return created transaction
+   */
+  SentryTransaction startTransaction(TransactionContext transactionContexts);
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * sampling context the decision if transaction is sampled will be taken by {@link
+   * TracingSampler}.
+   *
+   * @param name the transaction name
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  default SentryTransaction startTransaction(
+      String name, CustomSamplingContext customSamplingContext) {
+    return startTransaction(new TransactionContext(name), customSamplingContext);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * transaction and sampling contexts the decision if transaction is sampled will be taken by
+   * {@link TracingSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  SentryTransaction startTransaction(
+      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
+   * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
+   * {@link TracingSampler}.
+   *
+   * @param name the transaction name
+   * @return created transaction
+   */
+  default SentryTransaction startTransaction(final @NotNull String name) {
+    return startTransaction(name, null);
+  }
+
+  /**
+   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   *
+   * @return trace header or null
+   */
+  @Nullable
+  SentryTraceHeader traceHeaders();
+
+  /**
+   * Associates {@link SpanContext} with the {@link Throwable}. Used to determine in which trace the
+   * exception has been thrown in framework integrations.
+   *
+   * @param throwable the throwable
+   * @param spanContext the span context
+   */
+  @ApiStatus.Internal
+  void setSpanContext(@NotNull Throwable throwable, @NotNull SpanContext spanContext);
+
+  /**
+   * Gets the span context for the span that was active while the throwable given by parameter was
+   * thrown.
+   *
+   * @param throwable - the throwable
+   * @return span context or {@code null} if no corresponding span context found.
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SpanContext getSpanContext(Throwable throwable);
+
+  /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  @Nullable
+  ISpan getSpan();
 }

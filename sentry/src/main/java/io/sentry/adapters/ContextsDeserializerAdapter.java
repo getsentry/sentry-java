@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SpanContext;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
 import io.sentry.protocol.Contexts;
@@ -73,6 +74,12 @@ public final class ContextsDeserializerAdapter implements JsonDeserializer<Conte
                 Gpu gpu = parseObject(context, jsonObject, key, Gpu.class);
                 if (gpu != null) {
                   contexts.setGpu(gpu);
+                }
+                break;
+              case SpanContext.TYPE:
+                SpanContext trace = parseObject(context, jsonObject, key, SpanContext.class);
+                if (trace != null) {
+                  contexts.setTrace(trace);
                 }
                 break;
               default:

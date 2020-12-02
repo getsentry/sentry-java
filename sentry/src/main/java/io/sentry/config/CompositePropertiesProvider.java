@@ -1,6 +1,8 @@
 package io.sentry.config;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,5 +27,16 @@ final class CompositePropertiesProvider implements PropertiesProvider {
       }
     }
     return null;
+  }
+
+  @Override
+  public @NotNull Map<String, String> getMap(final @NotNull String property) {
+    for (final PropertiesProvider provider : providers) {
+      final Map<String, String> result = provider.getMap(property);
+      if (!result.isEmpty()) {
+        return result;
+      }
+    }
+    return new ConcurrentHashMap<>();
   }
 }

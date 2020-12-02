@@ -23,13 +23,14 @@ public class SentryWebConfiguration {
   }
 
   @Bean
-  public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
-      final @NotNull IHub sentryHub, final @NotNull SentryOptions sentryOptions) {
-    return new SentrySpringRequestListener(sentryHub, sentryOptions);
+  public @NotNull SentryRequestResolver sentryRequestResolver(
+      final @NotNull SentryOptions options) {
+    return new SentryRequestResolver(options);
   }
 
   @Bean
-  public @NotNull SentryExceptionResolver sentryExceptionResolver(final @NotNull IHub sentryHub) {
-    return new SentryExceptionResolver(sentryHub);
+  public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
+      final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
+    return new SentrySpringRequestListener(sentryHub, requestResolver);
   }
 }

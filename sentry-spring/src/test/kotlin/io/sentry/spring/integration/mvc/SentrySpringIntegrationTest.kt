@@ -3,11 +3,13 @@ package io.sentry.spring.integration.mvc
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import io.sentry.Sentry
 import io.sentry.spring.EnableSentry
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.Before
@@ -20,9 +22,11 @@ import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.User
@@ -32,6 +36,8 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.web.bind.annotation.ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -104,10 +110,34 @@ class SentrySpringIntegrationTest {
             })
         }
     }
+
+    @Test
+    fun `attaches transaction name to events`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.transaction).isEqualTo("GET /throws")
+            })
+        }
+    }
+
+    @Test
+    fun `does not send events for handled exceptions`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
+
+        await.during(Duration.ofSeconds(2)).untilAsserted {
+            verifyZeroInteractions(transport)
+        }
+    }
 }
 
 @SpringBootApplication
-@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
+@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, exceptionResolverOrder = Ordered.LOWEST_PRECEDENCE)
 open class App {
 
     @Bean
@@ -126,6 +156,20 @@ class HelloController {
     fun throws() {
         throw RuntimeException("something went wrong")
     }
+
+    @GetMapping("/throws-handled")
+    fun throwsHandled() {
+        throw CustomException("handled exception")
+    }
+}
+
+class CustomException(message: String) : RuntimeException(message)
+
+@ControllerAdvice
+class ExceptionHandlers {
+
+    @ExceptionHandler(CustomException::class)
+    fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
 }
 
 @Configuration

@@ -1,19 +1,15 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.Nullable;
 
-import io.sentry.protocol.SentryId;
-
-/**
- * Adds additional information about what happened to an event.
- */
+/** Adds additional information about what happened to an event. */
 public final class UserFeedback {
 
   private final SentryId eventId;
   private @Nullable String name;
   private @Nullable String email;
   private @Nullable String comments;
-
 
   /**
    * Initializes SentryUserFeedback and sets the required eventId.
@@ -26,15 +22,14 @@ public final class UserFeedback {
 
   /**
    * Initializes SentryUserFeedback and sets the required eventId.
+   *
    * @param eventId The eventId of the event to which the user feedback is associated.
    * @param name the name of the user.
    * @param email the email of the user.
    * @param comments comments of the user about what happened.
    */
-  public UserFeedback(SentryId eventId,
-                      @Nullable String name,
-                      @Nullable String email,
-                      @Nullable String comments) {
+  public UserFeedback(
+      SentryId eventId, @Nullable String name, @Nullable String email, @Nullable String comments) {
     this.eventId = eventId;
     this.name = name;
     this.email = email;
@@ -106,11 +101,18 @@ public final class UserFeedback {
 
   @Override
   public String toString() {
-    return "UserFeedback{" +
-      "eventId=" + eventId +
-      ", name='" + name + '\'' +
-      ", email='" + email + '\'' +
-      ", comments='" + comments + '\'' +
-      '}';
+    return "UserFeedback{"
+        + "eventId="
+        + eventId
+        + ", name='"
+        + name
+        + '\''
+        + ", email='"
+        + email
+        + '\''
+        + ", comments='"
+        + comments
+        + '\''
+        + '}';
   }
 }

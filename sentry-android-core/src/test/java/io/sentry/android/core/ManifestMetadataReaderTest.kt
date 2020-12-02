@@ -208,21 +208,6 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads anr deprecated interval to options`() {
-        // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putInt(ManifestMetadataReader.ANR_TIMEOUT_INTERVAL_MILLS, 1000)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
-
-        // Assert
-        assertEquals(1000.toLong(), options.anrTimeoutIntervalMillis)
-    }
-
-    @Test
     fun `applyMetadata reads anr interval to options`() {
         // Arrange
         val options = SentryAndroidOptions()
@@ -380,5 +365,34 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertTrue(options.isEnableUncaughtExceptionHandler)
+    }
+
+    @Test
+    fun `applyMetadata reads attachThreads to options`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        bundle.putBoolean(ManifestMetadataReader.ATTACH_THREADS, true)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertTrue(options.isAttachThreads)
+    }
+
+    @Test
+    fun `applyMetadata reads attachThreads and keep default value if not found`() {
+        // Arrange
+        val options = SentryAndroidOptions()
+        val bundle = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(mockContext, options)
+
+        // Assert
+        assertFalse(options.isAttachThreads)
     }
 }

@@ -1,0 +1,27 @@
+public class io/sentry/samples/spring/CustomUserProvider : io/sentry/spring/reactive/SentryReactiveUserProvider {
+	public fun <init> ()V
+	public fun provideUser (Lorg/springframework/web/server/ServerWebExchange;)Lreactor/core/publisher/Mono;
+}
+
+public class io/sentry/samples/spring/Person {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getFirstName ()Ljava/lang/String;
+	public fun getLastName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public class io/sentry/samples/spring/PersonController {
+	public fun <init> ()V
+}
+
+public class io/sentry/samples/spring/SecurityConfiguration {
+	public fun <init> ()V
+	public fun securityWebFilterChain (Lorg/springframework/security/config/web/server/ServerHttpSecurity;)Lorg/springframework/security/web/server/SecurityWebFilterChain;
+	public fun userDetailsService ()Lorg/springframework/security/core/userdetails/MapReactiveUserDetailsService;
+}
+
+public class io/sentry/samples/spring/SentryDemoApplication {
+	public fun <init> ()V
+	public static fun main ([Ljava/lang/String;)V
+}
+

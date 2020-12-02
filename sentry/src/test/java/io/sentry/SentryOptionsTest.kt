@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.config.PropertiesProviderFactory
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,6 +10,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.rules.TemporaryFolder
 
 class SentryOptionsTest {
     @Test
@@ -170,6 +172,9 @@ class SentryOptionsTest {
         externalOptions.environment = "environment"
         externalOptions.release = "release"
         externalOptions.serverName = "serverName"
+        externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
+        externalOptions.setTag("tag1", "value1")
+        externalOptions.setTag("tag2", "value2")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -179,5 +184,107 @@ class SentryOptionsTest {
         assertEquals("environment", options.environment)
         assertEquals("release", options.release)
         assertEquals("serverName", options.serverName)
+        assertNotNull(options.proxy)
+        assertEquals("example.com", options.proxy!!.host)
+        assertEquals("8090", options.proxy!!.port)
+        assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
+    }
+
+    @Test
+    fun `merging options merges and overwrites existing tag values`() {
+        val externalOptions = SentryOptions()
+        externalOptions.setTag("tag1", "value1")
+        externalOptions.setTag("tag2", "value2")
+        val options = SentryOptions()
+        options.setTag("tag2", "original-options-value")
+        options.setTag("tag3", "value3")
+
+        options.merge(externalOptions)
+
+        assertEquals(mapOf("tag1" to "value1", "tag2" to "value2", "tag3" to "value3"), options.tags)
+    }
+
+    @Test
+    fun `creates options with proxy using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("proxy.host=proxy.example.com\n")
+        file.appendText("proxy.port=9090\n")
+        file.appendText("proxy.user=some-user\n")
+        file.appendText("proxy.pass=some-pass")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.proxy)
+            assertEquals("proxy.example.com", options.proxy!!.host)
+            assertEquals("9090", options.proxy!!.port)
+            assertEquals("some-user", options.proxy!!.user)
+            assertEquals("some-pass", options.proxy!!.pass)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `when proxy port is not set default proxy port is used`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("proxy.host=proxy.example.com\n")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.proxy)
+            assertEquals("proxy.example.com", options.proxy!!.host)
+            assertEquals("80", options.proxy!!.port)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with tags using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("tags.tag1=value1\n")
+        file.appendText("tags.tag2=value2")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with inAppInclude and inAppExclude using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("in-app-includes=org.springframework,com.myapp\n")
+        file.appendText("in-app-excludes=org.jboss,com.microsoft")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertEquals(listOf("org.springframework", "com.myapp"), options.inAppIncludes)
+            assertEquals(listOf("org.jboss", "com.microsoft"), options.inAppExcludes)
+        } finally {
+            temporaryFolder.delete()
+        }
     }
 }

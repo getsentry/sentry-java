@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.InvalidDsnException;
 import java.net.URI;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,7 +48,7 @@ final class Dsn {
 
   Dsn(@Nullable String dsn) throws InvalidDsnException {
     try {
-      URI uri = new URI(dsn);
+      URI uri = new URI(dsn).normalize();
       String userInfo = uri.getUserInfo();
       if (userInfo == null || userInfo.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: No public key provided.");

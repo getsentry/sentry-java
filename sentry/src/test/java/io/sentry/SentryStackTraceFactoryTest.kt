@@ -3,6 +3,7 @@ package io.sentry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -144,11 +145,22 @@ class SentryStackTraceFactoryTest {
 
     @Test
     fun `when getStackFrames is called, remove sentry classes`() {
-        val stacktrace = Thread.currentThread().stackTrace
+        var stacktrace = Thread.currentThread().stackTrace
         val sentryElement = StackTraceElement("io.sentry.element", "test", "test.java", 1)
-        stacktrace.plusElement(sentryElement)
+        stacktrace = stacktrace.plusElement(sentryElement)
 
         assertNull(sut.getStackFrames(stacktrace)!!.find {
+            it.module.startsWith("io.sentry")
+        })
+    }
+
+    @Test
+    fun `when getStackFrames is called, does not remove sentry samples classes`() {
+        var stacktrace = Thread.currentThread().stackTrace
+        val sentryElement = StackTraceElement("io.sentry.samples.element", "test", "test.java", 1)
+        stacktrace = stacktrace.plusElement(sentryElement)
+
+        assertNotNull(sut.getStackFrames(stacktrace)!!.find {
             it.module.startsWith("io.sentry")
         })
     }

@@ -2,7 +2,12 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.spring.common.CaptureHelper;
+import io.sentry.SentryEvent;
+import io.sentry.SentryLevel;
+import io.sentry.SpanContext;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
+import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,9 +25,13 @@ import org.springframework.web.servlet.ModelAndView;
 @Open
 public class SentryExceptionResolver implements HandlerExceptionResolver, Ordered {
   private final @NotNull IHub hub;
+  private final @NotNull TransactionNameProvider transactionNameProvider =
+      new TransactionNameProvider();
+  private final int order;
 
-  public SentryExceptionResolver(final @NotNull IHub hub) {
+  public SentryExceptionResolver(final @NotNull IHub hub, final int order) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.order = order;
   }
 
   @Override
@@ -32,7 +41,20 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
       final @Nullable Object handler,
       final @NotNull Exception ex) {
 
-    CaptureHelper.captureUnhandled(hub, ex);
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setHandled(false);
+    final Throwable throwable =
+        new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
+    final SentryEvent event = new SentryEvent(throwable);
+    event.setLevel(SentryLevel.FATAL);
+    event.setTransaction(transactionNameProvider.provideTransactionName(request));
+
+    final SpanContext spanContext = hub.getSpanContext(ex);
+    if (spanContext != null) {
+      // connects the event with a span
+      event.getContexts().setTrace(spanContext);
+    }
+    hub.captureEvent(event);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
     return null;
@@ -40,7 +62,6 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
 
   @Override
   public int getOrder() {
-    // ensure this resolver runs first so that all exceptions are reported
-    return Integer.MIN_VALUE;
+    return order;
   }
 }

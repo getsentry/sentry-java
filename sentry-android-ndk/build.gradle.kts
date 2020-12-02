@@ -37,15 +37,19 @@ android {
         }
 
         ndk {
-            setAbiFilters(Config.Android.abiFilters)
-            ndkVersion = Config.Android.ndkVersion
+            abiFilters.addAll(Config.Android.abiFilters)
         }
+
+        // for AGP 4.1
+        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
+
+    // we use the default NDK and CMake versions based on the AGP's version
+    // https://developer.android.com/studio/projects/install-ndk#apply-specific-version
 
     externalNativeBuild {
         cmake {
-            version = Config.Android.cmakeVersion
-            setPath("CMakeLists.txt")
+            path("CMakeLists.txt")
         }
     }
 
@@ -70,13 +74,6 @@ android {
         unitTests.apply {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
-            all(KotlinClosure1<Any, Test>({
-                (this as Test).also { testTask ->
-                    testTask.extensions
-                        .getByType(JacocoTaskExtension::class.java)
-                        .isIncludeNoLocationClasses = true
-                }
-            }, this))
         }
     }
 
@@ -95,6 +92,12 @@ android {
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+    }
+}
+
+tasks.withType<Test> {
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = false
     }
 }
 

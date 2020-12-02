@@ -119,8 +119,8 @@ class NdkIntegrationTest {
         assertFalse(options.isEnableNdk)
     }
 
-    private fun getOptions(enableNdk: Boolean = true, logger: ILogger = mock(), cacheDir: String? = "abc"): SentryOptions {
-        return SentryOptions().apply {
+    private fun getOptions(enableNdk: Boolean = true, logger: ILogger = mock(), cacheDir: String? = "abc"): SentryAndroidOptions {
+        return SentryAndroidOptions().apply {
             setLogger(logger)
             isDebug = true
             isEnableNdk = enableNdk

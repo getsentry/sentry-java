@@ -12,12 +12,23 @@ import org.jetbrains.annotations.TestOnly;
 public final class App implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "app";
 
+  /** Version-independent application identifier, often a dotted bundle ID. */
   private String appIdentifier;
+  /**
+   * Start time of the app.
+   *
+   * <p>Formatted UTC timestamp when the user started the application.
+   */
   private Date appStartTime;
+  /** Application-specific device identifier. */
   private String deviceAppHash;
+  /** String identifying the kind of build. For example, `testflight`. */
   private String buildType;
+  /** Application name as it appears on the platform. */
   private String appName;
+  /** Application version as it appears on the platform. */
   private String appVersion;
+  /** Internal build ID as it appears on the platform. */
   private String appBuild;
 
   @SuppressWarnings("unused")

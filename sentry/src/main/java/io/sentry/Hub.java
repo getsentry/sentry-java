@@ -8,6 +8,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.util.Deque;
 import java.util.List;
+import java.util.WeakHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +30,9 @@ public final class Hub implements IHub {
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
   private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
+  private final @NotNull TracingSampler tracingSampler;
+  private final @NotNull WeakHashMap<Throwable, SpanContext> throwableToSpanContext =
+      new WeakHashMap<>();
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -40,6 +44,7 @@ public final class Hub implements IHub {
     validateOptions(options);
 
     this.options = options;
+    this.tracingSampler = new TracingSampler(options);
     if (rootStackItem != null) {
       this.stack.push(rootStackItem);
     }
@@ -192,20 +197,27 @@ public final class Hub implements IHub {
   public void captureUserFeedback(UserFeedback userFeedback) {
     if (!isEnabled()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING, "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
     } else {
       try {
         final StackItem item = stack.peek();
         if (item != null) {
           item.client.captureUserFeedback(userFeedback);
         } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
+          options
+              .getLogger()
+              .log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
         }
       } catch (Exception e) {
-        options.getLogger().log(SentryLevel.ERROR,
-          "Error while capturing captureUserFeedback: " + userFeedback.toString(), e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing captureUserFeedback: " + userFeedback.toString(),
+                e);
       }
     }
   }
@@ -476,9 +488,7 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'pushScope' call is a no-op.");
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
@@ -545,7 +555,9 @@ public final class Hub implements IHub {
     if (!isEnabled()) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'configureScope' call is a no-op.");
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
       if (item != null) {
@@ -622,5 +634,140 @@ public final class Hub implements IHub {
       clone.stack.push(cloneItem);
     }
     return clone;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    Objects.requireNonNull(transaction, "transaction is required");
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureTransaction' call is a no-op.");
+    } else if (!Boolean.TRUE.equals(transaction.isSampled())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction %s was dropped due to sampling decision.",
+              transaction.getEventId());
+    } else {
+      StackItem item = null;
+      try {
+        item = stack.peek();
+        if (item != null) {
+          sentryId = item.client.captureTransaction(transaction, item.scope, hint);
+        } else {
+          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureTransaction");
+        }
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing transaction with id: " + transaction.getEventId(),
+                e);
+      } finally {
+        if (item != null) {
+          item.scope.clearTransaction();
+        }
+      }
+    }
+    this.lastEventId = sentryId;
+    return sentryId;
+  }
+
+  @Override
+  public @Nullable SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts) {
+    Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+
+    SentryTransaction transaction = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'startTransaction' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        transaction = new SentryTransaction(transactionContexts, this);
+        item.scope.setTransaction(transaction);
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
+      }
+    }
+    return transaction;
+  }
+
+  @Override
+  public @Nullable SentryTransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext) {
+    final SamplingContext samplingContext =
+        new SamplingContext(transactionContexts, customSamplingContext);
+    boolean samplingDecision = tracingSampler.sample(samplingContext);
+    transactionContexts.setSampled(samplingDecision);
+    return this.startTransaction(transactionContexts);
+  }
+
+  @Override
+  public @Nullable SentryTraceHeader traceHeaders() {
+    SentryTraceHeader traceHeader = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        final ISpan span = item.scope.getSpan();
+        if (span != null) {
+          traceHeader = span.toSentryTrace();
+        }
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when 'traceHeaders'");
+      }
+    }
+    return traceHeader;
+  }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    ISpan span = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      if (item != null) {
+        span = item.scope.getSpan();
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when getSpan");
+      }
+    }
+    return span;
+  }
+
+  @Override
+  public void setSpanContext(
+      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    Objects.requireNonNull(spanContext, "spanContext is required");
+    this.throwableToSpanContext.put(throwable, spanContext);
+  }
+
+  @Override
+  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    return this.throwableToSpanContext.get(throwable);
   }
 }

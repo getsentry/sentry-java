@@ -10,9 +10,11 @@ import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
-import java.net.Proxy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
@@ -26,6 +28,9 @@ public class SentryOptions {
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
+
+  /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
+  private static final String PROXY_PORT_DEFAULT = "80";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -100,8 +105,8 @@ public class SentryOptions {
   /** The cache dir. path for caching offline events */
   private @Nullable String cacheDirPath;
 
-  /** The cache dir. size for capping the number of events Default is 10 */
-  private int cacheDirSize = 10;
+  /** The cache dir. size for capping the number of events Default is 30 */
+  private int cacheDirSize = 30;
 
   /** Max. queue size before flushing events/envelopes to the disk */
   private int maxQueueSize = cacheDirSize;
@@ -133,6 +138,19 @@ public class SentryOptions {
    * sent. Events are picked randomly. Default is null (disabled)
    */
   private @Nullable Double sampleRate;
+
+  /**
+   * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
+   * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
+   * transactions will be sent. Transactions are picked randomly. Default is null (disabled)
+   */
+  private @Nullable Double tracesSampleRate;
+
+  /**
+   * This function is called by {@link TracingSampler} to determine if transaction is sampled -
+   * meant to be sent to Sentry.
+   */
+  private @Nullable TracesSamplerCallback tracesSampler;
 
   /**
    * A list of string prefixes of module names that do not belong to the app, but rather third-party
@@ -225,6 +243,9 @@ public class SentryOptions {
    */
   private boolean enableExternalConfiguration;
 
+  /** Tags applied to every event and transaction */
+  private final @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -238,6 +259,26 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
+    final Map<String, String> tags = propertiesProvider.getMap("tags");
+    for (final Map.Entry<String, String> tag : tags.entrySet()) {
+      options.setTag(tag.getKey(), tag.getValue());
+    }
+
+    final String proxyHost = propertiesProvider.getProperty("proxy.host");
+    final String proxyUser = propertiesProvider.getProperty("proxy.user");
+    final String proxyPass = propertiesProvider.getProperty("proxy.pass");
+    final String proxyPort = propertiesProvider.getProperty("proxy.port", PROXY_PORT_DEFAULT);
+
+    if (proxyHost != null) {
+      options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
+    }
+
+    for (final String inAppInclude : propertiesProvider.getList("in-app-includes")) {
+      options.addInAppInclude(inAppInclude);
+    }
+    for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
+      options.addInAppExclude(inAppExclude);
+    }
     return options;
   }
 
@@ -497,7 +538,7 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the cache dir. size Default is 10
+   * Returns the cache dir. size Default is 30
    *
    * @return the cache dir. size
    */
@@ -506,7 +547,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the cache dir. size Default is 10
+   * Sets the cache dir. size Default is 30
    *
    * @param cacheDirSize the cache dir. size
    */
@@ -601,13 +642,46 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
+    this.validateRate(sampleRate);
     this.sampleRate = sampleRate;
+  }
+
+  /**
+   * Returns the traces sample rate Default is null (disabled)
+   *
+   * @return the sample rate
+   */
+  public @Nullable Double getTracesSampleRate() {
+    return tracesSampleRate;
+  }
+
+  /**
+   * Sets the tracesSampleRate Can be anything between 0.01 and 1.0 or null (default), to disable
+   * it.
+   *
+   * @param tracesSampleRate the sample rate
+   */
+  public void setTracesSampleRate(Double tracesSampleRate) {
+    this.validateRate(tracesSampleRate);
+    this.tracesSampleRate = tracesSampleRate;
+  }
+
+  /**
+   * Returns the callback used to determine if transaction is sampled.
+   *
+   * @return the callback
+   */
+  public @Nullable TracesSamplerCallback getTracesSampler() {
+    return tracesSampler;
+  }
+
+  /**
+   * Sets the callback used to determine if transaction is sampled.
+   *
+   * @param tracesSampler the callback
+   */
+  public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
+    this.tracesSampler = tracesSampler;
   }
 
   /**
@@ -1061,6 +1135,25 @@ public class SentryOptions {
     this.enableExternalConfiguration = enableExternalConfiguration;
   }
 
+  /**
+   * Returns tags applied to all events and transactions.
+   *
+   * @return the tags map
+   */
+  public @NotNull Map<String, String> getTags() {
+    return tags;
+  }
+
+  /**
+   * Sets a tag that is applied to all events and transactions.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public void setTag(final @NotNull String key, final @NotNull String value) {
+    this.tags.put(key, value);
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1087,6 +1180,20 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
+  }
+
+  /** The traces sampler callback. */
+  public interface TracesSamplerCallback {
+
+    /**
+     * Calculates the sampling value used to determine if transaction is going to be sent to Sentry
+     * backend.
+     *
+     * @param samplingContext the sampling context
+     * @return sampling value
+     */
+    @NotNull
+    Double sample(@NotNull SamplingContext samplingContext);
   }
 
   /** SentryOptions ctor It adds and set default things */
@@ -1129,6 +1236,13 @@ public class SentryOptions {
     if (options.getServerName() != null) {
       setServerName(options.getServerName());
     }
+    if (options.getProxy() != null) {
+      setProxy(options.getProxy());
+    }
+    final Map<String, String> tags = new HashMap<>(options.getTags());
+    for (final Map.Entry<String, String> tag : tags.entrySet()) {
+      this.tags.put(tag.getKey(), tag.getValue());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -1140,5 +1254,72 @@ public class SentryOptions {
     sdkVersion.addPackage("maven:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void validateRate(@Nullable Double rate) {
+    if (rate != null && (rate > 1.0 || rate <= 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + rate
+              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+    }
+  }
+
+  public static final class Proxy {
+    private @Nullable String host;
+    private @Nullable String port;
+    private @Nullable String user;
+    private @Nullable String pass;
+
+    public Proxy(
+        final @Nullable String host,
+        final @Nullable String port,
+        final @Nullable String user,
+        final @Nullable String pass) {
+      this.host = host;
+      this.port = port;
+      this.user = user;
+      this.pass = pass;
+    }
+
+    public Proxy() {
+      this(null, null, null, null);
+    }
+
+    public Proxy(@Nullable String host, @Nullable String port) {
+      this(host, port, null, null);
+    }
+
+    public @Nullable String getHost() {
+      return host;
+    }
+
+    public void setHost(final @Nullable String host) {
+      this.host = host;
+    }
+
+    public @Nullable String getPort() {
+      return port;
+    }
+
+    public void setPort(final @Nullable String port) {
+      this.port = port;
+    }
+
+    public @Nullable String getUser() {
+      return user;
+    }
+
+    public void setUser(final @Nullable String user) {
+      this.user = user;
+    }
+
+    public @Nullable String getPass() {
+      return pass;
+    }
+
+    public void setPass(final @Nullable String pass) {
+      this.pass = pass;
+    }
   }
 }

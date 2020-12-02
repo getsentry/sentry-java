@@ -37,6 +37,7 @@ dependencies {
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
+    compileOnly(Config.Libs.springBootStarterAop)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -56,6 +57,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterSecurity)
+    testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.TestLibs.awaitility)
 }
 

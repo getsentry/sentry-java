@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 
 /**
  * Enables Sentry error handling capabilities.
@@ -38,4 +39,11 @@ public @interface EnableSentry {
    * @return true if send default PII or false otherwise.
    */
   boolean sendDefaultPii() default false;
+
+  /**
+   * Determines whether all web exceptions are reported or only uncaught exceptions.
+   *
+   * @return the order to use for {@link SentryExceptionResolver}
+   */
+  int exceptionResolverOrder() default Ordered.HIGHEST_PRECEDENCE;
 }

@@ -7,7 +7,6 @@
 
 Sentry SDK for Java and Android
 ===========
-[![Travis](https://img.shields.io/travis/getsentry/sentry-java/ref/sentry-java-2?label=Travis)](https://travis-ci.com/getsentry/sentry-java)
 [![AppVeyor](https://img.shields.io/appveyor/build/sentry/sentry-java?label=AppVeyor)](https://ci.appveyor.com/project/sentry/sentry-java)
 [![GH Workflow](https://img.shields.io/github/workflow/status/getsentry/sentry-java/Workflow%20Ubuntu%20macOS?label=GH%20Workflow)](https://github.com/getsentry/sentry-java/actions)
 [![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-java/ref/sentry-java-2?compact_message)](https://ci.appveyor.com/project/sentry/sentry-java/branch/ref/sentry-java-2/tests)
@@ -34,13 +33,17 @@ The Java SDK documentation [can be found on docs.sentry.io](https://docs.sentry.
 
 Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 
+Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
+
 # Android Docs
 
 That's the initial page of the release [2.x and its docs](https://docs.sentry.io/platforms/android).
 
 Releases from sentry-android [2.x and its changelogs](https://github.com/getsentry/sentry-android/releases).
 
-Migration page from [sentry-android 1.x to sentry-android 2.0](https://docs.sentry.io/platforms/android/migration/).
+Migration page from [sentry-android 1.x and 2.x to sentry-android 3.x](https://docs.sentry.io/platforms/android/migration/).
+
+Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/getsentry/sentry-android-gradle-plugin)
 
 # Blog posts
 

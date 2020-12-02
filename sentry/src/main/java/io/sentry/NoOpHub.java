@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class NoOpHub implements IHub {
@@ -41,7 +42,7 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) { }
+  public void captureUserFeedback(UserFeedback userFeedback) {}
 
   @Override
   public void startSession() {}
@@ -108,5 +109,41 @@ final class NoOpHub implements IHub {
   @Override
   public IHub clone() {
     return instance;
+  }
+
+  @Override
+  public SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public SentryTransaction startTransaction(TransactionContext transactionContexts) {
+    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+  }
+
+  @Override
+  public SentryTransaction startTransaction(
+      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
+    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+  }
+
+  @Override
+  public @NotNull SentryTraceHeader traceHeaders() {
+    return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
+  }
+
+  @Override
+  public void setSpanContext(
+      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {}
+
+  @Override
+  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+    return null;
+  }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    return null;
   }
 }

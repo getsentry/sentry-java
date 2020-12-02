@@ -14,6 +14,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.exception.InvalidDsnException
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -28,6 +29,8 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -412,7 +415,7 @@ class HubTest {
         sut.captureUserFeedback(userFeedback)
     }
 
-    private val userFeedback: UserFeedback get()  {
+    private val userFeedback: UserFeedback get() {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
         return UserFeedback(eventId).apply {
             name = "John"
@@ -548,11 +551,11 @@ class HubTest {
         hub.close()
 
         hub.setTransaction("test")
-        assertNull(scope?.transaction)
+        assertNull(scope?.transactionName)
     }
 
     @Test
-    fun `when setTransaction is called, transaction is set`() {
+    fun `when setTransaction is called, and transaction is not set, transaction name is not changed`() {
         val hub = generateHub()
         var scope: Scope? = null
         hub.configureScope {
@@ -560,7 +563,20 @@ class HubTest {
         }
 
         hub.setTransaction("test")
-        assertEquals("test", scope?.transaction)
+        assertNull(scope?.transactionName)
+    }
+
+    @Test
+    fun `when setTransaction is called, and transaction is set, transaction name is changed`() {
+        val hub = generateHub()
+        var scope: Scope? = null
+        hub.configureScope {
+            scope = it
+        }
+
+        hub.startTransaction("test")
+
+        assertEquals("test", scope?.transactionName)
     }
     //endregion
 
@@ -893,6 +909,102 @@ class HubTest {
     }
     //endregion
 
+    //region captureTransaction tests
+    @Test
+    fun `when captureTransaction is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureTransaction(SentryTransaction("name"), null)
+        verify(mockClient, never()).captureTransaction(any(), any(), any())
+    }
+
+    @Test
+    fun `when captureTransaction and transaction is sampled, captureTransaction on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.captureTransaction(SentryTransaction("name", SpanContext(true), NoOpHub.getInstance()), null)
+        verify(mockClient).captureTransaction(any(), any(), eq(null))
+    }
+
+    @Test
+    fun `when captureTransaction and transaction is not sampled, captureTransaction on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        sut.captureTransaction(SentryTransaction("name", SpanContext(false), NoOpHub.getInstance()), null)
+        verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
+    }
+
+    @Test
+    fun `when captureTransaction, scope transaction is cleared`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+
+        sut.captureTransaction(SentryTransaction("name"), null)
+        sut.configureScope {
+            assertNull(it.transaction)
+        }
+    }
+    //endregion
+
+    //region startTransaction tests
+    @Test
+    fun `when startTransaction, creates transaction`() {
+        val hub = generateHub()
+        val contexts = TransactionContext("name")
+
+        val transaction = hub.startTransaction(contexts)
+
+        assertEquals(contexts, transaction.contexts.trace)
+    }
+
+    @Test
+    fun `when startTransaction, attaches transaction to the scope`() {
+        val hub = generateHub()
+
+        val transaction = hub.startTransaction("name")
+
+        hub.configureScope {
+            assertNotNull(it.span)
+            assertEquals(transaction, it.span)
+        }
+    }
+
+    @Test
+    fun `when startTransaction and no tracing sampling is configured, event is not sampled`() {
+        val hub = generateHub()
+
+        val transaction = hub.startTransaction("name")
+
+        hub.configureScope {
+            assertNotNull(it.span)
+            assertEquals(transaction, it.span)
+            assertNotNull(it.transaction)
+            assertFalse(it.transaction!!.isSampled!!)
+        }
+    }
+
     @Test
     fun `Hub should close the sentry executor processor on close call`() {
         val executor = mock<ISentryExecutorService>()
@@ -905,6 +1017,65 @@ class HubTest {
         sut.close()
         verify(executor).close(any())
     }
+    //endregion
+
+    //region startTransaction tests
+    @Test
+    fun `when traceHeaders and no transaction is active, traceHeaders are null`() {
+        val hub = generateHub()
+
+        assertNull(hub.traceHeaders())
+    }
+
+    @Test
+    fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
+        val hub = generateHub()
+        hub.startTransaction("aTransaction")
+
+        assertNotNull(hub.traceHeaders())
+    }
+    //endregion
+
+    //region getSpan tests
+    @Test
+    fun `when there is no active transaction, getSpan returns null`() {
+        val hub = generateHub()
+        assertNull(hub.getSpan())
+    }
+
+    @Test
+    fun `when there is active transaction, getSpan returns active transaction`() {
+        val hub = generateHub()
+        val tx = hub.startTransaction("aTransaction")
+        assertEquals(tx, hub.getSpan())
+    }
+
+    @Test
+    fun `when there is active span within a transaction, getSpan returns active span`() {
+        val hub = generateHub()
+        val tx = hub.startTransaction("aTransaction")
+        val span = tx.startChild()
+        assertEquals(span, hub.getSpan())
+    }
+    // endregion
+
+    //region setSpanContext
+    @Test
+    fun `associates span context with throwable`() {
+        val hub = generateHub()
+        val transaction = hub.startTransaction("aTransaction")
+        val span = transaction.startChild()
+        val exception = RuntimeException()
+        hub.setSpanContext(exception, span)
+        assertEquals(span, hub.getSpanContext(exception))
+    }
+
+    @Test
+    fun `returns null when no span context associated with throwable`() {
+        val hub = generateHub()
+        assertNull(hub.getSpanContext(RuntimeException()))
+    }
+    // endregion
 
     private fun generateHub(): IHub {
         val options = SentryOptions().apply {

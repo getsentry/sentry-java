@@ -60,8 +60,8 @@ File(path)
         val path = folder.path
         val module = folder.name
 
-        val file:String
-        val repositoryUrl:String
+        val file: String
+        val repositoryUrl: String
 
         val androidFile = folder.listFiles { it -> it.name.contains("release") && it.extension == "aar" }.firstOrNull()
         if (androidFile != null) {
