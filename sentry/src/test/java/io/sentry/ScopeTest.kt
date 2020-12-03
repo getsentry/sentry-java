@@ -109,7 +109,7 @@ class ScopeTest {
 
         assertEquals(1, clone.attachments.size)
         val actual = clone.attachments.first()
-        assertEquals(attachment.path, actual.path)
+        assertEquals(attachment.pathname, actual.pathname)
         assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
         assertEquals(attachment.filename, actual.filename)
         assertEquals(attachment.contentType, actual.contentType)

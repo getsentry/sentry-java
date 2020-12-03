@@ -158,9 +158,9 @@ public final class SentryEnvelopeItem {
             () -> {
               if (attachment.getBytes() != null) {
                 return attachment.getBytes();
-              } else if (attachment.getPath() != null) {
-
-                try (FileInputStream fileInputStream = new FileInputStream(attachment.getPath());
+              } else if (attachment.getPathname() != null) {
+                try (FileInputStream fileInputStream =
+                        new FileInputStream(attachment.getPathname());
                     BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
@@ -176,7 +176,7 @@ public final class SentryEnvelopeItem {
                       SentryLevel.ERROR,
                       exception,
                       "Serializing attachment %s failed.",
-                      attachment.getFilename());
+                      attachment.getPathname());
                 }
               }
 

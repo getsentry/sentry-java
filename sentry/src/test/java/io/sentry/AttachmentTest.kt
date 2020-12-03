@@ -12,7 +12,7 @@ class AttachmentTest {
         val contentType = "application/json"
         val filename = "logs.txt"
         val bytes = "content".toByteArray()
-        val path = "path/to/$filename"
+        val pathname = "path/to/$filename"
     }
 
     private val fixture = Fixture()
@@ -22,43 +22,43 @@ class AttachmentTest {
         val attachment = Attachment(fixture.bytes, fixture.filename)
 
         assertEquals(fixture.bytes, attachment.bytes)
-        assertNull(attachment.path)
+        assertNull(attachment.pathname)
         assertEquals(fixture.filename, attachment.filename)
         assertEquals(fixture.defaultContentType, attachment.contentType)
     }
 
     @Test
-    fun `init with file with path`() {
-        val attachment = Attachment(fixture.path)
+    fun `init with file with pathname`() {
+        val attachment = Attachment(fixture.pathname)
 
-        assertEquals(fixture.path, attachment.path)
+        assertEquals(fixture.pathname, attachment.pathname)
         assertNull(attachment.bytes)
         assertEquals(fixture.filename, attachment.filename)
         assertEquals(fixture.defaultContentType, attachment.contentType)
     }
 
     @Test
-    fun `init with file with empty path`() {
+    fun `init with file with empty pathname`() {
         val attachment = Attachment("")
 
-        assertEquals("", attachment.path)
+        assertEquals("", attachment.pathname)
         assertEquals("", attachment.filename)
     }
 
     @Test
-    fun `init with file with filename as path `() {
+    fun `init with file with filename as pathname`() {
         val attachment = Attachment(fixture.filename)
 
-        assertEquals(fixture.filename, attachment.path)
+        assertEquals(fixture.filename, attachment.pathname)
         assertEquals(fixture.filename, attachment.filename)
     }
 
     @Test
-    fun `init with file with path and filename`() {
+    fun `init with file with pathname and filename`() {
         val otherFileName = "input.json"
-        val attachment = Attachment(fixture.path, otherFileName)
+        val attachment = Attachment(fixture.pathname, otherFileName)
 
-        assertEquals(fixture.path, attachment.path)
+        assertEquals(fixture.pathname, attachment.pathname)
         assertNull(attachment.bytes)
         assertEquals(otherFileName, attachment.filename)
         assertEquals(fixture.defaultContentType, attachment.contentType)
@@ -66,7 +66,7 @@ class AttachmentTest {
 
     @Test
     fun `set content type`() {
-        val attachment = Attachment(fixture.path)
+        val attachment = Attachment(fixture.pathname)
         attachment.contentType = fixture.contentType
         assertEquals(fixture.contentType, attachment.contentType)
     }
@@ -86,18 +86,18 @@ class AttachmentTest {
 
         assertEquals(fixture.defaultContentType, clone.contentType)
         assertEquals(fixture.filename, clone.filename)
-        assertNull(clone.path)
+        assertNull(clone.pathname)
     }
 
     @Test
-    fun `clone with path`() {
-        val attachment = Attachment(fixture.path, fixture.filename)
+    fun `clone with pathname`() {
+        val attachment = Attachment(fixture.pathname, fixture.filename)
 
         val clone = attachment.clone() as Attachment
         attachment.contentType = "application/json"
 
         assertEquals(fixture.defaultContentType, clone.contentType)
-        assertEquals(fixture.path, clone.path)
+        assertEquals(fixture.pathname, clone.pathname)
         assertEquals(fixture.filename, clone.filename)
         assertNull(clone.bytes)
     }
