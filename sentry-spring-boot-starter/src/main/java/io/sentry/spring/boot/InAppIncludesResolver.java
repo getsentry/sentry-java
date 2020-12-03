@@ -19,7 +19,7 @@ import org.springframework.context.ApplicationContextAware;
  * SpringBootConfiguration} like {@link SpringBootApplication}.
  */
 @Open
-class InAppIncludesResolver implements ApplicationContextAware {
+public class InAppIncludesResolver implements ApplicationContextAware {
   private @Nullable ApplicationContext applicationContext;
 
   @Nullable

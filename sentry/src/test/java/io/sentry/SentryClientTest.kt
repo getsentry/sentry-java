@@ -42,6 +42,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.Assert.assertArrayEquals
 
 class SentryClientTest {
 
@@ -852,10 +853,7 @@ class SentryClientTest {
             assertEquals(fixture.attachment.bytes?.size, attachmentItem.header.length)
 
             val expectedBytes = fixture.attachment.bytes!!
-            assertTrue(
-                expectedBytes.contentEquals(attachmentItem.data),
-                "${String(expectedBytes)} is not equal to ${String(attachmentItem.data)}"
-            )
+            assertArrayEquals(expectedBytes, attachmentItem.data)
         }, isNull())
     }
 

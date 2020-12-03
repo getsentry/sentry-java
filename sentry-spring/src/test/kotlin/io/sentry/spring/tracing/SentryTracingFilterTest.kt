@@ -56,7 +56,7 @@ class SentryTracingFilterTest {
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
-            assertThat(it.contexts.trace!!.operation).isEqualTo("http")
+            assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
             assertThat(it.request).isNotNull()
         }, eq(null))
     }

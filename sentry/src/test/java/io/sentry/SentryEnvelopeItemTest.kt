@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
+import io.sentry.test.injectForField
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FilePermission
@@ -14,12 +15,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import org.junit.Assert.assertArrayEquals
 
 class SentryEnvelopeItemTest {
 
     private class Fixture {
-        val filename = "hello.txt"
+        val pathname = "hello.txt"
         val bytes = "hello".toByteArray()
     }
 
@@ -27,7 +28,7 @@ class SentryEnvelopeItemTest {
 
     @AfterTest
     fun afterTest() {
-        val file = File(fixture.filename)
+        val file = File(fixture.pathname)
         file.delete()
     }
 
@@ -45,7 +46,7 @@ class SentryEnvelopeItemTest {
     @Test
     fun `fromAttachment with bytes`() {
         val bytes = "hello".toByteArray()
-        val attachment = Attachment(bytes, fixture.filename)
+        val attachment = Attachment(bytes, fixture.pathname)
 
         val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
 
@@ -54,9 +55,9 @@ class SentryEnvelopeItemTest {
 
     @Test
     fun `fromAttachment with file`() {
-        val file = File(fixture.filename)
+        val file = File(fixture.pathname)
         file.writeBytes(fixture.bytes)
-        val attachment = Attachment(file.absolutePath)
+        val attachment = Attachment(file.path)
 
         val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
 
@@ -65,7 +66,7 @@ class SentryEnvelopeItemTest {
 
     @Test
     fun `fromAttachment with 2MB file`() {
-        val file = File(fixture.filename)
+        val file = File(fixture.pathname)
         val twoMB = ByteArray(1024 * 1024 * 2) { 1 }
         file.writeBytes(twoMB)
         val attachment = Attachment(file.absolutePath)
@@ -83,24 +84,24 @@ class SentryEnvelopeItemTest {
         val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
 
         assertAttachment(attachment, byteArrayOf(), item)
-        verifyLogException<FileNotFoundException>(logger, attachment.filename)
+        verifyLogException<FileNotFoundException>(logger, attachment.pathname ?: "")
     }
 
     @Test
     fun `fromAttachment with file permission denied`() {
-        val file = File(fixture.filename)
+        val file = File(fixture.pathname)
         file.writeBytes(fixture.bytes)
 
         // On CI it can happen that we don't have the permission to the file permission to read only
         val changedFileReadPermission = file.setReadable(false)
         if (changedFileReadPermission) {
             val logger = mock<ILogger>()
-            val attachment = Attachment(file.absolutePath, "file.txt")
+            val attachment = Attachment(file.path, "file.txt")
 
             val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
 
             assertAttachment(attachment, byteArrayOf(), item)
-            verifyLogException<FileNotFoundException>(logger, attachment.filename)
+            verifyLogException<FileNotFoundException>(logger, attachment.pathname ?: "")
         } else {
             println("Was not able to change file access permission. Skipping test.")
         }
@@ -108,32 +109,32 @@ class SentryEnvelopeItemTest {
 
     @Test
     fun `fromAttachment with file SecurityManager denies read access`() {
-        val file = File(fixture.filename)
+        val file = File(fixture.pathname)
         file.writeBytes(fixture.bytes)
 
         val logger = mock<ILogger>()
-        val attachment = Attachment(file.absolutePath, "file.txt")
+        val attachment = Attachment(file.path, "file.txt")
 
-        val securityManager = DenyReadFileSecurityManager(fixture.filename)
+        val securityManager = DenyReadFileSecurityManager(fixture.pathname)
         System.setSecurityManager(securityManager)
 
         val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
 
         assertAttachment(attachment, byteArrayOf(), item)
-        verifyLogException<SecurityException>(logger, attachment.filename)
+        verifyLogException<SecurityException>(logger, attachment.pathname ?: "")
 
         System.setSecurityManager(null)
     }
 
     @Test
-    fun `fromAttachment with both bytes and path null`() {
+    fun `fromAttachment with both bytes and pathname null`() {
         val attachment = Attachment("")
         // Annotations prevent creating attachments with both bytes and path null.
         // If someone ignores the annotations in Java and passes null for path
         // or bytes, we still want our code to work properly. Instead of creating
         // an extra test class in Java and ignoring the warnings we just use
         // reflection instead.
-        attachment.injectForField("path", null)
+        attachment.injectForField("pathname", null)
 
         val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
 
@@ -151,29 +152,20 @@ class SentryEnvelopeItemTest {
     ) {
         assertEquals(attachment.contentType, actualItem.header.contentType)
         assertEquals(attachment.filename, actualItem.header.fileName)
-        assertTrue(
-            expectedBytes.contentEquals(actualItem.data),
-            "${String(expectedBytes)} is not equal to ${String(actualItem.data)}"
-        )
+        assertArrayEquals(expectedBytes, actualItem.data)
     }
 
-    private inline fun <reified T : Exception> verifyLogException(logger: ILogger, filename: String) {
+    private inline fun <reified T : Exception> verifyLogException(logger: ILogger, pathname: String) {
         verify(logger)
             .log(eq(SentryLevel.ERROR), any<T>(),
-                eq("Serializing attachment %s failed."), eq(filename))
-    }
-
-    private inline fun <reified T : Any> T.injectForField(name: String, value: Any?) {
-        T::class.java.getDeclaredField(name)
-            .apply { isAccessible = true }
-            .set(this, value)
+                eq("Serializing attachment %s failed."), eq(pathname))
     }
 }
 
-private class DenyReadFileSecurityManager(private val filename: String) : SecurityManager() {
+private class DenyReadFileSecurityManager(private val pathname: String) : SecurityManager() {
     override fun checkPermission(permission: Permission?) {
         if (permission is FilePermission &&
-            permission.name.contains(filename) &&
+            permission.name.contains(pathname) &&
             permission.actions.contains("read")
         ) {
             super.checkPermission(permission)

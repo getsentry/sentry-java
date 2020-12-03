@@ -54,16 +54,29 @@ public class MainActivity extends AppCompatActivity {
           Sentry.captureUserFeedback(userFeedback);
         });
 
-    binding.sendAttachment.setOnClickListener(
+    binding.addAttachment.setOnClickListener(
         view -> {
-          Thread thread =
-              new Thread() {
-                public void run() {
-                  captureExceptionWithAttachments();
-                }
-              };
-          // Fire and forget
-          thread.start();
+          String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
+          File file = getApplication().getFileStreamPath(fileName);
+          try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream)) {
+            for (int i = 0; i < 1024; i++) {
+              // To keep the sample code simple this happens on the main thread. Don't do this in a
+              // real app.
+              outputStreamWriter.write("1");
+            }
+            outputStreamWriter.flush();
+          } catch (IOException e) {
+            Sentry.captureException(e);
+          }
+
+          Sentry.configureScope(
+              scope -> {
+                String json = "{ \"number\": 10 }";
+                Attachment attachment = new Attachment(json.getBytes(), "log.json");
+                scope.addAttachment(attachment);
+                scope.addAttachment(new Attachment(file.getPath()));
+              });
         });
 
     // adds the current db as an attachment to the main scope
@@ -144,31 +157,5 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
-  }
-
-  private void captureExceptionWithAttachments() {
-    Sentry.withScope(
-        scope -> {
-          String json = "{ \"number\": 10 }";
-          Attachment attachment = new Attachment(json.getBytes(), "log.json");
-          scope.addAttachment(attachment);
-
-          String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
-          File file = getApplication().getFileStreamPath(fileName);
-          try (FileOutputStream fileOutputStream = new FileOutputStream(file);
-              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream)) {
-
-            for (int i = 0; i < 1024 * 1024 * 2; i++) {
-              outputStreamWriter.write("1");
-            }
-            outputStreamWriter.flush();
-
-            scope.addAttachment(new Attachment(file.getPath()));
-          } catch (IOException e) {
-            Sentry.captureException(e);
-          }
-
-          Sentry.captureException(new Exception("I have an attachment"));
-        });
   }
 }

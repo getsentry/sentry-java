@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -74,6 +75,7 @@ public final class SentryEnvelopeItem {
         new SentryEnvelopeItemHeader(
             SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
 
+    // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -110,6 +112,7 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
+    // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -146,7 +149,8 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
-    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   public static SentryEnvelopeItem fromAttachment(
@@ -157,27 +161,26 @@ public final class SentryEnvelopeItem {
             () -> {
               if (attachment.getBytes() != null) {
                 return attachment.getBytes();
-              } else if (attachment.getPath() != null) {
-                ByteArrayOutputStream outputStream;
+              } else if (attachment.getPathname() != null) {
+                try (FileInputStream fileInputStream =
+                        new FileInputStream(attachment.getPathname());
+                    BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-                try (FileInputStream stream = new FileInputStream(attachment.getPath())) {
                   byte[] bytes = new byte[1024];
-                  outputStream = new ByteArrayOutputStream();
                   int length;
                   int offset = 0;
-                  while ((length = stream.read(bytes)) != -1) {
+                  while ((length = inputStream.read(bytes)) != -1) {
                     outputStream.write(bytes, offset, length);
                   }
+                  return outputStream.toByteArray();
                 } catch (IOException | SecurityException exception) {
                   logger.log(
                       SentryLevel.ERROR,
                       exception,
                       "Serializing attachment %s failed.",
-                      attachment.getFilename());
-                  outputStream = new ByteArrayOutputStream();
+                      attachment.getPathname());
                 }
-
-                return outputStream.toByteArray();
               }
 
               return new byte[0];
@@ -190,7 +193,8 @@ public final class SentryEnvelopeItem {
             attachment.getContentType(),
             attachment.getFilename());
 
-    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   private static class CachedItem {

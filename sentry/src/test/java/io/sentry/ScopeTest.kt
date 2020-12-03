@@ -13,6 +13,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.Assert.assertArrayEquals
 
 class ScopeTest {
     @Test
@@ -105,7 +106,13 @@ class ScopeTest {
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
         assertEquals(transaction, clone.span)
-        assertEquals(listOf(attachment), clone.attachments)
+
+        assertEquals(1, clone.attachments.size)
+        val actual = clone.attachments.first()
+        assertEquals(attachment.pathname, actual.pathname)
+        assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
+        assertEquals(attachment.filename, actual.filename)
+        assertEquals(attachment.contentType, actual.contentType)
     }
 
     @Test
@@ -156,6 +163,7 @@ class ScopeTest {
         scope.addEventProcessor(processor)
 
         scope.addAttachment(Attachment("path/image.png"))
+        attachment.contentType = "application/json"
 
         assertEquals(SentryLevel.DEBUG, clone.level)
 
@@ -174,7 +182,9 @@ class ScopeTest {
         assertEquals(1, clone.eventProcessors.size)
         assertNull(clone.span)
 
-        assertEquals(listOf(attachment), clone.attachments)
+        assertEquals(1, clone.attachments.size)
+        assertEquals(Attachment("").contentType, clone.attachments.first().contentType)
+        assertTrue(clone.attachments is CopyOnWriteArrayList)
     }
 
     @Test
