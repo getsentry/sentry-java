@@ -1,6 +1,7 @@
 # 3.2.1
 
 * Fix: Set current thread only if theres no exceptions (#1064)
+* Fix: Append DebugImage list if event already has it (#1092)
 
 # 3.2.0
 
