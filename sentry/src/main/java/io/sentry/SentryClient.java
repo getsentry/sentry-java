@@ -124,14 +124,12 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @NotNull List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
-    List<Attachment> attachments;
+  private List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
     if (scope != null) {
-      attachments = scope.getAttachments();
+      return scope.getAttachments();
     } else {
-      attachments = new ArrayList<>();
+      return null;
     }
-    return attachments;
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
