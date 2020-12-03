@@ -27,7 +27,7 @@ public @interface SentryTransaction {
    *
    * @return transaction operation
    */
-  String op() default "";
+  String operation() default "";
 
   /**
    * Transaction name.

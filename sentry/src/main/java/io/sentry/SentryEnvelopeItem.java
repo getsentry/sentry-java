@@ -75,6 +75,7 @@ public final class SentryEnvelopeItem {
         new SentryEnvelopeItemHeader(
             SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
 
+    // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -111,6 +112,7 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
+    // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -147,7 +149,8 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
-    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   public static SentryEnvelopeItem fromAttachment(
