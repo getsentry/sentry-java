@@ -11,8 +11,8 @@ public final class Attachment {
 
   private @Nullable byte[] bytes;
   private @Nullable String path;
-  private final String filename;
-  private String contentType;
+  private final @NotNull String filename;
+  private @NotNull String contentType;
 
   /**
    * We could use Files.probeContentType(path) to determine the content type of the filename. This
@@ -32,7 +32,7 @@ public final class Attachment {
    * @param bytes The bytes of file.
    * @param filename The name of the attachment to display in Sentry.
    */
-  public Attachment(@NotNull byte[] bytes, @NotNull String filename) {
+  public Attachment(final @NotNull byte[] bytes, final @NotNull String filename) {
     this.bytes = bytes;
     this.filename = filename;
     this.contentType = DEFAULT_CONTENT_TYPE;
@@ -43,7 +43,7 @@ public final class Attachment {
    *
    * @param path The path of the file to upload as an attachment.
    */
-  public Attachment(@NotNull String path) {
+  public Attachment(final @NotNull String path) {
     this(path, new File(path).getName());
   }
 
@@ -56,7 +56,7 @@ public final class Attachment {
    * @param path The path of the file to upload as an attachment.
    * @param filename The name of the attachment to display in Sentry.
    */
-  public Attachment(@NotNull String path, @NotNull String filename) {
+  public Attachment(final @NotNull String path, final @NotNull String filename) {
     this.path = path;
     this.filename = filename;
     this.contentType = DEFAULT_CONTENT_TYPE;
@@ -85,7 +85,7 @@ public final class Attachment {
    *
    * @return the filename.
    */
-  public String getFilename() {
+  public @NotNull String getFilename() {
     return filename;
   }
 
@@ -94,7 +94,7 @@ public final class Attachment {
    *
    * @return the content type.
    */
-  public String getContentType() {
+  public @NotNull String getContentType() {
     return contentType;
   }
 
@@ -103,7 +103,7 @@ public final class Attachment {
    *
    * @param contentType the content type of the attachment.
    */
-  public void setContentType(String contentType) {
+  public void setContentType(final @NotNull String contentType) {
     this.contentType = contentType;
   }
 }
