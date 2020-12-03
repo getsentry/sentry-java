@@ -156,6 +156,7 @@ class ScopeTest {
         scope.addEventProcessor(processor)
 
         scope.addAttachment(Attachment("path/image.png"))
+        attachment.contentType = "application/json"
 
         assertEquals(SentryLevel.DEBUG, clone.level)
 
@@ -174,7 +175,9 @@ class ScopeTest {
         assertEquals(1, clone.eventProcessors.size)
         assertNull(clone.span)
 
-        assertEquals(listOf(attachment), clone.attachments)
+        assertEquals(1, clone.attachments.size)
+        assertEquals(Attachment("").contentType, clone.attachments.first().contentType)
+        assertTrue(clone.attachments is CopyOnWriteArrayList)
     }
 
     @Test

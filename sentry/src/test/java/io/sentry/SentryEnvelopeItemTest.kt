@@ -14,7 +14,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class SentryEnvelopeItemTest {
 
@@ -151,10 +150,7 @@ class SentryEnvelopeItemTest {
     ) {
         assertEquals(attachment.contentType, actualItem.header.contentType)
         assertEquals(attachment.filename, actualItem.header.fileName)
-        assertTrue(
-            expectedBytes.contentEquals(actualItem.data),
-            "${String(expectedBytes)} is not equal to ${String(actualItem.data)}"
-        )
+        assertArrayEquals(expectedBytes, actualItem.data)
     }
 
     private inline fun <reified T : Exception> verifyLogException(logger: ILogger, filename: String) {

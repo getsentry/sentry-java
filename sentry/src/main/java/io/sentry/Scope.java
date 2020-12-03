@@ -440,7 +440,6 @@ public final class Scope implements Cloneable {
    *
    * @return the attachments
    */
-  @ApiStatus.Experimental
   @NotNull
   List<Attachment> getAttachments() {
     return attachments;
@@ -453,7 +452,7 @@ public final class Scope implements Cloneable {
    * @param attachment The attachment to add to the Scope's list of attachments.
    */
   @ApiStatus.Experimental
-  public void addAttachment(Attachment attachment) {
+  public void addAttachment(final @NotNull Attachment attachment) {
     attachments.add(attachment);
   }
 
@@ -522,7 +521,16 @@ public final class Scope implements Cloneable {
     clone.extra = extraClone;
 
     clone.contexts = contexts.clone();
-    clone.attachments = new CopyOnWriteArrayList<>(attachments);
+
+    // Don't use CopyOnWriteArrayList for cloning the attachments, because each call to add
+    // would create a new clone of the underlying array.
+    final List<Attachment> attachmentsClone = new ArrayList<>(attachments.size());
+    final List<Attachment> attachmentsRef = attachments;
+    for (Attachment attachment : attachmentsRef) {
+      attachmentsClone.add((Attachment) attachment.clone());
+    }
+
+    clone.attachments = new CopyOnWriteArrayList<>(attachmentsClone);
 
     return clone;
   }

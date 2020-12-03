@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** You can use an attachment to store additional files alongside an event or transaction. */
 @ApiStatus.Experimental
-public final class Attachment {
+public final class Attachment implements Cloneable {
 
   private @Nullable byte[] bytes;
   private @Nullable String path;
@@ -105,5 +105,14 @@ public final class Attachment {
    */
   public void setContentType(final @NotNull String contentType) {
     this.contentType = contentType;
+  }
+
+  @Override
+  protected @NotNull Object clone() throws CloneNotSupportedException {
+    Attachment clone = (Attachment) super.clone();
+    if (this.bytes != null) {
+      clone.bytes = this.bytes.clone();
+    }
+    return clone;
   }
 }

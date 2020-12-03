@@ -852,10 +852,7 @@ class SentryClientTest {
             assertEquals(fixture.attachment.bytes?.size, attachmentItem.header.length)
 
             val expectedBytes = fixture.attachment.bytes!!
-            assertTrue(
-                expectedBytes.contentEquals(attachmentItem.data),
-                "${String(expectedBytes)} is not equal to ${String(attachmentItem.data)}"
-            )
+            assertArrayEquals(expectedBytes, attachmentItem.data)
         }, isNull())
     }
 

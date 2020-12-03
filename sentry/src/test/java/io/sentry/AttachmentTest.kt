@@ -69,4 +69,35 @@ class AttachmentTest {
         attachment.contentType = fixture.contentType
         assertEquals(fixture.contentType, attachment.contentType)
     }
+
+    @Test
+    fun `clone with bytes`() {
+        val bytes = fixture.bytes.copyOf()
+        val attachment = Attachment(bytes, fixture.filename)
+
+        val clone = attachment.clone() as Attachment
+        attachment.contentType = "application/json"
+        bytes[0] = 'a'.toByte()
+
+        // make sure the byte array of the attachment is actually changed
+        assertArrayEquals(bytes, attachment.bytes!!)
+        assertArrayEquals(fixture.bytes, clone.bytes!!)
+
+        assertEquals(fixture.defaultContentType, clone.contentType)
+        assertEquals(fixture.filename, clone.filename)
+        assertNull(clone.path)
+    }
+
+    @Test
+    fun `clone with path`() {
+        val attachment = Attachment(fixture.path, fixture.filename)
+
+        val clone = attachment.clone() as Attachment
+        attachment.contentType = "application/json"
+
+        assertEquals(fixture.defaultContentType, clone.contentType)
+        assertEquals(fixture.path, clone.path)
+        assertEquals(fixture.filename, clone.filename)
+        assertNull(clone.bytes)
+    }
 }
