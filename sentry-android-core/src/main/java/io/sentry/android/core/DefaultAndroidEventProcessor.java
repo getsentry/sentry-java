@@ -66,7 +66,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String ANDROID_ID = "androidId";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
-  @TestOnly static final String DEBUG_IMAGES = "debugImages";
 
   // it could also be a parameter and get from Sentry.init(...)
   private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTimeOrNull();
