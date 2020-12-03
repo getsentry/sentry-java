@@ -106,7 +106,7 @@ class DefaultAndroidEventProcessorTest {
         var event = SentryEvent().apply {
             debugMeta = DebugMeta()
         }
-        // refactor and mock data later on
+
         event = processor.process(event, null)
 
         assertEquals("test", event.debugMeta.images[0].uuid)
@@ -125,7 +125,7 @@ class DefaultAndroidEventProcessorTest {
                 images = mutableListOf(image)
             }
         }
-        // refactor and mock data later on
+
         event = processor.process(event, null)
 
         assertEquals("abc", event.debugMeta.images.first().uuid)
