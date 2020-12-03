@@ -16,6 +16,31 @@ public final class DateUtils {
   private static final String UTC = "UTC";
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   private static final String ISO_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+  private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          final TimeZone tz = TimeZone.getTimeZone(UTC);
+          final SimpleDateFormat simpleDateFormat =
+              new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
+          simpleDateFormat.setTimeZone(tz);
+          return simpleDateFormat;
+        }
+      };
+  private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS =
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
+        }
+      };
+  private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT =
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          return new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
+        }
+      };
 
   private DateUtils() {}
 
@@ -26,10 +51,7 @@ public final class DateUtils {
    * @return the ISO formatted UTC date with millis precision.
    */
   public static @NotNull String getTimestampIsoFormat(final @NotNull Date date) {
-    final TimeZone tz = TimeZone.getTimeZone(UTC);
-    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
-    df.setTimeZone(tz);
-    return df.format(date);
+    return SDF_ISO_FORMAT_WITH_MILLIS_UTC.get().format(date);
   }
 
   /**
@@ -66,11 +88,11 @@ public final class DateUtils {
   public static @NotNull Date getDateTime(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
-      return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT).parse(timestamp);
+      return SDF_ISO_FORMAT_WITH_MILLIS.get().parse(timestamp);
     } catch (ParseException e) {
       try {
         // to keep compatibility with older envelopes
-        return new SimpleDateFormat(ISO_FORMAT, Locale.ROOT).parse(timestamp);
+        return SDF_ISO_FORMAT.get().parse(timestamp);
       } catch (ParseException ignored) {
         // invalid timestamp format
       }
@@ -105,7 +127,7 @@ public final class DateUtils {
    * @return the ISO formatted date with millis precision.
    */
   public static @NotNull String getTimestamp(final @NotNull Date date) {
-    final DateFormat df = new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
+    final DateFormat df = SDF_ISO_FORMAT_WITH_MILLIS.get();
     return df.format(date);
   }
 
