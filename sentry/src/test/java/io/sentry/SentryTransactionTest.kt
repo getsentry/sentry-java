@@ -49,6 +49,16 @@ class SentryTransactionTest {
     }
 
     @Test
+    fun `when transaction with throwable set is finished, span context is associated with throwable`() {
+        val hub = mock<IHub>()
+        val transaction = SentryTransaction("name", SpanContext(), hub)
+        val ex = RuntimeException()
+        transaction.setThrowable(ex)
+        transaction.finish()
+        verify(hub).setSpanContext(ex, transaction.spanContext)
+    }
+
+    @Test
     fun `returns sentry-trace header`() {
         val transaction = SentryTransaction("name")
 
@@ -87,6 +97,39 @@ class SentryTransactionTest {
     }
 
     @Test
+    fun `starting child with operation and description creates a new span`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertNotNull(span)
+        assertNotNull(span.spanId)
+        assertNotNull(span.startTimestamp)
+        assertEquals("op", span.operation)
+        assertEquals("description", span.description)
+    }
+
+    @Test
+    fun `starting child with operation and description adds a span to transaction`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertEquals(1, transaction.spans.size)
+        assertEquals(span, transaction.spans.first())
+    }
+
+    @Test
+    fun `span created with startChild with operation and description has parent span id the same as transaction span id`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertEquals(transaction.spanId, span.parentSpanId)
+    }
+
+    @Test
+    fun `span created with startChild with operation and description has the same trace id as transaction`() {
+        val transaction = SentryTransaction("name")
+        val span = transaction.startChild("op", "description")
+        assertEquals(transaction.traceId, span.traceId)
+    }
+
+    @Test
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setOperation("op")
@@ -108,28 +151,9 @@ class SentryTransactionTest {
     }
 
     @Test
-    fun `when transaction has throwable set, returns transaction context`() {
-        val transaction = SentryTransaction("name")
-        val ex = RuntimeException()
-        transaction.setThrowable(ex)
-        assertEquals(transaction.contexts.trace, transaction.getSpanContext(ex))
-    }
-
-    @Test
-    fun `when transaction has a span with throwable, returns span`() {
-        val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
-        val ex = RuntimeException()
-        span.throwable = ex
-        assertEquals(span, transaction.getSpanContext(ex))
-    }
-
-    @Test
-    fun `when neither transaction nor spans match throwable, returns null`() {
-        val transaction = SentryTransaction("name")
-        transaction.throwable = RuntimeException()
-        val span = transaction.startChild()
-        span.throwable = RuntimeException()
-        assertNull(transaction.getSpanContext(RuntimeException()))
+    fun `setName overwrites the transaction name`() {
+        val transaction = SentryTransaction("initial name")
+        transaction.setName("new name")
+        assertEquals("new name", transaction.transaction)
     }
 }

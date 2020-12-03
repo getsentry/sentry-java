@@ -19,4 +19,11 @@ class EnvironmentVariablePropertiesProviderTest {
         val result = provider.getProperty("not.set.property")
         assertNull(result)
     }
+
+    @Test
+    fun `resolves map properties`() {
+        // SENTRY_TEST_MAP_KEY1 and SENTRY_TEST_MAP_KEY2 are set in Gradle build configuration
+        val result = provider.getMap("test.map")
+        assertEquals(mapOf("key1" to "value1", "key2" to "value2"), result)
+    }
 }

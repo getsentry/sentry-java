@@ -8,6 +8,7 @@ import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
 import io.sentry.IHub
 import io.sentry.Integration
+import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
@@ -94,8 +95,8 @@ class SentryAutoConfigurationTest {
             "sentry.release=1.0.3",
             "sentry.environment=production",
             "sentry.sample-rate=0.2",
-            "sentry.in-app-excludes[0]=org.springframework",
-            "sentry.in-app-includes[0]=com.myapp",
+            "sentry.in-app-includes=org.springframework,com.myapp",
+            "sentry.in-app-excludes=org.jboss,com.microsoft",
             "sentry.dist=my-dist",
             "sentry.attach-threads=true",
             "sentry.attach-stacktrace=true",
@@ -105,7 +106,10 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
-            "sentry.enable-tracing=true"
+            "sentry.enable-tracing=true",
+            "sentry.traces-sample-rate=0.3",
+            "sentry.tags.tag1=tag1-value",
+            "sentry.tags.tag2=tag2-value"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -117,8 +121,8 @@ class SentryAutoConfigurationTest {
             assertThat(options.release).isEqualTo("1.0.3")
             assertThat(options.environment).isEqualTo("production")
             assertThat(options.sampleRate).isEqualTo(0.2)
-            assertThat(options.inAppExcludes).containsOnly("org.springframework")
-            assertThat(options.inAppIncludes).containsOnly("com.myapp")
+            assertThat(options.inAppIncludes).containsOnly("org.springframework", "com.myapp")
+            assertThat(options.inAppExcludes).containsOnly("com.microsoft", "org.jboss")
             assertThat(options.dist).isEqualTo("my-dist")
             assertThat(options.isAttachThreads).isEqualTo(true)
             assertThat(options.isAttachStacktrace).isEqualTo(true)
@@ -130,6 +134,8 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
             assertThat(options.isEnableTracing).isTrue()
+            assertThat(options.tracesSampleRate).isEqualTo(0.3)
+            assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
         }
     }
 
@@ -412,6 +418,15 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `registers tracesSamplerCallback on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomTracesSamplerCallbackConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).tracesSampler).isInstanceOf(CustomTracesSamplerCallback::class.java)
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
@@ -523,6 +538,17 @@ class SentryAutoConfigurationTest {
 
         @Bean
         open fun sentrySpanPointcut() = NameMatchMethodPointcut()
+    }
+
+    @Configuration
+    open class CustomTracesSamplerCallbackConfiguration {
+
+        @Bean
+        open fun tracingSamplerCallback() = CustomTracesSamplerCallback()
+    }
+
+    class CustomTracesSamplerCallback : SentryOptions.TracesSamplerCallback {
+        override fun sample(samplingContext: SamplingContext) = 1.0
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {

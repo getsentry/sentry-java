@@ -1,7 +1,22 @@
 # vNext
 
+* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
+* Fix: Set current thread only if there are no exceptions
+* Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
+* Ref: Refactor resolving SpanContext for Throwable (#1068)
+* Enhancement: Add API validator and remove deprecated methods
+* Enhancement: Add more convenient method to start a child span (#1073)
+* Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)
+* Enhancement: Resolve in-app-includes and in-app-excludes parameters from the external configuration
+* Enhancement: Make InAppIncludesResolver public (#1084)
+* Ref: Change "op" to "operation" in @SentrySpan and @SentryTransaction
+
+# 4.0.0-alpha.1
+
 * Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
-* ref: Refactor JSON deserialization (#1047)
+* Ref: Refactor JSON deserialization (#1047)
+* Feat: Performance monitoring (#971)
+* Feat: Performance monitoring for Spring Boot applications (#971)
 
 # 3.2.0
 
@@ -21,8 +36,6 @@
 * Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
-* feat: Performance monitoring (#971)
-* feat: Performance monitoring for Spring Boot applications
 
 # 3.1.2
 

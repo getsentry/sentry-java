@@ -269,6 +269,17 @@ public interface IHub {
   SentryId captureTransaction(SentryTransaction transaction, Object hint);
 
   /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @return transaction's id
+   */
+  @ApiStatus.Internal
+  default SentryId captureTransaction(SentryTransaction transaction) {
+    return captureTransaction(transaction, null);
+  }
+
+  /**
    * Creates a Transaction bound to the current hub and returns the instance.
    *
    * @param transactionContexts the transaction contexts
@@ -321,4 +332,33 @@ public interface IHub {
    */
   @Nullable
   SentryTraceHeader traceHeaders();
+
+  /**
+   * Associates {@link SpanContext} with the {@link Throwable}. Used to determine in which trace the
+   * exception has been thrown in framework integrations.
+   *
+   * @param throwable the throwable
+   * @param spanContext the span context
+   */
+  @ApiStatus.Internal
+  void setSpanContext(@NotNull Throwable throwable, @NotNull SpanContext spanContext);
+
+  /**
+   * Gets the span context for the span that was active while the throwable given by parameter was
+   * thrown.
+   *
+   * @param throwable - the throwable
+   * @return span context or {@code null} if no corresponding span context found.
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SpanContext getSpanContext(Throwable throwable);
+
+  /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  @Nullable
+  ISpan getSpan();
 }

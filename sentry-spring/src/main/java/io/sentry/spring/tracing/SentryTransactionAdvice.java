@@ -42,8 +42,8 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       return invocation.proceed();
     } else {
       final io.sentry.SentryTransaction transaction = hub.startTransaction(name);
-      if (sentryTransaction != null && !StringUtils.isEmpty(sentryTransaction.op())) {
-        transaction.setOperation(sentryTransaction.op());
+      if (sentryTransaction != null && !StringUtils.isEmpty(sentryTransaction.operation())) {
+        transaction.setOperation(sentryTransaction.operation());
       }
       try {
         return invocation.proceed();

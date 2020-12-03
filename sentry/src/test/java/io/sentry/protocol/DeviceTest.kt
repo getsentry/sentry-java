@@ -36,7 +36,6 @@ class DeviceTest {
         device.family = "family"
         device.model = "model"
         device.modelId = "modelId"
-        device.arch = "arch"
         device.archs = arrayOf("archs1", "archs2")
         device.batteryLevel = 3.14f
         device.isCharging = true
@@ -51,7 +50,6 @@ class DeviceTest {
         device.freeStorage = 512
         device.externalStorageSize = 768
         device.externalFreeStorage = 384
-        device.screenResolution = "1024x768"
         device.screenWidthPixels = 1024
         device.screenHeightPixels = 768
         device.screenDensity = 1.5f
@@ -73,7 +71,6 @@ class DeviceTest {
         assertEquals("family", clone.family)
         assertEquals("model", clone.model)
         assertEquals("modelId", clone.modelId)
-        assertEquals("arch", clone.arch)
         assertEquals(2, clone.archs.size)
         assertEquals("archs1", clone.archs[0])
         assertEquals("archs2", clone.archs[1])
@@ -90,7 +87,6 @@ class DeviceTest {
         assertEquals(512, clone.freeStorage)
         assertEquals(768, clone.externalStorageSize)
         assertEquals(384, clone.externalFreeStorage)
-        assertEquals("1024x768", clone.screenResolution)
         assertEquals(1024, clone.screenWidthPixels)
         assertEquals(768, clone.screenHeightPixels)
         assertEquals(1.5f, clone.screenDensity)

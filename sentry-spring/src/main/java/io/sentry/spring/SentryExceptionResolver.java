@@ -4,13 +4,11 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.SentryTransaction;
 import io.sentry.SpanContext;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -49,15 +47,12 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
         new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
     final SentryEvent event = new SentryEvent(throwable);
     event.setLevel(SentryLevel.FATAL);
-    final SentryTransaction sentryTransaction = resolveActiveTransaction();
-    if (sentryTransaction != null) {
-      final SpanContext spanContext = sentryTransaction.getSpanContext(ex);
-      if (spanContext != null) {
-        // connects the event with a span
-        event.getContexts().setTrace(spanContext);
-      }
-      // connects the event with transaction
-      event.setTransaction(transactionNameProvider.provideTransactionName(request));
+    event.setTransaction(transactionNameProvider.provideTransactionName(request));
+
+    final SpanContext spanContext = hub.getSpanContext(ex);
+    if (spanContext != null) {
+      // connects the event with a span
+      event.getContexts().setTrace(spanContext);
     }
     hub.captureEvent(event);
 
@@ -68,20 +63,5 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
   @Override
   public int getOrder() {
     return order;
-  }
-
-  private @Nullable SentryTransaction resolveActiveTransaction() {
-    final AtomicReference<SentryTransaction> spanRef = new AtomicReference<>();
-
-    hub.configureScope(
-        scope -> {
-          final SentryTransaction transaction = scope.getTransaction();
-
-          if (transaction != null) {
-            spanRef.set(transaction);
-          }
-        });
-
-    return spanRef.get();
   }
 }

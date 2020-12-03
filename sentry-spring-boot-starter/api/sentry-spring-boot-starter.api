@@ -1,0 +1,41 @@
+public final class io/sentry/spring/boot/BuildConfig {
+	public static final field SENTRY_SPRING_BOOT_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public class io/sentry/spring/boot/InAppIncludesResolver : org/springframework/context/ApplicationContextAware {
+	public fun <init> ()V
+	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
+}
+
+public class io/sentry/spring/boot/SentryAutoConfiguration {
+	public fun <init> ()V
+}
+
+public class io/sentry/spring/boot/SentryLogbackAppenderAutoConfiguration : org/springframework/beans/factory/InitializingBean {
+	public fun <init> ()V
+	public fun afterPropertiesSet ()V
+}
+
+public class io/sentry/spring/boot/SentryProperties : io/sentry/SentryOptions {
+	public fun <init> ()V
+	public fun getExceptionResolverOrder ()I
+	public fun getLogging ()Lio/sentry/spring/boot/SentryProperties$Logging;
+	public fun isEnableTracing ()Z
+	public fun isUseGitCommitIdAsRelease ()Z
+	public fun setEnableTracing (Z)V
+	public fun setExceptionResolverOrder (I)V
+	public fun setLogging (Lio/sentry/spring/boot/SentryProperties$Logging;)V
+	public fun setUseGitCommitIdAsRelease (Z)V
+}
+
+public class io/sentry/spring/boot/SentryProperties$Logging {
+	public fun <init> ()V
+	public fun getMinimumBreadcrumbLevel ()Lorg/slf4j/event/Level;
+	public fun getMinimumEventLevel ()Lorg/slf4j/event/Level;
+	public fun isEnabled ()Z
+	public fun setEnabled (Z)V
+	public fun setMinimumBreadcrumbLevel (Lorg/slf4j/event/Level;)V
+	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
+}
+

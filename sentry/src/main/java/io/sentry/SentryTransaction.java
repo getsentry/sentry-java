@@ -48,6 +48,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    *
    * @param name - transaction name
    * @param contexts - transaction contexts
+   * @param hub - the hub
    */
   @TestOnly
   public SentryTransaction(
@@ -82,6 +83,22 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   }
 
   /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - new span description name
+   * @return a new transaction span
+   */
+  @Override
+  public @NotNull Span startChild(
+      final @NotNull String operation, final @NotNull String description) {
+    final Span span = startChild();
+    span.setOperation(operation);
+    span.setDescription(description);
+    return span;
+  }
+
+  /**
    * Starts a child Span with given trace id and parent span id.
    *
    * @param parentSpanId - parent span id
@@ -89,8 +106,27 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    */
   Span startChild(final @NotNull SpanId parentSpanId) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
-    final Span span = new Span(getTraceId(), parentSpanId, this);
+    final Span span = new Span(getTraceId(), parentSpanId, this, this.hub);
     this.spans.add(span);
+    return span;
+  }
+
+  /**
+   * Starts a child Span with given trace id and parent span id.
+   *
+   * @param parentSpanId - parent span id
+   * @param operation - span operation name
+   * @param description - span description
+   * @return a new transaction span
+   */
+  @NotNull
+  Span startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @NotNull String description) {
+    final Span span = startChild(parentSpanId);
+    span.setOperation(operation);
+    span.setDescription(description);
     return span;
   }
 
@@ -117,6 +153,9 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
   @Override
   public void finish() {
     this.timestamp = DateUtils.getCurrentDateTime();
+    if (this.throwable != null) {
+      hub.setSpanContext(this.throwable, this.getSpanContext());
+    }
     this.hub.captureTransaction(this, null);
   }
 
@@ -198,28 +237,5 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
       }
     }
     return null;
-  }
-
-  /**
-   * Gets the span context for the span that was active while the throwable given by parameter was
-   * thrown.
-   *
-   * @param throwable - the throwable
-   * @return span context or {@code null} if no corresponding span context found.
-   */
-  public SpanContext getSpanContext(final @NotNull Throwable throwable) {
-    SpanContext context = null;
-    if (this.throwable == throwable) {
-      context = this.getSpanContext();
-    } else {
-      final List<Span> spans = new ArrayList<>(this.spans);
-      for (int i = spans.size() - 1; i >= 0; i--) {
-        if (throwable == spans.get(i).getThrowable()) {
-          context = spans.get(i);
-          break;
-        }
-      }
-    }
-    return context;
   }
 }

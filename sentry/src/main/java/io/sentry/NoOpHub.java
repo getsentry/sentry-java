@@ -132,4 +132,18 @@ final class NoOpHub implements IHub {
   public @NotNull SentryTraceHeader traceHeaders() {
     return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
   }
+
+  @Override
+  public void setSpanContext(
+      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {}
+
+  @Override
+  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+    return null;
+  }
+
+  @Override
+  public @Nullable ISpan getSpan() {
+    return null;
+  }
 }

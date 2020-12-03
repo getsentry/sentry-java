@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
-import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
@@ -50,9 +49,7 @@ class SentrySpanAdviceTest {
         val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
+        whenever(hub.span).thenReturn(tx)
         val result = sampleService.methodWithSpanDescriptionSet()
         assertEquals(1, result)
         assertEquals(1, tx.spans.size)
@@ -66,9 +63,7 @@ class SentrySpanAdviceTest {
         val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
+        whenever(hub.span).thenReturn(tx)
         val result = sampleService.methodWithoutSpanDescriptionSet()
         assertEquals(2, result)
         assertEquals(1, tx.spans.size)
@@ -82,9 +77,7 @@ class SentrySpanAdviceTest {
         val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
+        whenever(hub.span).thenReturn(tx)
         sampleService.methodWithSpanDescriptionSet()
         assertEquals(SpanStatus.OK, tx.spans.first().status)
     }
@@ -95,9 +88,7 @@ class SentrySpanAdviceTest {
         val tx = SentryTransaction("aTransaction", SpanContext(), hub)
         scope.setTransaction(tx)
 
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
+        whenever(hub.span).thenReturn(tx)
         var throwable: Throwable? = null
         try {
             sampleService.methodThrowingException()
@@ -111,9 +102,7 @@ class SentrySpanAdviceTest {
     @Test
     fun `when method is annotated with @SentrySpan and there is no active transaction, span is not created and method is executed`() {
         val scope = Scope(SentryOptions())
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
+        whenever(hub.span).thenReturn(null)
         val result = sampleService.methodWithSpanDescriptionSet()
         assertEquals(1, result)
     }
@@ -146,7 +135,7 @@ class SentrySpanAdviceTest {
 
     open class SampleService {
 
-        @SentrySpan(description = "customName", op = "bean")
+        @SentrySpan(description = "customName", operation = "bean")
         open fun methodWithSpanDescriptionSet() = 1
 
         @SentrySpan

@@ -16,6 +16,7 @@ buildscript {
         google()
         jcenter()
         maven { setUrl("https://dl.bintray.com/maranda/maven/") }
+        maven { setUrl("https://kotlin.bintray.com/kotlinx") }
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
@@ -30,8 +31,12 @@ buildscript {
 
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
+
+        classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
     }
 }
+
+apply(plugin = Config.QualityPlugins.binaryCompatibilityValidator)
 
 allprojects {
     repositories {
