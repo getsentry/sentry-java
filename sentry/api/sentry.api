@@ -1,4 +1,4 @@
-public final class io/sentry/Attachment {
+public final class io/sentry/Attachment : java/lang/Cloneable {
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;)V
