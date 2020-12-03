@@ -3,6 +3,7 @@ package io.sentry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.Assert.assertArrayEquals
 
 class AttachmentTest {
 
