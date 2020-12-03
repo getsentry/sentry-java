@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
+import io.sentry.test.injectForField
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FilePermission
@@ -14,6 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.Assert.assertArrayEquals
 
 class SentryEnvelopeItemTest {
 
@@ -157,12 +159,6 @@ class SentryEnvelopeItemTest {
         verify(logger)
             .log(eq(SentryLevel.ERROR), any<T>(),
                 eq("Serializing attachment %s failed."), eq(filename))
-    }
-
-    private inline fun <reified T : Any> T.injectForField(name: String, value: Any?) {
-        T::class.java.getDeclaredField(name)
-            .apply { isAccessible = true }
-            .set(this, value)
     }
 }
 
