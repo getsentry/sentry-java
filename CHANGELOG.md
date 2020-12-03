@@ -10,6 +10,7 @@
 * Enhancement: Resolve in-app-includes and in-app-excludes parameters from the external configuration
 * Enhancement: Make InAppIncludesResolver public (#1084)
 * Ref: Change "op" to "operation" in @SentrySpan and @SentryTransaction
+* Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
 
 # 4.0.0-alpha.1
 
