@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("org.greenrobot.greendao")
 }
 
 android {
@@ -98,6 +99,7 @@ dependencies {
 //    }
 
     implementation(Config.Libs.appCompat)
+    implementation("org.greenrobot:greendao:3.3.0")
 
     debugImplementation(Config.Libs.leakCanary)
 }

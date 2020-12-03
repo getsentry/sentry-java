@@ -33,6 +33,7 @@ buildscript {
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
+        classpath("org.greenrobot:greendao-gradle-plugin:3.3.0")
     }
 }
 

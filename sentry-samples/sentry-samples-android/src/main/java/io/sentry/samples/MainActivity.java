@@ -1,6 +1,7 @@
 package io.sentry.samples;
 
 import android.os.Bundle;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.Sentry;
@@ -14,14 +15,26 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import org.greenrobot.greendao.query.Query;
 
 public class MainActivity extends AppCompatActivity {
+
+  private NoteDao noteDao;
+  private Query<Note> notesQuery;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
+
+    // get the note DAO
+    DaoSession daoSession = ((MyApplication) getApplication()).getDaoSession();
+    noteDao = daoSession.getNoteDao();
+
+    // query all notes, sorted a-z by their text
+    notesQuery = noteDao.queryBuilder().orderAsc(NoteDao.Properties.Text).build();
 
     binding.crashFromJava.setOnClickListener(
         view -> {
@@ -51,6 +64,27 @@ public class MainActivity extends AppCompatActivity {
               };
           // Fire and forget
           thread.start();
+        });
+
+    File noteDbFile = getApplicationContext().getDatabasePath("notes-db");
+
+    Attachment noteDb = new Attachment(noteDbFile.getAbsolutePath());
+    Sentry.configureScope(
+        scope -> {
+          scope.addAttachment(noteDb);
+        });
+
+    binding.sendNotes.setOnClickListener(
+        view -> {
+          int size = notesQuery.list().size();
+          size += 1;
+          Note note = new Note();
+          note.setText(size + " note");
+          note.setComment(size + " comment");
+          note.setDate(new Date());
+          note.setType(NoteType.TEXT);
+          noteDao.insert(note);
+          Log.d("DaoExample", "Inserted new note, ID: " + note.getId());
         });
 
     binding.captureException.setOnClickListener(
@@ -105,6 +139,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
+
+    //      Note note = new Note();
+    //      note.setText(noteText);
+    //      note.setComment(comment);
+    //      note.setDate(new Date());
+    //      note.setType(NoteType.TEXT);
+    //      noteDao.insert(note);
+    //      Log.d("DaoExample", "Inserted new note, ID: " + note.getId());
   }
 
   private void captureExceptionWithAttachments() {

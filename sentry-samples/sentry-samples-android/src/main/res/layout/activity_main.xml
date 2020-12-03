@@ -28,6 +28,12 @@
     android:layout_height="wrap_content"
     android:text="@string/send_attachment" />
 
+  <Button
+      android:id="@+id/send_notes"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Add 1 more note" />
+
   <Button android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/capture_exception"

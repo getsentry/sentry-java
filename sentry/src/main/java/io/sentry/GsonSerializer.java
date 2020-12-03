@@ -161,9 +161,16 @@ public final class GsonSerializer implements ISerializer {
     Objects.requireNonNull(writer, "The Writer object is required.");
 
     gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(envelope.getHeader()));
+    }
+
     writer.write("\n");
     for (SentryEnvelopeItem item : envelope.getItems()) {
       gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(item.getHeader()));
+      }
       writer.write("\n");
 
       try (final BufferedReader reader =

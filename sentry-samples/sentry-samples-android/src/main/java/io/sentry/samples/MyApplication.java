@@ -2,11 +2,14 @@ package io.sentry.samples;
 
 import android.app.Application;
 import android.os.StrictMode;
+import org.greenrobot.greendao.database.Database;
 
 // import io.sentry.android.core.SentryAndroid;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
+
+  private DaoSession daoSession;
 
   @Override
   public void onCreate() {
@@ -23,6 +26,16 @@ public class MyApplication extends Application {
     //   });
     //   options.setAnrTimeoutIntervalMillis(2000);
     // });
+
+    // regular SQLite database
+    DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, "notes-db");
+    Database db = helper.getWritableDb();
+
+    daoSession = new DaoMaster(db).newSession();
+  }
+
+  public DaoSession getDaoSession() {
+    return daoSession;
   }
 
   private void strictMode() {
