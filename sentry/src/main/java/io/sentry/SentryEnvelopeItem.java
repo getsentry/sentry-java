@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -158,26 +159,25 @@ public final class SentryEnvelopeItem {
               if (attachment.getBytes() != null) {
                 return attachment.getBytes();
               } else if (attachment.getPath() != null) {
-                ByteArrayOutputStream outputStream;
 
-                try (FileInputStream stream = new FileInputStream(attachment.getPath())) {
+                try (FileInputStream fileInputStream = new FileInputStream(attachment.getPath());
+                    BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
                   byte[] bytes = new byte[1024];
-                  outputStream = new ByteArrayOutputStream();
                   int length;
                   int offset = 0;
-                  while ((length = stream.read(bytes)) != -1) {
+                  while ((length = inputStream.read(bytes)) != -1) {
                     outputStream.write(bytes, offset, length);
                   }
+                  return outputStream.toByteArray();
                 } catch (IOException | SecurityException exception) {
                   logger.log(
                       SentryLevel.ERROR,
                       exception,
                       "Serializing attachment %s failed.",
                       attachment.getFilename());
-                  outputStream = new ByteArrayOutputStream();
                 }
-
-                return outputStream.toByteArray();
               }
 
               return new byte[0];
