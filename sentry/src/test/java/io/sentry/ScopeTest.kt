@@ -105,7 +105,13 @@ class ScopeTest {
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
         assertEquals(transaction, clone.span)
-        assertEquals(listOf(attachment), clone.attachments)
+
+        assertEquals(1, clone.attachments.size)
+        val actual = clone.attachments.first()
+        assertEquals(attachment.path, actual.path)
+        assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
+        assertEquals(attachment.filename, actual.filename)
+        assertEquals(attachment.contentType, actual.contentType)
     }
 
     @Test
