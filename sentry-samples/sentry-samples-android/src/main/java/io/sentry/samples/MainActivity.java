@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
           thread.start();
         });
 
+    // adds the current db as an attachment to the main scope
     File noteDbFile = getApplicationContext().getDatabasePath("notes-db");
 
     Attachment noteDb = new Attachment(noteDbFile.getAbsolutePath());
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendNotes.setOnClickListener(
         view -> {
+          // every click will add a new comment
           int size = notesQuery.list().size();
           size += 1;
           Note note = new Note();
@@ -85,6 +87,9 @@ public class MainActivity extends AppCompatActivity {
           note.setType(NoteType.TEXT);
           noteDao.insert(note);
           Log.d("DaoExample", "Inserted new note, ID: " + note.getId());
+
+          // after this, click on any other button that captures a message or exception
+          // you should expect an attachment along with all the previous + this new note
         });
 
     binding.captureException.setOnClickListener(
@@ -139,14 +144,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
-
-    //      Note note = new Note();
-    //      note.setText(noteText);
-    //      note.setComment(comment);
-    //      note.setDate(new Date());
-    //      note.setType(NoteType.TEXT);
-    //      noteDao.insert(note);
-    //      Log.d("DaoExample", "Inserted new note, ID: " + note.getId());
   }
 
   private void captureExceptionWithAttachments() {
