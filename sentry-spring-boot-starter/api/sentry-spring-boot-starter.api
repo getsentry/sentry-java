@@ -5,6 +5,7 @@ public final class io/sentry/spring/boot/BuildConfig {
 
 public class io/sentry/spring/boot/InAppIncludesResolver : org/springframework/context/ApplicationContextAware {
 	public fun <init> ()V
+	public fun resolveInAppIncludes ()Ljava/util/List;
 	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
 }
 
