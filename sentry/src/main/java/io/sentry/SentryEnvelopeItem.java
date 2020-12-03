@@ -190,7 +190,8 @@ public final class SentryEnvelopeItem {
             attachment.getContentType(),
             attachment.getFilename());
 
-    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   private static class CachedItem {
