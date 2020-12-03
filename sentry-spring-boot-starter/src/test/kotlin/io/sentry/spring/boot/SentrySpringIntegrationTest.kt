@@ -11,13 +11,15 @@ import org.awaitility.kotlin.await
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.SpringBootConfiguration
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -127,11 +129,14 @@ class SentrySpringIntegrationTest {
     }
 }
 
-@SpringBootApplication
+@EnableAutoConfiguration
+@SpringBootConfiguration
+@Import(HelloController::class, HelloService::class, SecurityConfiguration::class)
 open class App
 
 @RestController
 class HelloController(private val helloService: HelloService) {
+
     private val logger = LoggerFactory.getLogger(HelloController::class.java)
 
     @GetMapping("/hello")

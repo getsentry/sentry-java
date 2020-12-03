@@ -39,3 +39,8 @@ public class io/sentry/spring/boot/SentryProperties$Logging {
 	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
 }
 
+public class io/sentry/spring/boot/datasource/dsproxy/SentryDsProxyAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryQueryExecutionListener (Lio/sentry/IHub;)Lio/sentry/dsproxy/SentryQueryExecutionListener;
+}
+

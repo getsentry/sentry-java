@@ -16,7 +16,7 @@ public class io/sentry/samples/spring/boot/PersonController {
 }
 
 public class io/sentry/samples/spring/boot/PersonService {
-	public fun <init> ()V
+	public fun <init> (Lorg/springframework/jdbc/core/JdbcTemplate;)V
 }
 
 public class io/sentry/samples/spring/boot/SecurityConfiguration : org/springframework/security/config/annotation/web/configuration/WebSecurityConfigurerAdapter {

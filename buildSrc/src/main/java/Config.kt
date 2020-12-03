@@ -51,12 +51,16 @@ object Config {
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
+        val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api"
+
+        val datasourceProxy = "net.ttddyy:datasource-proxy:1.7"
+        val datasourceProxySpringBootStarter = "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.6.2"
     }
 
     object AnnotationProcessors {
@@ -75,6 +79,7 @@ object Config {
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
         val mockitoInline = "org.mockito:mockito-inline:3.6.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
+        val hsqldb = "org.hsqldb:hsqldb"
     }
 
     object QualityPlugins {

@@ -34,10 +34,12 @@ dependencies {
     api(project(":sentry"))
     api(project(":sentry-spring"))
     compileOnly(project(":sentry-logback"))
+    compileOnly(project(":sentry-datasource-proxy"))
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
+    compileOnly(Config.Libs.datasourceProxySpringBootStarter)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -50,6 +52,7 @@ dependencies {
 
     // tests
     testImplementation(project(":sentry-logback"))
+    testImplementation(project(":sentry-datasource-proxy"))
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
@@ -58,7 +61,10 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
+    testImplementation(Config.Libs.springBootStarterJdbc)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.Libs.datasourceProxySpringBootStarter)
+    testImplementation(Config.TestLibs.hsqldb)
 }
 
 configure<SourceSetContainer> {
