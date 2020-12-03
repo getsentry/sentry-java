@@ -165,15 +165,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     setAppExtras(app);
 
-    //    DebugMeta debugMeta = event.getDebugMeta();
-    //    final List<DebugImage> debugImages = getDebugImages();
-    //    if (debugMeta == null) {
-    //      debugMeta = new DebugMeta();
-    //    }
-    //    if (debugImages != null) {
-    //      debug
-    //      event.setDebugMeta(debugMeta);
-    //    }
     mergeDebugImages(event);
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
@@ -207,7 +198,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       debugMeta = new DebugMeta();
     }
 
-    // sets the imageList or append to the list if it alreadu exists
+    // sets the imageList or append to the list if it already exists
     if (debugMeta.getImages() == null) {
       debugMeta.setImages(debugImages);
     } else {
