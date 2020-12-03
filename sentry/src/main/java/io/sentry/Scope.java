@@ -526,7 +526,7 @@ public final class Scope implements Cloneable {
     // would create a new clone of the underlying array.
     final List<Attachment> attachmentsClone = new ArrayList<>(attachments.size());
     final List<Attachment> attachmentsRef = attachments;
-    for (Attachment attachment : attachmentsRef) {
+    for (final Attachment attachment : attachmentsRef) {
       attachmentsClone.add((Attachment) attachment.clone());
     }
 

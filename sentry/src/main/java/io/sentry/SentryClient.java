@@ -161,7 +161,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (attachments != null) {
-      for (Attachment attachment : attachments) {
+      for (final Attachment attachment : attachments) {
         final SentryEnvelopeItem attachmentItem =
             SentryEnvelopeItem.fromAttachment(options.getLogger(), attachment);
         envelopeItems.add(attachmentItem);
