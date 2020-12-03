@@ -24,13 +24,13 @@ public class io/sentry/samples/NativeSample {
 }
 
 public final class io/sentry/samples/databinding/ActivityMainBinding : androidx/viewbinding/ViewBinding {
+	public final field addAttachment Landroid/widget/Button;
 	public final field anr Landroid/widget/Button;
 	public final field breadcrumb Landroid/widget/Button;
 	public final field captureException Landroid/widget/Button;
 	public final field crashFromJava Landroid/widget/Button;
 	public final field nativeCapture Landroid/widget/Button;
 	public final field nativeCrash Landroid/widget/Button;
-	public final field sendAttachment Landroid/widget/Button;
 	public final field sendMessage Landroid/widget/Button;
 	public final field sendUserFeedback Landroid/widget/Button;
 	public final field setUser Landroid/widget/Button;
