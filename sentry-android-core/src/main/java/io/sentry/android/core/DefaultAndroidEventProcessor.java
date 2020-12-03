@@ -66,6 +66,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String ANDROID_ID = "androidId";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
+  @TestOnly static final String DEBUG_IMAGES = "debugImages";
 
   // it could also be a parameter and get from Sentry.init(...)
   private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTimeOrNull();
@@ -164,9 +165,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     setAppExtras(app);
 
-    if (event.getDebugMeta() == null) {
-      event.setDebugMeta(getDebugMeta());
-    }
+    //    DebugMeta debugMeta = event.getDebugMeta();
+    //    final List<DebugImage> debugImages = getDebugImages();
+    //    if (debugMeta == null) {
+    //      debugMeta = new DebugMeta();
+    //    }
+    //    if (debugImages != null) {
+    //      debug
+    //      event.setDebugMeta(debugMeta);
+    //    }
+    mergeDebugImages(event);
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
     if (packageInfo != null) {
@@ -185,6 +193,27 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         thread.setCurrent(MainThreadChecker.isMainThread(thread));
       }
     }
+  }
+
+  private void mergeDebugImages(final @NotNull SentryEvent event) {
+    final List<DebugImage> debugImages = getDebugImages();
+    if (debugImages == null) {
+      return;
+    }
+
+    DebugMeta debugMeta = event.getDebugMeta();
+
+    if (debugMeta == null) {
+      debugMeta = new DebugMeta();
+    }
+
+    // sets the imageList or append to the list if it alreadu exists
+    if (debugMeta.getImages() == null) {
+      debugMeta.setImages(debugImages);
+    } else {
+      debugMeta.getImages().addAll(debugImages);
+    }
+    event.setDebugMeta(debugMeta);
   }
 
   private @Nullable List<DebugImage> getDebugImages() {
@@ -213,18 +242,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     return images;
-  }
-
-  private @Nullable DebugMeta getDebugMeta() {
-    List<DebugImage> debugImages = getDebugImages();
-
-    if (debugImages == null) {
-      return null;
-    }
-
-    DebugMeta debugMeta = new DebugMeta();
-    debugMeta.setImages(debugImages);
-    return debugMeta;
   }
 
   private void setAppExtras(final @NotNull App app) {
