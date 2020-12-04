@@ -1,5 +1,6 @@
 # vNext
 
+* Fix: Remove method reference in SentryEnvelopeItem (#1091)
 * Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
 * Fix: Set current thread only if there are no exceptions
 * Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
@@ -9,6 +10,8 @@
 * Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)
 * Enhancement: Resolve in-app-includes and in-app-excludes parameters from the external configuration
 * Enhancement: Make InAppIncludesResolver public (#1084)
+* Ref: Change "op" to "operation" in @SentrySpan and @SentryTransaction
+* Fix: Append DebugImage list if event already has it
 * Feat: Database query tracing with datasource-proxy (#1095)
 
 # 4.0.0-alpha.1

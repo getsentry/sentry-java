@@ -102,7 +102,7 @@ class SentryTransactionAdviceTest {
 
     open class SampleService {
 
-        @SentryTransaction(name = "customName", op = "bean")
+        @SentryTransaction(name = "customName", operation = "bean")
         open fun methodWithTransactionNameSet() = Unit
 
         @SentryTransaction
