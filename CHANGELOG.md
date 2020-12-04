@@ -12,6 +12,7 @@
 * Enhancement: Make InAppIncludesResolver public (#1084)
 * Ref: Change "op" to "operation" in @SentrySpan and @SentryTransaction
 * Fix: Append DebugImage list if event already has it
+* Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
 
 # 4.0.0-alpha.1
 
