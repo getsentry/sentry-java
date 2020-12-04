@@ -426,8 +426,6 @@ public final class SentryClient implements ISentryClient {
       sortedBreadcrumbs.addAll(breadcrumbs);
       Collections.sort(sortedBreadcrumbs, sortBreadcrumbsByDate);
     }
-
-    event.setBreadcrumbs(sortedBreadcrumbs);
   }
 
   private @Nullable SentryEvent executeBeforeSend(
