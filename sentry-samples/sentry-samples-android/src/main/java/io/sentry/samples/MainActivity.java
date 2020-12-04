@@ -30,6 +30,8 @@ public class MainActivity extends AppCompatActivity {
         FileOutputStream outputStream = new FileOutputStream(imageFile)) {
       byte[] bytes = new byte[1024];
       while (inputStream.read(bytes) != -1) {
+        // To keep the sample code simple this happens on the main thread. Don't do this in a
+        // real app.
         outputStream.write(bytes);
       }
       outputStream.flush();
