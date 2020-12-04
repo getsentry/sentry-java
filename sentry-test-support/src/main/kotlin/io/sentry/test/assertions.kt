@@ -10,7 +10,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 
 /**
- * Verifies is [SentryEnvelope] contains an event matching a predicate.
+ * Verifies that [SentryEnvelope] contains an event matching a predicate.
  */
 inline fun checkEvent(noinline predicate: (SentryEvent) -> Unit): SentryEnvelope {
     val options = SentryOptions().apply {
@@ -25,7 +25,7 @@ inline fun checkEvent(noinline predicate: (SentryEvent) -> Unit): SentryEnvelope
 }
 
 /**
- * Verifies is [SentryEnvelope] contains a transaction matching a predicate.
+ * Verifies that [SentryEnvelope] contains a transaction matching a predicate.
  */
 inline fun checkTransaction(noinline predicate: (SentryTransaction) -> Unit): SentryEnvelope {
     val options = SentryOptions().apply {
