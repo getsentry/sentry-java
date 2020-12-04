@@ -420,8 +420,11 @@ public final class SentryClient implements ISentryClient {
   private void sortBreadcrumbsByDate(
       final @NotNull SentryEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
     final List<Breadcrumb> sortedBreadcrumbs = event.getBreadcrumbs();
-    sortedBreadcrumbs.addAll(breadcrumbs);
-    sortedBreadcrumbs.sort(sortBreadcrumbsByDate);
+
+    if (!breadcrumbs.isEmpty()) {
+      sortedBreadcrumbs.addAll(breadcrumbs);
+      sortedBreadcrumbs.sort(sortBreadcrumbsByDate);
+    }
 
     event.setBreadcrumbs(sortedBreadcrumbs);
   }
