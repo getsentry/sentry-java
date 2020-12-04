@@ -12,6 +12,7 @@
 * Enhancement: Make InAppIncludesResolver public (#1084)
 * Ref: Change "op" to "operation" in @SentrySpan and @SentryTransaction
 * Fix: SentryOptions creates GsonSerializer by default
+* Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
 * Fix: Append DebugImage list if event already has it
 
 # 4.0.0-alpha.1
