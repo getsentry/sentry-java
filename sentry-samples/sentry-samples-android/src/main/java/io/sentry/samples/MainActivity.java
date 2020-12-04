@@ -12,6 +12,7 @@ import io.sentry.samples.databinding.ActivityMainBinding;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.Collections;
@@ -35,6 +36,26 @@ public class MainActivity extends AppCompatActivity {
 
     // query all notes, sorted a-z by their text
     notesQuery = noteDao.queryBuilder().orderAsc(NoteDao.Properties.Text).build();
+
+    File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
+    try (InputStream inputStream =
+            getApplicationContext().getResources().openRawResource(R.raw.sentry);
+        FileOutputStream outputStream = new FileOutputStream(imageFile)) {
+      byte[] bytes = new byte[1024];
+      while (inputStream.read(bytes) != -1) {
+        outputStream.write(bytes);
+      }
+      outputStream.flush();
+    } catch (IOException e) {
+      Sentry.captureException(e);
+    }
+
+    Attachment image = new Attachment(imageFile.getAbsolutePath());
+    image.setContentType("image/png");
+    Sentry.configureScope(
+        scope -> {
+          scope.addAttachment(image);
+        });
 
     binding.crashFromJava.setOnClickListener(
         view -> {

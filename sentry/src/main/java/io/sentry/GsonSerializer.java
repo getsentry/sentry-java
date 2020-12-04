@@ -23,14 +23,11 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
@@ -39,10 +36,6 @@ import org.jetbrains.annotations.Nullable;
 
 /** The AndroidSerializer class that uses Gson as JSON parser */
 public final class GsonSerializer implements ISerializer {
-
-  /** the UTF-8 Charset */
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   /** the ILogger interface */
   private final @NotNull ILogger logger;
@@ -151,13 +144,15 @@ public final class GsonSerializer implements ISerializer {
    * Serialize a SentryEnvelope to a stream Writer (JSON)
    *
    * @param envelope the SentryEnvelope
+   * @param stream the Stream
    * @param writer the Writer
    * @throws IOException an IOException
    */
   @Override
-  public void serialize(final @NotNull SentryEnvelope envelope, final @NotNull Writer writer)
+  public void serialize(SentryEnvelope envelope, OutputStream stream, Writer writer)
       throws Exception {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
+    Objects.requireNonNull(stream, "The Stream object is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
     gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
@@ -166,24 +161,19 @@ public final class GsonSerializer implements ISerializer {
     }
 
     writer.write("\n");
+
     for (SentryEnvelopeItem item : envelope.getItems()) {
       gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
       if (logger.isEnabled(SentryLevel.DEBUG)) {
         logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(item.getHeader()));
       }
       writer.write("\n");
+      writer.flush();
 
-      try (final BufferedReader reader =
-          new BufferedReader(
-              new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-        final char[] buffer = new char[1024];
-        int charsRead;
-        while ((charsRead = reader.read(buffer, 0, buffer.length)) > 0) {
-          writer.write(buffer, 0, charsRead);
-        }
-      }
+      stream.write(item.getData());
 
       writer.write("\n");
+      writer.flush();
     }
     writer.flush();
   }
