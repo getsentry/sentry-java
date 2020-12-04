@@ -19,6 +19,8 @@ import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
+import io.sentry.protocol.DebugImage
+import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.User
@@ -96,6 +98,38 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(event.contexts.app)
         assertEquals("test", event.debugMeta.images[0].uuid)
         assertNotNull(event.dist)
+    }
+
+    @Test
+    fun `When debug meta is not null, set the image list`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        var event = SentryEvent().apply {
+            debugMeta = DebugMeta()
+        }
+
+        event = processor.process(event, null)
+
+        assertEquals("test", event.debugMeta.images[0].uuid)
+    }
+
+    @Test
+    fun `When debug meta is not null and image list is not empty, append to the list`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+
+        val image = DebugImage().apply {
+            uuid = "abc"
+            type = "proguard"
+        }
+        var event = SentryEvent().apply {
+            debugMeta = DebugMeta().apply {
+                images = mutableListOf(image)
+            }
+        }
+
+        event = processor.process(event, null)
+
+        assertEquals("abc", event.debugMeta.images.first().uuid)
+        assertEquals("test", event.debugMeta.images.last().uuid)
     }
 
     @Test
