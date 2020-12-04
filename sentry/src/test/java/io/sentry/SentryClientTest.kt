@@ -252,18 +252,18 @@ class SentryClientTest {
 
     @Test
     fun `when breadcrumbs are not empty, sort them out by date`() {
+        val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
         val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
-        val b3 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
         val scope = Scope(SentryOptions()).apply {
             addBreadcrumb(b2)
-            addBreadcrumb(b3)
+            addBreadcrumb(b1)
         }
 
         val sut = fixture.getSut()
 
-        val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
+        val b3 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
         val event = SentryEvent().apply {
-            breadcrumbs = mutableListOf(b1)
+            breadcrumbs = mutableListOf(b3)
         }
 
         sut.captureEvent(event, scope)
