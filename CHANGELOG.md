@@ -9,6 +9,7 @@
 * Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)
 * Enhancement: Resolve in-app-includes and in-app-excludes parameters from the external configuration
 * Enhancement: Make InAppIncludesResolver public (#1084)
+* Feat: Database query tracing with datasource-proxy (#1095)
 
 # 4.0.0-alpha.1
 
