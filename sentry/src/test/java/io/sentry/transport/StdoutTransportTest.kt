@@ -29,7 +29,7 @@ class StdoutTransportTest {
 
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any())
+        verify(fixture.serializer).serialize(eq(envelope), any(), writer)
         assertTrue(result.isSuccess)
     }
 }

@@ -290,8 +290,7 @@ public class HttpTransport implements ITransport {
     try (final OutputStream outputStream = connection.getOutputStream();
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
-
-      serializer.serialize(envelope, writer);
+      serializer.serialize(envelope, gzip, writer);
     } catch (Exception e) {
       logger.log(
           ERROR, e, "An exception occurred while submitting the envelope to the Sentry server.");
