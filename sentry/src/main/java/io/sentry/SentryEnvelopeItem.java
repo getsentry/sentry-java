@@ -178,7 +178,7 @@ public final class SentryEnvelopeItem {
                   logger.log(
                       SentryLevel.ERROR,
                       exception,
-                      "Serializing attachment %s failed.",
+                      "Reading the attachment %s failed.",
                       attachment.getPathname());
                 }
               }
