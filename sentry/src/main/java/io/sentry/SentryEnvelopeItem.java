@@ -1,10 +1,13 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -146,6 +149,78 @@ public final class SentryEnvelopeItem {
             () -> cachedItem.getBytes().length,
             "application/json",
             null);
+
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromAttachment(
+      @NotNull ILogger logger, final @NotNull Attachment attachment) {
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              String errorMessage = null;
+
+              if (attachment.getBytes() != null) {
+                return attachment.getBytes();
+              } else if (attachment.getPathname() != null) {
+
+                try {
+                  File file = new File(attachment.getPathname());
+
+                  if (!file.isFile()) {
+                    errorMessage =
+                        String.format(
+                            "Reading the attachment %s failed, because the file located at the path is not a file.",
+                            attachment.getPathname());
+                  }
+
+                  if (errorMessage == null && !file.canRead()) {
+                    errorMessage =
+                        String.format(
+                            "Reading the attachment %s failed, because can't read the file.",
+                            attachment.getPathname());
+                  }
+
+                  if (errorMessage == null) {
+                    try (FileInputStream fileInputStream =
+                            new FileInputStream(attachment.getPathname());
+                        BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                      byte[] bytes = new byte[1024];
+                      int length;
+                      int offset = 0;
+                      while ((length = inputStream.read(bytes)) != -1) {
+                        outputStream.write(bytes, offset, length);
+                      }
+                      return outputStream.toByteArray();
+                    }
+                  }
+                } catch (IOException | SecurityException exception) {
+                  errorMessage =
+                      String.format("Reading the attachment %s failed.", attachment.getPathname());
+                  logger.log(SentryLevel.ERROR, exception, errorMessage);
+                }
+              }
+
+              if (errorMessage == null) {
+                errorMessage =
+                    String.format(
+                        "Couldn't attach the attachment %s.\n"
+                            + "Please check that either bytes or a path is set.",
+                        attachment.getFilename());
+              }
+
+              return errorMessage.getBytes(UTF_8);
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.Attachment,
+            () -> cachedItem.getBytes().length,
+            attachment.getContentType(),
+            attachment.getFilename());
 
     // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());

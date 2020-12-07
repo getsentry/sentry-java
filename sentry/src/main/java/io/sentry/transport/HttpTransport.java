@@ -13,13 +13,10 @@ import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -288,10 +285,8 @@ public class HttpTransport implements ITransport {
     TransportResult result;
 
     try (final OutputStream outputStream = connection.getOutputStream();
-        final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(gzip, UTF_8))) {
-
-      serializer.serialize(envelope, writer);
+        final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
+      serializer.serialize(envelope, gzip);
     } catch (Exception e) {
       logger.log(
           ERROR, e, "An exception occurred while submitting the envelope to the Sentry server.");

@@ -23,11 +23,12 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -151,34 +152,33 @@ public final class GsonSerializer implements ISerializer {
    * Serialize a SentryEnvelope to a stream Writer (JSON)
    *
    * @param envelope the SentryEnvelope
-   * @param writer the Writer
-   * @throws IOException an IOException
+   * @param outputStream the OutputStream
+   * @throws Exception an Exception
    */
   @Override
-  public void serialize(final @NotNull SentryEnvelope envelope, final @NotNull Writer writer)
+  public void serialize(
+      final @NotNull SentryEnvelope envelope, final @NotNull OutputStream outputStream)
       throws Exception {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
-    Objects.requireNonNull(writer, "The Writer object is required.");
+    Objects.requireNonNull(outputStream, "The Stream object is required.");
 
-    gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
-    writer.write("\n");
-    for (SentryEnvelopeItem item : envelope.getItems()) {
-      gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
+    try (final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+        final Writer writer =
+            new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
+      gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
       writer.write("\n");
 
-      try (final BufferedReader reader =
-          new BufferedReader(
-              new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-        final char[] buffer = new char[1024];
-        int charsRead;
-        while ((charsRead = reader.read(buffer, 0, buffer.length)) > 0) {
-          writer.write(buffer, 0, charsRead);
-        }
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
+        gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
+        writer.write("\n");
+        writer.flush();
+
+        outputStream.write(item.getData());
+
+        writer.write("\n");
       }
-
-      writer.write("\n");
+      writer.flush();
     }
-    writer.flush();
   }
 
   /**

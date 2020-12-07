@@ -1,5 +1,6 @@
 # vNext
 
+* Feat: Add basic support for attachments (#1082)
 * Fix: Remove method reference in SentryEnvelopeItem (#1091)
 * Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
 * Fix: Set current thread only if there are no exceptions

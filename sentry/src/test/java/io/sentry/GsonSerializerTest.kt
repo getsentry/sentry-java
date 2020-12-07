@@ -10,10 +10,13 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
 import java.util.Date
@@ -31,25 +34,28 @@ class GsonSerializerTest {
     private val serializer = GsonSerializer(mock(), EnvelopeReader())
 
     private fun serializeToString(ev: SentryEvent): String {
-        return serializeToString { wrt -> serializer.serialize(ev, wrt) }
+        return this.serializeToString { wrt -> serializer.serialize(ev, wrt) }
     }
 
     private fun serializeToString(session: Session): String {
-        return serializeToString { wrt -> serializer.serialize(session, wrt) }
-    }
-
-    private fun serializeToString(envelope: SentryEnvelope): String {
-        return serializeToString { wrt -> serializer.serialize(envelope, wrt) }
+        return this.serializeToString { wrt -> serializer.serialize(session, wrt) }
     }
 
     private fun serializeToString(userFeedback: UserFeedback): String {
-        return serializeToString { wrt -> serializer.serialize(userFeedback, wrt) }
+        return this.serializeToString { wrt -> serializer.serialize(userFeedback, wrt) }
     }
 
     private fun serializeToString(serialize: (StringWriter) -> Unit): String {
         val wrt = StringWriter()
         serialize(wrt)
         return wrt.toString()
+    }
+
+    private fun serializeToString(envelope: SentryEnvelope): String {
+        val outputStream = ByteArrayOutputStream()
+        BufferedWriter(OutputStreamWriter(outputStream))
+        serializer.serialize(envelope, outputStream)
+        return outputStream.toString()
     }
 
     @Test

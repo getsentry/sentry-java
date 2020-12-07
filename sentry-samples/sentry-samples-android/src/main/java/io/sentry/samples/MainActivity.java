@@ -2,12 +2,22 @@ package io.sentry.samples;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import io.sentry.Attachment;
 import io.sentry.Sentry;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.databinding.ActivityMainBinding;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,6 +26,28 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
 
     ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
+
+    File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
+    try (InputStream inputStream =
+            getApplicationContext().getResources().openRawResource(R.raw.sentry);
+        FileOutputStream outputStream = new FileOutputStream(imageFile)) {
+      byte[] bytes = new byte[1024];
+      while (inputStream.read(bytes) != -1) {
+        // To keep the sample code simple this happens on the main thread. Don't do this in a
+        // real app.
+        outputStream.write(bytes);
+      }
+      outputStream.flush();
+    } catch (IOException e) {
+      Sentry.captureException(e);
+    }
+
+    Attachment image = new Attachment(imageFile.getAbsolutePath());
+    image.setContentType("image/png");
+    Sentry.configureScope(
+        scope -> {
+          scope.addAttachment(image);
+        });
 
     binding.crashFromJava.setOnClickListener(
         view -> {
@@ -33,6 +65,33 @@ public class MainActivity extends AppCompatActivity {
           userFeedback.setEmail("john@me.com");
           userFeedback.setName("John Me");
           Sentry.captureUserFeedback(userFeedback);
+        });
+
+    binding.addAttachment.setOnClickListener(
+        view -> {
+          String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
+          File file = getApplication().getFileStreamPath(fileName);
+          try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+              final OutputStreamWriter outputStreamWriter =
+                  new OutputStreamWriter(fileOutputStream);
+              final Writer writer = new BufferedWriter(outputStreamWriter)) {
+            for (int i = 0; i < 1024; i++) {
+              // To keep the sample code simple this happens on the main thread. Don't do this in a
+              // real app.
+              writer.write(String.format(Locale.getDefault(), "%d\n", i));
+            }
+            writer.flush();
+          } catch (IOException e) {
+            Sentry.captureException(e);
+          }
+
+          Sentry.configureScope(
+              scope -> {
+                String json = "{ \"number\": 10 }";
+                Attachment attachment = new Attachment(json.getBytes(), "log.json");
+                scope.addAttachment(attachment);
+                scope.addAttachment(new Attachment(file.getPath()));
+              });
         });
 
     binding.captureException.setOnClickListener(

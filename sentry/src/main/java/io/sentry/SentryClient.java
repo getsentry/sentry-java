@@ -114,7 +114,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, session);
+      final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
 
       if (envelope != null) {
         connection.send(envelope, hint);
@@ -129,13 +129,25 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
-      throws IOException {
-    return this.buildEnvelope(event, null);
+  private List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
+    if (scope != null) {
+      return scope.getAttachments();
+    } else {
+      return null;
+    }
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable List<Attachment> attachments)
+      throws IOException {
+    return this.buildEnvelope(event, attachments, null);
+  }
+
+  private @Nullable SentryEnvelope buildEnvelope(
+      final @Nullable SentryBaseEvent event,
+      final @Nullable List<Attachment> attachments,
+      final @Nullable Session session)
+      throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -151,6 +163,14 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelopeItem sessionItem =
           SentryEnvelopeItem.fromSession(options.getSerializer(), session);
       envelopeItems.add(sessionItem);
+    }
+
+    if (attachments != null) {
+      for (final Attachment attachment : attachments) {
+        final SentryEnvelopeItem attachmentItem =
+            SentryEnvelopeItem.fromAttachment(options.getLogger(), attachment);
+        envelopeItems.add(attachmentItem);
+      }
     }
 
     if (!envelopeItems.isEmpty()) {
@@ -340,7 +360,7 @@ public final class SentryClient implements ISentryClient {
     SentryId sentryId = transaction.getEventId();
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(transaction);
+      final SentryEnvelope envelope = buildEnvelope(transaction, getAttachmentsFromScope(scope));
 
       if (envelope != null) {
         connection.send(envelope, hint);
