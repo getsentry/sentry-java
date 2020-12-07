@@ -23,6 +23,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -161,7 +162,9 @@ public final class GsonSerializer implements ISerializer {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
     Objects.requireNonNull(outputStream, "The Stream object is required.");
 
-    try (final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+    try (final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+        final Writer writer =
+            new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
       gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
       writer.write("\n");
 
@@ -173,7 +176,6 @@ public final class GsonSerializer implements ISerializer {
         outputStream.write(item.getData());
 
         writer.write("\n");
-        writer.flush();
       }
       writer.flush();
     }
