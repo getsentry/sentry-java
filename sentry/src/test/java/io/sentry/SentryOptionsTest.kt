@@ -269,6 +269,11 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, Gson Serializer is set by default`() {
+        assertTrue(SentryOptions().serializer is GsonSerializer)
+    }
+
+    @Test
     fun `creates options with inAppInclude and inAppExclude using external properties`() {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

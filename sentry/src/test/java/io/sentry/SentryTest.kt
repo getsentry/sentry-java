@@ -68,18 +68,6 @@ class SentryTest {
     }
 
     @Test
-    fun `Init sets GsonSerializer if serializer is NoOp`() {
-        var sentryOptions: SentryOptions? = null
-        Sentry.init {
-            it.dsn = dsn
-            it.cacheDirPath = getTempPath()
-            sentryOptions = it
-        }
-
-        assertTrue(sentryOptions!!.serializer is GsonSerializer)
-    }
-
-    @Test
     fun `scope changes are isolated to a thread`() {
         Sentry.init {
             it.dsn = dsn
