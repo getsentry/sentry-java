@@ -1,8 +1,10 @@
 # vNext
 
+# 4.0.0-alpha.2
+
 * Feat: Add basic support for attachments (#1082)
 * Fix: Remove method reference in SentryEnvelopeItem (#1091)
-* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067) 
+* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067)
 * Fix: Set current thread only if there are no exceptions
 * Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
 * Ref: Refactor resolving SpanContext for Throwable (#1068)
