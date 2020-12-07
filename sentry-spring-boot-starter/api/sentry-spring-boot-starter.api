@@ -44,3 +44,8 @@ public class io/sentry/spring/boot/datasource/dsproxy/SentryDsProxyAutoConfigura
 	public fun sentryQueryExecutionListener (Lio/sentry/IHub;)Lio/sentry/dsproxy/SentryQueryExecutionListener;
 }
 
+public class io/sentry/spring/boot/datasource/p6spy/SentryP6SpyAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryJdbcEventListener (Lio/sentry/IHub;)Lio/sentry/p6spy/SentryJdbcEventListener;
+}
+

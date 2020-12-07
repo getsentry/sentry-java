@@ -1,7 +1,8 @@
-package io.sentry.spring.boot
+package io.sentry.spring.boot.datasource.p6spy
 
 import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.spring.boot.datasource.dsproxy.SentryDsProxyAutoConfiguration
 import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = ["sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0"]
 )
-class SentrySpringTracingIntegrationTest {
+class SentrySpringP6SpyTracingIntegrationTest {
 
     @MockBean
     lateinit var transport: ITransport
@@ -39,7 +40,7 @@ class SentrySpringTracingIntegrationTest {
     fun `attaches span from database query call to transaction`() {
         val restTemplate = TestRestTemplate()
 
-        restTemplate.getForEntity("http://localhost:$port/dsproxy", String::class.java)
+        restTemplate.getForEntity("http://localhost:$port/p6spy", String::class.java)
 
         await.untilAsserted {
             verify(transport, atLeastOnce()).send(checkTransaction { transaction ->
@@ -52,7 +53,7 @@ class SentrySpringTracingIntegrationTest {
     }
 }
 
-@EnableAutoConfiguration(exclude = [SecurityAutoConfiguration::class])
+@EnableAutoConfiguration(exclude = [SecurityAutoConfiguration::class, SentryDsProxyAutoConfiguration::class])
 @SpringBootConfiguration
 @Import(TracingController::class)
 open class TracingApp
@@ -63,7 +64,7 @@ class TracingController(private val jdbcTemplate: JdbcTemplate) {
         val QUERY = "select count(*) from INFORMATION_SCHEMA.SYSTEM_USERS where 1=0"
     }
 
-    @GetMapping("/dsproxy")
+    @GetMapping("/p6spy")
     fun dsProxy() {
         jdbcTemplate.queryForObject(QUERY, Long::class.java)
     }

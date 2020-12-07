@@ -35,6 +35,7 @@ dependencies {
     api(project(":sentry-spring"))
     compileOnly(project(":sentry-logback"))
     compileOnly(project(":sentry-datasource-proxy"))
+    compileOnly(project(":sentry-p6spy"))
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
@@ -53,6 +54,7 @@ dependencies {
     // tests
     testImplementation(project(":sentry-logback"))
     testImplementation(project(":sentry-datasource-proxy"))
+    testImplementation(project(":sentry-p6spy"))
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)

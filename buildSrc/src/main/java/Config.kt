@@ -60,6 +60,7 @@ object Config {
         val servletApi = "javax.servlet:javax.servlet-api"
 
         val datasourceProxy = "net.ttddyy:datasource-proxy:1.7"
+        val p6spy = "p6spy:p6spy:3.9.1"
         val datasourceProxySpringBootStarter = "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.6.2"
     }
 
