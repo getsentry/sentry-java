@@ -9,6 +9,9 @@ import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,8 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull SentryOptions options;
   private final @NotNull Connection connection;
   private final @Nullable Random random;
+
+  private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
   @Override
   public boolean isEnabled() {
@@ -184,7 +189,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) {
+  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
 
     if (SentryId.EMPTY_ID.equals(userFeedback.getEventId())) {
@@ -209,7 +214,7 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  private SentryEnvelope buildEnvelope(@NotNull UserFeedback userFeedback) {
+  private @NotNull SentryEnvelope buildEnvelope(final @NotNull UserFeedback userFeedback) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
     final SentryEnvelopeItem userFeedbackItem =
@@ -317,6 +322,40 @@ public final class SentryClient implements ISentryClient {
     return envelope.getHeader().getEventId();
   }
 
+<<<<<<< HEAD
+=======
+  @Override
+  public @NotNull SentryId captureTransaction(
+      final @NotNull SentryTransaction transaction,
+      final @NotNull Scope scope,
+      final @Nullable Object hint) {
+    Objects.requireNonNull(transaction, "Transaction is required.");
+
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
+
+    SentryId sentryId = transaction.getEventId();
+
+    try {
+      final SentryEnvelope envelope = buildEnvelope(transaction);
+
+      if (envelope != null) {
+        connection.send(envelope, hint);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
+      }
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
+>>>>>>> fc4b4570 (Fix: Sort breadcrumbs by Date if the event has breadcrumbs (#1094))
   private @Nullable SentryEvent applyScope(
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
@@ -332,7 +371,7 @@ public final class SentryClient implements ISentryClient {
       if (event.getBreadcrumbs() == null) {
         event.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
       } else {
-        event.getBreadcrumbs().addAll(scope.getBreadcrumbs());
+        sortBreadcrumbsByDate(event, scope.getBreadcrumbs());
       }
       if (event.getTags() == null) {
         event.setTags(new HashMap<>(scope.getTags()));
@@ -373,6 +412,16 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
+  private void sortBreadcrumbsByDate(
+      final @NotNull SentryEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
+    final List<Breadcrumb> sortedBreadcrumbs = event.getBreadcrumbs();
+
+    if (!breadcrumbs.isEmpty()) {
+      sortedBreadcrumbs.addAll(breadcrumbs);
+      Collections.sort(sortedBreadcrumbs, sortBreadcrumbsByDate);
+    }
+  }
+
   private @Nullable SentryEvent executeBeforeSend(
       @NotNull SentryEvent event, final @Nullable Object hint) {
     final SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
@@ -387,7 +436,7 @@ public final class SentryClient implements ISentryClient {
                 "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
                 e);
 
-        Breadcrumb breadcrumb = new Breadcrumb();
+        final Breadcrumb breadcrumb = new Breadcrumb();
         breadcrumb.setMessage("BeforeSend callback failed.");
         breadcrumb.setCategory("SentryClient");
         breadcrumb.setLevel(SentryLevel.ERROR);
@@ -414,16 +463,25 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  public void flush(long timeoutMillis) {
+  public void flush(final long timeoutMillis) {
     // TODO: Flush transport
   }
 
   private boolean sample() {
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
     if (options.getSampleRate() != null && random != null) {
-      double sampling = options.getSampleRate();
+      final double sampling = options.getSampleRate();
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;
+  }
+
+  private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {
+
+    @SuppressWarnings("JdkObsolete")
+    @Override
+    public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
+      return b1.getTimestamp().compareTo(b2.getTimestamp());
+    }
   }
 }
