@@ -1,0 +1,6 @@
+public class io/sentry/p6spy/SentryJdbcEventListener : com/p6spy/engine/event/SimpleJdbcEventListener {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun onAfterAnyExecute (Lcom/p6spy/engine/common/StatementInformation;JLjava/sql/SQLException;)V
+	public fun onBeforeAnyExecute (Lcom/p6spy/engine/common/StatementInformation;)V
+}
+
