@@ -8,11 +8,13 @@ import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.databinding.ActivityMainBinding;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
@@ -69,14 +71,16 @@ public class MainActivity extends AppCompatActivity {
         view -> {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
-          try (FileOutputStream fileOutputStream = new FileOutputStream(file);
-              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream)) {
+          try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+              final OutputStreamWriter outputStreamWriter =
+                  new OutputStreamWriter(fileOutputStream);
+              final Writer writer = new BufferedWriter(outputStreamWriter)) {
             for (int i = 0; i < 1024; i++) {
               // To keep the sample code simple this happens on the main thread. Don't do this in a
               // real app.
-              outputStreamWriter.write(String.format(Locale.getDefault(), "%d\n", i));
+              writer.write(String.format(Locale.getDefault(), "%d\n", i));
             }
-            outputStreamWriter.flush();
+            writer.flush();
           } catch (IOException e) {
             Sentry.captureException(e);
           }
