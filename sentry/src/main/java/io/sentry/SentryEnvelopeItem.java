@@ -159,6 +159,8 @@ public final class SentryEnvelopeItem {
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
+              String errorMessage = null;
+
               if (attachment.getBytes() != null) {
                 return attachment.getBytes();
               } else if (attachment.getPathname() != null) {
@@ -175,15 +177,21 @@ public final class SentryEnvelopeItem {
                   }
                   return outputStream.toByteArray();
                 } catch (IOException | SecurityException exception) {
-                  logger.log(
-                      SentryLevel.ERROR,
-                      exception,
-                      "Reading the attachment %s failed.",
-                      attachment.getPathname());
+                  errorMessage =
+                      String.format("Reading the attachment %s failed.", attachment.getPathname());
+                  logger.log(SentryLevel.ERROR, exception, errorMessage);
                 }
               }
 
-              return new byte[0];
+              if (errorMessage == null) {
+                errorMessage =
+                    String.format(
+                        "Couldn't attach the attachment %s.\n"
+                            + "Please check that either bytes or a path is set.",
+                        attachment.getFilename());
+              }
+
+              return errorMessage.getBytes(UTF_8);
             });
 
     SentryEnvelopeItemHeader itemHeader =
