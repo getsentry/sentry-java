@@ -30,4 +30,4 @@ make compile
 # CI
 
 Build and tests are automatically run against branches and pull requests
-via TravisCI, AppVeyor and GH Actions.
+via TravisCI and GH Actions.
