@@ -40,6 +40,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryClientTest {
@@ -247,6 +248,29 @@ class SentryClientTest {
         assertEquals("fp", event.fingerprints[0])
         assertEquals("id", event.user.id)
         assertEquals(SentryLevel.FATAL, event.level)
+    }
+
+    @Test
+    fun `when breadcrumbs are not empty, sort them out by date`() {
+        val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
+        val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
+        val scope = Scope(SentryOptions()).apply {
+            addBreadcrumb(b2)
+            addBreadcrumb(b1)
+        }
+
+        val sut = fixture.getSut()
+
+        val b3 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
+        val event = SentryEvent().apply {
+            breadcrumbs = mutableListOf(b3)
+        }
+
+        sut.captureEvent(event, scope)
+
+        assertSame(b1, event.breadcrumbs[0])
+        assertSame(b2, event.breadcrumbs[1])
+        assertSame(b3, event.breadcrumbs[2])
     }
 
     @Test
