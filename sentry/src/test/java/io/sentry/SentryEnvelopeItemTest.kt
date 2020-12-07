@@ -167,7 +167,7 @@ class SentryEnvelopeItemTest {
     private inline fun <reified T : Exception> verifyLogException(logger: ILogger, pathname: String) {
         verify(logger)
             .log(eq(SentryLevel.ERROR), any<T>(),
-                eq("Serializing attachment %s failed."), eq(pathname))
+                eq("Reading the attachment %s failed."), eq(pathname))
     }
 }
 
