@@ -152,7 +152,7 @@ public final class GsonSerializer implements ISerializer {
    *
    * @param envelope the SentryEnvelope
    * @param outputStream the OutputStream
-   * @throws IOException an IOException
+   * @throws Exception an Exception
    */
   @Override
   public void serialize(
