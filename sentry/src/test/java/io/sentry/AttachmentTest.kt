@@ -3,7 +3,6 @@ package io.sentry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import org.junit.Assert.assertArrayEquals
 
 class AttachmentTest {
 
@@ -69,36 +68,5 @@ class AttachmentTest {
         val attachment = Attachment(fixture.pathname)
         attachment.contentType = fixture.contentType
         assertEquals(fixture.contentType, attachment.contentType)
-    }
-
-    @Test
-    fun `clone with bytes`() {
-        val bytes = fixture.bytes.copyOf()
-        val attachment = Attachment(bytes, fixture.filename)
-
-        val clone = attachment.clone() as Attachment
-        attachment.contentType = "application/json"
-        bytes[0] = 'a'.toByte()
-
-        // make sure the byte array of the attachment is actually changed
-        assertArrayEquals(bytes, attachment.bytes!!)
-        assertArrayEquals(fixture.bytes, clone.bytes!!)
-
-        assertEquals(fixture.defaultContentType, clone.contentType)
-        assertEquals(fixture.filename, clone.filename)
-        assertNull(clone.pathname)
-    }
-
-    @Test
-    fun `clone with pathname`() {
-        val attachment = Attachment(fixture.pathname, fixture.filename)
-
-        val clone = attachment.clone() as Attachment
-        attachment.contentType = "application/json"
-
-        assertEquals(fixture.defaultContentType, clone.contentType)
-        assertEquals(fixture.pathname, clone.pathname)
-        assertEquals(fixture.filename, clone.filename)
-        assertNull(clone.bytes)
     }
 }

@@ -162,9 +162,6 @@ class ScopeTest {
 
         scope.addEventProcessor(processor)
 
-        scope.addAttachment(Attachment("path/image.png"))
-        attachment.contentType = "application/json"
-
         assertEquals(SentryLevel.DEBUG, clone.level)
 
         assertEquals("123", clone.user?.id)
@@ -182,8 +179,11 @@ class ScopeTest {
         assertEquals(1, clone.eventProcessors.size)
         assertNull(clone.span)
 
+        scope.addAttachment(Attachment("path/image.png"))
+        attachment.contentType = "application/json"
+
         assertEquals(1, clone.attachments.size)
-        assertEquals(Attachment("").contentType, clone.attachments.first().contentType)
+        assertEquals("application/json", clone.attachments.first().contentType)
         assertTrue(clone.attachments is CopyOnWriteArrayList)
     }
 
@@ -653,5 +653,14 @@ class ScopeTest {
 
         val cloned = scope.clone()
         assertTrue(cloned.attachments is CopyOnWriteArrayList)
+    }
+
+    @Test
+    fun `getAttachments returns new instance`() {
+        val scope = Scope(SentryOptions())
+        scope.addAttachment(Attachment(""))
+
+        assertNotSame(scope.attachments, scope.attachments,
+                "Scope.attachments must return a new instance on each call.")
     }
 }
