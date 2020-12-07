@@ -87,7 +87,7 @@ public final class io/sentry/GsonSerializer : io/sentry/ISerializer {
 	public fun <init> (Lio/sentry/ILogger;Lio/sentry/IEnvelopeReader;)V
 	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
-	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;Ljava/io/Writer;)V
+	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
 	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
 	public fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }
@@ -268,7 +268,7 @@ public abstract interface class io/sentry/ISentryClient {
 public abstract interface class io/sentry/ISerializer {
 	public abstract fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
 	public abstract fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
-	public abstract fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;Ljava/io/Writer;)V
+	public abstract fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
 	public abstract fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
 	public abstract fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }

@@ -77,7 +77,7 @@ class HttpTransportTest {
 
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertTrue(result.isSuccess)
     }
 
@@ -94,7 +94,7 @@ class HttpTransportTest {
 
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertTrue(transport.isRetryAfter("session"))
     }
@@ -110,7 +110,7 @@ class HttpTransportTest {
 
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertEquals(1234, result.responseCode)
     }
@@ -127,7 +127,7 @@ class HttpTransportTest {
 
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertTrue(transport.isRetryAfter("session"))
     }
@@ -144,7 +144,7 @@ class HttpTransportTest {
 
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertEquals(-1, result.responseCode)
     }
@@ -161,7 +161,7 @@ class HttpTransportTest {
         val envelope = createEnvelope()
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertTrue(transport.isRetryAfter("event"))
     }
@@ -178,7 +178,7 @@ class HttpTransportTest {
         val envelope = createEnvelope()
         val result = transport.send(envelope)
 
-        verify(fixture.serializer).serialize(eq(envelope), any(), any())
+        verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertFalse(transport.isRetryAfter("event"))
     }
@@ -363,7 +363,7 @@ class HttpTransportTest {
     }
 
     private fun throwOnEnvelopeSerialize() {
-        whenever(fixture.serializer.serialize(any<SentryEnvelope>(), any(), any())).thenThrow(IOException())
+        whenever(fixture.serializer.serialize(any<SentryEnvelope>(), any())).thenThrow(IOException())
     }
 
     private fun createEnvelope(event: SentryEvent = SentryEvent()): SentryEnvelope {

@@ -16,11 +16,9 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
-import java.io.Writer
 import java.util.Date
 import java.util.TimeZone
 import java.util.UUID
@@ -36,15 +34,15 @@ class GsonSerializerTest {
     private val serializer = GsonSerializer(mock(), EnvelopeReader())
 
     private fun serializeToString(ev: SentryEvent): String {
-        return serializeToString { wrt -> serializer.serialize(ev, wrt) }
+        return this.serializeToString { wrt -> serializer.serialize(ev, wrt) }
     }
 
     private fun serializeToString(session: Session): String {
-        return serializeToString { wrt -> serializer.serialize(session, wrt) }
+        return this.serializeToString { wrt -> serializer.serialize(session, wrt) }
     }
 
     private fun serializeToString(userFeedback: UserFeedback): String {
-        return serializeToString { wrt -> serializer.serialize(userFeedback, wrt) }
+        return this.serializeToString { wrt -> serializer.serialize(userFeedback, wrt) }
     }
 
     private fun serializeToString(serialize: (StringWriter) -> Unit): String {
@@ -54,13 +52,9 @@ class GsonSerializerTest {
     }
 
     private fun serializeToString(envelope: SentryEnvelope): String {
-        return serializeToString { stream, writer -> serializer.serialize(envelope, stream, writer) }
-    }
-
-    private fun serializeToString(serialize: (OutputStream, Writer) -> Unit): String {
         val outputStream = ByteArrayOutputStream()
-        val writer = BufferedWriter(OutputStreamWriter(outputStream))
-        serialize(outputStream, writer)
+        BufferedWriter(OutputStreamWriter(outputStream))
+        serializer.serialize(envelope, outputStream)
         return outputStream.toString()
     }
 
