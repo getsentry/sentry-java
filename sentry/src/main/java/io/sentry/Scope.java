@@ -524,8 +524,8 @@ public final class Scope implements Cloneable {
 
     // Don't use CopyOnWriteArrayList for cloning the attachments, because each call to add
     // would create a new clone of the underlying array.
-    final List<Attachment> attachmentsClone = new ArrayList<>(attachments.size());
     final List<Attachment> attachmentsRef = attachments;
+    final List<Attachment> attachmentsClone = new ArrayList<>(attachmentsRef.size());
     for (final Attachment attachment : attachmentsRef) {
       attachmentsClone.add((Attachment) attachment.clone());
     }
