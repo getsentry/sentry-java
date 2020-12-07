@@ -151,24 +151,26 @@ public final class GsonSerializer implements ISerializer {
    * Serialize a SentryEnvelope to a stream Writer (JSON)
    *
    * @param envelope the SentryEnvelope
-   * @param stream the Stream
+   * @param outputStream the OutputStream
    * @throws IOException an IOException
    */
   @Override
-  public void serialize(SentryEnvelope envelope, OutputStream stream) throws Exception {
+  public void serialize(
+      final @NotNull SentryEnvelope envelope, final @NotNull OutputStream outputStream)
+      throws Exception {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
-    Objects.requireNonNull(stream, "The Stream object is required.");
+    Objects.requireNonNull(outputStream, "The Stream object is required.");
 
-    try (final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+    try (final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
       writer.write("\n");
 
-      for (SentryEnvelopeItem item : envelope.getItems()) {
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
         gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
         writer.write("\n");
         writer.flush();
 
-        stream.write(item.getData());
+        outputStream.write(item.getData());
 
         writer.write("\n");
         writer.flush();

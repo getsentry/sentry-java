@@ -33,7 +33,7 @@ final class NoOpSerializer implements ISerializer {
   public <T> void serialize(T entity, Writer writer) throws IOException {}
 
   @Override
-  public void serialize(SentryEnvelope envelope, OutputStream stream) throws Exception {}
+  public void serialize(SentryEnvelope envelope, OutputStream outputStream) throws Exception {}
 
   @Override
   public @Nullable String serialize(Map<String, Object> data) throws Exception {
