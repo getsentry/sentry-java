@@ -141,6 +141,15 @@ class SentryEnvelopeItemTest {
         assertAttachment(attachment, byteArrayOf(), item)
     }
 
+    @Test
+    fun `fromAttachment with image`() {
+        val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
+        val attachment = Attachment(image.path)
+
+        val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
+        assertAttachment(attachment, image.readBytes(), item)
+    }
+
     private fun createSession(): Session {
         return Session("dis", User(), "env", "rel")
     }
