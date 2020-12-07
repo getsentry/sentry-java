@@ -64,7 +64,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `OptionsConfiguration is created if custom one with name "sentryOptionsConfiguration" is not provided`() {
+    fun `OptionsConfiguration is created if custom one with name sentryOptionsConfiguration is not provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).hasSingleBean(Sentry.OptionsConfiguration::class.java)
@@ -72,7 +72,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `OptionsConfiguration with name "sentryOptionsConfiguration" is created if another one with different name is provided`() {
+    fun `OptionsConfiguration with name sentryOptionsConfiguration is created if another one with different name is provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(CustomOptionsConfigurationConfiguration::class.java)
             .run {
@@ -87,7 +87,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `"sentryOptionsConfiguration" bean is configured before custom OptionsConfiguration`() {
+    fun `sentryOptionsConfiguration bean is configured before custom OptionsConfiguration`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(CustomOptionsConfigurationConfiguration::class.java)
             .run {
@@ -97,7 +97,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `OptionsConfiguration is not created if custom one with name "sentryOptionsConfiguration" is provided`() {
+    fun `OptionsConfiguration is not created if custom one with name sentryOptionsConfiguration is provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(OverridingOptionsConfigurationConfiguration::class.java)
             .run {
