@@ -12,7 +12,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.text.Charsets.UTF_8
 import org.junit.Assert.assertArrayEquals
 
 class SentryEnvelopeItemTest {
@@ -81,7 +80,9 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
 
-        assertAttachment(attachment, "Reading the attachment ${attachment.pathname} failed, because the file located at the path is not a file.".toByteArray(UTF_8), item)
+        assertAttachment(attachment,
+                "Reading the attachment ${attachment.pathname} failed, because the file located at " +
+                        "the path is not a file.", item)
     }
 
     @Test
@@ -97,8 +98,8 @@ class SentryEnvelopeItemTest {
 
             val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
 
-            assertAttachment(attachment, ("Reading the attachment ${attachment.pathname} failed, " +
-                    "because can't read the file.").toByteArray(UTF_8), item)
+            assertAttachment(attachment, "Reading the attachment ${attachment.pathname} failed, " +
+                    "because can't read the file.", item)
         } else {
             println("Was not able to change file access permission. Skipping test.")
         }
@@ -117,7 +118,7 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
 
-        assertAttachment(attachment, "Reading the attachment ${attachment.pathname} failed.".toByteArray(UTF_8), item)
+        assertAttachment(attachment, "Reading the attachment ${attachment.pathname} failed.", item)
         verifyLogException<SecurityException>(logger, attachment.pathname ?: "")
 
         System.setSecurityManager(null)
@@ -135,8 +136,8 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
 
-        assertAttachment(attachment, ("Couldn't attach the attachment ${attachment.filename}.\n" +
-                "Please check that either bytes or a path is set.").toByteArray(UTF_8), item)
+        assertAttachment(attachment, "Couldn't attach the attachment ${attachment.filename}.\n" +
+                "Please check that either bytes or a path is set.", item)
     }
 
     @Test
@@ -160,6 +161,16 @@ class SentryEnvelopeItemTest {
         assertEquals(attachment.contentType, actualItem.header.contentType)
         assertEquals(attachment.filename, actualItem.header.fileName)
         assertArrayEquals(expectedBytes, actualItem.data)
+    }
+
+    private fun assertAttachment(
+        attachment: Attachment,
+        expectedErrorMessage: String,
+        actualItem: SentryEnvelopeItem
+    ) {
+        assertEquals(attachment.contentType, actualItem.header.contentType)
+        assertEquals(attachment.filename, actualItem.header.fileName)
+        assertEquals(expectedErrorMessage, String(actualItem.data))
     }
 
     private inline fun <reified T : Exception> verifyLogException(logger: ILogger, pathname: String) {
