@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < 1024; i++) {
               // To keep the sample code simple this happens on the main thread. Don't do this in a
               // real app.
-              outputStreamWriter.write(String.valueOf(i));
+              outputStreamWriter.write(String.format(Locale.getDefault(), "%d\n", i));
             }
             outputStreamWriter.flush();
           } catch (IOException e) {
