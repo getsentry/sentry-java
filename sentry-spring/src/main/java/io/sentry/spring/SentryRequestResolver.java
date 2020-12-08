@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
-      if (options.isSendDefaultPii() || !SENSITIVE_HEADERS.contains(headerName.toUpperCase())) {
+      if (options.isSendDefaultPii() || !SENSITIVE_HEADERS.contains(headerName.toUpperCase(Locale.ROOT))) {
         headersMap.put(headerName, toString(request.getHeaders(headerName)));
       }
     }
