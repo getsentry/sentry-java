@@ -7,6 +7,7 @@ import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import io.sentry.test.injectForField
 
 class SessionAdapterTest {
 
@@ -520,6 +521,7 @@ class SessionAdapterTest {
         assertSessionData(expected, actual)
     }
 
+    // TODO: create a serializer.kt extensions in the sentry-test-support module
     private fun serializeToString(serialize: (StringWriter) -> Unit): String {
         val wrt = StringWriter()
         serialize(wrt)
@@ -550,11 +552,5 @@ class SessionAdapterTest {
         val json = serializeToString(expected)
 
         return serializer.deserialize(StringReader(json), Session::class.java)
-    }
-
-    inline fun <reified T : Any> T.injectForField(name: String, value: Any?) {
-        T::class.java.getDeclaredField(name)
-                .apply { isAccessible = true }
-                .set(this, value)
     }
 }
