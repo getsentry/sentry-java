@@ -46,7 +46,8 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
-      if (options.isSendDefaultPii() || !SENSITIVE_HEADERS.contains(headerName.toUpperCase(Locale.ROOT))) {
+      if (options.isSendDefaultPii()
+          || !SENSITIVE_HEADERS.contains(headerName.toUpperCase(Locale.ROOT))) {
         headersMap.put(headerName, toString(request.getHeaders(headerName)));
       }
     }

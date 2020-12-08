@@ -1,13 +1,13 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.test.injectForField
 import java.io.StringReader
 import java.io.StringWriter
-import java.util.*
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import io.sentry.test.injectForField
 
 class SessionAdapterTest {
 
