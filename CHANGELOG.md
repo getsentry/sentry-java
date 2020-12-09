@@ -1,5 +1,7 @@
 # vNext
 
+* Fix inheriting sampling decision from parent (#1100)
+
 # 4.0.0-alpha.2
 
 * Feat: Add basic support for attachments (#1082)
