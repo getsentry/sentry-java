@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.transport.AsyncConnection;
+import io.sentry.transport.RateLimiter;
 
 final class AsyncConnectionFactory {
   private AsyncConnectionFactory() {}
@@ -15,6 +16,7 @@ final class AsyncConnectionFactory {
         options.getTransportGate(),
         envelopeCache,
         options.getMaxQueueSize(),
-        options);
+        options,
+        new RateLimiter(options.getLogger()));
   }
 }

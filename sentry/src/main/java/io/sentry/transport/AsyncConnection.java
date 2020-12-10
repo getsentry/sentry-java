@@ -2,7 +2,6 @@ package io.sentry.transport;
 
 import io.sentry.ILogger;
 import io.sentry.SentryEnvelope;
-import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.cache.IEnvelopeCache;
@@ -14,8 +13,8 @@ import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -33,19 +32,22 @@ public final class AsyncConnection implements Closeable, Connection {
   private final @NotNull ExecutorService executor;
   private final @NotNull IEnvelopeCache envelopeCache;
   private final @NotNull SentryOptions options;
+  private final @NotNull RateLimiter rateLimiter;
 
   public AsyncConnection(
       final ITransport transport,
       final ITransportGate transportGate,
       final IEnvelopeCache envelopeCache,
       final int maxQueueSize,
-      final SentryOptions options) {
+      final SentryOptions options,
+      final @NotNull RateLimiter rateLimiter) {
     this(
         transport,
         transportGate,
         envelopeCache,
         initExecutor(maxQueueSize, envelopeCache, options.getLogger()),
-        options);
+        options,
+        rateLimiter);
   }
 
   @TestOnly
@@ -54,12 +56,14 @@ public final class AsyncConnection implements Closeable, Connection {
       final @NotNull ITransportGate transportGate,
       final @NotNull IEnvelopeCache envelopeCache,
       final @NotNull ExecutorService executorService,
-      final @NotNull SentryOptions options) {
+      final @NotNull SentryOptions options,
+      final @NotNull RateLimiter rateLimiter) {
     this.transport = transport;
     this.transportGate = transportGate;
     this.envelopeCache = envelopeCache;
     this.options = options;
     this.executor = executorService;
+    this.rateLimiter = rateLimiter;
   }
 
   private static QueuedThreadPoolExecutor initExecutor(
@@ -113,47 +117,15 @@ public final class AsyncConnection implements Closeable, Connection {
       options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
     }
 
-    // Optimize for/No allocations if no items are under 429
-    List<SentryEnvelopeItem> dropItems = null;
-    for (SentryEnvelopeItem item : envelope.getItems()) {
-      // using the raw value of the enum to not expose SentryEnvelopeItemType
-      if (transport.isRetryAfter(item.getHeader().getType().getItemType())) {
-        if (dropItems == null) {
-          dropItems = new ArrayList<>();
-        }
-        dropItems.add(item);
+    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
+
+    if (filteredEnvelope == null) {
+      if (cached) {
+        envelopeCache.discard(envelope);
       }
-      if (dropItems != null) {
-        options
-            .getLogger()
-            .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
-      }
+    } else {
+      executor.submit(new EnvelopeSender(filteredEnvelope, hint, currentEnvelopeCache));
     }
-
-    if (dropItems != null) {
-      // Need a new envelope
-      List<SentryEnvelopeItem> toSend = new ArrayList<>();
-      for (SentryEnvelopeItem item : envelope.getItems()) {
-        if (!dropItems.contains(item)) {
-          toSend.add(item);
-        }
-      }
-
-      // no reason to continue
-      if (toSend.isEmpty()) {
-        if (cached) {
-          envelopeCache.discard(envelope);
-        }
-        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
-
-        markHintWhenSendingFailed(hint, false);
-        return;
-      }
-
-      envelope = new SentryEnvelope(envelope.getHeader(), toSend);
-    }
-
-    executor.submit(new EnvelopeSender(envelope, hint, currentEnvelopeCache));
   }
 
   @Override
