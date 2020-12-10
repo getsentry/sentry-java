@@ -111,7 +111,10 @@ public final class Session {
   }
 
   @SuppressWarnings("JdkObsolete")
-  public @NotNull Date getStarted() {
+  public @Nullable Date getStarted() {
+    if (started == null) {
+      return null;
+    }
     return (Date) started.clone();
   }
 

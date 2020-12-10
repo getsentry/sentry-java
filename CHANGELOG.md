@@ -1,5 +1,7 @@
 # vNext
 
+* Fixes and Tests: Session serialization and deserialization
+
 # 4.0.0-alpha.2
 
 * Feat: Add basic support for attachments (#1082)
