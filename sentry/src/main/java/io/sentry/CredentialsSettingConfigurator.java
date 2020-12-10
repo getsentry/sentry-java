@@ -6,7 +6,7 @@ import java.net.HttpURLConnection;
 /**
  * Used by {@link SentryClient} to inject credentials into the HTTP requests for sending the events.
  */
-public final class CredentialsSettingConfigurator implements IConnectionConfigurator {
+final class CredentialsSettingConfigurator implements IConnectionConfigurator {
   /** HTTP Header for the user agent. */
   private static final String USER_AGENT = "User-Agent";
   /** HTTP Header for the authentication to Sentry. */
@@ -15,7 +15,7 @@ public final class CredentialsSettingConfigurator implements IConnectionConfigur
   private final String authHeader;
   private final String userAgent;
 
-  public CredentialsSettingConfigurator(Dsn dsn, String clientName) {
+  CredentialsSettingConfigurator(Dsn dsn, String clientName) {
 
     String publicKey = dsn.getPublicKey();
     String secretKey = dsn.getSecretKey();

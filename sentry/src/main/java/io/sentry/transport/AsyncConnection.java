@@ -13,8 +13,6 @@ import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
