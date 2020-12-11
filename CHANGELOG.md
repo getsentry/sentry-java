@@ -1,6 +1,7 @@
 # vNext
 
 * Fix inheriting sampling decision from parent (#1100)
+* Fixes and Tests: Session serialization and deserialization
 
 # 4.0.0-alpha.2
 
