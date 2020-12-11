@@ -1006,6 +1006,17 @@ class HubTest {
     }
 
     @Test
+    fun `when startTransaction with parent sampled and no traces sampler provided, transaction inherits sampling decision`() {
+        val hub = generateHub()
+        val transactionContext = TransactionContext("name")
+        transactionContext.parentSampled = true
+        val transaction = hub.startTransaction(transactionContext)
+        assertNotNull(transaction)
+        assertNotNull(transaction.isSampled)
+        assertTrue(transaction.isSampled!!)
+    }
+
+    @Test
     fun `Hub should close the sentry executor processor on close call`() {
         val executor = mock<ISentryExecutorService>()
         val options = SentryOptions().apply {
