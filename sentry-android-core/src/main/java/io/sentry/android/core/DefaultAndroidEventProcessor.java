@@ -906,15 +906,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         // apps.
         final String installerPackageName = packageManager.getInstallerPackageName(packageName);
 
-        Map<String, String> sideLoadedInfo = new HashMap<>();
+        final Map<String, String> sideLoadedInfo = new HashMap<>();
 
-        // it returns null if its an app installed via adb or system app
         if (installerPackageName != null) {
           sideLoadedInfo.put("isSideLoaded", "false");
           // could be amazon, google play etc
           sideLoadedInfo.put("installerStore", installerPackageName);
         } else {
-          // if it's installed via adb or untrusted sources
+          // if it's installed via adb, system apps or untrusted sources
           sideLoadedInfo.put("isSideLoaded", "true");
         }
 
@@ -931,7 +930,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @SuppressWarnings("unchecked")
   private void setSideLoadedInfo(final @NotNull SentryEvent event) {
     try {
-      Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
+      final Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
 
       if (sideLoadedInfo instanceof Map) {
         for (final Map.Entry<String, String> entry :
