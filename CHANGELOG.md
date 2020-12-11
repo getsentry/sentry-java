@@ -1,6 +1,7 @@
 # vNext
 
 * Fixes and Tests: Session serialization and deserialization
+* Feat: set isSideLoaded info tags
 
 # 4.0.0-alpha.2
 
