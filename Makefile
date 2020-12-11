@@ -35,3 +35,6 @@ stop:
 
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
+
+format:
+	./gradlew spotlessApply

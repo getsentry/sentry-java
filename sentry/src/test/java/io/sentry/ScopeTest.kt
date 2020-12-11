@@ -6,12 +6,14 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.Assert.assertArrayEquals
 
 class ScopeTest {
     @Test
@@ -59,6 +61,7 @@ class ScopeTest {
         assertNotSame(scope.tags, clone.tags)
         assertNotSame(scope.extras, clone.extras)
         assertNotSame(scope.eventProcessors, clone.eventProcessors)
+        assertNotSame(scope.attachments, clone.attachments)
     }
 
     @Test
@@ -85,6 +88,10 @@ class ScopeTest {
         val transaction = SentryTransaction("transaction-name")
         scope.setTransaction(transaction)
 
+        val attachment = Attachment("path/log.txt")
+        scope.addAttachment(attachment)
+        attachment.contentType = "application/json" // shallow copy, same reference
+
         val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
@@ -99,6 +106,13 @@ class ScopeTest {
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
         assertEquals(transaction, clone.span)
+
+        assertEquals(1, clone.attachments.size)
+        val actual = clone.attachments.first()
+        assertEquals(attachment.pathname, actual.pathname)
+        assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
+        assertEquals(attachment.filename, actual.filename)
+        assertEquals(attachment.contentType, actual.contentType)
     }
 
     @Test
@@ -124,6 +138,9 @@ class ScopeTest {
 
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
+
+        val attachment = Attachment("path/log.txt")
+        scope.addAttachment(attachment)
 
         val clone = scope.clone()
 
@@ -161,6 +178,13 @@ class ScopeTest {
         assertEquals(1, clone.extras.size)
         assertEquals(1, clone.eventProcessors.size)
         assertNull(clone.span)
+
+        scope.addAttachment(Attachment("path/image.png"))
+        attachment.contentType = "application/json"
+
+        assertEquals(1, clone.attachments.size)
+        assertEquals("application/json", clone.attachments.first().contentType)
+        assertTrue(clone.attachments is CopyOnWriteArrayList)
     }
 
     @Test
@@ -174,6 +198,7 @@ class ScopeTest {
         scope.setTag("some", "tag")
         scope.setExtra("some", "extra")
         scope.addEventProcessor { event, _ -> event }
+        scope.addAttachment(Attachment("path"))
 
         scope.clear()
 
@@ -184,6 +209,7 @@ class ScopeTest {
         assertEquals(0, scope.tags.size)
         assertEquals(0, scope.extras.size)
         assertEquals(0, scope.eventProcessors.size)
+        assertEquals(0, scope.attachments.size)
     }
 
     @Test
@@ -615,5 +641,26 @@ class ScopeTest {
         val span = transaction.startChild()
         val innerSpan = span.startChild()
         assertEquals(innerSpan, scope.span)
+    }
+
+    @Test
+    fun `attachments are thread safe`() {
+        val scope = Scope(SentryOptions())
+        assertTrue(scope.attachments is CopyOnWriteArrayList)
+
+        scope.clear()
+        assertTrue(scope.attachments is CopyOnWriteArrayList)
+
+        val cloned = scope.clone()
+        assertTrue(cloned.attachments is CopyOnWriteArrayList)
+    }
+
+    @Test
+    fun `getAttachments returns new instance`() {
+        val scope = Scope(SentryOptions())
+        scope.addAttachment(Attachment(""))
+
+        assertNotSame(scope.attachments, scope.attachments,
+                "Scope.attachments must return a new instance on each call.")
     }
 }

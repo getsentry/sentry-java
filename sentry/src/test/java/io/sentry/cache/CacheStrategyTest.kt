@@ -105,12 +105,12 @@ class CacheStrategyTest {
 
         val okSession = createSessionMockData(Session.State.Ok, true)
         val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
-        sut.serializer.serialize(okEnvelope, files[0].writer())
+        sut.serializer.serialize(okEnvelope, files[0].outputStream())
 
         val updatedOkSession = okSession.clone()
         updatedOkSession.update(null, null, true)
         val updatedOkEnvelope = SentryEnvelope.from(sut.serializer, updatedOkSession, null)
-        sut.serializer.serialize(updatedOkEnvelope, files[1].writer())
+        sut.serializer.serialize(updatedOkEnvelope, files[1].outputStream())
 
         saveSessionToFile(files[2], sut, Session.State.Exited, null)
 
@@ -172,7 +172,7 @@ class CacheStrategyTest {
     private fun saveSessionToFile(file: File, sut: CacheStrategy, state: Session.State = Session.State.Ok, init: Boolean? = true) {
         val okSession = createSessionMockData(state, init)
         val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
-        sut.serializer.serialize(okEnvelope, file.writer())
+        sut.serializer.serialize(okEnvelope, file.outputStream())
     }
 
     private fun getOptionsWithRealSerializer(): SentryOptions {

@@ -79,10 +79,11 @@ public class SentryOptions {
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
-  /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = NoOpSerializer.getInstance();
-
+  /** Envelope reader interface */
   private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
+
+  /** Serializer interface to serialize/deserialize json events */
+  private @NotNull ISerializer serializer = new GsonSerializer(logger, envelopeReader);
 
   /**
    * Sentry client name used for the HTTP authHeader and userAgent eg

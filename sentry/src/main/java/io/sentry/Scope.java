@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,6 +55,9 @@ public final class Scope implements Cloneable {
 
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
+
+  /** Scope's attachments */
+  private @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
 
   /**
    * Scope's ctor
@@ -282,6 +286,7 @@ public final class Scope implements Cloneable {
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
+    attachments.clear();
   }
 
   /**
@@ -431,6 +436,27 @@ public final class Scope implements Cloneable {
   }
 
   /**
+   * Returns the Scopes's attachments
+   *
+   * @return the attachments
+   */
+  @NotNull
+  List<Attachment> getAttachments() {
+    return new CopyOnWriteArrayList<>(attachments);
+  }
+
+  /**
+   * Adds an attachment to the Scope's list of attachments. The SDK adds the attachment to every
+   * event and transaction sent to Sentry.
+   *
+   * @param attachment The attachment to add to the Scope's list of attachments.
+   */
+  @ApiStatus.Experimental
+  public void addAttachment(final @NotNull Attachment attachment) {
+    attachments.add(attachment);
+  }
+
+  /**
    * Creates a breadcrumb list with the max number of breadcrumbs
    *
    * @param maxBreadcrumb the max number of breadcrumbs
@@ -495,6 +521,8 @@ public final class Scope implements Cloneable {
     clone.extra = extraClone;
 
     clone.contexts = contexts.clone();
+
+    clone.attachments = new CopyOnWriteArrayList<>(attachments);
 
     return clone;
   }

@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
@@ -40,7 +41,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.Assert.assertArrayEquals
 
 class SentryClientTest {
 
@@ -54,8 +57,11 @@ class SentryClientTest {
             isDebug = true
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(mock(), envelopeReader))
+            setLogger(mock())
         }
         var connection: AsyncConnection = mock()
+
+        var attachment = Attachment("hello".toByteArray(), "hello.txt")
 
         fun getSut() = SentryClient(sentryOptions, connection)
     }
@@ -250,6 +256,29 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when breadcrumbs are not empty, sort them out by date`() {
+        val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
+        val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
+        val scope = Scope(SentryOptions()).apply {
+            addBreadcrumb(b2)
+            addBreadcrumb(b1)
+        }
+
+        val sut = fixture.getSut()
+
+        val b3 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
+        val event = SentryEvent().apply {
+            breadcrumbs = mutableListOf(b3)
+        }
+
+        sut.captureEvent(event, scope)
+
+        assertSame(b1, event.breadcrumbs[0])
+        assertSame(b2, event.breadcrumbs[1])
+        assertSame(b3, event.breadcrumbs[2])
+    }
+
+    @Test
     fun `when captureEvent with scope, event data has priority over scope but level and it should append extras, tags and breadcrumbs`() {
         val event = createEvent()
 
@@ -331,6 +360,15 @@ class SentryClientTest {
         val allEvents = 10
         (0..allEvents).forEach { _ -> sut.captureEvent(SentryEvent()) }
         assertEquals(allEvents, mockingDetails(fixture.connection).invocations.size - 1) // 1 extra invocation outside .send()
+    }
+
+    @Test
+    fun `when captureEvent with attachments`() {
+        val event = createEvent()
+
+        fixture.getSut().captureEvent(event, createScopeWithAttachments())
+
+        verifyAttachmentsInEnvelope(event.eventId)
     }
 
     @Test
@@ -710,6 +748,15 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureTransaction with attachments`() {
+        val transaction = SentryTransaction("a-transaction")
+
+        fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
+
+        verifyAttachmentsInEnvelope(transaction.eventId)
+    }
+
+    @Test
     fun `when scope's active span is a transaction, transaction context is applied to an event`() {
         val event = SentryEvent()
         val sut = fixture.getSut()
@@ -746,6 +793,13 @@ class SentryClientTest {
             user = User().apply {
                 id = "id"
             }
+        }
+    }
+
+    private fun createScopeWithAttachments(): Scope {
+        return createScope().apply {
+            addAttachment(fixture.attachment)
+            addAttachment(fixture.attachment)
         }
     }
 
@@ -802,6 +856,29 @@ class SentryClientTest {
     private fun getTransactionFromData(data: ByteArray): SentryTransaction {
         val inputStream = InputStreamReader(ByteArrayInputStream(data))
         return fixture.sentryOptions.serializer.deserialize(inputStream, SentryTransaction::class.java)
+    }
+
+    private fun verifyAttachmentsInEnvelope(eventId: SentryId?) {
+        verify(fixture.connection).send(check { actual ->
+            assertEquals(eventId, actual.header.eventId)
+
+            assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
+
+            assertEquals(3, actual.items.count())
+            val attachmentItems = actual.items
+                .filter { item -> item.header.type == SentryItemType.Attachment }
+                .toList()
+
+            assertEquals(2, attachmentItems.size)
+
+            val attachmentItem = attachmentItems.first()
+            assertEquals(fixture.attachment.contentType, attachmentItem.header.contentType)
+            assertEquals(fixture.attachment.filename, attachmentItem.header.fileName)
+            assertEquals(fixture.attachment.bytes?.size, attachmentItem.header.length)
+
+            val expectedBytes = fixture.attachment.bytes!!
+            assertArrayEquals(expectedBytes, attachmentItem.data)
+        }, isNull())
     }
 
     internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData

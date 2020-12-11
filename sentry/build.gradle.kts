@@ -32,6 +32,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(project(":sentry-test-support"))
 }
 
 configure<SourceSetContainer> {

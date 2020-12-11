@@ -165,9 +165,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     setAppExtras(app);
 
-    if (event.getDebugMeta() == null) {
-      event.setDebugMeta(getDebugMeta());
-    }
+    mergeDebugImages(event);
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
     if (packageInfo != null) {
@@ -189,6 +187,27 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         thread.setCurrent(MainThreadChecker.isMainThread(thread));
       }
     }
+  }
+
+  private void mergeDebugImages(final @NotNull SentryEvent event) {
+    final List<DebugImage> debugImages = getDebugImages();
+    if (debugImages == null) {
+      return;
+    }
+
+    DebugMeta debugMeta = event.getDebugMeta();
+
+    if (debugMeta == null) {
+      debugMeta = new DebugMeta();
+    }
+
+    // sets the imageList or append to the list if it already exists
+    if (debugMeta.getImages() == null) {
+      debugMeta.setImages(debugImages);
+    } else {
+      debugMeta.getImages().addAll(debugImages);
+    }
+    event.setDebugMeta(debugMeta);
   }
 
   private @Nullable List<DebugImage> getDebugImages() {
@@ -217,18 +236,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     return images;
-  }
-
-  private @Nullable DebugMeta getDebugMeta() {
-    List<DebugImage> debugImages = getDebugImages();
-
-    if (debugImages == null) {
-      return null;
-    }
-
-    DebugMeta debugMeta = new DebugMeta();
-    debugMeta.setImages(debugImages);
-    return debugMeta;
   }
 
   private void setAppExtras(final @NotNull App app) {

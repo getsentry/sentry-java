@@ -43,6 +43,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
@@ -57,8 +58,9 @@ public class SentryAutoConfiguration {
   static class HubConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean
-    public @NotNull Sentry.OptionsConfiguration<SentryOptions> optionsOptionsConfiguration(
+    @ConditionalOnMissingBean(name = "sentryOptionsConfiguration")
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public @NotNull Sentry.OptionsConfiguration<SentryOptions> sentryOptionsConfiguration(
         final @NotNull ObjectProvider<SentryOptions.BeforeSendCallback> beforeSendCallback,
         final @NotNull ObjectProvider<SentryOptions.BeforeBreadcrumbCallback>
                 beforeBreadcrumbCallback,
@@ -92,10 +94,11 @@ public class SentryAutoConfiguration {
 
     @Bean
     public @NotNull IHub sentryHub(
-        final @NotNull Sentry.OptionsConfiguration<SentryOptions> optionsConfiguration,
+        final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
-      optionsConfiguration.configure(options);
+      optionsConfigurations.forEach(
+          optionsConfiguration -> optionsConfiguration.configure(options));
       gitProperties.ifAvailable(
           git -> {
             if (options.getRelease() == null && options.isUseGitCommitIdAsRelease()) {

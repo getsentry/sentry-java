@@ -64,7 +64,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `OptionsConfiguration is created if custom one is not provided`() {
+    fun `OptionsConfiguration is created if custom one with name "sentryOptionsConfiguration" is not provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).hasSingleBean(Sentry.OptionsConfiguration::class.java)
@@ -72,9 +72,34 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `OptionsConfiguration is not created if custom one is provided`() {
+    fun `OptionsConfiguration with name "sentryOptionsConfiguration" is created if another one with different name is provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(CustomOptionsConfigurationConfiguration::class.java)
+            .run {
+                assertThat(it).getBeans(Sentry.OptionsConfiguration::class.java).hasSize(2)
+                assertThat(it).getBean("sentryOptionsConfiguration")
+                    .isNotNull()
+                    .isInstanceOf(Sentry.OptionsConfiguration::class.java)
+                assertThat(it).getBean("customOptionsConfiguration")
+                    .isNotNull()
+                    .isInstanceOf(Sentry.OptionsConfiguration::class.java)
+            }
+    }
+
+    @Test
+    fun `"sentryOptionsConfiguration" bean is configured before custom OptionsConfiguration`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomOptionsConfigurationConfiguration::class.java)
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.beforeSend).isNull()
+            }
+    }
+
+    @Test
+    fun `OptionsConfiguration is not created if custom one with name "sentryOptionsConfiguration" is provided`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(OverridingOptionsConfigurationConfiguration::class.java)
             .run {
                 assertThat(it).hasSingleBean(Sentry.OptionsConfiguration::class.java)
                 assertThat(it.getBean(Sentry.OptionsConfiguration::class.java, "customOptionsConfiguration")).isNotNull
@@ -432,6 +457,18 @@ class SentryAutoConfigurationTest {
 
         @Bean
         open fun customOptionsConfiguration() = Sentry.OptionsConfiguration<SentryOptions> {
+            it.setBeforeSend(null)
+        }
+
+        @Bean
+        open fun beforeSendCallback() = CustomBeforeSendCallback()
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class OverridingOptionsConfigurationConfiguration {
+
+        @Bean
+        open fun sentryOptionsConfiguration() = Sentry.OptionsConfiguration<SentryOptions> {
         }
     }
 
