@@ -67,6 +67,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String ANDROID_ID = "androidId";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
+  @TestOnly static final String SIDE_LOADED = "sideLoaded";
 
   // it could also be a parameter and get from Sentry.init(...)
   private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTimeOrNull();
@@ -127,6 +128,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // its not IO, but it has been cached in the old version as well
     map.put(EMULATOR, isEmulator());
 
+    final Map<String, String> sideLoadedInfo = getSideLoadedInfo();
+    if (sideLoadedInfo != null) {
+      map.put(SIDE_LOADED, sideLoadedInfo);
+    }
+
     return map;
   }
 
@@ -154,6 +160,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       event.getContexts().setOperatingSystem(getOperatingSystem());
     }
 
+    setSideLoadedInfo(event);
+
     return event;
   }
 
@@ -175,9 +183,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         event.setDist(versionCode);
       }
       setAppPackageInfo(app, packageInfo);
-
-      // ideally we cache this into contextData along with other cacheable items
-      isSideLoaded(packageInfo.packageName, event);
     }
 
     event.getContexts().setApp(app);
@@ -888,46 +893,54 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("deprecation")
-  private void isSideLoaded(final @NotNull String packageName, final @NotNull SentryEvent event) {
+  private @Nullable Map<String, String> getSideLoadedInfo() {
+    String packageName = null;
     try {
+      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
       final PackageManager packageManager = context.getPackageManager();
-      if (packageManager == null) {
-        return;
-      }
 
-      //      String installerPackageName;
-      //      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
+      if (packageInfo != null && packageManager != null) {
+        packageName = packageInfo.packageName;
 
-      // this permission is only granted to system apps, so it won't work for us
-      //        if (!Permissions.hasPermission(context, "android.permission.INSTALL_PACKAGES")) {
-      //          return null;
-      //        }
+        // getInstallSourceInfo requires INSTALL_PACKAGES permission which is only given to system
+        // apps.
+        final String installerPackageName = packageManager.getInstallerPackageName(packageName);
 
-      //        final InstallSourceInfo sourceInfo =
-      // packageManager.getInstallSourceInfo(appPackage);
-      //        if (sourceInfo == null) {
-      //          return null;
-      //        }
+        Map<String, String> sideLoadedInfo = new HashMap<>();
 
-      // if the permission INSTALL_PACKAGES is not available, it returns null,
-      // this makes the API useless as we don't know how to differentiate if it's
-      // because there's no permissions or its installed via adb or system apps.
-      //        installerPackageName = sourceInfo.getInitiatingPackageName();
-      //      } else {
-      final String installerPackageName = packageManager.getInstallerPackageName(packageName);
-      //      }
+        // it returns null if its an app installed via adb or system app
+        if (installerPackageName != null) {
+          sideLoadedInfo.put("isSideLoaded", "false");
+          // could be amazon, google play etc
+          sideLoadedInfo.put("installerStore", installerPackageName);
+        } else {
+          // if it's installed via adb or untrusted sources
+          sideLoadedInfo.put("isSideLoaded", "true");
+        }
 
-      // it returns null if its an app installed via adb or system app
-      if (installerPackageName != null) {
-        event.setTag("isSideLoaded", "false");
-        // could be amazon, google play etc
-        event.setTag("installerStore", installerPackageName);
-      } else {
-        event.setTag("isSideLoaded", "true");
+        return sideLoadedInfo;
       }
     } catch (IllegalArgumentException e) {
       // it'll never be thrown as we are querying its own App's package.
       logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+    }
+
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private void setSideLoadedInfo(final @NotNull SentryEvent event) {
+    try {
+      Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
+
+      if (sideLoadedInfo instanceof Map) {
+        for (final Map.Entry<String, String> entry :
+            ((Map<String, String>) sideLoadedInfo).entrySet()) {
+          event.setTag(entry.getKey(), entry.getValue());
+        }
+      }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error getting side loaded info.", e);
     }
   }
 }
