@@ -1,9 +1,13 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryExceptionFactoryTest {
@@ -12,7 +16,7 @@ class SentryExceptionFactoryTest {
     @Test
     fun `when getSentryExceptions is called passing an Exception, not empty result`() {
         val exception = Exception("Exception")
-        assertTrue(sut.getSentryExceptions(exception).size > 0)
+        assertTrue(sut.getSentryExceptions(exception).isNotEmpty())
     }
 
     @Test
@@ -22,7 +26,33 @@ class SentryExceptionFactoryTest {
         assertEquals("Exception", sentryExceptions[0].type)
         assertEquals("Exception", sentryExceptions[0].value)
         assertEquals("java.lang", sentryExceptions[0].module)
-        assertTrue(sentryExceptions[0].stacktrace.frames.size > 0)
+        assertTrue(sentryExceptions[0].stacktrace.frames.isNotEmpty())
+    }
+
+    @Test
+    fun `when frames are null, do not set a stack trace object`() {
+        val stackTraceFactory = mock<SentryStackTraceFactory>()
+        whenever(stackTraceFactory.getStackFrames(any())).thenReturn(null)
+
+        val sentryExceptionFactory = SentryExceptionFactory(stackTraceFactory)
+        val exception = Exception("Exception")
+
+        val sentryExceptions = sentryExceptionFactory.getSentryExceptions(exception)
+
+        assertNull(sentryExceptions[0].stacktrace)
+    }
+
+    @Test
+    fun `when frames are empty, do not set a stack trace object`() {
+        val stackTraceFactory = mock<SentryStackTraceFactory>()
+        whenever(stackTraceFactory.getStackFrames(any())).thenReturn(emptyList())
+
+        val sentryExceptionFactory = SentryExceptionFactory(stackTraceFactory)
+        val exception = Exception("Exception")
+
+        val sentryExceptions = sentryExceptionFactory.getSentryExceptions(exception)
+
+        assertNull(sentryExceptions[0].stacktrace)
     }
 
     @Test
