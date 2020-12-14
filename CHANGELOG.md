@@ -2,6 +2,7 @@
 
 * Fix inheriting sampling decision from parent (#1100)
 * Fixes and Tests: Session serialization and deserialization
+* Feat: set isSideLoaded info tags
 
 # 4.0.0-alpha.2
 
