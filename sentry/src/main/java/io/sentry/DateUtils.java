@@ -3,96 +3,81 @@ package io.sentry;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** Utilities to deal with dates */
 @ApiStatus.Internal
 public final class DateUtils {
   private static final String UTC = "UTC";
+  // ISO 8601
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   private static final String ISO_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-  private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
+
+  private static @NotNull TimeZone getTimeZone() {
+    TimeZone timeZone = TimeZone.getTimeZone(UTC);
+    // if UTC is not available, let's get the current one and avoid NPE problems
+    if (timeZone == null) {
+      timeZone = TimeZone.getDefault();
+    }
+    return timeZone;
+  }
+
+  private static final @NotNull TimeZone UTC_TIMEZONE = getTimeZone();
+
+  private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
       new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
-          final TimeZone tz = TimeZone.getTimeZone(UTC);
           final SimpleDateFormat simpleDateFormat =
               new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
-          simpleDateFormat.setTimeZone(tz);
+          simpleDateFormat.setTimeZone(UTC_TIMEZONE);
           return simpleDateFormat;
         }
       };
-  private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS =
+
+  private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_UTC =
       new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
-          return new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
-        }
-      };
-  private static final ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT =
-      new ThreadLocal<SimpleDateFormat>() {
-        @Override
-        protected SimpleDateFormat initialValue() {
-          return new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
+          final SimpleDateFormat simpleDateFormat =
+                  new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
+          simpleDateFormat.setTimeZone(UTC_TIMEZONE);
+          return simpleDateFormat;
         }
       };
 
   private DateUtils() {}
 
   /**
-   * Get date formatted as expected by Sentry.
+   * Get the current date and time (UTC)
    *
-   * @param date the current date with local timezone
-   * @return the ISO formatted UTC date with millis precision.
-   */
-  public static @NotNull String getTimestampIsoFormat(final @NotNull Date date) {
-    return SDF_ISO_FORMAT_WITH_MILLIS_UTC.get().format(date);
-  }
-
-  /**
-   * Get the current date and time as ISO UTC
-   *
-   * @return the ISO UTC date and time
+   * @return the UTC date and time
    */
   @SuppressWarnings("JdkObsolete")
-  public static @NotNull Date getCurrentDateTime() throws IllegalArgumentException {
-    final String timestampIsoFormat = getTimestampIsoFormat(new Date());
-    return getDateTime(timestampIsoFormat);
+  public static @NotNull Date getCurrentDateTime() {
+    final Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
+    return calendar.getTime();
   }
 
   /**
-   * Get the current date and time as ISO UTC or null if not available
+   * Get Java Date from UTC/ISO 8601 timestamp format
    *
-   * @return the ISO UTC date and time or null
-   */
-  public static @Nullable Date getCurrentDateTimeOrNull() throws IllegalArgumentException {
-    try {
-      return getCurrentDateTime();
-    } catch (IllegalArgumentException ignored) {
-      // error getting current device's timestamp due to eg locale problems
-    }
-    return null;
-  }
-
-  /**
-   * Get Java Date from UTC timestamp format
-   *
-   * @param timestamp UTC format eg 2000-12-31T23:59:58Z or 2000-12-31T23:59:58.123Z
+   * @param timestamp UTC/ISO 8601 format eg 2000-12-31T23:59:58Z or 2000-12-31T23:59:58.123Z
    * @return the Date
    */
   public static @NotNull Date getDateTime(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
-      return SDF_ISO_FORMAT_WITH_MILLIS.get().parse(timestamp);
+      return SDF_ISO_FORMAT_WITH_MILLIS_UTC.get().parse(timestamp);
     } catch (ParseException e) {
       try {
         // to keep compatibility with older envelopes
-        return SDF_ISO_FORMAT.get().parse(timestamp);
+        return SDF_ISO_FORMAT_UTC.get().parse(timestamp);
       } catch (ParseException ignored) {
         // invalid timestamp format
       }
@@ -114,7 +99,7 @@ public final class DateUtils {
       final long seconds = Long.parseLong(times[0]);
       final long millis = times.length > 1 ? Long.parseLong(times[1]) : 0;
 
-      return getDateTime(new Date((seconds * 1000) + millis));
+      return getDateTime((seconds * 1000) + millis);
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException("timestamp is not millis format " + timestamp);
     }
@@ -127,19 +112,13 @@ public final class DateUtils {
    * @return the ISO formatted date with millis precision.
    */
   public static @NotNull String getTimestamp(final @NotNull Date date) {
-    final DateFormat df = SDF_ISO_FORMAT_WITH_MILLIS.get();
+    final DateFormat df = SDF_ISO_FORMAT_WITH_MILLIS_UTC.get();
     return df.format(date);
   }
 
-  /**
-   * Converts the given Date and time to UTC timezone
-   *
-   * @param date the Date with local timezone
-   * @return the Date UTC timezone
-   */
-  public static @NotNull Date getDateTime(final @NotNull Date date)
-      throws IllegalArgumentException {
-    final String timestampIsoFormat = getTimestampIsoFormat(date);
-    return getDateTime(timestampIsoFormat);
+  public static @NotNull Date getDateTime(final long millis) {
+    final Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
+    calendar.setTimeInMillis(millis);
+    return calendar.getTime();
   }
 }

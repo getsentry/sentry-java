@@ -18,4 +18,10 @@ class DateUtilsTest {
         val result = DateUtils.getTimestamp(date)
         assertEquals("2020-03-27T08:52:58.000Z", result)
     }
+
+    @Test
+    fun `calendar test`() {
+        val date = DateUtils.getCurrentDateTime()
+        val result = DateUtils.getTimestamp(date)
+    }
 }
