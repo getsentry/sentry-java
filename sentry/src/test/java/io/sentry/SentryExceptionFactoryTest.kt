@@ -11,18 +11,25 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryExceptionFactoryTest {
-    private val sut = SentryExceptionFactory(SentryStackTraceFactory(listOf("io.sentry"), listOf()))
+    private class Fixture {
+
+        fun getSut(stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), listOf())): SentryExceptionFactory {
+            return SentryExceptionFactory(stackTraceFactory)
+        }
+    }
+
+    private val fixture = Fixture()
 
     @Test
     fun `when getSentryExceptions is called passing an Exception, not empty result`() {
         val exception = Exception("Exception")
-        assertTrue(sut.getSentryExceptions(exception).isNotEmpty())
+        assertTrue(fixture.getSut().getSentryExceptions(exception).isNotEmpty())
     }
 
     @Test
     fun `when getSentryExceptions is called passing an Exception, it should set its fields`() {
         val exception = Exception("Exception")
-        val sentryExceptions = sut.getSentryExceptions(exception)
+        val sentryExceptions = fixture.getSut().getSentryExceptions(exception)
         assertEquals("Exception", sentryExceptions[0].type)
         assertEquals("Exception", sentryExceptions[0].value)
         assertEquals("java.lang", sentryExceptions[0].module)
@@ -34,10 +41,10 @@ class SentryExceptionFactoryTest {
         val stackTraceFactory = mock<SentryStackTraceFactory>()
         whenever(stackTraceFactory.getStackFrames(any())).thenReturn(null)
 
-        val sentryExceptionFactory = SentryExceptionFactory(stackTraceFactory)
+        val sut = fixture.getSut(stackTraceFactory)
         val exception = Exception("Exception")
 
-        val sentryExceptions = sentryExceptionFactory.getSentryExceptions(exception)
+        val sentryExceptions = sut.getSentryExceptions(exception)
 
         assertNull(sentryExceptions[0].stacktrace)
     }
@@ -47,10 +54,10 @@ class SentryExceptionFactoryTest {
         val stackTraceFactory = mock<SentryStackTraceFactory>()
         whenever(stackTraceFactory.getStackFrames(any())).thenReturn(emptyList())
 
-        val sentryExceptionFactory = SentryExceptionFactory(stackTraceFactory)
+        val sut = fixture.getSut(stackTraceFactory)
         val exception = Exception("Exception")
 
-        val sentryExceptions = sentryExceptionFactory.getSentryExceptions(exception)
+        val sentryExceptions = sut.getSentryExceptions(exception)
 
         assertNull(sentryExceptions[0].stacktrace)
     }
@@ -65,7 +72,7 @@ class SentryExceptionFactoryTest {
 
         val throwable = ExceptionMechanismException(mechanism, error, null)
 
-        val sentryExceptions = sut.getSentryExceptions(throwable)
+        val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
         assertEquals("anr", sentryExceptions[0].mechanism.type)
         assertEquals(false, sentryExceptions[0].mechanism.isHandled)
     }
@@ -73,7 +80,7 @@ class SentryExceptionFactoryTest {
     @Test
     fun `when exception is nested, it should be sorted oldest to newest`() {
         val exception = Exception("message", Exception("cause"))
-        val queue = sut.extractExceptionQueue(exception)
+        val queue = fixture.getSut().extractExceptionQueue(exception)
 
         assertEquals("cause", queue.first.value)
         assertEquals("message", queue.last.value)
@@ -82,13 +89,13 @@ class SentryExceptionFactoryTest {
     @Test
     fun `when getSentryExceptions is called passing an Inner exception, not empty result`() {
         val exception = InnerClassThrowable(InnerClassThrowable())
-        val queue = sut.extractExceptionQueue(exception)
+        val queue = fixture.getSut().extractExceptionQueue(exception)
         assertEquals("SentryExceptionFactoryTest\$InnerClassThrowable", queue.first.type)
     }
 
     @Test
     fun `when getSentryExceptions is called passing an anonymous exception, not empty result`() {
-        val queue = sut.extractExceptionQueue(anonymousException)
+        val queue = fixture.getSut().extractExceptionQueue(anonymousException)
         assertEquals("SentryExceptionFactoryTest\$anonymousException\$1", queue.first.type)
     }
 
@@ -96,7 +103,7 @@ class SentryExceptionFactoryTest {
     fun `when exception has no mechanism, it should get and set the current threadId`() {
         val threadId = Thread.currentThread().id
         val exception = Exception("message", Exception("cause"))
-        val queue = sut.extractExceptionQueue(exception)
+        val queue = fixture.getSut().extractExceptionQueue(exception)
 
         assertEquals(threadId, queue.first.threadId)
     }
@@ -109,7 +116,7 @@ class SentryExceptionFactoryTest {
         val thread = Thread()
         val throwable = ExceptionMechanismException(mechanism, exception, thread)
 
-        val queue = sut.extractExceptionQueue(throwable)
+        val queue = fixture.getSut().extractExceptionQueue(throwable)
 
         assertEquals(thread.id, queue.first.threadId)
     }
