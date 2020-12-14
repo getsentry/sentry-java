@@ -3,6 +3,7 @@
 * Fix inheriting sampling decision from parent (#1100)
 * Fixes and Tests: Session serialization and deserialization
 * Fix: Exception only sets a stack trace if there are frames
+* Feat: set isSideLoaded info tags
 
 # 4.0.0-alpha.2
 

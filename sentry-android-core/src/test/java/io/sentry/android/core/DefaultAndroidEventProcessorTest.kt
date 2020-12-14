@@ -19,6 +19,7 @@ import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
+import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
 import io.sentry.protocol.DebugImage
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
@@ -202,6 +203,7 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(contextData[ANDROID_ID])
         assertNotNull(contextData[KERNEL_VERSION])
         assertNotNull(contextData[EMULATOR])
+        assertNotNull(contextData[SIDE_LOADED])
     }
 
     @Test
@@ -216,5 +218,14 @@ class DefaultAndroidEventProcessorTest {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
         processor.process(SentryEvent(), CachedEvent())
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `When event is processed, sideLoaded info should be set`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        var event = SentryEvent()
+        event = processor.process(event, null)
+
+        assertNotNull(event.getTag("isSideLoaded"))
     }
 }
