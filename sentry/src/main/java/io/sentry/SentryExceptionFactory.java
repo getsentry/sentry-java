@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
+import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.util.Objects;
 import java.util.ArrayDeque;
@@ -82,13 +83,15 @@ final class SentryExceptionFactory {
     final String exceptionPackageName =
         exceptionPackage != null ? exceptionPackage.getName() : null;
 
-    final SentryStackTrace sentryStackTrace = new SentryStackTrace();
-    sentryStackTrace.setFrames(sentryStackTraceFactory.getStackFrames(throwable.getStackTrace()));
+    final List<SentryStackFrame> frames =
+        sentryStackTraceFactory.getStackFrames(throwable.getStackTrace());
+    if (frames != null && !frames.isEmpty()) {
+      exception.setStacktrace(new SentryStackTrace(frames));
+    }
 
     if (thread != null) {
       exception.setThreadId(thread.getId());
     }
-    exception.setStacktrace(sentryStackTrace);
     exception.setType(exceptionClassName);
     exception.setMechanism(exceptionMechanism);
     exception.setModule(exceptionPackageName);
