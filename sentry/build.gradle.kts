@@ -19,7 +19,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 dependencies {
     // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
     implementation(Config.Libs.gson)
-    compileOnly("org.asynchttpclient:async-http-client:2.12.1")
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
