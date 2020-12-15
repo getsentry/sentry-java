@@ -52,7 +52,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (connection == null) {
-      connection = ConnectionFactory.create(options);
+      connection = AsyncConnectionFactory.create(options, options.getEnvelopeDiskCache());
     }
     this.connection = connection;
     random = options.getSampleRate() == null ? null : new Random();

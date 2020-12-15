@@ -38,8 +38,4 @@ final class CredentialsSettingConfigurator implements IConnectionConfigurator {
     connection.setRequestProperty(USER_AGENT, userAgent);
     connection.setRequestProperty(SENTRY_AUTH, authHeader);
   }
-
-  public String getAuthHeader() {
-    return authHeader;
-  }
 }

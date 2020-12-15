@@ -32,6 +32,7 @@ class AsyncConnectionTest {
         var transportGate = mock<ITransportGate>()
         var envelopeCache = mock<IEnvelopeCache>()
         var executor = mock<ExecutorService>()
+        var rateLimiter = mock<RateLimiter>()
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             setSerializer(mock())
@@ -45,7 +46,7 @@ class AsyncConnectionTest {
         }
 
         fun getSUT(): AsyncConnection {
-            return AsyncConnection(transport, transportGate, envelopeCache, executor, sentryOptions, RateLimiter(sentryOptions.logger))
+            return AsyncConnection(transport, transportGate, envelopeCache, executor, sentryOptions, rateLimiter)
         }
     }
 
@@ -56,6 +57,7 @@ class AsyncConnectionTest {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
         whenever(fixture.transport.send(any())).thenReturn(TransportResult.success())
 
         // when
@@ -72,18 +74,18 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
     fun `stores envelope in cache if sending is not allowed`() {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(false)
+        whenever(fixture.rateLimiter.filter(eq(envelope), anyOrNull())).thenReturn(envelope)
 
         // when
         fixture.getSUT().send(envelope)
 
         // then
         verify(fixture.envelopeCache).store(eq(envelope), anyOrNull())
-        verify(fixture.transport).isRetryAfter(any())
+        verify(fixture.rateLimiter).filter(eq(envelope), anyOrNull())
     }
 
     @Test
@@ -91,6 +93,7 @@ class AsyncConnectionTest {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(eq(envelope), anyOrNull())).thenReturn(envelope)
         whenever(fixture.transport.send(any())).thenReturn(TransportResult.error(500))
 
         // when
@@ -115,6 +118,7 @@ class AsyncConnectionTest {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
         whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(eq(envelope), anyOrNull())).thenReturn(envelope)
         whenever(fixture.transport.send(any())).thenThrow(IOException())
 
         // when
@@ -131,11 +135,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
-    fun `when event is retry after, do not submit runnable`() {
+    fun `when event is filtered out, do not submit runnable`() {
         // given
         val ev = SentryEvent()
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
@@ -146,11 +149,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
-    fun `when event is not retry after, submit runnable`() {
+    fun `when event is not filtered out, submit runnable`() {
         // given
         val ev = SentryEvent()
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(false)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
@@ -161,11 +163,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
-    fun `when session is retry after, do not submit runnable`() {
+    fun `when session is filtered out, do not submit runnable`() {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
 
         // when
         fixture.getSUT().send(envelope)
@@ -175,11 +176,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
-    fun `when session is retry after and cached, discard session`() {
+    fun `when session is filtered out, discard session`() {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
 
         // when
         fixture.getSUT().send(envelope, CachedEvent())
@@ -189,11 +189,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
-    fun `when session is retry after but not cached, do nothing`() {
+    fun `when session is filtered out, do nothing`() {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
 
         // when
         fixture.getSUT().send(envelope)
@@ -203,10 +202,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    fun `when session is not retry after, submit runnable`() {
+    fun `when session is not filtered out, submit runnable`() {
         // given
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(false)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
 
         // when
         fixture.getSUT().send(envelope)
@@ -216,14 +215,12 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
     fun `When envelopes have retry after items, ignore them and send others`() {
         val sessionItem = SentryEnvelopeItem.fromSession(fixture.sentryOptions.serializer, createSession())
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.sentryOptions.serializer, SentryEvent())
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(sessionItem, eventItem))
 
-        whenever(fixture.transport.isRetryAfter(eq("event"))).thenReturn(false)
-        whenever(fixture.transport.isRetryAfter(eq("session"))).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem)) }
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.transport.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
         fixture.getSUT().send(envelope)
@@ -233,11 +230,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    @Ignore
-    fun `when event is retry after and cached, discard session`() {
+    fun `when event is filtered out and cached, discard session`() {
         // given
         val ev = SentryEvent()
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
@@ -248,10 +244,10 @@ class AsyncConnectionTest {
     }
 
     @Test
-    fun `when event is retry after but not cached, do nothing`() {
+    fun `when event is filtered out but not cached, do nothing`() {
         // given
         val ev = SentryEvent()
-        whenever(fixture.transport.isRetryAfter(any())).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
