@@ -122,4 +122,17 @@ class RateLimiterTest {
         val result = rateLimiter.filter(envelope, null)
         assertNull(result)
     }
+
+    @Test
+    fun `When both retry headers are not present, default delay is set`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
+
+        rateLimiter.updateRetryAfterLimits(null, null, 429)
+
+        val result = rateLimiter.filter(envelope, null)
+        assertNull(result)
+    }
 }
