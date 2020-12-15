@@ -387,7 +387,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @SuppressWarnings("JdkObsolete")
   private @Nullable Date getBootTime() {
     try {
-      // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
+      // if user changes the clock, will give a wrong answer, consider ACTION_TIME_CHANGED.
+      // currentTimeMillis returns UTC already
       return DateUtils.getDateTime(System.currentTimeMillis() - SystemClock.elapsedRealtime());
     } catch (IllegalArgumentException e) {
       logger.log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
