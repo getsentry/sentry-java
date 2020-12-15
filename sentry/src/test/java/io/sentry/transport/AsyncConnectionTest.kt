@@ -21,7 +21,6 @@ import io.sentry.dsnString
 import io.sentry.protocol.User
 import java.io.IOException
 import java.util.concurrent.ExecutorService
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

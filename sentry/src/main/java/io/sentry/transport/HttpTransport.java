@@ -89,8 +89,8 @@ public class HttpTransport implements ITransport {
         sslSocketFactory,
         hostnameVerifier,
         sentryUrl,
-        CurrentDateProvider.getInstance(),
-        AuthenticatorWrapper.getInstance());
+        AuthenticatorWrapper.getInstance(),
+        new RateLimiter(CurrentDateProvider.getInstance(), options.getLogger()));
   }
 
   HttpTransport(
@@ -101,8 +101,8 @@ public class HttpTransport implements ITransport {
       final @Nullable SSLSocketFactory sslSocketFactory,
       final @Nullable HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl,
-      final @NotNull ICurrentDateProvider currentDateProvider,
-      final @NotNull AuthenticatorWrapper authenticatorWrapper) {
+      final @NotNull AuthenticatorWrapper authenticatorWrapper,
+      final @NotNull RateLimiter rateLimiter) {
     this.connectionConfigurator = connectionConfigurator;
     this.serializer = options.getSerializer();
     this.connectionTimeout = connectionTimeoutMillis;
@@ -110,6 +110,7 @@ public class HttpTransport implements ITransport {
     this.options = options;
     this.sslSocketFactory = sslSocketFactory;
     this.hostnameVerifier = hostnameVerifier;
+    this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter is required");
     this.logger = Objects.requireNonNull(options.getLogger(), "Logger is required.");
 
     try {
@@ -129,7 +130,6 @@ public class HttpTransport implements ITransport {
         authenticatorWrapper.setDefault(new ProxyAuthenticator(proxyUser, proxyPassword));
       }
     }
-    this.rateLimiter = new RateLimiter(currentDateProvider, options.getLogger());
   }
 
   private @Nullable Proxy resolveProxy(final @Nullable SentryOptions.Proxy optionsProxy) {
@@ -157,18 +157,6 @@ public class HttpTransport implements ITransport {
   protected @NotNull HttpURLConnection open() throws IOException {
     return (HttpURLConnection)
         (proxy == null ? envelopeUrl.openConnection() : envelopeUrl.openConnection(proxy));
-  }
-
-  /**
-   * Check if an itemType is retry after or not
-   *
-   * @param itemType the itemType (eg event, session, etc...)
-   * @return true if retry after or false otherwise
-   */
-  @SuppressWarnings("JdkObsolete")
-  @Override
-  public boolean isRetryAfter(final @NotNull String itemType) {
-    return rateLimiter.isRetryAfter(itemType);
   }
 
   /**

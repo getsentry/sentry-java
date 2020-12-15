@@ -15,11 +15,6 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
-  public boolean isRetryAfter(String type) {
-    return false;
-  }
-
-  @Override
   public TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
     Objects.requireNonNull(envelope, "SentryEnvelope is required");
 

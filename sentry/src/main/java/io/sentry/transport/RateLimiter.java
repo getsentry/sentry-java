@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/** Controls retry limits on different category types sent to Sentry. */
 public final class RateLimiter {
 
   private enum DataCategory {
@@ -111,8 +112,14 @@ public final class RateLimiter {
     }
   }
 
+  /**
+   * Check if an itemType is retry after or not
+   *
+   * @param itemType the itemType (eg event, session, etc...)
+   * @return true if retry after or false otherwise
+   */
   @SuppressWarnings("JdkObsolete")
-  public boolean isRetryAfter(final @NotNull String itemType) {
+  private boolean isRetryAfter(final @NotNull String itemType) {
     final DataCategory dataCategory = getCategoryFromItemType(itemType);
     final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
 

@@ -16,11 +16,6 @@ public final class NoOpTransport implements ITransport {
   private NoOpTransport() {}
 
   @Override
-  public boolean isRetryAfter(String type) {
-    return false;
-  }
-
-  @Override
   public TransportResult send(SentryEnvelope envelope) throws IOException {
     return TransportResult.success();
   }
