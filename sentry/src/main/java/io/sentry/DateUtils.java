@@ -18,16 +18,8 @@ public final class DateUtils {
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   private static final String ISO_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
-  private static @NotNull TimeZone getTimeZone() {
-    TimeZone timeZone = TimeZone.getTimeZone(UTC);
-    // if UTC is not available, let's get the current one and avoid NPE problems
-    if (timeZone == null) {
-      timeZone = TimeZone.getDefault();
-    }
-    return timeZone;
-  }
-
-  private static final @NotNull TimeZone UTC_TIMEZONE = getTimeZone();
+  // if UTC is not found, it fallback to "GMT" which is UTC equivalent
+  private static final @NotNull TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
 
   private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
       new ThreadLocal<SimpleDateFormat>() {
