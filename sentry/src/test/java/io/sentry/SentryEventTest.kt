@@ -5,11 +5,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Date
-import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -44,8 +44,7 @@ public final class DateUtils {
       new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
-          final SimpleDateFormat simpleDateFormat =
-                  new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
+          final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
           simpleDateFormat.setTimeZone(UTC_TIMEZONE);
           return simpleDateFormat;
         }
@@ -54,9 +53,9 @@ public final class DateUtils {
   private DateUtils() {}
 
   /**
-   * Get the current date and time (UTC)
+   * Get the current Date (UTC)
    *
-   * @return the UTC date and time
+   * @return the UTC Date
    */
   @SuppressWarnings("JdkObsolete")
   public static @NotNull Date getCurrentDateTime() {
@@ -65,10 +64,10 @@ public final class DateUtils {
   }
 
   /**
-   * Get Java Date from UTC/ISO 8601 timestamp format
+   * Get the Date from UTC/ISO 8601 timestamp
    *
    * @param timestamp UTC/ISO 8601 format eg 2000-12-31T23:59:58Z or 2000-12-31T23:59:58.123Z
-   * @return the Date
+   * @return the UTC Date
    */
   public static @NotNull Date getDateTime(final @NotNull String timestamp)
       throws IllegalArgumentException {
@@ -86,10 +85,10 @@ public final class DateUtils {
   }
 
   /**
-   * Get Java Date from millis timestamp format
+   * Get the Date from millis timestamp
    *
-   * @param timestamp millis format eg 1581410911.988 (1581410911 seconds and 988 millis)
-   * @return the Date UTC timezone
+   * @param timestamp millis eg 1581410911.988 (1581410911 seconds and 988 millis)
+   * @return the UTC Date
    */
   @SuppressWarnings("JdkObsolete")
   public static @NotNull Date getDateTimeWithMillisPrecision(final @NotNull String timestamp)
@@ -106,16 +105,22 @@ public final class DateUtils {
   }
 
   /**
-   * Get date formatted as expected by Sentry.
+   * Get the UTC/ISO 8601 timestamp from Date
    *
-   * @param date already UTC format
-   * @return the ISO formatted date with millis precision.
+   * @param date the UTC Date
+   * @return the UTC/ISO 8601 timestamp
    */
   public static @NotNull String getTimestamp(final @NotNull Date date) {
     final DateFormat df = SDF_ISO_FORMAT_WITH_MILLIS_UTC.get();
     return df.format(date);
   }
 
+  /**
+   * Get the Date from millis timestamp
+   *
+   * @param millis the UTC millis from the epoch
+   * @return the UTC Date
+   */
   public static @NotNull Date getDateTime(final long millis) {
     final Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
     calendar.setTimeInMillis(millis);

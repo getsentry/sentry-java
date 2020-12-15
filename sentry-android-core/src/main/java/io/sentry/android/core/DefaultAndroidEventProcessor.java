@@ -388,8 +388,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private @Nullable Date getBootTime() {
     try {
       // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
-      return DateUtils.getDateTime(
-          System.currentTimeMillis() - SystemClock.elapsedRealtime());
+      return DateUtils.getDateTime(System.currentTimeMillis() - SystemClock.elapsedRealtime());
     } catch (IllegalArgumentException e) {
       logger.log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
     }

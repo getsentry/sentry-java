@@ -28,9 +28,10 @@ import org.apache.logging.log4j.spi.ExtendedLogger
 import org.awaitility.kotlin.await
 
 class SentryAppenderTest {
-    private class Fixture() {
+    private class Fixture {
         val loggerContext = LogManager.getContext() as LoggerContext
         lateinit var transport: ITransport
+        val utcTimeZone: ZoneId = ZoneId.of("UTC")
 
         fun getSut(transport: ITransport = mock(), minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {
             this.transport = transport
@@ -103,14 +104,14 @@ class SentryAppenderTest {
     @Test
     fun `event date is in UTC`() {
         val logger = fixture.getSut(minimumEventLevel = Level.DEBUG)
-        val utcTime = LocalDateTime.now(ZoneId.of("UTC"))
+        val utcTime = LocalDateTime.now(fixture.utcTimeZone)
 
         logger.debug("testing event date")
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 val eventTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(fixture.utcTimeZone)
                     .toLocalDateTime()
 
                 assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
@@ -249,7 +250,7 @@ class SentryAppenderTest {
     @Test
     fun `attaches breadcrumbs with level higher than minimumBreadcrumbLevel`() {
         val logger = fixture.getSut(minimumEventLevel = Level.WARN, minimumBreadcrumbLevel = Level.DEBUG)
-        val utcTime = LocalDateTime.now(ZoneId.of("UTC"))
+        val utcTime = LocalDateTime.now(fixture.utcTimeZone)
 
         logger.debug("this should be a breadcrumb #1")
         logger.info("this should be a breadcrumb #2")
@@ -260,7 +261,7 @@ class SentryAppenderTest {
                 assertEquals(2, event.breadcrumbs.size)
                 val breadcrumb = event.breadcrumbs[0]
                 val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(fixture.utcTimeZone)
                     .toLocalDateTime()
                 assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
