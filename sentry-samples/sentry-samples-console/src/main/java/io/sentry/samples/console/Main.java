@@ -158,7 +158,7 @@ public class Main {
 
     // All events that have not been sent yet are being flushed on JVM exit. Events can be also
     // flushed manually:
-    Sentry.close();
+    // Sentry.close();
   }
 
   private static class SomeEventProcessor implements EventProcessor {
