@@ -113,7 +113,8 @@ public final class EnvelopeReader implements IEnvelopeReader {
         byte[] envelopeItemBytes =
             Arrays.copyOfRange(
                 envelopeBytes, lineBreakIndex + 1, payloadEndOffsetExclusive /* to is exclusive */);
-
+        // when special chars are part of the envelope item, creating a string out of the envelopeItemBytes
+        // you see an incomplete json, chars are missing
         SentryEnvelopeItem item = new SentryEnvelopeItem(itemHeader, envelopeItemBytes);
         items.add(item);
 
