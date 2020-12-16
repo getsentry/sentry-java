@@ -1,5 +1,6 @@
 package io.sentry.log4j2
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.HubAdapter
@@ -81,7 +82,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals("manual-environment", event.environment)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -96,7 +97,7 @@ class SentryAppenderTest {
                 assertEquals("testing message conversion {}, {}", event.message.message)
                 assertEquals(listOf("1", "2"), event.message.params)
                 assertEquals("io.sentry.log4j2.SentryAppenderTest", event.logger)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -115,7 +116,7 @@ class SentryAppenderTest {
 
                 assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
-            })
+            }, anyOrNull())
         }
     }
 
@@ -127,7 +128,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -139,7 +140,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -151,7 +152,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.INFO, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -163,7 +164,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.WARNING, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -175,7 +176,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.ERROR, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -187,7 +188,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.FATAL, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -199,7 +200,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertNotNull(event.getExtra("thread_name"))
-            })
+            }, anyOrNull())
         }
     }
 
@@ -212,7 +213,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
-            })
+            }, anyOrNull())
         }
     }
 
@@ -224,7 +225,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
-            })
+            }, anyOrNull())
         }
     }
 
@@ -242,7 +243,7 @@ class SentryAppenderTest {
                     "maven:sentry-log4j2" == pkg.name &&
                         BuildConfig.VERSION_NAME == pkg.version
                 })
-            })
+            }, anyOrNull())
         }
     }
 
@@ -267,7 +268,7 @@ class SentryAppenderTest {
                 assertEquals("this should be a breadcrumb #1", breadcrumb.message)
                 assertEquals("io.sentry.log4j2.SentryAppenderTest", breadcrumb.category)
                 assertEquals(SentryLevel.DEBUG, breadcrumb.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -283,7 +284,7 @@ class SentryAppenderTest {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(1, event.breadcrumbs.size)
                 assertEquals("this should be a breadcrumb", event.breadcrumbs[0].message)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -301,7 +302,7 @@ class SentryAppenderTest {
                 assertEquals(2, event.breadcrumbs.size)
                 assertEquals("this should be a breadcrumb", event.breadcrumbs[0].message)
                 assertEquals("this should not be sent as the event but be a breadcrumb", event.breadcrumbs[1].message)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -313,7 +314,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals("release from sentry.properties", event.release)
-            })
+            }, anyOrNull())
         }
     }
 }

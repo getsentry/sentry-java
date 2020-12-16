@@ -29,15 +29,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class HttpTransportTest {
+class HttpConnectionTest {
 
     private class Fixture {
         val dsn: URL = URI.create("https://key@localhost/proj").toURL()
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
         var requestUpdater = IConnectionConfigurator {}
-        var connectionTimeout = 1000
-        var readTimeout = 500
         val connection = mock<HttpsURLConnection>()
         val currentDateProvider = mock<ICurrentDateProvider>()
         val authenticatorWrapper = mock<AuthenticatorWrapper>()
@@ -52,14 +50,14 @@ class HttpTransportTest {
             whenever(connection.setSSLSocketFactory(any())).thenCallRealMethod()
         }
 
-        fun getSUT(): HttpTransport {
+        fun getSUT(): HttpConnection {
             val options = SentryOptions()
             options.setSerializer(serializer)
             options.proxy = proxy
             options.sslSocketFactory = sslSocketFactory
             options.hostnameVerifier = hostnameVerifier
 
-            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, sslSocketFactory, hostnameVerifier, dsn, authenticatorWrapper, rateLimiter) {
+            return object : HttpConnection(options, requestUpdater, dsn, authenticatorWrapper, rateLimiter) {
                 override fun open(): HttpsURLConnection {
                     return connection
                 }

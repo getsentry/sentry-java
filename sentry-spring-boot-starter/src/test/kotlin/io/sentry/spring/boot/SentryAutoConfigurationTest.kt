@@ -1,6 +1,7 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
@@ -186,7 +187,7 @@ class SentryAutoConfigurationTest {
                         assertThat(event.sdk.packages).anyMatch { pkg ->
                             pkg.name == "maven:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
                         }
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -246,7 +247,7 @@ class SentryAutoConfigurationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event ->
                         assertThat(event.release).isEqualTo("git-commit-id")
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -261,7 +262,7 @@ class SentryAutoConfigurationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event ->
                         assertThat(event.release).isEqualTo("my-release")
-                    })
+                    }, anyOrNull())
                 }
             }
     }

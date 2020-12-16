@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.SentryId;
-import io.sentry.transport.Connection;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.NoOpTransport;
 import io.sentry.util.ApplyScopeUtils;
@@ -27,7 +26,7 @@ public final class SentryClient implements ISentryClient {
   private boolean enabled;
 
   private final @NotNull SentryOptions options;
-  private final @NotNull Connection connection;
+  private final @NotNull ITransport transport;
   private final @Nullable Random random;
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
@@ -38,10 +37,6 @@ public final class SentryClient implements ISentryClient {
   }
 
   SentryClient(final @NotNull SentryOptions options) {
-    this(options, null);
-  }
-
-  public SentryClient(final @NotNull SentryOptions options, @Nullable Connection connection) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
@@ -50,12 +45,8 @@ public final class SentryClient implements ISentryClient {
       transport = HttpTransportFactory.create(options);
       options.setTransport(transport);
     }
-
-    if (connection == null) {
-      connection = AsyncConnectionFactory.create(options, options.getEnvelopeDiskCache());
-    }
-    this.connection = connection;
-    random = options.getSampleRate() == null ? null : new Random();
+    this.transport = transport;
+    this.random = options.getSampleRate() == null ? null : new Random();
   }
 
   @Override
@@ -117,7 +108,7 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
 
       if (envelope != null) {
-        connection.send(envelope, hint);
+        transport.send(envelope, hint);
       }
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
@@ -227,7 +218,7 @@ public final class SentryClient implements ISentryClient {
 
     try {
       final SentryEnvelope envelope = buildEnvelope(userFeedback);
-      connection.send(envelope);
+      transport.send(envelope);
     } catch (IOException e) {
       options
           .getLogger()
@@ -338,7 +329,7 @@ public final class SentryClient implements ISentryClient {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     try {
-      connection.send(envelope, hint);
+      transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
       return SentryId.EMPTY_ID;
@@ -363,7 +354,7 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope = buildEnvelope(transaction, getAttachmentsFromScope(scope));
 
       if (envelope != null) {
-        connection.send(envelope, hint);
+        transport.send(envelope, hint);
       } else {
         sentryId = SentryId.EMPTY_ID;
       }
@@ -479,7 +470,7 @@ public final class SentryClient implements ISentryClient {
 
     try {
       flush(options.getShutdownTimeout());
-      connection.close();
+      transport.close();
     } catch (IOException e) {
       options
           .getLogger()

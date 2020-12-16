@@ -1,5 +1,6 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
@@ -36,7 +37,7 @@ class SentryUserProviderEventProcessorIntegrationTest {
                     verify(transport).send(checkEvent { event: SentryEvent ->
                         assertThat(event.user).isNotNull
                         assertThat(event.user.username).isEqualTo("john.smith")
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -53,7 +54,7 @@ class SentryUserProviderEventProcessorIntegrationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event: SentryEvent ->
                         assertThat(event.user).isNull()
-                    })
+                    }, anyOrNull())
                 }
             }
     }

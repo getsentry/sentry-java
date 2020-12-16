@@ -16,9 +16,7 @@ public final class NoOpTransport implements ITransport {
   private NoOpTransport() {}
 
   @Override
-  public TransportResult send(SentryEnvelope envelope) throws IOException {
-    return TransportResult.success();
-  }
+  public void send(SentryEnvelope envelope, Object hint) throws IOException {}
 
   @Override
   public void close() throws IOException {}

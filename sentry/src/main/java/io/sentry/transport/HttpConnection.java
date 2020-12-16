@@ -5,11 +5,8 @@ import static io.sentry.SentryLevel.ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.ILogger;
-import io.sentry.ISerializer;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
-import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,37 +24,21 @@ import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-/**
- * An implementation of the {@link ITransport} interface that sends the events to the Sentry server
- * over HTTP(S).
- */
 @Open
-@ApiStatus.NonExtendable // only not final because of testing
-@ApiStatus.Internal
-public class HttpTransport implements ITransport {
+class HttpConnection {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final @Nullable Proxy proxy;
   private final @NotNull IConnectionConfigurator connectionConfigurator;
-  private final @NotNull ISerializer serializer;
-  private final int connectionTimeout;
-  private final int readTimeout;
   private final @NotNull URL envelopeUrl;
-  private final @Nullable SSLSocketFactory sslSocketFactory;
-  private final @Nullable HostnameVerifier hostnameVerifier;
-
-  private final @NotNull SentryOptions options;
-
-  private final @NotNull ILogger logger;
-
-  private final @NotNull RateLimiter rateLimiter;
+  private final SentryOptions options;
+  private final RateLimiter rateLimiter;
 
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
@@ -67,51 +48,31 @@ public class HttpTransport implements ITransport {
    * @param options sentry options to read the config from
    * @param connectionConfigurator this consumer is given a chance to set up the request before it
    *     is sent
-   * @param connectionTimeoutMillis connection timeout in milliseconds
-   * @param readTimeoutMillis read timeout in milliseconds
-   * @param sslSocketFactory custom sslSocketFactory for self-signed certificate trust
-   * @param hostnameVerifier custom hostnameVerifier for self-signed certificate trust
    * @param sentryUrl sentryUrl which is the parsed DSN
+   * @param rateLimiter rate limiter
    */
-  public HttpTransport(
+  public HttpConnection(
       final @NotNull SentryOptions options,
       final @NotNull IConnectionConfigurator connectionConfigurator,
-      final int connectionTimeoutMillis,
-      final int readTimeoutMillis,
-      final @Nullable SSLSocketFactory sslSocketFactory,
-      final @Nullable HostnameVerifier hostnameVerifier,
-      final @NotNull URL sentryUrl) {
+      final @NotNull URL sentryUrl,
+      RateLimiter rateLimiter) {
     this(
         options,
         connectionConfigurator,
-        connectionTimeoutMillis,
-        readTimeoutMillis,
-        sslSocketFactory,
-        hostnameVerifier,
         sentryUrl,
         AuthenticatorWrapper.getInstance(),
-        new RateLimiter(CurrentDateProvider.getInstance(), options.getLogger()));
+        rateLimiter);
   }
 
-  HttpTransport(
+  HttpConnection(
       final @NotNull SentryOptions options,
       final @NotNull IConnectionConfigurator connectionConfigurator,
-      final int connectionTimeoutMillis,
-      final int readTimeoutMillis,
-      final @Nullable SSLSocketFactory sslSocketFactory,
-      final @Nullable HostnameVerifier hostnameVerifier,
       final @NotNull URL sentryUrl,
       final @NotNull AuthenticatorWrapper authenticatorWrapper,
-      final @NotNull RateLimiter rateLimiter) {
+      RateLimiter rateLimiter) {
     this.connectionConfigurator = connectionConfigurator;
-    this.serializer = options.getSerializer();
-    this.connectionTimeout = connectionTimeoutMillis;
-    this.readTimeout = readTimeoutMillis;
     this.options = options;
-    this.sslSocketFactory = sslSocketFactory;
-    this.hostnameVerifier = hostnameVerifier;
-    this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter is required");
-    this.logger = Objects.requireNonNull(options.getLogger(), "Logger is required.");
+    this.rateLimiter = rateLimiter;
 
     try {
       final URI uri = sentryUrl.toURI();
@@ -142,12 +103,14 @@ public class HttpTransport implements ITransport {
           InetSocketAddress proxyAddr = new InetSocketAddress(host, Integer.parseInt(port));
           proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
         } catch (NumberFormatException e) {
-          logger.log(
-              ERROR,
-              e,
-              "Failed to parse Sentry Proxy port: "
-                  + optionsProxy.getPort()
-                  + ". Proxy is ignored");
+          options
+              .getLogger()
+              .log(
+                  ERROR,
+                  e,
+                  "Failed to parse Sentry Proxy port: "
+                      + optionsProxy.getPort()
+                      + ". Proxy is ignored");
         }
       }
     }
@@ -179,12 +142,17 @@ public class HttpTransport implements ITransport {
     // https://stackoverflow.com/questions/52726909/java-io-ioexception-unexpected-end-of-stream-on-connection/53089882
     connection.setRequestProperty("Connection", "close");
 
-    connection.setConnectTimeout(connectionTimeout);
-    connection.setReadTimeout(readTimeout);
+    connection.setConnectTimeout(options.getConnectionTimeoutMillis());
+    connection.setReadTimeout(options.getReadTimeoutMillis());
+
+    final HostnameVerifier hostnameVerifier = options.getHostnameVerifier();
 
     if (connection instanceof HttpsURLConnection && hostnameVerifier != null) {
       ((HttpsURLConnection) connection).setHostnameVerifier(hostnameVerifier);
     }
+
+    final SSLSocketFactory sslSocketFactory = options.getSslSocketFactory();
+
     if (connection instanceof HttpsURLConnection && sslSocketFactory != null) {
       ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory);
     }
@@ -193,17 +161,20 @@ public class HttpTransport implements ITransport {
     return connection;
   }
 
-  @Override
   public @NotNull TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
     final HttpURLConnection connection = createConnection();
     TransportResult result;
 
     try (final OutputStream outputStream = connection.getOutputStream();
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
-      serializer.serialize(envelope, gzip);
+      options.getSerializer().serialize(envelope, gzip);
     } catch (Exception e) {
-      logger.log(
-          ERROR, e, "An exception occurred while submitting the envelope to the Sentry server.");
+      options
+          .getLogger()
+          .log(
+              ERROR,
+              e,
+              "An exception occurred while submitting the envelope to the Sentry server.");
     } finally {
       result = readAndLog(connection);
     }
@@ -223,21 +194,21 @@ public class HttpTransport implements ITransport {
       updateRetryAfterLimits(connection, responseCode);
 
       if (!isSuccessfulResponseCode(responseCode)) {
-        logger.log(ERROR, "Request failed, API returned %s", responseCode);
+        options.getLogger().log(ERROR, "Request failed, API returned %s", responseCode);
         // double check because call is expensive
         if (options.isDebug()) {
           String errorMessage = getErrorMessageFromStream(connection);
-          logger.log(ERROR, errorMessage);
+          options.getLogger().log(ERROR, errorMessage);
         }
 
         return TransportResult.error(responseCode);
       }
 
-      logger.log(DEBUG, "Envelope sent successfully.");
+      options.getLogger().log(DEBUG, "Envelope sent successfully.");
 
       return TransportResult.success();
     } catch (IOException e) {
-      logger.log(ERROR, e, "Error reading and logging the response stream");
+      options.getLogger().log(ERROR, e, "Error reading and logging the response stream");
     } finally {
       closeAndDisconnect(connection);
     }
@@ -320,10 +291,5 @@ public class HttpTransport implements ITransport {
   @TestOnly
   Proxy getProxy() {
     return proxy;
-  }
-
-  @Override
-  public void close() throws IOException {
-    // a connection is opened and closed for each request, so this method is not used at all.
   }
 }

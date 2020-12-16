@@ -1,5 +1,6 @@
 package io.sentry.spring.boot
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Sentry
 import io.sentry.spring.tracing.SentrySpan
@@ -64,7 +65,7 @@ class SentrySpringIntegrationTest {
                 assertThat(event.user).isNotNull()
                 assertThat(event.user.username).isEqualTo("user")
                 assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -80,7 +81,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -96,7 +97,7 @@ class SentrySpringIntegrationTest {
                 val ex = event.exceptions.first()
                 assertThat(ex.value).isEqualTo("something went wrong")
                 assertThat(ex.mechanism.isHandled).isFalse()
-            })
+            }, anyOrNull())
         }
     }
 
@@ -109,7 +110,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.message.message).isEqualTo("event from logger")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -122,7 +123,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.contexts.trace).isNotNull()
-            })
+            }, anyOrNull())
         }
     }
 }
