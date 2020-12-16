@@ -42,8 +42,7 @@ public class MainActivity extends AppCompatActivity {
       Sentry.captureException(e);
     }
 
-    Attachment image = new Attachment(imageFile.getAbsolutePath());
-    image.setContentType("image/png");
+    Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
     Sentry.configureScope(
         scope -> {
           scope.addAttachment(image);
