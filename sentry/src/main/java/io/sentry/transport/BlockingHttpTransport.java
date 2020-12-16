@@ -21,8 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * {@link ITransport} implementation that executes request asynchronously in a blocking manner using {@link
- * java.net.HttpURLConnection}.
+ * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
+ * {@link java.net.HttpURLConnection}.
  */
 public final class BlockingHttpTransport implements ITransport {
 
