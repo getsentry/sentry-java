@@ -4,6 +4,7 @@
 * Fixes and Tests: Session serialization and deserialization
 * Fix: Exception only sets a stack trace if there are frames
 * Feat: set isSideLoaded info tags
+* Enhancement: Read tracesSampleRate from AndroidManifest
 
 # 4.0.0-alpha.2
 

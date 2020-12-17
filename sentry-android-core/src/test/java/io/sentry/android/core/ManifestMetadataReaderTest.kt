@@ -1,6 +1,8 @@
 package io.sentry.android.core
 
+import android.content.Context
 import android.os.Bundle
+import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
@@ -19,380 +21,583 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ManifestMetadataReaderTest {
 
-    @Test
-    fun `isAutoInit won't throw exception`() {
-        // tests for the returned boolean are in SentryInitProviderTest
+    private class Fixture {
         val logger = mock<ILogger>()
-        val context = ContextUtilsTest.mockMetaData(metaData = Bundle())
-        assertTrue(ManifestMetadataReader.isAutoInit(context, logger))
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+        val options = SentryAndroidOptions().apply {
+            setLogger(logger)
+        }
+
+        fun getContext(metaData: Bundle = Bundle()): Context {
+            return ContextUtilsTest.mockMetaData(metaData = metaData)
+        }
+    }
+
+    private val fixture = Fixture()
+
+    @Test
+    fun `isAutoInit won't throw exception and is enabled by default`() {
+        fixture.options.isDebug = true
+        val context = fixture.getContext()
+
+        assertTrue(ManifestMetadataReader.isAutoInit(context, fixture.logger))
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `Disables auto init mode`() {
+        val bundle = bundleOf(ManifestMetadataReader.AUTO_INIT to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        assertFalse(ManifestMetadataReader.isAutoInit(context, fixture.logger))
     }
 
     @Test
     fun `applyMetadata won't throw exception`() {
-        // tests for the returned boolean are in SentryInitProviderTest
-        val options = SentryAndroidOptions().apply {
-            isDebug = true
-        }
+        fixture.options.isDebug = true
+        val context = fixture.getContext()
 
-        val context = ContextUtilsTest.createMockContext()
-        ManifestMetadataReader.applyMetadata(context, options)
-        val logger = mock<ILogger>()
-        options.setLogger(logger)
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
     fun `applyMetadata reads sampleRate from metadata`() {
         // Arrange
-        val options = SentryAndroidOptions()
         val expectedSampleRate = 0.99f
 
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putFloat(ManifestMetadataReader.SAMPLE_RATE, expectedSampleRate)
+        val bundle = bundleOf(ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
     }
 
     @Test
     fun `applyMetadata does not override sampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        val options = SentryAndroidOptions()
-        options.sampleRate = expectedSampleRate.toDouble()
-
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putFloat(ManifestMetadataReader.SAMPLE_RATE, 0.1f)
+        fixture.options.sampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
     }
 
     @Test
     fun `applyMetadata without specifying sampleRate, stays null`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertNull(options.sampleRate)
+        assertNull(fixture.options.sampleRate)
     }
 
     @Test
     fun `applyMetadata reads session tracking to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.SESSION_TRACKING_ENABLE, false)
+        val bundle = bundleOf(ManifestMetadataReader.SESSION_TRACKING_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isEnableSessionTracking)
+        assertFalse(fixture.options.isEnableSessionTracking)
     }
 
     @Test
     fun `applyMetadata reads session tracking and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isEnableSessionTracking)
+        assertTrue(fixture.options.isEnableSessionTracking)
     }
 
     @Test
     fun `applyMetadata reads environment to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putString(ManifestMetadataReader.ENVIRONMENT, "env")
+        val bundle = bundleOf(ManifestMetadataReader.ENVIRONMENT to "env")
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals("env", options.environment)
+        assertEquals("env", fixture.options.environment)
     }
 
     @Test
     fun `applyMetadata reads environment and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertNull(options.environment)
+        assertNull(fixture.options.environment)
     }
 
     @Test
     fun `applyMetadata reads release to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putString(ManifestMetadataReader.RELEASE, "release")
+
+        val bundle = bundleOf(ManifestMetadataReader.RELEASE to "release")
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals("release", options.release)
+        assertEquals("release", fixture.options.release)
     }
 
     @Test
     fun `applyMetadata reads release and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertNull(options.release)
+        assertNull(fixture.options.release)
     }
 
     @Test
     fun `applyMetadata reads session tracking interval to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putInt(ManifestMetadataReader.SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS, 1000)
+
+        val bundle = bundleOf(ManifestMetadataReader.SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS to 1000)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals(1000.toLong(), options.sessionTrackingIntervalMillis)
+        assertEquals(1000.toLong(), fixture.options.sessionTrackingIntervalMillis)
     }
 
     @Test
     fun `applyMetadata reads session tracking interval and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals(30000.toLong(), options.sessionTrackingIntervalMillis)
+        assertEquals(30000.toLong(), fixture.options.sessionTrackingIntervalMillis)
     }
 
     @Test
     fun `applyMetadata reads anr interval to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putInt(ManifestMetadataReader.ANR_TIMEOUT_INTERVAL_MILLIS, 1000)
+        val bundle = bundleOf(ManifestMetadataReader.ANR_TIMEOUT_INTERVAL_MILLIS to 1000)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals(1000.toLong(), options.anrTimeoutIntervalMillis)
+        assertEquals(1000.toLong(), fixture.options.anrTimeoutIntervalMillis)
+    }
+
+    @Test
+    fun `applyMetadata reads anr interval to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(5000.toLong(), fixture.options.anrTimeoutIntervalMillis)
     }
 
     @Test
     fun `applyMetadata reads activity breadcrumbs to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE, false)
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isEnableActivityLifecycleBreadcrumbs)
+        assertFalse(fixture.options.isEnableActivityLifecycleBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads activity breadcrumbs and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isEnableActivityLifecycleBreadcrumbs)
+        assertTrue(fixture.options.isEnableActivityLifecycleBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads app lifecycle breadcrumbs to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_APP_LIFECYCLE_ENABLE, false)
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_APP_LIFECYCLE_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isEnableAppLifecycleBreadcrumbs)
+        assertFalse(fixture.options.isEnableAppLifecycleBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads app lifecycle breadcrumbs and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isEnableAppLifecycleBreadcrumbs)
+        assertTrue(fixture.options.isEnableAppLifecycleBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads system events breadcrumbs to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_SYSTEM_EVENTS_ENABLE, false)
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_SYSTEM_EVENTS_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isEnableSystemEventBreadcrumbs)
+        assertFalse(fixture.options.isEnableSystemEventBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads system events breadcrumbs and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isEnableSystemEventBreadcrumbs)
+        assertTrue(fixture.options.isEnableSystemEventBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads app components breadcrumbs to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.BREADCRUMBS_APP_COMPONENTS_ENABLE, false)
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_APP_COMPONENTS_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isEnableAppComponentBreadcrumbs)
+        assertFalse(fixture.options.isEnableAppComponentBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads app components breadcrumbs and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isEnableAppComponentBreadcrumbs)
+        assertTrue(fixture.options.isEnableAppComponentBreadcrumbs)
     }
 
     @Test
     fun `applyMetadata reads enableUncaughtExceptionHandler to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.UNCAUGHT_EXCEPTION_HANDLER_ENABLE, false)
+        val bundle = bundleOf(ManifestMetadataReader.UNCAUGHT_EXCEPTION_HANDLER_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isEnableUncaughtExceptionHandler)
+        assertFalse(fixture.options.isEnableUncaughtExceptionHandler)
     }
 
     @Test
     fun `applyMetadata reads enableUncaughtExceptionHandler and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isEnableUncaughtExceptionHandler)
+        assertTrue(fixture.options.isEnableUncaughtExceptionHandler)
     }
 
     @Test
     fun `applyMetadata reads attachThreads to options`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
-        bundle.putBoolean(ManifestMetadataReader.ATTACH_THREADS, true)
+        val bundle = bundleOf(ManifestMetadataReader.ATTACH_THREADS to true)
+        val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(options.isAttachThreads)
+        assertTrue(fixture.options.isAttachThreads)
     }
 
     @Test
     fun `applyMetadata reads attachThreads and keep default value if not found`() {
         // Arrange
-        val options = SentryAndroidOptions()
-        val bundle = Bundle()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = bundle)
+        val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(mockContext, options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(options.isAttachThreads)
+        assertFalse(fixture.options.isAttachThreads)
+    }
+
+    @Test
+    fun `applyMetadata reads isDebug to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.DEBUG to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isDebug)
+    }
+
+    @Test
+    fun `applyMetadata reads isDebug and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isDebug)
+    }
+
+    @Test
+    fun `applyMetadata reads diagnosticLevel to options`() {
+        // Arrange
+        val bundle = bundleOf(
+                ManifestMetadataReader.DEBUG to true,
+                ManifestMetadataReader.DEBUG_LEVEL to "info"
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(SentryLevel.INFO, fixture.options.diagnosticLevel)
+    }
+
+    @Test
+    fun `applyMetadata reads diagnosticLevel to options and keeps default`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.DEBUG to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(SentryLevel.DEBUG, fixture.options.diagnosticLevel)
+    }
+
+    @Test
+    fun `applyMetadata reads anrEnabled to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ANR_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isAnrEnabled)
+    }
+
+    @Test
+    fun `applyMetadata reads anrEnabled to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isAnrEnabled)
+    }
+
+    @Test
+    fun `applyMetadata reads anrReportInDebug to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_DEBUG to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isAnrReportInDebug)
+    }
+
+    @Test
+    fun `applyMetadata reads anrReportInDebug to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isAnrReportInDebug)
+    }
+
+    @Test
+    fun `applyMetadata reads DSN to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.DSN to "dsn")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals("dsn", fixture.options.dsn)
+    }
+
+    @Test
+    fun `applyMetadata reads DSN to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+        fixture.options.dsn = "myOwnDsn"
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals("myOwnDsn", fixture.options.dsn)
+    }
+
+    @Test
+    fun `applyMetadata reads enableNdk to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.NDK_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableNdk)
+    }
+
+    @Test
+    fun `applyMetadata reads enableNdk to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableNdk)
+    }
+
+    @Test
+    fun `applyMetadata reads enableScopeSync to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.NDK_SCOPE_SYNC_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableScopeSync)
+    }
+
+    @Test
+    fun `applyMetadata reads enableScopeSync to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableScopeSync)
+    }
+
+    @Test
+    fun `applyMetadata reads tracesSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override tracesSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.tracesSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying tracesSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertNull(fixture.options.tracesSampleRate)
     }
 }

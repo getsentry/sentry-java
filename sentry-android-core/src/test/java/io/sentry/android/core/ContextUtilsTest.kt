@@ -14,9 +14,9 @@ import java.io.FileNotFoundException
 
 object ContextUtilsTest {
     fun mockMetaData(mockContext: Context = createMockContext(), metaData: Bundle): Context {
-        val mockPackageManager: PackageManager = mock()
-        val mockApplicationInfo: ApplicationInfo = mock()
-        val assets: AssetManager = mock()
+        val mockPackageManager = mock<PackageManager>()
+        val mockApplicationInfo = mock<ApplicationInfo>()
+        val assets = mock<AssetManager>()
 
         whenever(mockContext.packageName).thenReturn("io.sentry.sample.test")
         whenever(mockContext.packageManager).thenReturn(mockPackageManager)
