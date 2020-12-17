@@ -1,11 +1,14 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Sentry
+import io.sentry.TransportFactory
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
@@ -140,8 +143,17 @@ class SentrySpringIntegrationTest {
 @EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, exceptionResolverOrder = Ordered.LOWEST_PRECEDENCE)
 open class App {
 
+    private val transport = mock<ITransport>()
+
     @Bean
-    open fun mockTransport() = mock<ITransport>()
+    open fun mockTransportFactory(): TransportFactory {
+        val factory = mock<TransportFactory>()
+        whenever(factory.create(any())).thenReturn(transport)
+        return factory
+    }
+
+    @Bean
+    open fun mockTransport() = transport
 }
 
 @RestController
