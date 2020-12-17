@@ -1,5 +1,7 @@
 # vNext
 
+* Ref: `ITransport` implementations are now responsible for executing request in asynchronous or synchronous way (#1118)
+
 # 4.0.0-alpha.2
 
 * Feat: Add basic support for attachments (#1082)
