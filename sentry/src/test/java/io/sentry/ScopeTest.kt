@@ -90,7 +90,6 @@ class ScopeTest {
 
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
-        attachment.contentType = "application/json" // shallow copy, same reference
 
         val clone = scope.clone()
 
@@ -180,10 +179,8 @@ class ScopeTest {
         assertNull(clone.span)
 
         scope.addAttachment(Attachment("path/image.png"))
-        attachment.contentType = "application/json"
 
         assertEquals(1, clone.attachments.size)
-        assertEquals("application/json", clone.attachments.first().contentType)
         assertTrue(clone.attachments is CopyOnWriteArrayList)
     }
 
