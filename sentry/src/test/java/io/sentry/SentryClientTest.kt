@@ -21,7 +21,7 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
-import io.sentry.transport.BlockingHttpTransport
+import io.sentry.transport.AsyncHttpTransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.NoOpTransport
 import java.io.ByteArrayInputStream
@@ -476,7 +476,7 @@ class SentryClientTest {
     fun `when transport is NoOp, it should initialize it`() {
         fixture.sentryOptions.setTransport(NoOpTransport.getInstance())
         fixture.getSut()
-        assertTrue(fixture.sentryOptions.transport is BlockingHttpTransport)
+        assertTrue(fixture.sentryOptions.transport is AsyncHttpTransport)
     }
 
     @Test
@@ -484,7 +484,7 @@ class SentryClientTest {
         val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
         }
-        val transport = mock<BlockingHttpTransport>()
+        val transport = mock<AsyncHttpTransport>()
         sentryOptions.setTransport(transport)
 
         SentryClient(sentryOptions)

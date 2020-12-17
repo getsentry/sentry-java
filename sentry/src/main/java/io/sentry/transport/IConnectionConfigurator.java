@@ -3,7 +3,7 @@ package io.sentry.transport;
 import java.net.HttpURLConnection;
 
 /**
- * A companion interface to {@link BlockingHttpTransport} implementations of which prepare the
+ * A companion interface to {@link AsyncHttpTransport} implementations of which prepare the
  * connection with necessary headers and other settings before an event is sent.
  */
 public interface IConnectionConfigurator {

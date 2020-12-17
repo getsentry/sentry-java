@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class BlockingHttpTransportTest {
+class AsyncHttpTransportTest {
 
     private class Fixture {
         var connection = mock<HttpConnection>()
@@ -43,8 +43,8 @@ class BlockingHttpTransportTest {
             whenever(executor.submit(any())).thenAnswer { (it.arguments[0] as Runnable).run(); null }
         }
 
-        fun getSUT(): BlockingHttpTransport {
-            return BlockingHttpTransport(executor, sentryOptions, rateLimiter, transportGate, connection)
+        fun getSUT(): AsyncHttpTransport {
+            return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, connection)
         }
     }
 

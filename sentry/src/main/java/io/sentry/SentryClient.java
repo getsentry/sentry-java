@@ -42,7 +42,7 @@ public final class SentryClient implements ISentryClient {
 
     ITransport transport = options.getTransport();
     if (transport instanceof NoOpTransport) {
-      transport = HttpTransportFactory.create(options);
+      transport = AsyncHttpTransportFactory.create(options);
       options.setTransport(transport);
     }
     this.transport = transport;

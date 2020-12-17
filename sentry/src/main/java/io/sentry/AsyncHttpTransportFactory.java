@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.transport.BlockingHttpTransport;
+import io.sentry.transport.AsyncHttpTransport;
 import io.sentry.transport.IConnectionConfigurator;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
@@ -9,9 +9,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import org.jetbrains.annotations.NotNull;
 
-final class HttpTransportFactory {
+final class AsyncHttpTransportFactory {
 
-  private HttpTransportFactory() {}
+  private AsyncHttpTransportFactory() {}
 
   static ITransport create(final @NotNull SentryOptions options) {
     Objects.requireNonNull(options, "options is required");
@@ -26,7 +26,7 @@ final class HttpTransportFactory {
       throw new IllegalArgumentException("Failed to compose the Sentry's server URL.", e);
     }
 
-    return new BlockingHttpTransport(
+    return new AsyncHttpTransport(
         options,
         new RateLimiter(options.getLogger()),
         options.getTransportGate(),

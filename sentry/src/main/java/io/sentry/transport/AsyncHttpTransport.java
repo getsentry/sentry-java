@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
  * {@link java.net.HttpURLConnection}.
  */
-public final class BlockingHttpTransport implements ITransport {
+public final class AsyncHttpTransport implements ITransport {
 
   private final @NotNull ExecutorService executor;
   private final @NotNull IEnvelopeCache envelopeCache;
@@ -33,7 +33,7 @@ public final class BlockingHttpTransport implements ITransport {
   private final @NotNull ITransportGate transportGate;
   private final @NotNull HttpConnection connection;
 
-  public BlockingHttpTransport(
+  public AsyncHttpTransport(
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
@@ -48,7 +48,7 @@ public final class BlockingHttpTransport implements ITransport {
         new HttpConnection(options, connectionConfigurator, sentryUrl, rateLimiter));
   }
 
-  public BlockingHttpTransport(
+  public AsyncHttpTransport(
       final @NotNull ExecutorService executor,
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
