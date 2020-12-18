@@ -683,13 +683,13 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
+  public @NotNull SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return this.startTransaction(transactionContexts, null);
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
+  public @NotNull SentryTransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContexts, "transactionContexts is required");
@@ -699,21 +699,12 @@ public final class Hub implements IHub {
     boolean samplingDecision = tracingSampler.sample(samplingContext);
     transactionContexts.setSampled(samplingDecision);
 
-    SentryTransaction transaction = null;
-    if (!isEnabled()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'startTransaction' call is a no-op.");
+    SentryTransaction transaction = new SentryTransaction(transactionContexts, this);
+    final StackItem item = stack.peek();
+    if (item != null) {
+      item.scope.setTransaction(transaction);
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        transaction = new SentryTransaction(transactionContexts, this);
-        item.scope.setTransaction(transaction);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
-      }
+      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
     }
     return transaction;
   }

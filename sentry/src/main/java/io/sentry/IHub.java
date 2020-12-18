@@ -296,7 +296,7 @@ public interface IHub {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  default SentryTransaction startTransaction(
+  default @NotNull SentryTransaction startTransaction(
       String name, CustomSamplingContext customSamplingContext) {
     return startTransaction(new TransactionContext(name), customSamplingContext);
   }
@@ -310,6 +310,7 @@ public interface IHub {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
+  @NotNull
   SentryTransaction startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
 
@@ -321,7 +322,7 @@ public interface IHub {
    * @param name the transaction name
    * @return created transaction
    */
-  default SentryTransaction startTransaction(final @NotNull String name) {
+  default @NotNull SentryTransaction startTransaction(final @NotNull String name) {
     return startTransaction(name, null);
   }
 
