@@ -149,7 +149,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   public SentryEvent() {
-    this(new SentryId(), DateUtils.getCurrentDateTimeOrNull());
+    this(new SentryId(), DateUtils.getCurrentDateTime());
   }
 
   @TestOnly

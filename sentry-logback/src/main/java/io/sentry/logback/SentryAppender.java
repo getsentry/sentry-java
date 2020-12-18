@@ -16,7 +16,6 @@ import io.sentry.transport.ITransport;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,8 +67,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
   final @NotNull SentryEvent createEvent(@NotNull ILoggingEvent loggingEvent) {
-    final SentryEvent event =
-        new SentryEvent(DateUtils.getDateTime(new Date(loggingEvent.getTimeStamp())));
+    final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeStamp()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage());
     message.setFormatted(loggingEvent.getFormattedMessage());

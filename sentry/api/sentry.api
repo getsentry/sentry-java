@@ -47,12 +47,10 @@ public final class io/sentry/CustomSamplingContext {
 
 public final class io/sentry/DateUtils {
 	public static fun getCurrentDateTime ()Ljava/util/Date;
-	public static fun getCurrentDateTimeOrNull ()Ljava/util/Date;
+	public static fun getDateTime (J)Ljava/util/Date;
 	public static fun getDateTime (Ljava/lang/String;)Ljava/util/Date;
-	public static fun getDateTime (Ljava/util/Date;)Ljava/util/Date;
 	public static fun getDateTimeWithMillisPrecision (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getTimestamp (Ljava/util/Date;)Ljava/lang/String;
-	public static fun getTimestampIsoFormat (Ljava/util/Date;)Ljava/lang/String;
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
