@@ -975,7 +975,7 @@ class HubTest {
         val contexts = TransactionContext("name")
 
         val transaction = hub.startTransaction(contexts)
-
+        assertTrue(transaction is SentryTransaction)
         assertEquals(contexts, transaction.contexts.trace)
     }
 

@@ -41,7 +41,7 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
+  public SentryId captureTransaction(ITransaction transaction, Scope scope, Object hint) {
     return SentryId.EMPTY_ID;
   }
 }

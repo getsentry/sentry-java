@@ -8,6 +8,7 @@
 * Feat: set isSideLoaded info tags
 * Enhancement: Read tracesSampleRate from AndroidManifest
 * Fix: Initialize Logback after context refreshes (#1129)
+* Ref: Return NoOpTransaction instead of null (#1126)
 
 # 4.0.0-alpha.2
 

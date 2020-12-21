@@ -117,7 +117,7 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
-  public @Nullable SentryTransaction getTransaction(final @NotNull ISerializer serializer)
+  public @Nullable ITransaction getTransaction(final @NotNull ISerializer serializer)
       throws Exception {
     if (header == null || header.getType() != SentryItemType.Transaction) {
       return null;
