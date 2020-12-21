@@ -20,7 +20,7 @@ import org.springframework.core.ResolvableType;
 /** Registers {@link SentryAppender} after Spring context gets refreshed. */
 @Open
 class SentryLogbackInitializer implements GenericApplicationListener {
-  private final SentryProperties sentryProperties;
+  private final @NotNull SentryProperties sentryProperties;
 
   public SentryLogbackInitializer(final @NotNull SentryProperties sentryProperties) {
     this.sentryProperties = Objects.requireNonNull(sentryProperties, "properties are required");
