@@ -7,6 +7,7 @@
 * Fix: Exception only sets a stack trace if there are frames
 * Feat: set isSideLoaded info tags
 * Enhancement: Read tracesSampleRate from AndroidManifest
+* Fix: Initialize Logback after context refreshes (#1129)
 
 # 4.0.0-alpha.2
 
