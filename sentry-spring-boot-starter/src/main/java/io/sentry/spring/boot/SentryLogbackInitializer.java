@@ -56,7 +56,7 @@ class SentryLogbackInitializer implements GenericApplicationListener {
   private boolean isSentryAppenderRegistered(final @NotNull Logger logger) {
     final Iterator<Appender<ILoggingEvent>> it = logger.iteratorForAppenders();
     while (it.hasNext()) {
-      Appender<ILoggingEvent> appender = it.next();
+      final Appender<ILoggingEvent> appender = it.next();
 
       if (appender.getClass().equals(SentryAppender.class)) {
         return true;
