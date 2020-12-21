@@ -2,10 +2,10 @@ package io.sentry.samples.console;
 
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
+import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.SentryTransaction;
 import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.Message;
@@ -138,7 +138,7 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    SentryTransaction transaction = Sentry.startTransaction("transaction name");
+    ITransaction transaction = Sentry.startTransaction("transaction name");
     // Transactions can contain one or more Spans
     Span outerSpan = transaction.startChild();
     Thread.sleep(100);

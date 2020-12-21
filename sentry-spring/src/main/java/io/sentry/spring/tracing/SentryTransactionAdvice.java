@@ -3,6 +3,7 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.ITransaction;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,7 +42,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       // transaction is already active, we do not start new transaction
       return invocation.proceed();
     } else {
-      final io.sentry.SentryTransaction transaction = hub.startTransaction(name);
+      final ITransaction transaction = hub.startTransaction(name);
       if (sentryTransaction != null && !StringUtils.isEmpty(sentryTransaction.operation())) {
         transaction.setOperation(sentryTransaction.operation());
       }

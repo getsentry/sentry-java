@@ -639,7 +639,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull ITransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -683,13 +683,13 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @NotNull SentryTransaction startTransaction(
+  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return this.startTransaction(transactionContexts, null);
   }
 
   @Override
-  public @NotNull SentryTransaction startTransaction(
+  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContexts, "transactionContexts is required");
@@ -699,12 +699,22 @@ public final class Hub implements IHub {
     boolean samplingDecision = tracingSampler.sample(samplingContext);
     transactionContexts.setSampled(samplingDecision);
 
-    SentryTransaction transaction = new SentryTransaction(transactionContexts, this);
-    final StackItem item = stack.peek();
-    if (item != null) {
-      item.scope.setTransaction(transaction);
+    ITransaction transaction = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'startTransaction' returns a no-op.");
+      transaction = new NoOpTransaction();
     } else {
-      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
+      final StackItem item = stack.peek();
+      if (item != null) {
+        transaction = new SentryTransaction(transactionContexts, this);
+        item.scope.setTransaction(transaction);
+      } else {
+        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
+      }
     }
     return transaction;
   }

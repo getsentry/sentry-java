@@ -266,7 +266,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  SentryId captureTransaction(SentryTransaction transaction, Object hint);
+  SentryId captureTransaction(ITransaction transaction, Object hint);
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
@@ -275,7 +275,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  default SentryId captureTransaction(SentryTransaction transaction) {
+  default SentryId captureTransaction(ITransaction transaction) {
     return captureTransaction(transaction, null);
   }
 
@@ -285,7 +285,7 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  SentryTransaction startTransaction(TransactionContext transactionContexts);
+  ITransaction startTransaction(TransactionContext transactionContexts);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
@@ -296,7 +296,7 @@ public interface IHub {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  default @NotNull SentryTransaction startTransaction(
+  default @NotNull ITransaction startTransaction(
       String name, CustomSamplingContext customSamplingContext) {
     return startTransaction(new TransactionContext(name), customSamplingContext);
   }
@@ -311,7 +311,7 @@ public interface IHub {
    * @return created transaction.
    */
   @NotNull
-  SentryTransaction startTransaction(
+  ITransaction startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
 
   /**
@@ -322,7 +322,7 @@ public interface IHub {
    * @param name the transaction name
    * @return created transaction
    */
-  default @NotNull SentryTransaction startTransaction(final @NotNull String name) {
+  default @NotNull ITransaction startTransaction(final @NotNull String name) {
     return startTransaction(name, null);
   }
 

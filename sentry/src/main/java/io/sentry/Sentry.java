@@ -495,7 +495,7 @@ public final class Sentry {
    * @param name the transaction name
    * @return created transaction
    */
-  public static @NotNull SentryTransaction startTransaction(final @NotNull String name) {
+  public static @NotNull ITransaction startTransaction(final @NotNull String name) {
     return getCurrentHub().startTransaction(name);
   }
 
@@ -505,7 +505,7 @@ public final class Sentry {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  public static @NotNull SentryTransaction startTransaction(
+  public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return getCurrentHub().startTransaction(transactionContexts);
   }
@@ -519,7 +519,7 @@ public final class Sentry {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  public static @NotNull SentryTransaction startTransaction(
+  public static @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
     return getCurrentHub().startTransaction(name, customSamplingContext);
   }
@@ -533,7 +533,7 @@ public final class Sentry {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  public static @NotNull SentryTransaction startTransaction(
+  public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @NotNull CustomSamplingContext customSamplingContext) {
     return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
