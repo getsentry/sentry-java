@@ -557,7 +557,7 @@ public final class Hub implements IHub {
     boolean samplingDecision = tracingSampler.sample(samplingContext);
     transactionContexts.setSampled(samplingDecision);
 
-    ITransaction transaction = null;
+    ITransaction transaction;
     if (!isEnabled()) {
       options
           .getLogger()
