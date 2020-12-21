@@ -501,7 +501,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull ITransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -541,13 +541,13 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
+  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return this.startTransaction(transactionContexts, null);
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
+  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContexts, "transactionContexts is required");
@@ -557,13 +557,14 @@ public final class Hub implements IHub {
     boolean samplingDecision = tracingSampler.sample(samplingContext);
     transactionContexts.setSampled(samplingDecision);
 
-    SentryTransaction transaction = null;
+    ITransaction transaction;
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Instance is disabled and this 'startTransaction' call is a no-op.");
+              "Instance is disabled and this 'startTransaction' returns a no-op.");
+      transaction = new NoOpTransaction();
     } else {
       transaction = new SentryTransaction(transactionContexts, this);
       stack.peek().getScope().setTransaction(transaction);

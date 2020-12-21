@@ -2,6 +2,7 @@ package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
@@ -22,7 +23,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
 
 /**
- * Creates {@link io.sentry.SentryTransaction} around HTTP request executions.
+ * Creates {@link ITransaction} around HTTP request executions.
  *
  * <p>Only requests that have {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} request
  * attribute set are turned into transactions. This attribute is set in {@link
@@ -59,7 +60,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
     // at this stage we are not able to get real transaction name
-    final io.sentry.SentryTransaction transaction =
+    final ITransaction transaction =
         startTransaction(
             httpRequest.getMethod() + " " + httpRequest.getRequestURI(), sentryTraceHeader);
     try {
@@ -79,7 +80,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     }
   }
 
-  private io.sentry.SentryTransaction startTransaction(
+  private ITransaction startTransaction(
       final @NotNull String name, final @Nullable String sentryTraceHeader) {
     if (sentryTraceHeader != null) {
       try {

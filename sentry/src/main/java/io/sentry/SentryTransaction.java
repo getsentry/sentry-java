@@ -12,7 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryTransaction extends SentryBaseEvent implements ISpan {
+@ApiStatus.Internal
+public final class SentryTransaction extends SentryBaseEvent implements ITransaction {
   /** The transaction name. */
   private @Nullable String transaction;
 
@@ -67,6 +68,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    *
    * @param name - transaction name
    */
+  @Override
   public void setName(final @NotNull String name) {
     Objects.requireNonNull(name, "name is required");
     this.transaction = name;
@@ -104,7 +106,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @param parentSpanId - parent span id
    * @return a new transaction span
    */
-  Span startChild(final @NotNull SpanId parentSpanId) {
+  @Override
+  public @NotNull Span startChild(final @NotNull SpanId parentSpanId) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     final Span span = new Span(getTraceId(), parentSpanId, this, this.hub);
     this.spans.add(span);
@@ -119,8 +122,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    * @param description - span description
    * @return a new transaction span
    */
-  @NotNull
-  Span startChild(
+  @Override
+  public @NotNull Span startChild(
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @NotNull String description) {
@@ -145,8 +148,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
     return getContexts().getTrace().getTraceId();
   }
 
-  @Nullable
-  Boolean isSampled() {
+  @Override
+  public @Nullable Boolean isSampled() {
     return getContexts().getTrace().getSampled();
   }
 
@@ -179,6 +182,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
     this.getContexts().getTrace().setDescription(description);
   }
 
+  @Override
   public @Nullable String getDescription() {
     return this.getContexts().getTrace().getDescription();
   }
@@ -203,9 +207,9 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
    *
    * @return transaction name.
    */
-  @Nullable
+  @Override
   @ApiStatus.Internal
-  public String getTransaction() {
+  public @Nullable String getTransaction() {
     return transaction;
   }
 
@@ -219,15 +223,15 @@ public final class SentryTransaction extends SentryBaseEvent implements ISpan {
     return timestamp;
   }
 
-  @NotNull
+  @Override
   @TestOnly
-  public List<Span> getSpans() {
+  public @NotNull List<Span> getSpans() {
     return spans;
   }
 
   /** @return the latest span that is not finished or null if not found. */
-  @Nullable
-  Span getLatestActiveSpan() {
+  @Override
+  public @Nullable Span getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.spans);
     if (!spans.isEmpty()) {
       for (int i = spans.size() - 1; i >= 0; i--) {
