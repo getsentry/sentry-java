@@ -170,6 +170,7 @@ public final class GsonSerializer implements ISerializer {
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
         try {
+          // When this throws we don't write anything and continue with the next item.
           final byte[] data = item.getData();
 
           gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
