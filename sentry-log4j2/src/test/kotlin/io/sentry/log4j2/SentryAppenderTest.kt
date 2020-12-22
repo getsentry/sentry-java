@@ -6,9 +6,9 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.HubAdapter
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryLevel
-import io.sentry.TransportFactory
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -34,14 +34,14 @@ import org.awaitility.kotlin.await
 class SentryAppenderTest {
     private class Fixture() {
         val loggerContext = LogManager.getContext() as LoggerContext
-        var transportFactory = mock<TransportFactory>()
+        var transportFactory = mock<ITransportFactory>()
         var transport = mock<ITransport>()
 
         init {
             whenever(transportFactory.create(any())).thenReturn(transport)
         }
 
-        fun getSut(transportFactory: TransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {
+        fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {
             if (transportFactory != null) {
                 this.transportFactory = transportFactory
             }

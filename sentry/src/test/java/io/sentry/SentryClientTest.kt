@@ -47,7 +47,7 @@ class SentryClientTest {
 
     class Fixture {
         var transport = mock<ITransport>()
-        var factory = mock<TransportFactory>()
+        var factory = mock<ITransportFactory>()
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             sdkVersion = SdkVersion().apply {
@@ -489,7 +489,7 @@ class SentryClientTest {
         val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
         }
-        val transportFactory = mock<TransportFactory>()
+        val transportFactory = mock<ITransportFactory>()
         sentryOptions.setTransportFactory(transportFactory)
 
         SentryClient(sentryOptions)

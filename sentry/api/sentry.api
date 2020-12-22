@@ -287,6 +287,10 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
+public abstract interface class io/sentry/ITransportFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
+}
+
 public abstract interface class io/sentry/IUnknownPropertiesConsumer {
 	public abstract fun acceptUnknownProperties (Ljava/util/Map;)V
 }
@@ -312,7 +316,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public final class io/sentry/NoOpTransportFactory : io/sentry/TransportFactory {
+public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory {
 	public fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
 	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
 }
@@ -651,7 +655,7 @@ public class io/sentry/SentryOptions {
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
-	public fun getTransportFactory ()Lio/sentry/TransportFactory;
+	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
@@ -702,7 +706,7 @@ public class io/sentry/SentryOptions {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
-	public fun setTransportFactory (Lio/sentry/TransportFactory;)V
+	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 }
 
@@ -890,10 +894,6 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun setParentSampled (Ljava/lang/Boolean;)V
-}
-
-public abstract interface class io/sentry/TransportFactory {
-	public abstract fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
 }
 
 public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Integration, java/io/Closeable, java/lang/Thread$UncaughtExceptionHandler {

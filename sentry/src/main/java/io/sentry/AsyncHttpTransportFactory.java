@@ -10,7 +10,7 @@ import java.net.URL;
 import org.jetbrains.annotations.NotNull;
 
 /** Creates {@link AsyncHttpTransport}. */
-final class AsyncHttpTransportFactory implements TransportFactory {
+final class AsyncHttpTransportFactory implements ITransportFactory {
 
   @Override
   public @NotNull ITransport create(final @NotNull SentryOptions options) {

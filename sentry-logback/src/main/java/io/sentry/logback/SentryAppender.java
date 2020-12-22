@@ -6,11 +6,11 @@ import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.TransportFactory;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
 public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull SentryOptions options = new SentryOptions();
-  private @Nullable TransportFactory transportFactory;
+  private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
 
@@ -179,7 +179,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   }
 
   @ApiStatus.Internal
-  void setTransportFactory(final @Nullable TransportFactory transportFactory) {
+  void setTransportFactory(final @Nullable ITransportFactory transportFactory) {
     this.transportFactory = transportFactory;
   }
 }

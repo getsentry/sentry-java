@@ -7,8 +7,8 @@ import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
-import io.sentry.TransportFactory
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
@@ -146,8 +146,8 @@ open class App {
     private val transport = mock<ITransport>()
 
     @Bean
-    open fun mockTransportFactory(): TransportFactory {
-        val factory = mock<TransportFactory>()
+    open fun mockTransportFactory(): ITransportFactory {
+        val factory = mock<ITransportFactory>()
         whenever(factory.create(any())).thenReturn(transport)
         return factory
     }

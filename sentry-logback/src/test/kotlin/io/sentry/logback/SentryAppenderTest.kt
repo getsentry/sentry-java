@@ -7,10 +7,10 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.TransportFactory
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -32,7 +32,7 @@ class SentryAppenderTest {
     private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
-        val transportFactory = mock<TransportFactory>()
+        val transportFactory = mock<ITransportFactory>()
         val transport = mock<ITransport>()
 
         init {

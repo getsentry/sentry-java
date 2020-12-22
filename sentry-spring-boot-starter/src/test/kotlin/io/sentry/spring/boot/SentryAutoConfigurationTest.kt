@@ -9,13 +9,13 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
 import io.sentry.IHub
+import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.TransportFactory
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserProvider
@@ -481,8 +481,8 @@ class SentryAutoConfigurationTest {
         private val transport = mock<ITransport>()
 
         @Bean
-        open fun mockTransportFactory(): TransportFactory {
-            val factory = mock<TransportFactory>()
+        open fun mockTransportFactory(): ITransportFactory {
+            val factory = mock<ITransportFactory>()
             whenever(factory.create(any())).thenReturn(transport)
             return factory
         }

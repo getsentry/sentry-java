@@ -4,11 +4,11 @@ import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.TransportFactory;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
 public final class SentryAppender extends AbstractAppender {
   private final @Nullable String dsn;
-  private final @Nullable TransportFactory transportFactory;
+  private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private final @NotNull IHub hub;
@@ -47,7 +47,7 @@ public final class SentryAppender extends AbstractAppender {
       final @Nullable String dsn,
       final @Nullable Level minimumBreadcrumbLevel,
       final @Nullable Level minimumEventLevel,
-      final @Nullable TransportFactory transportFactory,
+      final @Nullable ITransportFactory transportFactory,
       final @NotNull IHub hub) {
     super(name, filter, null, true, null);
     this.dsn = dsn;

@@ -39,7 +39,7 @@ public final class SentryClient implements ISentryClient {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
-    TransportFactory transportFactory = options.getTransportFactory();
+    ITransportFactory transportFactory = options.getTransportFactory();
     if (transportFactory instanceof NoOpTransportFactory) {
       transportFactory = new AsyncHttpTransportFactory();
       options.setTransportFactory(transportFactory);

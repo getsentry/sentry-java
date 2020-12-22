@@ -6,7 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public final class NoOpTransportFactory implements TransportFactory {
+public final class NoOpTransportFactory implements ITransportFactory {
 
   private static final NoOpTransportFactory instance = new NoOpTransportFactory();
 

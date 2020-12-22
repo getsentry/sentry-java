@@ -168,7 +168,7 @@ public class SentryOptions {
    * The transport factory creates instances of {@link io.sentry.transport.ITransport} - internal
    * construct of the client that abstracts away the event sending.
    */
-  private @NotNull TransportFactory transportFactory = NoOpTransportFactory.getInstance();
+  private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
 
   /**
    * Implementations of this interface serve as gatekeepers that allow or disallow sending of the
@@ -727,7 +727,7 @@ public class SentryOptions {
    *
    * @return the transport factory
    */
-  public @NotNull TransportFactory getTransportFactory() {
+  public @NotNull ITransportFactory getTransportFactory() {
     return transportFactory;
   }
 
@@ -736,7 +736,7 @@ public class SentryOptions {
    *
    * @param transportFactory the transport factory
    */
-  public void setTransportFactory(@Nullable TransportFactory transportFactory) {
+  public void setTransportFactory(@Nullable ITransportFactory transportFactory) {
     this.transportFactory =
         transportFactory != null ? transportFactory : NoOpTransportFactory.getInstance();
   }
