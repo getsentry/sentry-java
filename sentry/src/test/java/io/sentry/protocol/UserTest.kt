@@ -4,20 +4,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
+import kotlin.test.assertNull
 
 class UserTest {
     @Test
     fun `cloning user wont have the same references`() {
-        val user = User()
-        user.email = "a@a.com"
-        user.id = "123"
-        user.ipAddress = "123.x"
-        user.username = "userName"
-        val others = mutableMapOf(Pair("others", "others"))
-        user.others = others
-        val unknown = mapOf(Pair("unknown", "unknown"))
-        user.acceptUnknownProperties(unknown)
-
+        val user = createUser()
         val clone = user.clone()
 
         assertNotNull(clone)
@@ -30,16 +22,7 @@ class UserTest {
 
     @Test
     fun `cloning user will have the same values`() {
-        val user = User()
-        user.email = "a@a.com"
-        user.id = "123"
-        user.ipAddress = "123.x"
-        user.username = "userName"
-        val others = mutableMapOf(Pair("others", "others"))
-        user.others = others
-        val unknown = mapOf(Pair("unknown", "unknown"))
-        user.acceptUnknownProperties(unknown)
-
+        val user = createUser()
         val clone = user.clone()
 
         assertEquals("a@a.com", clone.email)
@@ -47,21 +30,12 @@ class UserTest {
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
         assertEquals("others", clone.others!!["others"])
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertEquals("unknown", clone.unknown!!["unknown"])
     }
 
     @Test
     fun `cloning user and changing the original values wont change the clone values`() {
-        val user = User()
-        user.email = "a@a.com"
-        user.id = "123"
-        user.ipAddress = "123.x"
-        user.username = "userName"
-        val others = mutableMapOf(Pair("others", "others"))
-        user.others = others
-        val unknown = mapOf(Pair("unknown", "unknown"))
-        user.acceptUnknownProperties(unknown)
-
+        val user = createUser()
         val clone = user.clone()
 
         user.email = "b@b.com"
@@ -79,7 +53,28 @@ class UserTest {
         assertEquals("userName", clone.username)
         assertEquals("others", clone.others!!["others"])
         assertEquals(1, clone.others!!.size)
-        assertEquals("unknown", clone.unknown["unknown"])
-        assertEquals(1, clone.unknown.size)
+        assertEquals("unknown", clone.unknown!!["unknown"])
+        assertEquals(1, clone.unknown!!.size)
+    }
+
+    @Test
+    fun `setting null others do not crash`() {
+        val user = createUser()
+        user.others = null
+
+        assertNull(user.others)
+    }
+
+    private fun createUser(): User {
+        return User().apply {
+            email = "a@a.com"
+            id = "123"
+            ipAddress = "123.x"
+            username = "userName"
+            val others = mutableMapOf(Pair("others", "others"))
+            setOthers(others)
+            val unknown = mapOf(Pair("unknown", "unknown"))
+            acceptUnknownProperties(unknown)
+        }
     }
 }

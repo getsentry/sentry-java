@@ -83,7 +83,7 @@ public final class Scope implements Cloneable {
    *
    * @param level the SentryLevel
    */
-  public void setLevel(@Nullable SentryLevel level) {
+  public void setLevel(final @Nullable SentryLevel level) {
     this.level = level;
   }
 
@@ -150,7 +150,7 @@ public final class Scope implements Cloneable {
    *
    * @param user the user
    */
-  public void setUser(@Nullable User user) {
+  public void setUser(final @Nullable User user) {
     this.user = user;
 
     if (options.isEnableScopeSync()) {
@@ -175,7 +175,10 @@ public final class Scope implements Cloneable {
    *
    * @param fingerprint the fingerprint list
    */
-  public void setFingerprint(@NotNull List<String> fingerprint) {
+  public void setFingerprint(final @NotNull List<String> fingerprint) {
+    if (fingerprint == null) {
+      return;
+    }
     this.fingerprint = fingerprint;
   }
 
@@ -251,7 +254,7 @@ public final class Scope implements Cloneable {
    *
    * @param breadcrumb the breadcrumb
    */
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
     addBreadcrumb(breadcrumb, null);
   }
 
@@ -305,7 +308,7 @@ public final class Scope implements Cloneable {
    * @param key the key
    * @param value the value
    */
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(final @NotNull String key, final @NotNull String value) {
     this.tags.put(key, value);
 
     if (options.isEnableScopeSync()) {
@@ -320,7 +323,7 @@ public final class Scope implements Cloneable {
    *
    * @param key the key
    */
-  public void removeTag(@NotNull String key) {
+  public void removeTag(final @NotNull String key) {
     this.tags.remove(key);
 
     if (options.isEnableScopeSync()) {
@@ -346,7 +349,7 @@ public final class Scope implements Cloneable {
    * @param key the key
    * @param value the value
    */
-  public void setExtra(@NotNull String key, @NotNull String value) {
+  public void setExtra(final @NotNull String key, final @NotNull String value) {
     this.extra.put(key, value);
 
     if (options.isEnableScopeSync()) {
@@ -361,7 +364,7 @@ public final class Scope implements Cloneable {
    *
    * @param key the key
    */
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(final @NotNull String key) {
     this.extra.remove(key);
 
     if (options.isEnableScopeSync()) {
@@ -542,7 +545,7 @@ public final class Scope implements Cloneable {
    *
    * @param eventProcessor the event processor
    */
-  public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
+  public void addEventProcessor(final @NotNull EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
   }
 
@@ -553,7 +556,7 @@ public final class Scope implements Cloneable {
    * @return a clone of the Session after executing the callback and mutating the session
    */
   @Nullable
-  Session withSession(@NotNull IWithSession sessionCallback) {
+  Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     synchronized (sessionLock) {
       sessionCallback.accept(session);

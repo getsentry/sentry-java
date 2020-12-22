@@ -5,3 +5,8 @@ inline fun <reified T : Any> T.injectForField(name: String, value: Any?) {
         .apply { isAccessible = true }
         .set(this, value)
 }
+
+inline fun <reified T : Any> T.callMethod(name: String, parameterTypes: Class<*>, value: Any?) {
+    T::class.java.getDeclaredMethod(name, parameterTypes)
+            .invoke(this, value)
+}
