@@ -37,8 +37,8 @@ class HttpConnection {
   private final @Nullable Proxy proxy;
   private final @NotNull IConnectionConfigurator connectionConfigurator;
   private final @NotNull URL envelopeUrl;
-  private final SentryOptions options;
-  private final RateLimiter rateLimiter;
+  private final @NotNull SentryOptions options;
+  private final @NotNull RateLimiter rateLimiter;
 
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
@@ -55,7 +55,7 @@ class HttpConnection {
       final @NotNull SentryOptions options,
       final @NotNull IConnectionConfigurator connectionConfigurator,
       final @NotNull URL sentryUrl,
-      RateLimiter rateLimiter) {
+      final @NotNull RateLimiter rateLimiter) {
     this(
         options,
         connectionConfigurator,
@@ -69,7 +69,7 @@ class HttpConnection {
       final @NotNull IConnectionConfigurator connectionConfigurator,
       final @NotNull URL sentryUrl,
       final @NotNull AuthenticatorWrapper authenticatorWrapper,
-      RateLimiter rateLimiter) {
+      final @NotNull RateLimiter rateLimiter) {
     this.connectionConfigurator = connectionConfigurator;
     this.options = options;
     this.rateLimiter = rateLimiter;

@@ -13,7 +13,7 @@ final class AsyncHttpTransportFactory {
 
   private AsyncHttpTransportFactory() {}
 
-  static ITransport create(final @NotNull SentryOptions options) {
+  static @NotNull ITransport create(final @NotNull SentryOptions options) {
     Objects.requireNonNull(options, "options is required");
     final Dsn parsedDsn = new Dsn(options.getDsn());
     final IConnectionConfigurator credentials =
