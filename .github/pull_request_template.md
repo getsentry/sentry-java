@@ -1,11 +1,3 @@
-## :loudspeaker: Type of change
-<!--- Put an `x` in the boxes that apply -->
-- [ ] Bugfix
-- [ ] New feature
-- [ ] Enhancement
-- [ ] Refactoring
-
-
 ## :scroll: Description
 <!--- Describe your changes in detail -->
 

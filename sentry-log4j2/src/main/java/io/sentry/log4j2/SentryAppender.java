@@ -14,7 +14,6 @@ import io.sentry.transport.ITransport;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,8 +130,7 @@ public final class SentryAppender extends AbstractAppender {
   // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
   final @NotNull SentryEvent createEvent(final @NotNull LogEvent loggingEvent) {
-    final SentryEvent event =
-        new SentryEvent(DateUtils.getDateTime(new Date(loggingEvent.getTimeMillis())));
+    final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeMillis()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage().getFormat());
     message.setFormatted(loggingEvent.getMessage().getFormattedMessage());

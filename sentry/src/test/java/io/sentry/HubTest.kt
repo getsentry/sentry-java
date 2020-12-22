@@ -975,7 +975,7 @@ class HubTest {
         val contexts = TransactionContext("name")
 
         val transaction = hub.startTransaction(contexts)
-
+        assertTrue(transaction is SentryTransaction)
         assertEquals(contexts, transaction.contexts.trace)
     }
 
@@ -1003,6 +1003,17 @@ class HubTest {
             assertNotNull(it.transaction)
             assertFalse(it.transaction!!.isSampled!!)
         }
+    }
+
+    @Test
+    fun `when startTransaction with parent sampled and no traces sampler provided, transaction inherits sampling decision`() {
+        val hub = generateHub()
+        val transactionContext = TransactionContext("name")
+        transactionContext.parentSampled = true
+        val transaction = hub.startTransaction(transactionContext)
+        assertNotNull(transaction)
+        assertNotNull(transaction.isSampled)
+        assertTrue(transaction.isSampled!!)
     }
 
     @Test

@@ -61,7 +61,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
 
   /** Breadcrumb ctor */
   public Breadcrumb() {
-    this(DateUtils.getCurrentDateTimeOrNull());
+    this(DateUtils.getCurrentDateTime());
   }
 
   /**

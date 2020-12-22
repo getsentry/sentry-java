@@ -348,7 +348,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction,
+      final @NotNull ITransaction transaction,
       final @NotNull Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -359,19 +359,27 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    try {
-      final SentryEnvelope envelope = buildEnvelope(transaction, getAttachmentsFromScope(scope));
+    if (transaction instanceof SentryTransaction) {
+      final SentryTransaction sentryTransaction = (SentryTransaction) transaction;
+      try {
+        final SentryEnvelope envelope =
+            buildEnvelope(sentryTransaction, getAttachmentsFromScope(scope));
 
-      if (envelope != null) {
-        connection.send(envelope, hint);
-      } else {
+        if (envelope != null) {
+          connection.send(envelope, hint);
+        } else {
+          sentryId = SentryId.EMPTY_ID;
+        }
+      } catch (IOException e) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+
+        // if there was an error capturing the event, we return an emptyId
         sentryId = SentryId.EMPTY_ID;
       }
-    } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
-
-      // if there was an error capturing the event, we return an emptyId
-      sentryId = SentryId.EMPTY_ID;
+    } else {
+      options.getLogger().log(SentryLevel.DEBUG, "Captured a NoOpTransaction %s", sentryId);
     }
 
     return sentryId;

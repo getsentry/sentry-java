@@ -1,35 +1,23 @@
 package io.sentry;
 
+import io.sentry.Stack.StackItem;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.io.Closeable;
-import java.util.Deque;
 import java.util.List;
 import java.util.WeakHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Hub implements IHub {
-
-  private static final class StackItem {
-    private volatile @NotNull ISentryClient client;
-    private volatile @NotNull Scope scope;
-
-    StackItem(final @NotNull ISentryClient client, final @NotNull Scope scope) {
-      this.client = Objects.requireNonNull(client, "ISentryClient is required.");
-      this.scope = Objects.requireNonNull(scope, "Scope is required.");
-    }
-  }
-
   private volatile @NotNull SentryId lastEventId;
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
-  private final @NotNull Deque<StackItem> stack = new LinkedBlockingDeque<>();
+  private final @NotNull Stack stack;
   private final @NotNull TracingSampler tracingSampler;
   private final @NotNull WeakHashMap<Throwable, SpanContext> throwableToSpanContext =
       new WeakHashMap<>();
@@ -37,22 +25,24 @@ public final class Hub implements IHub {
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
 
-    // Integrations are no longer registed on Hub ctor, but on Sentry.init
+    // Integrations are no longer registered on Hub ctor, but on Sentry.init
   }
 
-  private Hub(final @NotNull SentryOptions options, final @Nullable StackItem rootStackItem) {
+  private Hub(final @NotNull SentryOptions options, final @NotNull Stack stack) {
     validateOptions(options);
 
     this.options = options;
     this.tracingSampler = new TracingSampler(options);
-    if (rootStackItem != null) {
-      this.stack.push(rootStackItem);
-    }
+    this.stack = stack;
     this.lastEventId = SentryId.EMPTY_ID;
 
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
+  }
+
+  private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
+    this(options, new Stack(options.getLogger(), rootStackItem));
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {
@@ -67,7 +57,7 @@ public final class Hub implements IHub {
     validateOptions(options);
     final Scope scope = new Scope(options);
     final ISentryClient client = new SentryClient(options);
-    return new StackItem(client, scope);
+    return new StackItem(options, client, scope);
   }
 
   @Override
@@ -89,11 +79,7 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        if (item != null) {
-          sentryId = item.client.captureEvent(event, item.scope, hint);
-        } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureEvent");
-        }
+        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
       } catch (Exception e) {
         options
             .getLogger()
@@ -120,11 +106,7 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        if (item != null) {
-          sentryId = item.client.captureMessage(message, level, item.scope);
-        } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureMessage");
-        }
+        sentryId = item.getClient().captureMessage(message, level, item.getScope());
       } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
       }
@@ -148,12 +130,7 @@ public final class Hub implements IHub {
               "Instance is disabled and this 'captureEnvelope' call is a no-op.");
     } else {
       try {
-        final StackItem item = stack.peek();
-        if (item != null) {
-          sentryId = item.client.captureEnvelope(envelope, hint);
-        } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureEnvelope");
-        }
+        sentryId = stack.peek().getClient().captureEnvelope(envelope, hint);
       } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
@@ -177,11 +154,7 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        if (item != null) {
-          sentryId = item.client.captureException(throwable, item.scope, hint);
-        } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureException");
-        }
+        sentryId = item.getClient().captureException(throwable, item.getScope(), hint);
       } catch (Exception e) {
         options
             .getLogger()
@@ -204,13 +177,7 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        if (item != null) {
-          item.client.captureUserFeedback(userFeedback);
-        } else {
-          options
-              .getLogger()
-              .log(SentryLevel.FATAL, "Stack peek was null when captureUserFeedback");
-        }
+        item.getClient().captureUserFeedback(userFeedback);
       } catch (Exception e) {
         options
             .getLogger()
@@ -231,20 +198,16 @@ public final class Hub implements IHub {
               SentryLevel.WARNING, "Instance is disabled and this 'startSession' call is a no-op.");
     } else {
       final StackItem item = this.stack.peek();
-      if (item != null) {
-        final Scope.SessionPair pair = item.scope.startSession();
+      final Scope.SessionPair pair = item.getScope().startSession();
 
-        // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
-        // single envelope
-        // Or create the envelope here with both items and call `captureEnvelope`
-        if (pair.getPrevious() != null) {
-          item.client.captureSession(pair.getPrevious(), new SessionEndHint());
-        }
-
-        item.client.captureSession(pair.getCurrent(), new SessionStartHint());
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startSession");
+      // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
+      // single envelope
+      // Or create the envelope here with both items and call `captureEnvelope`
+      if (pair.getPrevious() != null) {
+        item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
       }
+
+      item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
     }
   }
 
@@ -256,13 +219,9 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
     } else {
       final StackItem item = this.stack.peek();
-      if (item != null) {
-        final Session previousSession = item.scope.endSession();
-        if (previousSession != null) {
-          item.client.captureSession(previousSession, new SessionEndHint());
-        }
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when endSession");
+      final Session previousSession = item.getScope().endSession();
+      if (previousSession != null) {
+        item.getClient().captureSession(previousSession, new SessionEndHint());
       }
     }
   }
@@ -284,13 +243,8 @@ public final class Hub implements IHub {
 
         // Close the top-most client
         final StackItem item = stack.peek();
-        if (item != null) {
-          // TODO: should we end session before closing client?
-
-          item.client.close();
-        } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was NULL when closing Hub");
-        }
+        // TODO: should we end session before closing client?
+        item.getClient().close();
       } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
       }
@@ -309,12 +263,7 @@ public final class Hub implements IHub {
     } else if (breadcrumb == null) {
       options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.addBreadcrumb(breadcrumb, hint);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when addBreadcrumb");
-      }
+      stack.peek().getScope().addBreadcrumb(breadcrumb, hint);
     }
   }
 
@@ -325,12 +274,7 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setLevel' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.setLevel(level);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setLevel");
-      }
+      stack.peek().getScope().setLevel(level);
     }
   }
 
@@ -343,12 +287,7 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'setTransaction' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.setTransaction(transaction);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setTransaction");
-      }
+      stack.peek().getScope().setTransaction(transaction);
     }
   }
 
@@ -359,12 +298,8 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.setUser(user);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setUser");
-      }
+      stack.peek().getScope().setUser(user);
+      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setUser");
     }
   }
 
@@ -379,12 +314,8 @@ public final class Hub implements IHub {
     } else if (fingerprint == null) {
       options.getLogger().log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.setFingerprint(fingerprint);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setFingerprint");
-      }
+      stack.peek().getScope().setFingerprint(fingerprint);
+      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setFingerprint");
     }
   }
 
@@ -397,12 +328,8 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.clearBreadcrumbs();
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when clearBreadcrumbs");
-      }
+      stack.peek().getScope().clearBreadcrumbs();
+      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when clearBreadcrumbs");
     }
   }
 
@@ -415,12 +342,7 @@ public final class Hub implements IHub {
     } else if (key == null || value == null) {
       options.getLogger().log(SentryLevel.WARNING, "setTag called with null parameter.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.setTag(key, value);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setTag");
-      }
+      stack.peek().getScope().setTag(key, value);
     }
   }
 
@@ -433,12 +355,7 @@ public final class Hub implements IHub {
     } else if (key == null) {
       options.getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.removeTag(key);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when removeTag");
-      }
+      stack.peek().getScope().removeTag(key);
     }
   }
 
@@ -451,12 +368,7 @@ public final class Hub implements IHub {
     } else if (key == null || value == null) {
       options.getLogger().log(SentryLevel.WARNING, "setExtra called with null parameter.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.setExtra(key, value);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setExtra");
-      }
+      stack.peek().getScope().setExtra(key, value);
     }
   }
 
@@ -469,12 +381,7 @@ public final class Hub implements IHub {
     } else if (key == null) {
       options.getLogger().log(SentryLevel.WARNING, "removeExtra called with null parameter.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        item.scope.removeExtra(key);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when removeExtra");
-      }
+      stack.peek().getScope().removeExtra(key);
     }
   }
 
@@ -491,21 +398,15 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      if (item != null) {
-        Scope clone = null;
-        try {
-          clone = item.scope.clone();
-        } catch (CloneNotSupportedException e) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "An error has occurred when cloning a Scope", e);
-        }
-        if (clone != null) {
-          final StackItem newItem = new StackItem(item.client, clone);
-          stack.push(newItem);
-        }
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was NULL when pushScope");
+      Scope clone = null;
+      try {
+        clone = item.getScope().clone();
+      } catch (CloneNotSupportedException e) {
+        options.getLogger().log(SentryLevel.ERROR, "An error has occurred when cloning a Scope", e);
+      }
+      if (clone != null) {
+        final StackItem newItem = new StackItem(options, item.getClient(), clone);
+        stack.push(newItem);
       }
     }
   }
@@ -517,14 +418,7 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
     } else {
-      // Don't drop the root scope
-      synchronized (stack) {
-        if (stack.size() != 1) {
-          stack.pop();
-        } else {
-          options.getLogger().log(SentryLevel.WARNING, "Attempt to pop the root scope.");
-        }
-      }
+      stack.pop();
     }
   }
 
@@ -536,15 +430,10 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'withScope' call is a no-op.");
     } else {
       pushScope();
-      final StackItem item = stack.peek();
-      if (item != null) {
-        try {
-          callback.run(item.scope);
-        } catch (Exception e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
-        }
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when withScope");
+      try {
+        callback.run(stack.peek().getScope());
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
       popScope();
     }
@@ -559,15 +448,10 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        try {
-          callback.run(item.scope);
-        } catch (Exception e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
-        }
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when configureScope");
+      try {
+        callback.run(stack.peek().getScope());
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
       }
     }
   }
@@ -580,16 +464,12 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'bindClient' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      if (item != null) {
-        if (client != null) {
-          options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
-          item.client = client;
-        } else {
-          options.getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
-          item.client = NoOpSentryClient.getInstance();
-        }
+      if (client != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
+        item.setClient(client);
       } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when bindClient");
+        options.getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
+        item.setClient(NoOpSentryClient.getInstance());
       }
     }
   }
@@ -601,15 +481,10 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'flush' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        try {
-          item.client.flush(timeoutMillis);
-        } catch (Exception e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
-        }
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when flush");
+      try {
+        stack.peek().getClient().flush(timeoutMillis);
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
       }
     }
   }
@@ -620,26 +495,13 @@ public final class Hub implements IHub {
       options.getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
     }
     // Clone will be invoked in parallel
-    final Hub clone = new Hub(this.options, null);
-    for (StackItem item : this.stack) {
-      Scope clonedScope;
-      try {
-        clonedScope = item.scope.clone();
-      } catch (CloneNotSupportedException e) {
-        // TODO: Why do we need to deal with this? We must guarantee clone is possible here!
-        options.getLogger().log(SentryLevel.ERROR, "Clone not supported");
-        clonedScope = new Scope(options);
-      }
-      final StackItem cloneItem = new StackItem(item.client, clonedScope);
-      clone.stack.push(cloneItem);
-    }
-    return clone;
+    return new Hub(this.options, new Stack(this.stack));
   }
 
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull ITransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -660,11 +522,7 @@ public final class Hub implements IHub {
       StackItem item = null;
       try {
         item = stack.peek();
-        if (item != null) {
-          sentryId = item.client.captureTransaction(transaction, item.scope, hint);
-        } else {
-          options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when captureTransaction");
-        }
+        sentryId = item.getClient().captureTransaction(transaction, item.getScope(), hint);
       } catch (Exception e) {
         options
             .getLogger()
@@ -674,7 +532,7 @@ public final class Hub implements IHub {
                 e);
       } finally {
         if (item != null) {
-          item.scope.clearTransaction();
+          item.getScope().clearTransaction();
         }
       }
     }
@@ -683,38 +541,35 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable SentryTransaction startTransaction(
+  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
+    return this.startTransaction(transactionContexts, null);
+  }
+
+  @Override
+  public @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContexts, "transactionContexts is required");
 
-    SentryTransaction transaction = null;
+    final SamplingContext samplingContext =
+        new SamplingContext(transactionContexts, customSamplingContext);
+    boolean samplingDecision = tracingSampler.sample(samplingContext);
+    transactionContexts.setSampled(samplingDecision);
+
+    ITransaction transaction;
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Instance is disabled and this 'startTransaction' call is a no-op.");
+              "Instance is disabled and this 'startTransaction' returns a no-op.");
+      transaction = new NoOpTransaction();
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        transaction = new SentryTransaction(transactionContexts, this);
-        item.scope.setTransaction(transaction);
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when startTransaction");
-      }
+      transaction = new SentryTransaction(transactionContexts, this);
+      stack.peek().getScope().setTransaction(transaction);
     }
     return transaction;
-  }
-
-  @Override
-  public @Nullable SentryTransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext) {
-    final SamplingContext samplingContext =
-        new SamplingContext(transactionContexts, customSamplingContext);
-    boolean samplingDecision = tracingSampler.sample(samplingContext);
-    transactionContexts.setSampled(samplingDecision);
-    return this.startTransaction(transactionContexts);
   }
 
   @Override
@@ -726,14 +581,9 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        final ISpan span = item.scope.getSpan();
-        if (span != null) {
-          traceHeader = span.toSentryTrace();
-        }
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when 'traceHeaders'");
+      final ISpan span = stack.peek().getScope().getSpan();
+      if (span != null) {
+        traceHeader = span.toSentryTrace();
       }
     }
     return traceHeader;
@@ -747,12 +597,7 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      final StackItem item = stack.peek();
-      if (item != null) {
-        span = item.scope.getSpan();
-      } else {
-        options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when getSpan");
-      }
+      span = stack.peek().getScope().getSpan();
     }
     return span;
   }

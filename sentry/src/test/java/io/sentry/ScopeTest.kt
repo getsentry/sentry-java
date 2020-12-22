@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
+import io.sentry.test.callMethod
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -90,7 +91,6 @@ class ScopeTest {
 
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
-        attachment.contentType = "application/json" // shallow copy, same reference
 
         val clone = scope.clone()
 
@@ -180,10 +180,8 @@ class ScopeTest {
         assertNull(clone.span)
 
         scope.addAttachment(Attachment("path/image.png"))
-        attachment.contentType = "application/json"
 
         assertEquals(1, clone.attachments.size)
-        assertEquals("application/json", clone.attachments.first().contentType)
         assertTrue(clone.attachments is CopyOnWriteArrayList)
     }
 
@@ -662,5 +660,16 @@ class ScopeTest {
 
         assertNotSame(scope.attachments, scope.attachments,
                 "Scope.attachments must return a new instance on each call.")
+    }
+
+    @Test
+    fun `setting null fingerprint do not overwrite current value`() {
+        val scope = Scope(SentryOptions())
+        // sanity check
+        assertNotNull(scope.fingerprint)
+
+        scope.callMethod("setFingerprint", List::class.java, null)
+
+        assertNotNull(scope.fingerprint)
     }
 }

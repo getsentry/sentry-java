@@ -1,5 +1,16 @@
 # vNext
 
+* Ref: Make Attachment immutable (#1120)
+* Fix inheriting sampling decision from parent (#1100)
+* Fixes and Tests: Session serialization and deserialization
+* Ref: using Calendar to generate Dates
+* Fix: Exception only sets a stack trace if there are frames
+* Feat: set isSideLoaded info tags
+* Enhancement: Read tracesSampleRate from AndroidManifest
+* Fix: Initialize Logback after context refreshes (#1129)
+* Ref: Return NoOpTransaction instead of null (#1126)
+* Fix: Do not crash when passing null values to @Nullable methods, eg User and Scope
+
 # 4.0.0-alpha.2
 
 * Feat: Add basic support for attachments (#1082)

@@ -105,7 +105,7 @@ class GsonSerializerTest {
     }
 
     @Test
-    fun `when deserializing mills timestamp, it should become a SentryEvent-Date`() {
+    fun `when deserializing millis timestamp, it should become a SentryEvent-Date`() {
         val dateIsoFormat = "1581410911"
         val expected = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
 
@@ -117,7 +117,7 @@ class GsonSerializerTest {
     }
 
     @Test
-    fun `when deserializing mills timestamp with mills precision, it should become a SentryEvent-Date`() {
+    fun `when deserializing millis timestamp with mills precision, it should become a SentryEvent-Date`() {
         val dateIsoFormat = "1581410911.988"
         val expected = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
 
@@ -126,17 +126,6 @@ class GsonSerializerTest {
         val actual = serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
-    }
-
-    @Test
-    fun `when deserializing mills timestamp with mills precision, it should be UTC`() {
-        // Jun 7, 2020 12:38:12 PM UTC
-        val dateIsoFormat = "1591533492.631"
-        val actual = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
-
-        val expected = DateUtils.getTimestamp(actual)
-
-        assertEquals("2020-06-07T12:38:12.631Z", expected)
     }
 
     @Test
@@ -521,7 +510,7 @@ class GsonSerializerTest {
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
-        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started))
+        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started!!))
         assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.timestamp!!))
         assertEquals(6000.toDouble(), expectedSession.duration)
         assertEquals(Session.State.Ok, expectedSession.status)
