@@ -1,6 +1,12 @@
 package io.sentry.spring.boot
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.spring.tracing.SentrySpan
 import io.sentry.test.checkEvent
@@ -8,12 +14,13 @@ import io.sentry.transport.ITransport
 import java.lang.RuntimeException
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -42,11 +49,16 @@ import org.springframework.web.bind.annotation.RestController
 )
 class SentrySpringIntegrationTest {
 
-    @MockBean
+    @Autowired
     lateinit var transport: ITransport
 
     @LocalServerPort
     lateinit var port: Integer
+
+    @Before
+    fun reset() {
+        reset(transport)
+    }
 
     @Test
     fun `attaches request and user information to SentryEvents`() {
@@ -64,7 +76,7 @@ class SentrySpringIntegrationTest {
                 assertThat(event.user).isNotNull()
                 assertThat(event.user.username).isEqualTo("user")
                 assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -80,7 +92,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -96,7 +108,7 @@ class SentrySpringIntegrationTest {
                 val ex = event.exceptions.first()
                 assertThat(ex.value).isEqualTo("something went wrong")
                 assertThat(ex.mechanism.isHandled).isFalse()
-            })
+            }, anyOrNull())
         }
     }
 
@@ -109,7 +121,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.message.message).isEqualTo("event from logger")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -122,13 +134,25 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.contexts.trace).isNotNull()
-            })
+            }, anyOrNull())
         }
     }
 }
 
 @SpringBootApplication
-open class App
+open class App {
+    private val transport = mock<ITransport>()
+
+    @Bean
+    open fun mockTransportFactory(): ITransportFactory {
+        val factory = mock<ITransportFactory>()
+        whenever(factory.create(any())).thenReturn(transport)
+        return factory
+    }
+
+    @Bean
+    open fun mockTransport() = transport
+}
 
 @RestController
 class HelloController(private val helloService: HelloService) {

@@ -1,12 +1,15 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
 import io.sentry.IHub
+import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.SamplingContext
 import io.sentry.Sentry
@@ -186,7 +189,7 @@ class SentryAutoConfigurationTest {
                         assertThat(event.sdk.packages).anyMatch { pkg ->
                             pkg.name == "maven:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
                         }
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -246,7 +249,7 @@ class SentryAutoConfigurationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event ->
                         assertThat(event.release).isEqualTo("git-commit-id")
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -261,7 +264,7 @@ class SentryAutoConfigurationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event ->
                         assertThat(event.release).isEqualTo("my-release")
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -475,8 +478,17 @@ class SentryAutoConfigurationTest {
     @Configuration(proxyBeanMethods = false)
     open class MockTransportConfiguration {
 
+        private val transport = mock<ITransport>()
+
         @Bean
-        open fun sentryTransport() = mock<ITransport>()
+        open fun mockTransportFactory(): ITransportFactory {
+            val factory = mock<ITransportFactory>()
+            whenever(factory.create(any())).thenReturn(transport)
+            return factory
+        }
+
+        @Bean
+        open fun sentryTransport() = transport
     }
 
     @Configuration(proxyBeanMethods = false)

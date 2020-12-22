@@ -21,15 +21,13 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
-import io.sentry.transport.AsyncConnection
-import io.sentry.transport.HttpTransport
+import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.RuntimeException
-import java.net.URL
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.UUID
@@ -48,6 +46,8 @@ import org.junit.Assert.assertArrayEquals
 class SentryClientTest {
 
     class Fixture {
+        var transport = mock<ITransport>()
+        var factory = mock<ITransportFactory>()
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             sdkVersion = SdkVersion().apply {
@@ -58,12 +58,16 @@ class SentryClientTest {
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(mock(), envelopeReader))
             setLogger(mock())
+            setTransportFactory(factory)
         }
-        var connection: AsyncConnection = mock()
+
+        init {
+            whenever(factory.create(any())).thenReturn(transport)
+        }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt")
 
-        fun getSut() = SentryClient(sentryOptions, connection)
+        fun getSut() = SentryClient(sentryOptions)
     }
 
     private val fixture = Fixture()
@@ -84,6 +88,7 @@ class SentryClientTest {
 
     @Test
     fun `when dsn is an invalid string, client throws`() {
+        fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
         fixture.sentryOptions.dsn = "invalid-dsn"
         assertFailsWith<InvalidDsnException> { fixture.getSut() }
     }
@@ -133,7 +138,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val event = SentryEvent()
         sut.captureEvent(event)
-        verify(fixture.connection, never()).send(any())
+        verify(fixture.transport, never()).send(any())
     }
 
     @Test
@@ -145,11 +150,11 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val actual = SentryEvent()
         sut.captureEvent(actual)
-        verify(fixture.connection).send(check {
+        verify(fixture.transport).send(check {
             val event = getEventFromData(it.items.first().data)
             assertEquals("test", event.tags["test"])
         }, anyOrNull())
-        verifyNoMoreInteractions(fixture.connection)
+        verifyNoMoreInteractions(fixture.transport)
     }
 
     @Test
@@ -175,7 +180,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val expectedHint = Object()
         sut.captureEvent(event, expectedHint)
-        verify(fixture.connection).send(any(), eq(expectedHint))
+        verify(fixture.transport).send(any(), eq(expectedHint))
     }
 
     @Test
@@ -349,7 +354,7 @@ class SentryClientTest {
 
         val allEvents = 10
         (0..allEvents).forEach { _ -> sut.captureEvent(SentryEvent()) }
-        assertTrue(allEvents > mockingDetails(fixture.connection).invocations.size)
+        assertTrue(allEvents > mockingDetails(fixture.transport).invocations.size)
     }
 
     @Test
@@ -359,7 +364,7 @@ class SentryClientTest {
 
         val allEvents = 10
         (0..allEvents).forEach { _ -> sut.captureEvent(SentryEvent()) }
-        assertEquals(allEvents, mockingDetails(fixture.connection).invocations.size - 1) // 1 extra invocation outside .send()
+        assertEquals(allEvents, mockingDetails(fixture.transport).invocations.size - 1) // 1 extra invocation outside .send()
     }
 
     @Test
@@ -377,7 +382,7 @@ class SentryClientTest {
 
         sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
 
-        verify(fixture.connection, never()).send(any())
+        verify(fixture.transport, never()).send(any())
     }
 
     @Test
@@ -386,7 +391,7 @@ class SentryClientTest {
 
         sut.captureUserFeedback(userFeedback)
 
-        verify(fixture.connection).send(check { actual ->
+        verify(fixture.transport).send(check { actual ->
             assertEquals(userFeedback.eventId, actual.header.eventId)
             assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
@@ -412,7 +417,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val exception = IOException("No connection")
-        whenever(fixture.connection.send(any())).thenThrow(exception)
+        whenever(fixture.transport.send(any())).thenThrow(exception)
 
         val logger = mock<ILogger>()
         fixture.sentryOptions.setLogger(logger)
@@ -473,23 +478,23 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when transport is NoOp, it should initialize it`() {
+    fun `when transport factory is NoOp, it should initialize it`() {
+        fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
         fixture.getSut()
-        assertTrue(fixture.sentryOptions.transport is HttpTransport)
+        assertTrue(fixture.sentryOptions.transportFactory is AsyncHttpTransportFactory)
     }
 
     @Test
-    fun `when transport is set on options, it should use the custom transport`() {
+    fun `when transport factory is set on options, it should use the custom transport factory`() {
         val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
         }
-        val transport = HttpTransport(sentryOptions, mock(), 500, 500, null, null, URL("https://key@sentry.io/proj"))
-        sentryOptions.setTransport(transport)
+        val transportFactory = mock<ITransportFactory>()
+        sentryOptions.setTransportFactory(transportFactory)
 
-        val connection = mock<AsyncConnection>()
-        SentryClient(sentryOptions, connection)
+        SentryClient(sentryOptions)
 
-        assertEquals(transport, sentryOptions.transport)
+        assertEquals(transportFactory, sentryOptions.transportFactory)
     }
 
     @Test
@@ -500,8 +505,7 @@ class SentryClientTest {
         val transportGate = CustomTransportGate()
         sentryOptions.setTransportGate(transportGate)
 
-        val connection = mock<AsyncConnection>()
-        SentryClient(sentryOptions, connection)
+        SentryClient(sentryOptions)
 
         assertEquals(transportGate, sentryOptions.transportGate)
     }
@@ -512,8 +516,7 @@ class SentryClientTest {
             dsn = dsnString
         }
 
-        val connection = mock<AsyncConnection>()
-        SentryClient(sentryOptions, connection)
+        SentryClient(sentryOptions)
 
         assertNotNull(sentryOptions.transportGate)
         assertTrue(sentryOptions.transportGate.isConnected)
@@ -547,26 +550,26 @@ class SentryClientTest {
     @Test
     fun `when captureSession and no release is set, do nothing`() {
         fixture.getSut().captureSession(createSession(""))
-        verify(fixture.connection, never()).send(any<SentryEnvelope>())
+        verify(fixture.transport, never()).send(any<SentryEnvelope>())
     }
 
     @Test
     fun `when captureSession and release is set, send an envelope`() {
         fixture.getSut().captureSession(createSession())
-        verify(fixture.connection).send(any<SentryEnvelope>(), anyOrNull())
+        verify(fixture.transport).send(any<SentryEnvelope>(), anyOrNull())
     }
 
     @Test
     fun `when captureSession, sdkInfo should be in the envelope header`() {
         fixture.getSut().captureSession(createSession())
-        verify(fixture.connection).send(check<SentryEnvelope> {
+        verify(fixture.transport).send(check<SentryEnvelope> {
             assertNotNull(it.header.sdkVersion)
         }, anyOrNull())
     }
 
     @Test
     fun `when captureEnvelope and thres an exception, returns empty sentryId`() {
-        whenever(fixture.connection.send(any<SentryEnvelope>(), anyOrNull())).thenThrow(IOException())
+        whenever(fixture.transport.send(any(), anyOrNull())).thenThrow(IOException())
 
         val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
         val sentryId = fixture.getSut().captureEnvelope(envelope)
@@ -705,7 +708,7 @@ class SentryClientTest {
         scope.setContexts("key", "abc")
         scope.startSession().current
         sut.captureEvent(SentryEvent(), scope, null)
-        verify(fixture.connection).send(check {
+        verify(fixture.transport).send(check {
             val event = getEventFromData(it.items.first().data)
             val map = event.contexts["key"] as Map<*, *>
             assertEquals("abc", map["value"])
@@ -722,7 +725,7 @@ class SentryClientTest {
         scope.setContexts("key", "scope value")
         scope.startSession().current
         sut.captureEvent(event, scope, null)
-        verify(fixture.connection).send(check {
+        verify(fixture.transport).send(check {
             val eventFromData = getEventFromData(it.items.first().data)
             assertEquals("event value", eventFromData.contexts["key"])
         }, anyOrNull())
@@ -737,10 +740,9 @@ class SentryClientTest {
 
     @Test
     fun `transactions are sent using connection`() {
-        fixture.connection = mock()
         val sut = fixture.getSut()
         sut.captureTransaction(SentryTransaction("a-transaction"), mock(), null)
-        verify(fixture.connection).send(check {
+        verify(fixture.transport).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)
             assertEquals("a-transaction", transaction.transaction)
@@ -859,7 +861,7 @@ class SentryClientTest {
     }
 
     private fun verifyAttachmentsInEnvelope(eventId: SentryId?) {
-        verify(fixture.connection).send(check { actual ->
+        verify(fixture.transport).send(check { actual ->
             assertEquals(eventId, actual.header.eventId)
 
             assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
