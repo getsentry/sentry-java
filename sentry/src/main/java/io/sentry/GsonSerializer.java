@@ -180,8 +180,7 @@ public final class GsonSerializer implements ISerializer {
 
           writer.write("\n");
         } catch (Exception exception) {
-          logger.log(
-              SentryLevel.ERROR, "Failed to get data for envelope item. Dropping it.", exception);
+          logger.log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
         }
       }
       writer.flush();

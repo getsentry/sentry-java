@@ -4,8 +4,11 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
@@ -22,6 +25,7 @@ import java.io.StringWriter
 import java.util.Date
 import java.util.TimeZone
 import java.util.UUID
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -31,7 +35,14 @@ import kotlin.test.assertTrue
 
 class GsonSerializerTest {
 
-    private val serializer = GsonSerializer(mock(), EnvelopeReader())
+    private lateinit var logger: ILogger
+    private lateinit var serializer: GsonSerializer
+
+    @BeforeTest
+    fun before() {
+        logger = mock()
+        serializer = GsonSerializer(logger, EnvelopeReader())
+    }
 
     private fun serializeToString(ev: SentryEvent): String {
         return this.serializeToString { wrt -> serializer.serialize(ev, wrt) }
@@ -503,6 +514,35 @@ class GsonSerializerTest {
         assertEquals(userFeedback.name, actual.name)
         assertEquals(userFeedback.email, actual.email)
         assertEquals(userFeedback.comments, actual.comments)
+    }
+
+    @Test
+    fun `serialize envelope with item throwing`() {
+        val eventID = SentryId()
+        val header = SentryEnvelopeHeader(eventID)
+
+        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("no"))
+
+        val message = "hello"
+        val attachment = Attachment(message.toByteArray(), "bytes.txt")
+        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(attachment)
+
+        val envelope = SentryEnvelope(header, listOf(invalidAttachmentItem, validAttachmentItem))
+
+        val actualJson = serializeToString(envelope)
+
+        val expectedJson = "{\"event_id\":\"${eventID}\"}\n" +
+                "{\"content_type\":\"${attachment.contentType}\"," +
+                "\"filename\":\"${attachment.filename}\"," +
+                "\"type\":\"attachment\",\"length\":${attachment.bytes?.size}}\n" +
+                "$message\n"
+
+        assertEquals(expectedJson, actualJson)
+
+        verify(logger)
+                .log(eq(SentryLevel.ERROR),
+                        eq("Failed to create envelope item. Dropping it."),
+                        any<SentryEnvelopeException>())
     }
 
     private fun assertSessionData(expectedSession: Session?) {
