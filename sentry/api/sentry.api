@@ -312,6 +312,11 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/NoOpTransportFactory : io/sentry/TransportFactory {
+	public fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
+	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
+}
+
 public final class io/sentry/OptionsContainer {
 	public static fun create (Ljava/lang/Class;)Lio/sentry/OptionsContainer;
 	public fun createInstance ()Ljava/lang/Object;
@@ -646,7 +651,7 @@ public class io/sentry/SentryOptions {
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
-	public fun getTransport ()Lio/sentry/transport/ITransport;
+	public fun getTransportFactory ()Lio/sentry/TransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
@@ -697,7 +702,7 @@ public class io/sentry/SentryOptions {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
-	public fun setTransport (Lio/sentry/transport/ITransport;)V
+	public fun setTransportFactory (Lio/sentry/TransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 }
 
@@ -885,6 +890,10 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun setParentSampled (Ljava/lang/Boolean;)V
+}
+
+public abstract interface class io/sentry/TransportFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
 }
 
 public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Integration, java/io/Closeable, java/lang/Thread$UncaughtExceptionHandler {
@@ -1516,7 +1525,7 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 	public fun setUsername (Ljava/lang/String;)V
 }
 
-public final class io/sentry/transport/BlockingHttpTransport : io/sentry/transport/ITransport {
+public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/IConnectionConfigurator;Ljava/net/URL;)V
 	public fun <init> (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V

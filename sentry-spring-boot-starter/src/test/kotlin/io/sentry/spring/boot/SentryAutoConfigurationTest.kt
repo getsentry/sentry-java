@@ -1,6 +1,7 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -14,6 +15,7 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.TransportFactory
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserProvider
@@ -476,8 +478,17 @@ class SentryAutoConfigurationTest {
     @Configuration(proxyBeanMethods = false)
     open class MockTransportConfiguration {
 
+        private val transport = mock<ITransport>()
+
         @Bean
-        open fun sentryTransport() = mock<ITransport>()
+        open fun mockTransportFactory(): TransportFactory {
+            val factory = mock<TransportFactory>()
+            whenever(factory.create(any())).thenReturn(transport)
+            return factory
+        }
+
+        @Bean
+        open fun sentryTransport() = transport
     }
 
     @Configuration(proxyBeanMethods = false)

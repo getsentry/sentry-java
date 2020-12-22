@@ -9,11 +9,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import org.jetbrains.annotations.NotNull;
 
-final class AsyncHttpTransportFactory {
+/** Creates {@link AsyncHttpTransport}. */
+final class AsyncHttpTransportFactory implements TransportFactory {
 
-  private AsyncHttpTransportFactory() {}
-
-  static @NotNull ITransport create(final @NotNull SentryOptions options) {
+  @Override
+  public @NotNull ITransport create(final @NotNull SentryOptions options) {
     Objects.requireNonNull(options, "options is required");
     final Dsn parsedDsn = new Dsn(options.getDsn());
     final IConnectionConfigurator credentials =
