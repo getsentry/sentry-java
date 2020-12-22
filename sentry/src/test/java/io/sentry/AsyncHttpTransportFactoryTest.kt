@@ -9,7 +9,7 @@ class AsyncHttpTransportFactoryTest {
 
     @Test
     fun `When HttpTransportFactory doesn't have a valid DSN, it throws InvalidDsnException`() {
-        assertFailsWith<InvalidDsnException> { AsyncHttpTransportFactory.create(SentryOptions()) }
+        assertFailsWith<InvalidDsnException> { AsyncHttpTransportFactory().create(SentryOptions()) }
     }
 
     @Test
@@ -17,7 +17,7 @@ class AsyncHttpTransportFactoryTest {
         val options = SentryOptions().apply {
             dsn = "ttps://key@sentry.io/proj"
         }
-        assertFailsWith<IllegalArgumentException> { AsyncHttpTransportFactory.create(options) }
+        assertFailsWith<IllegalArgumentException> { AsyncHttpTransportFactory().create(options) }
     }
 
     @Test
@@ -25,7 +25,7 @@ class AsyncHttpTransportFactoryTest {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val transport = AsyncHttpTransportFactory.create(options)
+        val transport = AsyncHttpTransportFactory().create(options)
         assertNotNull(transport)
     }
 }

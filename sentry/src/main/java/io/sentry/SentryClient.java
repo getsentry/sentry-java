@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.ITransport;
-import io.sentry.transport.NoOpTransport;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
@@ -40,12 +39,12 @@ public final class SentryClient implements ISentryClient {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
-    ITransport transport = options.getTransport();
-    if (transport instanceof NoOpTransport) {
-      transport = AsyncHttpTransportFactory.create(options);
-      options.setTransport(transport);
+    TransportFactory transportFactory = options.getTransportFactory();
+    if (transportFactory instanceof NoOpTransportFactory) {
+      transportFactory = new AsyncHttpTransportFactory();
+      options.setTransportFactory(transportFactory);
     }
-    this.transport = transport;
+    transport = transportFactory.create(options);
     this.random = options.getSampleRate() == null ? null : new Random();
   }
 

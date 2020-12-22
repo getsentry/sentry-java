@@ -1,6 +1,7 @@
 # vNext
 
 * Ref: `ITransport` implementations are now responsible for executing request in asynchronous or synchronous way (#1118)
+* Ref: Add option to set `TransportFactory` instead of `ITransport` on `SentryOptions` (#1124) 
 
 # 4.0.0-alpha.2
 

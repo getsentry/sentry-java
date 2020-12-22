@@ -1,11 +1,14 @@
 package io.sentry.log4j2
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.HubAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import io.sentry.TransportFactory
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -31,13 +34,20 @@ import org.awaitility.kotlin.await
 class SentryAppenderTest {
     private class Fixture() {
         val loggerContext = LogManager.getContext() as LoggerContext
-        lateinit var transport: ITransport
+        var transportFactory = mock<TransportFactory>()
+        var transport = mock<ITransport>()
 
-        fun getSut(transport: ITransport = mock(), minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {
-            this.transport = transport
+        init {
+            whenever(transportFactory.create(any())).thenReturn(transport)
+        }
+
+        fun getSut(transportFactory: TransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {
+            if (transportFactory != null) {
+                this.transportFactory = transportFactory
+            }
             loggerContext.start()
             val config: Configuration = loggerContext.configuration
-            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, transport, HubAdapter.getInstance())
+            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, this.transportFactory, HubAdapter.getInstance())
             config.addAppender(appender)
 
             val ref = AppenderRef.createAppenderRef("sentry", null, null)
@@ -70,13 +80,12 @@ class SentryAppenderTest {
 
     @Test
     fun `does not initialize Sentry if Sentry is already enabled`() {
-        val transport = mock<ITransport>()
         Sentry.init {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
-            it.setTransport(transport)
+            it.setTransportFactory(fixture.transportFactory)
         }
-        val logger = fixture.getSut(transport = transport)
+        val logger = fixture.getSut()
         logger.error("testing environment field")
 
         await.untilAsserted {

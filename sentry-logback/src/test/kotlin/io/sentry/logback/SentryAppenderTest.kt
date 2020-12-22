@@ -6,9 +6,11 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.TransportFactory
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -27,11 +29,14 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 class SentryAppenderTest {
-    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val transport: ITransport = mock<ITransport>()) {
+    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+        val transportFactory = mock<TransportFactory>()
+        val transport = mock<ITransport>()
 
         init {
+            whenever(this.transportFactory.create(any())).thenReturn(transport)
             val appender = SentryAppender()
             val options = SentryOptions()
             options.dsn = "http://key@localhost/proj"
@@ -39,7 +44,7 @@ class SentryAppenderTest {
             appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
             appender.setMinimumEventLevel(minimumEventLevel)
             appender.context = loggerContext
-            appender.setTransport(transport)
+            appender.setTransportFactory(transportFactory)
             val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
             rootLogger.level = Level.TRACE
             rootLogger.addAppender(appender)
@@ -63,13 +68,12 @@ class SentryAppenderTest {
 
     @Test
     fun `does not initialize Sentry if Sentry is already enabled`() {
-        val transport = mock<ITransport>()
+        fixture = Fixture()
         Sentry.init {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
-            it.setTransport(transport)
+            it.setTransportFactory(fixture.transportFactory)
         }
-        fixture = Fixture(transport = transport)
         fixture.logger.error("testing environment field")
 
         await.untilAsserted {
