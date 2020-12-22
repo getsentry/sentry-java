@@ -35,8 +35,8 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryOptions.class);
 
-    if (registry.containsBeanDefinition("mockTransport")) {
-      builder.addPropertyReference("transport", "mockTransport");
+    if (registry.containsBeanDefinition("mockTransportFactory")) {
+      builder.addPropertyReference("transportFactory", "mockTransportFactory");
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
     builder.addPropertyValue("enableExternalConfiguration", true);

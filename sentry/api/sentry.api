@@ -287,6 +287,10 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
+public abstract interface class io/sentry/ITransportFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
+}
+
 public abstract interface class io/sentry/IUnknownPropertiesConsumer {
 	public abstract fun acceptUnknownProperties (Ljava/util/Map;)V
 }
@@ -310,6 +314,11 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
+public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory {
+	public fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
+	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
 }
 
 public final class io/sentry/OptionsContainer {
@@ -466,7 +475,6 @@ public abstract class io/sentry/SentryBaseEvent {
 }
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/Connection;)V
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Ljava/lang/Object;)V
@@ -647,7 +655,7 @@ public class io/sentry/SentryOptions {
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
-	public fun getTransport ()Lio/sentry/transport/ITransport;
+	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
@@ -698,7 +706,7 @@ public class io/sentry/SentryOptions {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
-	public fun setTransport (Lio/sentry/transport/ITransport;)V
+	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 }
 
@@ -1517,29 +1525,16 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 	public fun setUsername (Ljava/lang/String;)V
 }
 
-public final class io/sentry/transport/AsyncConnection : io/sentry/transport/Connection, java/io/Closeable {
-	public fun <init> (Lio/sentry/transport/ITransport;Lio/sentry/transport/ITransportGate;Lio/sentry/cache/IEnvelopeCache;ILio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;)V
+public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/IConnectionConfigurator;Ljava/net/URL;)V
+	public fun <init> (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
-}
-
-public abstract interface class io/sentry/transport/Connection {
-	public abstract fun close ()V
-	public fun send (Lio/sentry/SentryEnvelope;)V
-	public abstract fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/transport/CurrentDateProvider : io/sentry/transport/ICurrentDateProvider {
 	public final fun getCurrentTimeMillis ()J
 	public static fun getInstance ()Lio/sentry/transport/ICurrentDateProvider;
-}
-
-public class io/sentry/transport/HttpTransport : io/sentry/transport/ITransport {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/IConnectionConfigurator;IILjavax/net/ssl/SSLSocketFactory;Ljavax/net/ssl/HostnameVerifier;Ljava/net/URL;)V
-	public fun close ()V
-	protected fun open ()Ljava/net/HttpURLConnection;
-	public fun send (Lio/sentry/SentryEnvelope;)Lio/sentry/transport/TransportResult;
-	public fun updateRetryAfterLimits (Ljava/net/HttpURLConnection;I)V
 }
 
 public abstract interface class io/sentry/transport/IConnectionConfigurator {
@@ -1551,7 +1546,8 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 }
 
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
-	public abstract fun send (Lio/sentry/SentryEnvelope;)Lio/sentry/transport/TransportResult;
+	public fun send (Lio/sentry/SentryEnvelope;)V
+	public abstract fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
 public abstract interface class io/sentry/transport/ITransportGate {
@@ -1569,7 +1565,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/transport/NoOpTransport;
-	public fun send (Lio/sentry/SentryEnvelope;)Lio/sentry/transport/TransportResult;
+	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/ITransportGate {
@@ -1587,7 +1583,7 @@ public final class io/sentry/transport/RateLimiter {
 public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
-	public fun send (Lio/sentry/SentryEnvelope;)Lio/sentry/transport/TransportResult;
+	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
 public abstract class io/sentry/transport/TransportResult {

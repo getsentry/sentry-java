@@ -4,10 +4,8 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProvider;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
-import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
 import java.util.ArrayList;
@@ -166,8 +164,11 @@ public class SentryOptions {
    */
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
-  /** The transport is an internal construct of the client that abstracts away the event sending. */
-  private @NotNull ITransport transport = NoOpTransport.getInstance();
+  /**
+   * The transport factory creates instances of {@link io.sentry.transport.ITransport} - internal
+   * construct of the client that abstracts away the event sending.
+   */
+  private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
 
   /**
    * Implementations of this interface serve as gatekeepers that allow or disallow sending of the
@@ -722,21 +723,22 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the Transport interface
+   * Returns the TransportFactory interface
    *
-   * @return the transport
+   * @return the transport factory
    */
-  public @NotNull ITransport getTransport() {
-    return transport;
+  public @NotNull ITransportFactory getTransportFactory() {
+    return transportFactory;
   }
 
   /**
-   * Sets the Transport interface
+   * Sets the TransportFactory interface
    *
-   * @param transport the transport
+   * @param transportFactory the transport factory
    */
-  public void setTransport(@Nullable ITransport transport) {
-    this.transport = transport != null ? transport : NoOpTransport.getInstance();
+  public void setTransportFactory(@Nullable ITransportFactory transportFactory) {
+    this.transportFactory =
+        transportFactory != null ? transportFactory : NoOpTransportFactory.getInstance();
   }
 
   /**
