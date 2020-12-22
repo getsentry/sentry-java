@@ -169,13 +169,20 @@ public final class GsonSerializer implements ISerializer {
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
-        gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
-        writer.write("\n");
-        writer.flush();
+        try {
+          final byte[] data = item.getData();
 
-        outputStream.write(item.getData());
+          gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
+          writer.write("\n");
+          writer.flush();
 
-        writer.write("\n");
+          outputStream.write(data);
+
+          writer.write("\n");
+        } catch (Exception exception) {
+          logger.log(
+              SentryLevel.ERROR, "Failed to get data for envelope item. Dropping it.", exception);
+        }
       }
       writer.flush();
     }
