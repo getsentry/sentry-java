@@ -8,6 +8,7 @@
 * Feat: set isSideLoaded info tags
 * Enhancement: Read tracesSampleRate from AndroidManifest
 * Ref: Return NoOpTransaction instead of null (#1126)
+* Fix: User.setOthers is marked @Nullable but crashes when passing in null #1131
 
 # 4.0.0-alpha.2
 
