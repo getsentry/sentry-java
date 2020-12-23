@@ -5,6 +5,7 @@ import static io.sentry.SentryLevel.ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
 import java.io.BufferedReader;
@@ -14,12 +15,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -35,8 +33,7 @@ class HttpConnection {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final @Nullable Proxy proxy;
-  private final @NotNull IConnectionConfigurator connectionConfigurator;
-  private final @NotNull URL envelopeUrl;
+  private final @NotNull RequestDetails requestDetails;
   private final @NotNull SentryOptions options;
   private final @NotNull RateLimiter rateLimiter;
 
@@ -46,40 +43,24 @@ class HttpConnection {
    * from the options.
    *
    * @param options sentry options to read the config from
-   * @param connectionConfigurator this consumer is given a chance to set up the request before it
-   *     is sent
-   * @param sentryUrl sentryUrl which is the parsed DSN
+   * @param requestDetails request details
    * @param rateLimiter rate limiter
    */
   public HttpConnection(
       final @NotNull SentryOptions options,
-      final @NotNull IConnectionConfigurator connectionConfigurator,
-      final @NotNull URL sentryUrl,
+      final @NotNull RequestDetails requestDetails,
       final @NotNull RateLimiter rateLimiter) {
-    this(
-        options,
-        connectionConfigurator,
-        sentryUrl,
-        AuthenticatorWrapper.getInstance(),
-        rateLimiter);
+    this(options, requestDetails, AuthenticatorWrapper.getInstance(), rateLimiter);
   }
 
   HttpConnection(
       final @NotNull SentryOptions options,
-      final @NotNull IConnectionConfigurator connectionConfigurator,
-      final @NotNull URL sentryUrl,
+      final @NotNull RequestDetails requestDetails,
       final @NotNull AuthenticatorWrapper authenticatorWrapper,
       final @NotNull RateLimiter rateLimiter) {
-    this.connectionConfigurator = connectionConfigurator;
+    this.requestDetails = requestDetails;
     this.options = options;
     this.rateLimiter = rateLimiter;
-
-    try {
-      final URI uri = sentryUrl.toURI();
-      envelopeUrl = uri.resolve(uri.getPath() + "/envelope/").toURL();
-    } catch (URISyntaxException | MalformedURLException e) {
-      throw new IllegalArgumentException("Failed to compose the Sentry's server URL.", e);
-    }
 
     this.proxy = resolveProxy(options.getProxy());
 
@@ -119,7 +100,9 @@ class HttpConnection {
 
   protected @NotNull HttpURLConnection open() throws IOException {
     return (HttpURLConnection)
-        (proxy == null ? envelopeUrl.openConnection() : envelopeUrl.openConnection(proxy));
+        (proxy == null
+            ? requestDetails.getUrl().openConnection()
+            : requestDetails.getUrl().openConnection(proxy));
   }
 
   /**
@@ -130,7 +113,10 @@ class HttpConnection {
    */
   private @NotNull HttpURLConnection createConnection() throws IOException {
     HttpURLConnection connection = open();
-    connectionConfigurator.configure(connection);
+
+    for (Map.Entry<String, String> header : requestDetails.getHeaders().entrySet()) {
+      connection.setRequestProperty(header.getKey(), header.getValue());
+    }
 
     connection.setRequestMethod("POST");
     connection.setDoOutput(true);

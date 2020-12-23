@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ISerializer
+import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
@@ -18,7 +19,6 @@ import io.sentry.protocol.User
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy.Type
-import java.net.URI
 import java.net.URL
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
@@ -32,22 +32,26 @@ import kotlin.test.assertTrue
 class HttpConnectionTest {
 
     private class Fixture {
-        val dsn: URL = URI.create("https://key@localhost/proj").toURL()
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
-        var requestUpdater = IConnectionConfigurator {}
         val connection = mock<HttpsURLConnection>()
         val currentDateProvider = mock<ICurrentDateProvider>()
         val authenticatorWrapper = mock<AuthenticatorWrapper>()
         val rateLimiter = mock<RateLimiter>()
         var sslSocketFactory: SSLSocketFactory? = null
         var hostnameVerifier: HostnameVerifier? = null
+        val requestDetails = mock<RequestDetails>()
 
         init {
             whenever(connection.outputStream).thenReturn(mock())
             whenever(connection.inputStream).thenReturn(mock())
             whenever(connection.setHostnameVerifier(any())).thenCallRealMethod()
             whenever(connection.setSSLSocketFactory(any())).thenCallRealMethod()
+            whenever(requestDetails.headers).thenReturn(mapOf("header-name" to "header-value"))
+            val url = mock<URL>()
+            whenever(url.openConnection()).thenReturn(connection)
+            whenever(url.openConnection(any())).thenReturn(connection)
+            whenever(requestDetails.url).thenReturn(url)
         }
 
         fun getSUT(): HttpConnection {
@@ -57,11 +61,7 @@ class HttpConnectionTest {
             options.sslSocketFactory = sslSocketFactory
             options.hostnameVerifier = hostnameVerifier
 
-            return object : HttpConnection(options, requestUpdater, dsn, authenticatorWrapper, rateLimiter) {
-                override fun open(): HttpsURLConnection {
-                    return connection
-                }
-            }
+            return HttpConnection(options, requestDetails, authenticatorWrapper, rateLimiter)
         }
     }
 
@@ -220,6 +220,16 @@ class HttpConnectionTest {
 
         assertNull(transport.proxy)
         verifyZeroInteractions(fixture.authenticatorWrapper)
+    }
+
+    @Test
+    fun `sets common headers and on http connection`() {
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.connection).setRequestProperty("header-name", "header-value")
+        verify(fixture.requestDetails.url).openConnection()
     }
 
     private fun createSession(): Session {

@@ -96,7 +96,7 @@ class SentryUserProviderEventProcessorIntegrationTest {
         @Bean
         open fun mockTransportFactory(): ITransportFactory {
             val factory = mock<ITransportFactory>()
-            whenever(factory.create(any())).thenReturn(transport)
+            whenever(factory.create(any(), any())).thenReturn(transport)
             return factory
         }
 
