@@ -15,11 +15,11 @@ final class RequestDetailsResolver {
 
   private final @NotNull SentryOptions options;
 
-  public RequestDetailsResolver(@NotNull SentryOptions options) {
+  public RequestDetailsResolver(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "options is required");
   }
 
-  RequestDetails resolve() {
+  @NotNull RequestDetails resolve() {
     final Dsn dsn = new Dsn(options.getDsn());
     final URI sentryUri = dsn.getSentryUri();
     final String envelopeUrl = sentryUri.resolve(sentryUri.getPath() + "/envelope/").toString();
