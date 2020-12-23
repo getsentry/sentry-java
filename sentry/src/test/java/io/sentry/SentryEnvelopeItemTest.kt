@@ -78,7 +78,7 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-        assertFailsWith(SentryEnvelopeException::class, "Reading the attachment ${attachment.pathname} failed, because the file located at " +
+        assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed, because the file located at " +
                 "the path is not a file.") {
             item.data
         }
@@ -96,7 +96,7 @@ class SentryEnvelopeItemTest {
 
             val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-            assertFailsWith(SentryEnvelopeException::class, "Reading the attachment ${attachment.pathname} failed, " +
+            assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed, " +
                     "because can't read the file.") {
                 item.data
             }
@@ -117,7 +117,7 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-        assertFailsWith(SentryEnvelopeException::class, "Reading the attachment ${attachment.pathname} failed.") {
+        assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed.") {
             item.data
         }
 
@@ -136,7 +136,7 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-        assertFailsWith(SentryEnvelopeException::class, "Couldn't attach the attachment ${attachment.filename}.\n" +
+        assertFailsWith<SentryEnvelopeException>("Couldn't attach the attachment ${attachment.filename}.\n" +
                 "Please check that either bytes or a path is set.") {
             item.data
         }
