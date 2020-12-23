@@ -547,7 +547,7 @@ public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeA
 }
 
 public final class io/sentry/SentryEnvelopeItem {
-	public static fun fromAttachment (Lio/sentry/ILogger;Lio/sentry/Attachment;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromAttachment (Lio/sentry/Attachment;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
@@ -1097,6 +1097,10 @@ public final class io/sentry/exception/InvalidDsnException : java/lang/RuntimeEx
 public final class io/sentry/exception/InvalidSentryTraceHeaderException : java/lang/Exception {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getSentryTraceHeader ()Ljava/lang/String;
+}
+
+public final class io/sentry/exception/SentryEnvelopeException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;)V
 }
 
 public abstract interface class io/sentry/hints/ApplyScopeData {

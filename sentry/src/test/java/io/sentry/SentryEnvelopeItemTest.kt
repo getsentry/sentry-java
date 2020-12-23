@@ -1,15 +1,14 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
+import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.User
 import io.sentry.test.injectForField
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.junit.Assert.assertArrayEquals
@@ -45,7 +44,7 @@ class SentryEnvelopeItemTest {
         val bytes = "hello".toByteArray()
         val attachment = Attachment(bytes, fixture.pathname)
 
-        val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
 
         assertAttachment(attachment, bytes, item)
     }
@@ -56,7 +55,7 @@ class SentryEnvelopeItemTest {
         file.writeBytes(fixture.bytes)
         val attachment = Attachment(file.path)
 
-        val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
 
         assertAttachment(attachment, fixture.bytes, item)
     }
@@ -68,21 +67,21 @@ class SentryEnvelopeItemTest {
         file.writeBytes(twoMB)
         val attachment = Attachment(file.absolutePath)
 
-        val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
 
         assertAttachment(attachment, twoMB, item)
     }
 
     @Test
     fun `fromAttachment with non existent file`() {
-        val logger = mock<ILogger>()
         val attachment = Attachment("I don't exist", "file.txt")
 
-        val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-        assertAttachment(attachment,
-                "Reading the attachment ${attachment.pathname} failed, because the file located at " +
-                        "the path is not a file.", item)
+        assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed, because the file located at " +
+                "the path is not a file.") {
+            item.data
+        }
     }
 
     @Test
@@ -93,13 +92,14 @@ class SentryEnvelopeItemTest {
         // On CI it can happen that we don't have the permission to the file permission to read only
         val changedFileReadPermission = file.setReadable(false)
         if (changedFileReadPermission) {
-            val logger = mock<ILogger>()
             val attachment = Attachment(file.path, "file.txt")
 
-            val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
+            val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-            assertAttachment(attachment, "Reading the attachment ${attachment.pathname} failed, " +
-                    "because can't read the file.", item)
+            assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed, " +
+                    "because can't read the file.") {
+                item.data
+            }
         } else {
             println("Was not able to change file access permission. Skipping test.")
         }
@@ -110,16 +110,16 @@ class SentryEnvelopeItemTest {
         val file = File(fixture.pathname)
         file.writeBytes(fixture.bytes)
 
-        val logger = mock<ILogger>()
         val attachment = Attachment(file.path, "file.txt")
 
         val securityManager = DenyReadFileSecurityManager(fixture.pathname)
         System.setSecurityManager(securityManager)
 
-        val item = SentryEnvelopeItem.fromAttachment(logger, attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-        assertAttachment(attachment, "Reading the attachment ${attachment.pathname} failed.", item)
-        verifyLogException<SecurityException>(logger, attachment.pathname ?: "")
+        assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed.") {
+            item.data
+        }
 
         System.setSecurityManager(null)
     }
@@ -134,10 +134,12 @@ class SentryEnvelopeItemTest {
         // reflection instead.
         attachment.injectForField("pathname", null)
 
-        val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
 
-        assertAttachment(attachment, "Couldn't attach the attachment ${attachment.filename}.\n" +
-                "Please check that either bytes or a path is set.", item)
+        assertFailsWith<SentryEnvelopeException>("Couldn't attach the attachment ${attachment.filename}.\n" +
+                "Please check that either bytes or a path is set.") {
+            item.data
+        }
     }
 
     @Test
@@ -145,7 +147,7 @@ class SentryEnvelopeItemTest {
         val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
         val attachment = Attachment(image.path)
 
-        val item = SentryEnvelopeItem.fromAttachment(mock(), attachment)
+        val item = SentryEnvelopeItem.fromAttachment(attachment)
         assertAttachment(attachment, image.readBytes(), item)
     }
 
@@ -161,21 +163,5 @@ class SentryEnvelopeItemTest {
         assertEquals(attachment.contentType, actualItem.header.contentType)
         assertEquals(attachment.filename, actualItem.header.fileName)
         assertArrayEquals(expectedBytes, actualItem.data)
-    }
-
-    private fun assertAttachment(
-        attachment: Attachment,
-        expectedErrorMessage: String,
-        actualItem: SentryEnvelopeItem
-    ) {
-        assertEquals(attachment.contentType, actualItem.header.contentType)
-        assertEquals(attachment.filename, actualItem.header.fileName)
-        assertEquals(expectedErrorMessage, String(actualItem.data))
-    }
-
-    private inline fun <reified T : Exception> verifyLogException(logger: ILogger, pathname: String) {
-        verify(logger)
-            .log(eq(SentryLevel.ERROR), any<T>(),
-                eq("Reading the attachment $pathname failed."))
     }
 }
