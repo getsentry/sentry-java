@@ -69,7 +69,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureEvent(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -95,7 +95,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureMessage(
       final @NotNull String message, final @NotNull SentryLevel level) {
     SentryId sentryId = SentryId.EMPTY_ID;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -122,7 +122,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -143,7 +143,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Object hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -168,7 +168,7 @@ public final class Hub implements IHub {
 
   @Override
   public void captureUserFeedback(UserFeedback userFeedback) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -191,7 +191,7 @@ public final class Hub implements IHub {
 
   @Override
   public void startSession() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -213,7 +213,7 @@ public final class Hub implements IHub {
 
   @Override
   public void endSession() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
@@ -228,7 +228,7 @@ public final class Hub implements IHub {
 
   @Override
   public void close() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'close' call is a no-op.");
@@ -254,7 +254,7 @@ public final class Hub implements IHub {
 
   @Override
   public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -269,7 +269,7 @@ public final class Hub implements IHub {
 
   @Override
   public void setLevel(final @Nullable SentryLevel level) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setLevel' call is a no-op.");
@@ -280,7 +280,7 @@ public final class Hub implements IHub {
 
   @Override
   public void setTransaction(final @Nullable String transaction) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -293,7 +293,7 @@ public final class Hub implements IHub {
 
   @Override
   public void setUser(final @Nullable User user) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
@@ -305,7 +305,7 @@ public final class Hub implements IHub {
 
   @Override
   public void setFingerprint(final @NotNull List<String> fingerprint) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -321,7 +321,7 @@ public final class Hub implements IHub {
 
   @Override
   public void clearBreadcrumbs() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -335,7 +335,7 @@ public final class Hub implements IHub {
 
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setTag' call is a no-op.");
@@ -348,7 +348,7 @@ public final class Hub implements IHub {
 
   @Override
   public void removeTag(final @NotNull String key) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'removeTag' call is a no-op.");
@@ -361,7 +361,7 @@ public final class Hub implements IHub {
 
   @Override
   public void setExtra(final @NotNull String key, final @NotNull String value) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
@@ -374,7 +374,7 @@ public final class Hub implements IHub {
 
   @Override
   public void removeExtra(final @NotNull String key) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'removeExtra' call is a no-op.");
@@ -392,7 +392,7 @@ public final class Hub implements IHub {
 
   @Override
   public void pushScope() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
@@ -413,7 +413,7 @@ public final class Hub implements IHub {
 
   @Override
   public void popScope() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
@@ -424,7 +424,7 @@ public final class Hub implements IHub {
 
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'withScope' call is a no-op.");
@@ -441,7 +441,7 @@ public final class Hub implements IHub {
 
   @Override
   public void configureScope(final @NotNull ScopeCallback callback) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -458,7 +458,7 @@ public final class Hub implements IHub {
 
   @Override
   public void bindClient(final @NotNull ISentryClient client) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'bindClient' call is a no-op.");
@@ -476,7 +476,7 @@ public final class Hub implements IHub {
 
   @Override
   public void flush(long timeoutMillis) {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'flush' call is a no-op.");
@@ -491,7 +491,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull IHub clone() {
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options.getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
     }
     // Clone will be invoked in parallel
@@ -505,7 +505,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -558,7 +558,7 @@ public final class Hub implements IHub {
     transactionContexts.setSampled(samplingDecision);
 
     ITransaction transaction;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -575,7 +575,7 @@ public final class Hub implements IHub {
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
     SentryTraceHeader traceHeader = null;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(
@@ -592,7 +592,7 @@ public final class Hub implements IHub {
   @Override
   public @Nullable ISpan getSpan() {
     ISpan span = null;
-    if (!isEnabled()) {
+    if (!isEnabled) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");

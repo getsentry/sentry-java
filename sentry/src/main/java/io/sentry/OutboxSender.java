@@ -34,6 +34,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
 
+  @SuppressWarnings("LambdaLast")
   public OutboxSender(
       final @NotNull IHub hub,
       final @NotNull IEnvelopeReader envelopeReader,

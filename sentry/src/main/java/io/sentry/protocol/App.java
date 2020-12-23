@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class App implements IUnknownPropertiesConsumer, Cloneable {
@@ -34,7 +35,7 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   @SuppressWarnings("unused")
   private Map<String, Object> unknown;
 
-  public String getAppIdentifier() {
+  public @Nullable String getAppIdentifier() {
     return appIdentifier;
   }
 

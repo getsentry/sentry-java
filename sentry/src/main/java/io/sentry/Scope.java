@@ -165,6 +165,7 @@ public final class Scope implements Cloneable {
    *
    * @return the fingerprint list
    */
+  @SuppressWarnings("KotlinPropertyAccess")
   @NotNull
   List<String> getFingerprint() {
     return fingerprint;

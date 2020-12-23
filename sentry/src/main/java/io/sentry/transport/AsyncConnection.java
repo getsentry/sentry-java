@@ -34,6 +34,7 @@ public final class AsyncConnection implements Closeable, Connection {
   private final @NotNull IEnvelopeCache envelopeCache;
   private final @NotNull SentryOptions options;
 
+  @SuppressWarnings("LambdaLast")
   public AsyncConnection(
       final ITransport transport,
       final ITransportGate transportGate,
@@ -62,6 +63,7 @@ public final class AsyncConnection implements Closeable, Connection {
     this.executor = executorService;
   }
 
+  @SuppressWarnings("SyntheticAccessor")
   private static QueuedThreadPoolExecutor initExecutor(
       final int maxQueueSize,
       final @NotNull IEnvelopeCache envelopeCache,
@@ -72,11 +74,11 @@ public final class AsyncConnection implements Closeable, Connection {
           if (r instanceof EnvelopeSender) {
             final EnvelopeSender envelopeSender = (EnvelopeSender) r;
 
-            if (!(envelopeSender.hint instanceof Cached)) {
-              envelopeCache.store(envelopeSender.envelope, envelopeSender.hint);
+            if (!(envelopeSender.getHint() instanceof Cached)) {
+              envelopeCache.store(envelopeSender.getEnvelope(), envelopeSender.getHint());
             }
 
-            markHintWhenSendingFailed(envelopeSender.hint, true);
+            markHintWhenSendingFailed(envelopeSender.getHint(), true);
             logger.log(SentryLevel.WARNING, "Envelope rejected");
           }
         };
@@ -153,7 +155,9 @@ public final class AsyncConnection implements Closeable, Connection {
       envelope = new SentryEnvelope(envelope.getHeader(), toSend);
     }
 
-    executor.submit(new EnvelopeSender(envelope, hint, currentEnvelopeCache));
+    executor.submit(
+        new EnvelopeSender(
+            envelope, hint, currentEnvelopeCache, transport, transportGate, options));
   }
 
   @Override
@@ -190,19 +194,28 @@ public final class AsyncConnection implements Closeable, Connection {
     }
   }
 
-  private final class EnvelopeSender implements Runnable {
+  private static final class EnvelopeSender implements Runnable {
     private final @NotNull SentryEnvelope envelope;
     private final @Nullable Object hint;
     private final @NotNull IEnvelopeCache envelopeCache;
     private final TransportResult failedResult = TransportResult.error();
+    private final @NotNull ITransport transport;
+    private final @NotNull ITransportGate transportGate;
+    private final @NotNull SentryOptions options;
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
         final @Nullable Object hint,
-        final @NotNull IEnvelopeCache envelopeCache) {
+        final @NotNull IEnvelopeCache envelopeCache,
+        final @NotNull ITransport transport,
+        final @NotNull ITransportGate transportGate,
+        final @NotNull SentryOptions options) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
       this.envelopeCache = Objects.requireNonNull(envelopeCache, "EnvelopeCache is required.");
+      this.transport = transport;
+      this.transportGate = transportGate;
+      this.options = options;
     }
 
     @Override
@@ -266,6 +279,14 @@ public final class AsyncConnection implements Closeable, Connection {
         }
       }
       return result;
+    }
+
+    public @NotNull SentryEnvelope getEnvelope() {
+      return envelope;
+    }
+
+    public @Nullable Object getHint() {
+      return hint;
     }
   }
 }

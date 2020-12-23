@@ -17,6 +17,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   private @Nullable EnvelopeFileObserver observer;
   private @Nullable ILogger logger;
 
+  @SuppressWarnings("SyntheticAccessor")
   public static @NotNull EnvelopeFileObserverIntegration getOutboxFileObserver() {
     return new OutboxEnvelopeFileObserverIntegration();
   }
@@ -67,6 +68,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   @TestOnly
   abstract @Nullable String getPath(final @NotNull SentryOptions options);
 
+  @SuppressWarnings("SyntheticAccessor")
   private static final class OutboxEnvelopeFileObserverIntegration
       extends EnvelopeFileObserverIntegration {
 

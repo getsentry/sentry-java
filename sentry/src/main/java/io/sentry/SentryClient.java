@@ -30,6 +30,7 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull Connection connection;
   private final @Nullable Random random;
 
+  @SuppressWarnings("SyntheticAccessor")
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
   @Override

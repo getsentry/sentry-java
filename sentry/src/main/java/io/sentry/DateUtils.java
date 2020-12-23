@@ -21,6 +21,7 @@ public final class DateUtils {
   // if UTC is not found, it fallback to "GMT" which is UTC equivalent
   private static final @NotNull TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
 
+  @SuppressWarnings("SyntheticAccessor")
   private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
       new ThreadLocal<SimpleDateFormat>() {
         @Override
@@ -32,6 +33,7 @@ public final class DateUtils {
         }
       };
 
+  @SuppressWarnings("SyntheticAccessor")
   private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_UTC =
       new ThreadLocal<SimpleDateFormat>() {
         @Override

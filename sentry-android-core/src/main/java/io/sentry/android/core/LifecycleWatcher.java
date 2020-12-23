@@ -101,8 +101,8 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
           @Override
           public void run() {
             addSessionBreadcrumb("end");
-            hub.endSession();
-            runningSession.set(false);
+            getHub().endSession();
+            isRunningSession().set(false);
           }
         };
 
@@ -127,7 +127,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     }
   }
 
-  private void addSessionBreadcrumb(final @NotNull String state) {
+  void addSessionBreadcrumb(final @NotNull String state) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setType("session");
     breadcrumb.setData("state", state);
@@ -136,7 +136,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     hub.addBreadcrumb(breadcrumb);
   }
 
-  @TestOnly
   @NotNull
   AtomicBoolean isRunningSession() {
     return runningSession;
@@ -146,5 +145,10 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   @Nullable
   TimerTask getTimerTask() {
     return timerTask;
+  }
+
+  @NotNull
+  IHub getHub() {
+    return hub;
   }
 }

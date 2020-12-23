@@ -28,6 +28,7 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
     return instance;
   }
 
+  @SuppressWarnings("SyntheticAccessor")
   @Override
   public <T> TypeAdapter<T> create(final Gson gson, final TypeToken<T> typeToken) {
     // Check if we can deal with the given type

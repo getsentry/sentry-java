@@ -90,6 +90,7 @@ public final class Sentry {
    * @throws NoSuchMethodException the NoSuchMethodException
    * @throws InvocationTargetException the InvocationTargetException
    */
+  @SuppressWarnings("LambdaLast")
   public static <T extends SentryOptions> void init(
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration,
@@ -116,6 +117,7 @@ public final class Sentry {
    * @param optionsConfiguration configuration options callback
    * @param globalHubMode the globalHubMode
    */
+  @SuppressWarnings("LambdaLast")
   public static void init(
       final @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration,
       final boolean globalHubMode) {

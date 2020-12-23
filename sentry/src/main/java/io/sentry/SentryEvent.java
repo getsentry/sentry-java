@@ -289,6 +289,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.addBreadcrumb(new Breadcrumb(message));
   }
 
+  @SuppressWarnings("KotlinPropertyAccess")
   Map<String, Object> getExtras() {
     return extra;
   }
@@ -328,6 +329,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     return unknown;
   }
 
+  @SuppressWarnings("KotlinPropertyAccess")
   Map<String, String> getModules() {
     return modules;
   }

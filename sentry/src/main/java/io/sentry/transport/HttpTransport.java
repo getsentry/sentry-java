@@ -103,6 +103,7 @@ public class HttpTransport implements ITransport {
    * @param hostnameVerifier custom hostnameVerifier for self-signed certificate trust
    * @param sentryUrl sentryUrl which is the parsed DSN
    */
+  @SuppressWarnings("LambdaLast")
   public HttpTransport(
       final @NotNull SentryOptions options,
       final @NotNull IConnectionConfigurator connectionConfigurator,

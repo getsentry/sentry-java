@@ -9,7 +9,7 @@ final class AndroidLogger implements ILogger {
 
   private static final String tag = "Sentry";
 
-  @SuppressWarnings("AnnotateFormatMethod")
+  @SuppressWarnings({"AnnotateFormatMethod", "LogConditional"})
   @Override
   public void log(SentryLevel level, String message, Object... args) {
     Log.println(toLogcatLevel(level), tag, String.format(message, args));

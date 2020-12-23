@@ -335,6 +335,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    *
    * @return an iterator over this queue's elements
    */
+  @SuppressWarnings("SyntheticAccessor")
   @Override
   public Iterator<E> iterator() {
     return new Iterator<E>() {

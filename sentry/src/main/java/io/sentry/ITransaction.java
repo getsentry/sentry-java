@@ -21,6 +21,7 @@ public interface ITransaction extends ISpan {
   /**
    * Starts a child Span.
    *
+   * @param parentSpanId - parent span id
    * @return a new transaction span
    */
   @NotNull

@@ -54,6 +54,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     this.logger = logger;
   }
 
+  @SuppressWarnings("SyntheticAccessor")
   @Override
   public Future<?> submit(final @NotNull Runnable task) {
     if (isSchedulingAllowed()) {

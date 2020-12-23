@@ -104,6 +104,7 @@ public abstract class SentryBaseEvent {
     this.throwable = throwable;
   }
 
+  @SuppressWarnings("KotlinPropertyAccess")
   Map<String, String> getTags() {
     return tags;
   }
