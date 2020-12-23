@@ -281,11 +281,13 @@ public final class AsyncConnection implements Closeable, Connection {
       return result;
     }
 
-    public @NotNull SentryEnvelope getEnvelope() {
+    @NotNull
+    SentryEnvelope getEnvelope() {
       return envelope;
     }
 
-    public @Nullable Object getHint() {
+    @Nullable
+    Object getHint() {
       return hint;
     }
   }
