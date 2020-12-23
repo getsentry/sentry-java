@@ -21,25 +21,27 @@ public final class DateUtils {
   // if UTC is not found, it fallback to "GMT" which is UTC equivalent
   private static final @NotNull TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
 
-  @SuppressWarnings("SyntheticAccessor")
+  static @NotNull TimeZone getUtCTimezone() {
+    return UTC_TIMEZONE;
+  }
+
   private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_WITH_MILLIS_UTC =
       new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
           final SimpleDateFormat simpleDateFormat =
               new SimpleDateFormat(ISO_FORMAT_WITH_MILLIS, Locale.ROOT);
-          simpleDateFormat.setTimeZone(UTC_TIMEZONE);
+          simpleDateFormat.setTimeZone(getUtCTimezone());
           return simpleDateFormat;
         }
       };
 
-  @SuppressWarnings("SyntheticAccessor")
   private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_UTC =
       new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
           final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
-          simpleDateFormat.setTimeZone(UTC_TIMEZONE);
+          simpleDateFormat.setTimeZone(getUtCTimezone());
           return simpleDateFormat;
         }
       };

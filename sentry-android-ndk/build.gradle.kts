@@ -83,6 +83,8 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         isCheckReleaseBuilds = false
+
+        disable.add("UnknownNullness")
     }
 
     nativeBundleExport {

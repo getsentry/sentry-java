@@ -101,7 +101,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when method is annotated with @SentrySpan and there is no active transaction, span is not created and method is executed`() {
-        val scope = Scope(SentryOptions())
+        Scope(SentryOptions())
         whenever(hub.span).thenReturn(null)
         val result = sampleService.methodWithSpanDescriptionSet()
         assertEquals(1, result)
