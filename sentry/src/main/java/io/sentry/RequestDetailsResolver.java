@@ -19,7 +19,8 @@ final class RequestDetailsResolver {
     this.options = Objects.requireNonNull(options, "options is required");
   }
 
-  @NotNull RequestDetails resolve() {
+  @NotNull
+  RequestDetails resolve() {
     final Dsn dsn = new Dsn(options.getDsn());
     final URI sentryUri = dsn.getSentryUri();
     final String envelopeUrl = sentryUri.resolve(sentryUri.getPath() + "/envelope/").toString();
