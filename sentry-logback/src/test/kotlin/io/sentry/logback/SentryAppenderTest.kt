@@ -37,7 +37,7 @@ class SentryAppenderTest {
         val utcTimeZone: ZoneId = ZoneId.of("UTC")
 
         init {
-            whenever(this.transportFactory.create(any())).thenReturn(transport)
+            whenever(this.transportFactory.create(any(), any())).thenReturn(transport)
             val appender = SentryAppender()
             val options = SentryOptions()
             options.dsn = "http://key@localhost/proj"

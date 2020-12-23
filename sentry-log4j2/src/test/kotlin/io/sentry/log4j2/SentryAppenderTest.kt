@@ -39,7 +39,7 @@ class SentryAppenderTest {
         val utcTimeZone: ZoneId = ZoneId.of("UTC")
 
         init {
-            whenever(transportFactory.create(any())).thenReturn(transport)
+            whenever(transportFactory.create(any(), any())).thenReturn(transport)
         }
 
         fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {

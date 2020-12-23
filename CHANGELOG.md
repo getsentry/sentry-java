@@ -11,7 +11,8 @@
 * Ref: Return NoOpTransaction instead of null (#1126)
 * Fix: Do not crash when passing null values to @Nullable methods, eg User and Scope
 * Ref: `ITransport` implementations are now responsible for executing request in asynchronous or synchronous way (#1118)
-* Ref: Add option to set `TransportFactory` instead of `ITransport` on `SentryOptions` (#1124) 
+* Ref: Add option to set `TransportFactory` instead of `ITransport` on `SentryOptions` (#1124)
+* Ref: Simplify ITransport creation in ITransportFactory (#1135) 
 
 # 4.0.0-alpha.2
 

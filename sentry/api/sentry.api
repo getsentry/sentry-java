@@ -303,7 +303,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransportFactory {
-	public abstract fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
+	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 }
 
 public abstract interface class io/sentry/IUnknownPropertiesConsumer {
@@ -360,7 +360,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 }
 
 public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory {
-	public fun create (Lio/sentry/SentryOptions;)Lio/sentry/transport/ITransport;
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
 }
 
@@ -373,6 +373,12 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/IEnvelopeReader;Lio/sentry/ISerializer;Lio/sentry/ILogger;J)V
 	public synthetic fun processDirectory (Ljava/io/File;)V
 	public fun processEnvelopeFile (Ljava/lang/String;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/RequestDetails {
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public fun getHeaders ()Ljava/util/Map;
+	public fun getUrl ()Ljava/net/URL;
 }
 
 public final class io/sentry/SamplingContext {
@@ -1573,7 +1579,7 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/IConnectionConfigurator;Ljava/net/URL;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
 	public fun <init> (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
@@ -1582,10 +1588,6 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 public final class io/sentry/transport/CurrentDateProvider : io/sentry/transport/ICurrentDateProvider {
 	public final fun getCurrentTimeMillis ()J
 	public static fun getInstance ()Lio/sentry/transport/ICurrentDateProvider;
-}
-
-public abstract interface class io/sentry/transport/IConnectionConfigurator {
-	public abstract fun configure (Ljava/net/HttpURLConnection;)V
 }
 
 public abstract interface class io/sentry/transport/ICurrentDateProvider {

@@ -62,7 +62,7 @@ class SentryClientTest {
         }
 
         init {
-            whenever(factory.create(any())).thenReturn(transport)
+            whenever(factory.create(any(), any())).thenReturn(transport)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt")

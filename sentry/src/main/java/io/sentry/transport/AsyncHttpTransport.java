@@ -1,6 +1,7 @@
 package io.sentry.transport;
 
 import io.sentry.ILogger;
+import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -12,7 +13,6 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
-import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -37,15 +37,14 @@ public final class AsyncHttpTransport implements ITransport {
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
-      final @NotNull IConnectionConfigurator connectionConfigurator,
-      final @NotNull URL sentryUrl) {
+      final @NotNull RequestDetails requestDetails) {
     this(
         initExecutor(
             options.getMaxQueueSize(), options.getEnvelopeDiskCache(), options.getLogger()),
         options,
         rateLimiter,
         transportGate,
-        new HttpConnection(options, connectionConfigurator, sentryUrl, rateLimiter));
+        new HttpConnection(options, requestDetails, rateLimiter));
   }
 
   public AsyncHttpTransport(

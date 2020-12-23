@@ -44,7 +44,10 @@ public final class SentryClient implements ISentryClient {
       transportFactory = new AsyncHttpTransportFactory();
       options.setTransportFactory(transportFactory);
     }
-    transport = transportFactory.create(options);
+
+    final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
+    transport = transportFactory.create(options, requestDetailsResolver.resolve());
+
     this.random = options.getSampleRate() == null ? null : new Random();
   }
 
