@@ -13,6 +13,7 @@
 * Ref: `ITransport` implementations are now responsible for executing request in asynchronous or synchronous way (#1118)
 * Ref: Add option to set `TransportFactory` instead of `ITransport` on `SentryOptions` (#1124)
 * Ref: Simplify ITransport creation in ITransportFactory (#1135) 
+* Feat: Add non blocking Apache HttpClient 5 based Transport (#1136) 
 
 # 4.0.0-alpha.2
 
