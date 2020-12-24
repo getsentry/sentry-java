@@ -1,4 +1,4 @@
-package io.sentry.transport;
+package io.sentry.transport.apache;
 
 import static io.sentry.SentryLevel.*;
 
@@ -6,6 +6,8 @@ import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.transport.ITransport;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

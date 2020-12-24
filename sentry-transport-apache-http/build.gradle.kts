@@ -1,10 +1,11 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     `java-library`
     kotlin("jvm")
     jacoco
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
 configure<JavaPluginConvention> {
@@ -12,13 +13,14 @@ configure<JavaPluginConvention> {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+    kotlinOptions.languageVersion = Config.springKotlinCompatibleLanguageVersion
 }
 
 dependencies {
-    // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
-    implementation(Config.Libs.gson)
+    api(project(":sentry"))
+    compileOnly(Config.Libs.apacheHttpClient)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -27,12 +29,11 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
+    testImplementation(Config.Libs.apacheHttpClient)
+    testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(project(":sentry-test-support"))
 }
 
 configure<SourceSetContainer> {
@@ -62,21 +63,4 @@ tasks {
         dependsOn(jacocoTestCoverageVerification)
         dependsOn(jacocoTestReport)
     }
-    test {
-        environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
-        environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
-        environment["SENTRY_TEST_MAP_KEY2"] = "value2"
-    }
-}
-
-buildConfig {
-    useJavaOutput()
-    packageName("io.sentry")
-    buildConfigField("String", "SENTRY_JAVA_SDK_NAME", "\"${Config.Sentry.SENTRY_JAVA_SDK_NAME}\"")
-    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-}
-
-val generateBuildConfig by tasks
-tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
 }

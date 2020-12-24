@@ -1,6 +1,8 @@
-package io.sentry;
+package io.sentry.transport.apache;
 
-import io.sentry.transport.ApacheHttpClientTransport;
+import io.sentry.ITransportFactory;
+import io.sentry.RequestDetails;
+import io.sentry.SentryOptions;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.Objects;

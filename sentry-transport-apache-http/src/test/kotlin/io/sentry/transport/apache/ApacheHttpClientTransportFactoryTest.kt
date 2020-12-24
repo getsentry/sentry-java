@@ -1,6 +1,8 @@
-package io.sentry
+package io.sentry.transport.apache
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.RequestDetails
+import io.sentry.SentryOptions
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 

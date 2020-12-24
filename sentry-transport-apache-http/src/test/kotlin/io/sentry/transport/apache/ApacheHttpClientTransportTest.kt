@@ -1,4 +1,4 @@
-package io.sentry.transport
+package io.sentry.transport.apache
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
@@ -11,6 +11,7 @@ import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.transport.RateLimiter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test

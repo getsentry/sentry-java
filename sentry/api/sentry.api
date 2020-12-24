@@ -1,9 +1,3 @@
-public final class io/sentry/ApacheHttpClientTransportFactory : io/sentry/ITransportFactory {
-	public fun <init> ()V
-	public fun <init> (Lorg/apache/hc/core5/util/TimeValue;)V
-	public fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
-}
-
 public final class io/sentry/Attachment {
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
@@ -1582,12 +1576,6 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 	public fun setIpAddress (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
 	public fun setUsername (Ljava/lang/String;)V
-}
-
-public final class io/sentry/transport/ApacheHttpClientTransport : io/sentry/transport/ITransport {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;Lorg/apache/hc/client5/http/impl/async/CloseableHttpAsyncClient;Lio/sentry/transport/RateLimiter;)V
-	public fun close ()V
-	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
