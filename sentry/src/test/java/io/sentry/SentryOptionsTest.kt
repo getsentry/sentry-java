@@ -292,4 +292,9 @@ class SentryOptionsTest {
             temporaryFolder.delete()
         }
     }
+
+    @Test
+    fun `when options are initialized, maxAttachmentSize is 20`() {
+        assertEquals(20 * 1024 * 1024, SentryOptions().maxAttachmentSize)
+    }
 }

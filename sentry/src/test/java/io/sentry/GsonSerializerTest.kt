@@ -526,9 +526,9 @@ class GsonSerializerTest {
 
         val message = "hello"
         val attachment = Attachment(message.toByteArray(), "bytes.txt")
-        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(attachment)
+        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(attachment, 5)
 
-        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("no"))
+        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("no"), 5)
         val envelope = SentryEnvelope(header, listOf(invalidAttachmentItem, validAttachmentItem))
 
         val actualJson = serializeToString(envelope)

@@ -247,6 +247,9 @@ public class SentryOptions {
   /** Tags applied to every event and transaction */
   private final @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
 
+  /** max attachment size in bytes. */
+  private long maxAttachmentSize = 20 * 1024 * 1024;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1153,6 +1156,26 @@ public class SentryOptions {
    */
   public void setTag(final @NotNull String key, final @NotNull String value) {
     this.tags.put(key, value);
+  }
+
+  /**
+   * Returns the maximum attachment size for each attachment in MiB.
+   *
+   * @return the maximum attachment size in MiB.
+   */
+  public long getMaxAttachmentSize() {
+    return maxAttachmentSize;
+  }
+
+  /**
+   * Sets the max attachment size for each attachment in bytes. Default is 20 MiB. Please also check
+   * the maximum attachment size of Relay to make sure your attachments don't get discarded there:
+   * https://docs.sentry.io/product/relay/options/
+   *
+   * @param maxAttachmentSize the max attachment size in bytes.
+   */
+  public void setMaxAttachmentSize(long maxAttachmentSize) {
+    this.maxAttachmentSize = maxAttachmentSize;
   }
 
   /** The BeforeSend callback */

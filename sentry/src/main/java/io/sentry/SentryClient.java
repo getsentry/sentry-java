@@ -167,7 +167,8 @@ public final class SentryClient implements ISentryClient {
 
     if (attachments != null) {
       for (final Attachment attachment : attachments) {
-        final SentryEnvelopeItem attachmentItem = SentryEnvelopeItem.fromAttachment(attachment);
+        final SentryEnvelopeItem attachmentItem =
+            SentryEnvelopeItem.fromAttachment(attachment, options.getMaxAttachmentSize());
         envelopeItems.add(attachmentItem);
       }
     }

@@ -155,12 +155,24 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
-  public static SentryEnvelopeItem fromAttachment(final @NotNull Attachment attachment) {
+  public static SentryEnvelopeItem fromAttachment(
+      final @NotNull Attachment attachment, final long maxAttachmentSize) {
 
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
               if (attachment.getBytes() != null) {
+                if (attachment.getBytes().length > maxAttachmentSize) {
+                  throw new SentryEnvelopeException(
+                      String.format(
+                          "Dropping attachment with filename '%s', because the "
+                              + "size of the passed bytes with %d bytes is bigger "
+                              + "than the maximum allowed attachment size of "
+                              + "%d bytes.",
+                          attachment.getFilename(),
+                          attachment.getBytes().length,
+                          maxAttachmentSize));
+                }
                 return attachment.getBytes();
               } else if (attachment.getPathname() != null) {
 
@@ -179,6 +191,15 @@ public final class SentryEnvelopeItem {
                         String.format(
                             "Reading the attachment %s failed, because can't read the file.",
                             attachment.getPathname()));
+                  }
+
+                  if (file.length() > maxAttachmentSize) {
+                    throw new SentryEnvelopeException(
+                        String.format(
+                            "Dropping attachment, because the size of the it located at "
+                                + "'%s' with %d bytes is bigger than the maximum "
+                                + "allowed attachment size of %d bytes.",
+                            attachment.getPathname(), file.length(), maxAttachmentSize));
                   }
 
                   try (FileInputStream fileInputStream =
