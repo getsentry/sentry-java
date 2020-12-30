@@ -1,6 +1,7 @@
 # vNext
 
-* Feat: Drop invalid attachments #1134
+* Feat: Add maxAttachmentSize to SentryOptions (#1138)
+* Feat: Drop invalid attachments (#1134)
 * Ref: Make Attachment immutable (#1120)
 * Fix inheriting sampling decision from parent (#1100)
 * Fixes and Tests: Session serialization and deserialization

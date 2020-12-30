@@ -547,7 +547,7 @@ public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeA
 }
 
 public final class io/sentry/SentryEnvelopeItem {
-	public static fun fromAttachment (Lio/sentry/Attachment;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
@@ -673,6 +673,7 @@ public class io/sentry/SentryOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getLogger ()Lio/sentry/ILogger;
+	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxQueueSize ()I
 	public fun getOutboxPath ()Ljava/lang/String;
@@ -724,6 +725,7 @@ public class io/sentry/SentryOptions {
 	public fun setFlushTimeoutMillis (J)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
+	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxQueueSize (I)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
