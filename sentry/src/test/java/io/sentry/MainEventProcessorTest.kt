@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.User
 import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,10 +26,13 @@ class MainEventProcessorTest {
                 version = "1.2.3"
             }
         }
-        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap()): MainEventProcessor {
+        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
             sentryOptions.environment = environment
+            if (sendDefaultPii != null) {
+                sentryOptions.isSendDefaultPii = sendDefaultPii
+            }
             tags.forEach { sentryOptions.setTag(it.key, it.value) }
             return MainEventProcessor(sentryOptions)
         }
@@ -189,6 +193,36 @@ class MainEventProcessorTest {
         val event = SentryEvent()
         sut.process(event, null)
         assertEquals("production", event.environment)
+    }
+
+    @Test
+    fun `when event does not have ip address set and sendDefaultPii is set to true, sets "{{auto}}" as the ip address`() {
+        val sut = fixture.getSut(sendDefaultPii = true)
+        val event = SentryEvent()
+        sut.process(event, null)
+        assertNotNull(event.user)
+        assertEquals("{{auto}}", event.user.ipAddress)
+    }
+
+    @Test
+    fun `when event has ip address set and sendDefaultPii is set to true, keeps original ip address`() {
+        val sut = fixture.getSut(sendDefaultPii = true)
+        val event = SentryEvent()
+        event.user = User()
+        event.user.ipAddress = "192.168.0.1"
+        sut.process(event, null)
+        assertNotNull(event.user)
+        assertEquals("192.168.0.1", event.user.ipAddress)
+    }
+
+    @Test
+    fun `when event does not have ip address set and sendDefaultPii is set to false, does not set ip address`() {
+        val sut = fixture.getSut(sendDefaultPii = false)
+        val event = SentryEvent()
+        event.user = User()
+        sut.process(event, null)
+        assertNotNull(event.user)
+        assertNull(event.user.ipAddress)
     }
 
     @Test
