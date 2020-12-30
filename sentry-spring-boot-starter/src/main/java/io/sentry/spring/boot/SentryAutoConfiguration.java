@@ -7,6 +7,7 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
+import io.sentry.ServerNameResolvingEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
@@ -90,6 +91,11 @@ public class SentryAutoConfiguration {
     @Bean
     public @NotNull InAppIncludesResolver inAppPackagesResolver() {
       return new InAppIncludesResolver();
+    }
+
+    @Bean
+    public @NotNull ServerNameResolvingEventProcessor serverNameResolvingEventProcessor() {
+      return new ServerNameResolvingEventProcessor();
     }
 
     @Bean
