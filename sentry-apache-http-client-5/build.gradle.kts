@@ -20,7 +20,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(project(":sentry"))
-    compileOnly(Config.Libs.apacheHttpClient)
+    api(Config.Libs.apacheHttpClient)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

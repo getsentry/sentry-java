@@ -20,6 +20,7 @@ import io.sentry.spring.tracing.SentryTracingFilter;
 import io.sentry.spring.tracing.SentryTransaction;
 import io.sentry.spring.tracing.SentryTransactionAdvice;
 import io.sentry.transport.ITransportGate;
+import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
 import org.aopalliance.aop.Advice;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -207,6 +208,18 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
         return new SentrySpanRestTemplateCustomizer(hub);
+      }
+    }
+
+    @Configuration
+    @ConditionalOnMissingBean(ITransportFactory.class)
+    @ConditionalOnClass(ApacheHttpClientTransportFactory.class)
+    @Open
+    static class ApacheHttpClientTransportFactoryAutoconfiguration {
+
+      @Bean
+      public @NotNull ApacheHttpClientTransportFactory apacheHttpClientTransportFactory() {
+        return new ApacheHttpClientTransportFactory();
       }
     }
 

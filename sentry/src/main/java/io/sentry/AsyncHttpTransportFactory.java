@@ -4,10 +4,12 @@ import io.sentry.transport.AsyncHttpTransport;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Creates {@link AsyncHttpTransport}. */
-final class AsyncHttpTransportFactory implements ITransportFactory {
+@ApiStatus.Internal
+public final class AsyncHttpTransportFactory implements ITransportFactory {
 
   @Override
   public @NotNull ITransport create(
