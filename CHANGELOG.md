@@ -12,7 +12,8 @@
 * Fix: Initialize Logback after context refreshes (#1129)
 * Ref: Return NoOpTransaction instead of null (#1126)
 * Fix: Do not crash when passing null values to @Nullable methods, eg User and Scope
-* feat: Read `uncaught.handler.enabled` property from the external configuration 
+* Fix: Resolving dashed properties from external configuration
+* Feat: Read `uncaught.handler.enabled` property from the external configuration 
 
 # 4.0.0-alpha.2
 
