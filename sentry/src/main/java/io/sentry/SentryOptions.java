@@ -206,7 +206,7 @@ public class SentryOptions {
   /*
   When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
    */
-  private boolean enableUncaughtExceptionHandler = true;
+  private @Nullable Boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService;
@@ -263,6 +263,8 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
+    options.setEnableUncaughtExceptionHandler(
+        propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -912,6 +914,15 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isEnableUncaughtExceptionHandler() {
+    return Boolean.TRUE.equals(enableUncaughtExceptionHandler);
+  }
+
+  /**
+   * Checks if the default UncaughtExceptionHandlerIntegration is enabled or disabled or not set.
+   *
+   * @return true if enabled, false otherwise or null if not set.
+   */
+  public @Nullable Boolean getEnableUncaughtExceptionHandler() {
     return enableUncaughtExceptionHandler;
   }
 
@@ -920,7 +931,8 @@ public class SentryOptions {
    *
    * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
    */
-  public void setEnableUncaughtExceptionHandler(boolean enableUncaughtExceptionHandler) {
+  public void setEnableUncaughtExceptionHandler(
+      final @Nullable Boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -1262,6 +1274,9 @@ public class SentryOptions {
     }
     if (options.getProxy() != null) {
       setProxy(options.getProxy());
+    }
+    if (options.getEnableUncaughtExceptionHandler() != null) {
+      setEnableUncaughtExceptionHandler(options.getEnableUncaughtExceptionHandler());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
