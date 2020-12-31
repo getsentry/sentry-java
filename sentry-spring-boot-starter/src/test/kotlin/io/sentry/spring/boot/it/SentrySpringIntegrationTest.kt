@@ -1,4 +1,4 @@
-package io.sentry.spring.boot
+package io.sentry.spring.boot.it
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull

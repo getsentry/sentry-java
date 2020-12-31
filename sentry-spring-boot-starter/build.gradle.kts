@@ -34,6 +34,7 @@ dependencies {
     api(project(":sentry"))
     api(project(":sentry-spring"))
     compileOnly(project(":sentry-logback"))
+    compileOnly(project(":sentry-apache-http-client-5"))
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
@@ -50,6 +51,7 @@ dependencies {
 
     // tests
     testImplementation(project(":sentry-logback"))
+    testImplementation(project(":sentry-apache-http-client-5"))
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)

@@ -1,3 +1,8 @@
+public final class io/sentry/AsyncHttpTransportFactory : io/sentry/ITransportFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
+}
+
 public final class io/sentry/Attachment {
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
