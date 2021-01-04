@@ -15,16 +15,16 @@ import org.jetbrains.annotations.Nullable;
 public final class MainEventProcessor implements EventProcessor {
 
   /**
+   * Default value for {@link User#getIpAddress()} set when event does not have user and ip address
+   * set and when {@link SentryOptions#isSendDefaultPii()} is set to true.
+   */
+  public static final String DEFAULT_IP_ADDRESS = "{{auto}}";
+
+  /**
    * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
    * SentryOptions} do not have the environment field set.
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
-
-  /**
-   * Default value for {@link User#getIpAddress()} set when event does not have user and ip address
-   * set and when {@link SentryOptions#isSendDefaultPii()} is set to true.
-   */
-  private static final String DEFAULT_IP_ADDRESS = "{{auto}}";
 
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
