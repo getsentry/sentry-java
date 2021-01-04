@@ -80,7 +80,7 @@ public class SentryAutoConfiguration {
         sentryUserProviders.forEach(
             sentryUserProvider ->
                 options.addEventProcessor(
-                    new SentryUserProviderEventProcessor(sentryUserProvider)));
+                    new SentryUserProviderEventProcessor(options, sentryUserProvider)));
         transportGate.ifAvailable(options::setTransportGate);
         transport.ifAvailable(options::setTransport);
         inAppPackagesResolver.resolveInAppIncludes().forEach(options::addInAppInclude);

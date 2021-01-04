@@ -149,8 +149,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
-    if (event.getUser() == null) {
+    final User user = event.getUser();
+    if (user == null) {
       event.setUser(getDefaultUser());
+    } else if (user.getId() == null) {
+      user.setId(getDeviceId());
     }
 
     if (event.getContexts().getDevice() == null) {
