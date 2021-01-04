@@ -105,7 +105,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     @Test
     fun `When defaultUncaughtExceptionHandler is disabled, should not install Sentry UncaughtExceptionHandler`() {
         val options = SentryOptions()
-        options.isEnableUncaughtExceptionHandler = false
+        options.enableUncaughtExceptionHandler = false
         val hub = mock<IHub>()
         val handlerMock = mock<UncaughtExceptionHandler>()
         val integration = UncaughtExceptionHandlerIntegration(handlerMock)

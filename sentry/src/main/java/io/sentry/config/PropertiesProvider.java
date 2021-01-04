@@ -50,4 +50,16 @@ public interface PropertiesProvider {
     final String result = getProperty(property);
     return result != null ? result : defaultValue;
   }
+
+  /**
+   * Resolves a boolean property given by it's name.
+   *
+   * @param property - the property name
+   * @return property value or the default value if not found.
+   */
+  @Nullable
+  default Boolean getBooleanProperty(@NotNull String property) {
+    final String result = getProperty(property);
+    return result != null ? Boolean.valueOf(result) : null;
+  }
 }
