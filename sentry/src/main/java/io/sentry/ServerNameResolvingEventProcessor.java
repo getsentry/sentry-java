@@ -4,7 +4,10 @@ import io.sentry.util.Objects;
 import java.net.InetAddress;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,6 +72,9 @@ public final class ServerNameResolvingEventProcessor implements EventProcessor {
 
     private final @NotNull Callable<InetAddress> getLocalhost;
 
+    private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor(new HostnameCacheThreadFactory());
+
+
     private HostnameCache(long cacheDuration) {
       this(cacheDuration, () -> InetAddress.getLocalHost());
     }
@@ -116,8 +122,7 @@ public final class ServerNameResolvingEventProcessor implements EventProcessor {
           };
 
       try {
-        final FutureTask<Void> futureTask = new FutureTask<>(hostRetriever);
-        new Thread(futureTask).start();
+        final Future<Void> futureTask = executorService.submit(hostRetriever);
         futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
@@ -129,6 +134,17 @@ public final class ServerNameResolvingEventProcessor implements EventProcessor {
 
     private void handleCacheUpdateFailure() {
       expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
+    }
+  }
+
+  private static final class HostnameCacheThreadFactory implements ThreadFactory {
+    private int cnt;
+
+    @Override
+    public @NotNull Thread newThread(final @NotNull Runnable r) {
+      final Thread ret = new Thread(r, "SentryHostnameCache-" + cnt++);
+      ret.setDaemon(true);
+      return ret;
     }
   }
 }
