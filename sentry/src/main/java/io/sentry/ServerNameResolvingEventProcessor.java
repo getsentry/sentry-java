@@ -70,7 +70,7 @@ public final class ServerNameResolvingEventProcessor implements EventProcessor {
     private final @NotNull Callable<InetAddress> getLocalhost;
 
     private HostnameCache(long cacheDuration) {
-      this(cacheDuration, InetAddress::getLocalHost);
+      this(cacheDuration, () -> InetAddress.getLocalHost());
     }
 
     /**
