@@ -203,6 +203,9 @@ public class SentryOptions {
   /** The server name used in the Sentry messages. */
   private String serverName;
 
+  /** Automatically resolve server name. */
+  private boolean attachServerName = true;
+
   /*
   When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
    */
@@ -850,6 +853,24 @@ public class SentryOptions {
    */
   public void setServerName(@Nullable String serverName) {
     this.serverName = serverName;
+  }
+
+  /**
+   * Returns if SDK automatically resolves and attaches server name to events.
+   *
+   * @return true if enabled false if otherwise
+   */
+  public boolean isAttachServerName() {
+    return attachServerName;
+  }
+
+  /**
+   * Sets if SDK should automatically resolve and attache server name to events.
+   *
+   * @param attachServerName true if enabled false if otherwise
+   */
+  public void setAttachServerName(boolean attachServerName) {
+    this.attachServerName = attachServerName;
   }
 
   /**

@@ -13,7 +13,6 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.ServerNameResolvingEventProcessor
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserProvider
@@ -450,14 +449,6 @@ class SentryAutoConfigurationTest {
             .withUserConfiguration(CustomTracesSamplerCallbackConfiguration::class.java)
             .run {
                 assertThat(it.getBean(SentryOptions::class.java).tracesSampler).isInstanceOf(CustomTracesSamplerCallback::class.java)
-            }
-    }
-
-    @Test
-    fun `autoconfigures ServerNameResolvingEventProcessor`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .run {
-                assertThat(it).hasSingleBean(ServerNameResolvingEventProcessor::class.java)
             }
     }
 
