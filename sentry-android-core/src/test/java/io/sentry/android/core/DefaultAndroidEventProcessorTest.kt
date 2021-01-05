@@ -182,7 +182,20 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `When user is already set, do not overwrite it`() {
+    fun `When user with id is already set, do not overwrite it`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val user = User()
+        user.id = "user-id"
+        var event = SentryEvent().apply {
+            setUser(user)
+        }
+        event = processor.process(event, null)
+        assertNotNull(event.user)
+        assertSame(user, event.user)
+    }
+
+    @Test
+    fun `When user without id is set, user id is applied`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
         val user = User()
         var event = SentryEvent().apply {
@@ -190,7 +203,7 @@ class DefaultAndroidEventProcessorTest {
         }
         event = processor.process(event, null)
         assertNotNull(event.user)
-        assertSame(user, event.user)
+        assertNotNull(event.user.id)
     }
 
     @Test
