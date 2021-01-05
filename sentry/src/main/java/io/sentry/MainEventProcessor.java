@@ -133,10 +133,10 @@ public final class MainEventProcessor implements EventProcessor {
     if (options.isSendDefaultPii()) {
       if (event.getUser() == null) {
         final User user = new User();
-        user.setIpAddress(DEFAULT_IP_ADDRESS);
+        user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
         event.setUser(user);
       } else if (event.getUser().getIpAddress() == null) {
-        event.getUser().setIpAddress(DEFAULT_IP_ADDRESS);
+        event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
       }
     }
   }

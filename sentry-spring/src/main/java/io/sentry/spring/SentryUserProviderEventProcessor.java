@@ -1,7 +1,7 @@
 package io.sentry.spring;
 
 import io.sentry.EventProcessor;
-import io.sentry.MainEventProcessor;
+import io.sentry.IpAddressUtils;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.User;
@@ -46,8 +46,7 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
     }
     if (options.isSendDefaultPii()) {
       final User existingUser = event.getUser();
-      if (existingUser != null
-          && MainEventProcessor.DEFAULT_IP_ADDRESS.equals(existingUser.getIpAddress())) {
+      if (existingUser != null && IpAddressUtils.isDefault(existingUser.getIpAddress())) {
         // unset {{auto}} as it would set the server's ip address as a user ip address
         existingUser.setIpAddress(null);
       }
