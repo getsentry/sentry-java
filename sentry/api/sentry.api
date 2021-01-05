@@ -310,6 +310,10 @@ public abstract interface class io/sentry/Integration {
 	public abstract fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/IpAddressUtils {
+	public static fun isDefault (Ljava/lang/String;)Z
+}
+
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
 	public static final field DEFAULT_IP_ADDRESS Ljava/lang/String;
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
