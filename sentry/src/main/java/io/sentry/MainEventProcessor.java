@@ -29,16 +29,16 @@ public final class MainEventProcessor implements EventProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
-  private final @NotNull HostnameCache hostnameCache;
+  private final @Nullable HostnameCache hostnameCache;
 
   MainEventProcessor(final @NotNull SentryOptions options) {
-    this(options, new HostnameCache());
+    this(options, options.isAttachServerName() ? new HostnameCache() : null);
   }
 
   MainEventProcessor(
-      final @NotNull SentryOptions options, final @NotNull HostnameCache hostnameCache) {
+      final @NotNull SentryOptions options, final @Nullable HostnameCache hostnameCache) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
-    this.hostnameCache = Objects.requireNonNull(hostnameCache, "The HostnameCache is required");
+    this.hostnameCache = hostnameCache;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(
@@ -148,7 +148,7 @@ public final class MainEventProcessor implements EventProcessor {
         event.getUser().setIpAddress(DEFAULT_IP_ADDRESS);
       }
     }
-    if (options.isAttachServerName() && event.getServerName() == null) {
+    if (options.isAttachServerName() && hostnameCache != null && event.getServerName() == null) {
       event.setServerName(hostnameCache.getHostname());
     }
   }

@@ -39,6 +39,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
+    setAttachServerName(false);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
