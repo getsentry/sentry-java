@@ -386,7 +386,8 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @NotNull SentryTransaction processTransaction(final @NotNull SentryTransaction transaction) {
+  private @NotNull SentryTransaction processTransaction(
+      final @NotNull SentryTransaction transaction) {
     if (transaction.getRelease() == null) {
       transaction.setRelease(options.getRelease());
     }
