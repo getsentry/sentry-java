@@ -360,7 +360,8 @@ public final class SentryClient implements ISentryClient {
     SentryId sentryId = transaction.getEventId();
 
     if (transaction instanceof SentryTransaction) {
-      final SentryTransaction sentryTransaction = (SentryTransaction) transaction;
+      final SentryTransaction sentryTransaction =
+          processTransaction((SentryTransaction) transaction);
       try {
         final SentryEnvelope envelope =
             buildEnvelope(sentryTransaction, getAttachmentsFromScope(scope));
@@ -383,6 +384,16 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private @NotNull SentryTransaction processTransaction(final @NotNull SentryTransaction transaction) {
+    if (transaction.getRelease() == null) {
+      transaction.setRelease(options.getRelease());
+    }
+    if (transaction.getEnvironment() == null) {
+      transaction.setEnvironment(options.getEnvironment());
+    }
+    return transaction;
   }
 
   private @Nullable SentryEvent applyScope(
