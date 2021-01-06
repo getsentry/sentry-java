@@ -29,9 +29,16 @@ public final class MainEventProcessor implements EventProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
+  private final @Nullable HostnameCache hostnameCache;
 
   MainEventProcessor(final @NotNull SentryOptions options) {
+    this(options, options.isAttachServerName() ? new HostnameCache() : null);
+  }
+
+  MainEventProcessor(
+      final @NotNull SentryOptions options, final @Nullable HostnameCache hostnameCache) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
+    this.hostnameCache = hostnameCache;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(
@@ -44,12 +51,14 @@ public final class MainEventProcessor implements EventProcessor {
   MainEventProcessor(
       final @NotNull SentryOptions options,
       final @NotNull SentryThreadFactory sentryThreadFactory,
-      final @NotNull SentryExceptionFactory sentryExceptionFactory) {
+      final @NotNull SentryExceptionFactory sentryExceptionFactory,
+      final @NotNull HostnameCache hostnameCache) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
     this.sentryThreadFactory =
         Objects.requireNonNull(sentryThreadFactory, "The SentryThreadFactory is required.");
     this.sentryExceptionFactory =
         Objects.requireNonNull(sentryExceptionFactory, "The SentryExceptionFactory is required.");
+    this.hostnameCache = Objects.requireNonNull(hostnameCache, "The HostnameCache is required");
   }
 
   @Override
@@ -138,6 +147,9 @@ public final class MainEventProcessor implements EventProcessor {
       } else if (event.getUser().getIpAddress() == null) {
         event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
       }
+    }
+    if (options.isAttachServerName() && hostnameCache != null && event.getServerName() == null) {
+      event.setServerName(hostnameCache.getHostname());
     }
   }
 }
