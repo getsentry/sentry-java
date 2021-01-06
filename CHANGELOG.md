@@ -12,10 +12,11 @@
 * Fix: Initialize Logback after context refreshes (#1129)
 * Ref: Return NoOpTransaction instead of null (#1126)
 * Fix: Do not crash when passing null values to @Nullable methods, eg User and Scope
-* Enhancement: Send user.ip_address = {{auto}} when sendDefaultPii is true
+* Enhancement: Send user.ip_address = {{auto}} when sendDefaultPii is true (#1015)
 * Fix: Resolving dashed properties from external configuration
 * Feat: Read `uncaught.handler.enabled` property from the external configuration 
 * Feat: Resolve servername from the localhost address
+* Fix: Consider {{ auto }} as a default ip address (#1015) 
 
 # 4.0.0-alpha.2
 
