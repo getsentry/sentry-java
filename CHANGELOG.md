@@ -16,6 +16,7 @@
 * Fix: Resolving dashed properties from external configuration
 * Feat: Read `uncaught.handler.enabled` property from the external configuration
 * Fix: Consider {{ auto }} as a default ip address (#1015) 
+* Fix: Set release and environment on Transactions (#1152) 
 
 # 4.0.0-alpha.2
 
