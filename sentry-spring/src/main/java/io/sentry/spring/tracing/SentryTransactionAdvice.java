@@ -43,6 +43,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       return invocation.proceed();
     } else {
       final ITransaction transaction = hub.startTransaction(name);
+      hub.configureScope(scope -> scope.setTransaction(transaction));
       if (sentryTransaction != null && !StringUtils.isEmpty(sentryTransaction.operation())) {
         transaction.setOperation(sentryTransaction.operation());
       }

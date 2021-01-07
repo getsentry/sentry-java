@@ -567,7 +567,6 @@ public final class Hub implements IHub {
       transaction = new NoOpTransaction();
     } else {
       transaction = new SentryTransaction(transactionContexts, this);
-      stack.peek().getScope().setTransaction(transaction);
     }
     return transaction;
   }
