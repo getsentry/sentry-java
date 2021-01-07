@@ -17,7 +17,8 @@
 * Feat: Read `uncaught.handler.enabled` property from the external configuration 
 * Feat: Resolve servername from the localhost address
 * Fix: Consider {{ auto }} as a default ip address (#1015) 
-* Fix: Set release and environment on Transactions (#1152) 
+* Fix: Set release and environment on Transactions (#1152)
+* Fix: Do not set transaction on the scope automatically
 
 # 4.0.0-alpha.2
 
