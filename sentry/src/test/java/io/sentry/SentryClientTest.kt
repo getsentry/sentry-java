@@ -785,6 +785,30 @@ class SentryClientTest {
         assertEquals(span, event.contexts.trace)
     }
 
+    @Test
+    fun `when transaction does not have environment and release set, and the environment is set on options, options values are applied to transactions`() {
+        fixture.sentryOptions.release = "optionsRelease"
+        fixture.sentryOptions.environment = "optionsEnvironment"
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name")
+        sut.captureTransaction(transaction)
+        assertEquals("optionsRelease", transaction.release)
+        assertEquals("optionsEnvironment", transaction.environment)
+    }
+
+    @Test
+    fun `when transaction has environment and release set, and the environment is set on options, options values are not applied to transactions`() {
+        fixture.sentryOptions.release = "optionsRelease"
+        fixture.sentryOptions.environment = "optionsEnvironment"
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name")
+        transaction.release = "transactionRelease"
+        transaction.environment = "transactionEnvironment"
+        sut.captureTransaction(transaction)
+        assertEquals("transactionRelease", transaction.release)
+        assertEquals("transactionEnvironment", transaction.environment)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {

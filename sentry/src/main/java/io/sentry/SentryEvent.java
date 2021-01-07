@@ -49,13 +49,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * `ruby`
    */
   private String platform;
-  /**
-   * The release version of the application.
-   *
-   * <p>**Release versions must be unique across all projects in your organization.** This value can
-   * be the git SHA for the given project, or a product identifier with a semantic version.
-   */
-  private String release;
+
   /**
    * Program's distribution identifier.
    *
@@ -87,12 +81,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * `UserView`), in a task queue it might be the function + module name.
    */
   private String transaction;
-  /**
-   * The environment name, such as `production` or `staging`.
-   *
-   * <p>```json { "environment": "production" } ```
-   */
-  private String environment;
+
   /** Information about the user who triggered this event. */
   private User user;
   /**
@@ -186,14 +175,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.platform = platform;
   }
 
-  public String getRelease() {
-    return release;
-  }
-
-  public void setRelease(String release) {
-    this.release = release;
-  }
-
   public String getDist() {
     return dist;
   }
@@ -244,14 +225,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setTransaction(String transaction) {
     this.transaction = transaction;
-  }
-
-  public String getEnvironment() {
-    return environment;
-  }
-
-  public void setEnvironment(String environment) {
-    this.environment = environment;
   }
 
   public User getUser() {
