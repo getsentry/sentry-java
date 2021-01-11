@@ -78,6 +78,7 @@ public final class Hub implements IHub {
       options.getLogger().log(SentryLevel.WARNING, "captureEvent called with null parameter.");
     } else {
       try {
+        assignTraceContext(event);
         final StackItem item = stack.peek();
         sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
       } catch (Exception e) {
@@ -154,7 +155,9 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureException(throwable, item.getScope(), hint);
+        final SentryEvent event = new SentryEvent(throwable);
+        assignTraceContext(event);
+        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
       } catch (Exception e) {
         options
             .getLogger()
@@ -164,6 +167,15 @@ public final class Hub implements IHub {
     }
     this.lastEventId = sentryId;
     return sentryId;
+  }
+
+  private void assignTraceContext(final @NotNull SentryEvent event) {
+    if (event.getThrowable() != null) {
+      final SpanContext spanContext = throwableToSpanContext.get(event.getThrowable());
+      if (spanContext != null && event.getContexts().getTrace() == null) {
+        event.getContexts().setTrace(spanContext);
+      }
+    }
   }
 
   @Override

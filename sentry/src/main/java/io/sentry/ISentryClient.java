@@ -96,52 +96,6 @@ public interface ISentryClient {
   }
 
   /**
-   * Captures the exception.
-   *
-   * @param throwable The exception.
-   * @return The Id (SentryId object) of the event
-   */
-  default SentryId captureException(Throwable throwable) {
-    return captureException(throwable, null, null);
-  }
-
-  /**
-   * Captures the exception.
-   *
-   * @param throwable The exception.
-   * @param hint SDK specific but provides high level information about the origin of the event
-   * @param scope An optional scope to be applied to the event.
-   * @return The Id (SentryId object) of the event
-   */
-  default SentryId captureException(
-      Throwable throwable, @Nullable Scope scope, @Nullable Object hint) {
-    SentryEvent event = new SentryEvent(throwable);
-    return captureEvent(event, scope, hint);
-  }
-
-  /**
-   * Captures the exception.
-   *
-   * @param throwable The exception.
-   * @param hint SDK specific but provides high level information about the origin of the event
-   * @return The Id (SentryId object) of the event
-   */
-  default SentryId captureException(Throwable throwable, @Nullable Object hint) {
-    return captureException(throwable, null, hint);
-  }
-
-  /**
-   * Captures the exception.
-   *
-   * @param throwable The exception.
-   * @param scope An optional scope to be applied to the event.
-   * @return The Id (SentryId object) of the event
-   */
-  default SentryId captureException(Throwable throwable, @Nullable Scope scope) {
-    return captureException(throwable, scope, null);
-  }
-
-  /**
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.

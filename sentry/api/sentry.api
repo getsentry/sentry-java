@@ -248,10 +248,6 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;)V
