@@ -574,7 +574,8 @@ class HubTest {
             scope = it
         }
 
-        hub.startTransaction("test")
+        val tx = hub.startTransaction("test")
+        hub.configureScope { it.setTransaction(tx) }
 
         assertEquals("test", scope?.transactionName)
     }
@@ -980,14 +981,13 @@ class HubTest {
     }
 
     @Test
-    fun `when startTransaction, attaches transaction to the scope`() {
+    fun `when startTransaction, transaction is not attached to the scope`() {
         val hub = generateHub()
 
-        val transaction = hub.startTransaction("name")
+        hub.startTransaction("name")
 
         hub.configureScope {
-            assertNotNull(it.span)
-            assertEquals(transaction, it.span)
+            assertNull(it.span)
         }
     }
 
@@ -996,13 +996,7 @@ class HubTest {
         val hub = generateHub()
 
         val transaction = hub.startTransaction("name")
-
-        hub.configureScope {
-            assertNotNull(it.span)
-            assertEquals(transaction, it.span)
-            assertNotNull(it.transaction)
-            assertFalse(it.transaction!!.isSampled!!)
-        }
+        assertFalse(transaction.isSampled!!)
     }
 
     @Test
@@ -1041,7 +1035,8 @@ class HubTest {
     @Test
     fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
         val hub = generateHub()
-        hub.startTransaction("aTransaction")
+        val tx = hub.startTransaction("aTransaction")
+        hub.configureScope { it.setTransaction(tx) }
 
         assertNotNull(hub.traceHeaders())
     }
@@ -1055,16 +1050,19 @@ class HubTest {
     }
 
     @Test
-    fun `when there is active transaction, getSpan returns active transaction`() {
+    fun `when there is active transaction bound to the scope, getSpan returns active transaction`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction")
+        hub.configureScope { it.setTransaction(tx) }
         assertEquals(tx, hub.getSpan())
     }
 
     @Test
-    fun `when there is active span within a transaction, getSpan returns active span`() {
+    fun `when there is active span within a transaction bound to the scope, getSpan returns active span`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction")
+        hub.configureScope { it.setTransaction(tx) }
+        hub.configureScope { it.setTransaction(tx) }
         val span = tx.startChild()
         assertEquals(span, hub.getSpan())
     }
