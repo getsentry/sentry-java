@@ -74,9 +74,9 @@ public final class ApacheHttpClientTransport implements ITransport {
 
           final SimpleHttpRequest request =
               SimpleHttpRequests.post(requestDetails.getUrl().toString());
-          request.setBody(outputStream.toByteArray(), ContentType.APPLICATION_JSON);
+          request.setBody(
+              outputStream.toByteArray(), ContentType.create("application/x-sentry-envelope"));
           request.setHeader("Content-Encoding", "gzip");
-          request.setHeader("Content-Type", "application/x-sentry-envelope");
           request.setHeader("Accept", "application/json");
 
           for (Map.Entry<String, String> header : requestDetails.getHeaders().entrySet()) {
