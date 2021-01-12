@@ -107,6 +107,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         "Processing Envelope with %d item(s)",
         CollectionUtils.size(envelope.getItems()));
     int items = 0;
+
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       items++;
 
@@ -138,26 +139,33 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
             hub.captureEvent(event, hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
-            if (hint instanceof Flushable) {
-              if (!((Flushable) hint).waitFlush()) {
-                logger.log(
-                    SentryLevel.WARNING,
-                    "Timed out waiting for event submission: %s",
-                    event.getEventId());
 
-                break;
-              }
-            } else {
-              LogUtils.logIfNotFlushable(logger, hint);
+            if (!waitFlush(hint)) {
+              logger.log(
+                  SentryLevel.WARNING,
+                  "Timed out waiting for event submission: %s",
+                  event.getEventId());
+              break;
             }
           }
         } catch (Exception e) {
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else {
-        // TODO: Handle attachments and other types
-        logger.log(
-            SentryLevel.WARNING, "Item %d of type: %s ignored.", items, item.getHeader().getType());
+        // send unknown item types over the wire
+        final SentryEnvelope newEnvelope =
+            new SentryEnvelope(
+                envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
+        hub.captureEnvelope(newEnvelope, hint);
+        logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
+
+        if (!waitFlush(hint)) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Timed out waiting for item type submission: %s",
+              item.getHeader().getType().getItemType());
+          break;
+        }
       }
 
       if (hint instanceof SubmissionResult) {
@@ -172,5 +180,14 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         }
       }
     }
+  }
+
+  private boolean waitFlush(final @Nullable Object hint) {
+    if (hint instanceof Flushable) {
+      return ((Flushable) hint).waitFlush();
+    } else {
+      LogUtils.logIfNotFlushable(logger, hint);
+    }
+    return true;
   }
 }
