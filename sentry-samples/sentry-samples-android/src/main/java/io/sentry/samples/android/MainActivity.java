@@ -1,4 +1,4 @@
-package io.sentry.samples;
+package io.sentry.samples.android;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -7,7 +7,7 @@ import io.sentry.Sentry;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.samples.databinding.ActivityMainBinding;
+import io.sentry.samples.android.databinding.ActivityMainBinding;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -132,13 +132,15 @@ public class MainActivity extends AppCompatActivity {
 
     binding.anr.setOnClickListener(
         view -> {
-          // Try cause ANR by blocking for 2.5 seconds.
-          // By default the SDK sends an event if blocked by at least 4 seconds.
-          // The time was configurable (see manifest) to 1 second for demo purposes.
+          // Try cause ANR by blocking for 10 seconds.
+          // By default the SDK sends an event if blocked by at least 5 seconds.
+          // Keep clicking on the ANR button till you've gotten the "App. isn''t responding" dialog,
+          // then either click on Wait or Close, at this point you should have seen an event on
+          // Sentry.
           // NOTE: By default it doesn't raise if the debugger is attached. That can also be
           // configured.
           try {
-            Thread.sleep(2500);
+            Thread.sleep(10000);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }

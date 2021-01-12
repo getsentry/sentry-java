@@ -1,4 +1,4 @@
-package io.sentry.samples;
+package io.sentry.samples.android;
 
 public class NativeSample {
   public static native void crash();
