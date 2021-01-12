@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -155,14 +156,23 @@ public final class SentryEnvelopeItem {
   }
 
   public static SentryEnvelopeItem fromAttachment(
-      @NotNull ILogger logger, final @NotNull Attachment attachment) {
+      final @NotNull Attachment attachment, final long maxAttachmentSize) {
 
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
-              String errorMessage = null;
-
               if (attachment.getBytes() != null) {
+                if (attachment.getBytes().length > maxAttachmentSize) {
+                  throw new SentryEnvelopeException(
+                      String.format(
+                          "Dropping attachment with filename '%s', because the "
+                              + "size of the passed bytes with %d bytes is bigger "
+                              + "than the maximum allowed attachment size of "
+                              + "%d bytes.",
+                          attachment.getFilename(),
+                          attachment.getBytes().length,
+                          maxAttachmentSize));
+                }
                 return attachment.getBytes();
               } else if (attachment.getPathname() != null) {
 
@@ -170,49 +180,51 @@ public final class SentryEnvelopeItem {
                   File file = new File(attachment.getPathname());
 
                   if (!file.isFile()) {
-                    errorMessage =
+                    throw new SentryEnvelopeException(
                         String.format(
                             "Reading the attachment %s failed, because the file located at the path is not a file.",
-                            attachment.getPathname());
+                            attachment.getPathname()));
                   }
 
-                  if (errorMessage == null && !file.canRead()) {
-                    errorMessage =
+                  if (!file.canRead()) {
+                    throw new SentryEnvelopeException(
                         String.format(
                             "Reading the attachment %s failed, because can't read the file.",
-                            attachment.getPathname());
+                            attachment.getPathname()));
                   }
 
-                  if (errorMessage == null) {
-                    try (FileInputStream fileInputStream =
-                            new FileInputStream(attachment.getPathname());
-                        BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
-                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                      byte[] bytes = new byte[1024];
-                      int length;
-                      int offset = 0;
-                      while ((length = inputStream.read(bytes)) != -1) {
-                        outputStream.write(bytes, offset, length);
-                      }
-                      return outputStream.toByteArray();
+                  if (file.length() > maxAttachmentSize) {
+                    throw new SentryEnvelopeException(
+                        String.format(
+                            "Dropping attachment, because the size of the it located at "
+                                + "'%s' with %d bytes is bigger than the maximum "
+                                + "allowed attachment size of %d bytes.",
+                            attachment.getPathname(), file.length(), maxAttachmentSize));
+                  }
+
+                  try (FileInputStream fileInputStream =
+                          new FileInputStream(attachment.getPathname());
+                      BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+                      ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] bytes = new byte[1024];
+                    int length;
+                    int offset = 0;
+                    while ((length = inputStream.read(bytes)) != -1) {
+                      outputStream.write(bytes, offset, length);
                     }
+                    return outputStream.toByteArray();
                   }
                 } catch (IOException | SecurityException exception) {
-                  errorMessage =
-                      String.format("Reading the attachment %s failed.", attachment.getPathname());
-                  logger.log(SentryLevel.ERROR, exception, errorMessage);
+                  throw new SentryEnvelopeException(
+                      String.format("Reading the attachment %s failed.", attachment.getPathname()));
                 }
               }
 
-              if (errorMessage == null) {
-                errorMessage =
-                    String.format(
-                        "Couldn't attach the attachment %s.\n"
-                            + "Please check that either bytes or a path is set.",
-                        attachment.getFilename());
-              }
-
-              return errorMessage.getBytes(UTF_8);
+              throw new SentryEnvelopeException(
+                  String.format(
+                      "Couldn't attach the attachment %s.\n"
+                          + "Please check that either bytes or a path is set.",
+                      attachment.getFilename()));
             });
 
     SentryEnvelopeItemHeader itemHeader =

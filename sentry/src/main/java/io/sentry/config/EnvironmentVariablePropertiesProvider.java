@@ -45,6 +45,6 @@ final class EnvironmentVariablePropertiesProvider implements PropertiesProvider 
   }
 
   private @NotNull String propertyToEnvironmentVariableName(final @NotNull String property) {
-    return PREFIX + "_" + property.replace(".", "_").toUpperCase(Locale.ROOT);
+    return PREFIX + "_" + property.replace(".", "_").replace("-", "_").toUpperCase(Locale.ROOT);
   }
 }

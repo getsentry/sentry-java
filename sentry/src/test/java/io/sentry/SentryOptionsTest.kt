@@ -175,6 +175,7 @@ class SentryOptionsTest {
         externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
+        externalOptions.enableUncaughtExceptionHandler = false
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -188,6 +189,16 @@ class SentryOptionsTest {
         assertEquals("example.com", options.proxy!!.host)
         assertEquals("8090", options.proxy!!.port)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
+        assertFalse(options.enableUncaughtExceptionHandler!!)
+    }
+
+    @Test
+    fun `merging options when enableUncaughtExceptionHandler is not set preserves the default value`() {
+        val externalOptions = SentryOptions()
+        externalOptions.enableUncaughtExceptionHandler = null
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertTrue(options.enableUncaughtExceptionHandler!!)
     }
 
     @Test
@@ -269,6 +280,61 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `creates options with uncaught handler set to true enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("uncaught.handler.enabled=true")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.enableUncaughtExceptionHandler)
+            assertTrue(options.enableUncaughtExceptionHandler!!)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with uncaught handler set to false enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("uncaught.handler.enabled=false")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.enableUncaughtExceptionHandler)
+            assertFalse(options.enableUncaughtExceptionHandler!!)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with uncaught handler set to null enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNull(options.enableUncaughtExceptionHandler)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
     fun `when options is initialized, Gson Serializer is set by default`() {
         assertTrue(SentryOptions().serializer is GsonSerializer)
     }
@@ -291,5 +357,10 @@ class SentryOptionsTest {
         } finally {
             temporaryFolder.delete()
         }
+    }
+
+    @Test
+    fun `when options are initialized, maxAttachmentSize is 20`() {
+        assertEquals(20 * 1024 * 1024, SentryOptions().maxAttachmentSize)
     }
 }

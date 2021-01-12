@@ -28,7 +28,7 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
             .forEach(
                 sentryUserProvider ->
                     options.addEventProcessor(
-                        new SentryUserProviderEventProcessor(sentryUserProvider)));
+                        new SentryUserProviderEventProcessor(options, sentryUserProvider)));
       }
       Sentry.init(options);
     }

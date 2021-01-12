@@ -8,9 +8,16 @@ class EnvironmentVariablePropertiesProviderTest {
     private val provider = EnvironmentVariablePropertiesProvider()
 
     @Test
-    fun `when system property is set resolves property`() {
+    fun `when system property is set resolves property replacing dots with underscores`() {
         // SENTRY_TEST_PROPERTY is set in Gradle build configuration
         val result = provider.getProperty("test.property")
+        assertEquals("some-value", result)
+    }
+
+    @Test
+    fun `when system property is set resolves property replacing dashes with underscores`() {
+        // SENTRY_TEST_PROPERTY is set in Gradle build configuration
+        val result = provider.getProperty("test-property")
         assertEquals("some-value", result)
     }
 

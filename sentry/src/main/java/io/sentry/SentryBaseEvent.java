@@ -43,6 +43,21 @@ public abstract class SentryBaseEvent {
    */
   private Map<String, String> tags;
 
+  /**
+   * The release version of the application.
+   *
+   * <p>**Release versions must be unique across all projects in your organization.** This value can
+   * be the git SHA for the given project, or a product identifier with a semantic version.
+   */
+  private String release;
+
+  /**
+   * The environment name, such as `production` or `staging`.
+   *
+   * <p>```json { "environment": "production" } ```
+   */
+  private String environment;
+
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
 
@@ -130,5 +145,21 @@ public abstract class SentryBaseEvent {
       tags = new HashMap<>();
     }
     tags.put(key, value);
+  }
+
+  public String getRelease() {
+    return release;
+  }
+
+  public void setRelease(String release) {
+    this.release = release;
+  }
+
+  public String getEnvironment() {
+    return environment;
+  }
+
+  public void setEnvironment(String environment) {
+    this.environment = environment;
   }
 }

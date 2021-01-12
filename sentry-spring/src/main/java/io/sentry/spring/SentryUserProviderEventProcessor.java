@@ -1,7 +1,9 @@
 package io.sentry.spring;
 
 import io.sentry.EventProcessor;
+import io.sentry.IpAddressUtils;
 import io.sentry.SentryEvent;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Map;
@@ -12,9 +14,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryUserProviderEventProcessor implements EventProcessor {
+  private final @NotNull SentryOptions options;
   private final @NotNull SentryUserProvider sentryUserProvider;
 
-  public SentryUserProviderEventProcessor(final @NotNull SentryUserProvider sentryUserProvider) {
+  public SentryUserProviderEventProcessor(
+      final @NotNull SentryOptions options, final @NotNull SentryUserProvider sentryUserProvider) {
+    this.options = Objects.requireNonNull(options, "options is required");
     this.sentryUserProvider =
         Objects.requireNonNull(sentryUserProvider, "sentryUserProvider is required");
   }
@@ -38,6 +43,13 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
         }
       }
       event.setUser(existingUser);
+    }
+    if (options.isSendDefaultPii()) {
+      final User existingUser = event.getUser();
+      if (existingUser != null && IpAddressUtils.isDefault(existingUser.getIpAddress())) {
+        // unset {{auto}} as it would set the server's ip address as a user ip address
+        existingUser.setIpAddress(null);
+      }
     }
     return event;
   }

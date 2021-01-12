@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.InvalidDsnException
+import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
@@ -48,6 +49,8 @@ class SentryClientTest {
     class Fixture {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
+        val maxAttachmentSize: Long = 5 * 1024 * 1024
+
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             sdkVersion = SdkVersion().apply {
@@ -58,6 +61,7 @@ class SentryClientTest {
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(mock(), envelopeReader))
             setLogger(mock())
+            maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
         }
 
@@ -783,6 +787,30 @@ class SentryClientTest {
         assertEquals(span, event.contexts.trace)
     }
 
+    @Test
+    fun `when transaction does not have environment and release set, and the environment is set on options, options values are applied to transactions`() {
+        fixture.sentryOptions.release = "optionsRelease"
+        fixture.sentryOptions.environment = "optionsEnvironment"
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name")
+        sut.captureTransaction(transaction)
+        assertEquals("optionsRelease", transaction.release)
+        assertEquals("optionsEnvironment", transaction.environment)
+    }
+
+    @Test
+    fun `when transaction has environment and release set, and the environment is set on options, options values are not applied to transactions`() {
+        fixture.sentryOptions.release = "optionsRelease"
+        fixture.sentryOptions.environment = "optionsEnvironment"
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name")
+        transaction.release = "transactionRelease"
+        transaction.environment = "transactionEnvironment"
+        sut.captureTransaction(transaction)
+        assertEquals("transactionRelease", transaction.release)
+        assertEquals("transactionEnvironment", transaction.environment)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
@@ -802,6 +830,9 @@ class SentryClientTest {
         return createScope().apply {
             addAttachment(fixture.attachment)
             addAttachment(fixture.attachment)
+
+            val bytesTooBig = ByteArray((fixture.maxAttachmentSize + 1).toInt()) { 0 }
+            addAttachment(Attachment(bytesTooBig, "will_get_dropped.txt"))
         }
     }
 
@@ -866,12 +897,12 @@ class SentryClientTest {
 
             assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
-            assertEquals(3, actual.items.count())
+            assertEquals(4, actual.items.count())
             val attachmentItems = actual.items
                 .filter { item -> item.header.type == SentryItemType.Attachment }
                 .toList()
 
-            assertEquals(2, attachmentItems.size)
+            assertEquals(3, attachmentItems.size)
 
             val attachmentItem = attachmentItems.first()
             assertEquals(fixture.attachment.contentType, attachmentItem.header.contentType)
@@ -880,6 +911,12 @@ class SentryClientTest {
 
             val expectedBytes = fixture.attachment.bytes!!
             assertArrayEquals(expectedBytes, attachmentItem.data)
+
+            val attachmentItemTooBig = attachmentItems.last()
+            assertFailsWith<SentryEnvelopeException>("Getting data from attachment should" +
+                    "throw an exception, because the attachment is too big.") {
+                attachmentItemTooBig.data
+            }
         }, isNull())
     }
 

@@ -204,10 +204,13 @@ public class SentryOptions {
   /** The server name used in the Sentry messages. */
   private String serverName;
 
+  /** Automatically resolve server name. */
+  private boolean attachServerName = true;
+
   /*
   When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
    */
-  private boolean enableUncaughtExceptionHandler = true;
+  private @Nullable Boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService;
@@ -248,6 +251,9 @@ public class SentryOptions {
   /** Tags applied to every event and transaction */
   private final @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
 
+  /** max attachment size in bytes. */
+  private long maxAttachmentSize = 20 * 1024 * 1024;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -261,6 +267,8 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
+    options.setEnableUncaughtExceptionHandler(
+        propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -850,6 +858,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns if SDK automatically resolves and attaches server name to events.
+   *
+   * @return true if enabled false if otherwise
+   */
+  public boolean isAttachServerName() {
+    return attachServerName;
+  }
+
+  /**
+   * Sets if SDK should automatically resolve and attache server name to events.
+   *
+   * @param attachServerName true if enabled false if otherwise
+   */
+  public void setAttachServerName(boolean attachServerName) {
+    this.attachServerName = attachServerName;
+  }
+
+  /**
    * Returns the session tracking interval in millis
    *
    * @return the interval in millis
@@ -911,6 +937,15 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isEnableUncaughtExceptionHandler() {
+    return Boolean.TRUE.equals(enableUncaughtExceptionHandler);
+  }
+
+  /**
+   * Checks if the default UncaughtExceptionHandlerIntegration is enabled or disabled or not set.
+   *
+   * @return true if enabled, false otherwise or null if not set.
+   */
+  public @Nullable Boolean getEnableUncaughtExceptionHandler() {
     return enableUncaughtExceptionHandler;
   }
 
@@ -919,7 +954,8 @@ public class SentryOptions {
    *
    * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
    */
-  public void setEnableUncaughtExceptionHandler(boolean enableUncaughtExceptionHandler) {
+  public void setEnableUncaughtExceptionHandler(
+      final @Nullable Boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -1157,6 +1193,26 @@ public class SentryOptions {
     this.tags.put(key, value);
   }
 
+  /**
+   * Returns the maximum attachment size for each attachment in MiB.
+   *
+   * @return the maximum attachment size in MiB.
+   */
+  public long getMaxAttachmentSize() {
+    return maxAttachmentSize;
+  }
+
+  /**
+   * Sets the max attachment size for each attachment in bytes. Default is 20 MiB. Please also check
+   * the maximum attachment size of Relay to make sure your attachments don't get discarded there:
+   * https://docs.sentry.io/product/relay/options/
+   *
+   * @param maxAttachmentSize the max attachment size in bytes.
+   */
+  public void setMaxAttachmentSize(long maxAttachmentSize) {
+    this.maxAttachmentSize = maxAttachmentSize;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1241,6 +1297,9 @@ public class SentryOptions {
     }
     if (options.getProxy() != null) {
       setProxy(options.getProxy());
+    }
+    if (options.getEnableUncaughtExceptionHandler() != null) {
+      setEnableUncaughtExceptionHandler(options.getEnableUncaughtExceptionHandler());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
