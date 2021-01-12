@@ -1,8 +1,12 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
@@ -36,7 +40,7 @@ class SentryUserProviderEventProcessorIntegrationTest {
                     verify(transport).send(checkEvent { event: SentryEvent ->
                         assertThat(event.user).isNotNull
                         assertThat(event.user.username).isEqualTo("john.smith")
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -53,7 +57,7 @@ class SentryUserProviderEventProcessorIntegrationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event: SentryEvent ->
                         assertThat(event.user).isNull()
-                    })
+                    }, anyOrNull())
                 }
             }
     }
@@ -87,8 +91,17 @@ class SentryUserProviderEventProcessorIntegrationTest {
     @EnableSentry(dsn = "http://key@localhost/proj")
     open class AppConfig {
 
+        private val transport = mock<ITransport>()
+
         @Bean
-        open fun mockTransport() = mock<ITransport>()
+        open fun mockTransportFactory(): ITransportFactory {
+            val factory = mock<ITransportFactory>()
+            whenever(factory.create(any(), any())).thenReturn(transport)
+            return factory
+        }
+
+        @Bean
+        open fun mockTransport() = transport
     }
 
     @Configuration

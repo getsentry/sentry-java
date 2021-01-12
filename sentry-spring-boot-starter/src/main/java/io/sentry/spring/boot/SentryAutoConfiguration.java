@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
@@ -18,8 +19,8 @@ import io.sentry.spring.tracing.SentrySpanAdvice;
 import io.sentry.spring.tracing.SentryTracingFilter;
 import io.sentry.spring.tracing.SentryTransaction;
 import io.sentry.spring.tracing.SentryTransactionAdvice;
-import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
+import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
 import org.aopalliance.aop.Advice;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -69,7 +70,7 @@ public class SentryAutoConfiguration {
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
         final @NotNull List<SentryUserProvider> sentryUserProviders,
-        final @NotNull ObjectProvider<ITransport> transport,
+        final @NotNull ObjectProvider<ITransportFactory> transportFactory,
         final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
@@ -82,7 +83,7 @@ public class SentryAutoConfiguration {
                 options.addEventProcessor(
                     new SentryUserProviderEventProcessor(options, sentryUserProvider)));
         transportGate.ifAvailable(options::setTransportGate);
-        transport.ifAvailable(options::setTransport);
+        transportFactory.ifAvailable(options::setTransportFactory);
         inAppPackagesResolver.resolveInAppIncludes().forEach(options::addInAppInclude);
       };
     }
@@ -207,6 +208,18 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
         return new SentrySpanRestTemplateCustomizer(hub);
+      }
+    }
+
+    @Configuration
+    @ConditionalOnMissingBean(ITransportFactory.class)
+    @ConditionalOnClass(ApacheHttpClientTransportFactory.class)
+    @Open
+    static class ApacheHttpClientTransportFactoryAutoconfiguration {
+
+      @Bean
+      public @NotNull ApacheHttpClientTransportFactory apacheHttpClientTransportFactory() {
+        return new ApacheHttpClientTransportFactory();
       }
     }
 

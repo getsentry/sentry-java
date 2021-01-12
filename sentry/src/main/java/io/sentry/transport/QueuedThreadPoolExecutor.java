@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>The {@link Runnable} instances.
  *
- * <p>This class is not public because it is used solely in {@link AsyncConnection}.
+ * <p>This class is not public because it is used solely in {@link AsyncHttpTransport}.
  */
 final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;

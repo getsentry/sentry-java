@@ -1,8 +1,8 @@
 package io.sentry.transport;
 
 import io.sentry.ILogger;
+import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
-import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.cache.IEnvelopeCache;
@@ -12,54 +12,77 @@ import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
-import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-/** A connection to Sentry that sends the events asynchronously. */
-@ApiStatus.Internal
-public final class AsyncConnection implements Closeable, Connection {
-  private final @NotNull ITransport transport;
-  private final @NotNull ITransportGate transportGate;
+/**
+ * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
+ * {@link java.net.HttpURLConnection}.
+ */
+public final class AsyncHttpTransport implements ITransport {
+
   private final @NotNull ExecutorService executor;
   private final @NotNull IEnvelopeCache envelopeCache;
   private final @NotNull SentryOptions options;
+  private final @NotNull RateLimiter rateLimiter;
+  private final @NotNull ITransportGate transportGate;
+  private final @NotNull HttpConnection connection;
 
-  public AsyncConnection(
-      final ITransport transport,
-      final ITransportGate transportGate,
-      final IEnvelopeCache envelopeCache,
-      final int maxQueueSize,
-      final SentryOptions options) {
+  public AsyncHttpTransport(
+      final @NotNull SentryOptions options,
+      final @NotNull RateLimiter rateLimiter,
+      final @NotNull ITransportGate transportGate,
+      final @NotNull RequestDetails requestDetails) {
     this(
-        transport,
+        initExecutor(
+            options.getMaxQueueSize(), options.getEnvelopeDiskCache(), options.getLogger()),
+        options,
+        rateLimiter,
         transportGate,
-        envelopeCache,
-        initExecutor(maxQueueSize, envelopeCache, options.getLogger()),
-        options);
+        new HttpConnection(options, requestDetails, rateLimiter));
   }
 
-  @TestOnly
-  AsyncConnection(
-      final @NotNull ITransport transport,
+  public AsyncHttpTransport(
+      final @NotNull ExecutorService executor,
+      final @NotNull SentryOptions options,
+      final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
-      final @NotNull IEnvelopeCache envelopeCache,
-      final @NotNull ExecutorService executorService,
-      final @NotNull SentryOptions options) {
-    this.transport = transport;
-    this.transportGate = transportGate;
-    this.envelopeCache = envelopeCache;
-    this.options = options;
-    this.executor = executorService;
+      final @NotNull HttpConnection httpConnection) {
+    this.executor = Objects.requireNonNull(executor, "executor is required");
+    this.envelopeCache =
+        Objects.requireNonNull(options.getEnvelopeDiskCache(), "envelopeCache is required");
+    this.options = Objects.requireNonNull(options, "options is required");
+    this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter is required");
+    this.transportGate = Objects.requireNonNull(transportGate, "transportGate is required");
+    this.connection = Objects.requireNonNull(httpConnection, "httpConnection is required");
+  }
+
+  @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void send(SentryEnvelope envelope, Object hint) throws IOException {
+    // For now no caching on envelopes
+    IEnvelopeCache currentEnvelopeCache = envelopeCache;
+    boolean cached = false;
+    if (hint instanceof Cached) {
+      currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
+      cached = true;
+      options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
+    }
+
+    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
+
+    if (filteredEnvelope == null) {
+      if (cached) {
+        envelopeCache.discard(envelope);
+      }
+    } else {
+      executor.submit(new EnvelopeSender(filteredEnvelope, hint, currentEnvelopeCache));
+    }
   }
 
   private static QueuedThreadPoolExecutor initExecutor(
@@ -85,77 +108,6 @@ public final class AsyncConnection implements Closeable, Connection {
         1, maxQueueSize, new AsyncConnectionThreadFactory(), storeEvents, logger);
   }
 
-  /**
-   * It marks the hints when sending has failed, so it's not necessary to wait the timeout
-   *
-   * @param hint the Hint
-   * @param retry if event should be retried or not
-   */
-  private static void markHintWhenSendingFailed(final @Nullable Object hint, final boolean retry) {
-    if (hint instanceof SubmissionResult) {
-      ((SubmissionResult) hint).setResult(false);
-    }
-    if (hint instanceof Retryable) {
-      ((Retryable) hint).setRetry(retry);
-    }
-  }
-
-  @SuppressWarnings("FutureReturnValueIgnored")
-  @Override
-  public void send(@NotNull SentryEnvelope envelope, final @Nullable Object hint)
-      throws IOException {
-    // For now no caching on envelopes
-    IEnvelopeCache currentEnvelopeCache = envelopeCache;
-    boolean cached = false;
-    if (hint instanceof Cached) {
-      currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
-      cached = true;
-      options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
-    }
-
-    // Optimize for/No allocations if no items are under 429
-    List<SentryEnvelopeItem> dropItems = null;
-    for (SentryEnvelopeItem item : envelope.getItems()) {
-      // using the raw value of the enum to not expose SentryEnvelopeItemType
-      if (transport.isRetryAfter(item.getHeader().getType().getItemType())) {
-        if (dropItems == null) {
-          dropItems = new ArrayList<>();
-        }
-        dropItems.add(item);
-      }
-      if (dropItems != null) {
-        options
-            .getLogger()
-            .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
-      }
-    }
-
-    if (dropItems != null) {
-      // Need a new envelope
-      List<SentryEnvelopeItem> toSend = new ArrayList<>();
-      for (SentryEnvelopeItem item : envelope.getItems()) {
-        if (!dropItems.contains(item)) {
-          toSend.add(item);
-        }
-      }
-
-      // no reason to continue
-      if (toSend.isEmpty()) {
-        if (cached) {
-          envelopeCache.discard(envelope);
-        }
-        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
-
-        markHintWhenSendingFailed(hint, false);
-        return;
-      }
-
-      envelope = new SentryEnvelope(envelope.getHeader(), toSend);
-    }
-
-    executor.submit(new EnvelopeSender(envelope, hint, currentEnvelopeCache));
-  }
-
   @Override
   public void close() throws IOException {
     executor.shutdown();
@@ -169,13 +121,27 @@ public final class AsyncConnection implements Closeable, Connection {
                 "Failed to shutdown the async connection async sender within 1 minute. Trying to force it now.");
         executor.shutdownNow();
       }
-      transport.close();
     } catch (InterruptedException e) {
       // ok, just give up then...
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "Thread interrupted while closing the connection.");
       Thread.currentThread().interrupt();
+    }
+  }
+
+  /**
+   * It marks the hints when sending has failed, so it's not necessary to wait the timeout
+   *
+   * @param hint the Hint
+   * @param retry if event should be retried or not
+   */
+  private static void markHintWhenSendingFailed(final @Nullable Object hint, final boolean retry) {
+    if (hint instanceof SubmissionResult) {
+      ((SubmissionResult) hint).setResult(false);
+    }
+    if (hint instanceof Retryable) {
+      ((Retryable) hint).setRetry(retry);
     }
   }
 
@@ -236,7 +202,7 @@ public final class AsyncConnection implements Closeable, Connection {
 
       if (transportGate.isConnected()) {
         try {
-          result = transport.send(envelope);
+          result = connection.send(envelope);
           if (result.isSuccess()) {
             envelopeCache.discard(envelope);
           } else {
