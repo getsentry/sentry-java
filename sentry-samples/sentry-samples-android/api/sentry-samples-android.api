@@ -1,4 +1,4 @@
-public final class io/sentry/samples/BuildConfig {
+public final class io/sentry/samples/android/BuildConfig {
 	public static final field APPLICATION_ID Ljava/lang/String;
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -7,23 +7,23 @@ public final class io/sentry/samples/BuildConfig {
 	public fun <init> ()V
 }
 
-public class io/sentry/samples/MainActivity : androidx/appcompat/app/AppCompatActivity {
+public class io/sentry/samples/android/MainActivity : androidx/appcompat/app/AppCompatActivity {
 	public fun <init> ()V
 	protected fun onCreate (Landroid/os/Bundle;)V
 }
 
-public class io/sentry/samples/MyApplication : android/app/Application {
+public class io/sentry/samples/android/MyApplication : android/app/Application {
 	public fun <init> ()V
 	public fun onCreate ()V
 }
 
-public class io/sentry/samples/NativeSample {
+public class io/sentry/samples/android/NativeSample {
 	public fun <init> ()V
 	public static fun crash ()V
 	public static fun message ()V
 }
 
-public final class io/sentry/samples/databinding/ActivityMainBinding : androidx/viewbinding/ViewBinding {
+public final class io/sentry/samples/android/databinding/ActivityMainBinding : androidx/viewbinding/ViewBinding {
 	public final field addAttachment Landroid/widget/Button;
 	public final field anr Landroid/widget/Button;
 	public final field breadcrumb Landroid/widget/Button;
@@ -35,10 +35,10 @@ public final class io/sentry/samples/databinding/ActivityMainBinding : androidx/
 	public final field sendUserFeedback Landroid/widget/Button;
 	public final field setUser Landroid/widget/Button;
 	public final field unsetUser Landroid/widget/Button;
-	public static fun bind (Landroid/view/View;)Lio/sentry/samples/databinding/ActivityMainBinding;
+	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/ActivityMainBinding;
 	public synthetic fun getRoot ()Landroid/view/View;
 	public fun getRoot ()Landroid/widget/LinearLayout;
-	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/databinding/ActivityMainBinding;
-	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/databinding/ActivityMainBinding;
+	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/ActivityMainBinding;
+	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/ActivityMainBinding;
 }
 
