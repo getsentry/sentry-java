@@ -135,7 +135,8 @@ public class MainActivity extends AppCompatActivity {
           // Try cause ANR by blocking for 10 seconds.
           // By default the SDK sends an event if blocked by at least 5 seconds.
           // Keep clicking on the ANR button till you've gotten the "App. isn''t responding" dialog,
-          // then either click on Wait or Close, at this point you should have seen an event on Sentry.
+          // then either click on Wait or Close, at this point you should have seen an event on
+          // Sentry.
           // NOTE: By default it doesn't raise if the debugger is attached. That can also be
           // configured.
           try {
