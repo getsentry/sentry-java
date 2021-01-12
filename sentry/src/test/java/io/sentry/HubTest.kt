@@ -306,6 +306,50 @@ class HubTest {
         verify(mockClient).captureEvent(eq(event), any(), eq(hint))
         verify(mockClient, never()).captureSession(any(), any())
     }
+
+    @Test
+    fun `when captureEvent is called and event has exception which has been previously attached with span context, sets span context to the event`() {
+        val (sut, mockClient) = getEnabledHub()
+        val exception = RuntimeException()
+        val spanContext = SpanContext()
+        sut.setSpanContext(exception, spanContext)
+
+        val event = SentryEvent(exception)
+
+        val hint = { }
+        sut.captureEvent(event, hint)
+        assertEquals(spanContext, event.contexts.trace)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
+
+    @Test
+    fun `when captureEvent is called and event has exception which has been previously attached with span context and trace context already set, does not set new span context to the event`() {
+        val (sut, mockClient) = getEnabledHub()
+        val exception = RuntimeException()
+        val spanContext = SpanContext()
+        sut.setSpanContext(exception, spanContext)
+
+        val event = SentryEvent(exception)
+        val originalSpanContext = SpanContext()
+        event.contexts.trace = originalSpanContext
+
+        val hint = { }
+        sut.captureEvent(event, hint)
+        assertEquals(originalSpanContext, event.contexts.trace)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
+
+    @Test
+    fun `when captureEvent is called and event has exception which has not been previously attached with span context, does not set new span context to the event`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        val event = SentryEvent(RuntimeException())
+
+        val hint = { }
+        sut.captureEvent(event, hint)
+        assertNull(event.contexts.trace)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
     //endregion
 
     //region captureMessage tests
@@ -363,23 +407,47 @@ class HubTest {
         sut.close()
 
         sut.captureException(Throwable())
-        verify(mockClient, never()).captureException(any(), any())
+        verify(mockClient, never()).captureEvent(any(), any(), any())
     }
 
     @Test
-    fun `when captureException is called with a valid argument and hint, captureException on the client should be called`() {
+    fun `when captureException is called with a valid argument and hint, captureEvent on the client should be called`() {
         val (sut, mockClient) = getEnabledHub()
 
         sut.captureException(Throwable(), Object())
-        verify(mockClient).captureException(any(), any(), any())
+        verify(mockClient).captureEvent(any(), any(), any())
     }
 
     @Test
-    fun `when captureException is called with a valid argument but no hint, captureException on the client should be called`() {
+    fun `when captureException is called with a valid argument but no hint, captureEvent on the client should be called`() {
         val (sut, mockClient) = getEnabledHub()
 
         sut.captureException(Throwable())
-        verify(mockClient).captureException(any(), any(), isNull())
+        verify(mockClient).captureEvent(any(), any(), isNull())
+    }
+
+    @Test
+    fun `when captureException is called with an exception which has been previously attached with span context, span context should be set on the event before capturing`() {
+        val (sut, mockClient) = getEnabledHub()
+        val throwable = Throwable()
+        val spanContext = SpanContext()
+        sut.setSpanContext(throwable, spanContext)
+
+        sut.captureException(throwable)
+        verify(mockClient).captureEvent(check {
+            assertEquals(spanContext, it.contexts.trace)
+        }, any(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureException is called with an exception which has not been previously attached with span context, span context should not be set on the event before capturing`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.setSpanContext(Throwable(), SpanContext())
+
+        sut.captureException(Throwable())
+        verify(mockClient).captureEvent(check {
+            assertNull(it.contexts.trace)
+        }, any(), anyOrNull())
     }
     //endregion
 

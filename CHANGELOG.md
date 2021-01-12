@@ -24,6 +24,7 @@
 * Fix: Consider {{ auto }} as a default ip address (#1015) 
 * Fix: Set release and environment on Transactions (#1152)
 * Fix: Do not set transaction on the scope automatically   
+* Enhancement: Automatically assign span context to captured events (#1156)
 
 # 4.0.0-alpha.2
 

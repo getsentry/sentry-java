@@ -4,7 +4,6 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.SpanContext;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.spring.tracing.TransactionNameProvider;
@@ -48,12 +47,6 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     final SentryEvent event = new SentryEvent(throwable);
     event.setLevel(SentryLevel.FATAL);
     event.setTransaction(transactionNameProvider.provideTransactionName(request));
-
-    final SpanContext spanContext = hub.getSpanContext(ex);
-    if (spanContext != null) {
-      // connects the event with a span
-      event.getContexts().setTrace(spanContext);
-    }
     hub.captureEvent(event);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
