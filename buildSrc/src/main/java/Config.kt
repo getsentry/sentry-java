@@ -57,6 +57,8 @@ object Config {
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api"
+
+        val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.3"
     }
 
     object AnnotationProcessors {

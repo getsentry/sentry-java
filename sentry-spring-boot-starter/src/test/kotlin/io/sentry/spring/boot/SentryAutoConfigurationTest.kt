@@ -6,11 +6,13 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Integration
+import io.sentry.NoOpTransportFactory
 import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
@@ -24,6 +26,7 @@ import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
+import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -452,6 +455,34 @@ class SentryAutoConfigurationTest {
             .withUserConfiguration(CustomTracesSamplerCallbackConfiguration::class.java)
             .run {
                 assertThat(it.getBean(SentryOptions::class.java).tracesSampler).isInstanceOf(CustomTracesSamplerCallback::class.java)
+            }
+    }
+
+    @Test
+    fun `when sentry-apache-http-client-5 is on the classpath, creates apache transport factory`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).transportFactory).isInstanceOf(ApacheHttpClientTransportFactory::class.java)
+            }
+    }
+
+    @Test
+    fun `when sentry-apache-http-client-5 is not on the classpath, does not create apache transport factory`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(ApacheHttpClientTransportFactory::class.java))
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).transportFactory).isInstanceOf(AsyncHttpTransportFactory::class.java)
+            }
+    }
+
+    @Test
+    fun `when sentry-apache-http-client-5 is on the classpath and custom transport factory bean is set, does not create apache transport factory`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(MockTransportConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).transportFactory)
+                    .isNotInstanceOf(ApacheHttpClientTransportFactory::class.java)
+                    .isNotInstanceOf(NoOpTransportFactory::class.java)
             }
     }
 
