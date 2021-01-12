@@ -4,7 +4,6 @@ import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 
-import com.jakewharton.nopen.annotation.Open;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
@@ -26,8 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-@Open
-class HttpConnection {
+final class HttpConnection {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -98,7 +96,8 @@ class HttpConnection {
     return proxy;
   }
 
-  protected @NotNull HttpURLConnection open() throws IOException {
+  @NotNull
+  HttpURLConnection open() throws IOException {
     return (HttpURLConnection)
         (proxy == null
             ? requestDetails.getUrl().openConnection()
