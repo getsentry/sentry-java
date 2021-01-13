@@ -654,9 +654,9 @@ class SentryClientTest {
         val scope = Scope(fixture.sentryOptions)
         scope.startSession().current
         val event = SentryEvent().apply {
-            request = Request()
-            request.headers = mutableMapOf()
-            request.headers["user-agent"] = "jamesBond"
+            request = Request().apply {
+                headers = mutableMapOf("user-agent" to "jamesBond")
+            }
         }
         fixture.getSut().updateSessionData(event, null, scope)
         scope.withSession {
@@ -670,8 +670,9 @@ class SentryClientTest {
         val session = scope.startSession().current
         val userAgent = session.userAgent
         val event = SentryEvent().apply {
-            request = Request()
-            request.headers = mutableMapOf()
+            request = Request().apply {
+                headers = mutableMapOf()
+            }
         }
         fixture.getSut().updateSessionData(event, null, scope)
         assertEquals(userAgent, session.userAgent)

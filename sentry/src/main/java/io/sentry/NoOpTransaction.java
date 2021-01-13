@@ -14,41 +14,41 @@ public final class NoOpTransaction implements ITransaction {
   public void setName(@NotNull String name) {}
 
   @Override
-  public Span startChild() {
+  public @NotNull Span startChild() {
     return new Span(SentryId.EMPTY_ID, SpanId.EMPTY_ID, this, NoOpHub.getInstance());
   }
 
   @Override
-  public Span startChild(String operation, String description) {
+  public @NotNull Span startChild(
+      final @NotNull String operation, final @NotNull String description) {
     return startChild();
   }
 
   @Override
-  public @NotNull Span startChild(@NotNull SpanId parentSpanId) {
+  public @NotNull Span startChild(final @NotNull SpanId parentSpanId) {
     return startChild();
   }
 
   @Override
   public @NotNull Span startChild(
-      @NotNull SpanId parentSpanId, @NotNull String operation, @NotNull String description) {
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @NotNull String description) {
     return startChild();
   }
 
   @Override
-  public void setRequest(Request request) {}
+  public void setRequest(@Nullable Request request) {}
 
   @Override
-  public Request getRequest() {
+  public @Nullable Request getRequest() {
     return null;
   }
 
   @Override
-  public Contexts getContexts() {
-    return null;
+  public @NotNull Contexts getContexts() {
+    return new Contexts();
   }
-
-  @Override
-  public void setContexts(Contexts contexts) {}
 
   @Override
   public @Nullable String getDescription() {
@@ -81,8 +81,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public SentryTraceHeader toSentryTrace() {
-    return null;
+  public @NotNull SentryTraceHeader toSentryTrace() {
+    return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, false);
   }
 
   @Override

@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -58,9 +57,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     this.transaction = Objects.requireNonNull(name, "name is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    Contexts ctx = new Contexts();
-    ctx.setTrace(contexts);
-    this.setContexts(ctx);
+    this.getContexts().setTrace(contexts);
   }
 
   /**
@@ -80,7 +77,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * @return a new transaction span
    */
   @Override
-  public Span startChild() {
+  public @NotNull Span startChild() {
     return this.startChild(getSpanId());
   }
 
@@ -134,7 +131,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   }
 
   @Override
-  public SentryTraceHeader toSentryTrace() {
+  public @NotNull SentryTraceHeader toSentryTrace() {
     return new SentryTraceHeader(getTraceId(), getSpanId(), isSampled());
   }
 

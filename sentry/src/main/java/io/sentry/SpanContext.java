@@ -41,7 +41,7 @@ public class SpanContext implements Cloneable {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
 
-  public SpanContext(@Nullable Boolean sampled) {
+  public SpanContext(final @Nullable Boolean sampled) {
     this(new SentryId(), new SpanId(), null, sampled);
   }
 
@@ -71,11 +71,11 @@ public class SpanContext implements Cloneable {
     this.tags.put(name, value);
   }
 
-  public void setDescription(@Nullable String description) {
+  public void setDescription(final @Nullable String description) {
     this.description = description;
   }
 
-  public void setStatus(@Nullable SpanStatus status) {
+  public void setStatus(final @Nullable SpanStatus status) {
     this.status = status;
   }
 
@@ -115,7 +115,7 @@ public class SpanContext implements Cloneable {
     return sampled;
   }
 
-  public void setSampled(Boolean sampled) {
+  public void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }
 

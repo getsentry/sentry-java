@@ -124,7 +124,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   SentryEvent(SentryId eventId, final Date timestamp) {
     super(eventId);
     this.timestamp = timestamp;
-    this.setContexts(new Contexts());
   }
 
   /**
