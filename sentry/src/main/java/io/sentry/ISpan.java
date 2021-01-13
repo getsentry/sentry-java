@@ -10,6 +10,7 @@ public interface ISpan {
    *
    * @return a new transaction span
    */
+  @NotNull
   Span startChild();
 
   /**
@@ -19,13 +20,15 @@ public interface ISpan {
    * @param description - new span description name
    * @return a new transaction span
    */
-  Span startChild(String operation, String description);
+  @NotNull
+  Span startChild(@NotNull String operation, @NotNull String description);
 
   /**
    * Returns a string that could be sent as a sentry-trace header.
    *
    * @return SentryTraceHeader.
    */
+  @NotNull
   SentryTraceHeader toSentryTrace();
 
   /** Sets span timestamp marking this span as finished. */

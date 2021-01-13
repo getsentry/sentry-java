@@ -85,19 +85,19 @@ public abstract class SentryBaseEvent {
     this.contexts = contexts;
   }
 
-  public SdkVersion getSdk() {
+  public @Nullable SdkVersion getSdk() {
     return sdk;
   }
 
-  public void setSdk(@Nullable SdkVersion sdk) {
+  public void setSdk(final @Nullable SdkVersion sdk) {
     this.sdk = sdk;
   }
 
-  public Request getRequest() {
+  public @Nullable Request getRequest() {
     return request;
   }
 
-  public void setRequest(Request request) {
+  public void setRequest(final @Nullable Request request) {
     this.request = request;
   }
 

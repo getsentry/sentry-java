@@ -198,8 +198,8 @@ class MainEventProcessorTest {
         val event = SentryEvent()
         sut.process(event, null)
         assertNotNull(event.sdk)
-        assertEquals(event.sdk.name, "test")
-        assertEquals(event.sdk.version, "1.2.3")
+        assertEquals(event.sdk!!.name, "test")
+        assertEquals(event.sdk!!.version, "1.2.3")
     }
 
     @Test

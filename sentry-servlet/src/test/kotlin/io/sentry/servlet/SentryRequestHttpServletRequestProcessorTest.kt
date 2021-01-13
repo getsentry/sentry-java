@@ -6,6 +6,7 @@ import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.springframework.mock.web.MockServletContext
@@ -25,13 +26,15 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertEquals("GET", event.request.method)
+        assertNotNull(event.request)
+        val eventRequest = event.request!!
+        assertEquals("GET", eventRequest.method)
         assertEquals(mapOf(
             "some-header" to "some-header value",
             "Accept" to "application/json"
-        ), event.request.headers)
-        assertEquals("http://example.com", event.request.url)
-        assertEquals("param1=xyz", event.request.queryString)
+        ), eventRequest.headers)
+        assertEquals("http://example.com", eventRequest.url)
+        assertEquals("param1=xyz", eventRequest.queryString)
     }
 
     @Test
@@ -46,9 +49,10 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
+        assertNotNull(event.request)
         assertEquals(mapOf(
             "another-header" to "another value,another value2"
-        ), event.request.headers)
+        ), event.request!!.headers)
     }
 
     @Test
@@ -64,7 +68,8 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNull(event.request.cookies)
+        assertNotNull(event.request)
+        assertNull(event.request!!.cookies)
     }
 
     @Test
@@ -84,10 +89,12 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertFalse(event.request.headers.containsKey("X-FORWARDED-FOR"))
-        assertFalse(event.request.headers.containsKey("Authorization"))
-        assertFalse(event.request.headers.containsKey("authorization"))
-        assertFalse(event.request.headers.containsKey("Cookies"))
-        assertTrue(event.request.headers.containsKey("some-header"))
+        assertNotNull(event.request)
+        val eventRequest = event.request!!
+        assertFalse(eventRequest.headers.containsKey("X-FORWARDED-FOR"))
+        assertFalse(eventRequest.headers.containsKey("Authorization"))
+        assertFalse(eventRequest.headers.containsKey("authorization"))
+        assertFalse(eventRequest.headers.containsKey("Cookies"))
+        assertTrue(eventRequest.headers.containsKey("some-header"))
     }
 }
