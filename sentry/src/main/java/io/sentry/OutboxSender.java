@@ -4,6 +4,7 @@ import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
 import io.sentry.hints.Flushable;
+import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.CollectionUtils;
@@ -157,7 +158,11 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             new SentryEnvelope(
                 envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
         hub.captureEnvelope(newEnvelope, hint);
-        logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
+        logger.log(
+            SentryLevel.DEBUG,
+            "%s item %d is being captured.",
+            item.getHeader().getType().getItemType(),
+            items);
 
         if (!waitFlush(hint)) {
           logger.log(
@@ -178,6 +183,11 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               items);
           break;
         }
+      }
+
+      // reset the Hint to its initial state as we use it multiple times.
+      if (hint instanceof Resettable) {
+        ((Resettable) hint).reset();
       }
     }
   }
