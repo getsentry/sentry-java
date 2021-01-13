@@ -15,19 +15,13 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
-  public boolean isRetryAfter(String type) {
-    return false;
-  }
-
-  @Override
-  public TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
+  public void send(final @NotNull SentryEnvelope envelope, Object hint) throws IOException {
     Objects.requireNonNull(envelope, "SentryEnvelope is required");
 
     try {
       serializer.serialize(envelope, System.out);
-      return TransportResult.success();
     } catch (Exception e) {
-      return TransportResult.error();
+      // do nothing
     }
   }
 

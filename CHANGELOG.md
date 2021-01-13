@@ -12,13 +12,19 @@
 * Fix: Initialize Logback after context refreshes (#1129)
 * Ref: Return NoOpTransaction instead of null (#1126)
 * Fix: Do not crash when passing null values to @Nullable methods, eg User and Scope
+* Ref: `ITransport` implementations are now responsible for executing request in asynchronous or synchronous way (#1118)
+* Ref: Add option to set `TransportFactory` instead of `ITransport` on `SentryOptions` (#1124)
+* Ref: Simplify ITransport creation in ITransportFactory (#1135) 
+* Feat: Add non blocking Apache HttpClient 5 based Transport (#1136)
+* Enhancement: Autoconfigure Apache HttpClient 5 based Transport in Spring Boot integration (#1143)
 * Enhancement: Send user.ip_address = {{auto}} when sendDefaultPii is true (#1015)
 * Fix: Resolving dashed properties from external configuration
 * Feat: Read `uncaught.handler.enabled` property from the external configuration 
 * Feat: Resolve servername from the localhost address
 * Fix: Consider {{ auto }} as a default ip address (#1015) 
 * Fix: Set release and environment on Transactions (#1152)
-* Fix: Do not set transaction on the scope automatically
+* Fix: Do not set transaction on the scope automatically   
+* Enhancement: Automatically assign span context to captured events (#1156)
 
 # 4.0.0-alpha.2
 

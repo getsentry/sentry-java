@@ -1,9 +1,13 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
@@ -74,7 +78,7 @@ class SentrySpringIntegrationTest {
                 assertThat(event.user).isNotNull()
                 assertThat(event.user.username).isEqualTo("user")
                 assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -90,7 +94,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -106,7 +110,7 @@ class SentrySpringIntegrationTest {
                 val ex = event.exceptions.first()
                 assertThat(ex.value).isEqualTo("something went wrong")
                 assertThat(ex.mechanism.isHandled).isFalse()
-            })
+            }, anyOrNull())
         }
     }
 
@@ -119,7 +123,7 @@ class SentrySpringIntegrationTest {
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.transaction).isEqualTo("GET /throws")
-            })
+            }, anyOrNull())
         }
     }
 
@@ -139,8 +143,17 @@ class SentrySpringIntegrationTest {
 @EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, exceptionResolverOrder = Ordered.LOWEST_PRECEDENCE)
 open class App {
 
+    private val transport = mock<ITransport>()
+
     @Bean
-    open fun mockTransport() = mock<ITransport>()
+    open fun mockTransportFactory(): ITransportFactory {
+        val factory = mock<ITransportFactory>()
+        whenever(factory.create(any(), any())).thenReturn(transport)
+        return factory
+    }
+
+    @Bean
+    open fun mockTransport() = transport
 }
 
 @RestController

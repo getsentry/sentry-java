@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ISerializer
+import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
@@ -18,7 +19,6 @@ import io.sentry.protocol.User
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy.Type
-import java.net.URI
 import java.net.URL
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
@@ -29,40 +29,39 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class HttpTransportTest {
+class HttpConnectionTest {
 
     private class Fixture {
-        val dsn: URL = URI.create("https://key@localhost/proj").toURL()
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
-        var requestUpdater = IConnectionConfigurator {}
-        var connectionTimeout = 1000
-        var readTimeout = 500
         val connection = mock<HttpsURLConnection>()
         val currentDateProvider = mock<ICurrentDateProvider>()
         val authenticatorWrapper = mock<AuthenticatorWrapper>()
+        val rateLimiter = mock<RateLimiter>()
         var sslSocketFactory: SSLSocketFactory? = null
         var hostnameVerifier: HostnameVerifier? = null
+        val requestDetails = mock<RequestDetails>()
 
         init {
             whenever(connection.outputStream).thenReturn(mock())
             whenever(connection.inputStream).thenReturn(mock())
             whenever(connection.setHostnameVerifier(any())).thenCallRealMethod()
             whenever(connection.setSSLSocketFactory(any())).thenCallRealMethod()
+            whenever(requestDetails.headers).thenReturn(mapOf("header-name" to "header-value"))
+            val url = mock<URL>()
+            whenever(url.openConnection()).thenReturn(connection)
+            whenever(url.openConnection(any())).thenReturn(connection)
+            whenever(requestDetails.url).thenReturn(url)
         }
 
-        fun getSUT(): HttpTransport {
+        fun getSUT(): HttpConnection {
             val options = SentryOptions()
             options.setSerializer(serializer)
             options.proxy = proxy
             options.sslSocketFactory = sslSocketFactory
             options.hostnameVerifier = hostnameVerifier
 
-            return object : HttpTransport(options, requestUpdater, connectionTimeout, readTimeout, sslSocketFactory, hostnameVerifier, dsn, currentDateProvider, authenticatorWrapper) {
-                override fun open(): HttpsURLConnection {
-                    return connection
-                }
-            }
+            return HttpConnection(options, requestDetails, authenticatorWrapper, rateLimiter)
         }
     }
 
@@ -94,9 +93,9 @@ class HttpTransportTest {
 
         val result = transport.send(envelope)
 
+        verify(fixture.rateLimiter).updateRetryAfterLimits(null, "30", 429)
         verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
-        assertTrue(transport.isRetryAfter("session"))
     }
 
     @Test
@@ -128,8 +127,8 @@ class HttpTransportTest {
         val result = transport.send(envelope)
 
         verify(fixture.serializer).serialize(eq(envelope), any())
+        verify(fixture.rateLimiter).updateRetryAfterLimits(null, null, 429)
         assertFalse(result.isSuccess)
-        assertTrue(transport.isRetryAfter("session"))
     }
 
     @Test
@@ -147,136 +146,6 @@ class HttpTransportTest {
         verify(fixture.serializer).serialize(eq(envelope), any())
         assertFalse(result.isSuccess)
         assertEquals(-1, result.responseCode)
-    }
-
-    @Test
-    fun `uses X-Sentry-Rate-Limit and returns accordingly`() {
-        val transport = fixture.getSUT()
-
-        throwOnEventSerialize()
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50:transaction:key, 2700:default;error;security:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-
-        val envelope = createEnvelope()
-        val result = transport.send(envelope)
-
-        verify(fixture.serializer).serialize(eq(envelope), any())
-        assertFalse(result.isSuccess)
-        assertTrue(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `uses X-Sentry-Rate-Limit and allows sending if time has passed`() {
-        val transport = fixture.getSUT()
-
-        throwOnEventSerialize()
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50:transaction:key, 1:default;error;security:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
-
-        val envelope = createEnvelope()
-        val result = transport.send(envelope)
-
-        verify(fixture.serializer).serialize(eq(envelope), any())
-        assertFalse(result.isSuccess)
-        assertFalse(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `parse X-Sentry-Rate-Limit and set its values and retry after should be true`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50:transaction:key, 2700:default;error;security:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-
-        transport.send(createEnvelope())
-
-        assertTrue(transport.isRetryAfter("transaction"))
-        assertTrue(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `parse X-Sentry-Rate-Limit and set its values and retry after should be false`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("1:transaction:key, 1:default;error;security:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
-
-        transport.send(createEnvelope())
-
-        assertFalse(transport.isRetryAfter("transaction"))
-        assertFalse(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `When X-Sentry-Rate-Limit categories are empty, applies to all the categories`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("50::key")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-
-        transport.send(createEnvelope())
-
-        assertTrue(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `parse X-Sentry-Rate-Limit and ignore unknown categories`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("60:default;foobar;error;security:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-
-        transport.send(createEnvelope())
-        assertFalse(transport.isRetryAfter("foobar"))
-    }
-
-    @Test
-    fun `When all categories is set but expired, applies only for specific category`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("1::key, 60:default;error;security:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
-
-        transport.send(createEnvelope())
-        assertTrue(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `When category has shorter rate limiting, do not apply new timestamp`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("60:error:key, 1:error:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
-
-        transport.send(createEnvelope())
-        assertTrue(transport.isRetryAfter("event"))
-    }
-
-    @Test
-    fun `When category has longer rate limiting, apply new timestamp`() {
-        val transport = fixture.getSUT()
-
-        whenever(fixture.connection.inputStream).thenThrow(IOException())
-        whenever(fixture.connection.getHeaderField(eq("X-Sentry-Rate-Limits")))
-            .thenReturn("1:error:key, 5:error:organization")
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
-
-        transport.send(createEnvelope())
-        assertTrue(transport.isRetryAfter("event"))
     }
 
     @Test
@@ -351,6 +220,16 @@ class HttpTransportTest {
 
         assertNull(transport.proxy)
         verifyZeroInteractions(fixture.authenticatorWrapper)
+    }
+
+    @Test
+    fun `sets common headers and on http connection`() {
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.connection).setRequestProperty("header-name", "header-value")
+        verify(fixture.requestDetails.url).openConnection()
     }
 
     private fun createSession(): Session {
