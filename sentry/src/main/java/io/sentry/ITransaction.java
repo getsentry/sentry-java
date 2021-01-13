@@ -56,9 +56,8 @@ public interface ITransaction extends ISpan {
   @Nullable
   Request getRequest();
 
+  @NotNull
   Contexts getContexts();
-
-  void setContexts(Contexts contexts);
 
   /**
    * Returns the transaction's description.

@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.Stack.StackItem;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
-import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
@@ -174,10 +173,7 @@ public final class Hub implements IHub {
     if (event.getThrowable() != null) {
       final SpanContext spanContext = throwableToSpanContext.get(event.getThrowable());
       if (spanContext != null) {
-        if (event.getContexts() == null) {
-          event.setContexts(new Contexts());
-          event.getContexts().setTrace(spanContext);
-        } else if (event.getContexts().getTrace() == null) {
+        if (event.getContexts().getTrace() == null) {
           event.getContexts().setTrace(spanContext);
         }
       }

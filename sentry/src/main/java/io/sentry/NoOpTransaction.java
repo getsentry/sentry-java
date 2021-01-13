@@ -46,12 +46,9 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public Contexts getContexts() {
-    return null;
+  public @NotNull Contexts getContexts() {
+    return new Contexts();
   }
-
-  @Override
-  public void setContexts(Contexts contexts) {}
 
   @Override
   public @Nullable String getDescription() {

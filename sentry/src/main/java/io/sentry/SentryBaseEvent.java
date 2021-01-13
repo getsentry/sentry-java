@@ -31,7 +31,7 @@ public abstract class SentryBaseEvent {
    */
   private @Nullable SentryId eventId;
   /** Contexts describing the environment (e.g. device, os or browser). */
-  private Contexts contexts;
+  private final @NotNull Contexts contexts = new Contexts();
   /** Information about the Sentry SDK that generated this event. */
   private @Nullable SdkVersion sdk;
   /** Information about a web request that occurred during the event. */
@@ -77,12 +77,8 @@ public abstract class SentryBaseEvent {
     this.eventId = eventId;
   }
 
-  public Contexts getContexts() {
+  public @NotNull Contexts getContexts() {
     return contexts;
-  }
-
-  public void setContexts(Contexts contexts) {
-    this.contexts = contexts;
   }
 
   public @Nullable SdkVersion getSdk() {

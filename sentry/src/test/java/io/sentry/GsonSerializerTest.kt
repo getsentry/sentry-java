@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
-import io.sentry.protocol.Contexts
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
@@ -78,7 +77,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"event_id\":\"${sentryEvent.eventId}\"}"
+        val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
 
         assertEquals(expected, actual)
     }
@@ -99,7 +98,7 @@ class GsonSerializerTest {
         val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
 
-        val expected = "{\"timestamp\":\"$dateIsoFormat\"}"
+        val expected = "{\"timestamp\":\"$dateIsoFormat\",\"contexts\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -195,7 +194,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}}}"
+        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{}}"
 
         assertEquals(expected, actual)
     }
@@ -206,9 +205,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
-        val contexts = Contexts()
-        contexts.device = device
-        sentryEvent.contexts = contexts
+        sentryEvent.contexts.device = device
 
         val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
@@ -235,9 +232,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.orientation = Device.DeviceOrientation.LANDSCAPE
-        val contexts = Contexts()
-        contexts.device = device
-        sentryEvent.contexts = contexts
+        sentryEvent.contexts.device = device
 
         val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
@@ -264,7 +259,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         sentryEvent.level = SentryLevel.DEBUG
 
-        val expected = "{\"level\":\"debug\"}"
+        val expected = "{\"level\":\"debug\",\"contexts\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -577,9 +572,7 @@ class GsonSerializerTest {
     }
 
     private fun generateEmptySentryEvent(date: Date? = null): SentryEvent =
-        SentryEvent(date).apply {
-            contexts = null
-        }
+        SentryEvent(date)
 
     private fun createSessionMockData(): Session =
         Session(
