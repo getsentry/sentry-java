@@ -26,6 +26,7 @@
 * Fix: Do not set transaction on the scope automatically   
 * Enhancement: Automatically assign span context to captured events (#1156)
 * Feat: OutboxSender supports all envelope item types #1158
+* Enhancement: Improve ITransaction and ISpan null-safety compatibility (#1161)
 
 # 4.0.0-alpha.2
 

@@ -21,6 +21,7 @@ public interface ITransaction extends ISpan {
   /**
    * Starts a child Span.
    *
+   * @param parentSpanId - parent span id
    * @return a new transaction span
    */
   @NotNull
@@ -45,18 +46,18 @@ public interface ITransaction extends ISpan {
    *
    * @param request the request
    */
-  void setRequest(Request request);
+  void setRequest(@Nullable Request request);
 
   /**
    * Returns the request information from the transaction
    *
    * @return the request or {@code null} if not set
    */
+  @Nullable
   Request getRequest();
 
+  @NotNull
   Contexts getContexts();
-
-  void setContexts(Contexts contexts);
 
   /**
    * Returns the transaction's description.

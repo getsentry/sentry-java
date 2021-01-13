@@ -28,13 +28,15 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertEquals("GET", event.request.method)
-        assertEquals(mapOf(
-            "some-header" to "some-header value",
-            "Accept" to "application/json"
-        ), event.request.headers)
-        assertEquals("http://example.com", event.request.url)
-        assertEquals("param1=xyz", event.request.queryString)
+        assertNotNull(event.request) {
+            assertEquals("GET", it.method)
+            assertEquals(mapOf(
+                "some-header" to "some-header value",
+                "Accept" to "application/json"
+            ), it.headers)
+            assertEquals("http://example.com", it.url)
+            assertEquals("param1=xyz", it.queryString)
+        }
     }
 
     @Test
@@ -49,9 +51,11 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertEquals(mapOf(
-            "another-header" to "another value,another value2"
-        ), event.request.headers)
+        assertNotNull(event.request) {
+            assertEquals(mapOf(
+                "another-header" to "another value,another value2"
+            ), it.headers)
+        }
     }
 
     @Test
@@ -68,7 +72,9 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertEquals("name=value,name2=value2", event.request.cookies)
+        assertNotNull(event.request) {
+            assertEquals("name=value,name2=value2", it.cookies)
+        }
     }
 
     @Test
@@ -84,7 +90,9 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNull(event.request.cookies)
+        assertNotNull(event.request) {
+            assertNull(it.cookies)
+        }
     }
 
     @Test
@@ -104,11 +112,13 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertFalse(event.request.headers.containsKey("X-FORWARDED-FOR"))
-        assertFalse(event.request.headers.containsKey("Authorization"))
-        assertFalse(event.request.headers.containsKey("authorization"))
-        assertFalse(event.request.headers.containsKey("Cookie"))
-        assertTrue(event.request.headers.containsKey("some-header"))
+        assertNotNull(event.request) {
+            assertFalse(it.headers.containsKey("X-FORWARDED-FOR"))
+            assertFalse(it.headers.containsKey("Authorization"))
+            assertFalse(it.headers.containsKey("authorization"))
+            assertFalse(it.headers.containsKey("Cookie"))
+            assertTrue(it.headers.containsKey("some-header"))
+        }
     }
 
     @Test

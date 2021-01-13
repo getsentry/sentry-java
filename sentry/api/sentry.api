@@ -300,7 +300,6 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun getTransaction ()Ljava/lang/String;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
-	public abstract fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public abstract fun setName (Ljava/lang/String;)V
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 	public abstract fun startChild (Lio/sentry/SpanId;)Lio/sentry/Span;
@@ -354,7 +353,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun isSampled ()Ljava/lang/Boolean;
-	public fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -526,7 +524,6 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun removeTag (Ljava/lang/String;)V
-	public fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setEventId (Lio/sentry/protocol/SentryId;)V
 	public fun setRelease (Ljava/lang/String;)V

@@ -246,13 +246,15 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertEquals(BuildConfig.SENTRY_LOG4J2_SDK_NAME, event.sdk.name)
-                assertEquals(BuildConfig.VERSION_NAME, event.sdk.version)
-                assertNotNull(event.sdk.packages)
-                assertTrue(event.sdk.packages!!.any { pkg ->
-                    "maven:sentry-log4j2" == pkg.name &&
-                        BuildConfig.VERSION_NAME == pkg.version
-                })
+                assertNotNull(event.sdk) {
+                    assertEquals(BuildConfig.SENTRY_LOG4J2_SDK_NAME, it.name)
+                    assertEquals(BuildConfig.VERSION_NAME, it.version)
+                    assertNotNull(it.packages)
+                    assertTrue(it.packages!!.any { pkg ->
+                        "maven:sentry-log4j2" == pkg.name &&
+                            BuildConfig.VERSION_NAME == pkg.version
+                    })
+                }
             }, anyOrNull())
         }
     }

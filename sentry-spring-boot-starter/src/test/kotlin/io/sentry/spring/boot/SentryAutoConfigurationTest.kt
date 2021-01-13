@@ -187,9 +187,11 @@ class SentryAutoConfigurationTest {
                 val transport = it.getBean(ITransport::class.java)
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event ->
-                        assertThat(event.sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-                        assertThat(event.sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
-                        assertThat(event.sdk.packages).anyMatch { pkg ->
+                        assertThat(event.sdk).isNotNull()
+                        val sdk = event.sdk!!
+                        assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
+                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
+                        assertThat(sdk.packages).anyMatch { pkg ->
                             pkg.name == "maven:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
                         }
                     }, anyOrNull())
