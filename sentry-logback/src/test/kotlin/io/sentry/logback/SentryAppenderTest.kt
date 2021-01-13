@@ -222,15 +222,15 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertNotNull(event.sdk)
-                val sdk = event.sdk!!
-                assertEquals(BuildConfig.SENTRY_LOGBACK_SDK_NAME, sdk.name)
-                assertEquals(BuildConfig.VERSION_NAME, sdk.version)
-                assertNotNull(sdk.packages)
-                assertTrue(sdk.packages!!.any { pkg ->
-                    "maven:sentry-logback" == pkg.name &&
-                        BuildConfig.VERSION_NAME == pkg.version
-                })
+                assertNotNull(event.sdk) {
+                    assertEquals(BuildConfig.SENTRY_LOGBACK_SDK_NAME, it.name)
+                    assertEquals(BuildConfig.VERSION_NAME, it.version)
+                    assertNotNull(it.packages)
+                    assertTrue(it.packages!!.any { pkg ->
+                        "maven:sentry-logback" == pkg.name &&
+                            BuildConfig.VERSION_NAME == pkg.version
+                    })
+                }
             }, anyOrNull())
         }
     }

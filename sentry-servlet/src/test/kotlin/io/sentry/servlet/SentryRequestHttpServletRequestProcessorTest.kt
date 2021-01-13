@@ -49,10 +49,11 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNotNull(event.request)
-        assertEquals(mapOf(
-            "another-header" to "another value,another value2"
-        ), event.request!!.headers)
+        assertNotNull(event.request) {
+            assertEquals(mapOf(
+                "another-header" to "another value,another value2"
+            ), it.headers)
+        }
     }
 
     @Test
@@ -68,8 +69,9 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNotNull(event.request)
-        assertNull(event.request!!.cookies)
+        assertNotNull(event.request) {
+            assertNull(it.cookies)
+        }
     }
 
     @Test
@@ -89,12 +91,12 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNotNull(event.request)
-        val eventRequest = event.request!!
-        assertFalse(eventRequest.headers.containsKey("X-FORWARDED-FOR"))
-        assertFalse(eventRequest.headers.containsKey("Authorization"))
-        assertFalse(eventRequest.headers.containsKey("authorization"))
-        assertFalse(eventRequest.headers.containsKey("Cookies"))
-        assertTrue(eventRequest.headers.containsKey("some-header"))
+        assertNotNull(event.request) {
+            assertFalse(it.headers.containsKey("X-FORWARDED-FOR"))
+            assertFalse(it.headers.containsKey("Authorization"))
+            assertFalse(it.headers.containsKey("authorization"))
+            assertFalse(it.headers.containsKey("Cookies"))
+            assertTrue(it.headers.containsKey("some-header"))
+        }
     }
 }
