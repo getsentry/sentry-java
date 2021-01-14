@@ -566,11 +566,6 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContexts, "transactionContexts is required");
 
-    final SamplingContext samplingContext =
-        new SamplingContext(transactionContexts, customSamplingContext);
-    boolean samplingDecision = tracingSampler.sample(samplingContext);
-    transactionContexts.setSampled(samplingDecision);
-
     ITransaction transaction;
     if (!isEnabled()) {
       options
@@ -580,6 +575,11 @@ public final class Hub implements IHub {
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = new NoOpTransaction();
     } else {
+      final SamplingContext samplingContext =
+        new SamplingContext(transactionContexts, customSamplingContext);
+      boolean samplingDecision = tracingSampler.sample(samplingContext);
+      transactionContexts.setSampled(samplingDecision);
+
       transaction = new SentryTransaction(transactionContexts, this);
     }
     return transaction;
