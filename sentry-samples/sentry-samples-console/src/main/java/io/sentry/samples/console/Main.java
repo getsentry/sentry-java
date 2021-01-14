@@ -2,11 +2,11 @@ package io.sentry.samples.console;
 
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
+import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
@@ -16,91 +16,91 @@ public class Main {
 
   public static void main(String[] args) throws InterruptedException {
     Sentry.init(
-      options -> {
-        // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
-        // your Sentry project/dashboard
-        options.setDsn(
-          "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
+        options -> {
+          // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
+          // your Sentry project/dashboard
+          options.setDsn(
+              "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
 
-        // All events get assigned to the release. See more at
-        // https://docs.sentry.io/workflow/releases/
-        options.setRelease("io.sentry.samples.console@3.0.0+1");
+          // All events get assigned to the release. See more at
+          // https://docs.sentry.io/workflow/releases/
+          options.setRelease("io.sentry.samples.console@3.0.0+1");
 
-        // Modifications to event before it goes out. Could replace the event altogether
-        options.setBeforeSend(
-          (event, hint) -> {
-            // Drop an event altogether:
-            if (event.getTag("SomeTag") != null) {
-              return null;
-            }
-            return event;
-          });
+          // Modifications to event before it goes out. Could replace the event altogether
+          options.setBeforeSend(
+              (event, hint) -> {
+                // Drop an event altogether:
+                if (event.getTag("SomeTag") != null) {
+                  return null;
+                }
+                return event;
+              });
 
-        // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
-        options.setBeforeBreadcrumb(
-          (breadcrumb, hint) -> {
-            // Don't add breadcrumbs with message containing:
-            if (breadcrumb.getMessage() != null
-              && breadcrumb.getMessage().contains("bad breadcrumb")) {
-              return null;
-            }
-            return breadcrumb;
-          });
+          // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
+          options.setBeforeBreadcrumb(
+              (breadcrumb, hint) -> {
+                // Don't add breadcrumbs with message containing:
+                if (breadcrumb.getMessage() != null
+                    && breadcrumb.getMessage().contains("bad breadcrumb")) {
+                  return null;
+                }
+                return breadcrumb;
+              });
 
-        // Configure the background worker which sends events to sentry:
-        // Wait up to 5 seconds before shutdown while there are events to send.
-        options.setShutdownTimeout(5000);
+          // Configure the background worker which sends events to sentry:
+          // Wait up to 5 seconds before shutdown while there are events to send.
+          options.setShutdownTimeout(5000);
 
-        // Enable SDK logging with Debug level
-        options.setDebug(true);
-        // To change the verbosity, use:
-        // By default it's DEBUG.
-        options.setDiagnosticLevel(
-          SentryLevel
-            .ERROR); //  A good option to have SDK debug log in prod is to use only level
-        // ERROR here.
+          // Enable SDK logging with Debug level
+          options.setDebug(true);
+          // To change the verbosity, use:
+          // By default it's DEBUG.
+          options.setDiagnosticLevel(
+              SentryLevel
+                  .ERROR); //  A good option to have SDK debug log in prod is to use only level
+          // ERROR here.
 
-        // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
-        // UI:
-        options.addInAppExclude("org.jboss");
+          // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
+          // UI:
+          options.addInAppExclude("org.jboss");
 
-        // Performance configuration options
-        // Set what percentage of traces should be collected
-        options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
+          // Performance configuration options
+          // Set what percentage of traces should be collected
+          options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
-        // Determine traces sample rate based on the sampling context
-        options.setTracesSampler(
-          context -> {
-            // only 10% of transactions with "/product" prefix will be collected
-            if (!context.getTransactionContext().getName().startsWith("/products")) {
-              return 0.1;
-            } else {
-              return 0.5;
-            }
-          });
-      });
+          // Determine traces sample rate based on the sampling context
+          options.setTracesSampler(
+              context -> {
+                // only 10% of transactions with "/product" prefix will be collected
+                if (!context.getTransactionContext().getName().startsWith("/products")) {
+                  return 0.1;
+                } else {
+                  return 0.5;
+                }
+              });
+        });
 
     Sentry.addBreadcrumb(
-      "A 'bad breadcrumb' that will be rejected because of 'BeforeBreadcrumb callback above.'");
+        "A 'bad breadcrumb' that will be rejected because of 'BeforeBreadcrumb callback above.'");
 
     // Data added to the root scope (no PushScope called up to this point)
     // The modifications done here will affect all events sent and will propagate to child scopes.
     Sentry.configureScope(
-      scope -> {
-        scope.addEventProcessor(new SomeEventProcessor());
+        scope -> {
+          scope.addEventProcessor(new SomeEventProcessor());
 
-        scope.setExtra("SomeExtraInfo", "Some value for extra info");
-      });
+          scope.setExtra("SomeExtraInfo", "Some value for extra info");
+        });
 
     // Configures a scope which is only valid within the callback
     Sentry.withScope(
-      scope -> {
-        scope.setLevel(SentryLevel.FATAL);
-        scope.setTransaction("main");
+        scope -> {
+          scope.setLevel(SentryLevel.FATAL);
+          scope.setTransaction("main");
 
-        // This message includes the data set to the scope in this block:
-        Sentry.captureMessage("Fatal message!");
-      });
+          // This message includes the data set to the scope in this block:
+          Sentry.captureMessage("Fatal message!");
+        });
 
     // Only data added to the scope on `configureScope` above is included.
     Sentry.captureMessage("Some warning!", SentryLevel.WARNING);
@@ -140,10 +140,10 @@ public class Main {
     // and finish of transaction.
     ITransaction transaction = Sentry.startTransaction("transaction name");
     // Transactions can contain one or more Spans
-    Span outerSpan = transaction.startChild();
+    ISpan outerSpan = transaction.startChild();
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
-    Span innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
+    ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
     innerSpan.setStatus(SpanStatus.OK);
     Thread.sleep(300);
     // Finish the span and mark the end time of the span execution.

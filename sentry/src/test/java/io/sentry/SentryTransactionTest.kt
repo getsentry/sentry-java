@@ -55,7 +55,7 @@ class SentryTransactionTest {
         val ex = RuntimeException()
         transaction.setThrowable(ex)
         transaction.finish()
-        verify(hub).setSpanContext(ex, transaction.spanContext)
+        verify(hub).setSpanContext(ex, transaction)
     }
 
     @Test

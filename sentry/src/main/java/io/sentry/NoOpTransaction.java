@@ -14,26 +14,13 @@ public final class NoOpTransaction implements ITransaction {
   public void setName(@NotNull String name) {}
 
   @Override
-  public @NotNull Span startChild() {
-    return new Span(SentryId.EMPTY_ID, SpanId.EMPTY_ID, this, NoOpHub.getInstance());
+  public @NotNull ISpan startChild() {
+    return new NoOpSpan();
   }
 
   @Override
-  public @NotNull Span startChild(
+  public @NotNull ISpan startChild(
       final @Nullable String operation, final @Nullable String description) {
-    return startChild();
-  }
-
-  @Override
-  public @NotNull Span startChild(final @NotNull SpanId parentSpanId) {
-    return startChild();
-  }
-
-  @Override
-  public @NotNull Span startChild(
-      final @NotNull SpanId parentSpanId,
-      final @NotNull String operation,
-      final @NotNull String description) {
     return startChild();
   }
 
@@ -107,7 +94,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return startChild();
+    return new SpanContext();
   }
 
   @Override

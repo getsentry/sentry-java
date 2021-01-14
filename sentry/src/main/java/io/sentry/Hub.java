@@ -19,8 +19,7 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Stack stack;
   private final @NotNull TracingSampler tracingSampler;
-  private final @NotNull WeakHashMap<Throwable, SpanContext> throwableToSpanContext =
-      new WeakHashMap<>();
+  private final @NotNull WeakHashMap<Throwable, ISpan> throwableToSpan = new WeakHashMap<>();
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -171,10 +170,10 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (event.getThrowable() != null) {
-      final SpanContext spanContext = throwableToSpanContext.get(event.getThrowable());
-      if (spanContext != null) {
+      final ISpan span = throwableToSpan.get(event.getThrowable());
+      if (span != null && span.getSpanContext() != null) {
         if (event.getContexts().getTrace() == null) {
-          event.getContexts().setTrace(spanContext);
+          event.getContexts().setTrace(span.getSpanContext());
         }
       }
     }
@@ -576,7 +575,7 @@ public final class Hub implements IHub {
       transaction = new NoOpTransaction();
     } else {
       final SamplingContext samplingContext =
-        new SamplingContext(transactionContexts, customSamplingContext);
+          new SamplingContext(transactionContexts, customSamplingContext);
       boolean samplingDecision = tracingSampler.sample(samplingContext);
       transactionContexts.setSampled(samplingDecision);
 
@@ -616,16 +615,19 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void setSpanContext(
-      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {
+  public void setSpanContext(final @NotNull Throwable throwable, final @NotNull ISpan span) {
     Objects.requireNonNull(throwable, "throwable is required");
-    Objects.requireNonNull(spanContext, "spanContext is required");
-    this.throwableToSpanContext.put(throwable, spanContext);
+    Objects.requireNonNull(span, "span is required");
+    this.throwableToSpan.put(throwable, span);
   }
 
   @Override
   public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
-    return this.throwableToSpanContext.get(throwable);
+    final ISpan span = this.throwableToSpan.get(throwable);
+    if (span != null) {
+      return span.getSpanContext();
+    }
+    return null;
   }
 }
