@@ -21,13 +21,13 @@ final class TracingSampler {
   }
 
   boolean sample(final @Nullable SamplingContext samplingContext) {
-    if (samplingContext != null && samplingContext.getTransactionContexts().getSampled() != null) {
-      return samplingContext.getTransactionContexts().getSampled();
+    if (samplingContext != null && samplingContext.getTransactionContext().getSampled() != null) {
+      return samplingContext.getTransactionContext().getSampled();
     } else if (samplingContext != null && options.getTracesSampler() != null) {
       return sample(options.getTracesSampler().sample(samplingContext));
     } else if (samplingContext != null
-        && samplingContext.getTransactionContexts().getParentSampled() != null) {
-      return samplingContext.getTransactionContexts().getParentSampled();
+        && samplingContext.getTransactionContext().getParentSampled() != null) {
+      return samplingContext.getTransactionContext().getParentSampled();
     } else if (options.getTracesSampleRate() != null) {
       return sample(options.getTracesSampleRate());
     } else {
