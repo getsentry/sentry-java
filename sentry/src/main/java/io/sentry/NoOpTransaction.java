@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import java.util.Collections;
@@ -46,8 +45,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull Contexts getContexts() {
-    return new Contexts();
+  public @NotNull TransactionContexts getContexts() {
+    return new TransactionContexts(new SpanContext());
   }
 
   @Override

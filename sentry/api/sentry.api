@@ -292,7 +292,7 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
-	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
+	public abstract fun getContexts ()Lio/sentry/TransactionContexts;
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
@@ -343,7 +343,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun <init> ()V
 	public fun finish ()V
-	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getContexts ()Lio/sentry/TransactionContexts;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
@@ -515,7 +515,6 @@ public abstract class io/sentry/SentryBaseEvent {
 	protected field throwable Ljava/lang/Throwable;
 	protected fun <init> ()V
 	protected fun <init> (Lio/sentry/protocol/SentryId;)V
-	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getRelease ()Ljava/lang/String;
@@ -605,6 +604,7 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Ljava/lang/String;)V
 	public fun getBreadcrumbs ()Ljava/util/List;
+	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getDist ()Ljava/lang/String;
 	public fun getExceptions ()Ljava/util/List;
@@ -811,6 +811,7 @@ public final class io/sentry/SentryTraceHeader {
 public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/ITransaction {
 	public fun <init> (Ljava/lang/String;Lio/sentry/SpanContext;Lio/sentry/IHub;)V
 	public fun finish ()V
+	public fun getContexts ()Lio/sentry/TransactionContexts;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -961,6 +962,26 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun setParentSampled (Ljava/lang/Boolean;)V
 }
 
+public final class io/sentry/TransactionContexts {
+	public fun <init> (Lio/sentry/SpanContext;)V
+	public fun get (Ljava/lang/String;)Ljava/lang/Object;
+	public fun getApp ()Lio/sentry/protocol/App;
+	public fun getBrowser ()Lio/sentry/protocol/Browser;
+	public fun getDevice ()Lio/sentry/protocol/Device;
+	public fun getGpu ()Lio/sentry/protocol/Gpu;
+	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
+	public fun getOther ()Ljava/util/Map;
+	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
+	public fun getTrace ()Lio/sentry/SpanContext;
+	public fun set (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun setApp (Lio/sentry/protocol/App;)V
+	public fun setBrowser (Lio/sentry/protocol/Browser;)V
+	public fun setDevice (Lio/sentry/protocol/Device;)V
+	public fun setGpu (Lio/sentry/protocol/Gpu;)V
+	public fun setOperatingSystem (Lio/sentry/protocol/OperatingSystem;)V
+	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
+}
+
 public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Integration, java/io/Closeable, java/lang/Thread$UncaughtExceptionHandler {
 	public fun <init> ()V
 	public fun close ()V
@@ -1075,6 +1096,18 @@ public final class io/sentry/adapters/TimeZoneSerializerAdapter : com/google/gso
 	public fun <init> (Lio/sentry/ILogger;)V
 	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 	public fun serialize (Ljava/util/TimeZone;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+}
+
+public final class io/sentry/adapters/TransactionContextsDeserializerAdapter : com/google/gson/JsonDeserializer {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/TransactionContexts;
+	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
+}
+
+public final class io/sentry/adapters/TransactionContextsSerializerAdapter : com/google/gson/JsonSerializer {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/TransactionContexts;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 }
 
 public final class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {

@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
@@ -30,8 +29,7 @@ public abstract class SentryBaseEvent {
    * <p>```json { "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0" } ```
    */
   private @Nullable SentryId eventId;
-  /** Contexts describing the environment (e.g. device, os or browser). */
-  private final @NotNull Contexts contexts = new Contexts();
+
   /** Information about the Sentry SDK that generated this event. */
   private @Nullable SdkVersion sdk;
   /** Information about a web request that occurred during the event. */
@@ -75,10 +73,6 @@ public abstract class SentryBaseEvent {
 
   public void setEventId(@Nullable SentryId eventId) {
     this.eventId = eventId;
-  }
-
-  public @NotNull Contexts getContexts() {
-    return contexts;
   }
 
   public @Nullable SdkVersion getSdk() {

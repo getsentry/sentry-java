@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import java.util.List;
@@ -57,7 +56,7 @@ public interface ITransaction extends ISpan {
   Request getRequest();
 
   @NotNull
-  Contexts getContexts();
+  TransactionContexts getContexts();
 
   /**
    * Returns the transaction's description.

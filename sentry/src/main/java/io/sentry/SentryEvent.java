@@ -97,6 +97,9 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   /** List of breadcrumbs recorded before this event. */
   private List<Breadcrumb> breadcrumbs;
 
+  /** Contexts describing the environment (e.g. device, os or browser). */
+  private final @NotNull Contexts contexts = new Contexts();
+
   /**
    * Arbitrary extra information set by the user.
    *
@@ -259,6 +262,10 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void addBreadcrumb(final @Nullable String message) {
     this.addBreadcrumb(new Breadcrumb(message));
+  }
+
+  public @NotNull Contexts getContexts() {
+    return contexts;
   }
 
   Map<String, Object> getExtras() {

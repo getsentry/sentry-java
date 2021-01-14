@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
+import io.sentry.protocol.App
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
@@ -77,7 +78,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
+        val expected = "{\"contexts\":{},\"event_id\":\"${sentryEvent.eventId}\"}"
 
         assertEquals(expected, actual)
     }
@@ -194,7 +195,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{}}"
+        val expected = "{\"contexts\":{},\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}}}"
 
         assertEquals(expected, actual)
     }
@@ -440,6 +441,10 @@ class GsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         val transaction = SentryTransaction("transaction-name", trace, mock())
+        transaction.contexts.app = App().apply {
+            appName = "appName"
+        }
+        transaction.contexts["foo"] = "bar"
 
         val stringWriter = StringWriter()
         fixture.serializer.serialize(transaction, stringWriter)
@@ -450,6 +455,7 @@ class GsonSerializerTest {
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
+        assertEquals("bar", element["contexts"].asJsonObject["foo"].asString)
         val jsonTrace = element["contexts"].asJsonObject["trace"]
         assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
         assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
@@ -457,6 +463,8 @@ class GsonSerializerTest {
         assertEquals("some request", jsonTrace.asJsonObject["description"].asString)
         assertEquals("ok", jsonTrace.asJsonObject["status"].asString)
         assertEquals("myValue", jsonTrace.asJsonObject["tags"].asJsonObject["myTag"].asString)
+        val jsonApp = element["contexts"].asJsonObject["app"]
+        assertEquals("appName", jsonApp.asJsonObject["app_name"].asString)
     }
 
     @Test

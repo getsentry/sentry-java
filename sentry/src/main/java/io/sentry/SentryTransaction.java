@@ -34,6 +34,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
+  private final @NotNull TransactionContexts contexts;
+
   /** Creates transaction. */
   SentryTransaction(final @NotNull String name) {
     this(name, new SpanContext(), NoOpHub.getInstance());
@@ -57,7 +59,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     this.transaction = Objects.requireNonNull(name, "name is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.getContexts().setTrace(contexts);
+    this.contexts = new TransactionContexts(contexts);
   }
 
   /**
@@ -131,23 +133,28 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   }
 
   @Override
+  public @NotNull TransactionContexts getContexts() {
+    return contexts;
+  }
+
+  @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
     return new SentryTraceHeader(getTraceId(), getSpanId(), isSampled());
   }
 
   @NotNull
   SpanId getSpanId() {
-    return getContexts().getTrace().getSpanId();
+    return contexts.getTrace().getSpanId();
   }
 
   @NotNull
   SentryId getTraceId() {
-    return getContexts().getTrace().getTraceId();
+    return contexts.getTrace().getTraceId();
   }
 
   @Override
   public @Nullable Boolean isSampled() {
-    return getContexts().getTrace().getSampled();
+    return contexts.getTrace().getSampled();
   }
 
   @Override
@@ -166,7 +173,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public void setOperation(@Nullable String op) {
-    this.getContexts().getTrace().setOperation(op);
+    contexts.getTrace().setOperation(op);
   }
 
   /**
@@ -176,17 +183,17 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public void setDescription(@Nullable String description) {
-    this.getContexts().getTrace().setDescription(description);
+    contexts.getTrace().setDescription(description);
   }
 
   @Override
   public @Nullable String getDescription() {
-    return this.getContexts().getTrace().getDescription();
+    return contexts.getTrace().getDescription();
   }
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return this.getContexts().getTrace();
+    return contexts.getTrace();
   }
 
   /**
@@ -196,7 +203,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public void setStatus(@Nullable SpanStatus spanStatus) {
-    this.getContexts().getTrace().setStatus(spanStatus);
+    contexts.getTrace().setStatus(spanStatus);
   }
 
   /**
