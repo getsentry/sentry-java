@@ -1144,6 +1144,10 @@ public abstract interface class io/sentry/hints/Flushable {
 	public abstract fun waitFlush ()Z
 }
 
+public abstract interface class io/sentry/hints/Resettable {
+	public abstract fun reset ()V
+}
+
 public abstract interface class io/sentry/hints/Retryable {
 	public abstract fun isRetry ()Z
 	public abstract fun setRetry (Z)V

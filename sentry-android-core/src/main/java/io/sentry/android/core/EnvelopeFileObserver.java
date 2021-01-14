@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
+import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.Objects;
@@ -59,17 +60,17 @@ final class EnvelopeFileObserver extends FileObserver {
   }
 
   private static final class CachedEnvelopeHint
-      implements Cached, Retryable, SubmissionResult, Flushable, ApplyScopeData {
-    boolean retry = false;
-    boolean succeeded = false;
+      implements Cached, Retryable, SubmissionResult, Flushable, ApplyScopeData, Resettable {
+    boolean retry;
+    boolean succeeded;
 
-    private @NotNull final CountDownLatch latch;
+    private @NotNull CountDownLatch latch;
     private final long flushTimeoutMillis;
     private final @NotNull ILogger logger;
 
     public CachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
+      reset();
       this.flushTimeoutMillis = flushTimeoutMillis;
-      this.latch = new CountDownLatch(1);
       this.logger = Objects.requireNonNull(logger, "ILogger is required.");
     }
 
@@ -103,6 +104,13 @@ final class EnvelopeFileObserver extends FileObserver {
     @Override
     public boolean isSuccess() {
       return succeeded;
+    }
+
+    @Override
+    public void reset() {
+      latch = new CountDownLatch(1);
+      retry = false;
+      succeeded = false;
     }
   }
 }
