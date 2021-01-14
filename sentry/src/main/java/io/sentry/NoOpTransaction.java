@@ -20,7 +20,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull Span startChild(
-      final @NotNull String operation, final @NotNull String description) {
+      final @Nullable String operation, final @Nullable String description) {
     return startChild();
   }
 

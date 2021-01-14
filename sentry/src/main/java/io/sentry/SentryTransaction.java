@@ -90,7 +90,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public @NotNull Span startChild(
-      final @NotNull String operation, final @NotNull String description) {
+      final @Nullable String operation, final @Nullable String description) {
     final Span span = startChild();
     span.setOperation(operation);
     span.setDescription(description);
