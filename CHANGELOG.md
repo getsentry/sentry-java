@@ -1,5 +1,7 @@
 # vNext
 
+* Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
+
 # 4.0.0-alpha.3
 
 * Feat: Add maxAttachmentSize to SentryOptions (#1138)
