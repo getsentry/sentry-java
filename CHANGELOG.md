@@ -1,6 +1,7 @@
 # vNext
 
 * Enchancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
+* Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
 
 # 4.0.0-alpha.3
 

@@ -1,6 +1,7 @@
 package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.CustomSamplingContext;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
@@ -60,9 +61,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
     // at this stage we are not able to get real transaction name
-    final ITransaction transaction =
-        startTransaction(
-            httpRequest.getMethod() + " " + httpRequest.getRequestURI(), sentryTraceHeader);
+    final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
     try {
       filterChain.doFilter(httpRequest, httpResponse);
     } finally {
@@ -81,12 +80,18 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   private ITransaction startTransaction(
-      final @NotNull String name, final @Nullable String sentryTraceHeader) {
+      final @NotNull HttpServletRequest request, final @Nullable String sentryTraceHeader) {
+
+    final String name = request.getMethod() + " " + request.getRequestURI();
+
+    final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
+    customSamplingContext.put("request", request);
+
     if (sentryTraceHeader != null) {
       try {
         final TransactionContext contexts =
             TransactionContext.fromSentryTrace(name, new SentryTraceHeader(sentryTraceHeader));
-        final ITransaction transaction = hub.startTransaction(contexts);
+        final ITransaction transaction = hub.startTransaction(contexts, customSamplingContext);
         hub.configureScope(scope -> scope.setTransaction(transaction));
         return transaction;
       } catch (InvalidSentryTraceHeaderException e) {
@@ -95,7 +100,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    final ITransaction transaction = hub.startTransaction(name);
+    final ITransaction transaction = hub.startTransaction(name, customSamplingContext);
     hub.configureScope(scope -> scope.setTransaction(transaction));
     return transaction;
   }
