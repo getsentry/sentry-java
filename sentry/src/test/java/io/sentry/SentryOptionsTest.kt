@@ -176,6 +176,7 @@ class SentryOptionsTest {
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
+        externalOptions.tracesSampleRate = 0.5
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -190,6 +191,7 @@ class SentryOptionsTest {
         assertEquals("8090", options.proxy!!.port)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.enableUncaughtExceptionHandler!!)
+        assertEquals(0.5, options.tracesSampleRate)
     }
 
     @Test
@@ -354,6 +356,24 @@ class SentryOptionsTest {
             val options = SentryOptions.from(PropertiesProviderFactory.create())
             assertEquals(listOf("org.springframework", "com.myapp"), options.inAppIncludes)
             assertEquals(listOf("org.jboss", "com.microsoft"), options.inAppExcludes)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with tracesSampleRate using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("traces-sample-rate=0.2")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertEquals(0.2, options.tracesSampleRate)
         } finally {
             temporaryFolder.delete()
         }
