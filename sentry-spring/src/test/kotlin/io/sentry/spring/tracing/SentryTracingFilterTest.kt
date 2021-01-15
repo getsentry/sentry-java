@@ -16,7 +16,10 @@ import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
 import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
+import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -36,10 +39,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any<TransactionContext>())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
+                whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any<String>())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+            whenever(hub.startTransaction(any<String>(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
             return SentryTracingFilter(hub, SentryOptions(), requestResolver)
         }
     }
@@ -52,6 +55,10 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
+        verify(fixture.hub).startTransaction(eq("POST /product/12"), check {
+            assertNotNull(it["request"])
+            assertTrue(it["request"] is HttpServletRequest)
+        })
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
