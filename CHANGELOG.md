@@ -1,5 +1,7 @@
 # vNext
 
+# 4.0.0-alpha.3
+
 * Feat: Add maxAttachmentSize to SentryOptions (#1138)
 * Feat: Drop invalid attachments (#1134)
 * Ref: Make Attachment immutable (#1120)
