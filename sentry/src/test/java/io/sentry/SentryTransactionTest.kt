@@ -133,13 +133,15 @@ class SentryTransactionTest {
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setOperation("op")
+        transaction.finish()
         assertEquals("op", transaction.contexts.trace!!.operation)
     }
 
     @Test
     fun `setting description sets description on TraceContext`() {
         val transaction = SentryTransaction("name")
-        transaction.setDescription("desc")
+        transaction.description = "desc"
+        transaction.finish()
         assertEquals("desc", transaction.contexts.trace!!.description)
     }
 
@@ -147,6 +149,7 @@ class SentryTransactionTest {
     fun `setting status sets status on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setStatus(SpanStatus.ALREADY_EXISTS)
+        transaction.finish()
         assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.trace!!.status)
     }
 
