@@ -1,5 +1,7 @@
 # vNext
 
+* Enchancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
+
 # 4.0.0-alpha.3
 
 * Feat: Add maxAttachmentSize to SentryOptions (#1138)
