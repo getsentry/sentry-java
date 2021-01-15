@@ -269,6 +269,7 @@ public class SentryOptions {
     options.setServerName(propertiesProvider.getProperty("servername"));
     options.setEnableUncaughtExceptionHandler(
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
+    options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -1300,6 +1301,9 @@ public class SentryOptions {
     }
     if (options.getEnableUncaughtExceptionHandler() != null) {
       setEnableUncaughtExceptionHandler(options.getEnableUncaughtExceptionHandler());
+    }
+    if (options.getTracesSampleRate() != null) {
+      setTracesSampleRate(options.getTracesSampleRate());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {

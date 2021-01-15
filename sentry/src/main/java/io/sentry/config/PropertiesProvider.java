@@ -46,7 +46,7 @@ public interface PropertiesProvider {
    * @return property value or the default value if not found.
    */
   @NotNull
-  default String getProperty(@NotNull String property, @NotNull String defaultValue) {
+  default String getProperty(final @NotNull String property, final @NotNull String defaultValue) {
     final String result = getProperty(property);
     return result != null ? result : defaultValue;
   }
@@ -58,8 +58,20 @@ public interface PropertiesProvider {
    * @return property value or the default value if not found.
    */
   @Nullable
-  default Boolean getBooleanProperty(@NotNull String property) {
+  default Boolean getBooleanProperty(final @NotNull String property) {
     final String result = getProperty(property);
     return result != null ? Boolean.valueOf(result) : null;
+  }
+
+  /**
+   * Resolves a {@link Double} property given by it's name.
+   *
+   * @param property - the property name
+   * @return property value or the default value if not found.
+   */
+  @Nullable
+  default Double getDoubleProperty(final @NotNull String property) {
+    final String result = getProperty(property);
+    return result != null ? Double.valueOf(result) : null;
   }
 }
