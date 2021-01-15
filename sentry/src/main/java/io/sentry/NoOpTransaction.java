@@ -10,12 +10,20 @@ import org.jetbrains.annotations.Nullable;
 
 public final class NoOpTransaction implements ITransaction {
 
+  private static final NoOpTransaction instance = new NoOpTransaction();
+
+  private NoOpTransaction() {}
+
+  public static NoOpTransaction getInstance() {
+    return instance;
+  }
+
   @Override
   public void setName(@NotNull String name) {}
 
   @Override
   public @NotNull ISpan startChild() {
-    return new NoOpSpan();
+    return NoOpSpan.getInstance();
   }
 
   @Override
@@ -94,7 +102,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return new SpanContext();
+    return new SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, null, null);
   }
 
   @Override

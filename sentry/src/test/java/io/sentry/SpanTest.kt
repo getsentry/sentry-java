@@ -53,14 +53,14 @@ class SpanTest {
     @Test
     fun `when span has no timestamp set, it is considered unfinished`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild() as Span
         assertFalse(span.isFinished)
     }
 
     @Test
     fun `when span has timestamp set, it is considered finished`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild() as Span
         span.finish()
         assertTrue(span.isFinished)
     }

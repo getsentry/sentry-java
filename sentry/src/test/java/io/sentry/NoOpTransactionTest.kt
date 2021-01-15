@@ -5,7 +5,7 @@ import kotlin.test.assertNotNull
 
 class NoOpTransactionTest {
 
-    private val transaction = NoOpTransaction()
+    private val transaction = NoOpTransaction.getInstance()
 
     @Test
     fun `startChild does not return null`() {

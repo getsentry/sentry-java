@@ -5,6 +5,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class NoOpSpan implements ISpan {
+
+  private static final NoOpSpan instance = new NoOpSpan();
+
+  private NoOpSpan() {}
+
+  public static NoOpSpan getInstance() {
+    return instance;
+  }
+
   @Override
   public @NotNull ISpan startChild() {
     return new NoOpSpan();
@@ -42,7 +51,7 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return new SpanContext();
+    return new SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, null, null);
   }
 
   @Override

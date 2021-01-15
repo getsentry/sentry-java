@@ -68,7 +68,7 @@ class SentryTransactionTest {
     @Test
     fun `starting child creates a new span`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild() as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
         assertNotNull(span.startTimestamp)
@@ -85,21 +85,21 @@ class SentryTransactionTest {
     @Test
     fun `span created with startChild has parent span id the same as transaction span id`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild() as Span
         assertEquals(transaction.spanId, span.parentSpanId)
     }
 
     @Test
     fun `span created with startChild has the same trace id as transaction`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild() as Span
         assertEquals(transaction.traceId, span.traceId)
     }
 
     @Test
     fun `starting child with operation and description creates a new span`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild("op", "description")
+        val span = transaction.startChild("op", "description") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
         assertNotNull(span.startTimestamp)
@@ -118,14 +118,14 @@ class SentryTransactionTest {
     @Test
     fun `span created with startChild with operation and description has parent span id the same as transaction span id`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild("op", "description")
+        val span = transaction.startChild("op", "description") as Span
         assertEquals(transaction.spanId, span.parentSpanId)
     }
 
     @Test
     fun `span created with startChild with operation and description has the same trace id as transaction`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild("op", "description")
+        val span = transaction.startChild("op", "description") as Span
         assertEquals(transaction.traceId, span.traceId)
     }
 
@@ -139,7 +139,7 @@ class SentryTransactionTest {
     @Test
     fun `setting description sets description on TraceContext`() {
         val transaction = SentryTransaction("name")
-        transaction.setDescription("desc")
+        transaction.description = "desc"
         assertEquals("desc", transaction.contexts.trace!!.description)
     }
 

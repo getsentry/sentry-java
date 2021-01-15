@@ -572,7 +572,7 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
-      transaction = new NoOpTransaction();
+      transaction = NoOpTransaction.getInstance();
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContexts, customSamplingContext);
@@ -615,6 +615,7 @@ public final class Hub implements IHub {
   }
 
   @Override
+  @ApiStatus.Internal
   public void setSpanContext(final @NotNull Throwable throwable, final @NotNull ISpan span) {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(span, "span is required");
