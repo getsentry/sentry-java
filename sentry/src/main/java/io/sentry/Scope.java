@@ -109,9 +109,8 @@ public final class Scope implements Cloneable {
     final ITransaction tx = this.transaction;
     if (tx != null) {
       tx.setName(transaction);
-    } else {
-      this.transactionName = transaction;
     }
+    this.transactionName = transaction;
   }
 
   /**
@@ -271,6 +270,7 @@ public final class Scope implements Cloneable {
   /** Clears the transaction. */
   public void clearTransaction() {
     transaction = null;
+    transactionName = null;
   }
 
   /**

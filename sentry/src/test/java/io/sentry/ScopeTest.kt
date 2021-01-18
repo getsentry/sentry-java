@@ -692,4 +692,15 @@ class ScopeTest {
         sentryTransaction.setName("another-name")
         assertEquals("another-name", scope.transactionName)
     }
+
+    @Test
+    fun `when transaction is set after transaction name is set, clearing transaction does not bring back old transaction name`() {
+        val scope = Scope(SentryOptions())
+        scope.setTransaction("transaction-a")
+        val sentryTransaction = SentryTransaction("transaction-name")
+        scope.setTransaction(sentryTransaction)
+        assertEquals("transaction-name", scope.transactionName)
+        scope.clearTransaction()
+        assertNull(scope.transactionName)
+    }
 }
