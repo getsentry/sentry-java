@@ -19,6 +19,14 @@ class SpanTest {
     }
 
     @Test
+    fun `finishing span with status sets the timestamp and status`() {
+        val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
+        span.finish(SpanStatus.CANCELLED)
+        assertNotNull(span.timestamp)
+        assertEquals(SpanStatus.CANCELLED, span.status)
+    }
+
+    @Test
     fun `starting a child sets parent span id`() {
         val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
         val child = span.startChild()

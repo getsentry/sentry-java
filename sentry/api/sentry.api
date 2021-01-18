@@ -279,6 +279,7 @@ public abstract interface class io/sentry/ISerializer {
 
 public abstract interface class io/sentry/ISpan {
 	public abstract fun finish ()V
+	public abstract fun finish (Lio/sentry/SpanStatus;)V
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
 	public abstract fun getThrowable ()Ljava/lang/Throwable;
 	public abstract fun setDescription (Ljava/lang/String;)V
@@ -340,6 +341,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun finish ()V
+	public fun finish (Lio/sentry/SpanStatus;)V
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getThrowable ()Ljava/lang/Throwable;
@@ -355,6 +357,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
+	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -822,6 +825,7 @@ public final class io/sentry/SentryTraceHeader {
 public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/ITransaction {
 	public fun <init> (Ljava/lang/String;Lio/sentry/SpanContext;Lio/sentry/IHub;)V
 	public fun finish ()V
+	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getDescription ()Ljava/lang/String;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -886,6 +890,7 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration {
 
 public final class io/sentry/Span : io/sentry/SpanContext, io/sentry/ISpan {
 	public fun finish ()V
+	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getThrowable ()Ljava/lang/Throwable;

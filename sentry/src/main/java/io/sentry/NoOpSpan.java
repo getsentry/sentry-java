@@ -33,6 +33,9 @@ public final class NoOpSpan implements ISpan {
   public void finish() {}
 
   @Override
+  public void finish(@Nullable SpanStatus status) {}
+
+  @Override
   public void setOperation(@Nullable String operation) {}
 
   @Override

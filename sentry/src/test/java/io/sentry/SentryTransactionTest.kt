@@ -41,6 +41,14 @@ class SentryTransactionTest {
     }
 
     @Test
+    fun `when transaction is finished with status, timestamp and status are set`() {
+        val transaction = SentryTransaction("name")
+        transaction.finish(SpanStatus.ABORTED)
+        assertNotNull(transaction.timestamp)
+        assertEquals(SpanStatus.ABORTED, transaction.status)
+    }
+
+    @Test
     fun `when transaction is finished, transaction is captured`() {
         val hub = mock<IHub>()
         val transaction = SentryTransaction("name", SpanContext(), hub)
@@ -133,6 +141,7 @@ class SentryTransactionTest {
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setOperation("op")
+        transaction.finish()
         assertEquals("op", transaction.contexts.trace!!.operation)
     }
 
@@ -140,6 +149,7 @@ class SentryTransactionTest {
     fun `setting description sets description on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.description = "desc"
+        transaction.finish()
         assertEquals("desc", transaction.contexts.trace!!.description)
     }
 
@@ -147,6 +157,7 @@ class SentryTransactionTest {
     fun `setting status sets status on TraceContext`() {
         val transaction = SentryTransaction("name")
         transaction.setStatus(SpanStatus.ALREADY_EXISTS)
+        transaction.finish()
         assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.trace!!.status)
     }
 

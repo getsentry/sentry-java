@@ -628,7 +628,7 @@ class HubTest {
     }
 
     @Test
-    fun `when setTransaction is called, and transaction is not set, transaction name is not changed`() {
+    fun `when setTransaction is called, and transaction is not set, transaction name is changed`() {
         val hub = generateHub()
         var scope: Scope? = null
         hub.configureScope {
@@ -636,7 +636,7 @@ class HubTest {
         }
 
         hub.setTransaction("test")
-        assertNull(scope?.transactionName)
+        assertEquals("test", scope?.transactionName)
     }
 
     @Test
@@ -1050,7 +1050,7 @@ class HubTest {
 
         val transaction = hub.startTransaction(contexts)
         assertTrue(transaction is SentryTransaction)
-        assertEquals(contexts, transaction.contexts.trace)
+        assertEquals(contexts, transaction.context)
     }
 
     @Test
