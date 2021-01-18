@@ -3,6 +3,7 @@
 * Enchancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
 * Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
 * Fix: Free Local Refs manually due to Android local ref. count limits
+* Enhancement: Add overload for `transaction/span.finish(SpanStatus)` (#1182)
 
 # 4.0.0-alpha.3
 
