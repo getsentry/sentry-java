@@ -6,6 +6,7 @@ import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
+import org.springframework.context.annotation.Bean
 
 class EnableSentryTest {
     private val contextRunner = ApplicationContextRunner()
@@ -88,6 +89,16 @@ class EnableSentryTest {
             }
     }
 
+    @Test
+    fun `configures custom TracesSamplerCallback`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTracesSamplerCallback::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                val samplerCallback = it.getBean(SentryOptions.TracesSamplerCallback::class.java)
+                assertThat(options.tracesSampler).isEqualTo(samplerCallback)
+            }
+    }
+
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfig
 
@@ -99,4 +110,15 @@ class EnableSentryTest {
 
     @EnableSentry(dsn = "http://key@localhost/proj", exceptionResolverOrder = Integer.MAX_VALUE)
     class AppConfigWithExceptionResolverOrderIntegerMaxValue
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomTracesSamplerCallback {
+
+        @Bean
+        fun tracesSampler(): SentryOptions.TracesSamplerCallback {
+            return SentryOptions.TracesSamplerCallback {
+                return@TracesSamplerCallback 1.0
+            }
+        }
+    }
 }

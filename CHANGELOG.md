@@ -4,6 +4,9 @@
 * Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
 * Fix: Free Local Refs manually due to Android local ref. count limits
 * Enhancement: Move `SentrySpanClientHttpRequestInterceptor` to Spring module (#1181)
+* Fix: Bring back support for setting transaction name without ongoing transaction (#1183)
+* Enhancement: Add overload for `transaction/span.finish(SpanStatus)` (#1182)
+* Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
 
 # 4.0.0-alpha.3
 
