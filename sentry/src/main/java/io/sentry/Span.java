@@ -44,13 +44,13 @@ public final class Span extends SpanContext implements ISpan {
   }
 
   @Override
-  public @NotNull Span startChild() {
-    return transaction.startChild(super.getSpanId());
+  public @NotNull Span startChild(final @NotNull String operation) {
+    return this.startChild(operation, null);
   }
 
   @Override
   public @NotNull Span startChild(
-      final @Nullable String operation, final @Nullable String description) {
+      final @NotNull String operation, final @Nullable String description) {
     return transaction.startChild(super.getSpanId(), operation, description);
   }
 

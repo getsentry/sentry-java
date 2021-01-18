@@ -78,8 +78,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * @return a new transaction span
    */
   @Override
-  public @NotNull ISpan startChild() {
-    return this.startChild(getSpanId());
+  public @NotNull ISpan startChild(final @NotNull String operation) {
+    return this.startChild(operation, null);
   }
 
   /**
@@ -91,7 +91,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public @NotNull ISpan startChild(
-      final @Nullable String operation, final @Nullable String description) {
+      final @NotNull String operation, final @Nullable String description) {
     final Span span = startChild(getSpanId());
     span.setOperation(operation);
     span.setDescription(description);

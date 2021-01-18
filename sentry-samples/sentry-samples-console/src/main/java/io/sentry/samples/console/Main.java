@@ -140,7 +140,7 @@ public class Main {
     // and finish of transaction.
     ITransaction transaction = Sentry.startTransaction("transaction name");
     // Transactions can contain one or more Spans
-    ISpan outerSpan = transaction.startChild();
+    ISpan outerSpan = transaction.startChild("child");
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
     ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");

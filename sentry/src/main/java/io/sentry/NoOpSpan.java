@@ -15,12 +15,13 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull ISpan startChild() {
+  public @NotNull ISpan startChild(final @NotNull String operation) {
     return new NoOpSpan();
   }
 
   @Override
-  public @NotNull ISpan startChild(@Nullable String operation, @Nullable String description) {
+  public @NotNull ISpan startChild(
+      final @NotNull String operation, final @Nullable String description) {
     return new NoOpSpan();
   }
 

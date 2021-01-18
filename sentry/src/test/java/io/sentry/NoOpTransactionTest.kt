@@ -9,7 +9,7 @@ class NoOpTransactionTest {
 
     @Test
     fun `startChild does not return null`() {
-        assertNotNull(transaction.startChild())
+        assertNotNull(transaction.startChild("op"))
         assertNotNull(transaction.startChild("op", "desc"))
     }
 

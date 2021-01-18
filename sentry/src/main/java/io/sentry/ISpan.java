@@ -11,7 +11,7 @@ public interface ISpan {
    * @return a new transaction span
    */
   @NotNull
-  ISpan startChild();
+  ISpan startChild(@NotNull String operation);
 
   /**
    * Starts a child Span.
@@ -21,7 +21,7 @@ public interface ISpan {
    * @return a new transaction span
    */
   @NotNull
-  ISpan startChild(@Nullable String operation, @Nullable String description);
+  ISpan startChild(@NotNull String operation, @Nullable String description);
 
   /**
    * Returns a string that could be sent as a sentry-trace header.

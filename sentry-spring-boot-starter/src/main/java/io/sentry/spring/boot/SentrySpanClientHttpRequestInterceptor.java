@@ -41,10 +41,9 @@ class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterce
       return execution.execute(request, body);
     }
 
-    final ISpan span = activeSpan.startChild();
+    final ISpan span = activeSpan.startChild("http");
     span.setDescription(
         request.getMethodValue() + " " + ensureLeadingSlash(urlTemplate.get().poll()));
-    span.setOperation("http");
 
     final SentryTraceHeader sentryTraceHeader = activeSpan.toSentryTrace();
     request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());

@@ -1136,7 +1136,7 @@ class HubTest {
         val tx = hub.startTransaction("aTransaction")
         hub.configureScope { it.setTransaction(tx) }
         hub.configureScope { it.setTransaction(tx) }
-        val span = tx.startChild()
+        val span = tx.startChild("op")
         assertEquals(span, hub.span)
     }
     // endregion
@@ -1146,7 +1146,7 @@ class HubTest {
     fun `associates span context with throwable`() {
         val hub = generateHub()
         val transaction = hub.startTransaction("aTransaction")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op")
         val exception = RuntimeException()
         hub.setSpanContext(exception, span)
         assertEquals(span.spanContext, hub.getSpanContext(exception))

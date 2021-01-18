@@ -287,7 +287,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setThrowable (Ljava/lang/Throwable;)V
-	public abstract fun startChild ()Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
@@ -350,7 +350,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
-	public fun startChild ()Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
@@ -376,7 +376,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
-	public fun startChild ()Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
@@ -836,7 +836,7 @@ public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/s
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
-	public fun startChild ()Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
@@ -896,8 +896,8 @@ public final class io/sentry/Span : io/sentry/SpanContext, io/sentry/ISpan {
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun setThrowable (Ljava/lang/Throwable;)V
-	public synthetic fun startChild ()Lio/sentry/ISpan;
-	public fun startChild ()Lio/sentry/Span;
+	public synthetic fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;)Lio/sentry/Span;
 	public synthetic fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Span;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;

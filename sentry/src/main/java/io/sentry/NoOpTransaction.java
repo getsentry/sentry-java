@@ -22,14 +22,14 @@ public final class NoOpTransaction implements ITransaction {
   public void setName(@NotNull String name) {}
 
   @Override
-  public @NotNull ISpan startChild() {
+  public @NotNull ISpan startChild(final @NotNull String operation) {
     return NoOpSpan.getInstance();
   }
 
   @Override
   public @NotNull ISpan startChild(
-      final @Nullable String operation, final @Nullable String description) {
-    return startChild();
+      final @NotNull String operation, final @Nullable String description) {
+    return startChild(operation);
   }
 
   @Override
