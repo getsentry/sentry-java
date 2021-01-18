@@ -67,6 +67,12 @@ public final class Span extends SpanContext implements ISpan {
   }
 
   @Override
+  public void finish(@Nullable SpanStatus status) {
+    this.status = status;
+    this.finish();
+  }
+
+  @Override
   public @NotNull SpanContext getSpanContext() {
     return this;
   }
