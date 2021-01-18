@@ -28,7 +28,9 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * A hub this transaction is attached to. Marked as transient to be ignored during JSON
    * serialization.
    */
-  private @NotNull final transient IHub hub;
+  private final transient @NotNull IHub hub;
+
+  private final transient @NotNull SpanContext context;
 
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
@@ -47,17 +49,16 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * Creates transaction with name and contexts.
    *
    * @param name - transaction name
-   * @param contexts - transaction contexts
+   * @param context - transaction contexts
    * @param hub - the hub
    */
   @TestOnly
   public SentryTransaction(
-      final @NotNull String name, final @NotNull SpanContext contexts, final @NotNull IHub hub) {
-    Objects.requireNonNull(contexts, "contexts are required");
+      final @NotNull String name, final @NotNull SpanContext context, final @NotNull IHub hub) {
     this.transaction = Objects.requireNonNull(name, "name is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.getContexts().setTrace(contexts);
+    this.context = Objects.requireNonNull(context, "contexts is required");
   }
 
   /**
@@ -137,17 +138,17 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   @NotNull
   SpanId getSpanId() {
-    return getContexts().getTrace().getSpanId();
+    return this.context.getSpanId();
   }
 
   @NotNull
   SentryId getTraceId() {
-    return getContexts().getTrace().getTraceId();
+    return this.context.getTraceId();
   }
 
   @Override
   public @Nullable Boolean isSampled() {
-    return getContexts().getTrace().getSampled();
+    return this.context.getSampled();
   }
 
   @Override
@@ -156,6 +157,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     if (this.throwable != null) {
       hub.setSpanContext(this.throwable, this.getSpanContext());
     }
+    this.getContexts().setTrace(this.context);
     this.hub.captureTransaction(this, null);
   }
 
@@ -172,7 +174,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public void setOperation(@Nullable String op) {
-    this.getContexts().getTrace().setOperation(op);
+    this.context.setOperation(op);
   }
 
   /**
@@ -182,17 +184,17 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public void setDescription(@Nullable String description) {
-    this.getContexts().getTrace().setDescription(description);
+    this.context.setDescription(description);
   }
 
   @Override
   public @Nullable String getDescription() {
-    return this.getContexts().getTrace().getDescription();
+    return this.context.getDescription();
   }
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return this.getContexts().getTrace();
+    return this.context;
   }
 
   /**
@@ -202,7 +204,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    */
   @Override
   public void setStatus(@Nullable SpanStatus spanStatus) {
-    this.getContexts().getTrace().setStatus(spanStatus);
+    this.context.setStatus(spanStatus);
   }
 
   /**
@@ -249,5 +251,10 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
       }
     }
     return null;
+  }
+
+  @NotNull
+  SpanContext getContext() {
+    return context;
   }
 }

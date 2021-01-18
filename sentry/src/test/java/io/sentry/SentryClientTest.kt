@@ -770,6 +770,7 @@ class SentryClientTest {
         val scope = createScope()
         val transaction = SentryTransaction("name")
         scope.setTransaction(transaction)
+        transaction.finish()
         sut.captureEvent(event, scope)
         assertNotNull(event.contexts.trace)
         assertEquals(transaction.contexts.trace, event.contexts.trace)

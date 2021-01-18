@@ -440,6 +440,7 @@ class GsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         val transaction = SentryTransaction("transaction-name", trace, mock())
+        transaction.finish()
 
         val stringWriter = StringWriter()
         fixture.serializer.serialize(transaction, stringWriter)
