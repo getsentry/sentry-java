@@ -161,6 +161,12 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     this.hub.captureTransaction(this, null);
   }
 
+  @Override
+  public void finish(@Nullable SpanStatus status) {
+    this.setStatus(status);
+    this.finish();
+  }
+
   /**
    * Sets transaction operation.
    *
@@ -220,6 +226,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   @Nullable
   Date getTimestamp() {
     return timestamp;
+  }
+
+  @Nullable
+  SpanStatus getStatus() {
+    return this.getContexts().getTrace().getStatus();
   }
 
   @Override

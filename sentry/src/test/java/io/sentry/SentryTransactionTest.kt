@@ -41,6 +41,14 @@ class SentryTransactionTest {
     }
 
     @Test
+    fun `when transaction is finished with status, timestamp and status are set`() {
+        val transaction = SentryTransaction("name")
+        transaction.finish(SpanStatus.ABORTED)
+        assertNotNull(transaction.timestamp)
+        assertEquals(SpanStatus.ABORTED, transaction.status)
+    }
+
+    @Test
     fun `when transaction is finished, transaction is captured`() {
         val hub = mock<IHub>()
         val transaction = SentryTransaction("name", SpanContext(), hub)

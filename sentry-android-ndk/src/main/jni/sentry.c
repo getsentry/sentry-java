@@ -307,6 +307,12 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
                     jstring value = (*env)->NewStringUTF(env, value_v);
 
                     (*env)->CallVoidMethod(env, image, image_addr_method, value);
+
+                    // Local refs (eg NewStringUTF) are freed automatically when the native method
+                    // returns, but if you're iterating a large array, it's recommended to release
+                    // manually due to allocation limits (512) on Android < 8 or OOM.
+                    // https://developer.android.com/training/articles/perf-jni.html#local-and-global-references
+                    (*env)->DeleteLocalRef(env, value);
                 }
 
                 sentry_value_t image_size_t = sentry_value_get_by_key(image_t, "image_size");
@@ -325,6 +331,8 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
                     jstring value = (*env)->NewStringUTF(env, value_v);
 
                     (*env)->CallVoidMethod(env, image, code_file_method, value);
+
+                    (*env)->DeleteLocalRef(env, value);
                 }
 
                 sentry_value_t code_type_t = sentry_value_get_by_key(image_t, "type");
@@ -334,6 +342,8 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
                     jstring value = (*env)->NewStringUTF(env, value_v);
 
                     (*env)->CallVoidMethod(env, image, type_method, value);
+
+                    (*env)->DeleteLocalRef(env, value);
                 }
 
                 sentry_value_t debug_id_t = sentry_value_get_by_key(image_t, "debug_id");
@@ -343,6 +353,8 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
                     jstring value = (*env)->NewStringUTF(env, value_v);
 
                     (*env)->CallVoidMethod(env, image, debug_id_method, value);
+
+                    (*env)->DeleteLocalRef(env, value);
                 }
 
                 sentry_value_t code_id_t = sentry_value_get_by_key(image_t, "code_id");
@@ -352,6 +364,8 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
                     jstring value = (*env)->NewStringUTF(env, value_v);
 
                     (*env)->CallVoidMethod(env, image, code_id_method, value);
+
+                    (*env)->DeleteLocalRef(env, value);
                 }
 
                 // not needed on Android, but keeping for forward compatibility
@@ -362,9 +376,13 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
                     jstring value = (*env)->NewStringUTF(env, value_v);
 
                     (*env)->CallVoidMethod(env, image, debug_file_method, value);
+
+                    (*env)->DeleteLocalRef(env, value);
                 }
 
                 (*env)->SetObjectArrayElement(env, image_list, i, image);
+
+                (*env)->DeleteLocalRef(env, image);
             }
         }
 
