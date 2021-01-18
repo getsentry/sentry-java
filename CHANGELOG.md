@@ -1,9 +1,9 @@
-<<<<<<< HEAD
 # 3.2.1
 
 * Fix: Set current thread only if theres no exceptions (#1064)
 * Fix: Append DebugImage list if event already has it (#1092)
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event (#1094)
+* Fix: Free Local Refs manually due to Android local ref. count limits  (#1179)
 
 # 3.2.0
 
