@@ -30,13 +30,13 @@ class TracingSamplerTest {
     @Test
     fun `when tracesSampleRate is set and random returns greater number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.9, tracesSampleRate = 0.2)
-        assertFalse(sampler.sample(null))
+        assertFalse(sampler.sample(SamplingContext(TransactionContext("name"), null)))
     }
 
     @Test
     fun `when tracesSampleRate is set and random returns lower number returns true`() {
         val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 0.2)
-        assertTrue(sampler.sample(null))
+        assertTrue(sampler.sample(SamplingContext(TransactionContext("name"), null)))
     }
 
     @Test
