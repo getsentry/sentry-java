@@ -2,6 +2,7 @@ package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.spring.tracing.SentrySpanClientHttpRequestInterceptor;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;

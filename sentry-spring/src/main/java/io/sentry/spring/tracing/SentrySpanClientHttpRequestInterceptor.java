@@ -1,4 +1,4 @@
-package io.sentry.spring.boot;
+package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
@@ -21,7 +21,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.util.UriTemplateHandler;
 
 @Open
-class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
+public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
   private static final @NotNull ThreadLocal<Deque<String>> urlTemplate =
       new UrlTemplateThreadLocal();
   private final @NotNull IHub hub;
@@ -60,7 +60,8 @@ class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterce
     }
   }
 
-  UriTemplateHandler createUriTemplateHandler(final @NotNull UriTemplateHandler delegate) {
+  public @NotNull UriTemplateHandler createUriTemplateHandler(
+      final @NotNull UriTemplateHandler delegate) {
     return new UriTemplateHandler() {
 
       @Override
