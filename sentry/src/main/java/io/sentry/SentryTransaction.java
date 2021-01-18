@@ -49,17 +49,16 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * Creates transaction with name and contexts.
    *
    * @param name - transaction name
-   * @param contexts - transaction contexts
+   * @param context - transaction contexts
    * @param hub - the hub
    */
   @TestOnly
   public SentryTransaction(
-      final @NotNull String name, final @NotNull SpanContext contexts, final @NotNull IHub hub) {
-    Objects.requireNonNull(contexts, "contexts are required");
+      final @NotNull String name, final @NotNull SpanContext context, final @NotNull IHub hub) {
     this.transaction = Objects.requireNonNull(name, "name is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.context = contexts;
+    this.context = Objects.requireNonNull(context, "contexts is required");
   }
 
   /**
@@ -243,6 +242,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     return null;
   }
 
+  @NotNull
   SpanContext getContext() {
     return context;
   }
