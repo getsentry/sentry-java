@@ -4,6 +4,7 @@
 * Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
 * Fix: Free Local Refs manually due to Android local ref. count limits
 * Enhancement: Move `SentrySpanClientHttpRequestInterceptor` to Spring module (#1181)
+* Enhancement: Add overload for `transaction/span.finish(SpanStatus)` (#1182)
 
 # 4.0.0-alpha.3
 
