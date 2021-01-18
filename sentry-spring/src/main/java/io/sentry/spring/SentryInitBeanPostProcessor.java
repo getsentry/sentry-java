@@ -3,6 +3,7 @@ package io.sentry.spring;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
+import io.sentry.SentryOptions.TracesSamplerCallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -29,6 +30,9 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
                 sentryUserProvider ->
                     options.addEventProcessor(
                         new SentryUserProviderEventProcessor(options, sentryUserProvider)));
+        applicationContext
+            .getBeanProvider(TracesSamplerCallback.class)
+            .ifAvailable(options::setTracesSampler);
       }
       Sentry.init(options);
     }
