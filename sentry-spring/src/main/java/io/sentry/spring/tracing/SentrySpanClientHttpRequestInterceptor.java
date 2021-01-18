@@ -60,7 +60,8 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     }
   }
 
-  public @NotNull UriTemplateHandler createUriTemplateHandler(final @NotNull UriTemplateHandler delegate) {
+  public @NotNull UriTemplateHandler createUriTemplateHandler(
+      final @NotNull UriTemplateHandler delegate) {
     return new UriTemplateHandler() {
 
       @Override
