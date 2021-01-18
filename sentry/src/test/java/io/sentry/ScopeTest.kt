@@ -672,4 +672,24 @@ class ScopeTest {
 
         assertNotNull(scope.fingerprint)
     }
+
+    @Test
+    fun `when transaction is not started, sets transaction name on the field`() {
+        val scope = Scope(SentryOptions())
+        scope.setTransaction("transaction-name")
+        assertEquals("transaction-name", scope.transactionName)
+        assertNull(scope.transaction)
+    }
+
+    @Test
+    fun `when transaction is started, sets transaction name on the transaction object`() {
+        val scope = Scope(SentryOptions())
+        val sentryTransaction = SentryTransaction("transaction-name")
+        scope.setTransaction(sentryTransaction)
+        assertEquals("transaction-name", scope.transactionName)
+        scope.setTransaction("new-name")
+        assertEquals("new-name", scope.transactionName)
+        sentryTransaction.setName("another-name")
+        assertEquals("another-name", scope.transactionName)
+    }
 }

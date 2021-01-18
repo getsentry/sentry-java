@@ -24,6 +24,9 @@ public final class Scope implements Cloneable {
   /** Scope's {@link ITransaction}. */
   private @Nullable ITransaction transaction;
 
+  /** Scope's transaction name. Used when using error reporting without the performance feature. */
+  private @Nullable String transactionName;
+
   /** Scope's user */
   private @Nullable User user;
 
@@ -94,7 +97,7 @@ public final class Scope implements Cloneable {
    */
   public @Nullable String getTransactionName() {
     final ITransaction tx = this.transaction;
-    return tx != null ? tx.getTransaction() : null;
+    return tx != null ? tx.getTransaction() : transactionName;
   }
 
   /**
@@ -106,6 +109,8 @@ public final class Scope implements Cloneable {
     final ITransaction tx = this.transaction;
     if (tx != null) {
       tx.setName(transaction);
+    } else {
+      this.transactionName = transaction;
     }
   }
 
