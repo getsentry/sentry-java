@@ -4,6 +4,7 @@
 * Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
 * Fix: Free Local Refs manually due to Android local ref. count limits
 * Enhancement: Add overload for `transaction/span.finish(SpanStatus)` (#1182)
+* Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
 
 # 4.0.0-alpha.3
 
