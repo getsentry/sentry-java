@@ -35,6 +35,13 @@ public interface ISpan {
   void finish();
 
   /**
+   * Sets span timestamp marking this span as finished.
+   *
+   * @param status - the status
+   */
+  void finish(@Nullable SpanStatus status);
+
+  /**
    * Sets span operation.
    *
    * @param operation - the operation
