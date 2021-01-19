@@ -322,40 +322,6 @@ public final class SentryClient implements ISentryClient {
     return envelope.getHeader().getEventId();
   }
 
-<<<<<<< HEAD
-=======
-  @Override
-  public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction,
-      final @NotNull Scope scope,
-      final @Nullable Object hint) {
-    Objects.requireNonNull(transaction, "Transaction is required.");
-
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
-
-    SentryId sentryId = transaction.getEventId();
-
-    try {
-      final SentryEnvelope envelope = buildEnvelope(transaction);
-
-      if (envelope != null) {
-        connection.send(envelope, hint);
-      } else {
-        sentryId = SentryId.EMPTY_ID;
-      }
-    } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
-
-      // if there was an error capturing the event, we return an emptyId
-      sentryId = SentryId.EMPTY_ID;
-    }
-
-    return sentryId;
-  }
-
->>>>>>> fc4b4570 (Fix: Sort breadcrumbs by Date if the event has breadcrumbs (#1094))
   private @Nullable SentryEvent applyScope(
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
