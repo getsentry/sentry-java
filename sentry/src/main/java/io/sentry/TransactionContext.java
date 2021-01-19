@@ -31,6 +31,17 @@ public final class TransactionContext extends SpanContext {
     this.parentSampled = null;
   }
 
+  /**
+   * Creates {@link TransactionContext} with explicit sampling decision.
+   *
+   * @param name - transaction name
+   * @param sampled - sampling decision
+   */
+  public TransactionContext(final @NotNull String name, final @Nullable Boolean sampled) {
+    this.name = Objects.requireNonNull(name, "name is required");
+    this.setSampled(sampled);
+  }
+
   private TransactionContext(
       final @NotNull String name,
       final @NotNull SentryId traceId,
