@@ -92,10 +92,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    final Span span = startChild(getSpanId());
-    span.setOperation(operation);
-    span.setDescription(description);
-    return span;
+    return startChild(getSpanId(), operation, description);
   }
 
   /**
@@ -105,7 +102,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * @return a new transaction span
    */
   @NotNull
-  private Span startChild(final @NotNull SpanId parentSpanId) {
+  private ISpan startChild(final @NotNull SpanId parentSpanId) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     final Span span = new Span(getTraceId(), parentSpanId, this, this.hub);
     this.spans.add(span);
@@ -121,11 +118,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * @return a new transaction span
    */
   @NotNull
-  Span startChild(
+  ISpan startChild(
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description) {
-    final Span span = startChild(parentSpanId);
+    final ISpan span = startChild(parentSpanId);
     span.setOperation(operation);
     span.setDescription(description);
     return span;

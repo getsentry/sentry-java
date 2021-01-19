@@ -29,7 +29,7 @@ class SpanTest {
     @Test
     fun `starting a child sets parent span id`() {
         val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
-        val child = span.startChild("op")
+        val child = span.startChild("op") as Span
         assertEquals(span.spanId, child.parentSpanId)
     }
 
@@ -44,7 +44,7 @@ class SpanTest {
     @Test
     fun `starting a child creates a new span`() {
         val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
-        val child = span.startChild("op", "description")
+        val child = span.startChild("op", "description") as Span
         assertEquals(span.spanId, child.parentSpanId)
         assertEquals("op", child.operation)
         assertEquals("description", child.description)

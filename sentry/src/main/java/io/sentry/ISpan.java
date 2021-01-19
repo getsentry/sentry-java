@@ -8,6 +8,7 @@ public interface ISpan {
   /**
    * Starts a child Span.
    *
+   * @param operation - new span operation name
    * @return a new transaction span
    */
   @NotNull

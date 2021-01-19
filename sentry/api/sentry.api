@@ -896,10 +896,8 @@ public final class io/sentry/Span : io/sentry/SpanContext, io/sentry/ISpan {
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun setThrowable (Ljava/lang/Throwable;)V
-	public synthetic fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;)Lio/sentry/Span;
-	public synthetic fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Span;
+	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
