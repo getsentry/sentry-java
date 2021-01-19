@@ -26,7 +26,7 @@ class EnvelopeSenderTest {
         var options = SentryOptions().noFlushTimeout()
 
         init {
-            options.isDebug = true
+            options.debug = true
             options.setLogger(logger)
         }
 

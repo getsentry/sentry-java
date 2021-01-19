@@ -682,6 +682,7 @@ public class io/sentry/SentryOptions {
 	public fun getCacheDirPath ()Ljava/lang/String;
 	public fun getCacheDirSize ()I
 	public fun getConnectionTimeoutMillis ()I
+	public fun getDebug ()Ljava/lang/Boolean;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
@@ -735,7 +736,7 @@ public class io/sentry/SentryOptions {
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setCacheDirSize (I)V
 	public fun setConnectionTimeoutMillis (I)V
-	public fun setDebug (Z)V
+	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V

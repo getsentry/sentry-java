@@ -61,7 +61,7 @@ class SentryTest {
             it.dsn = dsn
             it.cacheDirPath = getTempPath()
             sentryOptions = it
-            it.isDebug = true
+            it.debug = true
         }
 
         assertTrue((sentryOptions!!.logger as DiagnosticLogger).logger is SystemOutLogger)
@@ -99,7 +99,7 @@ class SentryTest {
         }
         Sentry.init {
             it.dsn = dsn
-            it.isDebug = true
+            it.debug = true
             it.setLogger(logger)
         }
         verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
