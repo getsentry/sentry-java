@@ -43,7 +43,7 @@ class DefaultAndroidEventProcessorTest {
     private class Fixture {
         val buildInfo = mock<IBuildInfoProvider>()
         val options = SentryOptions().apply {
-            isDebug = true
+            setDebug(true)
             setLogger(mock())
             sdkVersion = SdkVersion().apply {
                 name = "test"

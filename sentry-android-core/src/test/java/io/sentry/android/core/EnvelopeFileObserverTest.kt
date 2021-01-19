@@ -33,7 +33,7 @@ class EnvelopeFileObserverTest {
         val envelopeSender = mock<IEnvelopeSender>()
         val logger = mock<ILogger>()
         val options = SentryOptions().apply {
-            isDebug = true
+            setDebug(true)
             setLogger(logger)
         }
 
