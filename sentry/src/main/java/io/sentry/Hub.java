@@ -18,7 +18,7 @@ public final class Hub implements IHub {
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
   private final @NotNull Stack stack;
-  private final @NotNull TracingSampler tracingSampler;
+  private final @NotNull TracesSampler tracesSampler;
   private final @NotNull WeakHashMap<Throwable, ISpan> throwableToSpan = new WeakHashMap<>();
 
   public Hub(final @NotNull SentryOptions options) {
@@ -31,7 +31,7 @@ public final class Hub implements IHub {
     validateOptions(options);
 
     this.options = options;
-    this.tracingSampler = new TracingSampler(options);
+    this.tracesSampler = new TracesSampler(options);
     this.stack = stack;
     this.lastEventId = SentryId.EMPTY_ID;
 
@@ -576,7 +576,7 @@ public final class Hub implements IHub {
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContext, customSamplingContext);
-      boolean samplingDecision = tracingSampler.sample(samplingContext);
+      boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
       transaction = new SentryTransaction(transactionContext, this);

@@ -7,9 +7,9 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class TracingSamplerTest {
+class TracesSamplerTest {
     class Fixture {
-        internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = null): TracingSampler {
+        internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = null): TracesSampler {
             val random = mock<Random>()
             if (randomResult != null) {
                 whenever(random.nextDouble()).thenReturn(randomResult)
@@ -21,7 +21,7 @@ class TracingSamplerTest {
             if (tracesSamplerResult != null) {
                 options.tracesSampler = SentryOptions.TracesSamplerCallback { tracesSamplerResult }
             }
-            return TracingSampler(options, random)
+            return TracesSampler(options, random)
         }
     }
 

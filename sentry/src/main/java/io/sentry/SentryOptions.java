@@ -146,8 +146,8 @@ public class SentryOptions {
   private @Nullable Double tracesSampleRate;
 
   /**
-   * This function is called by {@link TracingSampler} to determine if transaction is sampled -
-   * meant to be sent to Sentry.
+   * This function is called by {@link TracesSampler} to determine if transaction is sampled - meant
+   * to be sent to Sentry.
    */
   private @Nullable TracesSamplerCallback tracesSampler;
 

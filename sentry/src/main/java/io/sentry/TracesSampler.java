@@ -5,16 +5,16 @@ import java.util.Random;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
-final class TracingSampler {
+final class TracesSampler {
   private final @NotNull SentryOptions options;
   private final @NotNull Random random;
 
-  public TracingSampler(final @NotNull SentryOptions options) {
+  public TracesSampler(final @NotNull SentryOptions options) {
     this(Objects.requireNonNull(options, "options are required"), new Random());
   }
 
   @TestOnly
-  TracingSampler(final @NotNull SentryOptions options, final @NotNull Random random) {
+  TracesSampler(final @NotNull SentryOptions options, final @NotNull Random random) {
     this.options = options;
     this.random = random;
   }
