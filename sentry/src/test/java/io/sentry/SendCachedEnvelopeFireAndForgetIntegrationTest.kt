@@ -15,7 +15,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         var callback = mock<SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory>()
 
         init {
-            options.debug = true
+            options.setDebug(true)
             options.setLogger(logger)
         }
 

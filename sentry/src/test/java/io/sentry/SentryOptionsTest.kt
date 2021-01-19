@@ -348,8 +348,7 @@ class SentryOptionsTest {
 
         try {
             val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNotNull(options.debug)
-            assertTrue(options.debug!!)
+            assertTrue(options.isDebug)
         } finally {
             temporaryFolder.delete()
         }
@@ -367,8 +366,7 @@ class SentryOptionsTest {
 
         try {
             val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNotNull(options.debug)
-            assertFalse(options.debug!!)
+            assertFalse(options.isDebug)
         } finally {
             temporaryFolder.delete()
         }
@@ -385,7 +383,11 @@ class SentryOptionsTest {
 
         try {
             val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNull(options.debug)
+            val mergeResult = SentryOptions().apply {
+                setDebug(true)
+            }
+            mergeResult.merge(options)
+            assertTrue(mergeResult.isDebug)
         } finally {
             temporaryFolder.delete()
         }

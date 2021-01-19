@@ -57,7 +57,7 @@ class SentryClientTest {
                 name = "test"
                 version = "1.2.3"
             }
-            debug = true
+            setDebug(true)
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(mock(), envelopeReader))
             setLogger(mock())

@@ -371,8 +371,7 @@ public class SentryOptions {
    *
    * @return true if ON or false otherwise
    */
-  @Nullable
-  Boolean getDebug() {
+  private @Nullable Boolean getDebug() {
     return debug;
   }
 
