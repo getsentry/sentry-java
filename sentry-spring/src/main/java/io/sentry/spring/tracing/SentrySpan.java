@@ -30,9 +30,9 @@ public @interface SentrySpan {
   String operation() default "";
 
   /**
-   * Span description.
+   * Span operation.
    *
-   * @return description.
+   * @return operation.
    */
   @AliasFor("operation")
   String value() default "";

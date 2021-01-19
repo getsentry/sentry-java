@@ -555,15 +555,15 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts) {
-    return this.startTransaction(transactionContexts, null);
+      final @NotNull TransactionContext transactionContext) {
+    return this.startTransaction(transactionContext, null);
   }
 
   @Override
   public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
+      final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext) {
-    Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+    Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
     if (!isEnabled()) {
@@ -575,11 +575,11 @@ public final class Hub implements IHub {
       transaction = NoOpTransaction.getInstance();
     } else {
       final SamplingContext samplingContext =
-          new SamplingContext(transactionContexts, customSamplingContext);
+          new SamplingContext(transactionContext, customSamplingContext);
       boolean samplingDecision = tracingSampler.sample(samplingContext);
-      transactionContexts.setSampled(samplingDecision);
+      transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTransaction(transactionContexts, this);
+      transaction = new SentryTransaction(transactionContext, this);
     }
     return transaction;
   }

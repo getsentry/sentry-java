@@ -16,13 +16,13 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
-    return new NoOpSpan();
+    return NoOpSpan.getInstance();
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return new NoOpSpan();
+    return NoOpSpan.getInstance();
   }
 
   @Override

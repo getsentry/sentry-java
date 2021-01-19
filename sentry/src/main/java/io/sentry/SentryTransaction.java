@@ -105,7 +105,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
    * @return a new transaction span
    */
   @NotNull
-  Span startChild(final @NotNull SpanId parentSpanId) {
+  private Span startChild(final @NotNull SpanId parentSpanId) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     final Span span = new Span(getTraceId(), parentSpanId, this, this.hub);
     this.spans.add(span);
@@ -123,7 +123,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   @NotNull
   Span startChild(
       final @NotNull SpanId parentSpanId,
-      final @Nullable String operation,
+      final @NotNull String operation,
       final @Nullable String description) {
     final Span span = startChild(parentSpanId);
     span.setOperation(operation);

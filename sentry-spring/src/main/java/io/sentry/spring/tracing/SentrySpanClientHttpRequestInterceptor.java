@@ -41,7 +41,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       return execution.execute(request, body);
     }
 
-    final ISpan span = activeSpan.startChild("http");
+    final ISpan span = activeSpan.startChild("http.client");
     span.setDescription(
         request.getMethodValue() + " " + ensureLeadingSlash(urlTemplate.get().poll()));
 
