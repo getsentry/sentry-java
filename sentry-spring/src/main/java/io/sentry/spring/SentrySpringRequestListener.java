@@ -18,18 +18,29 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
 
+  /**
+   * Creates a new instance of {@link SentrySpringRequestListener}. Used in traditional servlet
+   * containers with {@link SentrySpringServletContainerInitializer}.
+   */
   public SentrySpringRequestListener() {
     this(HubAdapter.getInstance());
   }
 
-  SentrySpringRequestListener(final @NotNull IHub hub) {
-    this(hub, new SentryRequestResolver(hub));
-  }
-
+  /**
+   * Creates a new instance of {@link SentrySpringRequestListener}. Used together with Spring Boot
+   * or with embedded servlet containers.
+   *
+   * @param hub - the hub
+   * @param requestResolver - the request resolver
+   */
   public SentrySpringRequestListener(
       final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver are required");
+  }
+
+  SentrySpringRequestListener(final @NotNull IHub hub) {
+    this(hub, new SentryRequestResolver(hub));
   }
 
   @Override
