@@ -66,7 +66,7 @@ public class SentryOptions {
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
    * information if something goes wrong. Default is disabled.
    */
-  private boolean debug;
+  private @Nullable Boolean debug;
 
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
@@ -270,6 +270,7 @@ public class SentryOptions {
     options.setEnableUncaughtExceptionHandler(
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
+    options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -353,7 +354,7 @@ public class SentryOptions {
    * @return true if ON or false otherwise
    */
   public boolean isDebug() {
-    return debug;
+    return Boolean.TRUE.equals(debug);
   }
 
   /**
@@ -361,8 +362,17 @@ public class SentryOptions {
    *
    * @param debug true if ON or false otherwise
    */
-  public void setDebug(boolean debug) {
+  public void setDebug(final @Nullable Boolean debug) {
     this.debug = debug;
+  }
+
+  /**
+   * Check if debug mode is ON, OFF or not set.
+   *
+   * @return true if ON or false otherwise
+   */
+  private @Nullable Boolean getDebug() {
+    return debug;
   }
 
   /**
@@ -1304,6 +1314,9 @@ public class SentryOptions {
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
+    }
+    if (options.getDebug() != null) {
+      setDebug(options.getDebug());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {

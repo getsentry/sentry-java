@@ -29,7 +29,7 @@ class DirectoryProcessorTest {
         var options = SentryOptions().noFlushTimeout()
 
         init {
-            options.isDebug = true
+            options.setDebug(true)
             options.setLogger(logger)
         }
 
