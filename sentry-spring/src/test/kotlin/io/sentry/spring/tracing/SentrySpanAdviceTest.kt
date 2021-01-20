@@ -67,8 +67,8 @@ class SentrySpanAdviceTest {
         val result = sampleService.methodWithoutSpanDescriptionSet()
         assertEquals(2, result)
         assertEquals(1, tx.spans.size)
-        assertEquals("SampleService.methodWithoutSpanDescriptionSet", tx.spans.first().description)
-        assertNull(tx.spans.first().operation)
+        assertEquals("SampleService.methodWithoutSpanDescriptionSet", tx.spans.first().operation)
+        assertNull(tx.spans.first().description)
     }
 
     @Test

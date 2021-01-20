@@ -29,22 +29,22 @@ class SpanTest {
     @Test
     fun `starting a child sets parent span id`() {
         val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
-        val child = span.startChild()
+        val child = span.startChild("op") as Span
         assertEquals(span.spanId, child.parentSpanId)
     }
 
     @Test
     fun `starting a child adds span to transaction`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
-        span.startChild()
+        val span = transaction.startChild("op")
+        span.startChild("op")
         assertEquals(2, transaction.spans.size)
     }
 
     @Test
     fun `starting a child creates a new span`() {
         val span = Span(SentryId(), SpanId(), SentryTransaction("name"), mock())
-        val child = span.startChild("op", "description")
+        val child = span.startChild("op", "description") as Span
         assertEquals(span.spanId, child.parentSpanId)
         assertEquals("op", child.operation)
         assertEquals("description", child.description)
@@ -54,21 +54,21 @@ class SpanTest {
     fun `starting a child with details adds span to transaction`() {
         val transaction = SentryTransaction("name")
         val span = transaction.startChild("operation", "description")
-        span.startChild()
+        span.startChild("op")
         assertEquals(2, transaction.spans.size)
     }
 
     @Test
     fun `when span has no timestamp set, it is considered unfinished`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op") as Span
         assertFalse(span.isFinished)
     }
 
     @Test
     fun `when span has timestamp set, it is considered finished`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op") as Span
         span.finish()
         assertTrue(span.isFinished)
     }
@@ -77,7 +77,7 @@ class SpanTest {
     fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
         val hub = mock<IHub>()
         val transaction = SentryTransaction(TransactionContext("name"), hub)
-        val span = transaction.startChild()
+        val span = transaction.startChild("op")
         val ex = RuntimeException()
         span.throwable = ex
         span.finish()

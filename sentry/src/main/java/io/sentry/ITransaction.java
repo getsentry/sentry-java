@@ -19,29 +19,6 @@ public interface ITransaction extends ISpan {
   void setName(@NotNull String name);
 
   /**
-   * Starts a child Span.
-   *
-   * @param parentSpanId - parent span id
-   * @return a new transaction span
-   */
-  @NotNull
-  Span startChild(final @NotNull SpanId parentSpanId);
-
-  /**
-   * Starts a child Span with given trace id and parent span id.
-   *
-   * @param parentSpanId - parent span id
-   * @param operation - span operation name
-   * @param description - span description
-   * @return a new transaction span
-   */
-  @NotNull
-  Span startChild(
-      final @NotNull SpanId parentSpanId,
-      final @NotNull String operation,
-      final @NotNull String description);
-
-  /**
    * Attaches request information to the transaction.
    *
    * @param request the request

@@ -8,10 +8,11 @@ public interface ISpan {
   /**
    * Starts a child Span.
    *
+   * @param operation - new span operation name
    * @return a new transaction span
    */
   @NotNull
-  Span startChild();
+  ISpan startChild(@NotNull String operation);
 
   /**
    * Starts a child Span.
@@ -21,7 +22,7 @@ public interface ISpan {
    * @return a new transaction span
    */
   @NotNull
-  Span startChild(@NotNull String operation, @NotNull String description);
+  ISpan startChild(@NotNull String operation, @Nullable String description);
 
   /**
    * Returns a string that could be sent as a sentry-trace header.

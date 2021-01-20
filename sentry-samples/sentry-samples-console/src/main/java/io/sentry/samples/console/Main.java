@@ -2,11 +2,11 @@ package io.sentry.samples.console;
 
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
+import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
@@ -72,7 +72,7 @@ public class Main {
           options.setTracesSampler(
               context -> {
                 // only 10% of transactions with "/product" prefix will be collected
-                if (!context.getTransactionContexts().getName().startsWith("/products")) {
+                if (!context.getTransactionContext().getName().startsWith("/products")) {
                   return 0.1;
                 } else {
                   return 0.5;
@@ -140,10 +140,10 @@ public class Main {
     // and finish of transaction.
     ITransaction transaction = Sentry.startTransaction("transaction name");
     // Transactions can contain one or more Spans
-    Span outerSpan = transaction.startChild();
+    ISpan outerSpan = transaction.startChild("child");
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
-    Span innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
+    ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
     innerSpan.setStatus(SpanStatus.OK);
     Thread.sleep(300);
     // Finish the span and mark the end time of the span execution.

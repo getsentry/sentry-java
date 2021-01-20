@@ -115,7 +115,7 @@ public class SpanContext implements Cloneable {
     return sampled;
   }
 
-  public void setSampled(final @Nullable Boolean sampled) {
+  void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }
 

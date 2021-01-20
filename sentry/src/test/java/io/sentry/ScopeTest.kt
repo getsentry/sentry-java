@@ -617,7 +617,7 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         val transaction = SentryTransaction("name")
         scope.setTransaction(transaction)
-        val span = transaction.startChild()
+        val span = transaction.startChild("op")
         assertEquals(span, scope.span)
     }
 
@@ -626,7 +626,7 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         val transaction = SentryTransaction("name")
         scope.setTransaction(transaction)
-        val span = transaction.startChild()
+        val span = transaction.startChild("op")
         span.finish()
         assertEquals(transaction, scope.span)
     }
@@ -636,8 +636,8 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         val transaction = SentryTransaction("name")
         scope.setTransaction(transaction)
-        val span = transaction.startChild()
-        val innerSpan = span.startChild()
+        val span = transaction.startChild("op")
+        val innerSpan = span.startChild("op")
         assertEquals(innerSpan, scope.span)
     }
 

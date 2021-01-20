@@ -19,7 +19,6 @@ public @interface SentrySpan {
    *
    * @return description
    */
-  @AliasFor("value")
   String description() default "";
 
   /**
@@ -27,13 +26,14 @@ public @interface SentrySpan {
    *
    * @return operation.
    */
+  @AliasFor("value")
   String operation() default "";
 
   /**
-   * Span description.
+   * Span operation.
    *
-   * @return description.
+   * @return operation.
    */
-  @AliasFor("description")
+  @AliasFor("operation")
   String value() default "";
 }
