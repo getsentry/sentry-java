@@ -2,6 +2,7 @@ package io.sentry.samples.spring;
 
 import io.sentry.IHub;
 import io.sentry.spring.tracing.SentrySpanClientHttpRequestInterceptor;
+import java.util.Collections;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -10,8 +11,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.util.UriTemplateHandler;
 
-import java.util.Collections;
-
 @Configuration
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @ComponentScan("io.sentry.samples.spring.web")
@@ -19,7 +18,8 @@ import java.util.Collections;
 public class WebConfig {
 
   /**
-   * Creates a {@link RestTemplate} which calls are intercepted with {@link SentrySpanClientHttpRequestInterceptor} to create spans around HTTP calls.
+   * Creates a {@link RestTemplate} which calls are intercepted with {@link
+   * SentrySpanClientHttpRequestInterceptor} to create spans around HTTP calls.
    *
    * @param hub - sentry hub
    * @return RestTemplate
@@ -27,9 +27,11 @@ public class WebConfig {
   @Bean
   RestTemplate restTemplate(IHub hub) {
     RestTemplate restTemplate = new RestTemplate();
-    SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor = new SentrySpanClientHttpRequestInterceptor(hub);
+    SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor =
+        new SentrySpanClientHttpRequestInterceptor(hub);
     UriTemplateHandler templateHandler = restTemplate.getUriTemplateHandler();
-    restTemplate.setUriTemplateHandler(sentryRestTemplateInterceptor.createUriTemplateHandler(templateHandler));
+    restTemplate.setUriTemplateHandler(
+        sentryRestTemplateInterceptor.createUriTemplateHandler(templateHandler));
     restTemplate.setInterceptors(Collections.singletonList(sentryRestTemplateInterceptor));
     return restTemplate;
   }

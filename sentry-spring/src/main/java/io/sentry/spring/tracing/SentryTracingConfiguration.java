@@ -13,7 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Provides infrastructure beans for creating transactions and spans around bean methods annotated with {@link SentryTransaction} and {@link SentrySpan}.
+ * Provides infrastructure beans for creating transactions and spans around bean methods annotated
+ * with {@link SentryTransaction} and {@link SentrySpan}.
  */
 @Configuration
 @Open
@@ -31,9 +32,8 @@ public class SentryTracingConfiguration {
 
   @Bean
   public @NotNull Advisor sentryTransactionAdvisor(
-    final @NotNull IHub hub,
-    final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut
-      sentryTransactionPointcut) {
+      final @NotNull IHub hub,
+      final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut sentryTransactionPointcut) {
     return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice(hub));
   }
 
@@ -56,7 +56,8 @@ public class SentryTracingConfiguration {
   }
 
   @Bean
-  public @NotNull Advisor sentrySpanAdvisor(final IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
+  public @NotNull Advisor sentrySpanAdvisor(
+      final IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
     return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice(hub));
   }
 }

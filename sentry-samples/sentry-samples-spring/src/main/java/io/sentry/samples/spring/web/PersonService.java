@@ -1,10 +1,9 @@
 package io.sentry.samples.spring.web;
 
 import io.sentry.spring.tracing.SentrySpan;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
 
 @Service
 public class PersonService {
@@ -17,7 +16,8 @@ public class PersonService {
   @SentrySpan
   @SuppressWarnings("unchecked")
   Person find(Long id) {
-    Map<String, Object> result = restTemplate.getForObject("https://jsonplaceholder.typicode.com/users/{id}", Map.class, id);
+    Map<String, Object> result =
+        restTemplate.getForObject("https://jsonplaceholder.typicode.com/users/{id}", Map.class, id);
     String name = (String) result.get("name");
     if (name != null) {
       String[] nameParts = name.split(" ");

@@ -10,28 +10,32 @@ public class io/sentry/samples/spring/AppInitializer : org/springframework/web/s
 	protected fun getServletMappings ()[Ljava/lang/String;
 }
 
-public class io/sentry/samples/spring/Person {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun getFirstName ()Ljava/lang/String;
-	public fun getLastName ()Ljava/lang/String;
-	public fun toString ()Ljava/lang/String;
-}
-
-public class io/sentry/samples/spring/PersonController {
-	public fun <init> ()V
-}
-
 public class io/sentry/samples/spring/SecurityConfiguration : org/springframework/security/config/annotation/web/configuration/WebSecurityConfigurerAdapter {
 	public fun <init> ()V
 	protected fun configure (Lorg/springframework/security/config/annotation/web/builders/HttpSecurity;)V
 	public fun userDetailsService ()Lorg/springframework/security/core/userdetails/UserDetailsService;
 }
 
+public class io/sentry/samples/spring/SentryConfig {
+	public fun <init> ()V
+}
+
 public class io/sentry/samples/spring/WebConfig {
 	public fun <init> ()V
 }
 
-public class io/sentry/samples/spring/hello/web/HelloController {
-	public fun <init> ()V
+public class io/sentry/samples/spring/web/Person {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getFirstName ()Ljava/lang/String;
+	public fun getLastName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public class io/sentry/samples/spring/web/PersonController {
+	public fun <init> (Lio/sentry/samples/spring/web/PersonService;)V
+}
+
+public class io/sentry/samples/spring/web/PersonService {
+	public fun <init> (Lorg/springframework/web/client/RestTemplate;)V
 }
 
