@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
 
@@ -101,7 +102,6 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when method is annotated with @SentrySpan and there is no active transaction, span is not created and method is executed`() {
-        val scope = Scope(SentryOptions())
         whenever(hub.span).thenReturn(null)
         val result = sampleService.methodWithSpanDescriptionSet()
         assertEquals(1, result)
@@ -109,6 +109,7 @@ class SentrySpanAdviceTest {
 
     @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
+    @Import(SentryTracingConfiguration::class)
     open class Config {
 
         @Bean
@@ -116,21 +117,6 @@ class SentrySpanAdviceTest {
 
         @Bean
         open fun hub() = mock<IHub>()
-
-        @Bean
-        open fun sentrySpanPointcut(): Pointcut {
-            return AnnotationMatchingPointcut(null, SentrySpan::class.java)
-        }
-
-        @Bean
-        open fun sentrySpanAdvice(hub: IHub): Advice {
-            return SentrySpanAdvice(hub)
-        }
-
-        @Bean
-        open fun sentrySpanAdvisor(hub: IHub): Advisor {
-            return DefaultPointcutAdvisor(sentrySpanPointcut(), sentrySpanAdvice(hub))
-        }
     }
 
     open class SampleService {

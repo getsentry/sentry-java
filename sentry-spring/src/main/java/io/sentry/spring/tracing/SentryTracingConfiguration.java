@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @Open
-public class SentryTracingConfig {
+public class SentryTracingConfiguration {
 
   @Bean
   public @NotNull Pointcut sentryTransactionPointcut() {
