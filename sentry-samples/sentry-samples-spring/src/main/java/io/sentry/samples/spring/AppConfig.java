@@ -1,6 +1,5 @@
 package io.sentry.samples.spring;
 
-import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
 import io.sentry.spring.EnableSentry;
 import javax.servlet.http.HttpServletRequest;
