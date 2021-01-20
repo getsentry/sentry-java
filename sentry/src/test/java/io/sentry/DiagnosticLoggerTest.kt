@@ -10,7 +10,7 @@ class DiagnosticLoggerTest {
 
     private class Fixture {
         val options = SentryOptions().apply {
-            isDebug = true
+            setDebug(true)
             setLogger(logger)
         }
         var logger: ILogger? = mock()
@@ -79,7 +79,7 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is false and option level is fatal, a call to log and level error is not logged`() {
-        fixture.options.isDebug = false
+        fixture.options.setDebug(false)
         val sut = fixture.getSut()
         val expectedLevel = SentryLevel.FATAL
         sut.log(expectedLevel, expectedMessage)
@@ -106,7 +106,7 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is false option level is debug, a call to log with throwable and level info is not logged`() {
-        fixture.options.isDebug = false
+        fixture.options.setDebug(false)
         fixture.options.setDiagnosticLevel(SentryLevel.DEBUG)
         val sut = fixture.getSut()
         val expectedLevel = SentryLevel.INFO
@@ -143,7 +143,7 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is false option level is fatal, a call to log with throwable and level error is not logged`() {
-        fixture.options.isDebug = false
+        fixture.options.setDebug(false)
         fixture.options.setDiagnosticLevel(SentryLevel.FATAL)
         val sut = fixture.getSut()
         val expectedLevel = SentryLevel.ERROR

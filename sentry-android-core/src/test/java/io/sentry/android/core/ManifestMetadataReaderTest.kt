@@ -36,7 +36,7 @@ class ManifestMetadataReaderTest {
 
     @Test
     fun `isAutoInit won't throw exception and is enabled by default`() {
-        fixture.options.isDebug = true
+        fixture.options.setDebug(true)
         val context = fixture.getContext()
 
         assertTrue(ManifestMetadataReader.isAutoInit(context, fixture.logger))
@@ -53,7 +53,7 @@ class ManifestMetadataReaderTest {
 
     @Test
     fun `applyMetadata won't throw exception`() {
-        fixture.options.isDebug = true
+        fixture.options.setDebug(true)
         val context = fixture.getContext()
 
         ManifestMetadataReader.applyMetadata(context, fixture.options)

@@ -8,6 +8,7 @@
 * Enhancement: Add overload for `transaction/span.finish(SpanStatus)` (#1182)
 * Fix: Bring back support for setting transaction name without ongoing transaction (#1183)
 * Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
+* Enhancement: Set "debug" through external properties (#1186)
 
 # 4.0.0-alpha.3
 
