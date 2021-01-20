@@ -46,7 +46,7 @@ final class Stack {
       return scope;
     }
 
-    public SentryOptions getOptions() {
+    public @NotNull SentryOptions getOptions() {
       return options;
     }
   }
