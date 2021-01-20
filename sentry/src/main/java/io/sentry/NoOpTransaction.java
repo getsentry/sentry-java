@@ -29,7 +29,7 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return startChild(operation);
+    return NoOpSpan.getInstance();
   }
 
   @Override
