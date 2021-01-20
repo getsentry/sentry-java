@@ -362,4 +362,7 @@ public interface IHub {
    */
   @Nullable
   ISpan getSpan();
+
+  @NotNull
+  SentryOptions getOptions();
 }

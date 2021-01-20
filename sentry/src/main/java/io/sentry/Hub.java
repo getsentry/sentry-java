@@ -426,6 +426,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public @NotNull SentryOptions getOptions() {
+    return this.stack.peek().getOptions();
+  }
+
+  @Override
   public void popScope() {
     if (!isEnabled()) {
       options

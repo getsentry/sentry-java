@@ -146,4 +146,9 @@ final class NoOpHub implements IHub {
   public @Nullable ISpan getSpan() {
     return null;
   }
+
+  @Override
+  public @NotNull SentryOptions getOptions() {
+    return new SentryOptions();
+  }
 }

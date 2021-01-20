@@ -194,4 +194,9 @@ public final class HubAdapter implements IHub {
   public @Nullable ISpan getSpan() {
     return Sentry.getCurrentHub().getSpan();
   }
+
+  @Override
+  public @NotNull SentryOptions getOptions() {
+    return Sentry.getCurrentHub().getOptions();
+  }
 }

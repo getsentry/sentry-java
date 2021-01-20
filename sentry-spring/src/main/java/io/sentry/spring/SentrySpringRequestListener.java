@@ -2,6 +2,7 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
 import javax.servlet.ServletRequest;
@@ -16,6 +17,14 @@ import org.springframework.core.Ordered;
 public class SentrySpringRequestListener implements ServletRequestListener, Ordered {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
+
+  public SentrySpringRequestListener() {
+    this(HubAdapter.getInstance());
+  }
+
+  SentrySpringRequestListener(final @NotNull IHub hub) {
+    this(hub, new SentryRequestResolver(hub));
+  }
 
   public SentrySpringRequestListener(
       final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
