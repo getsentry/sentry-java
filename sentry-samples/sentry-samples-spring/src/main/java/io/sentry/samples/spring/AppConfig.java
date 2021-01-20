@@ -1,6 +1,7 @@
 package io.sentry.samples.spring;
 
 import io.sentry.SentryOptions;
+import io.sentry.SentryOptions.TracesSamplerCallback;
 import io.sentry.spring.EnableSentry;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppConfig {
 
   @Bean
-  SentryOptions.TracesSamplerCallback tracesSamplerCallback() {
+  TracesSamplerCallback tracesSamplerCallback() {
     return samplingContext -> {
       HttpServletRequest request =
           (HttpServletRequest) samplingContext.getCustomSamplingContext().get("request");
