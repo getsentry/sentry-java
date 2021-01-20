@@ -63,7 +63,7 @@ class SentryTransactionTest {
         val ex = RuntimeException()
         transaction.setThrowable(ex)
         transaction.finish()
-        verify(hub).setSpanContext(ex, transaction.spanContext)
+        verify(hub).setSpanContext(ex, transaction)
     }
 
     @Test
@@ -76,7 +76,7 @@ class SentryTransactionTest {
     @Test
     fun `starting child creates a new span`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
         assertNotNull(span.startTimestamp)
@@ -85,7 +85,7 @@ class SentryTransactionTest {
     @Test
     fun `starting child adds a span to transaction`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op")
         assertEquals(1, transaction.spans.size)
         assertEquals(span, transaction.spans.first())
     }
@@ -93,21 +93,21 @@ class SentryTransactionTest {
     @Test
     fun `span created with startChild has parent span id the same as transaction span id`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op") as Span
         assertEquals(transaction.spanId, span.parentSpanId)
     }
 
     @Test
     fun `span created with startChild has the same trace id as transaction`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild()
+        val span = transaction.startChild("op") as Span
         assertEquals(transaction.traceId, span.traceId)
     }
 
     @Test
     fun `starting child with operation and description creates a new span`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild("op", "description")
+        val span = transaction.startChild("op", "description") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
         assertNotNull(span.startTimestamp)
@@ -126,14 +126,14 @@ class SentryTransactionTest {
     @Test
     fun `span created with startChild with operation and description has parent span id the same as transaction span id`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild("op", "description")
+        val span = transaction.startChild("op", "description") as Span
         assertEquals(transaction.spanId, span.parentSpanId)
     }
 
     @Test
     fun `span created with startChild with operation and description has the same trace id as transaction`() {
         val transaction = SentryTransaction("name")
-        val span = transaction.startChild("op", "description")
+        val span = transaction.startChild("op", "description") as Span
         assertEquals(transaction.traceId, span.traceId)
     }
 

@@ -17,7 +17,7 @@ public final class Span extends SpanContext implements ISpan {
    * A transaction this span is attached to. Marked as transient to be ignored during JSON
    * serialization.
    */
-  private final transient @NotNull ITransaction transaction;
+  private final transient @NotNull SentryTransaction transaction;
 
   /** A throwable thrown during the execution of the span. */
   private transient @Nullable Throwable throwable;
@@ -27,7 +27,7 @@ public final class Span extends SpanContext implements ISpan {
   Span(
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
-      final @NotNull ITransaction transaction,
+      final @NotNull SentryTransaction transaction,
       final @NotNull IHub hub) {
     super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
@@ -44,12 +44,13 @@ public final class Span extends SpanContext implements ISpan {
   }
 
   @Override
-  public @NotNull Span startChild() {
-    return transaction.startChild(super.getSpanId());
+  public @NotNull ISpan startChild(final @NotNull String operation) {
+    return this.startChild(operation, null);
   }
 
   @Override
-  public Span startChild(final @NotNull String operation, final @NotNull String description) {
+  public @NotNull ISpan startChild(
+      final @NotNull String operation, final @Nullable String description) {
     return transaction.startChild(super.getSpanId(), operation, description);
   }
 

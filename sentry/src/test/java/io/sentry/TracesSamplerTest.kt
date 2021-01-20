@@ -7,9 +7,9 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class TracingSamplerTest {
+class TracesSamplerTest {
     class Fixture {
-        internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = null): TracingSampler {
+        internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = null): TracesSampler {
             val random = mock<Random>()
             if (randomResult != null) {
                 whenever(random.nextDouble()).thenReturn(randomResult)
@@ -21,7 +21,7 @@ class TracingSamplerTest {
             if (tracesSamplerResult != null) {
                 options.tracesSampler = SentryOptions.TracesSamplerCallback { tracesSamplerResult }
             }
-            return TracingSampler(options, random)
+            return TracesSampler(options, random)
         }
     }
 
@@ -30,13 +30,13 @@ class TracingSamplerTest {
     @Test
     fun `when tracesSampleRate is set and random returns greater number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.9, tracesSampleRate = 0.2)
-        assertFalse(sampler.sample(null))
+        assertFalse(sampler.sample(SamplingContext(TransactionContext("name"), null)))
     }
 
     @Test
     fun `when tracesSampleRate is set and random returns lower number returns true`() {
         val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 0.2)
-        assertTrue(sampler.sample(null))
+        assertTrue(sampler.sample(SamplingContext(TransactionContext("name"), null)))
     }
 
     @Test

@@ -1,25 +1,18 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
-import java.util.Collections;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class NoOpTransaction implements ITransaction {
+public final class NoOpSpan implements ISpan {
 
-  private static final NoOpTransaction instance = new NoOpTransaction();
+  private static final NoOpSpan instance = new NoOpSpan();
 
-  private NoOpTransaction() {}
+  private NoOpSpan() {}
 
-  public static NoOpTransaction getInstance() {
+  public static NoOpSpan getInstance() {
     return instance;
   }
-
-  @Override
-  public void setName(@NotNull String name) {}
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
@@ -30,49 +23,6 @@ public final class NoOpTransaction implements ITransaction {
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
     return NoOpSpan.getInstance();
-  }
-
-  @Override
-  public void setRequest(@Nullable Request request) {}
-
-  @Override
-  public @Nullable Request getRequest() {
-    return null;
-  }
-
-  @Override
-  public @NotNull Contexts getContexts() {
-    return new Contexts();
-  }
-
-  @Override
-  public @Nullable String getDescription() {
-    return null;
-  }
-
-  @Override
-  public @NotNull List<Span> getSpans() {
-    return Collections.emptyList();
-  }
-
-  @Override
-  public @Nullable Boolean isSampled() {
-    return null;
-  }
-
-  @Override
-  public @Nullable Span getLatestActiveSpan() {
-    return null;
-  }
-
-  @Override
-  public @Nullable SentryId getEventId() {
-    return null;
-  }
-
-  @Override
-  public @Nullable String getTransaction() {
-    return null;
   }
 
   @Override
