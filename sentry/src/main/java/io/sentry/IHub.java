@@ -362,6 +362,11 @@ public interface IHub {
   @Nullable
   ISpan getSpan();
 
+  /**
+   * Gets the {@link SentryOptions} attached to current scope.
+   *
+   * @return the options attached to current scope.
+   */
   @NotNull
   SentryOptions getOptions();
 }
