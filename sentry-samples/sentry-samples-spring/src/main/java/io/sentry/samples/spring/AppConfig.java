@@ -1,17 +1,14 @@
 package io.sentry.samples.spring;
 
 import io.sentry.SentryOptions.TracesSamplerCallback;
-import io.sentry.spring.EnableSentry;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Configuration
-// NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry
-// project/dashboard
-@EnableSentry(
-    dsn = "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563",
-    sendDefaultPii = true)
+@Import(SentryConfig.class)
 public class AppConfig {
 
   @Bean

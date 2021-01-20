@@ -27,6 +27,8 @@ dependencyManagement {
 dependencies {
     implementation(Config.Libs.servletApi)
     implementation(Config.Libs.springWeb)
+    implementation(Config.Libs.springAop)
+    implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springSecurityWeb)
     implementation(Config.Libs.springSecurityConfig)
     implementation(Config.Libs.logbackClassic)
