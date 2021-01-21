@@ -1,9 +1,13 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.IHub
+import io.sentry.ITransportFactory
+import io.sentry.RequestDetails
 import io.sentry.SentryOptions
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.annotations.NotNull
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
@@ -92,6 +96,16 @@ class EnableSentryTest {
             }
     }
 
+    @Test
+    fun `configures custom TransportFactory`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTransportFactory::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                val transportFactory = it.getBean(ITransportFactory::class.java)
+                assertThat(options.transportFactory).isEqualTo(transportFactory)
+            }
+    }
+
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfig
 
@@ -113,5 +127,12 @@ class EnableSentryTest {
                 return@TracesSamplerCallback 1.0
             }
         }
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomTransportFactory {
+
+        @Bean
+        fun tracesSampler() = mock<ITransportFactory>()
     }
 }

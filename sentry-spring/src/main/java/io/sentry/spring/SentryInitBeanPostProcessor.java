@@ -1,6 +1,7 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
@@ -33,6 +34,9 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
         applicationContext
             .getBeanProvider(TracesSamplerCallback.class)
             .ifAvailable(options::setTracesSampler);
+        applicationContext
+          .getBeanProvider(ITransportFactory.class)
+          .ifAvailable(options::setTransportFactory);
       }
       Sentry.init(options);
     }
