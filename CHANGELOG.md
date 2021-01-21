@@ -10,6 +10,7 @@
 * Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
 * Enhancement: Polish Performance API (#1165)
 * Enhancement: Set "debug" through external properties (#1186)
+* Bump: sentry-native to 0.4.5
 
 # 4.0.0-alpha.3
 
