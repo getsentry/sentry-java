@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentrySpringServletContainerInitializer implements ServletContainerInitializer {
   @Override
-  public void onStartup(@Nullable Set<Class<?>> c, @NotNull ServletContext ctx)
+  public void onStartup(final @Nullable Set<Class<?>> c, final @NotNull ServletContext ctx)
       throws ServletException {
     ctx.addListener(SentrySpringRequestListener.class);
   }
