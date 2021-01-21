@@ -64,7 +64,7 @@ public final class Sentry {
    *
    * @param dsn The Sentry DSN
    */
-  public static void init(String dsn) {
+  public static void init(final @NotNull String dsn) {
     init(options -> options.setDsn(dsn));
   }
 
