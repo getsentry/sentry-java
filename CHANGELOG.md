@@ -12,6 +12,7 @@
 * Enhancement: Polish Performance API (#1165)
 * Enhancement: Set "debug" through external properties (#1186)
 * Enhancement: Simplify Spring integration (#1188)
+* Enhancement: Enable Kotlin map-like access on CustomSamplingContext (#1192)
 
 # 4.0.0-alpha.3
 
