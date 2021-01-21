@@ -64,13 +64,6 @@ class EnableSentryTest {
     }
 
     @Test
-    fun `creates SentrySpringRequestListener`() {
-        contextRunner.run {
-            assertThat(it).hasSingleBean(SentrySpringRequestListener::class.java)
-        }
-    }
-
-    @Test
     fun `creates SentryExceptionResolver`() {
         contextRunner.run {
             assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)

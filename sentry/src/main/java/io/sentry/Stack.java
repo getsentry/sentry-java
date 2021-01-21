@@ -45,6 +45,10 @@ final class Stack {
     public @NotNull Scope getScope() {
       return scope;
     }
+
+    public @NotNull SentryOptions getOptions() {
+      return options;
+    }
   }
 
   private final @NotNull Deque<StackItem> items = new LinkedBlockingDeque<>();

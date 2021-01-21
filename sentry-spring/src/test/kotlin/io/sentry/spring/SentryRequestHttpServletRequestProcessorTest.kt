@@ -1,8 +1,12 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import java.net.URI
+import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,6 +20,17 @@ import org.springframework.web.servlet.HandlerMapping
 
 class SentryRequestHttpServletRequestProcessorTest {
 
+    private class Fixture {
+        val hub = mock<IHub>()
+
+        fun getSut(request: HttpServletRequest, options: SentryOptions = SentryOptions()): SentryRequestHttpServletRequestProcessor {
+            whenever(hub.options).thenReturn(options)
+            return SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(hub))
+        }
+    }
+
+    private val fixture = Fixture()
+
     @Test
     fun `attaches basic information from HTTP request to SentryEvent`() {
         val request = MockMvcRequestBuilders
@@ -23,7 +38,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("some-header", "some-header value")
             .accept(MediaType.APPLICATION_JSON)
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
+        val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -46,7 +61,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .header("another-header", "another value")
             .header("another-header", "another value2")
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
+        val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -67,7 +82,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = true
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(sentryOptions))
+        val eventProcessor = fixture.getSut(request, sentryOptions)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -85,7 +100,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(sentryOptions))
+        val eventProcessor = fixture.getSut(request, sentryOptions)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -107,7 +122,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(sentryOptions))
+        val eventProcessor = fixture.getSut(request, sentryOptions)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -127,7 +142,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .get(URI.create("http://example.com?param1=xyz"))
             .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
+        val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
 
         eventProcessor.process(event, null)
@@ -142,7 +157,7 @@ class SentryRequestHttpServletRequestProcessorTest {
             .get(URI.create("http://example.com?param1=xyz"))
             .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
             .buildRequest(MockServletContext())
-        val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryRequestResolver(SentryOptions()))
+        val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
         event.transaction = "some-transaction"
 

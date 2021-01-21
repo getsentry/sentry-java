@@ -2,10 +2,10 @@ package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CustomSamplingContext;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -39,16 +39,20 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private final @NotNull TransactionNameProvider transactionNameProvider =
       new TransactionNameProvider();
   private final @NotNull IHub hub;
-  private final @NotNull SentryOptions options;
   private final @NotNull SentryRequestResolver requestResolver;
 
+  public SentryTracingFilter() {
+    this(HubAdapter.getInstance());
+  }
+
   public SentryTracingFilter(
-      final @NotNull IHub hub,
-      final @NotNull SentryOptions options,
-      final @NotNull SentryRequestResolver requestResolver) {
+      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.options = Objects.requireNonNull(options, "options is required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
+  }
+
+  SentryTracingFilter(final @NotNull IHub hub) {
+    this(hub, new SentryRequestResolver(hub));
   }
 
   @Override
@@ -95,7 +99,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         hub.configureScope(scope -> scope.setTransaction(transaction));
         return transaction;
       } catch (InvalidSentryTraceHeaderException e) {
-        options
+        hub.getOptions()
             .getLogger()
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
