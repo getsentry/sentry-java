@@ -19,6 +19,14 @@ public interface ITransaction extends ISpan {
   void setName(@NotNull String name);
 
   /**
+   * Returns transaction name.
+   *
+   * @return transaction name
+   */
+  @NotNull
+  String getName();
+
+  /**
    * Attaches request information to the transaction.
    *
    * @param request the request
@@ -35,14 +43,6 @@ public interface ITransaction extends ISpan {
 
   @NotNull
   Contexts getContexts();
-
-  /**
-   * Returns the transaction's description.
-   *
-   * @return the description
-   */
-  @Nullable
-  String getDescription();
 
   @NotNull
   @TestOnly
