@@ -184,7 +184,7 @@ public final class Attachment {
    *
    * @return <code>true</code> if attachment should be added to every {@link ITransaction}.
    */
-  public boolean isAddToTransactions() {
+  boolean isAddToTransactions() {
     return addToTransactions;
   }
 }

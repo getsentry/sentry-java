@@ -377,7 +377,7 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private List<Attachment> filterForTransaction(List<Attachment> attachments) {
+  private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {
     if (attachments == null) {
       return null;
     }
