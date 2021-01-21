@@ -15,7 +15,7 @@
 * Enhancement: Enable Kotlin map-like access on CustomSamplingContext (#1192)
 * Enhancement: Auto register custom ITransportFactory in Spring integration (#1194)
 * Enhancement: Improve Kotlin property access in Performance API (#1193)
-* Enhancement: Copy options tags to transactions.
+* Enhancement: Copy options tags to transactions (#1198)
 
 # 4.0.0-alpha.3
 
