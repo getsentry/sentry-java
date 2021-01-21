@@ -689,7 +689,7 @@ class ScopeTest {
         assertEquals("transaction-name", scope.transactionName)
         scope.setTransaction("new-name")
         assertEquals("new-name", scope.transactionName)
-        sentryTransaction.setName("another-name")
+        sentryTransaction.name = "another-name"
         assertEquals("another-name", scope.transactionName)
     }
 

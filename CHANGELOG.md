@@ -13,6 +13,8 @@
 * Enhancement: Set "debug" through external properties (#1186)
 * Enhancement: Simplify Spring integration (#1188)
 * Enhancement: Init overload with dsn (#1195)
+* Enhancement: Auto register custom ITransportFactory in Spring integration (#1194)
+* Enhancement: Improve Kotlin property access in Performance API (#1193)
 
 # 4.0.0-alpha.3
 
