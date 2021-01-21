@@ -65,7 +65,7 @@ public final class Sentry {
    * @param dsn The Sentry DSN
    */
   public static void init(String dsn) {
-    init(options -> options.setDsn(dsn), GLOBAL_HUB_DEFAULT_MODE);
+    init(options -> options.setDsn(dsn));
   }
 
   /**
