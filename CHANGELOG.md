@@ -12,6 +12,7 @@
 * Enhancement: Polish Performance API (#1165)
 * Enhancement: Set "debug" through external properties (#1186)
 * Enhancement: Simplify Spring integration (#1188)
+* Enhancement: Auto register custom ITransportFactory in Spring integration.
 
 # 4.0.0-alpha.3
 
