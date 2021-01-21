@@ -35,8 +35,8 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
             .getBeanProvider(TracesSamplerCallback.class)
             .ifAvailable(options::setTracesSampler);
         applicationContext
-          .getBeanProvider(ITransportFactory.class)
-          .ifAvailable(options::setTransportFactory);
+            .getBeanProvider(ITransportFactory.class)
+            .ifAvailable(options::setTransportFactory);
       }
       Sentry.init(options);
     }
