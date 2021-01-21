@@ -61,7 +61,7 @@ class SentryTransactionTest {
         val hub = mock<IHub>()
         val transaction = SentryTransaction("name", SpanContext(), hub)
         val ex = RuntimeException()
-        transaction.setThrowable(ex)
+        transaction.throwable = ex
         transaction.finish()
         verify(hub).setSpanContext(ex, transaction)
     }
@@ -140,7 +140,7 @@ class SentryTransactionTest {
     @Test
     fun `setting op sets op on TraceContext`() {
         val transaction = SentryTransaction("name")
-        transaction.setOperation("op")
+        transaction.operation = "op"
         transaction.finish()
         assertEquals("op", transaction.contexts.trace!!.operation)
     }
@@ -156,7 +156,7 @@ class SentryTransactionTest {
     @Test
     fun `setting status sets status on TraceContext`() {
         val transaction = SentryTransaction("name")
-        transaction.setStatus(SpanStatus.ALREADY_EXISTS)
+        transaction.status = SpanStatus.ALREADY_EXISTS
         transaction.finish()
         assertEquals(SpanStatus.ALREADY_EXISTS, transaction.contexts.trace!!.status)
     }
@@ -164,7 +164,7 @@ class SentryTransactionTest {
     @Test
     fun `setName overwrites the transaction name`() {
         val transaction = SentryTransaction("initial name")
-        transaction.setName("new name")
+        transaction.name = "new name"
         assertEquals("new name", transaction.transaction)
     }
 }

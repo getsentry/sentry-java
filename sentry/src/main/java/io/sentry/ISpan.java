@@ -50,6 +50,14 @@ public interface ISpan {
   void setOperation(@Nullable String operation);
 
   /**
+   * Returns the span operation.
+   *
+   * @return the operation
+   */
+  @Nullable
+  String getOperation();
+
+  /**
    * Sets span description.
    *
    * @param description - the description.
@@ -57,11 +65,27 @@ public interface ISpan {
   void setDescription(@Nullable String description);
 
   /**
+   * Returns the span description.
+   *
+   * @return the description
+   */
+  @Nullable
+  String getDescription();
+
+  /**
    * Sets span status.
    *
    * @param status - the status.
    */
   void setStatus(@Nullable SpanStatus status);
+
+  /**
+   * Returns the span status
+   *
+   * @return the status
+   */
+  @Nullable
+  SpanStatus getStatus();
 
   /**
    * Sets the throwable that was thrown during the execution of the span.
