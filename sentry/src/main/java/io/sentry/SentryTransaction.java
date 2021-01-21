@@ -14,7 +14,7 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class SentryTransaction extends SentryBaseEvent implements ITransaction {
   /** The transaction name. */
-  private @Nullable String transaction;
+  private @NotNull String transaction;
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;
@@ -70,6 +70,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   public void setName(final @NotNull String name) {
     Objects.requireNonNull(name, "name is required");
     this.transaction = name;
+  }
+
+  @Override
+  public @NotNull String getName() {
+    return this.transaction;
   }
 
   /**
@@ -174,6 +179,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     this.context.setOperation(op);
   }
 
+  @Override
+  public @Nullable String getOperation() {
+    return this.context.getOperation();
+  }
+
   /**
    * Sets transaction description.
    *
@@ -225,8 +235,9 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     return timestamp;
   }
 
+  @Override
   @Nullable
-  SpanStatus getStatus() {
+  public SpanStatus getStatus() {
     return this.getContexts().getTrace().getStatus();
   }
 
