@@ -69,7 +69,7 @@ class SentryClientTest {
             whenever(factory.create(any(), any())).thenReturn(transport)
         }
 
-        var attachment = Attachment("hello".toByteArray(), "hello.txt")
+        var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
 
         fun getSut() = SentryClient(sentryOptions)
     }
@@ -764,6 +764,17 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureTransaction with attachments not added to transaction`() {
+        val transaction = SentryTransaction("a-transaction")
+
+        val scope = createScopeWithAttachments()
+        scope.addAttachment(Attachment("hello".toByteArray(), "application/octet-stream"))
+        fixture.getSut().captureTransaction(transaction, scope, null)
+
+        verifyAttachmentsInEnvelope(transaction.eventId)
+    }
+
+    @Test
     fun `when scope's active span is a transaction, transaction context is applied to an event`() {
         val event = SentryEvent()
         val sut = fixture.getSut()
@@ -834,7 +845,7 @@ class SentryClientTest {
             addAttachment(fixture.attachment)
 
             val bytesTooBig = ByteArray((fixture.maxAttachmentSize + 1).toInt()) { 0 }
-            addAttachment(Attachment(bytesTooBig, "will_get_dropped.txt"))
+            addAttachment(Attachment(bytesTooBig, "will_get_dropped.txt", "application/octet-stream", true))
         }
     }
 
