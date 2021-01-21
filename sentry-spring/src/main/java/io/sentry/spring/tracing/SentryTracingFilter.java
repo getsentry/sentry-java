@@ -89,7 +89,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final String name = request.getMethod() + " " + request.getRequestURI();
 
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
-    customSamplingContext.put("request", request);
+    customSamplingContext.set("request", request);
 
     if (sentryTraceHeader != null) {
       try {
