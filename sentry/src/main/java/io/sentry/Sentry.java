@@ -62,6 +62,15 @@ public final class Sentry {
   /**
    * Initializes the SDK
    *
+   * @param dsn The Sentry DSN
+   */
+  public static void init(String dsn) {
+    init(options -> options.setDsn(dsn), GLOBAL_HUB_DEFAULT_MODE);
+  }
+
+  /**
+   * Initializes the SDK
+   *
    * @param clazz OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
    * @param <T> class that extends SentryOptions
