@@ -49,7 +49,7 @@ public final class io/sentry/CustomSamplingContext {
 	public fun <init> ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getData ()Ljava/util/Map;
-	public fun put (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/DateUtils {
