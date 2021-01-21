@@ -357,7 +357,7 @@ public final class SentryClient implements ISentryClient {
           processTransaction((SentryTransaction) transaction);
       try {
         final SentryEnvelope envelope =
-            buildEnvelope(sentryTransaction, getAttachmentsFromScope(scope));
+            buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
         if (envelope != null) {
           transport.send(envelope, hint);
         } else {
@@ -375,6 +375,21 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {
+    if (attachments == null) {
+      return null;
+    }
+
+    List<Attachment> attachmentsToSend = new ArrayList<>();
+    for (Attachment attachment : attachments) {
+      if (attachment.isAddToTransactions()) {
+        attachmentsToSend.add(attachment);
+      }
+    }
+
+    return attachmentsToSend;
   }
 
   private @NotNull SentryTransaction processTransaction(
