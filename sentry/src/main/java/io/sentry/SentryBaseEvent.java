@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
@@ -104,6 +105,21 @@ public abstract class SentryBaseEvent {
    */
   public @Nullable Throwable getThrowable() {
     return throwable;
+  }
+
+  /**
+   * Returns the captured Throwable or null. If a throwable is wrapped in {@link
+   * ExceptionMechanismException}, returns unwrapped throwable.
+   *
+   * @return the Throwable or null
+   */
+  public @Nullable Throwable getOriginThrowable() {
+    final Throwable ex = throwable;
+    if (ex instanceof ExceptionMechanismException) {
+      return ((ExceptionMechanismException) ex).getThrowable();
+    } else {
+      return ex;
+    }
   }
 
   /**

@@ -544,6 +544,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
+	public fun getOriginThrowable ()Ljava/lang/Throwable;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSdk ()Lio/sentry/protocol/SdkVersion;

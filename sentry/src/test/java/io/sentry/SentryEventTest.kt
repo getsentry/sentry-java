@@ -67,9 +67,26 @@ class SentryEventTest {
         assertFalse(event.isCrashed)
     }
 
+    @Test
     fun `adds breadcrumb with string as a parameter`() {
         val event = SentryEvent()
         event.addBreadcrumb("breadcrumb")
         assertEquals(1, event.breadcrumbs.filter { it.message == "breadcrumb" }.size)
+    }
+
+    @Test
+    fun `when throwable is a ExceptionMechanismException, getOriginThrowable unwraps original throwable`() {
+        val event = SentryEvent()
+        val ex = RuntimeException()
+        event.throwable = ExceptionMechanismException(null, ex, null)
+        assertEquals(ex, event.originThrowable)
+    }
+
+    @Test
+    fun `when throwable is not a ExceptionMechanismException, getOriginThrowable returns throwable`() {
+        val event = SentryEvent()
+        val ex = RuntimeException()
+        event.throwable = ex
+        assertEquals(ex, event.originThrowable)
     }
 }
