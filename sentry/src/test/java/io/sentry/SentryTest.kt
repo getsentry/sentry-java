@@ -106,6 +106,18 @@ class SentryTest {
     }
 
     @Test
+    fun `warns about multiple Sentry initializations with string overload`() {
+        val logger = mock<ILogger>()
+        Sentry.init(dsn)
+        Sentry.init {
+            it.dsn = dsn
+            it.setDebug(true)
+            it.setLogger(logger)
+        }
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
+    }
+
+    @Test
     fun `initializes Sentry using external properties`() {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()
