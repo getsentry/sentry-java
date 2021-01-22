@@ -118,7 +118,6 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
-	public fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -158,7 +157,6 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
-	public fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -213,7 +211,6 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
-	public abstract fun getSpanContext (Ljava/lang/Throwable;)Lio/sentry/SpanContext;
 	public abstract fun isEnabled ()Z
 	public abstract fun popScope ()V
 	public abstract fun pushScope ()V
@@ -515,6 +512,7 @@ public final class io/sentry/Sentry {
 	public static fun init (Lio/sentry/Sentry$OptionsConfiguration;)V
 	public static fun init (Lio/sentry/Sentry$OptionsConfiguration;Z)V
 	public static fun init (Lio/sentry/SentryOptions;)V
+	public static fun init (Ljava/lang/String;)V
 	public static fun isEnabled ()Z
 	public static fun popScope ()V
 	public static fun pushScope ()V

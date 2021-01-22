@@ -85,10 +85,5 @@ class NoOpHubTest {
     }
 
     @Test
-    fun `getSpanContext returns null`() {
-        assertNull(sut.getSpanContext(RuntimeException()))
-    }
-
-    @Test
     fun `setSpanContext doesnt throw`() = sut.setSpanContext(RuntimeException(), mock())
 }
