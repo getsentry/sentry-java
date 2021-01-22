@@ -1,7 +1,6 @@
 package io.sentry;
 
-import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.util.Objects;
+  import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,34 +19,19 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
 
   @Override
   public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
-    final Throwable throwable = event.getThrowable();
+    final Throwable throwable = event.getOriginThrowable();
     if (throwable != null) {
-      if (throwable instanceof ExceptionMechanismException) {
-        final ExceptionMechanismException ex = (ExceptionMechanismException) throwable;
-        if (capturedObjects.containsKey(ex.getThrowable())) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Duplicate Exception detected. Event %s will be discarded.",
-                  event.getEventId());
-          return null;
-        } else {
-          capturedObjects.put(ex.getThrowable(), null);
-        }
+      if (capturedObjects.containsKey(throwable)
+          || containsAnyKey(capturedObjects, allCauses(throwable))) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Duplicate Exception detected. Event %s will be discarded.",
+                event.getEventId());
+        return null;
       } else {
-        if (capturedObjects.containsKey(throwable)
-            || containsAnyKey(capturedObjects, allCauses(throwable))) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Duplicate Exception detected. Event %s will be discarded.",
-                  event.getEventId());
-          return null;
-        } else {
-          capturedObjects.put(throwable, null);
-        }
+        capturedObjects.put(throwable, null);
       }
     }
     return event;
