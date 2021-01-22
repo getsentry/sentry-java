@@ -1,6 +1,6 @@
 package io.sentry;
 
-  import io.sentry.util.Objects;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
