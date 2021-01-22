@@ -171,7 +171,7 @@ public final class Hub implements IHub {
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (event.getThrowable() != null) {
       final ISpan span = throwableToSpan.get(event.getThrowable());
-      if (span != null && span.getSpanContext() != null) {
+      if (span != null) {
         if (event.getContexts().getTrace() == null) {
           event.getContexts().setTrace(span.getSpanContext());
         }
@@ -425,6 +425,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public @NotNull SentryOptions getOptions() {
+    return this.stack.peek().getOptions();
+  }
+
+  @Override
   public void popScope() {
     if (!isEnabled()) {
       options
@@ -622,8 +627,8 @@ public final class Hub implements IHub {
     this.throwableToSpan.put(throwable, span);
   }
 
-  @Override
-  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+  @Nullable
+  SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
     final ISpan span = this.throwableToSpan.get(throwable);
     if (span != null) {

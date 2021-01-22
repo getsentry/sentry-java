@@ -357,7 +357,7 @@ public final class SentryClient implements ISentryClient {
           processTransaction((SentryTransaction) transaction);
       try {
         final SentryEnvelope envelope =
-            buildEnvelope(sentryTransaction, getAttachmentsFromScope(scope));
+            buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
         if (envelope != null) {
           transport.send(envelope, hint);
         } else {
@@ -377,6 +377,21 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {
+    if (attachments == null) {
+      return null;
+    }
+
+    List<Attachment> attachmentsToSend = new ArrayList<>();
+    for (Attachment attachment : attachments) {
+      if (attachment.isAddToTransactions()) {
+        attachmentsToSend.add(attachment);
+      }
+    }
+
+    return attachmentsToSend;
+  }
+
   private @NotNull SentryTransaction processTransaction(
       final @NotNull SentryTransaction transaction) {
     if (transaction.getRelease() == null) {
@@ -384,6 +399,15 @@ public final class SentryClient implements ISentryClient {
     }
     if (transaction.getEnvironment() == null) {
       transaction.setEnvironment(options.getEnvironment());
+    }
+    if (transaction.getTags() == null) {
+      transaction.setTags(new HashMap<>(options.getTags()));
+    } else {
+      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
+        if (!transaction.getTags().containsKey(item.getKey())) {
+          transaction.setTag(item.getKey(), item.getValue());
+        }
+      }
     }
     return transaction;
   }

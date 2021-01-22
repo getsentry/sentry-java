@@ -1,6 +1,8 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.IHub
+import io.sentry.ITransportFactory
 import io.sentry.SentryOptions
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
@@ -64,13 +66,6 @@ class EnableSentryTest {
     }
 
     @Test
-    fun `creates SentrySpringRequestListener`() {
-        contextRunner.run {
-            assertThat(it).hasSingleBean(SentrySpringRequestListener::class.java)
-        }
-    }
-
-    @Test
     fun `creates SentryExceptionResolver`() {
         contextRunner.run {
             assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
@@ -99,6 +94,16 @@ class EnableSentryTest {
             }
     }
 
+    @Test
+    fun `configures custom TransportFactory`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTransportFactory::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                val transportFactory = it.getBean(ITransportFactory::class.java)
+                assertThat(options.transportFactory).isEqualTo(transportFactory)
+            }
+    }
+
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfig
 
@@ -120,5 +125,12 @@ class EnableSentryTest {
                 return@TracesSamplerCallback 1.0
             }
         }
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomTransportFactory {
+
+        @Bean
+        fun tracesSampler() = mock<ITransportFactory>()
     }
 }

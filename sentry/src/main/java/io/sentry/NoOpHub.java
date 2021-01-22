@@ -138,12 +138,12 @@ final class NoOpHub implements IHub {
       final @NotNull Throwable throwable, final @NotNull ISpan spanContext) {}
 
   @Override
-  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
+  public @Nullable ISpan getSpan() {
     return null;
   }
 
   @Override
-  public @Nullable ISpan getSpan() {
-    return null;
+  public @NotNull SentryOptions getOptions() {
+    return new SentryOptions();
   }
 }

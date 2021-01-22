@@ -1,5 +1,6 @@
 # vNext
 
+* Feat: Add addToTransactions to Attachment (#1191)
 * Enhancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
 * Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
 * Ref: Set SpanContext on SentryTransaction to avoid potential NPE (#1173)
@@ -10,6 +11,13 @@
 * Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
 * Enhancement: Polish Performance API (#1165)
 * Enhancement: Set "debug" through external properties (#1186)
+* Enhancement: Simplify Spring integration (#1188)
+* Enhancement: Init overload with dsn (#1195)
+* Enhancement: Enable Kotlin map-like access on CustomSamplingContext (#1192)
+* Enhancement: Auto register custom ITransportFactory in Spring integration (#1194)
+* Enhancement: Improve Kotlin property access in Performance API (#1193)
+* Enhancement: Copy options tags to transactions (#1198)
+* Enhancement: Add convenient method for accessing event's throwable (1202)
 * Bump: sentry-native to 0.4.5
 
 # 4.0.0-alpha.3

@@ -2,6 +2,7 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
 import javax.servlet.ServletRequest;
@@ -17,10 +18,29 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
 
+  /**
+   * Creates a new instance of {@link SentrySpringRequestListener}. Used in traditional servlet
+   * containers with {@link SentrySpringServletContainerInitializer}.
+   */
+  public SentrySpringRequestListener() {
+    this(HubAdapter.getInstance());
+  }
+
+  /**
+   * Creates a new instance of {@link SentrySpringRequestListener}. Used together with Spring Boot
+   * or with embedded servlet containers.
+   *
+   * @param hub - the hub
+   * @param requestResolver - the request resolver
+   */
   public SentrySpringRequestListener(
       final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver are required");
+  }
+
+  SentrySpringRequestListener(final @NotNull IHub hub) {
+    this(hub, new SentryRequestResolver(hub));
   }
 
   @Override

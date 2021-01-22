@@ -11,6 +11,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
+import io.sentry.spring.SentrySpringRequestListener;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
@@ -119,6 +120,18 @@ public class SentryAutoConfiguration {
     @Import(SentryWebConfiguration.class)
     @Open
     static class SentryWebMvcConfiguration {
+
+      @Bean
+      public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IHub hub) {
+        return new SentryRequestResolver(hub);
+      }
+
+      @Bean
+      public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
+          final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
+        return new SentrySpringRequestListener(sentryHub, requestResolver);
+      }
+
       @Bean
       @ConditionalOnMissingBean
       public @NotNull SentryExceptionResolver sentryExceptionResolver(
@@ -130,12 +143,9 @@ public class SentryAutoConfiguration {
       @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IHub hub,
-          final @NotNull SentryOptions options,
-          final @NotNull SentryRequestResolver sentryRequestResolver) {
+          final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(
-                new SentryTracingFilter(hub, options, sentryRequestResolver));
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub, sentryRequestResolver));
         filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return filter;
       }

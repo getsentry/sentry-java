@@ -344,21 +344,18 @@ public interface IHub {
   void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span);
 
   /**
-   * Gets the span context for the span that was active while the throwable given by parameter was
-   * thrown.
-   *
-   * @param throwable - the throwable
-   * @return span context or {@code null} if no corresponding span context found.
-   */
-  @ApiStatus.Internal
-  @Nullable
-  SpanContext getSpanContext(Throwable throwable);
-
-  /**
    * Gets the current active transaction or span.
    *
    * @return the active span or null when no active transaction is running
    */
   @Nullable
   ISpan getSpan();
+
+  /**
+   * Gets the {@link SentryOptions} attached to current scope.
+   *
+   * @return the options attached to current scope.
+   */
+  @NotNull
+  SentryOptions getOptions();
 }

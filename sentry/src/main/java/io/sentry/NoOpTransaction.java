@@ -22,6 +22,11 @@ public final class NoOpTransaction implements ITransaction {
   public void setName(@NotNull String name) {}
 
   @Override
+  public @NotNull String getName() {
+    return null;
+  }
+
+  @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
     return NoOpSpan.getInstance();
   }
@@ -90,10 +95,20 @@ public final class NoOpTransaction implements ITransaction {
   public void setOperation(@Nullable String operation) {}
 
   @Override
+  public @Nullable String getOperation() {
+    return null;
+  }
+
+  @Override
   public void setDescription(@Nullable String description) {}
 
   @Override
   public void setStatus(@Nullable SpanStatus status) {}
+
+  @Override
+  public @Nullable SpanStatus getStatus() {
+    return null;
+  }
 
   @Override
   public void setThrowable(@Nullable Throwable throwable) {}

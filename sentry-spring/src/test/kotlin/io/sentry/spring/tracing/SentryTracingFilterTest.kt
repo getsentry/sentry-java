@@ -14,7 +14,6 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
-import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
@@ -31,7 +30,10 @@ class SentryTracingFilterTest {
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
-        val requestResolver = SentryRequestResolver(SentryOptions())
+
+        init {
+            whenever(hub.options).thenReturn(SentryOptions())
+        }
 
         fun getSut(sentryTraceHeader: String? = null): SentryTracingFilter {
             request.requestURI = "/product/12"
@@ -43,7 +45,7 @@ class SentryTracingFilterTest {
             }
             response.status = 200
             whenever(hub.startTransaction(any<String>(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
-            return SentryTracingFilter(hub, SentryOptions(), requestResolver)
+            return SentryTracingFilter(hub)
         }
     }
 

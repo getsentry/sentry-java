@@ -16,6 +16,8 @@ object Config {
         val springBoot = "org.springframework.boot"
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.10.RELEASE"
+        val gretty = "org.gretty"
+        val grettyVersion = "3.0.3"
     }
 
     object Android {
@@ -54,6 +56,8 @@ object Config {
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
+        val springSecurityWeb = "org.springframework.security:spring-security-web"
+        val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api"

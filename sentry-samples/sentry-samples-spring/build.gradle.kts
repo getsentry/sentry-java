@@ -2,10 +2,12 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion
+    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
+    id("war")
+    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
 }
 
 group = "io.sentry.sample.spring"
@@ -16,10 +18,20 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    }
+}
+
 dependencies {
-    implementation(Config.Libs.springBootStarterSecurity)
-    implementation(Config.Libs.springBootStarterWeb)
-    implementation(Config.Libs.springBootStarter)
+    implementation(Config.Libs.servletApi)
+    implementation(Config.Libs.springWeb)
+    implementation(Config.Libs.springAop)
+    implementation(Config.Libs.aspectj)
+    implementation(Config.Libs.springSecurityWeb)
+    implementation(Config.Libs.springSecurityConfig)
+    implementation(Config.Libs.logbackClassic)
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(project(":sentry-spring"))

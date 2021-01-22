@@ -2,7 +2,9 @@ package io.sentry
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AttachmentTest {
 
@@ -70,5 +72,23 @@ class AttachmentTest {
 
         val byteAttachment = Attachment(fixture.bytes, fixture.filename, fixture.contentType)
         assertEquals(fixture.contentType, byteAttachment.contentType)
+    }
+
+    @Test
+    fun `default of addToTransactions is false`() {
+        val fileAttachment = Attachment(fixture.filename)
+        assertFalse(fileAttachment.isAddToTransactions)
+
+        val byteAttachment = Attachment(fixture.bytes, fixture.filename)
+        assertFalse(byteAttachment.isAddToTransactions)
+    }
+
+    @Test
+    fun `set addToTransactions`() {
+        val fileAttachment = Attachment(fixture.pathname, fixture.filename, fixture.contentType, true)
+        assertTrue(fileAttachment.isAddToTransactions)
+
+        val byteAttachment = Attachment(fixture.bytes, fixture.filename, fixture.contentType, true)
+        assertTrue(byteAttachment.isAddToTransactions)
     }
 }

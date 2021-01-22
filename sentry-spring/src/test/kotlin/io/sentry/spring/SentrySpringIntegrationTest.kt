@@ -154,6 +154,9 @@ open class App {
 
     @Bean
     open fun mockTransport() = transport
+
+    @Bean
+    open fun sentrySpringRequestListener() = SentrySpringRequestListener()
 }
 
 @RestController
