@@ -1,4 +1,4 @@
-# vNext
+# 4.0.0-beta.1
 
 * Feat: Add addToTransactions to Attachment (#1191)
 * Enhancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
