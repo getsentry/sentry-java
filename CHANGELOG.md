@@ -11,14 +11,21 @@
 * Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
 * Enhancement: Polish Performance API (#1165)
 * Enhancement: Set "debug" through external properties (#1186)
+<<<<<<< HEAD
+=======
+* Bump: sentry-native to 0.4.5
+>>>>>>> 87e1a2c3a6aa82d164caa85228dfc158077cafc5
 * Enhancement: Simplify Spring integration (#1188)
 * Enhancement: Init overload with dsn (#1195)
 * Enhancement: Enable Kotlin map-like access on CustomSamplingContext (#1192)
 * Enhancement: Auto register custom ITransportFactory in Spring integration (#1194)
 * Enhancement: Improve Kotlin property access in Performance API (#1193)
+<<<<<<< HEAD
 * Enhancement: Copy options tags to transactions (#1198)
 * Enhancement: Add convenient method for accessing event's throwable (1202)
 * Bump: sentry-native to 0.4.5
+=======
+>>>>>>> 87e1a2c3a6aa82d164caa85228dfc158077cafc5
 
 # 4.0.0-alpha.3
 
