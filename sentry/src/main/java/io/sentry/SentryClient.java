@@ -400,6 +400,15 @@ public final class SentryClient implements ISentryClient {
     if (transaction.getEnvironment() == null) {
       transaction.setEnvironment(options.getEnvironment());
     }
+    if (transaction.getTags() == null) {
+      transaction.setTags(new HashMap<>(options.getTags()));
+    } else {
+      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
+        if (!transaction.getTags().containsKey(item.getKey())) {
+          transaction.setTag(item.getKey(), item.getValue());
+        }
+      }
+    }
     return transaction;
   }
 

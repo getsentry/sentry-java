@@ -824,6 +824,27 @@ class SentryClientTest {
         assertEquals("transactionEnvironment", transaction.environment)
     }
 
+    @Test
+    fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
+        fixture.sentryOptions.setTag("tag1", "value1")
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name")
+        sut.captureTransaction(transaction)
+        assertEquals(mapOf("tag1" to "value1"), transaction.tags)
+    }
+
+    @Test
+    fun `when transaction has tags, and tags are set on options, options tags are added to transactions`() {
+        fixture.sentryOptions.setTag("tag1", "value1")
+        fixture.sentryOptions.setTag("tag2", "value2")
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name")
+        transaction.setTag("tag3", "value3")
+        transaction.setTag("tag2", "transaction-tag")
+        sut.captureTransaction(transaction)
+        assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
