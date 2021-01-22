@@ -12,9 +12,8 @@
 
 ## :pencil: Checklist
 <!--- Put an `x` in the boxes that apply -->
-- [ ] I reviewed submitted code
-- [ ] I added tests to verify changes
-- [ ] All tests passing
+- [ ] I reviewed the submitted code
+- [ ] I added tests to verify the changes
 - [ ] No breaking changes
 
 
