@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public final class CustomSamplingContext {
   private final @NotNull Map<String, Object> data = new HashMap<>();
 
-  public void put(final @NotNull String key, final @Nullable Object value) {
+  public void set(final @NotNull String key, final @Nullable Object value) {
     Objects.requireNonNull(key, "key is required");
     this.data.put(key, value);
   }

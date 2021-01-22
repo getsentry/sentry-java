@@ -14,7 +14,6 @@
 <!--- Put an `x` in the boxes that apply -->
 - [ ] I reviewed the submitted code
 - [ ] I added tests to verify the changes
-- [ ] All tests passing
 - [ ] No breaking changes
 
 
