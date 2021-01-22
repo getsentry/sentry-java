@@ -14,5 +14,7 @@ io.sentry.protocol
 io.sentry.servlet
 io.sentry.spring
 io.sentry.spring.boot
+io.sentry.spring.tracing
 io.sentry.transport
+io.sentry.transport.apache
 io.sentry.util
