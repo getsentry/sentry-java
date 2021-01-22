@@ -1144,7 +1144,7 @@ class HubTest {
     //region setSpanContext
     @Test
     fun `associates span context with throwable`() {
-        val hub = generateHub()
+        val hub = generateHub() as Hub
         val transaction = hub.startTransaction("aTransaction")
         val span = transaction.startChild("op")
         val exception = RuntimeException()
@@ -1154,7 +1154,7 @@ class HubTest {
 
     @Test
     fun `returns null when no span context associated with throwable`() {
-        val hub = generateHub()
+        val hub = generateHub() as Hub
         assertNull(hub.getSpanContext(RuntimeException()))
     }
     // endregion
