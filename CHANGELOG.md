@@ -1,5 +1,7 @@
 # vNext
 
+* Enhancement: TracesSamplerCallback allows returning a nullable Double (#1206)
+
 # 4.0.0-beta.1
 
 * Feat: Add addToTransactions to Attachment (#1191)

@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 
 class TracesSamplerTest {
     class Fixture {
-        internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = null): TracesSampler {
+        internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = Double.MIN_VALUE): TracesSampler {
             val random = mock<Random>()
             if (randomResult != null) {
                 whenever(random.nextDouble()).thenReturn(randomResult)
@@ -18,7 +18,7 @@ class TracesSamplerTest {
             if (tracesSampleRate != null) {
                 options.tracesSampleRate = tracesSampleRate
             }
-            if (tracesSamplerResult != null) {
+            if (tracesSamplerResult != Double.MIN_VALUE) {
                 options.tracesSampler = SentryOptions.TracesSamplerCallback { tracesSamplerResult }
             }
             return TracesSampler(options, random)
@@ -49,6 +49,20 @@ class TracesSamplerTest {
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns greater number returns false`() {
         val sampler = fixture.getSut(randomResult = 0.9, tracesSamplerResult = 0.2)
         assertFalse(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext())))
+    }
+
+    @Test
+    fun `when tracesSampler returns null and parentSampled is set sampler uses it as a sampling decision`() {
+        val sampler = fixture.getSut(tracesSamplerResult = null)
+        val transactionContextParentSampled = TransactionContext("name")
+        transactionContextParentSampled.parentSampled = true
+        assertTrue(sampler.sample(SamplingContext(transactionContextParentSampled, CustomSamplingContext())))
+    }
+
+    @Test
+    fun `when tracesSampler returns null and tracesSampleRate is set sampler uses it as a sampling decision`() {
+        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 0.2, tracesSamplerResult = null)
+        assertTrue(sampler.sample(SamplingContext(TransactionContext("name"), CustomSamplingContext())))
     }
 
     @Test
