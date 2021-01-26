@@ -1,5 +1,7 @@
 # vNext
 
+* Bump Gradle to 6.8.1 and AGP to 4.1.2 #1205
+
 # 4.0.0-beta.1
 
 * Feat: Add addToTransactions to Attachment (#1191)
