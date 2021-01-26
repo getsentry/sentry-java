@@ -1,5 +1,6 @@
 # vNext
 
+* Bump Gradle to 6.8.1 and AGP to 4.1.2 #1205
 * Bump: sentry-native to 0.4.6
 * Enhancement: TracesSamplerCallback allows returning a nullable Double (#1206)
 
