@@ -1,6 +1,7 @@
 # vNext
 
 * Bump: sentry-native to 0.4.6
+* Enhancement: TracesSamplerCallback allows returning a nullable Double (#1206)
 
 # 4.0.0-beta.1
 

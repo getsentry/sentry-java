@@ -22,15 +22,20 @@ final class TracesSampler {
   boolean sample(final @NotNull SamplingContext samplingContext) {
     if (samplingContext.getTransactionContext().getSampled() != null) {
       return samplingContext.getTransactionContext().getSampled();
-    } else if (options.getTracesSampler() != null) {
-      return sample(options.getTracesSampler().sample(samplingContext));
-    } else if (samplingContext.getTransactionContext().getParentSampled() != null) {
-      return samplingContext.getTransactionContext().getParentSampled();
-    } else if (options.getTracesSampleRate() != null) {
-      return sample(options.getTracesSampleRate());
-    } else {
-      return false;
     }
+    if (options.getTracesSampler() != null) {
+      final Double samplerResult = options.getTracesSampler().sample(samplingContext);
+      if (samplerResult != null) {
+        return sample(samplerResult);
+      }
+    }
+    if (samplingContext.getTransactionContext().getParentSampled() != null) {
+      return samplingContext.getTransactionContext().getParentSampled();
+    }
+    if (options.getTracesSampleRate() != null) {
+      return sample(options.getTracesSampleRate());
+    }
+    return false;
   }
 
   private boolean sample(final @NotNull Double aDouble) {
