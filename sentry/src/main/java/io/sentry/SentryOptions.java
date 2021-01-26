@@ -1260,9 +1260,9 @@ public class SentryOptions {
      * backend.
      *
      * @param samplingContext the sampling context
-     * @return sampling value
+     * @return sampling value or {@code null} if decision has not been taken
      */
-    @NotNull
+    @Nullable
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
