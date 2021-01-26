@@ -265,4 +265,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   SpanContext getContext() {
     return context;
   }
+
+  boolean isFinished() {
+    return this.timestamp != null;
+  }
 }

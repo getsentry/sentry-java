@@ -353,22 +353,29 @@ public final class SentryClient implements ISentryClient {
     SentryId sentryId = transaction.getEventId();
 
     if (transaction instanceof SentryTransaction) {
-      final SentryTransaction sentryTransaction =
-          processTransaction((SentryTransaction) transaction);
-      try {
-        final SentryEnvelope envelope =
-            buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
-        if (envelope != null) {
-          transport.send(envelope, hint);
-        } else {
+      final SentryTransaction sentryTransaction = (SentryTransaction) transaction;
+
+      if (!sentryTransaction.isFinished()) {
+        options.getLogger().log(SentryLevel.INFO, "Finishing unfinished transaction %s.", sentryId);
+        sentryTransaction.finish();
+      } else {
+        processTransaction(sentryTransaction);
+        try {
+          final SentryEnvelope envelope =
+              buildEnvelope(
+                  sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
+          if (envelope != null) {
+            transport.send(envelope, hint);
+          } else {
+            sentryId = SentryId.EMPTY_ID;
+          }
+        } catch (IOException e) {
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+          // if there was an error capturing the event, we return an emptyId
           sentryId = SentryId.EMPTY_ID;
         }
-      } catch (IOException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
-        // if there was an error capturing the event, we return an emptyId
-        sentryId = SentryId.EMPTY_ID;
       }
     } else {
       options.getLogger().log(SentryLevel.DEBUG, "Captured a NoOpTransaction %s", sentryId);
