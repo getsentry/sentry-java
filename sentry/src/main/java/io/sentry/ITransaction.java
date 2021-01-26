@@ -75,4 +75,11 @@ public interface ITransaction extends ISpan {
   @Nullable
   @ApiStatus.Internal
   String getTransaction();
+
+  /**
+   * Returns if transaction has finished.
+   *
+   * @return if transaction has finished.
+   */
+  boolean isFinished();
 }

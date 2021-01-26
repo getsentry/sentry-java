@@ -266,7 +266,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     return context;
   }
 
-  boolean isFinished() {
+  @Override
+  public boolean isFinished() {
     return this.timestamp != null;
   }
 }
