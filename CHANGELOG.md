@@ -1,5 +1,7 @@
 # vNext
 
+* Bump: sentry-native to 0.4.6
+
 # 4.0.0-beta.1
 
 * Feat: Add addToTransactions to Attachment (#1191)
@@ -20,7 +22,6 @@
 * Enhancement: Improve Kotlin property access in Performance API (#1193)
 * Enhancement: Copy options tags to transactions (#1198)
 * Enhancement: Add convenient method for accessing event's throwable (1202)
-* Bump: sentry-native to 0.4.5
 
 # 4.0.0-alpha.3
 
