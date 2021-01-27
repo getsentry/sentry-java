@@ -81,6 +81,11 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public boolean isFinished() {
+    return true;
+  }
+
+  @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
     return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, false);
   }
