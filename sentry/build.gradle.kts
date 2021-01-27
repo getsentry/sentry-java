@@ -66,6 +66,8 @@ tasks {
         environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
         environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
         environment["SENTRY_TEST_MAP_KEY2"] = "value2"
+        // used to test io.sentry.jul.SentryHandler
+        systemProperty("java.util.logging.config.file", "${project.projectDir}/src/test/resources/logging.properties")
     }
 }
 
