@@ -117,4 +117,11 @@ public interface ISpan {
    * @param value the tag value
    */
   void setTag(@NotNull String key, @NotNull String value);
+
+  /**
+   * Returns if span has finished.
+   *
+   * @return if span has finished.
+   */
+  boolean isFinished();
 }

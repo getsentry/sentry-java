@@ -746,9 +746,7 @@ class SentryClientTest {
     @Test
     fun `transactions are sent using connection`() {
         val sut = fixture.getSut()
-        val sentryTransaction = SentryTransaction("a-transaction")
-        sentryTransaction.finish()
-        sut.captureTransaction(sentryTransaction, mock(), null)
+        sut.captureTransaction(SentryTransaction("a-transaction"), mock(), null)
         verify(fixture.transport).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)
@@ -759,7 +757,6 @@ class SentryClientTest {
     @Test
     fun `when captureTransaction with attachments`() {
         val transaction = SentryTransaction("a-transaction")
-        transaction.finish()
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
@@ -768,7 +765,6 @@ class SentryClientTest {
     @Test
     fun `when captureTransaction with attachments not added to transaction`() {
         val transaction = SentryTransaction("a-transaction")
-        transaction.finish()
         val scope = createScopeWithAttachments()
         scope.addAttachment(Attachment("hello".toByteArray(), "application/octet-stream"))
         fixture.getSut().captureTransaction(transaction, scope, null)
@@ -808,7 +804,6 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "optionsEnvironment"
         val sut = fixture.getSut()
         val transaction = SentryTransaction("name")
-        transaction.finish()
         sut.captureTransaction(transaction)
         assertEquals("optionsRelease", transaction.release)
         assertEquals("optionsEnvironment", transaction.environment)
@@ -832,18 +827,8 @@ class SentryClientTest {
         fixture.sentryOptions.setTag("tag1", "value1")
         val sut = fixture.getSut()
         val transaction = SentryTransaction("name")
-        transaction.finish()
         sut.captureTransaction(transaction)
         assertEquals(mapOf("tag1" to "value1"), transaction.tags)
-    }
-
-    @Test
-    fun `when transaction is not finished, capturing transaction finishes it`() {
-        fixture.sentryOptions.setTag("tag1", "value1")
-        val sut = fixture.getSut()
-        val transaction = SentryTransaction("name")
-        sut.captureTransaction(transaction)
-        assertTrue(transaction.isFinished)
     }
 
     @Test
@@ -854,7 +839,6 @@ class SentryClientTest {
         val transaction = SentryTransaction("name")
         transaction.setTag("tag3", "value3")
         transaction.setTag("tag2", "transaction-tag")
-        transaction.finish()
         sut.captureTransaction(transaction)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
     }
