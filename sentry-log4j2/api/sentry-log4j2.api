@@ -1,0 +1,12 @@
+public final class io/sentry/log4j2/BuildConfig {
+	public static final field SENTRY_LOG4J2_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/log4j2/SentryAppender : org/apache/logging/log4j/core/appender/AbstractAppender {
+	public fun <init> (Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Lio/sentry/ITransportFactory;Lio/sentry/IHub;)V
+	public fun append (Lorg/apache/logging/log4j/core/LogEvent;)V
+	public static fun createAppender (Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;)Lio/sentry/log4j2/SentryAppender;
+	public fun start ()V
+}
+

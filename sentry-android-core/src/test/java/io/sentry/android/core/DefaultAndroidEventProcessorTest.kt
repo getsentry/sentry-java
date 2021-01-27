@@ -19,8 +19,12 @@ import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
+import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
+import io.sentry.protocol.DebugImage
+import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryThread
+import io.sentry.protocol.User
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,6 +32,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 
@@ -38,7 +43,7 @@ class DefaultAndroidEventProcessorTest {
     private class Fixture {
         val buildInfo = mock<IBuildInfoProvider>()
         val options = SentryOptions().apply {
-            isDebug = true
+            setDebug(true)
             setLogger(mock())
             sdkVersion = SdkVersion().apply {
                 name = "test"
@@ -88,14 +93,44 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `When hint is not Cached, data should be applied`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
-        var event = SentryEvent().apply {
-        }
+        var event = SentryEvent()
         // refactor and mock data later on
         event = processor.process(event, null)
-        assertNotNull(event.user)
         assertNotNull(event.contexts.app)
         assertEquals("test", event.debugMeta.images[0].uuid)
         assertNotNull(event.dist)
+    }
+
+    @Test
+    fun `When debug meta is not null, set the image list`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        var event = SentryEvent().apply {
+            debugMeta = DebugMeta()
+        }
+
+        event = processor.process(event, null)
+
+        assertEquals("test", event.debugMeta.images[0].uuid)
+    }
+
+    @Test
+    fun `When debug meta is not null and image list is not empty, append to the list`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+
+        val image = DebugImage().apply {
+            uuid = "abc"
+            type = "proguard"
+        }
+        var event = SentryEvent().apply {
+            debugMeta = DebugMeta().apply {
+                images = mutableListOf(image)
+            }
+        }
+
+        event = processor.process(event, null)
+
+        assertEquals("abc", event.debugMeta.images.first().uuid)
+        assertEquals("test", event.debugMeta.images.last().uuid)
     }
 
     @Test
@@ -129,15 +164,46 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `When hint is Cached, data should not be applied`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
-        var event = SentryEvent().apply {
-        }
+        var event = SentryEvent()
         // refactor and mock data later on
         event = processor.process(event, CachedEvent())
-        assertNull(event.user)
         assertNull(event.contexts.app)
         assertNull(event.debugMeta)
         assertNull(event.release)
         assertNull(event.dist)
+    }
+
+    @Test
+    fun `When hint is Cached, userId is applied anyway`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        var event = SentryEvent()
+        event = processor.process(event, CachedEvent())
+        assertNotNull(event.user)
+    }
+
+    @Test
+    fun `When user with id is already set, do not overwrite it`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val user = User()
+        user.id = "user-id"
+        var event = SentryEvent().apply {
+            setUser(user)
+        }
+        event = processor.process(event, null)
+        assertNotNull(event.user)
+        assertSame(user, event.user)
+    }
+
+    @Test
+    fun `When user without id is set, user id is applied`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val user = User()
+        var event = SentryEvent().apply {
+            setUser(user)
+        }
+        event = processor.process(event, null)
+        assertNotNull(event.user)
+        assertNotNull(event.user.id)
     }
 
     @Test
@@ -150,6 +216,7 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(contextData[ANDROID_ID])
         assertNotNull(contextData[KERNEL_VERSION])
         assertNotNull(contextData[EMULATOR])
+        assertNotNull(contextData[SIDE_LOADED])
     }
 
     @Test
@@ -164,5 +231,14 @@ class DefaultAndroidEventProcessorTest {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
         processor.process(SentryEvent(), CachedEvent())
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `When event is processed, sideLoaded info should be set`() {
+        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        var event = SentryEvent()
+        event = processor.process(event, null)
+
+        assertNotNull(event.getTag("isSideLoaded"))
     }
 }

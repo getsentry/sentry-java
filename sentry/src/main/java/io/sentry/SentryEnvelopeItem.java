@@ -1,10 +1,14 @@
 package io.sentry;
 
+import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.util.Objects;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -73,6 +77,7 @@ public final class SentryEnvelopeItem {
         new SentryEnvelopeItemHeader(
             SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
 
+    // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -82,12 +87,13 @@ public final class SentryEnvelopeItem {
     }
     try (final Reader eventReader =
         new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
-      return serializer.deserializeEvent(eventReader);
+      return serializer.deserialize(eventReader, SentryEvent.class);
     }
   }
 
   public static @NotNull SentryEnvelopeItem fromEvent(
-      final @NotNull ISerializer serializer, final @NotNull SentryEvent event) throws IOException {
+      final @NotNull ISerializer serializer, final @NotNull SentryBaseEvent event)
+      throws IOException {
     Objects.requireNonNull(serializer, "ISerializer is required.");
     Objects.requireNonNull(event, "SentryEvent is required.");
 
@@ -103,9 +109,24 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryItemType.Event, () -> cachedItem.getBytes().length, "application/json", null);
+            SentryItemType.resolve(event),
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
 
+    // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public @Nullable ITransaction getTransaction(final @NotNull ISerializer serializer)
+      throws Exception {
+    if (header == null || header.getType() != SentryItemType.Transaction) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, SentryTransaction.class);
+    }
   }
 
   public static SentryEnvelopeItem fromUserFeedback(
@@ -130,7 +151,91 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
-    return new SentryEnvelopeItem(itemHeader, cachedItem::getBytes);
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromAttachment(
+      final @NotNull Attachment attachment, final long maxAttachmentSize) {
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              if (attachment.getBytes() != null) {
+                if (attachment.getBytes().length > maxAttachmentSize) {
+                  throw new SentryEnvelopeException(
+                      String.format(
+                          "Dropping attachment with filename '%s', because the "
+                              + "size of the passed bytes with %d bytes is bigger "
+                              + "than the maximum allowed attachment size of "
+                              + "%d bytes.",
+                          attachment.getFilename(),
+                          attachment.getBytes().length,
+                          maxAttachmentSize));
+                }
+                return attachment.getBytes();
+              } else if (attachment.getPathname() != null) {
+
+                try {
+                  File file = new File(attachment.getPathname());
+
+                  if (!file.isFile()) {
+                    throw new SentryEnvelopeException(
+                        String.format(
+                            "Reading the attachment %s failed, because the file located at the path is not a file.",
+                            attachment.getPathname()));
+                  }
+
+                  if (!file.canRead()) {
+                    throw new SentryEnvelopeException(
+                        String.format(
+                            "Reading the attachment %s failed, because can't read the file.",
+                            attachment.getPathname()));
+                  }
+
+                  if (file.length() > maxAttachmentSize) {
+                    throw new SentryEnvelopeException(
+                        String.format(
+                            "Dropping attachment, because the size of the it located at "
+                                + "'%s' with %d bytes is bigger than the maximum "
+                                + "allowed attachment size of %d bytes.",
+                            attachment.getPathname(), file.length(), maxAttachmentSize));
+                  }
+
+                  try (FileInputStream fileInputStream =
+                          new FileInputStream(attachment.getPathname());
+                      BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+                      ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] bytes = new byte[1024];
+                    int length;
+                    int offset = 0;
+                    while ((length = inputStream.read(bytes)) != -1) {
+                      outputStream.write(bytes, offset, length);
+                    }
+                    return outputStream.toByteArray();
+                  }
+                } catch (IOException | SecurityException exception) {
+                  throw new SentryEnvelopeException(
+                      String.format("Reading the attachment %s failed.", attachment.getPathname()));
+                }
+              }
+
+              throw new SentryEnvelopeException(
+                  String.format(
+                      "Couldn't attach the attachment %s.\n"
+                          + "Please check that either bytes or a path is set.",
+                      attachment.getFilename()));
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.Attachment,
+            () -> cachedItem.getBytes().length,
+            attachment.getContentType(),
+            attachment.getFilename());
+
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   private static class CachedItem {

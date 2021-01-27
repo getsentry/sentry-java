@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.User;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,8 +21,11 @@ public final class Scope implements Cloneable {
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
 
-  /** Scope's transaction */
-  private @Nullable String transaction;
+  /** Scope's {@link ITransaction}. */
+  private @Nullable ITransaction transaction;
+
+  /** Scope's transaction name. Used when using error reporting without the performance feature. */
+  private @Nullable String transactionName;
 
   /** Scope's user */
   private @Nullable User user;
@@ -54,6 +59,9 @@ public final class Scope implements Cloneable {
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
 
+  /** Scope's attachments */
+  private @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
+
   /**
    * Scope's ctor
    *
@@ -78,26 +86,58 @@ public final class Scope implements Cloneable {
    *
    * @param level the SentryLevel
    */
-  public void setLevel(@Nullable SentryLevel level) {
+  public void setLevel(final @Nullable SentryLevel level) {
     this.level = level;
   }
 
   /**
-   * Returns the Scope's transaction
+   * Returns the Scope's transaction name.
    *
    * @return the transaction
    */
-  public @Nullable String getTransaction() {
-    return transaction;
+  public @Nullable String getTransactionName() {
+    final ITransaction tx = this.transaction;
+    return tx != null ? tx.getTransaction() : transactionName;
   }
 
   /**
-   * Sets the Scope's transaction
+   * Sets the Scope's transaction.
    *
    * @param transaction the transaction
    */
-  public void setTransaction(@Nullable String transaction) {
-    this.transaction = transaction;
+  public void setTransaction(final @NotNull String transaction) {
+    final ITransaction tx = this.transaction;
+    if (tx != null) {
+      tx.setName(transaction);
+    }
+    this.transactionName = transaction;
+  }
+
+  /**
+   * Returns current active Span or Transaction.
+   *
+   * @return current active Span or Transaction or null if transaction has not been set.
+   */
+  @Nullable
+  public ISpan getSpan() {
+    final ITransaction tx = transaction;
+    if (tx != null) {
+      final Span span = tx.getLatestActiveSpan();
+
+      if (span != null) {
+        return span;
+      }
+    }
+    return tx;
+  }
+
+  /**
+   * Sets the current active transaction
+   *
+   * @param transaction the transaction
+   */
+  public void setTransaction(final @NotNull ITransaction transaction) {
+    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
   }
 
   /**
@@ -114,7 +154,7 @@ public final class Scope implements Cloneable {
    *
    * @param user the user
    */
-  public void setUser(@Nullable User user) {
+  public void setUser(final @Nullable User user) {
     this.user = user;
 
     if (options.isEnableScopeSync()) {
@@ -139,7 +179,10 @@ public final class Scope implements Cloneable {
    *
    * @param fingerprint the fingerprint list
    */
-  public void setFingerprint(@NotNull List<String> fingerprint) {
+  public void setFingerprint(final @NotNull List<String> fingerprint) {
+    if (fingerprint == null) {
+      return;
+    }
     this.fingerprint = fingerprint;
   }
 
@@ -215,13 +258,29 @@ public final class Scope implements Cloneable {
    *
    * @param breadcrumb the breadcrumb
    */
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
     addBreadcrumb(breadcrumb, null);
   }
 
   /** Clear all the breadcrumbs */
   public void clearBreadcrumbs() {
     breadcrumbs.clear();
+  }
+
+  /** Clears the transaction. */
+  public void clearTransaction() {
+    transaction = null;
+    transactionName = null;
+  }
+
+  /**
+   * Returns active transaction or null if there is no active transaction.
+   *
+   * @return the transaction
+   */
+  @Nullable
+  public ITransaction getTransaction() {
+    return this.transaction;
   }
 
   /** Resets the Scope to its default state */
@@ -234,6 +293,8 @@ public final class Scope implements Cloneable {
     tags.clear();
     extra.clear();
     eventProcessors.clear();
+    clearTransaction();
+    attachments.clear();
   }
 
   /**
@@ -252,7 +313,7 @@ public final class Scope implements Cloneable {
    * @param key the key
    * @param value the value
    */
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(final @NotNull String key, final @NotNull String value) {
     this.tags.put(key, value);
 
     if (options.isEnableScopeSync()) {
@@ -267,7 +328,7 @@ public final class Scope implements Cloneable {
    *
    * @param key the key
    */
-  public void removeTag(@NotNull String key) {
+  public void removeTag(final @NotNull String key) {
     this.tags.remove(key);
 
     if (options.isEnableScopeSync()) {
@@ -293,7 +354,7 @@ public final class Scope implements Cloneable {
    * @param key the key
    * @param value the value
    */
-  public void setExtra(@NotNull String key, @NotNull String value) {
+  public void setExtra(final @NotNull String key, final @NotNull String value) {
     this.extra.put(key, value);
 
     if (options.isEnableScopeSync()) {
@@ -308,7 +369,7 @@ public final class Scope implements Cloneable {
    *
    * @param key the key
    */
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(final @NotNull String key) {
     this.extra.remove(key);
 
     if (options.isEnableScopeSync()) {
@@ -383,6 +444,27 @@ public final class Scope implements Cloneable {
   }
 
   /**
+   * Returns the Scopes's attachments
+   *
+   * @return the attachments
+   */
+  @NotNull
+  List<Attachment> getAttachments() {
+    return new CopyOnWriteArrayList<>(attachments);
+  }
+
+  /**
+   * Adds an attachment to the Scope's list of attachments. The SDK adds the attachment to every
+   * event and transaction sent to Sentry.
+   *
+   * @param attachment The attachment to add to the Scope's list of attachments.
+   */
+  @ApiStatus.Experimental
+  public void addAttachment(final @NotNull Attachment attachment) {
+    attachments.add(attachment);
+  }
+
+  /**
    * Creates a breadcrumb list with the max number of breadcrumbs
    *
    * @param maxBreadcrumb the max number of breadcrumbs
@@ -448,6 +530,8 @@ public final class Scope implements Cloneable {
 
     clone.contexts = contexts.clone();
 
+    clone.attachments = new CopyOnWriteArrayList<>(attachments);
+
     return clone;
   }
 
@@ -466,7 +550,7 @@ public final class Scope implements Cloneable {
    *
    * @param eventProcessor the event processor
    */
-  public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
+  public void addEventProcessor(final @NotNull EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
   }
 
@@ -477,7 +561,7 @@ public final class Scope implements Cloneable {
    * @return a clone of the Session after executing the callback and mutating the session
    */
   @Nullable
-  Session withSession(@NotNull IWithSession sessionCallback) {
+  Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     synchronized (sessionLock) {
       sessionCallback.accept(session);

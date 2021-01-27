@@ -62,6 +62,15 @@ public final class Sentry {
   /**
    * Initializes the SDK
    *
+   * @param dsn The Sentry DSN
+   */
+  public static void init(final @NotNull String dsn) {
+    init(options -> options.setDsn(dsn));
+  }
+
+  /**
+   * Initializes the SDK
+   *
    * @param clazz OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
    * @param <T> class that extends SentryOptions
@@ -199,10 +208,6 @@ public final class Sentry {
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
-
-    if (options.getSerializer() instanceof NoOpSerializer) {
-      options.setSerializer(new GsonSerializer(logger, options.getEnvelopeReader()));
-    }
 
     // this should be after setting serializers
     if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
@@ -491,6 +496,73 @@ public final class Sentry {
   /** Ends the current session */
   public static void endSession() {
     getCurrentHub().endSession();
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param name the transaction name
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(final @NotNull String name) {
+    return getCurrentHub().startTransaction(name);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts) {
+    return getCurrentHub().startTransaction(transactionContexts);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(name, customSamplingContext);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * transaction and sampling contexts the decision if transaction is sampled will be taken by
+   * {@link TracesSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
+  }
+
+  /**
+   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   *
+   * @return trace header or null
+   */
+  public static @Nullable SentryTraceHeader traceHeaders() {
+    return getCurrentHub().traceHeaders();
+  }
+
+  /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  public static @Nullable ISpan getSpan() {
+    return getCurrentHub().getSpan();
   }
 
   /**

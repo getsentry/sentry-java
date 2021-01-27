@@ -83,7 +83,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
             new BufferedReader(
                 new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
 
-          final Session session = serializer.deserializeSession(reader);
+          final Session session = serializer.deserialize(reader, Session.class);
           if (session == null) {
             options
                 .getLogger()
@@ -115,7 +115,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
             // if the App. has been upgraded and there's a new version of the SDK running,
             // SdkVersion will be outdated.
             final SentryEnvelope fromSession =
-                SentryEnvelope.fromSession(serializer, session, options.getSdkVersion());
+                SentryEnvelope.from(serializer, session, options.getSdkVersion());
             final File fileFromSession = getEnvelopeFile(fromSession);
             writeEnvelopeToDisk(fileFromSession, fromSession);
           }
@@ -186,7 +186,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          final Session session = serializer.deserializeSession(reader);
+          final Session session = serializer.deserialize(reader, Session.class);
           if (session == null) {
             options
                 .getLogger()
@@ -226,9 +226,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
       }
     }
 
-    try (final OutputStream outputStream = new FileOutputStream(file);
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-      serializer.serialize(envelope, writer);
+    try (final OutputStream outputStream = new FileOutputStream(file)) {
+      serializer.serialize(envelope, outputStream);
     } catch (Exception e) {
       options
           .getLogger()

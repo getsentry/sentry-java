@@ -1,5 +1,109 @@
 # vNext
 
+* Bump Gradle to 6.8.1 and AGP to 4.1.2 #1205
+* Bump: sentry-native to 0.4.6
+* Enhancement: TracesSamplerCallback allows returning a nullable Double (#1206)
+
+# 4.0.0-beta.1
+
+* Feat: Add addToTransactions to Attachment (#1191)
+* Enhancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
+* Enhancement: Pass request to CustomSamplingContext in Spring integration (#1172)
+* Ref: Set SpanContext on SentryTransaction to avoid potential NPE (#1173)
+* Fix: Free Local Refs manually due to Android local ref. count limits
+* Enhancement: Move `SentrySpanClientHttpRequestInterceptor` to Spring module (#1181)
+* Enhancement: Add overload for `transaction/span.finish(SpanStatus)` (#1182)
+* Fix: Bring back support for setting transaction name without ongoing transaction (#1183)
+* Enhancement: Simplify registering traces sample callback in Spring integration (#1184)
+* Enhancement: Polish Performance API (#1165)
+* Enhancement: Set "debug" through external properties (#1186)
+* Enhancement: Simplify Spring integration (#1188)
+* Enhancement: Init overload with dsn (#1195)
+* Enhancement: Enable Kotlin map-like access on CustomSamplingContext (#1192)
+* Enhancement: Auto register custom ITransportFactory in Spring integration (#1194)
+* Enhancement: Improve Kotlin property access in Performance API (#1193)
+* Enhancement: Copy options tags to transactions (#1198)
+* Enhancement: Add convenient method for accessing event's throwable (1202)
+
+# 4.0.0-alpha.3
+
+* Feat: Add maxAttachmentSize to SentryOptions (#1138)
+* Feat: Drop invalid attachments (#1134)
+* Ref: Make Attachment immutable (#1120)
+* Fix inheriting sampling decision from parent (#1100)
+* Fixes and Tests: Session serialization and deserialization
+* Ref: using Calendar to generate Dates
+* Fix: Exception only sets a stack trace if there are frames
+* Feat: set isSideLoaded info tags
+* Enhancement: Read tracesSampleRate from AndroidManifest
+* Fix: Initialize Logback after context refreshes (#1129)
+* Ref: Return NoOpTransaction instead of null (#1126)
+* Fix: Do not crash when passing null values to @Nullable methods, eg User and Scope
+* Ref: `ITransport` implementations are now responsible for executing request in asynchronous or synchronous way (#1118)
+* Ref: Add option to set `TransportFactory` instead of `ITransport` on `SentryOptions` (#1124)
+* Ref: Simplify ITransport creation in ITransportFactory (#1135) 
+* Feat: Add non blocking Apache HttpClient 5 based Transport (#1136)
+* Enhancement: Autoconfigure Apache HttpClient 5 based Transport in Spring Boot integration (#1143)
+* Enhancement: Send user.ip_address = {{auto}} when sendDefaultPii is true (#1015)
+* Fix: Resolving dashed properties from external configuration
+* Feat: Read `uncaught.handler.enabled` property from the external configuration 
+* Feat: Resolve servername from the localhost address
+* Fix: Consider {{ auto }} as a default ip address (#1015) 
+* Fix: Set release and environment on Transactions (#1152)
+* Fix: Do not set transaction on the scope automatically   
+* Enhancement: Automatically assign span context to captured events (#1156)
+* Feat: OutboxSender supports all envelope item types #1158
+* Enhancement: Improve ITransaction and ISpan null-safety compatibility (#1161)
+
+# 4.0.0-alpha.2
+
+* Feat: Add basic support for attachments (#1082)
+* Fix: Remove method reference in SentryEnvelopeItem (#1091)
+* Enhancement: Set transaction name on events and transactions sent using Spring integration (#1067)
+* Fix: Set current thread only if there are no exceptions
+* Enhancement: Set global tags on SentryOptions and load them from external configuration (#1066)
+* Ref: Refactor resolving SpanContext for Throwable (#1068)
+* Enhancement: Add API validator and remove deprecated methods
+* Enhancement: Add more convenient method to start a child span (#1073)
+* Enhancement: Autoconfigure traces callback in Spring Boot integration (#1074)
+* Enhancement: Resolve in-app-includes and in-app-excludes parameters from the external configuration
+* Enhancement: Make InAppIncludesResolver public (#1084)
+* Ref: Change "op" to "operation" in @SentrySpan and @SentryTransaction
+* Fix: SentryOptions creates GsonSerializer by default
+* Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
+* Fix: Append DebugImage list if event already has it
+* Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
+
+# 4.0.0-alpha.1
+
+* Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
+* Ref: Refactor JSON deserialization (#1047)
+* Feat: Performance monitoring (#971)
+* Feat: Performance monitoring for Spring Boot applications (#971)
+
+# 3.2.1
+
+* Fix: Set current thread only if theres no exceptions (#1064)
+* Fix: Append DebugImage list if event already has it (#1092)
+* Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event (#1094)
+* Fix: Free Local Refs manually due to Android local ref. count limits  (#1179)
+
+# 3.2.0
+
+* Bump: AGP 4.1.1 (#1040)
+* Fix: use neutral Locale for String operations #1033
+* Update to sentry-native 0.4.4 and fix shared library builds (#1039)
+* Feat: Expose a Module (Debug images) Loader for Android thru sentry-native #1043
+* Enhancement: Added java doc to protocol classes based on sentry-data-schemes project (#1045)
+* Enhancement: Make SentryExceptionResolver Order configurable to not send handled web exceptions (#1008)
+* Enhancement: Resolve HTTP Proxy parameters from the external configuration (#1028)
+* Enhancement: Sentry NDK integration is compiled against default NDK version based on AGP's version #1048
+* Fix: Clean up JNI code and properly free strings #1050
+* Fix: set userId for hard-crashes if no user is set #1049
+
+# 3.1.3
+
+* Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
 

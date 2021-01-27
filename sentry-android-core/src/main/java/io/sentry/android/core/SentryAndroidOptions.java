@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Sentry SDK options for Android */
@@ -34,9 +33,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
+  /** Interface that loads the debug images list */
+  private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
+    setAttachServerName(false);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -70,24 +73,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrEnabled(boolean anrEnabled) {
     this.anrEnabled = anrEnabled;
-  }
-
-  /**
-   * @deprecated use {@link #getAnrTimeoutIntervalMillis , #getAnrTimeoutIntervalMillis} instead.
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public long getAnrTimeoutIntervalMills() {
-    return getAnrTimeoutIntervalMillis();
-  }
-
-  /**
-   * @deprecated use {@link #setAnrTimeoutIntervalMillis , #setAnrTimeoutIntervalMillis} instead.
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public void setAnrTimeoutIntervalMills(long anrTimeoutIntervalMillis) {
-    setAnrTimeoutIntervalMillis(anrTimeoutIntervalMillis);
   }
 
   /**
@@ -169,5 +154,24 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
+  }
+
+  /**
+   * Returns the Debug image loader
+   *
+   * @return the image loader
+   */
+  public @NotNull IDebugImagesLoader getDebugImagesLoader() {
+    return debugImagesLoader;
+  }
+
+  /**
+   * Sets the image loader
+   *
+   * @param debugImagesLoader the image loader
+   */
+  public void setDebugImagesLoader(final @NotNull IDebugImagesLoader debugImagesLoader) {
+    this.debugImagesLoader =
+        debugImagesLoader != null ? debugImagesLoader : NoOpDebugImagesLoader.getInstance();
   }
 }

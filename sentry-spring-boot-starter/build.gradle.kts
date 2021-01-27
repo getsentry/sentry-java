@@ -34,9 +34,11 @@ dependencies {
     api(project(":sentry"))
     api(project(":sentry-spring"))
     compileOnly(project(":sentry-logback"))
+    compileOnly(project(":sentry-apache-http-client-5"))
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
+    compileOnly(Config.Libs.springBootStarterAop)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -49,6 +51,7 @@ dependencies {
 
     // tests
     testImplementation(project(":sentry-logback"))
+    testImplementation(project(":sentry-apache-http-client-5"))
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
@@ -56,6 +59,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterSecurity)
+    testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.TestLibs.awaitility)
 }
 

@@ -1,0 +1,43 @@
+public class io/sentry/samples/spring/boot/CustomEventProcessor : io/sentry/EventProcessor {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+}
+
+public class io/sentry/samples/spring/boot/Person {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getFirstName ()Ljava/lang/String;
+	public fun getLastName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public class io/sentry/samples/spring/boot/PersonController {
+	public fun <init> (Lio/sentry/samples/spring/boot/PersonService;)V
+}
+
+public class io/sentry/samples/spring/boot/PersonService {
+	public fun <init> ()V
+}
+
+public class io/sentry/samples/spring/boot/SecurityConfiguration : org/springframework/security/config/annotation/web/configuration/WebSecurityConfigurerAdapter {
+	public fun <init> ()V
+	protected fun configure (Lorg/springframework/security/config/annotation/web/builders/HttpSecurity;)V
+	public fun userDetailsService ()Lorg/springframework/security/core/userdetails/UserDetailsService;
+}
+
+public class io/sentry/samples/spring/boot/SentryDemoApplication {
+	public fun <init> ()V
+	public static fun main ([Ljava/lang/String;)V
+}
+
+public class io/sentry/samples/spring/boot/Todo {
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Z)V
+	public fun getId ()Ljava/lang/Long;
+	public fun getTitle ()Ljava/lang/String;
+	public fun isCompleted ()Z
+}
+
+public class io/sentry/samples/spring/boot/TodoController {
+	public fun <init> (Lorg/springframework/web/client/RestTemplate;)V
+}
+

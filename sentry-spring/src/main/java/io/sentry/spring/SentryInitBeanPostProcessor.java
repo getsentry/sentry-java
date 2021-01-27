@@ -1,8 +1,10 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
+import io.sentry.SentryOptions.TracesSamplerCallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -28,7 +30,13 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
             .forEach(
                 sentryUserProvider ->
                     options.addEventProcessor(
-                        new SentryUserProviderEventProcessor(sentryUserProvider)));
+                        new SentryUserProviderEventProcessor(options, sentryUserProvider)));
+        applicationContext
+            .getBeanProvider(TracesSamplerCallback.class)
+            .ifAvailable(options::setTracesSampler);
+        applicationContext
+            .getBeanProvider(ITransportFactory.class)
+            .ifAvailable(options::setTransportFactory);
       }
       Sentry.init(options);
     }

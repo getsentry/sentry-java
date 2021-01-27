@@ -8,7 +8,6 @@ import io.sentry.ISerializer
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import kotlin.test.Test
-import kotlin.test.assertTrue
 
 class StdoutTransportTest {
     private class Fixture {
@@ -25,11 +24,10 @@ class StdoutTransportTest {
     fun `test serializes envelope`() {
         val transport = fixture.getSUT()
         val event = SentryEvent()
-        val envelope = SentryEnvelope.fromEvent(fixture.serializer, event, null)
+        val envelope = SentryEnvelope.from(fixture.serializer, event, null)
 
         val result = transport.send(envelope)
 
         verify(fixture.serializer).serialize(eq(envelope), any())
-        assertTrue(result.isSuccess)
     }
 }

@@ -26,7 +26,7 @@ class EnvelopeSenderTest {
         var options = SentryOptions().noFlushTimeout()
 
         init {
-            options.isDebug = true
+            options.setDebug(true)
             options.setLogger(logger)
         }
 
@@ -79,7 +79,7 @@ class EnvelopeSenderTest {
     @Test
     fun `when directory has event files, processDirectory captures with hub`() {
         val event = SentryEvent()
-        val envelope = SentryEnvelope.fromEvent(fixture.serializer!!, event, null)
+        val envelope = SentryEnvelope.from(fixture.serializer!!, event, null)
         whenever(fixture.serializer!!.deserializeEnvelope(any())).thenReturn(envelope)
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri())

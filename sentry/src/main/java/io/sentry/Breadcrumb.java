@@ -55,13 +55,13 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     breadcrumb.setType("http");
     breadcrumb.setCategory("http");
     breadcrumb.setData("url", url);
-    breadcrumb.setData("method", method.toUpperCase(Locale.getDefault()));
+    breadcrumb.setData("method", method.toUpperCase(Locale.ROOT));
     return breadcrumb;
   }
 
   /** Breadcrumb ctor */
   public Breadcrumb() {
-    this(DateUtils.getCurrentDateTimeOrNull());
+    this(DateUtils.getCurrentDateTime());
   }
 
   /**

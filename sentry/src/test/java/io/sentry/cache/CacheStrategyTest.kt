@@ -74,9 +74,6 @@ class CacheStrategyTest {
 
     @Test
     fun `do not move init flag if state is not ok`() {
-        val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(mock(), envelopeReader))
-        }
         val sut = fixture.getSUT(3, getOptionsWithRealSerializer())
 
         val files = createTempFilesSortByOldestToNewest()
@@ -107,13 +104,13 @@ class CacheStrategyTest {
         val files = createTempFilesSortByOldestToNewest()
 
         val okSession = createSessionMockData(Session.State.Ok, true)
-        val okEnvelope = SentryEnvelope.fromSession(sut.serializer, okSession, null)
-        sut.serializer.serialize(okEnvelope, files[0].writer())
+        val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
+        sut.serializer.serialize(okEnvelope, files[0].outputStream())
 
         val updatedOkSession = okSession.clone()
         updatedOkSession.update(null, null, true)
-        val updatedOkEnvelope = SentryEnvelope.fromSession(sut.serializer, updatedOkSession, null)
-        sut.serializer.serialize(updatedOkEnvelope, files[1].writer())
+        val updatedOkEnvelope = SentryEnvelope.from(sut.serializer, updatedOkSession, null)
+        sut.serializer.serialize(updatedOkEnvelope, files[1].outputStream())
 
         saveSessionToFile(files[2], sut, Session.State.Exited, null)
 
@@ -169,13 +166,13 @@ class CacheStrategyTest {
         val item = envelope.items.first()
 
         val reader = InputStreamReader(ByteArrayInputStream(item.data), Charsets.UTF_8)
-        return sut.serializer.deserializeSession(reader)
+        return sut.serializer.deserialize(reader, Session::class.java)
     }
 
     private fun saveSessionToFile(file: File, sut: CacheStrategy, state: Session.State = Session.State.Ok, init: Boolean? = true) {
-        val okSession = createSessionMockData(Session.State.Ok, init)
-        val okEnvelope = SentryEnvelope.fromSession(sut.serializer, okSession, null)
-        sut.serializer.serialize(okEnvelope, file.writer())
+        val okSession = createSessionMockData(state, init)
+        val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
+        sut.serializer.serialize(okEnvelope, file.outputStream())
     }
 
     private fun getOptionsWithRealSerializer(): SentryOptions {

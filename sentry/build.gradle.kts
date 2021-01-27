@@ -32,6 +32,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(project(":sentry-test-support"))
 }
 
 configure<SourceSetContainer> {
@@ -63,6 +64,8 @@ tasks {
     }
     test {
         environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
+        environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
+        environment["SENTRY_TEST_MAP_KEY2"] = "value2"
     }
 }
 

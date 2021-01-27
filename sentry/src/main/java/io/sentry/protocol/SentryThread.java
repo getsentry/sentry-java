@@ -4,7 +4,20 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 
-/** Describes a thread in the Sentry protocol. */
+/**
+ * A process thread of an event.
+ *
+ * <p>The Threads Interface specifies threads that were running at the time an event happened. These
+ * threads can also contain stack traces.
+ *
+ * <p>An event may contain one or more threads in an attribute named `threads`.
+ *
+ * <p>The following example illustrates the threads part of the event payload and omits other
+ * attributes for simplicity.
+ *
+ * <p>```json { "threads": { "values": [ { "id": "0", "name": "main", "crashed": true, "stacktrace":
+ * {} } ] } } ```
+ */
 public final class SentryThread implements IUnknownPropertiesConsumer {
   private Long id;
   private Integer priority;

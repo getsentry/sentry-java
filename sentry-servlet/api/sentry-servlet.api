@@ -1,0 +1,12 @@
+public class io/sentry/servlet/SentryServletContainerInitializer : javax/servlet/ServletContainerInitializer {
+	public fun <init> ()V
+	public fun onStartup (Ljava/util/Set;Ljavax/servlet/ServletContext;)V
+}
+
+public class io/sentry/servlet/SentryServletRequestListener : javax/servlet/ServletRequestListener {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun requestDestroyed (Ljavax/servlet/ServletRequestEvent;)V
+	public fun requestInitialized (Ljavax/servlet/ServletRequestEvent;)V
+}
+

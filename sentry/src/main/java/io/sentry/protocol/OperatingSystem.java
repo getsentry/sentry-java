@@ -11,11 +11,27 @@ import org.jetbrains.annotations.TestOnly;
 public final class OperatingSystem implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "os";
 
+  /** Name of the operating system. */
   private String name;
+  /** Version of the operating system. */
   private String version;
+  /**
+   * Unprocessed operating system info.
+   *
+   * <p>An unprocessed description string obtained by the operating system. For some well-known
+   * runtimes, Sentry will attempt to parse `name` and `version` from this string, if they are not
+   * explicitly given.
+   */
   private String rawDescription;
+  /** Internal build number of the operating system. */
   private String build;
+  /**
+   * Current kernel version.
+   *
+   * <p>This is typically the entire output of the `uname` syscall.
+   */
   private String kernelVersion;
+  /** Indicator if the OS is rooted (mobile mostly). */
   private Boolean rooted;
 
   @SuppressWarnings("unused")

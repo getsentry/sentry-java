@@ -1,11 +1,14 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.IHub
+import io.sentry.ITransportFactory
 import io.sentry.SentryOptions
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
+import org.springframework.context.annotation.Bean
 
 class EnableSentryTest {
     private val contextRunner = ApplicationContextRunner()
@@ -63,17 +66,42 @@ class EnableSentryTest {
     }
 
     @Test
-    fun `creates SentrySpringRequestListener`() {
+    fun `creates SentryExceptionResolver`() {
         contextRunner.run {
-            assertThat(it).hasSingleBean(SentrySpringRequestListener::class.java)
+            assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
+            assertThat(it).getBean(SentryExceptionResolver::class.java)
+                .hasFieldOrPropertyWithValue("order", Integer.MIN_VALUE)
         }
     }
 
     @Test
-    fun `creates SentryExceptionResolver`() {
-        contextRunner.run {
-            assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
-        }
+    fun `creates SentryExceptionResolver with order set in the @EnableSentry annotation`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java))
+            .run {
+                assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
+                assertThat(it).getBean(SentryExceptionResolver::class.java)
+                    .hasFieldOrPropertyWithValue("order", Integer.MAX_VALUE)
+            }
+    }
+
+    @Test
+    fun `configures custom TracesSamplerCallback`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTracesSamplerCallback::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                val samplerCallback = it.getBean(SentryOptions.TracesSamplerCallback::class.java)
+                assertThat(options.tracesSampler).isEqualTo(samplerCallback)
+            }
+    }
+
+    @Test
+    fun `configures custom TransportFactory`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTransportFactory::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                val transportFactory = it.getBean(ITransportFactory::class.java)
+                assertThat(options.transportFactory).isEqualTo(transportFactory)
+            }
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")
@@ -84,4 +112,25 @@ class EnableSentryTest {
 
     @EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
     class AppConfigWithDefaultSendPii
+
+    @EnableSentry(dsn = "http://key@localhost/proj", exceptionResolverOrder = Integer.MAX_VALUE)
+    class AppConfigWithExceptionResolverOrderIntegerMaxValue
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomTracesSamplerCallback {
+
+        @Bean
+        fun tracesSampler(): SentryOptions.TracesSamplerCallback {
+            return SentryOptions.TracesSamplerCallback {
+                return@TracesSamplerCallback 1.0
+            }
+        }
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomTransportFactory {
+
+        @Bean
+        fun tracesSampler() = mock<ITransportFactory>()
+    }
 }

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -66,9 +67,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String ANDROID_ID = "androidId";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
+  @TestOnly static final String SIDE_LOADED = "sideLoaded";
 
   // it could also be a parameter and get from Sentry.init(...)
-  private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTimeOrNull();
+  private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTime();
 
   @TestOnly final Context context;
 
@@ -126,6 +128,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // its not IO, but it has been cached in the old version as well
     map.put(EMULATOR, isEmulator());
 
+    final Map<String, String> sideLoadedInfo = getSideLoadedInfo();
+    if (sideLoadedInfo != null) {
+      map.put(SIDE_LOADED, sideLoadedInfo);
+    }
+
     return map;
   }
 
@@ -141,6 +148,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           event.getEventId());
     }
 
+    // userId should be set even if event is Cached as the userId is static and won't change anyway.
+    final User user = event.getUser();
+    if (user == null) {
+      event.setUser(getDefaultUser());
+    } else if (user.getId() == null) {
+      user.setId(getDeviceId());
+    }
+
     if (event.getContexts().getDevice() == null) {
       event.getContexts().setDevice(getDevice());
     }
@@ -148,24 +163,20 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       event.getContexts().setOperatingSystem(getOperatingSystem());
     }
 
+    setSideLoadedInfo(event);
+
     return event;
   }
 
   // Data to be applied to events that was created in the running process
   private void processNonCachedEvent(final @NotNull SentryEvent event) {
-    if (event.getUser() == null) {
-      event.setUser(getUser());
-    }
-
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
     setAppExtras(app);
 
-    if (event.getDebugMeta() == null) {
-      event.setDebugMeta(getDebugMeta());
-    }
+    mergeDebugImages(event);
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
     if (packageInfo != null) {
@@ -184,6 +195,27 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         thread.setCurrent(MainThreadChecker.isMainThread(thread));
       }
     }
+  }
+
+  private void mergeDebugImages(final @NotNull SentryEvent event) {
+    final List<DebugImage> debugImages = getDebugImages();
+    if (debugImages == null) {
+      return;
+    }
+
+    DebugMeta debugMeta = event.getDebugMeta();
+
+    if (debugMeta == null) {
+      debugMeta = new DebugMeta();
+    }
+
+    // sets the imageList or append to the list if it already exists
+    if (debugMeta.getImages() == null) {
+      debugMeta.setImages(debugImages);
+    } else {
+      debugMeta.getImages().addAll(debugImages);
+    }
+    event.setDebugMeta(debugMeta);
   }
 
   private @Nullable List<DebugImage> getDebugImages() {
@@ -214,18 +246,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return images;
   }
 
-  private @Nullable DebugMeta getDebugMeta() {
-    List<DebugImage> debugImages = getDebugImages();
-
-    if (debugImages == null) {
-      return null;
-    }
-
-    DebugMeta debugMeta = new DebugMeta();
-    debugMeta.setImages(debugImages);
-    return debugMeta;
-  }
-
   private void setAppExtras(final @NotNull App app) {
     app.setAppName(getApplicationName());
     app.setAppStartTime(appStartTime);
@@ -245,11 +265,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setArchitectures(final @NotNull Device device) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       String[] supportedAbis = Build.SUPPORTED_ABIS;
-      device.setArch(supportedAbis[0]);
       device.setArchs(supportedAbis);
     } else {
       String[] supportedAbis = {getAbi(), getAbi2()};
-      device.setArch(supportedAbis[0]);
       device.setArchs(supportedAbis);
       // we were not checking CPU_ABI2, but I've added to the list now
     }
@@ -334,7 +352,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     DisplayMetrics displayMetrics = getDisplayMetrics();
     if (displayMetrics != null) {
-      setScreenResolution(device, displayMetrics);
       device.setScreenWidthPixels(displayMetrics.widthPixels);
       device.setScreenHeightPixels(displayMetrics.heightPixels);
       device.setScreenDensity(displayMetrics.density);
@@ -368,12 +385,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  @SuppressWarnings("deprecation")
-  private void setScreenResolution(
-      final @NotNull Device device, final @NotNull DisplayMetrics displayMetrics) {
-    device.setScreenResolution(getResolution(displayMetrics));
-  }
-
   private TimeZone getTimeZone() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       LocaleList locales = context.getResources().getConfiguration().getLocales();
@@ -388,19 +399,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @SuppressWarnings("JdkObsolete")
   private @Nullable Date getBootTime() {
     try {
-      // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
-      return DateUtils.getDateTime(
-          new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime()));
+      // if user changes the clock, will give a wrong answer, consider ACTION_TIME_CHANGED.
+      // currentTimeMillis returns UTC already
+      return DateUtils.getDateTime(System.currentTimeMillis() - SystemClock.elapsedRealtime());
     } catch (IllegalArgumentException e) {
       logger.log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
     }
     return null;
-  }
-
-  private @NotNull String getResolution(final @NotNull DisplayMetrics displayMetrics) {
-    int largestSide = Math.max(displayMetrics.widthPixels, displayMetrics.heightPixels);
-    int smallestSide = Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels);
-    return largestSide + "x" + smallestSide;
   }
 
   /**
@@ -808,7 +813,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  public @NotNull User getUser() {
+  /**
+   * Sets the default user which contains only the userId.
+   *
+   * @return the User object
+   */
+  public @NotNull User getDefaultUser() {
     User user = new User();
     user.setId(getDeviceId());
 
@@ -883,5 +893,56 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     return null;
+  }
+
+  @SuppressWarnings("deprecation")
+  private @Nullable Map<String, String> getSideLoadedInfo() {
+    String packageName = null;
+    try {
+      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
+      final PackageManager packageManager = context.getPackageManager();
+
+      if (packageInfo != null && packageManager != null) {
+        packageName = packageInfo.packageName;
+
+        // getInstallSourceInfo requires INSTALL_PACKAGES permission which is only given to system
+        // apps.
+        final String installerPackageName = packageManager.getInstallerPackageName(packageName);
+
+        final Map<String, String> sideLoadedInfo = new HashMap<>();
+
+        if (installerPackageName != null) {
+          sideLoadedInfo.put("isSideLoaded", "false");
+          // could be amazon, google play etc
+          sideLoadedInfo.put("installerStore", installerPackageName);
+        } else {
+          // if it's installed via adb, system apps or untrusted sources
+          sideLoadedInfo.put("isSideLoaded", "true");
+        }
+
+        return sideLoadedInfo;
+      }
+    } catch (IllegalArgumentException e) {
+      // it'll never be thrown as we are querying its own App's package.
+      logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+    }
+
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private void setSideLoadedInfo(final @NotNull SentryEvent event) {
+    try {
+      final Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
+
+      if (sideLoadedInfo instanceof Map) {
+        for (final Map.Entry<String, String> entry :
+            ((Map<String, String>) sideLoadedInfo).entrySet()) {
+          event.setTag(entry.getKey(), entry.getValue());
+        }
+      }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+    }
   }
 }

@@ -5,8 +5,8 @@ import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
-import io.sentry.InvalidDsnException
 import io.sentry.Sentry
+import io.sentry.exception.InvalidDsnException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

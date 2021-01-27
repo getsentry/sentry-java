@@ -43,8 +43,15 @@ public final class SessionAdapter extends TypeAdapter<Session> {
       writer.name("init").value(value.getInit());
     }
 
-    writer.name("started").value(DateUtils.getTimestamp(value.getStarted()));
-    writer.name("status").value(value.getStatus().name().toLowerCase(Locale.ROOT));
+    final Date started = value.getStarted();
+    if (started != null) {
+      writer.name("started").value(DateUtils.getTimestamp(started));
+    }
+
+    final Session.State status = value.getStatus();
+    if (status != null) {
+      writer.name("status").value(status.name().toLowerCase(Locale.ROOT));
+    }
 
     if (value.getSequence() != null) {
       writer.name("seq").value(value.getSequence());
@@ -125,7 +132,13 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     while (reader.hasNext()) {
       switch (reader.nextName()) {
         case "sid":
-          sid = UUID.fromString(reader.nextString());
+          String sidStr = null;
+          try {
+            sidStr = reader.nextString();
+            sid = UUID.fromString(sidStr);
+          } catch (IllegalArgumentException e) {
+            logger.log(SentryLevel.ERROR, "%s sid is not valid.", sidStr);
+          }
           break;
         case "did":
           did = reader.nextString();
@@ -137,7 +150,13 @@ public final class SessionAdapter extends TypeAdapter<Session> {
           started = converTimeStamp(reader.nextString(), "started");
           break;
         case "status":
-          status = Session.State.valueOf(StringUtils.capitalize(reader.nextString()));
+          String statusStr = null;
+          try {
+            statusStr = StringUtils.capitalize(reader.nextString());
+            status = Session.State.valueOf(statusStr);
+          } catch (IllegalArgumentException e) {
+            logger.log(SentryLevel.ERROR, "%s status is not valid.", statusStr);
+          }
           break;
         case "errors":
           errors = reader.nextInt();

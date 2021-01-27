@@ -3,15 +3,16 @@ package io.sentry.logback
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
-import io.sentry.transport.TransportResult
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -28,12 +29,15 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 class SentryAppenderTest {
-    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val transport: ITransport = mock<ITransport>()) {
+    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+        val transportFactory = mock<ITransportFactory>()
+        val transport = mock<ITransport>()
+        val utcTimeZone: ZoneId = ZoneId.of("UTC")
 
         init {
-            whenever(transport.send(any())).thenReturn(TransportResult.success())
+            whenever(this.transportFactory.create(any(), any())).thenReturn(transport)
             val appender = SentryAppender()
             val options = SentryOptions()
             options.dsn = "http://key@localhost/proj"
@@ -41,7 +45,7 @@ class SentryAppenderTest {
             appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
             appender.setMinimumEventLevel(minimumEventLevel)
             appender.context = loggerContext
-            appender.setTransport(transport)
+            appender.setTransportFactory(transportFactory)
             val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
             rootLogger.level = Level.TRACE
             rootLogger.addAppender(appender)
@@ -65,19 +69,18 @@ class SentryAppenderTest {
 
     @Test
     fun `does not initialize Sentry if Sentry is already enabled`() {
-        val transport = mock<ITransport>()
+        fixture = Fixture()
         Sentry.init {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
-            it.setTransport(transport)
+            it.setTransportFactory(fixture.transportFactory)
         }
-        fixture = Fixture(transport = transport)
         fixture.logger.error("testing environment field")
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals("manual-environment", event.environment)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -92,26 +95,26 @@ class SentryAppenderTest {
                 assertEquals("testing message conversion {}, {}", event.message.message)
                 assertEquals(listOf("1", "2"), event.message.params)
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
-            })
+            }, anyOrNull())
         }
     }
 
     @Test
     fun `event date is in UTC`() {
         fixture = Fixture(minimumEventLevel = Level.DEBUG)
-        val utcTime = LocalDateTime.now(ZoneId.of("UTC"))
+        val utcTime = LocalDateTime.now(fixture.utcTimeZone)
 
         fixture.logger.debug("testing event date")
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 val eventTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(fixture.utcTimeZone)
                     .toLocalDateTime()
 
                 assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
-            })
+            }, anyOrNull())
         }
     }
 
@@ -123,7 +126,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -135,7 +138,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -147,7 +150,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.INFO, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -159,7 +162,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.WARNING, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -171,7 +174,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(SentryLevel.ERROR, event.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -183,7 +186,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertNotNull(event.getExtra("thread_name"))
-            })
+            }, anyOrNull())
         }
     }
 
@@ -196,7 +199,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
-            })
+            }, anyOrNull())
         }
     }
 
@@ -208,7 +211,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
-            })
+            }, anyOrNull())
         }
     }
 
@@ -219,21 +222,23 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertEquals(BuildConfig.SENTRY_LOGBACK_SDK_NAME, event.sdk.name)
-                assertEquals(BuildConfig.VERSION_NAME, event.sdk.version)
-                assertNotNull(event.sdk.packages)
-                assertTrue(event.sdk.packages!!.any { pkg ->
-                    "maven:sentry-logback" == pkg.name &&
-                        BuildConfig.VERSION_NAME == pkg.version
-                })
-            })
+                assertNotNull(event.sdk) {
+                    assertEquals(BuildConfig.SENTRY_LOGBACK_SDK_NAME, it.name)
+                    assertEquals(BuildConfig.VERSION_NAME, it.version)
+                    assertNotNull(it.packages)
+                    assertTrue(it.packages!!.any { pkg ->
+                        "maven:sentry-logback" == pkg.name &&
+                            BuildConfig.VERSION_NAME == pkg.version
+                    })
+                }
+            }, anyOrNull())
         }
     }
 
     @Test
     fun `attaches breadcrumbs with level higher than minimumBreadcrumbLevel`() {
         fixture = Fixture(minimumBreadcrumbLevel = Level.DEBUG, minimumEventLevel = Level.WARN)
-        val utcTime = LocalDateTime.now(ZoneId.of("UTC"))
+        val utcTime = LocalDateTime.now(fixture.utcTimeZone)
 
         fixture.logger.debug("this should be a breadcrumb #1")
         fixture.logger.info("this should be a breadcrumb #2")
@@ -244,14 +249,14 @@ class SentryAppenderTest {
                 assertEquals(2, event.breadcrumbs.size)
                 val breadcrumb = event.breadcrumbs[0]
                 val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(fixture.utcTimeZone)
                     .toLocalDateTime()
                 assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
                 assertEquals("this should be a breadcrumb #1", breadcrumb.message)
                 assertEquals("io.sentry.logback.SentryAppenderTest", breadcrumb.category)
                 assertEquals(SentryLevel.DEBUG, breadcrumb.level)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -267,7 +272,7 @@ class SentryAppenderTest {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(1, event.breadcrumbs.size)
                 assertEquals("this should be a breadcrumb", event.breadcrumbs[0].message)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -285,7 +290,7 @@ class SentryAppenderTest {
                 assertEquals(2, event.breadcrumbs.size)
                 assertEquals("this should be a breadcrumb", event.breadcrumbs[0].message)
                 assertEquals("this should not be sent as the event but be a breadcrumb", event.breadcrumbs[1].message)
-            })
+            }, anyOrNull())
         }
     }
 
@@ -297,7 +302,7 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals("release from sentry.properties", event.release)
-            })
+            }, anyOrNull())
         }
     }
 }

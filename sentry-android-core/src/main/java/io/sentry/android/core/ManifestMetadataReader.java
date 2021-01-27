@@ -8,8 +8,8 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
 import java.util.Locale;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Class responsible for reading values from manifest and setting them to the options */
 final class ManifestMetadataReader {
@@ -20,9 +20,6 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
-
-  @ApiStatus.ScheduledForRemoval @Deprecated
-  static final String ANR_TIMEOUT_INTERVAL_MILLS = "io.sentry.anr.timeout-interval-mills";
 
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
 
@@ -44,6 +41,10 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
+  static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
+
+  static final String ATTACH_THREADS = "io.sentry.attach-threads";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -60,131 +61,113 @@ final class ManifestMetadataReader {
 
     try {
       final Bundle metadata = getMetadata(context);
+      final ILogger logger = options.getLogger();
 
       if (metadata != null) {
-        final boolean debug = metadata.getBoolean(DEBUG, options.isDebug());
-        options.setDebug(debug);
-        options.getLogger().log(SentryLevel.DEBUG, "debug read: %s", debug);
+        options.setDebug(readBool(metadata, logger, DEBUG, options.isDebug()));
 
         if (options.isDebug()) {
           final String level =
-              metadata.getString(
-                  DEBUG_LEVEL, options.getDiagnosticLevel().name().toLowerCase(Locale.ROOT));
+              readString(
+                  metadata,
+                  logger,
+                  DEBUG_LEVEL,
+                  options.getDiagnosticLevel().name().toLowerCase(Locale.ROOT));
           options.setDiagnosticLevel(SentryLevel.valueOf(level.toUpperCase(Locale.ROOT)));
         }
 
-        final boolean anrEnabled = metadata.getBoolean(ANR_ENABLE, options.isAnrEnabled());
-        options.getLogger().log(SentryLevel.DEBUG, "anrEnabled read: %s", anrEnabled);
-        options.setAnrEnabled(anrEnabled);
+        options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
 
-        final boolean sessionTrackingEnabled =
-            metadata.getBoolean(SESSION_TRACKING_ENABLE, options.isEnableSessionTracking());
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "sessionTrackingEnabled read: %s", sessionTrackingEnabled);
-        options.setEnableSessionTracking(sessionTrackingEnabled);
+        options.setEnableSessionTracking(
+            readBool(metadata, logger, SESSION_TRACKING_ENABLE, options.isEnableSessionTracking()));
 
         if (options.getSampleRate() == null) {
-          // manifest meta-data only reads floats
-          final Double sampleRate = ((Float) metadata.getFloat(SAMPLE_RATE, -1)).doubleValue();
-          options.getLogger().log(SentryLevel.DEBUG, "sampleRate read: %s", sampleRate);
+          final Double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
           if (sampleRate != -1) {
             options.setSampleRate(sampleRate);
           }
         }
 
-        boolean anrReportInDebug =
-            metadata.getBoolean(ANR_REPORT_DEBUG, options.isAnrReportInDebug());
-        options.getLogger().log(SentryLevel.DEBUG, "anrReportInDebug read: %s", anrReportInDebug);
-        options.setAnrReportInDebug(anrReportInDebug);
+        options.setAnrReportInDebug(
+            readBool(metadata, logger, ANR_REPORT_DEBUG, options.isAnrReportInDebug()));
 
-        // deprecated
-        final long anrTimeoutIntervalMills =
-            metadata.getInt(
-                ANR_TIMEOUT_INTERVAL_MILLS, (int) options.getAnrTimeoutIntervalMillis());
+        options.setAnrTimeoutIntervalMillis(
+            readLong(
+                metadata,
+                logger,
+                ANR_TIMEOUT_INTERVAL_MILLIS,
+                options.getAnrTimeoutIntervalMillis()));
 
-        // reading new values, but deprecated one as fallback
-        final long anrTimeoutIntervalMillis =
-            metadata.getInt(ANR_TIMEOUT_INTERVAL_MILLIS, (int) anrTimeoutIntervalMills);
-
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "anrTimeoutIntervalMillis read: %d", anrTimeoutIntervalMillis);
-        options.setAnrTimeoutIntervalMillis(anrTimeoutIntervalMillis);
-
-        final String dsn = metadata.getString(DSN, null);
+        final String dsn = readString(metadata, logger, DSN, options.getDsn());
         if (dsn == null) {
           options
               .getLogger()
               .log(SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
         } else if (dsn.isEmpty()) {
           options.getLogger().log(SentryLevel.DEBUG, "DSN is empty, disabling sentry-android");
-        } else {
-          options.getLogger().log(SentryLevel.DEBUG, "DSN read: %s", dsn);
         }
         options.setDsn(dsn);
 
-        final boolean ndk = metadata.getBoolean(NDK_ENABLE, options.isEnableNdk());
-        options.getLogger().log(SentryLevel.DEBUG, "NDK read: %s", ndk);
-        options.setEnableNdk(ndk);
+        options.setEnableNdk(readBool(metadata, logger, NDK_ENABLE, options.isEnableNdk()));
 
-        final boolean ndkScopeSync =
-            metadata.getBoolean(NDK_SCOPE_SYNC_ENABLE, options.isEnableScopeSync());
-        options.getLogger().log(SentryLevel.DEBUG, "ndkScopeSync read: %s", ndkScopeSync);
-        options.setEnableScopeSync(ndkScopeSync);
+        options.setEnableScopeSync(
+            readBool(metadata, logger, NDK_SCOPE_SYNC_ENABLE, options.isEnableScopeSync()));
 
-        final String release = metadata.getString(RELEASE, options.getRelease());
-        options.getLogger().log(SentryLevel.DEBUG, "release read: %s", release);
-        options.setRelease(release);
+        options.setRelease(readString(metadata, logger, RELEASE, options.getRelease()));
 
-        final String environment = metadata.getString(ENVIRONMENT, options.getEnvironment());
-        options.getLogger().log(SentryLevel.DEBUG, "environment read: %s", environment);
-        options.setEnvironment(environment);
+        options.setEnvironment(readString(metadata, logger, ENVIRONMENT, options.getEnvironment()));
 
-        final long sessionTrackingTimeoutIntervalMillis =
-            metadata.getInt(
+        options.setSessionTrackingIntervalMillis(
+            readLong(
+                metadata,
+                logger,
                 SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS,
-                (int) options.getSessionTrackingIntervalMillis());
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "sessionTrackingTimeoutIntervalMillis read: %d",
-                sessionTrackingTimeoutIntervalMillis);
-        options.setSessionTrackingIntervalMillis(sessionTrackingTimeoutIntervalMillis);
+                options.getSessionTrackingIntervalMillis()));
 
-        final boolean enableActivityLifecycleBreadcrumbs =
-            metadata.getBoolean(
+        options.setEnableActivityLifecycleBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
                 BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE,
-                options.isEnableActivityLifecycleBreadcrumbs());
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "enableActivityLifecycleBreadcrumbs read: %s", ndk);
-        options.setEnableActivityLifecycleBreadcrumbs(enableActivityLifecycleBreadcrumbs);
+                options.isEnableActivityLifecycleBreadcrumbs()));
 
-        final boolean enableAppLifecycleBreadcrumbs =
-            metadata.getBoolean(
-                BREADCRUMBS_APP_LIFECYCLE_ENABLE, options.isEnableAppComponentBreadcrumbs());
-        options.getLogger().log(SentryLevel.DEBUG, "enableAppLifecycleBreadcrumbs read: %s", ndk);
-        options.setEnableAppLifecycleBreadcrumbs(enableAppLifecycleBreadcrumbs);
+        options.setEnableAppLifecycleBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_APP_LIFECYCLE_ENABLE,
+                options.isEnableAppComponentBreadcrumbs()));
 
-        final boolean enableSystemEventBreadcrumbs =
-            metadata.getBoolean(
-                BREADCRUMBS_SYSTEM_EVENTS_ENABLE, options.isEnableSystemEventBreadcrumbs());
-        options.getLogger().log(SentryLevel.DEBUG, "enableSystemEventBreadcrumbs read: %s", ndk);
-        options.setEnableSystemEventBreadcrumbs(enableSystemEventBreadcrumbs);
+        options.setEnableSystemEventBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_SYSTEM_EVENTS_ENABLE,
+                options.isEnableSystemEventBreadcrumbs()));
 
-        final boolean enableAppComponentBreadcrumbs =
-            metadata.getBoolean(
-                BREADCRUMBS_APP_COMPONENTS_ENABLE, options.isEnableAppComponentBreadcrumbs());
-        options.getLogger().log(SentryLevel.DEBUG, "enableAppComponentBreadcrumbs read: %s", ndk);
-        options.setEnableAppComponentBreadcrumbs(enableAppComponentBreadcrumbs);
+        options.setEnableAppComponentBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_APP_COMPONENTS_ENABLE,
+                options.isEnableAppComponentBreadcrumbs()));
 
-        final boolean enableUncaughtExceptionHandler =
-            metadata.getBoolean(
-                UNCAUGHT_EXCEPTION_HANDLER_ENABLE, options.isEnableUncaughtExceptionHandler());
-        options.getLogger().log(SentryLevel.DEBUG, "enableUncaughtExceptionHandler read: %s", ndk);
-        options.setEnableUncaughtExceptionHandler(enableUncaughtExceptionHandler);
+        options.setEnableUncaughtExceptionHandler(
+            readBool(
+                metadata,
+                logger,
+                UNCAUGHT_EXCEPTION_HANDLER_ENABLE,
+                options.isEnableUncaughtExceptionHandler()));
+
+        options.setAttachThreads(
+            readBool(metadata, logger, ATTACH_THREADS, options.isAttachThreads()));
+
+        if (options.getTracesSampleRate() == null) {
+          final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
+          if (tracesSampleRate != -1) {
+            options.setTracesSampleRate(tracesSampleRate);
+          }
+        }
       }
       options
           .getLogger()
@@ -195,6 +178,45 @@ final class ManifestMetadataReader {
           .log(
               SentryLevel.ERROR, "Failed to read configuration from android manifest metadata.", e);
     }
+  }
+
+  private static boolean readBool(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final boolean defaultValue) {
+    final boolean value = metadata.getBoolean(key, defaultValue);
+    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    return value;
+  }
+
+  private static @Nullable String readString(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final @Nullable String defaultValue) {
+    final String value = metadata.getString(key, defaultValue);
+    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    return value;
+  }
+
+  private static @NotNull Double readDouble(
+      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
+    // manifest meta-data only reads float
+    final Double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
+    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    return value;
+  }
+
+  private static long readLong(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final long defaultValue) {
+    // manifest meta-data only reads int if the value is not big enough
+    final long value = metadata.getInt(key, (int) defaultValue);
+    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    return value;
   }
 
   /**
@@ -211,8 +233,7 @@ final class ManifestMetadataReader {
     try {
       final Bundle metadata = getMetadata(context);
       if (metadata != null) {
-        autoInit = metadata.getBoolean(AUTO_INIT, true);
-        logger.log(SentryLevel.DEBUG, "Auto-init: %s", autoInit);
+        autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
       logger.log(SentryLevel.INFO, "Retrieving auto-init from AndroidManifest.xml");
     } catch (Exception e) {
@@ -228,7 +249,7 @@ final class ManifestMetadataReader {
    * @return the Bundle attached to the PackageManager
    * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
-  private static Bundle getMetadata(final @NotNull Context context)
+  private static @Nullable Bundle getMetadata(final @NotNull Context context)
       throws PackageManager.NameNotFoundException {
     final ApplicationInfo app =
         context

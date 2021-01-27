@@ -12,7 +12,6 @@ import io.sentry.Session;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,9 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -262,7 +259,7 @@ abstract class CacheStrategy {
     try (final Reader reader =
         new BufferedReader(
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-      return serializer.deserializeSession(reader);
+      return serializer.deserialize(reader, Session.class);
     } catch (Exception e) {
       options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
     }
@@ -271,9 +268,8 @@ abstract class CacheStrategy {
 
   private void saveNewEnvelope(
       final @NotNull SentryEnvelope envelope, final @NotNull File file, final long timestamp) {
-    try (final OutputStream outputStream = new FileOutputStream(file);
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-      serializer.serialize(envelope, writer);
+    try (final OutputStream outputStream = new FileOutputStream(file)) {
+      serializer.serialize(envelope, outputStream);
       // we need to set the same timestamp so the sorting from oldest to newest wont break.
       file.setLastModified(timestamp);
     } catch (Exception e) {

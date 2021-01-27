@@ -2,26 +2,19 @@ package io.sentry;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 
 public interface ISerializer {
-  SentryEvent deserializeEvent(Reader reader);
-
-  UserFeedback deserializeUserFeedback(Reader reader);
-
-  Session deserializeSession(Reader reader);
+  <T> T deserialize(Reader reader, Class<T> clazz);
 
   SentryEnvelope deserializeEnvelope(InputStream inputStream);
 
-  void serialize(SentryEvent event, Writer writer) throws IOException;
+  <T> void serialize(T entity, Writer writer) throws IOException;
 
-  void serialize(Session session, Writer writer) throws IOException;
-
-  void serialize(UserFeedback userFeedback, Writer writer) throws IOException;
-
-  void serialize(SentryEnvelope envelope, Writer writer) throws Exception;
+  void serialize(SentryEnvelope envelope, OutputStream outputStream) throws Exception;
 
   String serialize(Map<String, Object> data) throws Exception;
 }

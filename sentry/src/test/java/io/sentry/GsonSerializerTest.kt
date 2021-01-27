@@ -1,23 +1,30 @@
 package io.sentry
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.protocol.Contexts
+import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
 import java.util.Date
 import java.util.TimeZone
 import java.util.UUID
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,22 +34,28 @@ import kotlin.test.assertTrue
 
 class GsonSerializerTest {
 
-    private val serializer = GsonSerializer(mock(), EnvelopeReader())
+    private class Fixture {
+        val logger: ILogger = mock()
+        val serializer = GsonSerializer(logger, EnvelopeReader())
+    }
+
+    private lateinit var fixture: Fixture
+
+    @BeforeTest
+    fun before() {
+        fixture = Fixture()
+    }
 
     private fun serializeToString(ev: SentryEvent): String {
-        return serializeToString { wrt -> serializer.serialize(ev, wrt) }
+        return this.serializeToString { wrt -> fixture.serializer.serialize(ev, wrt) }
     }
 
     private fun serializeToString(session: Session): String {
-        return serializeToString { wrt -> serializer.serialize(session, wrt) }
-    }
-
-    private fun serializeToString(envelope: SentryEnvelope): String {
-        return serializeToString { wrt -> serializer.serialize(envelope, wrt) }
+        return this.serializeToString { wrt -> fixture.serializer.serialize(session, wrt) }
     }
 
     private fun serializeToString(userFeedback: UserFeedback): String {
-        return serializeToString { wrt -> serializer.serialize(userFeedback, wrt) }
+        return this.serializeToString { wrt -> fixture.serializer.serialize(userFeedback, wrt) }
     }
 
     private fun serializeToString(serialize: (StringWriter) -> Unit): String {
@@ -51,13 +64,20 @@ class GsonSerializerTest {
         return wrt.toString()
     }
 
+    private fun serializeToString(envelope: SentryEnvelope): String {
+        val outputStream = ByteArrayOutputStream()
+        BufferedWriter(OutputStreamWriter(outputStream))
+        fixture.serializer.serialize(envelope, outputStream)
+        return outputStream.toString()
+    }
+
     @Test
     fun `when serializing SentryEvent-SentryId object, it should become a event_id json without dashes`() {
         val sentryEvent = generateEmptySentryEvent(null)
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"event_id\":\"${sentryEvent.eventId}\"}"
+        val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
 
         assertEquals(expected, actual)
     }
@@ -67,7 +87,7 @@ class GsonSerializerTest {
         val expected = UUID.randomUUID().toString().replace("-", "")
         val jsonEvent = "{\"event_id\":\"$expected\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.eventId.toString())
     }
@@ -78,7 +98,7 @@ class GsonSerializerTest {
         val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
 
-        val expected = "{\"timestamp\":\"$dateIsoFormat\"}"
+        val expected = "{\"timestamp\":\"$dateIsoFormat\",\"contexts\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -92,44 +112,33 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
-    fun `when deserializing mills timestamp, it should become a SentryEvent-Date`() {
+    fun `when deserializing millis timestamp, it should become a SentryEvent-Date`() {
         val dateIsoFormat = "1581410911"
         val expected = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
     }
 
     @Test
-    fun `when deserializing mills timestamp with mills precision, it should become a SentryEvent-Date`() {
+    fun `when deserializing millis timestamp with mills precision, it should become a SentryEvent-Date`() {
         val dateIsoFormat = "1581410911.988"
         val expected = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
 
         val jsonEvent = "{\"timestamp\":\"$dateIsoFormat\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(expected, actual!!.timestamp)
-    }
-
-    @Test
-    fun `when deserializing mills timestamp with mills precision, it should be UTC`() {
-        // Jun 7, 2020 12:38:12 PM UTC
-        val dateIsoFormat = "1591533492.631"
-        val actual = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
-
-        val expected = DateUtils.getTimestamp(actual)
-
-        assertEquals("2020-06-07T12:38:12.631Z", expected)
     }
 
     @Test
@@ -139,7 +148,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"string\":\"test\",\"int\":1,\"boolean\":true}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals("test", (actual!!.unknown["string"] as JsonPrimitive).asString)
         assertEquals(1, (actual.unknown["int"] as JsonPrimitive).asInt)
@@ -161,7 +170,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"object\":{\"int\":1,\"boolean\":true}}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         val hashMapActual = actual!!.unknown["object"] as JsonObject // gson creates it as JsonObject
 
@@ -185,7 +194,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}}}"
+        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{}}"
 
         assertEquals(expected, actual)
     }
@@ -196,9 +205,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
-        val contexts = Contexts()
-        contexts.device = device
-        sentryEvent.contexts = contexts
+        sentryEvent.contexts.device = device
 
         val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
@@ -214,7 +221,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals("Europe/Vienna", actual!!.contexts.device.timezone.id)
     }
@@ -225,9 +232,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.orientation = Device.DeviceOrientation.LANDSCAPE
-        val contexts = Contexts()
-        contexts.device = device
-        sentryEvent.contexts = contexts
+        sentryEvent.contexts.device = device
 
         val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
@@ -243,7 +248,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device.orientation)
     }
@@ -254,7 +259,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         sentryEvent.level = SentryLevel.DEBUG
 
-        val expected = "{\"level\":\"debug\"}"
+        val expected = "{\"level\":\"debug\",\"contexts\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -268,7 +273,7 @@ class GsonSerializerTest {
 
         val jsonEvent = "{\"level\":\"debug\"}"
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(SentryLevel.DEBUG, actual!!.level)
     }
@@ -277,7 +282,7 @@ class GsonSerializerTest {
     fun `when deserializing a event with breadcrumbs containing data, it should become have breadcrumbs`() {
         val jsonEvent = FileFromResources.invoke("event_breadcrumb_data.json")
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(2, actual!!.breadcrumbs.size)
     }
@@ -286,7 +291,7 @@ class GsonSerializerTest {
     fun `when deserializing a event with custom contexts, they should be set in the event contexts`() {
         val jsonEvent = FileFromResources.invoke("event_with_contexts.json")
 
-        val actual = serializer.deserializeEvent(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
         val obj = actual!!.contexts["object"] as Map<*, *>
         val number = actual.contexts["number"] as Double
         val list = actual.contexts["list"] as List<*>
@@ -315,7 +320,7 @@ class GsonSerializerTest {
     @Test
     fun `when theres a null value, gson wont blow up`() {
         val json = FileFromResources.invoke("event.json")
-        val event = serializer.deserializeEvent(StringReader(json))
+        val event = fixture.serializer.deserialize(StringReader(json), SentryEvent::class.java)
         assertNotNull(event)
         assertNull(event.user)
     }
@@ -324,7 +329,7 @@ class GsonSerializerTest {
     fun `When deserializing a Session all the values should be set to the Session object`() {
         val jsonEvent = FileFromResources.invoke("session.json")
 
-        val actual = serializer.deserializeSession(StringReader(jsonEvent))
+        val actual = fixture.serializer.deserialize(StringReader(jsonEvent), Session::class.java)
 
         assertSessionData(actual)
     }
@@ -334,7 +339,7 @@ class GsonSerializerTest {
         val inputStream = mock<InputStream>()
         whenever(inputStream.read(any())).thenThrow(IOException())
 
-        val envelope = serializer.deserializeEnvelope(inputStream)
+        val envelope = fixture.serializer.deserializeEnvelope(inputStream)
         assertNull(envelope)
     }
 
@@ -343,7 +348,7 @@ class GsonSerializerTest {
         val session = createSessionMockData()
         val jsonSession = serializeToString(session)
         // reversing, so we can assert values and not a json string
-        val expectedSession = serializer.deserializeSession(StringReader(jsonSession))
+        val expectedSession = fixture.serializer.deserialize(StringReader(jsonSession), Session::class.java)
 
         assertSessionData(expectedSession)
     }
@@ -351,14 +356,14 @@ class GsonSerializerTest {
     @Test
     fun `When deserializing an Envelope, all the values should be set to the SentryEnvelope object`() {
         val jsonEnvelope = FileFromResources.invoke("envelope_session.txt")
-        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
+        val envelope = fixture.serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
         assertEnvelopeData(envelope)
     }
 
     @Test
     fun `When deserializing an Envelope, SdkVersion should be set`() {
         val jsonEnvelope = FileFromResources.invoke("envelope_session_sdkversion.txt")
-        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))!!
+        val envelope = fixture.serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))!!
         assertNotNull(envelope.header.sdkVersion)
         val sdkInfo = envelope.header.sdkVersion!!
 
@@ -379,11 +384,11 @@ class GsonSerializerTest {
     @Test
     fun `When serializing an envelope, all the values should be set`() {
         val session = createSessionMockData()
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, null)
+        val sentryEnvelope = SentryEnvelope.from(fixture.serializer, session, null)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values
-        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
+        val envelope = fixture.serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
         assertEnvelopeData(envelope)
     }
 
@@ -396,11 +401,11 @@ class GsonSerializerTest {
             addIntegration("TestIntegration")
             addPackage("abc", "4.5.6")
         }
-        val sentryEnvelope = SentryEnvelope.fromSession(serializer, session, version)
+        val sentryEnvelope = SentryEnvelope.from(fixture.serializer, session, version)
 
         val jsonEnvelope = serializeToString(sentryEnvelope)
         // reversing it so we can assert the values
-        val envelope = serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))!!
+        val envelope = fixture.serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))!!
         assertNotNull(envelope.header.sdkVersion)
 
         val sdkVersion = envelope.header.sdkVersion!!
@@ -422,9 +427,70 @@ class GsonSerializerTest {
         val data = mapOf("a" to "b")
         val expected = "{\"a\":\"b\"}"
 
-        val dataJson = serializer.serialize(data)
+        val dataJson = fixture.serializer.serialize(data)
 
         assertEquals(expected, dataJson)
+    }
+
+    @Test
+    fun `serializes transaction`() {
+        val trace = SpanContext()
+        trace.op = "http"
+        trace.description = "some request"
+        trace.status = SpanStatus.OK
+        trace.setTag("myTag", "myValue")
+        val transaction = SentryTransaction("transaction-name", trace, mock())
+        transaction.finish()
+
+        val stringWriter = StringWriter()
+        fixture.serializer.serialize(transaction, stringWriter)
+
+        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        assertEquals("transaction-name", element["transaction"].asString)
+        assertEquals("transaction", element["type"].asString)
+        assertNotNull(element["start_timestamp"].asString)
+        assertNotNull(element["event_id"].asString)
+        assertNotNull(element["spans"].asJsonArray)
+        val jsonTrace = element["contexts"].asJsonObject["trace"]
+        assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
+        assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
+        assertEquals("http", jsonTrace.asJsonObject["op"].asString)
+        assertEquals("some request", jsonTrace.asJsonObject["description"].asString)
+        assertEquals("ok", jsonTrace.asJsonObject["status"].asString)
+        assertEquals("myValue", jsonTrace.asJsonObject["tags"].asJsonObject["myTag"].asString)
+    }
+
+    @Test
+    fun `deserializes transaction`() {
+        val json = """{
+                          "transaction": "a-transaction",
+                          "type": "transaction",
+                          "start_timestamp": "2020-10-23T10:24:01.791Z",
+                          "timestamp": "2020-10-23T10:24:02.791Z",
+                          "event_id": "3367f5196c494acaae85bbbd535379ac",
+                          "contexts": {
+                            "trace": {
+                              "trace_id": "b156a475de54423d9c1571df97ec7eb6",
+                              "span_id": "0a53026963414893",
+                              "op": "http"
+                            },
+                            "custom": {
+                              "some-key": "some-value"
+                            }
+                          }
+                        }"""
+        val transaction = fixture.serializer.deserialize(StringReader(json), SentryTransaction::class.java)
+        assertNotNull(transaction)
+        assertEquals("a-transaction", transaction.transaction)
+        assertNotNull(transaction.startTimestamp)
+        assertNotNull(transaction.timestamp)
+        assertNotNull(transaction.contexts)
+        assertNotNull(transaction.contexts.trace)
+        assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace!!.traceId.toString())
+        assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
+        assertEquals("http", transaction.contexts.trace!!.operation)
+        assertNotNull(transaction.contexts["custom"])
+        assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
     }
 
     @Test
@@ -441,12 +507,40 @@ class GsonSerializerTest {
     fun `deserializing user feedback`() {
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
-        val actual = serializer.deserializeUserFeedback(StringReader(jsonUserFeedback))
-
+        val actual = fixture.serializer.deserialize(StringReader(jsonUserFeedback), UserFeedback::class.java)
+        assertNotNull(actual)
         assertEquals(userFeedback.eventId, actual.eventId)
         assertEquals(userFeedback.name, actual.name)
         assertEquals(userFeedback.email, actual.email)
         assertEquals(userFeedback.comments, actual.comments)
+    }
+
+    @Test
+    fun `serialize envelope with item throwing`() {
+        val eventID = SentryId()
+        val header = SentryEnvelopeHeader(eventID)
+
+        val message = "hello"
+        val attachment = Attachment(message.toByteArray(), "bytes.txt")
+        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(attachment, 5)
+
+        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("no"), 5)
+        val envelope = SentryEnvelope(header, listOf(invalidAttachmentItem, validAttachmentItem))
+
+        val actualJson = serializeToString(envelope)
+
+        val expectedJson = "{\"event_id\":\"${eventID}\"}\n" +
+                "{\"content_type\":\"${attachment.contentType}\"," +
+                "\"filename\":\"${attachment.filename}\"," +
+                "\"type\":\"attachment\",\"length\":${attachment.bytes?.size}}\n" +
+                "$message\n"
+
+        assertEquals(expectedJson, actualJson)
+
+        verify(fixture.logger)
+                .log(eq(SentryLevel.ERROR),
+                        eq("Failed to create envelope item. Dropping it."),
+                        any<SentryEnvelopeException>())
     }
 
     private fun assertSessionData(expectedSession: Session?) {
@@ -454,7 +548,7 @@ class GsonSerializerTest {
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
-        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started))
+        assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started!!))
         assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.timestamp!!))
         assertEquals(6000.toDouble(), expectedSession.duration)
         assertEquals(Session.State.Ok, expectedSession.status)
@@ -473,15 +567,13 @@ class GsonSerializerTest {
             assertEquals(SentryItemType.Session, it.header.type)
             val reader =
                 InputStreamReader(ByteArrayInputStream(it.data), Charsets.UTF_8)
-            val actualSession = serializer.deserializeSession(reader)
+            val actualSession = fixture.serializer.deserialize(reader, Session::class.java)
             assertSessionData(actualSession)
         }
     }
 
     private fun generateEmptySentryEvent(date: Date? = null): SentryEvent =
-        SentryEvent(date).apply {
-            contexts = null
-        }
+        SentryEvent(date)
 
     private fun createSessionMockData(): Session =
         Session(

@@ -33,6 +33,8 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(project(":sentry"))
     compileOnly(Config.Libs.springWeb)
+    compileOnly(Config.Libs.springAop)
+    compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApi)
 
     compileOnly(Config.CompileOnly.nopen)
@@ -49,6 +51,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterSecurity)
+    testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.TestLibs.awaitility)
 }
 

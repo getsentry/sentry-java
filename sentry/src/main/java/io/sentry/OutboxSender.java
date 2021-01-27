@@ -4,6 +4,7 @@ import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
 import io.sentry.hints.Flushable;
+import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.CollectionUtils;
@@ -107,6 +108,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         "Processing Envelope with %d item(s)",
         CollectionUtils.size(envelope.getItems()));
     int items = 0;
+
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       items++;
 
@@ -118,7 +120,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         try (final Reader eventReader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          SentryEvent event = serializer.deserializeEvent(eventReader);
+          SentryEvent event = serializer.deserialize(eventReader, SentryEvent.class);
           if (event == null) {
             logger.log(
                 SentryLevel.ERROR,
@@ -138,26 +140,37 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
             hub.captureEvent(event, hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
-            if (hint instanceof Flushable) {
-              if (!((Flushable) hint).waitFlush()) {
-                logger.log(
-                    SentryLevel.WARNING,
-                    "Timed out waiting for event submission: %s",
-                    event.getEventId());
 
-                break;
-              }
-            } else {
-              LogUtils.logIfNotFlushable(logger, hint);
+            if (!waitFlush(hint)) {
+              logger.log(
+                  SentryLevel.WARNING,
+                  "Timed out waiting for event submission: %s",
+                  event.getEventId());
+              break;
             }
           }
         } catch (Exception e) {
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else {
-        // TODO: Handle attachments and other types
+        // send unknown item types over the wire
+        final SentryEnvelope newEnvelope =
+            new SentryEnvelope(
+                envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
+        hub.captureEnvelope(newEnvelope, hint);
         logger.log(
-            SentryLevel.WARNING, "Item %d of type: %s ignored.", items, item.getHeader().getType());
+            SentryLevel.DEBUG,
+            "%s item %d is being captured.",
+            item.getHeader().getType().getItemType(),
+            items);
+
+        if (!waitFlush(hint)) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Timed out waiting for item type submission: %s",
+              item.getHeader().getType().getItemType());
+          break;
+        }
       }
 
       if (hint instanceof SubmissionResult) {
@@ -171,6 +184,20 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           break;
         }
       }
+
+      // reset the Hint to its initial state as we use it multiple times.
+      if (hint instanceof Resettable) {
+        ((Resettable) hint).reset();
+      }
     }
+  }
+
+  private boolean waitFlush(final @Nullable Object hint) {
+    if (hint instanceof Flushable) {
+      return ((Flushable) hint).waitFlush();
+    } else {
+      LogUtils.logIfNotFlushable(logger, hint);
+    }
+    return true;
   }
 }

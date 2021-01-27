@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
@@ -28,7 +29,7 @@ class DirectoryProcessorTest {
         var options = SentryOptions().noFlushTimeout()
 
         init {
-            options.isDebug = true
+            options.setDebug(true)
             options.setLogger(logger)
         }
 
@@ -56,13 +57,13 @@ class DirectoryProcessorTest {
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
 //        val session = createSession()
-//        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.fromSession(fixture.serializer, session, null))
+//        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.from(fixture.serializer, session, null))
 //        whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         val event = SentryEvent()
-        val envelope = SentryEnvelope.fromEvent(fixture.serializer, event, null)
+        val envelope = SentryEnvelope.from(fixture.serializer, event, null)
 
         whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
-        whenever(fixture.serializer.deserializeEvent(any())).thenReturn(event)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
 
         fixture.getSut().processDirectory(file)
         verify(fixture.hub).captureEvent(any(), argWhere { it !is ApplyScopeData })

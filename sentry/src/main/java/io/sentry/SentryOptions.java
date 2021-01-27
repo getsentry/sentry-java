@@ -4,15 +4,15 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProvider;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
-import io.sentry.transport.NoOpTransport;
 import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
-import java.net.Proxy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
@@ -26,6 +26,9 @@ public class SentryOptions {
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
+
+  /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
+  private static final String PROXY_PORT_DEFAULT = "80";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -63,7 +66,7 @@ public class SentryOptions {
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
    * information if something goes wrong. Default is disabled.
    */
-  private boolean debug;
+  private @Nullable Boolean debug;
 
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
@@ -74,10 +77,11 @@ public class SentryOptions {
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
-  /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = NoOpSerializer.getInstance();
-
+  /** Envelope reader interface */
   private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
+
+  /** Serializer interface to serialize/deserialize json events */
+  private @NotNull ISerializer serializer = new GsonSerializer(logger, envelopeReader);
 
   /**
    * Sentry client name used for the HTTP authHeader and userAgent eg
@@ -135,6 +139,19 @@ public class SentryOptions {
   private @Nullable Double sampleRate;
 
   /**
+   * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
+   * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
+   * transactions will be sent. Transactions are picked randomly. Default is null (disabled)
+   */
+  private @Nullable Double tracesSampleRate;
+
+  /**
+   * This function is called by {@link TracesSampler} to determine if transaction is sampled - meant
+   * to be sent to Sentry.
+   */
+  private @Nullable TracesSamplerCallback tracesSampler;
+
+  /**
    * A list of string prefixes of module names that do not belong to the app, but rather third-party
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
    * default.
@@ -147,8 +164,11 @@ public class SentryOptions {
    */
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
-  /** The transport is an internal construct of the client that abstracts away the event sending. */
-  private @NotNull ITransport transport = NoOpTransport.getInstance();
+  /**
+   * The transport factory creates instances of {@link io.sentry.transport.ITransport} - internal
+   * construct of the client that abstracts away the event sending.
+   */
+  private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
 
   /**
    * Implementations of this interface serve as gatekeepers that allow or disallow sending of the
@@ -184,10 +204,13 @@ public class SentryOptions {
   /** The server name used in the Sentry messages. */
   private String serverName;
 
+  /** Automatically resolve server name. */
+  private boolean attachServerName = true;
+
   /*
   When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
    */
-  private boolean enableUncaughtExceptionHandler = true;
+  private @Nullable Boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService;
@@ -225,6 +248,12 @@ public class SentryOptions {
    */
   private boolean enableExternalConfiguration;
 
+  /** Tags applied to every event and transaction */
+  private final @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+
+  /** max attachment size in bytes. */
+  private long maxAttachmentSize = 20 * 1024 * 1024;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -238,6 +267,30 @@ public class SentryOptions {
     options.setRelease(propertiesProvider.getProperty("release"));
     options.setDist(propertiesProvider.getProperty("dist"));
     options.setServerName(propertiesProvider.getProperty("servername"));
+    options.setEnableUncaughtExceptionHandler(
+        propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
+    options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
+    options.setDebug(propertiesProvider.getBooleanProperty("debug"));
+    final Map<String, String> tags = propertiesProvider.getMap("tags");
+    for (final Map.Entry<String, String> tag : tags.entrySet()) {
+      options.setTag(tag.getKey(), tag.getValue());
+    }
+
+    final String proxyHost = propertiesProvider.getProperty("proxy.host");
+    final String proxyUser = propertiesProvider.getProperty("proxy.user");
+    final String proxyPass = propertiesProvider.getProperty("proxy.pass");
+    final String proxyPort = propertiesProvider.getProperty("proxy.port", PROXY_PORT_DEFAULT);
+
+    if (proxyHost != null) {
+      options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
+    }
+
+    for (final String inAppInclude : propertiesProvider.getList("in-app-includes")) {
+      options.addInAppInclude(inAppInclude);
+    }
+    for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
+      options.addInAppExclude(inAppExclude);
+    }
     return options;
   }
 
@@ -301,7 +354,7 @@ public class SentryOptions {
    * @return true if ON or false otherwise
    */
   public boolean isDebug() {
-    return debug;
+    return Boolean.TRUE.equals(debug);
   }
 
   /**
@@ -309,8 +362,17 @@ public class SentryOptions {
    *
    * @param debug true if ON or false otherwise
    */
-  public void setDebug(boolean debug) {
+  public void setDebug(final @Nullable Boolean debug) {
     this.debug = debug;
+  }
+
+  /**
+   * Check if debug mode is ON, OFF or not set.
+   *
+   * @return true if ON or false otherwise
+   */
+  private @Nullable Boolean getDebug() {
+    return debug;
   }
 
   /**
@@ -497,7 +559,7 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the cache dir. size Default is 10
+   * Returns the cache dir. size Default is 30
    *
    * @return the cache dir. size
    */
@@ -506,7 +568,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the cache dir. size Default is 10
+   * Sets the cache dir. size Default is 30
    *
    * @param cacheDirSize the cache dir. size
    */
@@ -601,13 +663,46 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
+    this.validateRate(sampleRate);
     this.sampleRate = sampleRate;
+  }
+
+  /**
+   * Returns the traces sample rate Default is null (disabled)
+   *
+   * @return the sample rate
+   */
+  public @Nullable Double getTracesSampleRate() {
+    return tracesSampleRate;
+  }
+
+  /**
+   * Sets the tracesSampleRate Can be anything between 0.01 and 1.0 or null (default), to disable
+   * it.
+   *
+   * @param tracesSampleRate the sample rate
+   */
+  public void setTracesSampleRate(Double tracesSampleRate) {
+    this.validateRate(tracesSampleRate);
+    this.tracesSampleRate = tracesSampleRate;
+  }
+
+  /**
+   * Returns the callback used to determine if transaction is sampled.
+   *
+   * @return the callback
+   */
+  public @Nullable TracesSamplerCallback getTracesSampler() {
+    return tracesSampler;
+  }
+
+  /**
+   * Sets the callback used to determine if transaction is sampled.
+   *
+   * @param tracesSampler the callback
+   */
+  public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
+    this.tracesSampler = tracesSampler;
   }
 
   /**
@@ -647,21 +742,22 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the Transport interface
+   * Returns the TransportFactory interface
    *
-   * @return the transport
+   * @return the transport factory
    */
-  public @NotNull ITransport getTransport() {
-    return transport;
+  public @NotNull ITransportFactory getTransportFactory() {
+    return transportFactory;
   }
 
   /**
-   * Sets the Transport interface
+   * Sets the TransportFactory interface
    *
-   * @param transport the transport
+   * @param transportFactory the transport factory
    */
-  public void setTransport(@Nullable ITransport transport) {
-    this.transport = transport != null ? transport : NoOpTransport.getInstance();
+  public void setTransportFactory(@Nullable ITransportFactory transportFactory) {
+    this.transportFactory =
+        transportFactory != null ? transportFactory : NoOpTransportFactory.getInstance();
   }
 
   /**
@@ -773,6 +869,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns if SDK automatically resolves and attaches server name to events.
+   *
+   * @return true if enabled false if otherwise
+   */
+  public boolean isAttachServerName() {
+    return attachServerName;
+  }
+
+  /**
+   * Sets if SDK should automatically resolve and attache server name to events.
+   *
+   * @param attachServerName true if enabled false if otherwise
+   */
+  public void setAttachServerName(boolean attachServerName) {
+    this.attachServerName = attachServerName;
+  }
+
+  /**
    * Returns the session tracking interval in millis
    *
    * @return the interval in millis
@@ -834,6 +948,15 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isEnableUncaughtExceptionHandler() {
+    return Boolean.TRUE.equals(enableUncaughtExceptionHandler);
+  }
+
+  /**
+   * Checks if the default UncaughtExceptionHandlerIntegration is enabled or disabled or not set.
+   *
+   * @return true if enabled, false otherwise or null if not set.
+   */
+  public @Nullable Boolean getEnableUncaughtExceptionHandler() {
     return enableUncaughtExceptionHandler;
   }
 
@@ -842,7 +965,8 @@ public class SentryOptions {
    *
    * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
    */
-  public void setEnableUncaughtExceptionHandler(boolean enableUncaughtExceptionHandler) {
+  public void setEnableUncaughtExceptionHandler(
+      final @Nullable Boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -1061,6 +1185,45 @@ public class SentryOptions {
     this.enableExternalConfiguration = enableExternalConfiguration;
   }
 
+  /**
+   * Returns tags applied to all events and transactions.
+   *
+   * @return the tags map
+   */
+  public @NotNull Map<String, String> getTags() {
+    return tags;
+  }
+
+  /**
+   * Sets a tag that is applied to all events and transactions.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public void setTag(final @NotNull String key, final @NotNull String value) {
+    this.tags.put(key, value);
+  }
+
+  /**
+   * Returns the maximum attachment size for each attachment in MiB.
+   *
+   * @return the maximum attachment size in MiB.
+   */
+  public long getMaxAttachmentSize() {
+    return maxAttachmentSize;
+  }
+
+  /**
+   * Sets the max attachment size for each attachment in bytes. Default is 20 MiB. Please also check
+   * the maximum attachment size of Relay to make sure your attachments don't get discarded there:
+   * https://docs.sentry.io/product/relay/options/
+   *
+   * @param maxAttachmentSize the max attachment size in bytes.
+   */
+  public void setMaxAttachmentSize(long maxAttachmentSize) {
+    this.maxAttachmentSize = maxAttachmentSize;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1087,6 +1250,20 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
+  }
+
+  /** The traces sampler callback. */
+  public interface TracesSamplerCallback {
+
+    /**
+     * Calculates the sampling value used to determine if transaction is going to be sent to Sentry
+     * backend.
+     *
+     * @param samplingContext the sampling context
+     * @return sampling value or {@code null} if decision has not been taken
+     */
+    @Nullable
+    Double sample(@NotNull SamplingContext samplingContext);
   }
 
   /** SentryOptions ctor It adds and set default things */
@@ -1129,6 +1306,22 @@ public class SentryOptions {
     if (options.getServerName() != null) {
       setServerName(options.getServerName());
     }
+    if (options.getProxy() != null) {
+      setProxy(options.getProxy());
+    }
+    if (options.getEnableUncaughtExceptionHandler() != null) {
+      setEnableUncaughtExceptionHandler(options.getEnableUncaughtExceptionHandler());
+    }
+    if (options.getTracesSampleRate() != null) {
+      setTracesSampleRate(options.getTracesSampleRate());
+    }
+    if (options.getDebug() != null) {
+      setDebug(options.getDebug());
+    }
+    final Map<String, String> tags = new HashMap<>(options.getTags());
+    for (final Map.Entry<String, String> tag : tags.entrySet()) {
+      this.tags.put(tag.getKey(), tag.getValue());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -1140,5 +1333,72 @@ public class SentryOptions {
     sdkVersion.addPackage("maven:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void validateRate(@Nullable Double rate) {
+    if (rate != null && (rate > 1.0 || rate <= 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + rate
+              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
+    }
+  }
+
+  public static final class Proxy {
+    private @Nullable String host;
+    private @Nullable String port;
+    private @Nullable String user;
+    private @Nullable String pass;
+
+    public Proxy(
+        final @Nullable String host,
+        final @Nullable String port,
+        final @Nullable String user,
+        final @Nullable String pass) {
+      this.host = host;
+      this.port = port;
+      this.user = user;
+      this.pass = pass;
+    }
+
+    public Proxy() {
+      this(null, null, null, null);
+    }
+
+    public Proxy(@Nullable String host, @Nullable String port) {
+      this(host, port, null, null);
+    }
+
+    public @Nullable String getHost() {
+      return host;
+    }
+
+    public void setHost(final @Nullable String host) {
+      this.host = host;
+    }
+
+    public @Nullable String getPort() {
+      return port;
+    }
+
+    public void setPort(final @Nullable String port) {
+      this.port = port;
+    }
+
+    public @Nullable String getUser() {
+      return user;
+    }
+
+    public void setUser(final @Nullable String user) {
+      this.user = user;
+    }
+
+    public @Nullable String getPass() {
+      return pass;
+    }
+
+    public void setPass(final @Nullable String pass) {
+      this.pass = pass;
+    }
   }
 }

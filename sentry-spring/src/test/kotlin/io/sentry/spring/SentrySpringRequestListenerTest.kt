@@ -15,7 +15,7 @@ import org.springframework.mock.web.MockHttpServletRequest
 class SentrySpringRequestListenerTest {
     private class Fixture {
         val hub = mock<IHub>()
-        val listener = SentrySpringRequestListener(hub, SentryOptions())
+        val listener = SentrySpringRequestListener(hub)
         val request = MockHttpServletRequest()
         val event = mock<ServletRequestEvent>()
 
@@ -23,6 +23,7 @@ class SentrySpringRequestListenerTest {
             request.requestURI = "http://localhost:8080/some-uri"
             request.method = "post"
             whenever(event.servletRequest).thenReturn(request)
+            whenever(hub.options).thenReturn(SentryOptions())
         }
     }
 

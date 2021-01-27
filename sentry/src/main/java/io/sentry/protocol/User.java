@@ -9,22 +9,30 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-/** The user affected by an event. */
+/**
+ * Information about the user who triggered an event.
+ *
+ * <p>```json { "user": { "id": "unique_id", "username": "my_user", "email": "foo@example.com",
+ * "ip_address": "127.0.0.1", "subscription": "basic" } } ```
+ */
 public final class User implements Cloneable, IUnknownPropertiesConsumer {
 
-  /** User's email */
+  /** Email address of the user. */
   private @Nullable String email;
 
-  /** User's id */
+  /** Unique identifier of the user. */
   private @Nullable String id;
 
-  /** User's username */
+  /** Username of the user. */
   private @Nullable String username;
 
-  /** User's ipAddress */
+  /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
-  /** User's others map */
+  /**
+   * Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). All
+   * data from `self.other` should end up here after store normalization.
+   */
   private @Nullable Map<String, String> other;
 
   /** unknown fields, only internal usage. */
@@ -44,7 +52,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param email the e-mail.
    */
-  public void setEmail(@Nullable String email) {
+  public void setEmail(final @Nullable String email) {
     this.email = email;
   }
 
@@ -62,7 +70,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param id the user id.
    */
-  public void setId(@Nullable String id) {
+  public void setId(final @Nullable String id) {
     this.id = id;
   }
 
@@ -80,7 +88,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param username the username.
    */
-  public void setUsername(@Nullable String username) {
+  public void setUsername(final @Nullable String username) {
     this.username = username;
   }
 
@@ -98,7 +106,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param ipAddress the IP address of the user.
    */
-  public void setIpAddress(@Nullable String ipAddress) {
+  public void setIpAddress(final @Nullable String ipAddress) {
     this.ipAddress = ipAddress;
   }
 
@@ -116,8 +124,12 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param other the other user related data..
    */
-  public void setOthers(@Nullable Map<String, String> other) {
-    this.other = new ConcurrentHashMap<>(other);
+  public void setOthers(final @Nullable Map<String, String> other) {
+    if (other != null) {
+      this.other = new ConcurrentHashMap<>(other);
+    } else {
+      this.other = null;
+    }
   }
 
   /**
@@ -127,7 +139,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
@@ -137,6 +149,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    * @return the unknown map
    */
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
