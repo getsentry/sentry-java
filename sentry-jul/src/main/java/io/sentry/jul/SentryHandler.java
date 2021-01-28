@@ -44,6 +44,11 @@ public final class SentryHandler extends Handler {
   }
 
   /** Creates an instance of SentryHandler. */
+  public SentryHandler(final @NotNull SentryOptions options) {
+    this(options, true);
+  }
+
+  /** Creates an instance of SentryHandler. */
   @TestOnly
   SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
     setFilter(new DropSentryFilter());
