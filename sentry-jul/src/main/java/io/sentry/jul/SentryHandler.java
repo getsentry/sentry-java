@@ -208,7 +208,7 @@ public final class SentryHandler extends Handler {
    * @param parameters Array of parameters for the message.
    * @return Formatted message.
    */
-  private String formatMessage(final @NotNull String message, final @Nullable Object[] parameters) {
+  private @NotNull String formatMessage(final @NotNull String message, final @Nullable Object[] parameters) {
     String formatted;
     if (printfStyle) {
       formatted = String.format(message, parameters);
@@ -233,7 +233,7 @@ public final class SentryHandler extends Handler {
     }
   }
 
-  private @NotNull SdkVersion createSdkVersion(@NotNull SentryOptions sentryOptions) {
+  private @NotNull SdkVersion createSdkVersion(final @NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
     if (sdkVersion == null) {
