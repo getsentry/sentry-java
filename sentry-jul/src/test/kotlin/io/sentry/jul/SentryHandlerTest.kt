@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.logback.BuildConfig
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -14,11 +15,14 @@ import java.time.ZoneId
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
+import org.slf4j.MDC
 
 class SentryHandlerTest {
     private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val configureWithLogManager: Boolean = false, val transport: ITransport = mock()) {
@@ -41,6 +45,11 @@ class SentryHandlerTest {
     }
 
     private lateinit var fixture: Fixture
+
+    @BeforeTest
+    fun `clear MDC`() {
+        MDC.clear()
+    }
 
     @AfterTest
     fun `close Sentry`() {
@@ -264,5 +273,50 @@ class SentryHandlerTest {
         assertEquals(Level.WARNING, fixture.handler.minimumEventLevel)
         assertEquals(Level.ALL, fixture.handler.level)
         assertTrue(fixture.handler.isPrintfStyle)
+    }
+
+    @Test
+    fun `sets tags from MDC`() {
+        fixture = Fixture(minimumEventLevel = Level.WARNING)
+        MDC.put("key", "value")
+        fixture.logger.warning("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `does not create MDC context when no MDC tags are set`() {
+        fixture = Fixture(minimumEventLevel = Level.WARNING)
+        fixture.logger.warning("testing without MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertFalse(event.contexts.containsKey("MDC"))
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `sets SDK version`() {
+        fixture = Fixture(minimumEventLevel = Level.INFO)
+        fixture.logger.info("testing sdk version")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNotNull(event.sdk) {
+                    assertEquals(BuildConfig.SENTRY_JUL_SDK_NAME, it.name)
+                    assertEquals(BuildConfig.VERSION_NAME, it.version)
+                    assertNotNull(it.packages)
+                    assertTrue(it.packages!!.any { pkg ->
+                        "maven:sentry-jul" == pkg.name &&
+                            BuildConfig.VERSION_NAME == pkg.version
+                    })
+                }
+            }, anyOrNull())
+        }
     }
 }

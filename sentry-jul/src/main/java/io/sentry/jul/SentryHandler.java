@@ -5,11 +5,15 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.logback.BuildConfig;
 import io.sentry.protocol.Message;
+import io.sentry.protocol.SdkVersion;
+import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -19,6 +23,7 @@ import java.util.logging.LogRecord;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
+import org.slf4j.MDC;
 
 /** Logging handler in charge of sending the java.util.logging records to a Sentry server. */
 public final class SentryHandler extends Handler {
@@ -34,6 +39,11 @@ public final class SentryHandler extends Handler {
   private @NotNull Level minimumEventLevel = Level.SEVERE;
 
   /** Creates an instance of SentryHandler. */
+  public SentryHandler() {
+    this(new SentryOptions(), true);
+  }
+
+  /** Creates an instance of SentryHandler. */
   @TestOnly
   SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
     setFilter(new DropSentryFilter());
@@ -42,13 +52,47 @@ public final class SentryHandler extends Handler {
     }
     if (!Sentry.isEnabled()) {
       options.setEnableExternalConfiguration(true);
+      options.setSdkVersion(createSdkVersion(options));
       Sentry.init(options);
     }
   }
 
-  /** Creates an instance of SentryHandler. */
-  public SentryHandler() {
-    this(new SentryOptions(), true);
+  @Override
+  public void publish(final @NotNull LogRecord record) {
+    // Do not log the event if the current thread is managed by sentry
+    if (!isLoggable(record)) {
+      return;
+    }
+    try {
+      if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
+        Sentry.captureEvent(createEvent(record));
+      }
+      if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
+        Sentry.addBreadcrumb(createBreadcrumb(record));
+      }
+    } catch (RuntimeException e) {
+      reportError(
+          "An exception occurred while creating a new event in Sentry",
+          e,
+          ErrorManager.WRITE_FAILURE);
+    }
+  }
+
+  /** Retrieves the properties of the logger. */
+  private void retrieveProperties() {
+    final LogManager manager = LogManager.getLogManager();
+    final String className = SentryHandler.class.getName();
+    setPrintfStyle(Boolean.parseBoolean(manager.getProperty(className + ".printfStyle")));
+    setLevel(parseLevelOrDefault(manager.getProperty(className + ".level")));
+    final String minimumBreadCrumbLevel =
+        manager.getProperty(className + ".minimumBreadcrumbLevel");
+    if (minimumBreadCrumbLevel != null) {
+      setMinimumBreadcrumbLevel(parseLevelOrDefault(minimumBreadCrumbLevel));
+    }
+    final String minimumEventLevel = manager.getProperty(className + ".minimumEventLevel");
+    if (minimumEventLevel != null) {
+      setMinimumEventLevel(parseLevelOrDefault(minimumEventLevel));
+    }
   }
 
   /**
@@ -71,49 +115,11 @@ public final class SentryHandler extends Handler {
     }
   }
 
-  /** Retrieves the properties of the logger. */
-  void retrieveProperties() {
-    final LogManager manager = LogManager.getLogManager();
-    final String className = SentryHandler.class.getName();
-    setPrintfStyle(Boolean.parseBoolean(manager.getProperty(className + ".printfStyle")));
-    setLevel(parseLevelOrDefault(manager.getProperty(className + ".level")));
-    final String minimumBreadCrumbLevel =
-        manager.getProperty(className + ".minimumBreadcrumbLevel");
-    if (minimumBreadCrumbLevel != null) {
-      setMinimumBreadcrumbLevel(parseLevelOrDefault(minimumBreadCrumbLevel));
-    }
-    final String minimumEventLevel = manager.getProperty(className + ".minimumEventLevel");
-    if (minimumEventLevel != null) {
-      setMinimumEventLevel(parseLevelOrDefault(minimumEventLevel));
-    }
-  }
-
   private @NotNull Level parseLevelOrDefault(final @NotNull String levelName) {
     try {
       return Level.parse(levelName.trim());
     } catch (RuntimeException e) {
       return Level.WARNING;
-    }
-  }
-
-  @Override
-  public void publish(final @NotNull LogRecord record) {
-    // Do not log the event if the current thread is managed by sentry
-    if (!isLoggable(record)) {
-      return;
-    }
-    try {
-      if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
-        Sentry.captureEvent(createEvent(record));
-      }
-      if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
-        Sentry.addBreadcrumb(createBreadcrumb(record));
-      }
-    } catch (RuntimeException e) {
-      reportError(
-          "An exception occurred while creating a new event in Sentry",
-          e,
-          ErrorManager.WRITE_FAILURE);
     }
   }
 
@@ -169,6 +175,11 @@ public final class SentryHandler extends Handler {
     if (throwable != null) {
       event.setThrowable(throwable);
     }
+    final Map<String, String> mdcProperties =
+        CollectionUtils.shallowCopy(MDC.getMDCAdapter().getCopyOfContextMap());
+    if (mdcProperties != null && !mdcProperties.isEmpty()) {
+      event.getContexts().put("MDC", mdcProperties);
+    }
     event.setExtra(THREAD_ID, record.getThreadID());
     return event;
   }
@@ -215,6 +226,21 @@ public final class SentryHandler extends Handler {
           e,
           ErrorManager.CLOSE_FAILURE);
     }
+  }
+
+  private @NotNull SdkVersion createSdkVersion(@NotNull SentryOptions sentryOptions) {
+    SdkVersion sdkVersion = sentryOptions.getSdkVersion();
+
+    if (sdkVersion == null) {
+      sdkVersion = new SdkVersion();
+    }
+
+    sdkVersion.setName(BuildConfig.SENTRY_JUL_SDK_NAME);
+    final String version = BuildConfig.VERSION_NAME;
+    sdkVersion.setVersion(version);
+    sdkVersion.addPackage("maven:sentry-jul", version);
+
+    return sdkVersion;
   }
 
   public void setPrintfStyle(final boolean printfStyle) {

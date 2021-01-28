@@ -17,8 +17,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 dependencies {
-    // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
-    implementation(Config.Libs.gson)
+    api(project(":sentry"))
+    implementation(Config.Libs.slf4jApi)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -27,12 +27,12 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
+    testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(Config.Libs.logbackClassic)
 }
 
 configure<SourceSetContainer> {
@@ -63,16 +63,15 @@ tasks {
         dependsOn(jacocoTestReport)
     }
     test {
-        environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
-        environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
-        environment["SENTRY_TEST_MAP_KEY2"] = "value2"
+        // used to test io.sentry.jul.SentryHandler
+        systemProperty("java.util.logging.config.file", "${project.projectDir}/src/test/resources/logging.properties")
     }
 }
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry")
-    buildConfigField("String", "SENTRY_JAVA_SDK_NAME", "\"${Config.Sentry.SENTRY_JAVA_SDK_NAME}\"")
+    packageName("io.sentry.logback")
+    buildConfigField("String", "SENTRY_JUL_SDK_NAME", "\"${Config.Sentry.SENTRY_LOGBACK_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
