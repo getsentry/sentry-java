@@ -78,7 +78,8 @@ public final class Span extends SpanContext implements ISpan {
     return this;
   }
 
-  boolean isFinished() {
+  @Override
+  public boolean isFinished() {
     return this.timestamp != null;
   }
 

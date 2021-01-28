@@ -529,28 +529,38 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
-    } else if (!Boolean.TRUE.equals(transaction.isSampled())) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction %s was dropped due to sampling decision.",
-              transaction.getEventId());
     } else {
-      StackItem item = null;
-      try {
-        item = stack.peek();
-        sentryId = item.getClient().captureTransaction(transaction, item.getScope(), hint);
-      } catch (Exception e) {
+      if (!transaction.isFinished()) {
         options
             .getLogger()
             .log(
-                SentryLevel.ERROR,
-                "Error while capturing transaction with id: " + transaction.getEventId(),
-                e);
-      } finally {
-        if (item != null) {
-          item.getScope().clearTransaction();
+                SentryLevel.WARNING,
+                "Capturing unfinished transaction: %s",
+                transaction.getEventId());
+      }
+      if (!Boolean.TRUE.equals(transaction.isSampled())) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction %s was dropped due to sampling decision.",
+                transaction.getEventId());
+      } else {
+        StackItem item = null;
+        try {
+          item = stack.peek();
+          sentryId = item.getClient().captureTransaction(transaction, item.getScope(), hint);
+        } catch (Exception e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Error while capturing transaction with id: " + transaction.getEventId(),
+                  e);
+        } finally {
+          if (item != null) {
+            item.getScope().clearTransaction();
+          }
         }
       }
     }

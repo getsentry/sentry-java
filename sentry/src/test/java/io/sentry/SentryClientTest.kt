@@ -757,7 +757,6 @@ class SentryClientTest {
     @Test
     fun `when captureTransaction with attachments`() {
         val transaction = SentryTransaction("a-transaction")
-
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
@@ -766,7 +765,6 @@ class SentryClientTest {
     @Test
     fun `when captureTransaction with attachments not added to transaction`() {
         val transaction = SentryTransaction("a-transaction")
-
         val scope = createScopeWithAttachments()
         scope.addAttachment(Attachment("hello".toByteArray(), "application/octet-stream"))
         fixture.getSut().captureTransaction(transaction, scope, null)

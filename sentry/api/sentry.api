@@ -287,6 +287,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
 	public abstract fun getStatus ()Lio/sentry/SpanStatus;
 	public abstract fun getThrowable ()Ljava/lang/Throwable;
+	public abstract fun isFinished ()Z
 	public abstract fun setDescription (Ljava/lang/String;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
@@ -353,6 +354,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun isFinished ()Z
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
@@ -379,6 +381,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTransaction ()Ljava/lang/String;
+	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -847,6 +850,7 @@ public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/s
 	public fun getSpans ()Ljava/util/List;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTransaction ()Ljava/lang/String;
+	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -911,6 +915,7 @@ public final class io/sentry/Span : io/sentry/SpanContext, io/sentry/ISpan {
 	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/util/Date;
+	public fun isFinished ()Z
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
