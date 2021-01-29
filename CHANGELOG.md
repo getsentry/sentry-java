@@ -1,8 +1,34 @@
 # vNext
 
-* Bump Gradle to 6.8.1 and AGP to 4.1.2 #1205
-* Bump: sentry-native to 0.4.6
-* Enhancement: TracesSamplerCallback allows returning a nullable Double (#1206)
+# 4.0.0
+
+This release brings the Sentry Performance feature to Java SDK, Spring, Spring Boot, and Android integrations. Read more in the reference documentation:
+
+- [Performance for Java](https://docs.sentry.io/platforms/java/performance/)
+- [Performance for Spring](https://docs.sentry.io/platforms/java/guides/spring/)
+- [Performance for Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/)
+- [Performance for Android](https://docs.sentry.io/platforms/android/performance/)
+
+### Other improvements:
+
+#### Core:
+
+- Improved loading external configuration:
+  - Load `sentry.properties` from the application's current working directory (#1046)
+  - Resolve `in-app-includes`, `in-app-excludes`, `tags`, `debug`, `uncaught.handler.enabled` parameters from the external configuration
+- Set global tags on SentryOptions and load them from external configuration (#1066)
+- Add support for attachments (#1082)
+- Resolve `servername` from the localhost address
+- Simplified transport configuration through setting `TransportFactory` instead of `ITransport` on SentryOptions (#1124)
+
+#### Spring Boot:
+- Add the ability to register multiple `OptionsConfiguration` beans (#1093)
+- Initialize Logback after context refreshes (#1129)
+
+#### Android:
+- Add `isSideLoaded` and `installerStore` tags automatically (Where your App. was installed from eg Google Play, Amazon Store, downloaded APK, etc...)
+- Bump: sentry-native to 0.4.6
+- Bump: Gradle to 6.8.1 and AGP to 4.1.2
 
 # 4.0.0-beta.1
 
