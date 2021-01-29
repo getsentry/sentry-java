@@ -1,5 +1,7 @@
 # vNext
 
+* Feat: Support logging via JUL (#1211)
+
 # 4.0.0
 
 This release brings the Sentry Performance feature to Java SDK, Spring, Spring Boot, and Android integrations. Read more in the reference documentation:
