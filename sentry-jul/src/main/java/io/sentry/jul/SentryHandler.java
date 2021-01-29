@@ -208,7 +208,8 @@ public final class SentryHandler extends Handler {
    * @param parameters Array of parameters for the message.
    * @return Formatted message.
    */
-  private @NotNull String formatMessage(final @NotNull String message, final @Nullable Object[] parameters) {
+  private @NotNull String formatMessage(
+      final @NotNull String message, final @Nullable Object[] parameters) {
     String formatted;
     if (printfStyle) {
       formatted = String.format(message, parameters);
