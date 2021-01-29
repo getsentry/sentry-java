@@ -1,6 +1,7 @@
 # vNext
 
 * Improve Kotlin compatibility for SdkVersion
+* Feat: Support logging via JUL (#1211)
 
 # 4.0.0
 
