@@ -140,13 +140,11 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   private @NotNull SdkVersion createSdkVersion(@NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
+    final String version = BuildConfig.VERSION_NAME;
     if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
+      sdkVersion = new SdkVersion(BuildConfig.SENTRY_LOGBACK_SDK_NAME, version);
     }
 
-    sdkVersion.setName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
-    final String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
     sdkVersion.addPackage("maven:sentry-logback", version);
 
     return sdkVersion;
