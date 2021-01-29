@@ -124,7 +124,10 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
                   reader.beginArray();
 
                   while (reader.hasNext()) {
-                    sdkVersion.addIntegration(reader.nextString());
+                    final String integration = reader.nextString();
+                    if (integration != null) {
+                      sdkVersion.addIntegration(integration);
+                    }
                   }
                   reader.endArray();
                   break;
@@ -150,7 +153,9 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
                           reader.skipValue();
                       }
                     }
-                    sdkVersion.addPackage(name, version);
+                    if (name != null && version != null) {
+                      sdkVersion.addPackage(name, version);
+                    }
 
                     // packages item
                     reader.endObject();

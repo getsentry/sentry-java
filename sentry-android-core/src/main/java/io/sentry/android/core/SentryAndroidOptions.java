@@ -45,10 +45,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   private @NotNull SdkVersion createSdkVersion() {
     SdkVersion sdkVersion = getSdkVersion();
 
+    final String name = BuildConfig.SENTRY_ANDROID_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion(BuildConfig.SENTRY_ANDROID_SDK_NAME, version);
-    }
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
     sdkVersion.addPackage("maven:sentry-android-core", version);
 

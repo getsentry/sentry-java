@@ -63,7 +63,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
 
   /**
    * @deprecated
-   * <p> Use {@link SdkVersion#SdkVersion(String, String) instead.
+   *     <p>Use {@link SdkVersion#SdkVersion(String, String)} instead.
    */
   @Deprecated
   public SdkVersion() {
@@ -120,5 +120,27 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
 
   public @Nullable List<String> getIntegrations() {
     return integrations;
+  }
+
+  /**
+   * Updates the Sdk name and version or create a new one with the given values
+   *
+   * @param sdk the SdkVersion object or null
+   * @param name the sdk name
+   * @param version the sdk version
+   * @return the SdkVersion
+   */
+  public static @NotNull SdkVersion updateSdkVersion(
+      @Nullable SdkVersion sdk, final @NotNull String name, final @NotNull String version) {
+    Objects.requireNonNull(name, "name is required.");
+    Objects.requireNonNull(version, "version is required.");
+
+    if (sdk == null) {
+      sdk = new SdkVersion(name, version);
+    } else {
+      sdk.setName(name);
+      sdk.setVersion(version);
+    }
+    return sdk;
   }
 }
