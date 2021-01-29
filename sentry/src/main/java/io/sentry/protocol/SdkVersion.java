@@ -56,6 +56,20 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
+  public SdkVersion(final @NotNull String name, final @NotNull String version) {
+    this.name = Objects.requireNonNull(name, "name is required.");
+    this.version = Objects.requireNonNull(version, "version is required.");
+  }
+
+  /**
+   * @Deprecated
+   * <p> Use {@link SdkVersion#SdkVersion(String, String) instead.
+   */
+  @Deprecated
+  public SdkVersion() {
+    this("", "");
+  }
+
   public @NotNull String getVersion() {
     return version;
   }
