@@ -239,10 +239,8 @@ public final class SentryHandler extends Handler {
 
     final String name = BuildConfig.SENTRY_JUL_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
-    sdkVersion = SdkVersion.updateSdkVersion(sdk, name, version);
+
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
     sdkVersion.addPackage("maven:sentry-jul", version);
 
     return sdkVersion;

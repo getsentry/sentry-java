@@ -18,8 +18,8 @@ public final class SentryPackage implements IUnknownPropertiesConsumer {
   private @Nullable Map<String, Object> unknown;
 
   public SentryPackage(final @NotNull String name, final @NotNull String version) {
-    Objects.requireNonNull(name, "name is required.");
-    Objects.requireNonNull(version, "version is required.");
+    this.name = Objects.requireNonNull(name, "name is required.");
+    this.version = Objects.requireNonNull(version, "version is required.");
   }
 
   /**
