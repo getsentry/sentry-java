@@ -1524,6 +1524,7 @@ public final class io/sentry/protocol/SentryId {
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getVersion ()Ljava/lang/String;

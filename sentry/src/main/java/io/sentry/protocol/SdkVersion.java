@@ -90,9 +90,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
     Objects.requireNonNull(name, "name is required.");
     Objects.requireNonNull(version, "version is required.");
 
-    SentryPackage newPackage = new SentryPackage();
-    newPackage.setName(name);
-    newPackage.setVersion(version);
+    SentryPackage newPackage = new SentryPackage(name, version);
     if (packages == null) {
       packages = new ArrayList<>();
     }

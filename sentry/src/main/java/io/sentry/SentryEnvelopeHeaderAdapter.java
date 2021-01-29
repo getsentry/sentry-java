@@ -153,6 +153,7 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
                           reader.skipValue();
                       }
                     }
+                    // packages should not contain null names or versions
                     if (name != null && version != null) {
                       sdkVersion.addPackage(name, version);
                     }
