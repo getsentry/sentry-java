@@ -62,7 +62,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
   }
 
   /**
-   * @Deprecated
+   * @deprecated
    * <p> Use {@link SdkVersion#SdkVersion(String, String) instead.
    */
   @Deprecated
