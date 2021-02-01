@@ -56,7 +56,7 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
-    return transaction.toSentryTrace();
+    return new SentryTraceHeader(getTraceId(), getSpanId(), getSampled());
   }
 
   @Override
