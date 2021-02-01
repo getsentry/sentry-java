@@ -1,10 +1,64 @@
 #include <string.h>
+#include <stdbool.h>
 #include <sentry.h>
 #include <jni.h>
 
 #define ENSURE(Expr) \
     if (!(Expr))     \
-    return
+        return
+
+#define ENSURE_OR_FAIL(Expr) \
+    if (!(Expr))          \
+        goto fail
+
+static bool get_string_into(JNIEnv *env, jstring jstr, char* buf, size_t buf_len)
+{
+    jsize utf_len = (*env)->GetStringUTFLength(env, jstr);
+    if ((size_t)utf_len >= buf_len) {
+        return false;
+    }
+
+    jsize j_len = (*env)->GetStringLength(env, jstr);
+
+    (*env)->GetStringUTFRegion(env, jstr, 0, j_len, buf);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return false;
+    }
+
+    buf[utf_len] = '\0';
+    return true;
+}
+
+static char* get_string(JNIEnv *env, jstring jstr) {
+    char *buf = NULL;
+
+    jsize utf_len = (*env)->GetStringUTFLength(env, jstr);
+    size_t buf_len = (size_t)utf_len + 1;
+    buf = sentry_malloc(buf_len);
+    ENSURE_OR_FAIL(buf);
+
+    ENSURE_OR_FAIL(get_string_into(env, jstr, buf, buf_len));
+
+    return buf;
+
+fail:
+    sentry_free(buf);
+
+    return NULL;
+}
+
+static char *call_get_string(JNIEnv *env, jobject obj, jmethodID mid)
+{
+    jstring j_str = (jstring)(*env)->CallObjectMethod(env, obj, mid);
+    ENSURE_OR_FAIL(j_str);
+    char* str = get_string(env, j_str);
+    (*env)->DeleteLocalRef(env, j_str);
+
+    return str;
+
+fail:
+    return NULL;
+}
 
 JNIEXPORT void JNICALL
 Java_io_sentry_android_ndk_NativeScope_nativeSetTag(
@@ -195,67 +249,80 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     jmethodID dist_mid = (*env)->GetMethodID(env, options_cls, "getDist", "()Ljava/lang/String;");
     jmethodID max_crumbs_mid = (*env)->GetMethodID(env, options_cls, "getMaxBreadcrumbs", "()I");
 
-    jstring outbox_path_j = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options,
-                                                               outbox_path_mid);
-    jstring dsn = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, dsn_mid);
-    jboolean debug = (jboolean) (*env)->CallBooleanMethod(env, sentry_sdk_options, is_debug_mid);
-    jstring release = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, release_mid);
-    jstring environment = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options,
-                                                             environment_mid);
-    jstring dist = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, dist_mid);
+    (*env)->DeleteLocalRef(env, options_cls);
+
+    char *outbox_path = NULL;
+    sentry_transport_t *transport = NULL;
+    sentry_options_t *options = NULL;
+    char *dsn_str = NULL;
+    char *release_str = NULL;
+    char *environment_str = NULL;
+    char *dist_str = NULL;
+
+    options = sentry_options_new();
+    ENSURE_OR_FAIL(options);
+
+    // session tracking is enabled by default, but the Android SDK already handles it
+    sentry_options_set_auto_session_tracking(options, 0);
+
+    jboolean debug = (jboolean)(*env)->CallBooleanMethod(env, sentry_sdk_options, is_debug_mid);
+    sentry_options_set_debug(options, debug);
+
     jint max_crumbs = (jint) (*env)->CallIntMethod(env, sentry_sdk_options, max_crumbs_mid);
+    sentry_options_set_max_breadcrumbs(options, max_crumbs);
 
-    ENSURE(outbox_path_j);
-    const char *outbox_path_str = (*env)->GetStringUTFChars(env, outbox_path_j, 0);
-    ENSURE(outbox_path_str);
-    char *outbox_path = strdup(outbox_path_str);
-    ENSURE(outbox_path);
-    (*env)->ReleaseStringUTFChars(env, outbox_path_j, outbox_path_str);
+    outbox_path = call_get_string(env, sentry_sdk_options, outbox_path_mid);
+    ENSURE_OR_FAIL(outbox_path);
 
-    sentry_transport_t *transport = sentry_transport_new(send_envelope);
-    ENSURE(transport);
+    transport = sentry_transport_new(send_envelope);
+    ENSURE_OR_FAIL(transport);
     sentry_transport_set_state(transport, outbox_path);
     sentry_transport_set_free_func(transport, sentry_free);
 
-    sentry_options_t *options = sentry_options_new();
-    ENSURE(options);
+    sentry_options_set_transport(options, transport);
 
     // give sentry-native its own database path it can work with, next to the outbox
     char database_path[4096];
     strncpy(database_path, outbox_path, 4096);
     char *dir = strrchr(database_path, '/');
-    if (dir) {
+    if (dir)
+    {
         strncpy(dir + 1, ".sentry-native", 4096 - (dir + 1 - database_path));
     }
     sentry_options_set_database_path(options, database_path);
 
-    sentry_options_set_transport(options, transport);
-    sentry_options_set_debug(options, debug);
-    sentry_options_set_max_breadcrumbs(options, max_crumbs);
-
-    const char *dsn_str = (*env)->GetStringUTFChars(env, dsn, 0);
+    dsn_str = call_get_string(env, sentry_sdk_options, dsn_mid);
+    ENSURE_OR_FAIL(dsn_str);
     sentry_options_set_dsn(options, dsn_str);
-    (*env)->ReleaseStringUTFChars(env, dsn, dsn_str);
+    sentry_free(dsn_str);
 
-    if (release) {
-        const char *release_str = (*env)->GetStringUTFChars(env, release, 0);
+    release_str = call_get_string(env, sentry_sdk_options, release_mid);
+    if (release_str) {
         sentry_options_set_release(options, release_str);
-        (*env)->ReleaseStringUTFChars(env, release, release_str);
+        sentry_free(release_str);
     }
-    if (environment) {
-        const char *environment_str = (*env)->GetStringUTFChars(env, environment, 0);
+
+    environment_str = call_get_string(env, sentry_sdk_options, environment_mid);
+    if (environment_str)
+    {
         sentry_options_set_environment(options, environment_str);
-        (*env)->ReleaseStringUTFChars(env, environment, environment_str);
+        sentry_free(environment_str);
     }
-    if (dist) {
-        const char *dist_str = (*env)->GetStringUTFChars(env, dist, 0);
+
+    dist_str = call_get_string(env, sentry_sdk_options, dist_mid);
+    if (dist_str)
+    {
         sentry_options_set_dist(options, dist_str);
-        (*env)->ReleaseStringUTFChars(env, dist, dist_str);
+        sentry_free(dist_str);
     }
-    // session tracking is enabled by default, but the Android SDK already handles it
-    sentry_options_set_auto_session_tracking(options, 0);
 
     sentry_init(options);
+    return;
+
+fail:
+    sentry_free(outbox_path);
+    sentry_transport_free(transport);
+    sentry_options_free(options);
 }
 
 JNIEXPORT void JNICALL
