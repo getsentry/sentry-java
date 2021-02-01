@@ -80,12 +80,12 @@ public class SpanContext implements Cloneable {
   }
 
   @NotNull
-  SentryId getTraceId() {
+  public SentryId getTraceId() {
     return traceId;
   }
 
   @NotNull
-  SpanId getSpanId() {
+  public SpanId getSpanId() {
     return spanId;
   }
 

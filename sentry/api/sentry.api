@@ -937,8 +937,10 @@ public class io/sentry/SpanContext : java/lang/Cloneable {
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSampled ()Ljava/lang/Boolean;
+	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V

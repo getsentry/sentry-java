@@ -10,7 +10,6 @@ import io.sentry.SpanContext
 import io.sentry.SpanStatus
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.core.IsNull
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -24,7 +23,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplate()
         var mockServer = MockRestServiceServer.createServer(restTemplate)
-        val transaction = SentryTransaction("aTransaction", SpanContext(), hub)
+        val transaction = SentryTransaction("aTransaction", SpanContext(true), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK): RestTemplate {
@@ -37,7 +36,12 @@ class SentrySpanRestTemplateCustomizerTest {
 
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
                     .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-                    .andExpect(MockRestRequestMatchers.header("sentry-trace", IsNull.notNullValue()))
+                    .andExpect {
+                        // must have trace id from the parent transaction and must not contain spanId from the parent transaction
+                        assertThat(it.headers["sentry-trace"]!!.first()).startsWith(transaction.spanContext.traceId.toString())
+                            .endsWith("-1")
+                            .doesNotContain(transaction.spanContext.spanId.toString())
+                    }
                     .andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
             } else {
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
