@@ -205,13 +205,10 @@ public final class SentryAppender extends AbstractAppender {
   private @NotNull SdkVersion createSdkVersion(final @NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
-
-    sdkVersion.setName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
+    final String name = BuildConfig.SENTRY_LOG4J2_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
+
     sdkVersion.addPackage("maven:sentry-log4j2", version);
 
     return sdkVersion;

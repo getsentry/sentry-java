@@ -1,10 +1,12 @@
 package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -23,7 +25,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
    * <p>Official Sentry SDKs use the entity `sentry`, as in `sentry.python` or
    * `sentry.javascript.react-native`. Please use a different entity for your own SDKs.
    */
-  private String name;
+  private @NotNull String name;
   /**
    * The version of the SDK. _Required._
    *
@@ -32,7 +34,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
    *
    * <p>Examples: `0.1.0`, `1.0.0`, `4.3.12`
    */
-  private String version;
+  private @NotNull String version;
   /**
    * List of installed and loaded SDK packages. _Optional._
    *
@@ -41,7 +43,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
    * is a Git repository, the `source` should be `git`, the identifier should be a checkout link and
    * the version should be a Git reference (branch, tag or SHA).
    */
-  private List<SentryPackage> packages;
+  private @Nullable List<SentryPackage> packages;
   /**
    * List of integrations that are enabled in the SDK. _Optional._
    *
@@ -49,38 +51,55 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
    * integrations are included because different SDK releases may contain different default
    * integrations.
    */
-  private List<String> integrations;
+  private @Nullable List<String> integrations;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
-  public String getVersion() {
+  public SdkVersion(final @NotNull String name, final @NotNull String version) {
+    this.name = Objects.requireNonNull(name, "name is required.");
+    this.version = Objects.requireNonNull(version, "version is required.");
+  }
+
+  /**
+   * @deprecated
+   *     <p>Use {@link SdkVersion#SdkVersion(String, String)} instead.
+   */
+  @Deprecated
+  public SdkVersion() {
+    this("", "");
+  }
+
+  public @NotNull String getVersion() {
     return version;
   }
 
-  public void setVersion(String version) {
-    this.version = version;
+  public void setVersion(final @NotNull String version) {
+    this.version = Objects.requireNonNull(version, "version is required.");
   }
 
-  public String getName() {
+  public @NotNull String getName() {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setName(final @NotNull String name) {
+    this.name = Objects.requireNonNull(name, "name is required.");
   }
 
-  public void addPackage(String name, String version) {
-    SentryPackage newPackage = new SentryPackage();
-    newPackage.setName(name);
-    newPackage.setVersion(version);
+  public void addPackage(final @NotNull String name, final @NotNull String version) {
+    Objects.requireNonNull(name, "name is required.");
+    Objects.requireNonNull(version, "version is required.");
+
+    SentryPackage newPackage = new SentryPackage(name, version);
     if (packages == null) {
       packages = new ArrayList<>();
     }
     packages.add(newPackage);
   }
 
-  public void addIntegration(String integration) {
+  public void addIntegration(final @NotNull String integration) {
+    Objects.requireNonNull(integration, "integration is required.");
+
     if (integrations == null) {
       integrations = new ArrayList<>();
     }
@@ -89,7 +108,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
@@ -99,5 +118,27 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
 
   public @Nullable List<String> getIntegrations() {
     return integrations;
+  }
+
+  /**
+   * Updates the Sdk name and version or create a new one with the given values
+   *
+   * @param sdk the SdkVersion object or null
+   * @param name the sdk name
+   * @param version the sdk version
+   * @return the SdkVersion
+   */
+  public static @NotNull SdkVersion updateSdkVersion(
+      @Nullable SdkVersion sdk, final @NotNull String name, final @NotNull String version) {
+    Objects.requireNonNull(name, "name is required.");
+    Objects.requireNonNull(version, "version is required.");
+
+    if (sdk == null) {
+      sdk = new SdkVersion(name, version);
+    } else {
+      sdk.setName(name);
+      sdk.setVersion(version);
+    }
+    return sdk;
   }
 }
