@@ -3,7 +3,7 @@
 * Improve Kotlin compatibility for SdkVersion
 * Feat: Support logging via JUL (#1211)
 * Fix: Fix returning Sentry trace header from Span (#1217)
-* Fix: Remove misleading error logs
+* Fix: Remove misleading error logs (#1222)
 
 # 4.0.0
 
