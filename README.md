@@ -26,21 +26,17 @@ Sentry SDK for Java and Android
 
 
 
-# Java SDK 3.0 Docs
+# Useful links and docs
 
-The Java SDK documentation [can be found on docs.sentry.io](https://docs.sentry.io/platforms/java/).
+Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
 
 Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 
-Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
+Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).
 
-# Android Docs
-
-That's the initial page of the release [2.x and its docs](https://docs.sentry.io/platforms/android).
+Migration page from [sentry 1.x to sentry 4.x](https://docs.sentry.io/platforms/java/migration/).
 
 Releases from sentry-android [2.x and its changelogs](https://github.com/getsentry/sentry-android/releases).
-
-Migration page from [sentry-android 1.x and 2.x to sentry-android 3.x](https://docs.sentry.io/platforms/android/migration/).
 
 Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/getsentry/sentry-android-gradle-plugin)
 
@@ -53,6 +49,8 @@ Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/gets
 # Samples
 
 [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
+
+[Sample App. with Sentry Java SDK](https://github.com/getsentry/examples/tree/master/java).
 
 [Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
 
