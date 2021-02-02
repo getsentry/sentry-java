@@ -105,7 +105,7 @@ public final class MainEventProcessor implements EventProcessor {
                 final String _package = frame.getPackage();
                 final String function = frame.getFunction();
 
-                if (_package != null && _package.contains("io.sentry.samples.android")) {
+                if (_package != null && _package.contains(appPackage)) {
                   frame.setInApp(true);
                 } else if (function != null && function.contains(appJniPackage)) {
                   frame.setInApp(true);
