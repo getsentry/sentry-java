@@ -87,28 +87,35 @@ public final class MainEventProcessor implements EventProcessor {
               event.getEventId());
     }
 
-      // other way would be to pass the packages name as inAppIncludes to sentry-native, but they dont
+    // read packages name from options (without @version+build)
+    final String appPackage = "io.sentry.samples.android";
+    final String appJniPackage = appPackage.replace(".", "_");
+
+    // other way would be to pass the packages name as inAppIncludes to sentry-native, but they dont
     // expose this option, yet.
-      final List<SentryException> exceptions = event.getExceptions();
-      if (event.getPlatform().equals("native") && exceptions != null && !exceptions.isEmpty()) {
-          for(final SentryException exception : exceptions) {
-              final SentryStackTrace stacktrace = exception.getStacktrace();
-              if (stacktrace != null) {
-                  final List<SentryStackFrame> frames = stacktrace.getFrames();
-                  if (frames != null && !frames.isEmpty()) {
-                      for(final SentryStackFrame frame : frames) {
-                          if (frame.isInApp() == null || !frame.isInApp()) {
-                              final String _package = frame.getPackage();
-                              // read packages name from options (without @version+build)
-                              if (_package != null && _package.contains("io.sentry.samples.android")) {
-                                  frame.setInApp(true);
-                              }
-                          }
-                      }
-                  }
+    final List<SentryException> exceptions = event.getExceptions();
+    if (event.getPlatform().equals("native") && exceptions != null && !exceptions.isEmpty()) {
+      for (final SentryException exception : exceptions) {
+        final SentryStackTrace stacktrace = exception.getStacktrace();
+        if (stacktrace != null) {
+          final List<SentryStackFrame> frames = stacktrace.getFrames();
+          if (frames != null && !frames.isEmpty()) {
+            for (final SentryStackFrame frame : frames) {
+              if (frame.isInApp() == null || !frame.isInApp()) {
+                final String _package = frame.getPackage();
+                final String function = frame.getFunction();
+
+                if (_package != null && _package.contains("io.sentry.samples.android")) {
+                  frame.setInApp(true);
+                } else if (function != null && function.contains(appJniPackage)) {
+                  frame.setInApp(true);
+                }
               }
+            }
           }
+        }
       }
+    }
 
     return event;
   }
