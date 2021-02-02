@@ -51,6 +51,20 @@ class SpanTest {
     }
 
     @Test
+    fun `converts to Sentry trace header`() {
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val hub = mock<IHub>()
+        val span = Span(traceId, parentSpanId, SentryTransaction(TransactionContext("name", true), hub), hub)
+        val sentryTrace = span.toSentryTrace()
+        assertEquals(traceId, sentryTrace.traceId)
+        assertEquals(span.spanId, sentryTrace.spanId)
+        assertNotNull(sentryTrace.isSampled) {
+            assertTrue(it)
+        }
+    }
+
+    @Test
     fun `starting a child with details adds span to transaction`() {
         val transaction = SentryTransaction("name")
         val span = transaction.startChild("operation", "description")
