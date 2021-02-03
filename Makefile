@@ -21,11 +21,11 @@ doRelease:
 
 	# upload symbols
 	cd sentry-android-ndk
-	# be sure SymbolCollector.Console is in your $PATH
+	# be sure SymbolCollector.Console is in your $PATH - https://github.com/getsentry/symbol-collector/releases
 	SymbolCollector.Console --upload directory --path ./ --batch-type android --bundle-id sentry-android-ndk-$VERSION --server-endpoint https://symbol-collector.services.sentry.io
 	cd ..
 
-	# maven central sync using jfrog cli
+	# maven central sync using jfrog cli - https://jfrog.com/getcli/
 	jfrog bt mcs --user=$BINTRAY_USERNAME --key=$BINTRAY_KEY --sonatype-username=$MAVEN_USER --sonatype-password=$MAVEN_PASS getsentry/sentry-java/io.sentry:sentry/$VERSION
 	jfrog bt mcs --user=$BINTRAY_USERNAME --key=$BINTRAY_KEY --sonatype-username=$MAVEN_USER --sonatype-password=$MAVEN_PASS getsentry/sentry-java/io.sentry:sentry-log4j2/$VERSION
 	jfrog bt mcs --user=$BINTRAY_USERNAME --key=$BINTRAY_KEY --sonatype-username=$MAVEN_USER --sonatype-password=$MAVEN_PASS getsentry/sentry-java/io.sentry:sentry-logback/$VERSION
