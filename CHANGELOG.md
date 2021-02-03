@@ -1,6 +1,6 @@
-# vNext
+# 4.1.0
 
-* Improve Kotlin compatibility for SdkVersion
+* Improve Kotlin compatibility for SdkVersion (#1213)
 * Feat: Support logging via JUL (#1211)
 * Fix: Fix returning Sentry trace header from Span (#1217)
 
