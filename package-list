@@ -8,6 +8,7 @@ io.sentry.cache
 io.sentry.config
 io.sentry.exception
 io.sentry.hints
+io.sentry.jul
 io.sentry.log4j2
 io.sentry.logback
 io.sentry.protocol
