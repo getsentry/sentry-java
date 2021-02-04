@@ -479,8 +479,13 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'bindClient' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
-      item.setClient(client);
+      if (client != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
+        item.setClient(client);
+      } else {
+        options.getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
+        item.setClient(NoOpSentryClient.getInstance());
+      }
     }
   }
 
