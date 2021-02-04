@@ -554,7 +554,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomEventProcessor : EventProcessor {
-        override fun process(event: SentryEvent?, hint: Any?) = null
+        override fun process(event: SentryEvent, hint: Any?) = null
     }
 
     @Configuration(proxyBeanMethods = false)
