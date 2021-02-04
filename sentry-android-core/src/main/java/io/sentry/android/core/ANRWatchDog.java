@@ -136,6 +136,6 @@ final class ANRWatchDog extends Thread {
      *
      * @param error The error describing the ANR.
      */
-    void onAppNotResponding(ApplicationNotResponding error);
+    void onAppNotResponding(@NotNull ApplicationNotResponding error);
   }
 }

@@ -2,21 +2,28 @@ package io.sentry.android.core;
 
 import android.os.Handler;
 import android.os.Looper;
+import io.sentry.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 final class MainLooperHandler implements IHandler {
-  private final Handler handler;
+  private final @NotNull Handler handler;
 
   MainLooperHandler() {
-    handler = new Handler(Looper.getMainLooper());
+    this(Looper.getMainLooper());
+  }
+
+  MainLooperHandler(final @NotNull Looper looper) {
+    Objects.requireNonNull(looper, "Looper is required");
+    handler = new Handler(looper);
   }
 
   @Override
-  public void post(Runnable runnable) {
+  public void post(final @NotNull Runnable runnable) {
     handler.post(runnable);
   }
 
   @Override
-  public Thread getThread() {
+  public @NotNull Thread getThread() {
     return handler.getLooper().getThread();
   }
 }
