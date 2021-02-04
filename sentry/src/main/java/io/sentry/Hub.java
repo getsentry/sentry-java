@@ -312,7 +312,6 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
     } else {
       stack.peek().getScope().setUser(user);
-      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setUser");
     }
   }
 
@@ -328,7 +327,6 @@ public final class Hub implements IHub {
       options.getLogger().log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
     } else {
       stack.peek().getScope().setFingerprint(fingerprint);
-      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when setFingerprint");
     }
   }
 
@@ -342,7 +340,6 @@ public final class Hub implements IHub {
               "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
     } else {
       stack.peek().getScope().clearBreadcrumbs();
-      options.getLogger().log(SentryLevel.FATAL, "Stack peek was null when clearBreadcrumbs");
     }
   }
 
