@@ -62,7 +62,7 @@ final class SentryExceptionFactory {
    * @param exceptionMechanism The optional {@link Mechanism} of the {@code throwable}. Or null if
    *     none exist.
    * @param thread The optional {@link Thread} which the exception originated. Or null if not known.
-   * @param snapshot If the captured {@link Thread} is a snapshot.
+   * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot.
    */
   private @NotNull SentryException getSentryException(
       @NotNull final Throwable throwable,

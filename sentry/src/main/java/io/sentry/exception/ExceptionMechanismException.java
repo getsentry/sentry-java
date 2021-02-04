@@ -24,14 +24,14 @@ public final class ExceptionMechanismException extends RuntimeException {
    * @param mechanism The {@link Mechanism}.
    * @param throwable The {@link java.lang.Throwable}.
    * @param thread The {@link java.lang.Thread}.
-   * @param snapshot if the captured {@link java.lang.Thread} is a snapshot.
+   * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot.
    */
   public ExceptionMechanismException(
       @NotNull Mechanism mechanism,
       @NotNull Throwable throwable,
       @NotNull Thread thread,
       final boolean snapshot) {
-    this.exceptionMechanism = Objects.requireNonNull(mechanism, "Mechanism is required.");
+    exceptionMechanism = Objects.requireNonNull(mechanism, "Mechanism is required.");
     this.throwable = Objects.requireNonNull(throwable, "Throwable is required.");
     this.thread = Objects.requireNonNull(thread, "Thread is required.");
     this.snapshot = snapshot;
