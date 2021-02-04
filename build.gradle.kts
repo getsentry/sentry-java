@@ -14,9 +14,9 @@ plugins {
 buildscript {
     repositories {
         google()
-        jcenter()
-        maven { setUrl("https://dl.bintray.com/maranda/maven/") }
-        maven { setUrl("https://kotlin.bintray.com/kotlinx") }
+        mavenCentral()
+//        jcenter()
+        maven { setUrl("https://dl.bintray.com/maranda/maven/") } // TODO: drop it
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
@@ -41,7 +41,7 @@ apply(plugin = Config.QualityPlugins.binaryCompatibilityValidator)
 allprojects {
     repositories {
         google()
-        jcenter()
+//        jcenter()
         mavenCentral()
     }
     group = Config.Sentry.group

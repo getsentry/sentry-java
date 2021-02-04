@@ -3,7 +3,8 @@ plugins {
 }
 
 repositories {
-    jcenter()
+//    jcenter()
+    mavenCentral()
 }
 
 // Disabling the warning about the use of experimental Kotlin compiler features
