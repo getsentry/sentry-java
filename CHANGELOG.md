@@ -1,5 +1,7 @@
 # vNext
 
+* Enchancement: Improve EventProcessor nullability annotations.
+
 # 4.1.0
 
 * Improve Kotlin compatibility for SdkVersion (#1213)
