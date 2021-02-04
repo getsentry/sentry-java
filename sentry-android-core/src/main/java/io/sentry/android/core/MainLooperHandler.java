@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.os.Handler;
 import android.os.Looper;
-import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 final class MainLooperHandler implements IHandler {
@@ -13,7 +12,6 @@ final class MainLooperHandler implements IHandler {
   }
 
   MainLooperHandler(final @NotNull Looper looper) {
-    Objects.requireNonNull(looper, "Looper is required");
     handler = new Handler(looper);
   }
 

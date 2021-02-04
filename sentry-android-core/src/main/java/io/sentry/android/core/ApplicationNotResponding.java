@@ -4,6 +4,7 @@ package io.sentry.android.core;
 
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Error thrown by ANRWatchDog when an ANR is detected. Contains the stack trace of the frozen UI
@@ -18,7 +19,7 @@ final class ApplicationNotResponding extends RuntimeException {
 
   private final @NotNull Thread thread;
 
-  ApplicationNotResponding(final @NotNull String message, final @NotNull Thread thread) {
+  ApplicationNotResponding(final @Nullable String message, final @NotNull Thread thread) {
     super(message);
     this.thread = Objects.requireNonNull(thread, "Thread must be provided.");
     setStackTrace(this.thread.getStackTrace());
