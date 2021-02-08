@@ -43,7 +43,10 @@ public final class SentryHandler extends Handler {
     this(new SentryOptions(), true);
   }
 
-  /** Creates an instance of SentryHandler. */
+  /**
+   * Creates an instance of SentryHandler.
+   * @param options the SentryOptions
+   */
   public SentryHandler(final @NotNull SentryOptions options) {
     this(options, true);
   }
