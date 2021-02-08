@@ -1,5 +1,7 @@
 # vNext
 
+* Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
+
 # 4.1.0
 
 * Improve Kotlin compatibility for SdkVersion (#1213)

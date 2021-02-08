@@ -1145,9 +1145,11 @@ public final class io/sentry/config/PropertiesProviderFactory {
 
 public final class io/sentry/exception/ExceptionMechanismException : java/lang/RuntimeException {
 	public fun <init> (Lio/sentry/protocol/Mechanism;Ljava/lang/Throwable;Ljava/lang/Thread;)V
+	public fun <init> (Lio/sentry/protocol/Mechanism;Ljava/lang/Throwable;Ljava/lang/Thread;Z)V
 	public fun getExceptionMechanism ()Lio/sentry/protocol/Mechanism;
 	public fun getThread ()Ljava/lang/Thread;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun isSnapshot ()Z
 }
 
 public final class io/sentry/exception/InvalidDsnException : java/lang/RuntimeException {
@@ -1597,8 +1599,10 @@ public final class io/sentry/protocol/SentryStackTrace : io/sentry/IUnknownPrope
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getFrames ()Ljava/util/List;
 	public fun getRegisters ()Ljava/util/Map;
+	public fun getSnapshot ()Ljava/lang/Boolean;
 	public fun setFrames (Ljava/util/List;)V
 	public fun setRegisters (Ljava/util/Map;)V
+	public fun setSnapshot (Ljava/lang/Boolean;)V
 }
 
 public final class io/sentry/protocol/SentryThread : io/sentry/IUnknownPropertiesConsumer {
