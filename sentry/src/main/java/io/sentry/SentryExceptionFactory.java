@@ -68,7 +68,7 @@ final class SentryExceptionFactory {
       @NotNull final Throwable throwable,
       @Nullable final Mechanism exceptionMechanism,
       @Nullable final Thread thread,
-      boolean snapshot) {
+      final boolean snapshot) {
 
     final Package exceptionPackage = throwable.getClass().getPackage();
     final String fullClassName = throwable.getClass().getName();

@@ -27,9 +27,9 @@ public final class ExceptionMechanismException extends RuntimeException {
    * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot.
    */
   public ExceptionMechanismException(
-      @NotNull Mechanism mechanism,
-      @NotNull Throwable throwable,
-      @NotNull Thread thread,
+      final @NotNull Mechanism mechanism,
+      final @NotNull Throwable throwable,
+      final @NotNull Thread thread,
       final boolean snapshot) {
     exceptionMechanism = Objects.requireNonNull(mechanism, "Mechanism is required.");
     this.throwable = Objects.requireNonNull(throwable, "Throwable is required.");
@@ -45,22 +45,44 @@ public final class ExceptionMechanismException extends RuntimeException {
    * @param thread The {@link java.lang.Thread}.
    */
   public ExceptionMechanismException(
-      @NotNull Mechanism mechanism, @NotNull Throwable throwable, @NotNull Thread thread) {
+      final @NotNull Mechanism mechanism,
+      final @NotNull Throwable throwable,
+      final @NotNull Thread thread) {
     this(mechanism, throwable, thread, false);
   }
 
+  /**
+   * Returns the encapsulated Mechanism
+   *
+   * @return the Mechanism
+   */
   public @NotNull Mechanism getExceptionMechanism() {
     return exceptionMechanism;
   }
 
+  /**
+   * Returns the encapsulated Throwable
+   *
+   * @return the Throwable
+   */
   public @NotNull Throwable getThrowable() {
     return throwable;
   }
 
+  /**
+   * Returns the encapsulated Thread
+   *
+   * @return the Thread
+   */
   public @NotNull Thread getThread() {
     return thread;
   }
 
+  /**
+   * Returns true if its a snapshot or false otherwise
+   *
+   * @return true or false
+   */
   public boolean isSnapshot() {
     return snapshot;
   }

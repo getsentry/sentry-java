@@ -45,6 +45,7 @@ public final class SentryHandler extends Handler {
 
   /**
    * Creates an instance of SentryHandler.
+   *
    * @param options the SentryOptions
    */
   public SentryHandler(final @NotNull SentryOptions options) {
