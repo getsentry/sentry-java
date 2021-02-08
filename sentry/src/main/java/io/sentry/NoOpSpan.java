@@ -77,6 +77,14 @@ public final class NoOpSpan implements ISpan {
   public void setTag(@NotNull String key, @NotNull String value) {}
 
   @Override
+  public void setData(@NotNull String key, @NotNull Object value) {}
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return null;
+  }
+
+  @Override
   public boolean isFinished() {
     return false;
   }

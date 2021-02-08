@@ -7,6 +7,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,6 +59,13 @@ public abstract class SentryBaseEvent {
    * <p>```json { "environment": "production" } ```
    */
   private String environment;
+
+  /**
+   * Arbitrary extra information set by the user.
+   *
+   * <p>```json { "extra": { "my_key": 1, "some_other_value": "foo bar" } }```
+   */
+  private final Map<String, Object> extra = new ConcurrentHashMap<>();
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
@@ -173,5 +181,28 @@ public abstract class SentryBaseEvent {
 
   public void setEnvironment(String environment) {
     this.environment = environment;
+  }
+
+  Map<String, Object> getExtras() {
+    return extra;
+  }
+
+  public void setExtras(Map<String, Object> extra) {
+    final Map<String, Object> copy = new HashMap<>(extra);
+    for (Map.Entry<String, Object> entry : copy.entrySet()) {
+      this.extra.put(entry.getKey(), entry.getValue());
+    }
+  }
+
+  public void setExtra(String key, Object value) {
+    extra.put(key, value);
+  }
+
+  public void removeExtra(@NotNull String key) {
+    extra.remove(key);
+  }
+
+  public @Nullable Object getExtra(final @NotNull String key) {
+    return extra.get(key);
   }
 }

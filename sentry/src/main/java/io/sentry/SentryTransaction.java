@@ -24,6 +24,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   /** A list of spans within this transaction. Can be empty. */
   private final @NotNull List<Span> spans = new CopyOnWriteArrayList<>();
+
   /**
    * A hub this transaction is attached to. Marked as transient to be ignored during JSON
    * serialization.
@@ -202,6 +203,16 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   @Override
   public @NotNull SpanContext getSpanContext() {
     return this.context;
+  }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {
+    setExtra(key, value);
+  }
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return getExtra(key);
   }
 
   /**

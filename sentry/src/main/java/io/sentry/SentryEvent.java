@@ -97,13 +97,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   /** List of breadcrumbs recorded before this event. */
   private List<Breadcrumb> breadcrumbs;
 
-  /**
-   * Arbitrary extra information set by the user.
-   *
-   * <p>```json { "extra": { "my_key": 1, "some_other_value": "foo bar" } }```
-   */
-  private Map<String, Object> extra;
-
   private Map<String, Object> unknown;
   /**
    * Name and versions of all installed modules/packages/dependencies in the current
@@ -259,34 +252,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void addBreadcrumb(final @Nullable String message) {
     this.addBreadcrumb(new Breadcrumb(message));
-  }
-
-  Map<String, Object> getExtras() {
-    return extra;
-  }
-
-  public void setExtras(Map<String, Object> extra) {
-    this.extra = extra;
-  }
-
-  public void setExtra(String key, Object value) {
-    if (extra == null) {
-      extra = new HashMap<>();
-    }
-    extra.put(key, value);
-  }
-
-  public void removeExtra(@NotNull String key) {
-    if (extra != null) {
-      extra.remove(key);
-    }
-  }
-
-  public @Nullable Object getExtra(final @NotNull String key) {
-    if (extra != null) {
-      return extra.get(key);
-    }
-    return null;
   }
 
   @ApiStatus.Internal

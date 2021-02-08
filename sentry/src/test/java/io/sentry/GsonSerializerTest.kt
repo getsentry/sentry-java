@@ -77,7 +77,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
+        val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{},\"extra\":{}}"
 
         assertEquals(expected, actual)
     }
@@ -98,7 +98,7 @@ class GsonSerializerTest {
         val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
 
-        val expected = "{\"timestamp\":\"$dateIsoFormat\",\"contexts\":{}}"
+        val expected = "{\"timestamp\":\"$dateIsoFormat\",\"contexts\":{},\"extra\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -194,7 +194,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{}}"
+        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{},\"extra\":{}}"
 
         assertEquals(expected, actual)
     }
@@ -207,7 +207,7 @@ class GsonSerializerTest {
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
         sentryEvent.contexts.device = device
 
-        val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
+        val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}},\"extra\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -234,7 +234,7 @@ class GsonSerializerTest {
         device.orientation = Device.DeviceOrientation.LANDSCAPE
         sentryEvent.contexts.device = device
 
-        val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
+        val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}},\"extra\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -259,7 +259,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         sentryEvent.level = SentryLevel.DEBUG
 
-        val expected = "{\"level\":\"debug\",\"contexts\":{}}"
+        val expected = "{\"level\":\"debug\",\"contexts\":{},\"extra\":{}}"
 
         val actual = serializeToString(sentryEvent)
 
@@ -440,6 +440,8 @@ class GsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         val transaction = SentryTransaction("transaction-name", trace, mock())
+        transaction.setData("string-data-key", "data-value")
+        transaction.setData("integer-data-key", 10)
         transaction.finish()
 
         val stringWriter = StringWriter()
@@ -451,6 +453,8 @@ class GsonSerializerTest {
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
+        assertEquals("data-value", element["extra"].asJsonObject["string-data-key"].asString)
+        assertEquals(10, element["extra"].asJsonObject["integer-data-key"].asInt)
         val jsonTrace = element["contexts"].asJsonObject["trace"]
         assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
         assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
@@ -468,6 +472,10 @@ class GsonSerializerTest {
                           "start_timestamp": "2020-10-23T10:24:01.791Z",
                           "timestamp": "2020-10-23T10:24:02.791Z",
                           "event_id": "3367f5196c494acaae85bbbd535379ac",
+                          "extra": {
+                            "string-data-key": "data-value",
+                            "integer-data-key": 10.5
+                          },
                           "contexts": {
                             "trace": {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
@@ -486,6 +494,8 @@ class GsonSerializerTest {
         assertNotNull(transaction.timestamp)
         assertNotNull(transaction.contexts)
         assertNotNull(transaction.contexts.trace)
+        assertEquals("data-value", transaction.getData("string-data-key"))
+        assertEquals(10.5, transaction.getData("integer-data-key"))
         assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace!!.traceId.toString())
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)

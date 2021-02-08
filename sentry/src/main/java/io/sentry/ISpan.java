@@ -119,6 +119,17 @@ public interface ISpan {
   void setTag(@NotNull String key, @NotNull String value);
 
   /**
+   * Set extra data on span on transaction
+   *
+   * @param key the data key
+   * @param value the data value
+   */
+  void setData(@NotNull String key, @NotNull Object value);
+
+  @Nullable
+  Object getData(@NotNull String key);
+
+  /**
    * Returns if span has finished.
    *
    * @return if span has finished.

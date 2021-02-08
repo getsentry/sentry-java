@@ -282,12 +282,14 @@ public abstract interface class io/sentry/ISerializer {
 public abstract interface class io/sentry/ISpan {
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
+	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getOperation ()Ljava/lang/String;
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
 	public abstract fun getStatus ()Lio/sentry/SpanStatus;
 	public abstract fun getThrowable ()Ljava/lang/Throwable;
 	public abstract fun isFinished ()Z
+	public abstract fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public abstract fun setDescription (Ljava/lang/String;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
@@ -348,6 +350,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getOperation ()Ljava/lang/String;
@@ -355,6 +358,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun isFinished ()Z
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
@@ -369,6 +373,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getInstance ()Lio/sentry/NoOpTransaction;
@@ -383,6 +388,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getTransaction ()Ljava/lang/String;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -547,15 +553,19 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
+	public fun getExtra (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getOriginThrowable ()Ljava/lang/Throwable;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSdk ()Lio/sentry/protocol/SdkVersion;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setEventId (Lio/sentry/protocol/SentryId;)V
+	public fun setExtra (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setExtras (Ljava/util/Map;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setSdk (Lio/sentry/protocol/SdkVersion;)V
@@ -638,7 +648,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getDist ()Ljava/lang/String;
 	public fun getExceptions ()Ljava/util/List;
-	public fun getExtra (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getFingerprints ()Ljava/util/List;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getLogger ()Ljava/lang/String;
@@ -653,14 +662,11 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun getUser ()Lio/sentry/protocol/User;
 	public fun isCrashed ()Z
 	public fun isErrored ()Z
-	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeModule (Ljava/lang/String;)V
 	public fun setBreadcrumbs (Ljava/util/List;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setExceptions (Ljava/util/List;)V
-	public fun setExtra (Ljava/lang/String;Ljava/lang/Object;)V
-	public fun setExtras (Ljava/util/Map;)V
 	public fun setFingerprints (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setLogger (Ljava/lang/String;)V
@@ -842,6 +848,7 @@ public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/s
 	public fun <init> (Ljava/lang/String;Lio/sentry/SpanContext;Lio/sentry/IHub;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
@@ -852,6 +859,7 @@ public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/s
 	public fun getTransaction ()Ljava/lang/String;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -911,11 +919,13 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration {
 public final class io/sentry/Span : io/sentry/SpanContext, io/sentry/ISpan {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun isFinished ()Z
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;

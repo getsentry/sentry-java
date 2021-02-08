@@ -67,17 +67,6 @@ public class Main {
           // Performance configuration options
           // Set what percentage of traces should be collected
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
-
-          // Determine traces sample rate based on the sampling context
-          options.setTracesSampler(
-              context -> {
-                // only 10% of transactions with "/product" prefix will be collected
-                if (!context.getTransactionContext().getName().startsWith("/products")) {
-                  return 0.1;
-                } else {
-                  return 0.5;
-                }
-              });
         });
 
     Sentry.addBreadcrumb(
@@ -139,8 +128,11 @@ public class Main {
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
     ITransaction transaction = Sentry.startTransaction("transaction name");
+    transaction.setData("data-key", "data-value");
+    Sentry.configureScope(scope -> scope.setTransaction(transaction));
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
+    outerSpan.setData("span-data-key", "span-data-value");
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
     ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
