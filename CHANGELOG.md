@@ -1,12 +1,14 @@
 # vNext
 
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
+* Enchancement: Improve EventProcessor nullability annotations (#1229).
 
 # 4.1.0
 
 * Improve Kotlin compatibility for SdkVersion (#1213)
 * Feat: Support logging via JUL (#1211)
 * Fix: Fix returning Sentry trace header from Span (#1217)
+* Fix: Remove misleading error logs (#1222)
 
 # 4.0.0
 
