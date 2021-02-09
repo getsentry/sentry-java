@@ -46,16 +46,8 @@ class GsonSerializerTest {
         fixture = Fixture()
     }
 
-    private fun serializeToString(ev: SentryEvent): String {
+    private fun serializeToString(ev: Any): String {
         return this.serializeToString { wrt -> fixture.serializer.serialize(ev, wrt) }
-    }
-
-    private fun serializeToString(session: Session): String {
-        return this.serializeToString { wrt -> fixture.serializer.serialize(session, wrt) }
-    }
-
-    private fun serializeToString(userFeedback: UserFeedback): String {
-        return this.serializeToString { wrt -> fixture.serializer.serialize(userFeedback, wrt) }
     }
 
     private fun serializeToString(serialize: (StringWriter) -> Unit): String {
@@ -444,10 +436,7 @@ class GsonSerializerTest {
         transaction.setData("integer-data-key", 10)
         transaction.finish()
 
-        val stringWriter = StringWriter()
-        fixture.serializer.serialize(transaction, stringWriter)
-
-        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        val element = JsonParser().parse(serializeToString(transaction)).asJsonObject
         assertEquals("transaction-name", element["transaction"].asString)
         assertEquals("transaction", element["type"].asString)
         assertNotNull(element["start_timestamp"].asString)
@@ -511,12 +500,7 @@ class GsonSerializerTest {
         span.setData("data-key", "data-value")
         span.finish()
 
-        val stringWriter = StringWriter()
-        fixture.serializer.serialize(span, stringWriter)
-
-        val toString = stringWriter.toString()
-        println(toString)
-        val element = JsonParser().parse(toString).asJsonObject
+        val element = JsonParser().parse(serializeToString(span)).asJsonObject
 
         assertEquals("data-value", element.get("data").asJsonObject.get("data-key").asString)
         assertEquals("data-value", element.get("data").asJsonObject.get("data-key").asString)
