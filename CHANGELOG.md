@@ -2,6 +2,7 @@
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Enchancement: Add ability to flush events synchronously.
+* Fix: Disable Gson HTML escaping
 
 # 4.1.0
 

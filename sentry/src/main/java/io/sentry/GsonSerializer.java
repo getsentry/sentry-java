@@ -99,6 +99,7 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
+        .disableHtmlEscaping()
         .create();
   }
 

@@ -24,6 +24,7 @@ public final class EnvelopeReader implements IEnvelopeReader {
           .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
           .registerTypeAdapter(
               SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
+          .disableHtmlEscaping()
           .create();
 
   public @Override @Nullable SentryEnvelope read(final @NotNull InputStream stream)
