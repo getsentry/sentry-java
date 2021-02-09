@@ -8,10 +8,12 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
+import io.sentry.transport.ReusableCountLatch;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
@@ -35,6 +37,7 @@ public final class ApacheHttpClientTransport implements ITransport {
   private final @NotNull CloseableHttpAsyncClient httpclient;
   private final @NotNull RateLimiter rateLimiter;
   private final @NotNull AtomicInteger currentlyRunning;
+  final ReusableCountLatch latch = new ReusableCountLatch();
 
   public ApacheHttpClientTransport(
       final @NotNull SentryOptions options,
@@ -67,6 +70,8 @@ public final class ApacheHttpClientTransport implements ITransport {
 
       if (filteredEnvelope != null) {
         currentlyRunning.incrementAndGet();
+        latch.increment();
+        System.out.println("After increment " + latch.getCount());
 
         try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
@@ -106,18 +111,24 @@ public final class ApacheHttpClientTransport implements ITransport {
                       rateLimits != null ? rateLimits.getValue() : null,
                       retryAfter != null ? retryAfter.getValue() : null,
                       response.getCode());
+                  latch.decrement();
+                  System.out.println("After decreemnt " + latch.getCount());
                 }
 
                 @Override
                 public void failed(Exception ex) {
                   currentlyRunning.decrementAndGet();
                   options.getLogger().log(ERROR, "Error while sending an envelope", ex);
+                  latch.decrement();
+                  System.out.println("After decreemnt " + latch.getCount());
                 }
 
                 @Override
                 public void cancelled() {
                   currentlyRunning.decrementAndGet();
                   options.getLogger().log(WARNING, "Request cancelled");
+                  latch.decrement();
+                  System.out.println("After decreemnt " + latch.getCount());
                 }
               });
         } catch (Exception e) {
@@ -126,6 +137,16 @@ public final class ApacheHttpClientTransport implements ITransport {
       }
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Submit cancelled");
+    }
+  }
+
+  @Override
+  public void flush(long timeoutMillis) {
+    try {
+      System.out.println("Flush " + latch.getCount());
+      latch.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to flush events");
     }
   }
 

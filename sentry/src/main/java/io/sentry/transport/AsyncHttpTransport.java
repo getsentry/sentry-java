@@ -85,6 +85,11 @@ public final class AsyncHttpTransport implements ITransport {
     }
   }
 
+  @Override
+  public void flush(long timeoutMillis) {
+    ((QueuedThreadPoolExecutor) executor).waitTillEmpty();
+  }
+
   private static QueuedThreadPoolExecutor initExecutor(
       final int maxQueueSize,
       final @NotNull IEnvelopeCache envelopeCache,

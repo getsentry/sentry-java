@@ -11,4 +11,11 @@ public interface ITransport extends Closeable {
   default void send(SentryEnvelope envelope) throws IOException {
     send(envelope, null);
   }
+
+  /**
+   * Flushes events queued up, but keeps the client enabled. Not implemented yet.
+   *
+   * @param timeoutMillis time in milliseconds
+   */
+  void flush(long timeoutMillis);
 }

@@ -26,5 +26,10 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
+  public void flush(long timeoutMillis) {
+    System.out.println("Flushing");
+  }
+
+  @Override
   public void close() {}
 }

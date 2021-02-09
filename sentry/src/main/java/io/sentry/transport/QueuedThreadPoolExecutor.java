@@ -25,6 +25,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;
   private final AtomicInteger currentlyRunning;
   private final @NotNull ILogger logger;
+  final ReusableCountLatch latch = new ReusableCountLatch();
 
   /**
    * Creates a new instance of the thread pool.
@@ -57,6 +58,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   @Override
   public Future<?> submit(final @NotNull Runnable task) {
     if (isSchedulingAllowed()) {
+      latch.increment();
       return super.submit(task);
     } else {
       // if the thread pool is full, we don't cache it
@@ -68,6 +70,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   @Override
   protected void beforeExecute(final @NotNull Thread t, final @NotNull Runnable r) {
     try {
+      System.out.println("Before execute");
       super.beforeExecute(t, r);
     } finally {
       currentlyRunning.incrementAndGet();
@@ -80,7 +83,17 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     try {
       super.afterExecute(r, t);
     } finally {
+      System.out.println("After execute");
       currentlyRunning.decrementAndGet();
+      latch.decrement();
+    }
+  }
+
+  void waitTillEmpty() {
+    try {
+      latch.waitTillZero();
+    } catch (InterruptedException e) {
+      logger.log(SentryLevel.ERROR, "Failed to flush events");
     }
   }
 
