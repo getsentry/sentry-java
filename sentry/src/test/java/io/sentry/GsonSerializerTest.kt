@@ -504,6 +504,56 @@ class GsonSerializerTest {
     }
 
     @Test
+    fun `serializes span`() {
+        val sentryId = SentryId()
+        val parentSpanId = SpanId()
+        val span = Span(sentryId, parentSpanId, SentryTransaction("tx"), NoOpHub.getInstance())
+        span.setData("data-key", "data-value")
+        span.finish()
+
+        val stringWriter = StringWriter()
+        fixture.serializer.serialize(span, stringWriter)
+
+        val toString = stringWriter.toString()
+        println(toString)
+        val element = JsonParser().parse(toString).asJsonObject
+
+        assertEquals("data-value", element.get("data").asJsonObject.get("data-key").asString)
+        assertEquals("data-value", element.get("data").asJsonObject.get("data-key").asString)
+        assertEquals(sentryId.toString(), element.get("trace_id").asString)
+        assertEquals(parentSpanId.toString(), element.get("parent_span_id").asString)
+        assertNotNull(element.get("span_id").asString)
+        assertNotNull(element.get("start_timestamp").asString)
+        assertNotNull(element.get("timestamp").asString)
+    }
+
+    @Test
+    fun `deserializes span`() {
+        val json = """
+            {
+              "start_timestamp":"2021-02-09T17:19:33.405Z",
+              "timestamp":"2021-02-09T17:19:33.405Z",
+              "data":{
+                "data-key":"data-value"
+              },
+              "trace_id":"bb185b9ad3ae489eb3645c1d6657b2e0",
+              "span_id":"f67e9eafb33f444e",
+              "parent_span_id":"15c304828711435c",
+              "tags":{}
+            }
+        """.trimIndent()
+
+        val span = fixture.serializer.deserialize(StringReader(json), Span::class.java)
+        assertNotNull(span)
+        assertNotNull(span.startTimestamp)
+        assertNotNull(span.timestamp)
+        assertEquals(SentryId("bb185b9ad3ae489eb3645c1d6657b2e0"), span.traceId)
+        assertEquals(SpanId("f67e9eafb33f444e"), span.spanId)
+        assertEquals(SpanId("15c304828711435c"), span.parentSpanId)
+        assertEquals("data-value", span.getData("data-key"))
+    }
+
+    @Test
     fun `serializing user feedback`() {
         val actual = serializeToString(userFeedback)
 

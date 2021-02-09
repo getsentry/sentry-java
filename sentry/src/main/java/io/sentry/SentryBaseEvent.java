@@ -183,22 +183,29 @@ public abstract class SentryBaseEvent {
     this.environment = environment;
   }
 
+  @NotNull
   Map<String, Object> getExtras() {
     return extra;
   }
 
-  public void setExtras(Map<String, Object> extra) {
+  /**
+   * Copies extras from the map given by parameter to extras on the event. If key already exists,
+   * its value gets overwritten.
+   *
+   * @param extra - the extras
+   */
+  public void setExtras(final @NotNull Map<String, Object> extra) {
     final Map<String, Object> copy = new HashMap<>(extra);
     for (Map.Entry<String, Object> entry : copy.entrySet()) {
       this.extra.put(entry.getKey(), entry.getValue());
     }
   }
 
-  public void setExtra(String key, Object value) {
+  public void setExtra(final @NotNull String key, final @NotNull Object value) {
     extra.put(key, value);
   }
 
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(final @NotNull String key) {
     extra.remove(key);
   }
 
