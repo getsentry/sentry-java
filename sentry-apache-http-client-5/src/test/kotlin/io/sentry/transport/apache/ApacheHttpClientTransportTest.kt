@@ -114,7 +114,7 @@ class ApacheHttpClientTransportTest {
         val sut = fixture.getSut()
         whenever(fixture.client.execute(any(), any())).then {
             CompletableFuture.runAsync {
-                Thread.sleep(100)
+                Thread.sleep(5)
                 (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
         }
@@ -122,31 +122,50 @@ class ApacheHttpClientTransportTest {
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 
-        sut.flush(500)
+        sut.flush(20)
 
         verify(fixture.currentlyRunning, times(3)).decrement()
     }
 
     @Test
-    fun `logs error when flush timeout was lower than time needed to execute all events`() {
+    fun `keeps sending events after flush`() {
         val sut = fixture.getSut()
         whenever(fixture.client.execute(any(), any())).then {
             CompletableFuture.runAsync {
-                Thread.sleep(1000)
+                Thread.sleep(5)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
+        }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.flush(20)
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.flush(20)
+
+        verify(fixture.currentlyRunning, times(4)).decrement()
+    }
+
+    @Test
+    fun `logs warning when flush timeout was lower than time needed to execute all events`() {
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            CompletableFuture.runAsync {
+                Thread.sleep(100)
                 (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
         }.then {
             CompletableFuture.runAsync {
-                Thread.sleep(50)
+                Thread.sleep(5)
                 (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
         }
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 
-        sut.flush(500)
+        sut.flush(10)
 
         verify(fixture.currentlyRunning, times(1)).decrement()
-        verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 500L)
+        verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 10L)
     }
 }
