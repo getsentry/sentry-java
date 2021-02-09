@@ -22,6 +22,7 @@ import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
 import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
 import io.sentry.protocol.DebugImage
 import io.sentry.protocol.DebugMeta
+import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.User
@@ -50,6 +51,10 @@ class DefaultAndroidEventProcessorTest {
                 version = "1.2.3"
             }
         }
+
+        fun getSut(context: Context): DefaultAndroidEventProcessor {
+            return DefaultAndroidEventProcessor(context, options.logger, buildInfo)
+        }
     }
 
     private val fixture = Fixture()
@@ -61,7 +66,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `when instance is created, application context reference is stored`() {
-        val sut = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
 
         assertEquals(sut.context, context)
     }
@@ -92,10 +97,10 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When hint is not Cached, data should be applied`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
         var event = SentryEvent()
         // refactor and mock data later on
-        event = processor.process(event, null)
+        event = sut.process(event, null)
         assertNotNull(event.contexts.app)
         assertEquals("test", event.debugMeta.images[0].uuid)
         assertNotNull(event.dist)
@@ -103,19 +108,19 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When debug meta is not null, set the image list`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
         var event = SentryEvent().apply {
             debugMeta = DebugMeta()
         }
 
-        event = processor.process(event, null)
+        event = sut.process(event, null)
 
         assertEquals("test", event.debugMeta.images[0].uuid)
     }
 
     @Test
     fun `When debug meta is not null and image list is not empty, append to the list`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
 
         val image = DebugImage().apply {
             uuid = "abc"
@@ -127,7 +132,7 @@ class DefaultAndroidEventProcessorTest {
             }
         }
 
-        event = processor.process(event, null)
+        event = sut.process(event, null)
 
         assertEquals("abc", event.debugMeta.images.first().uuid)
         assertEquals("test", event.debugMeta.images.last().uuid)
@@ -135,7 +140,8 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Current should be true if it comes from main thread`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         val sentryThread = SentryThread().apply {
             id = Looper.getMainLooper().thread.id
         }
@@ -143,13 +149,14 @@ class DefaultAndroidEventProcessorTest {
             threads = mutableListOf(sentryThread)
         }
         // refactor and mock data later on
-        event = processor.process(event, null)
+        event = sut.process(event, null)
         assertTrue(event.threads.first().isCurrent)
     }
 
     @Test
     fun `Current should be false if it its not the main thread`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         val sentryThread = SentryThread().apply {
             id = 10L
         }
@@ -157,16 +164,17 @@ class DefaultAndroidEventProcessorTest {
             threads = mutableListOf(sentryThread)
         }
         // refactor and mock data later on
-        event = processor.process(event, null)
+        event = sut.process(event, null)
         assertFalse(event.threads.first().isCurrent)
     }
 
     @Test
     fun `When hint is Cached, data should not be applied`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         var event = SentryEvent()
         // refactor and mock data later on
-        event = processor.process(event, CachedEvent())
+        event = sut.process(event, CachedEvent())
         assertNull(event.contexts.app)
         assertNull(event.debugMeta)
         assertNull(event.release)
@@ -175,41 +183,45 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When hint is Cached, userId is applied anyway`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         var event = SentryEvent()
-        event = processor.process(event, CachedEvent())
+        event = sut.process(event, CachedEvent())
         assertNotNull(event.user)
     }
 
     @Test
     fun `When user with id is already set, do not overwrite it`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         val user = User()
         user.id = "user-id"
         var event = SentryEvent().apply {
             setUser(user)
         }
-        event = processor.process(event, null)
+        event = sut.process(event, null)
         assertNotNull(event.user)
         assertSame(user, event.user)
     }
 
     @Test
     fun `When user without id is set, user id is applied`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         val user = User()
         var event = SentryEvent().apply {
             setUser(user)
         }
-        event = processor.process(event, null)
+        event = sut.process(event, null)
         assertNotNull(event.user)
         assertNotNull(event.user.id)
     }
 
     @Test
     fun `Executor service should be called on ctor`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
-        val contextData = processor.contextData.get()
+        val sut = fixture.getSut(context)
+
+        val contextData = sut.contextData.get()
         assertNotNull(contextData)
         assertEquals("test", (contextData[PROGUARD_UUID] as Array<*>)[0])
         assertNotNull(contextData[ROOTED])
@@ -221,8 +233,9 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Processor won't throw exception`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
-        processor.process(SentryEvent(), null)
+        val sut = fixture.getSut(context)
+
+        sut.process(SentryEvent(), null)
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
@@ -235,10 +248,40 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When event is processed, sideLoaded info should be set`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo)
+        val sut = fixture.getSut(context)
+
         var event = SentryEvent()
-        event = processor.process(event, null)
+        event = sut.process(event, null)
 
         assertNotNull(event.getTag("isSideLoaded"))
+    }
+
+    @Test
+    fun `When event already has OS, add OS with custom key`() {
+        val sut = fixture.getSut(context)
+
+        var event = SentryEvent().apply {
+            contexts.setOperatingSystem(OperatingSystem().apply {
+                name = " Linux "
+            })
+        }
+        event = sut.process(event, null)
+
+        assertEquals(" Linux ", (event.contexts["os_linux"] as OperatingSystem).name)
+        assertEquals("Android", event.contexts.operatingSystem!!.name)
+    }
+
+    @Test
+    fun `When event already has OS, add OS with generated key if no name`() {
+        val sut = fixture.getSut(context)
+
+        var event = SentryEvent().apply {
+            contexts.setOperatingSystem(OperatingSystem().apply {
+                version = "1.0"
+            })
+        }
+        event = sut.process(event, null)
+
+        assertEquals("1.0", (event.contexts["os_1"] as OperatingSystem).version)
     }
 }
