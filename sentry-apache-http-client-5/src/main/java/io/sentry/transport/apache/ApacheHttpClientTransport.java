@@ -135,7 +135,11 @@ public final class ApacheHttpClientTransport implements ITransport {
   @Override
   public void flush(long timeoutMillis) {
     try {
-      currentlyRunning.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
+      boolean b = currentlyRunning.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
+      System.out.println(b);
+      if (!b) {
+        options.getLogger().log(WARNING, "Failed to flush all events within %s ms", timeoutMillis);
+      }
     } catch (InterruptedException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to flush events", e);
     }

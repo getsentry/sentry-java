@@ -258,7 +258,7 @@ class AsyncHttpTransportTest {
     fun `flush waits for executor to finish tasks`() {
         val sut = fixture.getSUT()
         sut.flush(500)
-        verify(fixture.executor).waitTillIdle()
+        verify(fixture.executor).waitTillIdle(500)
     }
 
     private fun createSession(): Session {

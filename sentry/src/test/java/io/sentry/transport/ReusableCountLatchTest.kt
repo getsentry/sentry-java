@@ -11,7 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Tests originally copied from <a href="https://github.com/MatejTymes/JavaFixes/blob/master/src/test/java/javafixes/concurrency/ReusableCountLatchTest.java">ReusableCountLatchTest</a>.
+ * Tests originally copied from <a href="https://github.com/MatejTymes/JavaFixes/blob/37e74b9d0a29f7a47485c6d1bb1307f01fb93634/src/test/java/javafixes/concurrency/ReusableCountLatchTest.java">ReusableCountLatchTest</a>.
  */
 class ReusableCountLatchTest {
     @Test

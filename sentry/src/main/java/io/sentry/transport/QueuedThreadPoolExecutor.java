@@ -75,9 +75,9 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   }
 
   /** Blocks the thread until there are no running tasks. */
-  void waitTillIdle() {
+  void waitTillIdle(final long timeoutMillis) {
     try {
-      unfinishedTasksCount.waitTillZero();
+      unfinishedTasksCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       logger.log(SentryLevel.ERROR, "Failed to wait till idle", e);
     }

@@ -86,7 +86,7 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   public void flush(long timeoutMillis) {
-    executor.waitTillIdle();
+    executor.waitTillIdle(timeoutMillis);
   }
 
   private static QueuedThreadPoolExecutor initExecutor(

@@ -149,7 +149,7 @@ class QueuedThreadPoolExecutorTest {
                 finished.incrementAndGet()
             }
         }
-        sut.waitTillIdle()
+        sut.waitTillIdle(1000)
         assertEquals(3, finished.get())
     }
 }
