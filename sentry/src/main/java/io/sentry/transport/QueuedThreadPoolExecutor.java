@@ -9,7 +9,6 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,9 +22,8 @@ import org.jetbrains.annotations.Nullable;
  */
 final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;
-  private final AtomicInteger currentlyRunning;
   private final @NotNull ILogger logger;
-  final ReusableCountLatch latch = new ReusableCountLatch();
+  private final @NotNull ReusableCountLatch unfinishedTasksCount = new ReusableCountLatch();
 
   /**
    * Creates a new instance of the thread pool.
@@ -51,29 +49,18 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
         threadFactory,
         rejectedExecutionHandler);
     this.maxQueueSize = maxQueueSize;
-    this.currentlyRunning = new AtomicInteger();
     this.logger = logger;
   }
 
   @Override
   public Future<?> submit(final @NotNull Runnable task) {
     if (isSchedulingAllowed()) {
-      latch.increment();
+      unfinishedTasksCount.increment();
       return super.submit(task);
     } else {
       // if the thread pool is full, we don't cache it
       logger.log(SentryLevel.WARNING, "Submit cancelled");
       return new CancelledFuture<>();
-    }
-  }
-
-  @Override
-  protected void beforeExecute(final @NotNull Thread t, final @NotNull Runnable r) {
-    try {
-      System.out.println("Before execute");
-      super.beforeExecute(t, r);
-    } finally {
-      currentlyRunning.incrementAndGet();
     }
   }
 
@@ -83,22 +70,21 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     try {
       super.afterExecute(r, t);
     } finally {
-      System.out.println("After execute");
-      currentlyRunning.decrementAndGet();
-      latch.decrement();
+      unfinishedTasksCount.decrement();
     }
   }
 
-  void waitTillEmpty() {
+  /** Blocks the thread until there are no running tasks. */
+  void waitTillIdle() {
     try {
-      latch.waitTillZero();
+      unfinishedTasksCount.waitTillZero();
     } catch (InterruptedException e) {
-      logger.log(SentryLevel.ERROR, "Failed to flush events");
+      logger.log(SentryLevel.ERROR, "Failed to wait till idle", e);
     }
   }
 
   private boolean isSchedulingAllowed() {
-    return getQueue().size() + currentlyRunning.get() < maxQueueSize;
+    return unfinishedTasksCount.getCount() < maxQueueSize;
   }
 
   private static final class CancelledFuture<T> implements Future<T> {

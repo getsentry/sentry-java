@@ -1641,7 +1641,7 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
-	public fun <init> (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
+	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
 	public fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V

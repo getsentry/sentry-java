@@ -1,6 +1,7 @@
 # vNext
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
+* Enchancement: Add ability to flush events synchronously.
 
 # 4.1.0
 

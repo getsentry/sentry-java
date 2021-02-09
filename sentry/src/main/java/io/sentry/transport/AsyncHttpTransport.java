@@ -13,7 +13,6 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class AsyncHttpTransport implements ITransport {
 
-  private final @NotNull ExecutorService executor;
+  private final @NotNull QueuedThreadPoolExecutor executor;
   private final @NotNull IEnvelopeCache envelopeCache;
   private final @NotNull SentryOptions options;
   private final @NotNull RateLimiter rateLimiter;
@@ -48,7 +47,7 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   public AsyncHttpTransport(
-      final @NotNull ExecutorService executor,
+      final @NotNull QueuedThreadPoolExecutor executor,
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
@@ -87,7 +86,7 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   public void flush(long timeoutMillis) {
-    ((QueuedThreadPoolExecutor) executor).waitTillEmpty();
+    executor.waitTillIdle();
   }
 
   private static QueuedThreadPoolExecutor initExecutor(

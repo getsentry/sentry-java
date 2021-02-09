@@ -5,6 +5,8 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.RequestDetails
@@ -12,8 +14,8 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.transport.RateLimiter
+import io.sentry.transport.ReusableCountLatch
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
@@ -31,7 +33,7 @@ class ApacheHttpClientTransportTest {
         val rateLimiter = mock<RateLimiter>()
         val requestDetails = RequestDetails("http://key@localhost/proj", mapOf("header-name" to "header-value"))
         val client = mock<CloseableHttpAsyncClient>()
-        val currentlyRunning = mock<AtomicInteger>()
+        val currentlyRunning = spy<ReusableCountLatch>()
 
         init {
             whenever(rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
@@ -48,7 +50,7 @@ class ApacheHttpClientTransportTest {
             }
 
             if (queueFull) {
-                whenever(currentlyRunning.get()).thenReturn(options.maxQueueSize)
+                whenever(currentlyRunning.count).thenReturn(options.maxQueueSize)
             }
             return transport
         }
@@ -99,5 +101,23 @@ class ApacheHttpClientTransportTest {
         val sut = fixture.getSut()
         sut.close()
         verify(fixture.client).close(CloseMode.GRACEFUL)
+    }
+
+    @Test
+    fun `flush waits till all requests are finished`() {
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            CompletableFuture.runAsync {
+                Thread.sleep(100)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
+        }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+
+        sut.flush(500)
+
+        verify(fixture.currentlyRunning, times(3)).decrement()
     }
 }
