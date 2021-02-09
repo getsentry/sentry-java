@@ -260,14 +260,16 @@ class DefaultAndroidEventProcessorTest {
     fun `When event already has OS, add OS with custom key`() {
         val sut = fixture.getSut(context)
 
+        val osLinux = OperatingSystem().apply {
+            name = " Linux "
+        }
+
         var event = SentryEvent().apply {
-            contexts.setOperatingSystem(OperatingSystem().apply {
-                name = " Linux "
-            })
+            contexts.setOperatingSystem(osLinux)
         }
         event = sut.process(event, null)
 
-        assertEquals(" Linux ", (event.contexts["os_linux"] as OperatingSystem).name)
+        assertSame(osLinux, (event.contexts["os_linux"] as OperatingSystem))
         assertEquals("Android", event.contexts.operatingSystem!!.name)
     }
 
@@ -275,13 +277,16 @@ class DefaultAndroidEventProcessorTest {
     fun `When event already has OS, add OS with generated key if no name`() {
         val sut = fixture.getSut(context)
 
+        val osNoName = OperatingSystem().apply {
+            version = "1.0"
+        }
+
         var event = SentryEvent().apply {
-            contexts.setOperatingSystem(OperatingSystem().apply {
-                version = "1.0"
-            })
+            contexts.setOperatingSystem(osNoName)
         }
         event = sut.process(event, null)
 
-        assertEquals("1.0", (event.contexts["os_1"] as OperatingSystem).version)
+        assertSame(osNoName, (event.contexts["os_1"] as OperatingSystem))
+        assertEquals("Android", event.contexts.operatingSystem!!.name)
     }
 }
