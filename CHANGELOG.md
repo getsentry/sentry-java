@@ -1,6 +1,7 @@
 # vNext
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
+* Fix: Disable Gson HTML escaping
 
 # 4.1.0
 
