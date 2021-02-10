@@ -2,6 +2,7 @@
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Bump: sentry-native to 0.4.7
+* Fix: Disable Gson HTML escaping
 
 # 4.1.0
 
