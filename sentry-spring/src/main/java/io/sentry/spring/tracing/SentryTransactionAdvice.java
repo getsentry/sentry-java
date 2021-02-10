@@ -16,7 +16,10 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
-/** Reports every bean method annotated with {@link SentryTransaction} */
+/**
+ * Reports execution of every bean method annotated with {@link SentryTransaction} or a execution of
+ * a bean method within a class annotated with {@link SentryTransaction}.
+ */
 @ApiStatus.Internal
 @Open
 public class SentryTransactionAdvice implements MethodInterceptor {
@@ -31,8 +34,14 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     final Method mostSpecificMethod =
         AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
 
-    final @Nullable SentryTransaction sentryTransaction =
+    @Nullable
+    SentryTransaction sentryTransaction =
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryTransaction.class);
+    if (sentryTransaction == null) {
+      sentryTransaction =
+          AnnotationUtils.findAnnotation(
+              mostSpecificMethod.getDeclaringClass(), SentryTransaction.class);
+    }
 
     final String name = resolveTransactionName(invocation, sentryTransaction);
 

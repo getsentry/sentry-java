@@ -32,11 +32,45 @@ class SentrySpanAdviceTest {
     lateinit var sampleService: SampleService
 
     @Autowired
+    lateinit var classAnnotatedSampleService: ClassAnnotatedSampleService
+
+    @Autowired
+    lateinit var classAnnotatedWithOperationSampleService: ClassAnnotatedWithOperationSampleService
+
+    @Autowired
     lateinit var hub: IHub
 
     @BeforeTest
     fun setup() {
         whenever(hub.startTransaction(any<TransactionContext>())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+    }
+
+    @Test
+    fun `when class is annotated with @SentrySpan, every method call attaches span to existing transaction`() {
+        val scope = Scope(SentryOptions())
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
+        scope.setTransaction(tx)
+
+        whenever(hub.span).thenReturn(tx)
+        val result = classAnnotatedSampleService.hello()
+        assertEquals(1, result)
+        assertEquals(1, tx.spans.size)
+        assertNull(tx.spans.first().description)
+        assertEquals("ClassAnnotatedSampleService.hello", tx.spans.first().operation)
+    }
+
+    @Test
+    fun `when class is annotated with @SentrySpan with operation set, every method call attaches span to existing transaction`() {
+        val scope = Scope(SentryOptions())
+        val tx = SentryTransaction("aTransaction", SpanContext(), hub)
+        scope.setTransaction(tx)
+
+        whenever(hub.span).thenReturn(tx)
+        val result = classAnnotatedWithOperationSampleService.hello()
+        assertEquals(1, result)
+        assertEquals(1, tx.spans.size)
+        assertNull(tx.spans.first().description)
+        assertEquals("my-op", tx.spans.first().operation)
     }
 
     @Test
@@ -111,6 +145,12 @@ class SentrySpanAdviceTest {
         open fun sampleService() = SampleService()
 
         @Bean
+        open fun classAnnotatedSampleService() = ClassAnnotatedSampleService()
+
+        @Bean
+        open fun classAnnotatedWithOperationSampleService() = ClassAnnotatedWithOperationSampleService()
+
+        @Bean
         open fun hub() = mock<IHub>()
     }
 
@@ -126,5 +166,17 @@ class SentrySpanAdviceTest {
         open fun methodThrowingException() {
             throw RuntimeException("ex")
         }
+    }
+
+    @SentrySpan
+    open class ClassAnnotatedSampleService {
+
+        open fun hello() = 1
+    }
+
+    @SentrySpan(operation = "my-op")
+    open class ClassAnnotatedWithOperationSampleService {
+
+        open fun hello() = 1
     }
 }
