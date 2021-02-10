@@ -14,17 +14,13 @@ import io.sentry.SentryOptions
 import io.sentry.SpanContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import org.aopalliance.aop.Advice
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.runner.RunWith
-import org.springframework.aop.Advisor
-import org.springframework.aop.Pointcut
-import org.springframework.aop.support.DefaultPointcutAdvisor
-import org.springframework.aop.support.annotation.AnnotationMatchingPointcut
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
 
@@ -34,6 +30,12 @@ class SentryTransactionAdviceTest {
 
     @Autowired
     lateinit var sampleService: SampleService
+
+    @Autowired
+    lateinit var classAnnotatedSampleService: ClassAnnotatedSampleService
+
+    @Autowired
+    lateinit var classAnnotatedWithOperationSampleService: ClassAnnotatedWithOperationSampleService
 
     @Autowired
     lateinit var hub: IHub
@@ -74,30 +76,40 @@ class SentryTransactionAdviceTest {
         verify(hub, times(0)).captureTransaction(any(), any())
     }
 
+    @Test
+    fun `creates transaction around method in class annotated with @SentryTransaction`() {
+        classAnnotatedSampleService.hello()
+        verify(hub).captureTransaction(check {
+            assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
+            assertThat(it.contexts.trace!!.operation).isNull()
+        }, eq(null))
+    }
+
+    @Test
+    fun `creates transaction with operation set around method in class annotated with @SentryTransaction`() {
+        classAnnotatedWithOperationSampleService.hello()
+        verify(hub).captureTransaction(check {
+            assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
+            assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
+        }, eq(null))
+    }
+
     @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
+    @Import(SentryTracingConfiguration::class)
     open class Config {
 
         @Bean
         open fun sampleService() = SampleService()
 
         @Bean
+        open fun classAnnotatedSampleService() = ClassAnnotatedSampleService()
+
+        @Bean
+        open fun classAnnotatedWithOperationSampleService() = ClassAnnotatedWithOperationSampleService()
+
+        @Bean
         open fun hub() = mock<IHub>()
-
-        @Bean
-        open fun sentryTransactionPointcut(): Pointcut {
-            return AnnotationMatchingPointcut(null, SentryTransaction::class.java)
-        }
-
-        @Bean
-        open fun sentryTransactionAdvice(hub: IHub): Advice {
-            return SentryTransactionAdvice(hub)
-        }
-
-        @Bean
-        open fun sentryTransactionAdvisor(hub: IHub): Advisor {
-            return DefaultPointcutAdvisor(sentryTransactionPointcut(), sentryTransactionAdvice(hub))
-        }
     }
 
     open class SampleService {
@@ -107,5 +119,17 @@ class SentryTransactionAdviceTest {
 
         @SentryTransaction
         open fun methodWithoutTransactionNameSet() = Unit
+    }
+
+    @SentryTransaction
+    open class ClassAnnotatedSampleService {
+
+        open fun hello() = Unit
+    }
+
+    @SentryTransaction(operation = "my-op")
+    open class ClassAnnotatedWithOperationSampleService {
+
+        open fun hello() = Unit
     }
 }

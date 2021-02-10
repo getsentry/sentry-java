@@ -5,11 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * {@link SentrySpan} can be added either on the class or the method to create spans around method
+ * executions.
+ */
 @Service
+@SentrySpan
 public class PersonService {
   private static final Logger LOGGER = LoggerFactory.getLogger(PersonService.class);
 
-  @SentrySpan
   Person create(Person person) {
     LOGGER.warn("Creating person: {}", person);
     try {
