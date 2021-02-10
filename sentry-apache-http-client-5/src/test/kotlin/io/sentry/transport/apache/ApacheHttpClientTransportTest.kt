@@ -138,10 +138,10 @@ class ApacheHttpClientTransportTest {
         }
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-        sut.flush(20)
+        sut.flush(50)
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-        sut.flush(20)
+        sut.flush(50)
 
         verify(fixture.currentlyRunning, times(4)).decrement()
     }
