@@ -7,11 +7,12 @@ import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 
 /**
- * Bean method annotated with {@link SentrySpan} executed within {@link io.sentry.SentryTransaction}
- * gets wrapped into {@link io.sentry.Span}.
+ * Makes annotated method execution or a method execution within a class annotated with {@link
+ * SentrySpan} executed within running {@link io.sentry.SentryTransaction} to get wrapped into
+ * {@link io.sentry.Span}.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 public @interface SentrySpan {
 
   /**
@@ -22,7 +23,7 @@ public @interface SentrySpan {
   String description() default "";
 
   /**
-   * Span operation.
+   * Span operation. If not set, operation is resolved as a class name and a method name.
    *
    * @return operation.
    */
@@ -30,7 +31,7 @@ public @interface SentrySpan {
   String operation() default "";
 
   /**
-   * Span operation.
+   * Span operation. If not set, transaction name is resolved as a class name and a method name.
    *
    * @return operation.
    */

@@ -2,7 +2,9 @@
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Bump: sentry-native to 0.4.7
+* Enchancement: Add ability to flush events synchronously.
 * Fix: Disable Gson HTML escaping
+* Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 
 # 4.1.0
 

@@ -15,23 +15,16 @@ import io.sentry.spring.SentrySpringRequestListener;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
-import io.sentry.spring.tracing.SentrySpan;
-import io.sentry.spring.tracing.SentrySpanAdvice;
+import io.sentry.spring.tracing.SentryAdviceConfiguration;
+import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
-import io.sentry.spring.tracing.SentryTransaction;
-import io.sentry.spring.tracing.SentryTransactionAdvice;
+import io.sentry.spring.tracing.SentryTransactionPointcutConfiguration;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
-import org.aopalliance.aop.Advice;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.Advisor;
-import org.springframework.aop.Pointcut;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
-import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -154,60 +147,21 @@ public class SentryAutoConfiguration {
     @Configuration
     @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
     @ConditionalOnClass(ProceedingJoinPoint.class)
+    @Import(SentryAdviceConfiguration.class)
     @Open
     static class SentryPerformanceAspectsConfiguration {
 
-      /**
-       * Pointcut around which transactions are created.
-       *
-       * <p>This bean is can be replaced with user defined pointcut by specifying a {@link Pointcut}
-       * bean with name "sentryTransactionPointcut".
-       *
-       * @return pointcut used by {@link SentryTransactionAdvice}.
-       */
-      @Bean
+      @Configuration
       @ConditionalOnMissingBean(name = "sentryTransactionPointcut")
-      public @NotNull Pointcut sentryTransactionPointcut() {
-        return new AnnotationMatchingPointcut(null, SentryTransaction.class);
-      }
+      @Import(SentryTransactionPointcutConfiguration.class)
+      @Open
+      static class SentryTransactionPointcutAutoConfiguration {}
 
-      @Bean
-      public @NotNull Advice sentryTransactionAdvice(final @NotNull IHub hub) {
-        return new SentryTransactionAdvice(hub);
-      }
-
-      @Bean
-      public @NotNull Advisor sentryTransactionAdvisor(
-          final @NotNull IHub hub,
-          final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut
-                  sentryTransactionPointcut) {
-        return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice(hub));
-      }
-
-      /**
-       * Pointcut around which spans are created.
-       *
-       * <p>This bean is can be replaced with user defined pointcut by specifying a {@link Pointcut}
-       * bean with name "sentrySpanPointcut".
-       *
-       * @return pointcut used by {@link SentrySpanAdvice}.
-       */
-      @Bean
+      @Configuration
       @ConditionalOnMissingBean(name = "sentrySpanPointcut")
-      public @NotNull Pointcut sentrySpanPointcut() {
-        return new AnnotationMatchingPointcut(null, SentrySpan.class);
-      }
-
-      @Bean
-      public @NotNull Advice sentrySpanAdvice(final @NotNull IHub hub) {
-        return new SentrySpanAdvice(hub);
-      }
-
-      @Bean
-      public @NotNull Advisor sentrySpanAdvisor(
-          IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
-        return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice(hub));
-      }
+      @Import(SentrySpanPointcutConfiguration.class)
+      @Open
+      static class SentrySpanPointcutAutoConfiguration {}
     }
 
     @Configuration

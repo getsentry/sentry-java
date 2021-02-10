@@ -1641,8 +1641,9 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
-	public fun <init> (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
+	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
+	public fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
@@ -1656,6 +1657,7 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 }
 
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
+	public abstract fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;)V
 	public abstract fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
@@ -1674,6 +1676,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {
 	public fun close ()V
+	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/transport/NoOpTransport;
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
@@ -1690,9 +1693,20 @@ public final class io/sentry/transport/RateLimiter {
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
 
+public final class io/sentry/transport/ReusableCountLatch {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public fun decrement ()V
+	public fun getCount ()I
+	public fun increment ()V
+	public fun waitTillZero ()V
+	public fun waitTillZero (JLjava/util/concurrent/TimeUnit;)Z
+}
+
 public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
+	public fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
