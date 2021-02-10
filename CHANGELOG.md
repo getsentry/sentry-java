@@ -2,6 +2,7 @@
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Fix: Disable Gson HTML escaping
+* Enchancement: Add overloads for startTrasaction taking op and description (#1244)
 
 # 4.1.0
 
