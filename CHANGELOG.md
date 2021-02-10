@@ -3,6 +3,7 @@
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
+* Enchancement: Do not serialize empty collections and maps (#1245)
 
 # 4.1.0
 
