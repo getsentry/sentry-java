@@ -440,6 +440,8 @@ class GsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         val transaction = SentryTransaction("transaction-name", trace, mock())
+        val span = transaction.startChild("child")
+        span.finish()
         transaction.finish()
 
         val stringWriter = StringWriter()
@@ -541,6 +543,23 @@ class GsonSerializerTest {
                 .log(eq(SentryLevel.ERROR),
                         eq("Failed to create envelope item. Dropping it."),
                         any<SentryEnvelopeException>())
+    }
+
+    @Test
+    fun `empty maps are serialized to null`() {
+        val event = SentryEvent()
+        event.tags = emptyMap()
+        val element = JsonParser().parse(serializeToString(event)).asJsonObject
+        assertNull(element.asJsonObject["tags"])
+    }
+
+    @Test
+    fun `empty lists are serialized to null`() {
+        val transaction = SentryTransaction("tx")
+        val stringWriter = StringWriter()
+        fixture.serializer.serialize(transaction, stringWriter)
+        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        assertNull(element.asJsonObject["spans"])
     }
 
     private fun assertSessionData(expectedSession: Session?) {
