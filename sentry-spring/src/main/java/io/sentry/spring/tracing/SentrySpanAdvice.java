@@ -37,8 +37,12 @@ public class SentrySpanAdvice implements MethodInterceptor {
       final Method mostSpecificMethod =
           AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
       final Class<?> targetClass = invocation.getMethod().getDeclaringClass();
-      final SentrySpan sentrySpan =
-          AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
+      SentrySpan sentrySpan = AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
+      if (sentrySpan == null) {
+        sentrySpan =
+            AnnotationUtils.findAnnotation(
+                mostSpecificMethod.getDeclaringClass(), SentrySpan.class);
+      }
       final String operation = resolveSpanOperation(targetClass, mostSpecificMethod, sentrySpan);
       final ISpan span = activeSpan.startChild(operation);
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.description())) {
