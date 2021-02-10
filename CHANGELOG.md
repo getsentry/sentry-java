@@ -2,6 +2,7 @@
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Enchancement: Add "data" property to Span (#1235).
+* Fix: Disable Gson HTML escaping
 
 # 4.1.0
 
