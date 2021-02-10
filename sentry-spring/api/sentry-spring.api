@@ -90,7 +90,6 @@ public class io/sentry/spring/tracing/SentrySpanAdvice : org/aopalliance/interce
 
 public class io/sentry/spring/tracing/SentrySpanClientHttpRequestInterceptor : org/springframework/http/client/ClientHttpRequestInterceptor {
 	public fun <init> (Lio/sentry/IHub;)V
-	public fun createUriTemplateHandler (Lorg/springframework/web/util/UriTemplateHandler;)Lorg/springframework/web/util/UriTemplateHandler;
 	public fun intercept (Lorg/springframework/http/HttpRequest;[BLorg/springframework/http/client/ClientHttpRequestExecution;)Lorg/springframework/http/client/ClientHttpResponse;
 }
 

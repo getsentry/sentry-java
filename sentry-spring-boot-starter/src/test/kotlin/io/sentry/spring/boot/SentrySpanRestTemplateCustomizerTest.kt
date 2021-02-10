@@ -63,7 +63,7 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
-        assertThat(span.description).isEqualTo("GET /test/{id}")
+        assertThat(span.description).isEqualTo("GET /test/123")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
         fixture.mockServer.verify()
     }
@@ -76,7 +76,7 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
-        assertThat(span.description).isEqualTo("GET /test/{id}")
+        assertThat(span.description).isEqualTo("GET /test/123")
         assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
         fixture.mockServer.verify()
     }
@@ -98,14 +98,5 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(restTemplate.interceptors).hasSize(1)
         fixture.customizer.customize(restTemplate)
         assertThat(restTemplate.interceptors).hasSize(1)
-    }
-
-    @Test
-    fun `normalizes URI to contain leading slash`() {
-        val result = fixture.getSut(isTransactionActive = true).getForObject("test/{id}", String::class.java, 123)
-
-        assertThat(result).isEqualTo("OK")
-        assertThat(fixture.transaction.spans.first().description).isEqualTo("GET /test/{id}")
-        fixture.mockServer.verify()
     }
 }

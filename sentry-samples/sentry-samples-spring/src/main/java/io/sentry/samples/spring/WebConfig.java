@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.util.UriTemplateHandler;
 
 @Configuration
 @EnableAspectJAutoProxy(proxyTargetClass = true)
@@ -29,9 +28,6 @@ public class WebConfig {
     RestTemplate restTemplate = new RestTemplate();
     SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor =
         new SentrySpanClientHttpRequestInterceptor(hub);
-    UriTemplateHandler templateHandler = restTemplate.getUriTemplateHandler();
-    restTemplate.setUriTemplateHandler(
-        sentryRestTemplateInterceptor.createUriTemplateHandler(templateHandler));
     restTemplate.setInterceptors(Collections.singletonList(sentryRestTemplateInterceptor));
     return restTemplate;
   }
