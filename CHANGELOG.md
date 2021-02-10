@@ -1,6 +1,7 @@
 # vNext
 
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
+* Enchancement: Add ability to flush events synchronously.
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 

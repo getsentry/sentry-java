@@ -19,7 +19,6 @@ import io.sentry.Session
 import io.sentry.dsnString
 import io.sentry.protocol.User
 import java.io.IOException
-import java.util.concurrent.ExecutorService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -28,7 +27,7 @@ class AsyncHttpTransportTest {
     private class Fixture {
         var connection = mock<HttpConnection>()
         var transportGate = mock<ITransportGate>()
-        var executor = mock<ExecutorService>()
+        var executor = mock<QueuedThreadPoolExecutor>()
         var rateLimiter = mock<RateLimiter>()
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -253,6 +252,13 @@ class AsyncHttpTransportTest {
 
         // then
         verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
+    }
+
+    @Test
+    fun `flush waits for executor to finish tasks`() {
+        val sut = fixture.getSUT()
+        sut.flush(500)
+        verify(fixture.executor).waitTillIdle(500)
     }
 
     private fun createSession(): Session {

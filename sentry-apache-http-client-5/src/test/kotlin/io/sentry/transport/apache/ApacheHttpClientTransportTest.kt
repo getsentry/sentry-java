@@ -5,15 +5,19 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ILogger
 import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.transport.RateLimiter
+import io.sentry.transport.ReusableCountLatch
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
@@ -24,20 +28,24 @@ import org.apache.hc.core5.io.CloseMode
 class ApacheHttpClientTransportTest {
 
     class Fixture {
-        val options = SentryOptions().apply {
-            setSerializer(mock())
-            setLogger(mock())
-        }
+        val options: SentryOptions
+        val logger = mock<ILogger>()
         val rateLimiter = mock<RateLimiter>()
         val requestDetails = RequestDetails("http://key@localhost/proj", mapOf("header-name" to "header-value"))
         val client = mock<CloseableHttpAsyncClient>()
-        val currentlyRunning = mock<AtomicInteger>()
+        val currentlyRunning = spy<ReusableCountLatch>()
 
         init {
             whenever(rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+            options = SentryOptions()
+            options.setSerializer(mock())
+            options.setDiagnosticLevel(SentryLevel.WARNING)
+            options.setDebug(true)
+            options.setLogger(logger)
         }
 
         fun getSut(response: SimpleHttpResponse? = null, queueFull: Boolean = false): ApacheHttpClientTransport {
+
             val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, currentlyRunning)
 
             if (response != null) {
@@ -48,7 +56,7 @@ class ApacheHttpClientTransportTest {
             }
 
             if (queueFull) {
-                whenever(currentlyRunning.get()).thenReturn(options.maxQueueSize)
+                whenever(currentlyRunning.count).thenReturn(options.maxQueueSize)
             }
             return transport
         }
@@ -99,5 +107,65 @@ class ApacheHttpClientTransportTest {
         val sut = fixture.getSut()
         sut.close()
         verify(fixture.client).close(CloseMode.GRACEFUL)
+    }
+
+    @Test
+    fun `flush waits till all requests are finished`() {
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            CompletableFuture.runAsync {
+                Thread.sleep(5)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
+        }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+
+        sut.flush(20)
+
+        verify(fixture.currentlyRunning, times(3)).decrement()
+    }
+
+    @Test
+    fun `keeps sending events after flush`() {
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            CompletableFuture.runAsync {
+                Thread.sleep(5)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
+        }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.flush(50)
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.flush(50)
+
+        verify(fixture.currentlyRunning, times(4)).decrement()
+    }
+
+    @Test
+    fun `logs warning when flush timeout was lower than time needed to execute all events`() {
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            CompletableFuture.runAsync {
+                Thread.sleep(100)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
+        }.then {
+            CompletableFuture.runAsync {
+                Thread.sleep(5)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
+        }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+
+        sut.flush(10)
+
+        verify(fixture.currentlyRunning, times(1)).decrement()
+        verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 10L)
     }
 }
