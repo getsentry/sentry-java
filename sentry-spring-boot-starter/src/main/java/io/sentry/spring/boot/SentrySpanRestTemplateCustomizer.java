@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriTemplateHandler;
 
 @Open
 class SentrySpanRestTemplateCustomizer implements RestTemplateCustomizer {
@@ -21,9 +20,6 @@ class SentrySpanRestTemplateCustomizer implements RestTemplateCustomizer {
 
   @Override
   public void customize(final @NotNull RestTemplate restTemplate) {
-    UriTemplateHandler templateHandler = restTemplate.getUriTemplateHandler();
-    templateHandler = this.interceptor.createUriTemplateHandler(templateHandler);
-    restTemplate.setUriTemplateHandler(templateHandler);
     final List<ClientHttpRequestInterceptor> existingInterceptors = restTemplate.getInterceptors();
     if (!existingInterceptors.contains(this.interceptor)) {
       final List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();

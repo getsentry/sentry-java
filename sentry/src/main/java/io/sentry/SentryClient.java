@@ -525,7 +525,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void flush(final long timeoutMillis) {
-    // TODO: Flush transport
+    transport.flush(timeoutMillis);
   }
 
   private boolean sample() {
