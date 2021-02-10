@@ -3,6 +3,7 @@
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
+* Ref: Simplify RestTemplate instrumentation (#1246)
 
 # 4.1.0
 
