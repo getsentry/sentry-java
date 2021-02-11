@@ -1017,6 +1017,12 @@ public final class io/sentry/UserFeedback {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/sentry/adapters/CollectionAdapter : com/google/gson/JsonSerializer {
+	public fun <init> ()V
+	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+	public fun serialize (Ljava/util/Collection;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+}
+
 public final class io/sentry/adapters/ContextsDeserializerAdapter : com/google/gson/JsonDeserializer {
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/Contexts;
@@ -1039,6 +1045,12 @@ public final class io/sentry/adapters/DateSerializerAdapter : com/google/gson/Js
 	public fun <init> (Lio/sentry/ILogger;)V
 	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 	public fun serialize (Ljava/util/Date;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+}
+
+public final class io/sentry/adapters/MapAdapter : com/google/gson/JsonSerializer {
+	public fun <init> ()V
+	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+	public fun serialize (Ljava/util/Map;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 }
 
 public final class io/sentry/adapters/OrientationDeserializerAdapter : com/google/gson/JsonDeserializer {

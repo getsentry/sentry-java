@@ -4,6 +4,7 @@
 * Enchancement: Add ability to flush events synchronously.
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
+* Enchancement: Do not serialize empty collections and maps (#1245)
 * Ref: Simplify RestTemplate instrumentation (#1246)
 
 # 4.1.0
