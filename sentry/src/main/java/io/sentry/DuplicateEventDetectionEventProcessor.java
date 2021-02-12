@@ -4,15 +4,14 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedDeque;
-
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Deduplicates events containing throwable that has been already processed. */
 public final class DuplicateEventDetectionEventProcessor implements EventProcessor {
-  private final ConcurrentLinkedDeque<Throwable> capturedObjects = new ConcurrentLinkedDeque<>();
+  private final ConcurrentLinkedQueue<Throwable> capturedObjects = new ConcurrentLinkedQueue<>();
   private final SentryOptions options;
   private final int bufferSize;
 
@@ -20,7 +19,8 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
     this(options, 100);
   }
 
-  public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options, int bufferSize) {
+  public DuplicateEventDetectionEventProcessor(
+      final @NotNull SentryOptions options, int bufferSize) {
     this.options = Objects.requireNonNull(options, "options are required");
     this.bufferSize = bufferSize;
   }
@@ -54,7 +54,7 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
   }
 
   private static <T> boolean containsAnyKey(
-    final @NotNull Collection<T> map, final @NotNull List<T> list) {
+      final @NotNull Collection<T> map, final @NotNull List<T> list) {
     for (T entry : list) {
       if (map.contains(entry)) {
         return true;

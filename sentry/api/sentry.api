@@ -71,6 +71,7 @@ public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 
 public final class io/sentry/DuplicateEventDetectionEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;I)V
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 }
 
