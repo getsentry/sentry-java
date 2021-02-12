@@ -5,7 +5,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.Ordered;
 
 /**
  * Enables Sentry error handling capabilities.
@@ -44,5 +43,5 @@ public @interface EnableSentry {
    *
    * @return the order to use for {@link SentryExceptionResolver}
    */
-  int exceptionResolverOrder() default Ordered.HIGHEST_PRECEDENCE;
+  int exceptionResolverOrder() default 1;
 }
