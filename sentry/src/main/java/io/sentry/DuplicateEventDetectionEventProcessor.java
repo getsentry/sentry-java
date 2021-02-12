@@ -2,26 +2,34 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** Deduplicates events containing throwable that has been already processed. */
 public final class DuplicateEventDetectionEventProcessor implements EventProcessor {
-  private final WeakHashMap<Throwable, Object> capturedObjects = new WeakHashMap<>();
+  private final ConcurrentLinkedDeque<Throwable> capturedObjects = new ConcurrentLinkedDeque<>();
   private final SentryOptions options;
+  private final int bufferSize;
 
   public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options) {
+    this(options, 100);
+  }
+
+  public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options, int bufferSize) {
     this.options = Objects.requireNonNull(options, "options are required");
+    this.bufferSize = bufferSize;
   }
 
   @Override
   public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
     final Throwable throwable = event.getOriginThrowable();
     if (throwable != null) {
-      if (capturedObjects.containsKey(throwable)
+      if (capturedObjects.contains(throwable)
           || containsAnyKey(capturedObjects, allCauses(throwable))) {
         options
             .getLogger()
@@ -31,16 +39,24 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
                 event.getEventId());
         return null;
       } else {
-        capturedObjects.put(throwable, null);
+        capturedObjects.add(throwable);
+        if (capturedObjects.size() > bufferSize) {
+          capturedObjects.poll();
+        }
       }
     }
     return event;
   }
 
+  @TestOnly
+  int size() {
+    return capturedObjects.size();
+  }
+
   private static <T> boolean containsAnyKey(
-      final @NotNull Map<T, Object> map, final @NotNull List<T> list) {
+    final @NotNull Collection<T> map, final @NotNull List<T> list) {
     for (T entry : list) {
-      if (map.containsKey(entry)) {
+      if (map.contains(entry)) {
         return true;
       }
     }
