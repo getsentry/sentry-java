@@ -6,7 +6,7 @@
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 * Enchancement: Do not serialize empty collections and maps (#1245)
 * Ref: Simplify RestTemplate instrumentation (#1246)
-* Ref: Optimize DuplicateEventDetectionEventProcessor performance.
+* Ref: Optimize DuplicateEventDetectionEventProcessor performance (#1247).
 
 # 4.1.0
 
