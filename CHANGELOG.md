@@ -5,6 +5,7 @@
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 * Ref: Simplify RestTemplate instrumentation (#1246)
+* Fix: Make the ANR AtomicLong final 
 
 # 4.1.0
 

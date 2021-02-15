@@ -24,15 +24,15 @@ final class ANRWatchDog extends Thread {
   private final IHandler uiHandler;
   private final long timeoutIntervalMillis;
   private final @NotNull ILogger logger;
-  private AtomicLong tick = new AtomicLong(0);
-  private AtomicBoolean reported = new AtomicBoolean(false);
+  private final AtomicLong tick = new AtomicLong(0);
+  private final AtomicBoolean reported = new AtomicBoolean(false);
 
   private final @NotNull Context context;
 
   @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker =
       () -> {
-        tick = new AtomicLong(0);
+        tick.set(0);
         reported.set(false);
       };
 
