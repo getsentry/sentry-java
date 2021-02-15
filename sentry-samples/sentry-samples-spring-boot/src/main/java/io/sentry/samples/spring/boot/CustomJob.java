@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * execution of every method of the annotated class.
  */
 @Component
-@SentryTransaction
+@SentryTransaction(operation = "scheduled")
 public class CustomJob {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomJob.class);
