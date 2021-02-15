@@ -502,10 +502,12 @@ public final class Sentry {
    * Creates a Transaction and returns the instance.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @return created transaction
    */
-  public static @NotNull ITransaction startTransaction(final @NotNull String name) {
-    return getCurrentHub().startTransaction(name);
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation) {
+    return getCurrentHub().startTransaction(name, operation);
   }
 
   /**
@@ -518,10 +520,9 @@ public final class Sentry {
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull String name,
-      final @Nullable String operation,
+      final @NotNull String operation,
       final @Nullable String description) {
-    final ITransaction transaction = getCurrentHub().startTransaction(name);
-    transaction.setOperation(operation);
+    final ITransaction transaction = getCurrentHub().startTransaction(name, operation);
     transaction.setDescription(description);
     return transaction;
   }
@@ -542,12 +543,15 @@ public final class Sentry {
    * decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
   public static @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
-    return getCurrentHub().startTransaction(name, customSamplingContext);
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(name, operation, customSamplingContext);
   }
 
   /**

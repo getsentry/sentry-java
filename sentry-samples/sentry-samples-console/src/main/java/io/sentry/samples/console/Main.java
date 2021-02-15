@@ -138,7 +138,7 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    ITransaction transaction = Sentry.startTransaction("transaction name");
+    ITransaction transaction = Sentry.startTransaction("transaction name", "op");
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
     Thread.sleep(100);
