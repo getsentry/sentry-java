@@ -3,10 +3,12 @@ package io.sentry;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.sentry.adapters.CollectionAdapter;
 import io.sentry.adapters.ContextsDeserializerAdapter;
 import io.sentry.adapters.ContextsSerializerAdapter;
 import io.sentry.adapters.DateDeserializerAdapter;
 import io.sentry.adapters.DateSerializerAdapter;
+import io.sentry.adapters.MapAdapter;
 import io.sentry.adapters.OrientationDeserializerAdapter;
 import io.sentry.adapters.OrientationSerializerAdapter;
 import io.sentry.adapters.SentryIdDeserializerAdapter;
@@ -32,6 +34,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
@@ -99,6 +102,8 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
+        .registerTypeHierarchyAdapter(Collection.class, new CollectionAdapter())
+        .registerTypeHierarchyAdapter(Map.class, new MapAdapter())
         .disableHtmlEscaping()
         .create();
   }

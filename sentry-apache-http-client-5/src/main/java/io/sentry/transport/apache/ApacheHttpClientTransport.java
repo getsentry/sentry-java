@@ -8,11 +8,12 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
+import io.sentry.transport.ReusableCountLatch;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequests;
@@ -34,14 +35,14 @@ public final class ApacheHttpClientTransport implements ITransport {
   private final @NotNull RequestDetails requestDetails;
   private final @NotNull CloseableHttpAsyncClient httpclient;
   private final @NotNull RateLimiter rateLimiter;
-  private final @NotNull AtomicInteger currentlyRunning;
+  private final @NotNull ReusableCountLatch currentlyRunning;
 
   public ApacheHttpClientTransport(
       final @NotNull SentryOptions options,
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
       final @NotNull RateLimiter rateLimiter) {
-    this(options, requestDetails, httpclient, rateLimiter, new AtomicInteger());
+    this(options, requestDetails, httpclient, rateLimiter, new ReusableCountLatch());
   }
 
   ApacheHttpClientTransport(
@@ -49,7 +50,7 @@ public final class ApacheHttpClientTransport implements ITransport {
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
       final @NotNull RateLimiter rateLimiter,
-      final @NotNull AtomicInteger currentlyRunning) {
+      final @NotNull ReusableCountLatch currentlyRunning) {
     this.options = Objects.requireNonNull(options, "options is required");
     this.requestDetails = Objects.requireNonNull(requestDetails, "requestDetails is required");
     this.httpclient = Objects.requireNonNull(httpclient, "httpclient is required");
@@ -66,7 +67,7 @@ public final class ApacheHttpClientTransport implements ITransport {
       final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 
       if (filteredEnvelope != null) {
-        currentlyRunning.incrementAndGet();
+        currentlyRunning.increment();
 
         try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
@@ -84,7 +85,9 @@ public final class ApacheHttpClientTransport implements ITransport {
           }
 
           if (options.getLogger().isEnabled(DEBUG)) {
-            options.getLogger().log(DEBUG, "Currently running %d requests", currentlyRunning.get());
+            options
+                .getLogger()
+                .log(DEBUG, "Currently running %d requests", currentlyRunning.getCount());
           }
 
           httpclient.execute(
@@ -92,7 +95,6 @@ public final class ApacheHttpClientTransport implements ITransport {
               new FutureCallback<SimpleHttpResponse>() {
                 @Override
                 public void completed(SimpleHttpResponse response) {
-                  currentlyRunning.decrementAndGet();
                   if (response.getCode() != 200) {
                     options
                         .getLogger()
@@ -106,18 +108,19 @@ public final class ApacheHttpClientTransport implements ITransport {
                       rateLimits != null ? rateLimits.getValue() : null,
                       retryAfter != null ? retryAfter.getValue() : null,
                       response.getCode());
+                  currentlyRunning.decrement();
                 }
 
                 @Override
                 public void failed(Exception ex) {
-                  currentlyRunning.decrementAndGet();
                   options.getLogger().log(ERROR, "Error while sending an envelope", ex);
+                  currentlyRunning.decrement();
                 }
 
                 @Override
                 public void cancelled() {
-                  currentlyRunning.decrementAndGet();
                   options.getLogger().log(WARNING, "Request cancelled");
+                  currentlyRunning.decrement();
                 }
               });
         } catch (Exception e) {
@@ -126,6 +129,18 @@ public final class ApacheHttpClientTransport implements ITransport {
       }
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Submit cancelled");
+    }
+  }
+
+  @Override
+  public void flush(long timeoutMillis) {
+    try {
+      if (!currentlyRunning.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS)) {
+        options.getLogger().log(WARNING, "Failed to flush all events within %s ms", timeoutMillis);
+      }
+    } catch (InterruptedException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to flush events", e);
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -142,6 +157,6 @@ public final class ApacheHttpClientTransport implements ITransport {
   }
 
   private boolean isSchedulingAllowed() {
-    return currentlyRunning.get() < options.getMaxQueueSize();
+    return currentlyRunning.getCount() < options.getMaxQueueSize();
   }
 }

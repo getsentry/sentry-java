@@ -138,4 +138,18 @@ class QueuedThreadPoolExecutorTest {
         val runnables = sut.shutdownNow()
         assertTrue(runnables.isEmpty())
     }
+
+    @Test
+    fun `waits until all tasks are finished`() {
+        val sut = fixture.getSut()
+        val finished = AtomicInteger()
+        for (i in 1..3) {
+            sut.submit {
+                Thread.sleep(500)
+                finished.incrementAndGet()
+            }
+        }
+        sut.waitTillIdle(1000)
+        assertEquals(3, finished.get())
+    }
 }

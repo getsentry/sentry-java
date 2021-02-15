@@ -1,9 +1,12 @@
 package io.sentry.android.core
 
+import android.content.Context
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
+import io.sentry.exception.ExceptionMechanismException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -12,49 +15,80 @@ import kotlin.test.assertTrue
 
 class AnrIntegrationTest {
 
-    private val integration = AnrIntegration(mock())
+    private class Fixture {
+        val context = mock<Context>()
+        val hub = mock<IHub>()
+        val options = SentryAndroidOptions()
+
+        fun getSut(): AnrIntegration {
+            return AnrIntegration(context)
+        }
+    }
+
+    private val fixture = Fixture()
 
     @BeforeTest
     fun `before each test`() {
+        val sut = fixture.getSut()
         // watch dog is static and has shared state
-        integration.close()
+        sut.close()
     }
 
     @Test
     fun `When ANR is enabled, ANR watch dog should be started`() {
-        val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        integration.register(hub, options)
-        assertNotNull(integration.anrWatchDog)
-        assertTrue((integration.anrWatchDog as ANRWatchDog).isAlive)
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.anrWatchDog)
+        assertTrue((sut.anrWatchDog as ANRWatchDog).isAlive)
     }
 
     @Test
     fun `When ANR is disabled, ANR should not be started`() {
-        val options = SentryAndroidOptions()
-        options.isAnrEnabled = false
-        val hub = mock<IHub>()
-        val integration = AnrIntegration(mock())
-        integration.register(hub, options)
-        assertNull(integration.anrWatchDog)
+        val sut = fixture.getSut()
+        fixture.options.isAnrEnabled = false
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNull(sut.anrWatchDog)
     }
 
     @Test
     fun `When ANR watch dog is triggered, it should capture exception`() {
-        val hub = mock<IHub>()
-        val integration = AnrIntegration(mock())
-        integration.reportANR(hub, mock(), mock())
-        verify(hub).captureException(any())
+        val sut = fixture.getSut()
+
+        sut.reportANR(fixture.hub, mock(), getApplicationNotResponding())
+
+        verify(fixture.hub).captureException(any())
     }
 
     @Test
     fun `When ANR integration is closed, watch dog should stop`() {
-        val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        val integration = AnrIntegration(mock())
-        integration.register(hub, options)
-        assertNotNull(integration.anrWatchDog)
-        integration.close()
-        assertNull(integration.anrWatchDog)
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.anrWatchDog)
+
+        sut.close()
+
+        assertNull(sut.anrWatchDog)
+    }
+
+    @Test
+    fun `When ANR watch dog is triggered, snapshot flag should be true`() {
+        val sut = fixture.getSut()
+
+        sut.reportANR(fixture.hub, mock(), getApplicationNotResponding())
+
+        verify(fixture.hub).captureException(check {
+            val ex = it as ExceptionMechanismException
+            assertTrue(ex.isSnapshot)
+        })
+    }
+
+    private fun getApplicationNotResponding(): ApplicationNotResponding {
+        return ApplicationNotResponding("ApplicationNotResponding", Thread.currentThread())
     }
 }

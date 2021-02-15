@@ -205,7 +205,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
-        sentryEvent.contexts.device = device
+        sentryEvent.contexts.setDevice(device)
 
         val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
@@ -223,7 +223,7 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals("Europe/Vienna", actual!!.contexts.device.timezone.id)
+        assertEquals("Europe/Vienna", actual!!.contexts.device!!.timezone.id)
     }
 
     @Test
@@ -232,7 +232,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.orientation = Device.DeviceOrientation.LANDSCAPE
-        sentryEvent.contexts.device = device
+        sentryEvent.contexts.setDevice(device)
 
         val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
@@ -250,7 +250,7 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device.orientation)
+        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device!!.orientation)
     }
 
     @Test
@@ -440,6 +440,8 @@ class GsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         val transaction = SentryTransaction("transaction-name", trace, mock())
+        val span = transaction.startChild("child")
+        span.finish()
         transaction.finish()
 
         val stringWriter = StringWriter()
@@ -541,6 +543,23 @@ class GsonSerializerTest {
                 .log(eq(SentryLevel.ERROR),
                         eq("Failed to create envelope item. Dropping it."),
                         any<SentryEnvelopeException>())
+    }
+
+    @Test
+    fun `empty maps are serialized to null`() {
+        val event = SentryEvent()
+        event.tags = emptyMap()
+        val element = JsonParser().parse(serializeToString(event)).asJsonObject
+        assertNull(element.asJsonObject["tags"])
+    }
+
+    @Test
+    fun `empty lists are serialized to null`() {
+        val transaction = SentryTransaction("tx")
+        val stringWriter = StringWriter()
+        fixture.serializer.serialize(transaction, stringWriter)
+        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        assertNull(element.asJsonObject["spans"])
     }
 
     private fun assertSessionData(expectedSession: Session?) {

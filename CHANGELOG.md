@@ -1,7 +1,13 @@
 # vNext
 
+* Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
+* Bump: sentry-native to 0.4.7
+* Enchancement: Add ability to flush events synchronously.
 * Fix: Disable Gson HTML escaping
+* Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
+* Enchancement: Do not serialize empty collections and maps (#1245)
+* Ref: Simplify RestTemplate instrumentation (#1246)
 * Enchancement: Add overloads for startTrasaction taking op and description (#1244)
 
 # 4.1.0

@@ -1018,6 +1018,12 @@ public final class io/sentry/UserFeedback {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/sentry/adapters/CollectionAdapter : com/google/gson/JsonSerializer {
+	public fun <init> ()V
+	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+	public fun serialize (Ljava/util/Collection;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+}
+
 public final class io/sentry/adapters/ContextsDeserializerAdapter : com/google/gson/JsonDeserializer {
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/Contexts;
@@ -1040,6 +1046,12 @@ public final class io/sentry/adapters/DateSerializerAdapter : com/google/gson/Js
 	public fun <init> (Lio/sentry/ILogger;)V
 	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 	public fun serialize (Ljava/util/Date;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+}
+
+public final class io/sentry/adapters/MapAdapter : com/google/gson/JsonSerializer {
+	public fun <init> ()V
+	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+	public fun serialize (Ljava/util/Map;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 }
 
 public final class io/sentry/adapters/OrientationDeserializerAdapter : com/google/gson/JsonDeserializer {
@@ -1146,9 +1158,11 @@ public final class io/sentry/config/PropertiesProviderFactory {
 
 public final class io/sentry/exception/ExceptionMechanismException : java/lang/RuntimeException {
 	public fun <init> (Lio/sentry/protocol/Mechanism;Ljava/lang/Throwable;Ljava/lang/Thread;)V
+	public fun <init> (Lio/sentry/protocol/Mechanism;Ljava/lang/Throwable;Ljava/lang/Thread;Z)V
 	public fun getExceptionMechanism ()Lio/sentry/protocol/Mechanism;
 	public fun getThread ()Ljava/lang/Thread;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun isSnapshot ()Z
 }
 
 public final class io/sentry/exception/InvalidDsnException : java/lang/RuntimeException {
@@ -1598,8 +1612,10 @@ public final class io/sentry/protocol/SentryStackTrace : io/sentry/IUnknownPrope
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getFrames ()Ljava/util/List;
 	public fun getRegisters ()Ljava/util/Map;
+	public fun getSnapshot ()Ljava/lang/Boolean;
 	public fun setFrames (Ljava/util/List;)V
 	public fun setRegisters (Ljava/util/Map;)V
+	public fun setSnapshot (Ljava/lang/Boolean;)V
 }
 
 public final class io/sentry/protocol/SentryThread : io/sentry/IUnknownPropertiesConsumer {
@@ -1642,8 +1658,9 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
-	public fun <init> (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
+	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
+	public fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
@@ -1657,6 +1674,7 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 }
 
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
+	public abstract fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;)V
 	public abstract fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
@@ -1675,6 +1693,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {
 	public fun close ()V
+	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/transport/NoOpTransport;
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
@@ -1691,9 +1710,20 @@ public final class io/sentry/transport/RateLimiter {
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
 
+public final class io/sentry/transport/ReusableCountLatch {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public fun decrement ()V
+	public fun getCount ()I
+	public fun increment ()V
+	public fun waitTillZero ()V
+	public fun waitTillZero (JLjava/util/concurrent/TimeUnit;)Z
+}
+
 public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
+	public fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V
 }
 
