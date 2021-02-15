@@ -1,5 +1,6 @@
 # vNext
 
+* Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Bump: sentry-native to 0.4.7
 * Enchancement: Add ability to flush events synchronously.
