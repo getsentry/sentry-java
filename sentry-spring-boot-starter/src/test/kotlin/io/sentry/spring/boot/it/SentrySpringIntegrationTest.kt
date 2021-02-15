@@ -3,17 +3,17 @@ package io.sentry.spring.boot.it
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.spring.tracing.SentrySpan
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
-import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.Before
@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -56,6 +57,9 @@ class SentrySpringIntegrationTest {
 
     @Autowired
     lateinit var transport: ITransport
+
+    @SpyBean
+    lateinit var hub: IHub
 
     @LocalServerPort
     lateinit var port: Integer
@@ -149,9 +153,7 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
-        await.during(Duration.ofSeconds(2)).untilAsserted {
-            verifyZeroInteractions(transport)
-        }
+        verify(hub, never()).captureEvent(any())
     }
 }
 
