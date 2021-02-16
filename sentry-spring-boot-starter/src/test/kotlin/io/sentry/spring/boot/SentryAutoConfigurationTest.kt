@@ -565,7 +565,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomIntegration : Integration {
-        override fun register(hub: IHub?, options: SentryOptions?) {}
+        override fun register(hub: IHub, options: SentryOptions) {}
     }
 
     @Configuration(proxyBeanMethods = false)
