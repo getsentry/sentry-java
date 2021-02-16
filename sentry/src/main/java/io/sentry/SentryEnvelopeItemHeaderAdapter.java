@@ -34,6 +34,11 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
       writer.value(value.getType().getItemType().toLowerCase(Locale.ROOT));
     }
 
+    if (value.getAttachmentType() != null) {
+      writer.name("attachment_type");
+      writer.value(value.getAttachmentType());
+    }
+
     writer.name("length");
     writer.value(value.getLength());
 
@@ -51,6 +56,7 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
     String fileName = null;
     SentryItemType type = SentryItemType.Unknown;
     int length = 0;
+    String attachmentType = null;
 
     reader.beginObject();
     while (reader.hasNext()) {
@@ -71,6 +77,9 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
         case "length":
           length = reader.nextInt();
           break;
+        case "attachment_type":
+          attachmentType = reader.nextString();
+          break;
         default:
           reader.skipValue();
           break;
@@ -78,6 +87,6 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
     }
     reader.endObject();
 
-    return new SentryEnvelopeItemHeader(type, length, contentType, fileName);
+    return new SentryEnvelopeItemHeader(type, length, contentType, fileName, attachmentType);
   }
 }

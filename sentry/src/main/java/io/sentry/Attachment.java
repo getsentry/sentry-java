@@ -14,6 +14,7 @@ public final class Attachment {
   private final @NotNull String filename;
   private final @NotNull String contentType;
   private final boolean addToTransactions;
+  private final @NotNull String attachmentType = "event.attachment";
 
   /**
    * We could use Files.probeContentType(path) to determine the content type of the filename. This
@@ -186,5 +187,9 @@ public final class Attachment {
    */
   boolean isAddToTransactions() {
     return addToTransactions;
+  }
+
+  public @NotNull String getAttachmentType() {
+    return attachmentType;
   }
 }
