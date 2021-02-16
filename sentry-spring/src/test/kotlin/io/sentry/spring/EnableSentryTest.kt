@@ -70,7 +70,7 @@ class EnableSentryTest {
         contextRunner.run {
             assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
             assertThat(it).getBean(SentryExceptionResolver::class.java)
-                .hasFieldOrPropertyWithValue("order", Integer.MIN_VALUE)
+                .hasFieldOrPropertyWithValue("order", 1)
         }
     }
 

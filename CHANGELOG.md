@@ -9,6 +9,10 @@
 * Enchancement: Do not serialize empty collections and maps (#1245)
 * Ref: Simplify RestTemplate instrumentation (#1246)
 
+Breaking Changes:
+* Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
+
+
 # 4.1.0
 
 * Improve Kotlin compatibility for SdkVersion (#1213)
