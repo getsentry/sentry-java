@@ -46,12 +46,12 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
             .getBeanProvider(SentryOptions.BeforeBreadcrumbCallback.class)
             .ifAvailable(options::setBeforeBreadcrumb);
         applicationContext
-            .getBeanProvider(Sentry.OptionsConfiguration.class)
-            .ifAvailable(optionsConfiguration -> optionsConfiguration.configure(options));
-        applicationContext
             .getBeansOfType(EventProcessor.class)
             .values()
             .forEach(options::addEventProcessor);
+        applicationContext
+            .getBeanProvider(Sentry.OptionsConfiguration.class)
+            .ifAvailable(optionsConfiguration -> optionsConfiguration.configure(options));
       }
       Sentry.init(options);
     }
