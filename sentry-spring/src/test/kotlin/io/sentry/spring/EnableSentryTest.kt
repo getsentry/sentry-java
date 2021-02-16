@@ -1,8 +1,10 @@
 package io.sentry.spring
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.EventProcessor
 import io.sentry.IHub
 import io.sentry.ITransportFactory
+import io.sentry.Sentry
 import io.sentry.SentryOptions
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
@@ -104,6 +106,46 @@ class EnableSentryTest {
             }
     }
 
+    @Test
+    fun `configures options with options configuration`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomOptionsConfiguration::class.java))
+            .run {
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.environment).isEqualTo("from-options-configuration")
+            }
+    }
+
+    @Test
+    fun `configures custom before send callback`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomBeforeSendCallback::class.java))
+            .run {
+                val beforeSendCallback = it.getBean(SentryOptions.BeforeSendCallback::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.beforeSend).isEqualTo(beforeSendCallback)
+            }
+    }
+
+    @Test
+    fun `configures custom before breadcrumb callback`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomBeforeBreadcrumbCallback::class.java))
+            .run {
+                val beforeBreadcrumbCallback = it.getBean(SentryOptions.BeforeBreadcrumbCallback::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.beforeBreadcrumb).isEqualTo(beforeBreadcrumbCallback)
+            }
+    }
+
+    @Test
+    fun `configures custom event processors`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomEventProcessors::class.java))
+            .run {
+                val firstProcessor = it.getBean("firstProcessor", EventProcessor::class.java)
+                val secondProcessor = it.getBean("secondProcessor", EventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).contains(firstProcessor, secondProcessor)
+            }
+    }
+
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfig
 
@@ -131,6 +173,39 @@ class EnableSentryTest {
     class AppConfigWithCustomTransportFactory {
 
         @Bean
-        fun tracesSampler() = mock<ITransportFactory>()
+        fun transport() = mock<ITransportFactory>()
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomOptionsConfiguration {
+
+        @Bean
+        fun optionsConfiguration() = Sentry.OptionsConfiguration<SentryOptions> {
+            it.environment = "from-options-configuration"
+        }
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomBeforeSendCallback {
+
+        @Bean
+        fun beforeSendCallback() = mock<SentryOptions.BeforeSendCallback>()
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomBeforeBreadcrumbCallback {
+
+        @Bean
+        fun beforeBreadcrumbCallback() = mock<SentryOptions.BeforeBreadcrumbCallback>()
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomEventProcessors {
+
+        @Bean
+        fun firstProcessor() = mock<EventProcessor>()
+
+        @Bean
+        fun secondProcessor() = mock<EventProcessor>()
     }
 }
