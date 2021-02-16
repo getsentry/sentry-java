@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -459,7 +458,6 @@ public final class Scope implements Cloneable {
    *
    * @param attachment The attachment to add to the Scope's list of attachments.
    */
-  @ApiStatus.Experimental
   public void addAttachment(final @NotNull Attachment attachment) {
     attachments.add(attachment);
   }
