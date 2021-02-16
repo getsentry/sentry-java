@@ -1,25 +1,25 @@
 package io.sentry;
 
-import static io.sentry.SentryLevel.ERROR;
+//import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Resettable;
+//import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
-import io.sentry.hints.SubmissionResult;
+//import io.sentry.hints.SubmissionResult;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
+//import java.io.BufferedReader;
+//import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
+//import java.io.InputStreamReader;
+//import java.io.Reader;
+//import java.nio.charset.Charset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,11 +27,12 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class OutboxSender extends DirectoryProcessor implements IEnvelopeSender {
 
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
+//  @SuppressWarnings("CharsetObjectCanBeUsed")
+//  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final @NotNull IHub hub;
   private final @NotNull IEnvelopeReader envelopeReader;
+  @SuppressWarnings("UnusedVariable")
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
 
@@ -107,89 +108,97 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         SentryLevel.DEBUG,
         "Processing Envelope with %d item(s)",
         CollectionUtils.size(envelope.getItems()));
-    int items = 0;
+//    int items = 0;
 
-    for (final SentryEnvelopeItem item : envelope.getItems()) {
-      items++;
+//    for (final SentryEnvelopeItem item : envelope.getItems()) {
+//      items++;
+//
+//      if (item.getHeader() == null) {
+//        logger.log(SentryLevel.ERROR, "Item %d has no header", items);
+//        continue;
+//      }
+//      if (SentryItemType.Event.equals(item.getHeader().getType())) {
+//        try (final Reader eventReader =
+//            new BufferedReader(
+//                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
+//          SentryEvent event = serializer.deserialize(eventReader, SentryEvent.class);
+//          if (event == null) {
+//            logger.log(
+//                SentryLevel.ERROR,
+//                "Item %d of type %s returned null by the parser.",
+//                items,
+//                item.getHeader().getType());
+//          } else {
+//            if (envelope.getHeader().getEventId() != null
+//                && !envelope.getHeader().getEventId().equals(event.getEventId())) {
+//              logger.log(
+//                  SentryLevel.ERROR,
+//                  "Item %d of has a different event id (%s) to the envelope header (%s)",
+//                  items,
+//                  envelope.getHeader().getEventId(),
+//                  event.getEventId());
+//              continue;
+//            }
+//            hub.captureEvent(event, hint);
+//            logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
+//
+//            if (!waitFlush(hint)) {
+//              logger.log(
+//                  SentryLevel.WARNING,
+//                  "Timed out waiting for event submission: %s",
+//                  event.getEventId());
+//              break;
+//            }
+//          }
+//        } catch (Exception e) {
+//          logger.log(ERROR, "Item failed to process.", e);
+//        }
+//      } else {
+//        // send unknown item types over the wire
+//        final SentryEnvelope newEnvelope =
+//            new SentryEnvelope(
+//                envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
+//        hub.captureEnvelope(newEnvelope, hint);
+//        logger.log(
+//            SentryLevel.DEBUG,
+//            "%s item %d is being captured.",
+//            item.getHeader().getType().getItemType(),
+//            items);
+//
+//        if (!waitFlush(hint)) {
+//          logger.log(
+//              SentryLevel.WARNING,
+//              "Timed out waiting for item type submission: %s",
+//              item.getHeader().getType().getItemType());
+//          break;
+//        }
+//      }
+//
+//      if (hint instanceof SubmissionResult) {
+//        if (!((SubmissionResult) hint).isSuccess()) {
+//          // Failed to send an item of the envelope: Stop attempting to send the rest (an attachment
+//          // without the event that created it isn't useful)
+//          logger.log(
+//              SentryLevel.WARNING,
+//              "Envelope had a failed capture at item %d. No more items will be sent.",
+//              items);
+//          break;
+//        }
+//      }
+//
+//      // reset the Hint to its initial state as we use it multiple times.
+//      if (hint instanceof Resettable) {
+//        ((Resettable) hint).reset();
+//      }
+//    }
 
-      if (item.getHeader() == null) {
-        logger.log(SentryLevel.ERROR, "Item %d has no header", items);
-        continue;
-      }
-      if (SentryItemType.Event.equals(item.getHeader().getType())) {
-        try (final Reader eventReader =
-            new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          SentryEvent event = serializer.deserialize(eventReader, SentryEvent.class);
-          if (event == null) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Item %d of type %s returned null by the parser.",
-                items,
-                item.getHeader().getType());
-          } else {
-            if (envelope.getHeader().getEventId() != null
-                && !envelope.getHeader().getEventId().equals(event.getEventId())) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  "Item %d of has a different event id (%s) to the envelope header (%s)",
-                  items,
-                  envelope.getHeader().getEventId(),
-                  event.getEventId());
-              continue;
-            }
-            hub.captureEvent(event, hint);
-            logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
-
-            if (!waitFlush(hint)) {
-              logger.log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting for event submission: %s",
-                  event.getEventId());
-              break;
-            }
-          }
-        } catch (Exception e) {
-          logger.log(ERROR, "Item failed to process.", e);
-        }
-      } else {
-        // send unknown item types over the wire
-        final SentryEnvelope newEnvelope =
-            new SentryEnvelope(
-                envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
-        hub.captureEnvelope(newEnvelope, hint);
-        logger.log(
-            SentryLevel.DEBUG,
-            "%s item %d is being captured.",
-            item.getHeader().getType().getItemType(),
-            items);
-
-        if (!waitFlush(hint)) {
-          logger.log(
-              SentryLevel.WARNING,
-              "Timed out waiting for item type submission: %s",
-              item.getHeader().getType().getItemType());
-          break;
-        }
-      }
-
-      if (hint instanceof SubmissionResult) {
-        if (!((SubmissionResult) hint).isSuccess()) {
-          // Failed to send an item of the envelope: Stop attempting to send the rest (an attachment
-          // without the event that created it isn't useful)
-          logger.log(
-              SentryLevel.WARNING,
-              "Envelope had a failed capture at item %d. No more items will be sent.",
-              items);
-          break;
-        }
-      }
-
-      // reset the Hint to its initial state as we use it multiple times.
-      if (hint instanceof Resettable) {
-        ((Resettable) hint).reset();
-      }
+    // event and minidump need to be within the same envelope, so right now we are not enriching
+    // the event as a hacky solution, but event is gonna ne symbolicated using the minidump
+    hub.captureEnvelope(envelope, hint);
+    if (!waitFlush(hint)) {
+      return;
     }
+
   }
 
   private boolean waitFlush(final @Nullable Object hint) {
