@@ -10,6 +10,10 @@
 * Ref: Simplify RestTemplate instrumentation (#1246)
 * Enchancement: Add overloads for startTrasaction taking op and description (#1244)
 
+Breaking Changes:
+* Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
+
+
 # 4.1.0
 
 * Improve Kotlin compatibility for SdkVersion (#1213)
