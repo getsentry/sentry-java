@@ -78,7 +78,7 @@ class SentryEventTest {
     fun `when throwable is a ExceptionMechanismException, getOriginThrowable unwraps original throwable`() {
         val event = SentryEvent()
         val ex = RuntimeException()
-        event.throwable = ExceptionMechanismException(null, ex, null)
+        event.throwable = ExceptionMechanismException(Mechanism(), ex, Thread.currentThread())
         assertEquals(ex, event.originThrowable)
     }
 

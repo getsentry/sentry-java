@@ -205,7 +205,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
-        sentryEvent.contexts.device = device
+        sentryEvent.contexts.setDevice(device)
 
         val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
 
@@ -223,7 +223,7 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals("Europe/Vienna", actual!!.contexts.device.timezone.id)
+        assertEquals("Europe/Vienna", actual!!.contexts.device!!.timezone.id)
     }
 
     @Test
@@ -232,7 +232,7 @@ class GsonSerializerTest {
         sentryEvent.eventId = null
         val device = Device()
         device.orientation = Device.DeviceOrientation.LANDSCAPE
-        sentryEvent.contexts.device = device
+        sentryEvent.contexts.setDevice(device)
 
         val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
 
@@ -250,7 +250,7 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device.orientation)
+        assertEquals(Device.DeviceOrientation.LANDSCAPE, actual!!.contexts.device!!.orientation)
     }
 
     @Test

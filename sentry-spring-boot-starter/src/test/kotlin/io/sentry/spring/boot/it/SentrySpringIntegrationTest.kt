@@ -3,9 +3,11 @@ package io.sentry.spring.boot.it
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.spring.tracing.SentrySpan
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -28,6 +31,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.User
@@ -38,6 +42,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.web.bind.annotation.ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -51,6 +57,9 @@ class SentrySpringIntegrationTest {
 
     @Autowired
     lateinit var transport: ITransport
+
+    @SpyBean
+    lateinit var hub: IHub
 
     @LocalServerPort
     lateinit var port: Integer
@@ -137,6 +146,15 @@ class SentrySpringIntegrationTest {
             }, anyOrNull())
         }
     }
+
+    @Test
+    fun `does not send events for handled exceptions`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
+
+        verify(hub, never()).captureEvent(any())
+    }
 }
 
 @SpringBootApplication
@@ -166,6 +184,11 @@ class HelloController(private val helloService: HelloService) {
     @GetMapping("/throws")
     fun throws() {
         throw RuntimeException("something went wrong")
+    }
+
+    @GetMapping("/throws-handled")
+    fun throwsHandled() {
+        throw CustomException("handled exception")
     }
 
     @GetMapping("/performance")
@@ -210,4 +233,13 @@ open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
             .build()
         return InMemoryUserDetailsManager(user)
     }
+}
+
+class CustomException(message: String) : RuntimeException(message)
+
+@ControllerAdvice
+class ExceptionHandlers {
+
+    @ExceptionHandler(CustomException::class)
+    fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
 }

@@ -62,11 +62,14 @@ final class SentryExceptionFactory {
    * @param exceptionMechanism The optional {@link Mechanism} of the {@code throwable}. Or null if
    *     none exist.
    * @param thread The optional {@link Thread} which the exception originated. Or null if not known.
+   * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot, See {@link
+   *     SentryStackTrace#getSnapshot()}
    */
   private @NotNull SentryException getSentryException(
       @NotNull final Throwable throwable,
       @Nullable final Mechanism exceptionMechanism,
-      @Nullable final Thread thread) {
+      @Nullable final Thread thread,
+      final boolean snapshot) {
 
     final Package exceptionPackage = throwable.getClass().getPackage();
     final String fullClassName = throwable.getClass().getName();
@@ -86,7 +89,11 @@ final class SentryExceptionFactory {
     final List<SentryStackFrame> frames =
         sentryStackTraceFactory.getStackFrames(throwable.getStackTrace());
     if (frames != null && !frames.isEmpty()) {
-      exception.setStacktrace(new SentryStackTrace(frames));
+      final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);
+      if (snapshot) {
+        sentryStackTrace.setSnapshot(true);
+      }
+      exception.setStacktrace(sentryStackTrace);
     }
 
     if (thread != null) {
@@ -120,6 +127,7 @@ final class SentryExceptionFactory {
 
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
+      boolean snapshot = false;
       if (currentThrowable instanceof ExceptionMechanismException) {
         // this is for ANR I believe
         ExceptionMechanismException exceptionMechanismThrowable =
@@ -127,12 +135,14 @@ final class SentryExceptionFactory {
         exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
         currentThrowable = exceptionMechanismThrowable.getThrowable();
         thread = exceptionMechanismThrowable.getThread();
+        snapshot = exceptionMechanismThrowable.isSnapshot();
       } else {
         exceptionMechanism = null;
         thread = Thread.currentThread();
       }
 
-      SentryException exception = getSentryException(currentThrowable, exceptionMechanism, thread);
+      SentryException exception =
+          getSentryException(currentThrowable, exceptionMechanism, thread, snapshot);
       exceptions.addFirst(exception);
       currentThrowable = currentThrowable.getCause();
     }

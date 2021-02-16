@@ -82,10 +82,10 @@ public final class AnrIntegration implements Integration, Closeable {
       final @NotNull ApplicationNotResponding error) {
     logger.log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
 
-    Mechanism mechanism = new Mechanism();
+    final Mechanism mechanism = new Mechanism();
     mechanism.setType("ANR");
-    ExceptionMechanismException throwable =
-        new ExceptionMechanismException(mechanism, error, error.getThread());
+    final ExceptionMechanismException throwable =
+        new ExceptionMechanismException(mechanism, error, error.getThread(), true);
 
     hub.captureException(throwable);
   }

@@ -63,7 +63,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
-        override fun create(hub: IHub?, options: SentryOptions?): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
+        override fun create(hub: IHub, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
             return null
         }
     }

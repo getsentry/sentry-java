@@ -1,11 +1,17 @@
 # vNext
 
+* Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
+* Bump: sentry-native to 0.4.7
 * Enchancement: Add ability to flush events synchronously.
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 * Enchancement: Do not serialize empty collections and maps (#1245)
 * Ref: Simplify RestTemplate instrumentation (#1246)
+* Enchancement: Integration interface better compatibility with Kotlin null-safety
+
+Breaking Changes:
+* Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
 * Ref: Optimize DuplicateEventDetectionEventProcessor performance (#1247).
 
 # 4.1.0

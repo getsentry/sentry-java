@@ -4,6 +4,7 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A stack trace of a single thread.
@@ -40,21 +41,27 @@ public final class SentryStackTrace implements IUnknownPropertiesConsumer {
    * Required. A non-empty list of stack frames. The list is ordered from caller to callee, or
    * oldest to youngest. The last frame is the one creating the exception.
    */
-  private List<SentryStackFrame> frames;
+  private @Nullable List<SentryStackFrame> frames;
   /**
    * Register values of the thread (top frame).
    *
    * <p>A map of register names and their values. The values should contain the actual register
    * values of the thread, thus mapping to the last frame in the list.
    */
-  private Map<String, String> registers;
+  private @Nullable Map<String, String> registers;
+
+  /**
+   * This flag indicates that this stack trace is captured at an arbitrary moment in time and this
+   * would affect the quality of grouping, Sentry will special case if this is set to true.
+   */
+  private @Nullable Boolean snapshot;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
   public SentryStackTrace() {}
 
-  public SentryStackTrace(List<SentryStackFrame> frames) {
+  public SentryStackTrace(final @Nullable List<SentryStackFrame> frames) {
     this.frames = frames;
   }
 
@@ -63,7 +70,7 @@ public final class SentryStackTrace implements IUnknownPropertiesConsumer {
    *
    * @return the frames.
    */
-  public List<SentryStackFrame> getFrames() {
+  public @Nullable List<SentryStackFrame> getFrames() {
     return frames;
   }
 
@@ -72,21 +79,29 @@ public final class SentryStackTrace implements IUnknownPropertiesConsumer {
    *
    * @param frames the frames.
    */
-  public void setFrames(List<SentryStackFrame> frames) {
+  public void setFrames(final @Nullable List<SentryStackFrame> frames) {
     this.frames = frames;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
-  public Map<String, String> getRegisters() {
+  public @Nullable Map<String, String> getRegisters() {
     return registers;
   }
 
-  public void setRegisters(Map<String, String> registers) {
+  public void setRegisters(final @Nullable Map<String, String> registers) {
     this.registers = registers;
+  }
+
+  public @Nullable Boolean getSnapshot() {
+    return snapshot;
+  }
+
+  public void setSnapshot(final @Nullable Boolean snapshot) {
+    this.snapshot = snapshot;
   }
 }
