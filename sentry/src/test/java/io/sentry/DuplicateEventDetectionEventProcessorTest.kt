@@ -11,11 +11,16 @@ import kotlin.test.assertNull
 class DuplicateEventDetectionEventProcessorTest {
 
     class Fixture {
-        fun getSut(bufferSize: Int? = null): DuplicateEventDetectionEventProcessor {
+        fun getSut(bufferSize: Int? = null, enableDeduplication: Boolean? = null): DuplicateEventDetectionEventProcessor {
+            val options = SentryOptions().apply {
+                if (enableDeduplication != null) {
+                    this.setEnableDeduplication(enableDeduplication)
+                }
+            }
             return if (bufferSize != null) {
-                DuplicateEventDetectionEventProcessor(SentryOptions(), bufferSize)
+                DuplicateEventDetectionEventProcessor(options, bufferSize)
             } else {
-                DuplicateEventDetectionEventProcessor(SentryOptions())
+                DuplicateEventDetectionEventProcessor(options)
             }
         }
     }
@@ -93,5 +98,13 @@ class DuplicateEventDetectionEventProcessorTest {
             processor.process(event, null)
         }
         assertEquals(50, processor.size())
+    }
+
+    @Test
+    fun `does not deduplicate is deduplication is disabled`() {
+        val processor = fixture.getSut(enableDeduplication = false)
+        val event = SentryEvent(RuntimeException())
+        assertNotNull(processor.process(event, null))
+        assertNotNull(processor.process(event, null))
     }
 }

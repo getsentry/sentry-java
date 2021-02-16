@@ -27,21 +27,23 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
 
   @Override
   public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
-    final Throwable throwable = event.getOriginThrowable();
-    if (throwable != null) {
-      if (capturedObjects.contains(throwable)
-          || containsAnyKey(capturedObjects, allCauses(throwable))) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Duplicate Exception detected. Event %s will be discarded.",
-                event.getEventId());
-        return null;
-      } else {
-        capturedObjects.add(throwable);
-        if (capturedObjects.size() > bufferSize) {
-          capturedObjects.poll();
+    if (options.isEnableDeduplication()) {
+      final Throwable throwable = event.getOriginThrowable();
+      if (throwable != null) {
+        if (capturedObjects.contains(throwable)
+            || containsAnyKey(capturedObjects, allCauses(throwable))) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Duplicate Exception detected. Event %s will be discarded.",
+                  event.getEventId());
+          return null;
+        } else {
+          capturedObjects.add(throwable);
+          if (capturedObjects.size() > bufferSize) {
+            capturedObjects.poll();
+          }
         }
       }
     }

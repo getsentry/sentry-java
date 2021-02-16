@@ -437,6 +437,24 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `creates options with enableDeduplication using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("enable-deduplication=true")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertTrue(options.isEnableDeduplication)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
     fun `when options are initialized, maxAttachmentSize is 20`() {
         assertEquals(20 * 1024 * 1024, SentryOptions().maxAttachmentSize)
     }
