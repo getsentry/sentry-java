@@ -9,6 +9,7 @@
 * Enchancement: Do not serialize empty collections and maps (#1245)
 * Ref: Simplify RestTemplate instrumentation (#1246)
 * Enchancement: Integration interface better compatibility with Kotlin null-safety
+* Enchancement: Simplify Sentry configuration in Spring integration (#1259)
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
