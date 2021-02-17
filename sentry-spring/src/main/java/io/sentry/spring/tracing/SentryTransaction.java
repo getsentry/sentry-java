@@ -27,7 +27,7 @@ public @interface SentryTransaction {
    *
    * @return transaction operation
    */
-  String operation() default "";
+  String operation();
 
   /**
    * Transaction name. If not set, transaction name is resolved as a class name and a method name.

@@ -251,7 +251,7 @@ class SentryAppenderTest {
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
                     assertNotNull(it.packages)
                     assertTrue(it.packages!!.any { pkg ->
-                        "maven:sentry-log4j2" == pkg.name &&
+                        "maven:io.sentry:sentry-log4j2" == pkg.name &&
                             BuildConfig.VERSION_NAME == pkg.version
                     })
                 }

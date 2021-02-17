@@ -8,7 +8,6 @@ statusProvider:
 artifactProvider:
   name: github
 targets:
-  - name: bintray
   - name: github
   - name: registry
     type: sdk
@@ -34,6 +33,14 @@ targets:
     type: sdk
     config:
       canonical: "maven:io.sentry:sentry-log4j2"
+  - name: registry
+    type: sdk
+    config:
+      canonical: "maven:io.sentry:sentry-jul"
+  - name: registry
+    type: sdk
+    config:
+      canonical: "maven:io.sentry:sentry-apache-http-client-5"
   - name: registry
     type: sdk
     config:

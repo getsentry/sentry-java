@@ -1367,7 +1367,7 @@ public class SentryOptions {
     final SdkVersion sdkVersion = new SdkVersion(BuildConfig.SENTRY_JAVA_SDK_NAME, version);
 
     sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:sentry", version);
+    sdkVersion.addPackage("maven:io.sentry:sentry", version);
 
     return sdkVersion;
   }

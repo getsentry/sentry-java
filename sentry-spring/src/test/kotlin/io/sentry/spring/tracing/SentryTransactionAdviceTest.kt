@@ -42,7 +42,7 @@ class SentryTransactionAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any<String>())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+        whenever(hub.startTransaction(any<String>(), any())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
     }
 
     @Test
@@ -59,14 +59,14 @@ class SentryTransactionAdviceTest {
         sampleService.methodWithoutTransactionNameSet()
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
-            assertThat(it.contexts.trace!!.operation).isNull()
+            assertThat(it.contexts.trace!!.operation).isEqualTo("op")
         }, eq(null))
     }
 
     @Test
     fun `when transaction is already active, does not start new transaction`() {
         val scope = Scope(SentryOptions())
-        scope.setTransaction(io.sentry.SentryTransaction("aTransaction", SpanContext(), hub))
+        scope.setTransaction(io.sentry.SentryTransaction("aTransaction", SpanContext("op"), hub))
 
         whenever(hub.configureScope(any())).thenAnswer {
             (it.arguments[0] as ScopeCallback).run(scope)
@@ -81,7 +81,7 @@ class SentryTransactionAdviceTest {
         classAnnotatedSampleService.hello()
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
-            assertThat(it.contexts.trace!!.operation).isNull()
+            assertThat(it.contexts.trace!!.operation).isEqualTo("op")
         }, eq(null))
     }
 
@@ -117,11 +117,11 @@ class SentryTransactionAdviceTest {
         @SentryTransaction(name = "customName", operation = "bean")
         open fun methodWithTransactionNameSet() = Unit
 
-        @SentryTransaction
+        @SentryTransaction(operation = "op")
         open fun methodWithoutTransactionNameSet() = Unit
     }
 
-    @SentryTransaction
+    @SentryTransaction(operation = "op")
     open class ClassAnnotatedSampleService {
 
         open fun hello() = Unit
