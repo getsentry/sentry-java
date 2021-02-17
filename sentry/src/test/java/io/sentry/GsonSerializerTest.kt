@@ -376,7 +376,7 @@ class GsonSerializerTest {
         assertNotNull(sdkInfo.packages)
 
         assertTrue(sdkInfo.packages!!.any {
-            it.name == "maven:sentry-android-core"
+            it.name == "maven:io.sentry:sentry-android-core"
             it.version == "4.5.6"
         })
     }

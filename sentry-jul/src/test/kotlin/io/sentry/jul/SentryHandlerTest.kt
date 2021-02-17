@@ -312,7 +312,7 @@ class SentryHandlerTest {
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
                     assertNotNull(it.packages)
                     assertTrue(it.packages!!.any { pkg ->
-                        "maven:sentry-jul" == pkg.name &&
+                        "maven:io.sentry:sentry-jul" == pkg.name &&
                             BuildConfig.VERSION_NAME == pkg.version
                     })
                 }

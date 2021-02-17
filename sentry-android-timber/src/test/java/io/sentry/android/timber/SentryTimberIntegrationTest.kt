@@ -92,7 +92,7 @@ class SentryTimberIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         assertTrue(fixture.options.sdkVersion!!.packages!!.any {
-            it.name == "maven:sentry-android-timber"
+            it.name == "maven:io.sentry:sentry-android-timber"
             it.version == BuildConfig.VERSION_NAME
         })
     }

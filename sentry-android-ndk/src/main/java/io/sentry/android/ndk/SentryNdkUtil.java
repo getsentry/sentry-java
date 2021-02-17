@@ -19,6 +19,6 @@ final class SentryNdkUtil {
     if (sdkVersion == null) {
       return;
     }
-    sdkVersion.addPackage("maven:sentry-android-ndk", BuildConfig.VERSION_NAME);
+    sdkVersion.addPackage("maven:io.sentry:sentry-android-ndk", BuildConfig.VERSION_NAME);
   }
 }

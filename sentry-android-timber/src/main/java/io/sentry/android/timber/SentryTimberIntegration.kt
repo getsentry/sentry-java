@@ -40,6 +40,6 @@ class SentryTimberIntegration(
     }
 
     private fun addPackage(sdkVersion: SdkVersion?) {
-        sdkVersion?.addPackage("maven:sentry-android-timber", BuildConfig.VERSION_NAME)
+        sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", BuildConfig.VERSION_NAME)
     }
 }
