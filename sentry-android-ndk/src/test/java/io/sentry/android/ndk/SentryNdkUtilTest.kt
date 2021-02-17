@@ -12,7 +12,7 @@ class SentryNdkUtilTest {
         val options = SentryOptions()
         SentryNdkUtil.addPackage(options.sdkVersion)
         assertTrue(options.sdkVersion!!.packages!!.any {
-            it.name == "maven:sentry-android-ndk"
+            it.name == "maven:io.sentry:sentry-android-ndk"
             it.version == BuildConfig.VERSION_NAME
         })
     }
