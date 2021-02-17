@@ -37,6 +37,8 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
           capturedObjects.put(throwable, null);
         }
       }
+    } else {
+      options.getLogger().log(SentryLevel.DEBUG, "Event deduplication is disabled.");
     }
     return event;
   }
