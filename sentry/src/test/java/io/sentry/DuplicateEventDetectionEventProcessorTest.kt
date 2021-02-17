@@ -4,24 +4,19 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import java.lang.RuntimeException
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class DuplicateEventDetectionEventProcessorTest {
 
     class Fixture {
-        fun getSut(bufferSize: Int? = null, enableDeduplication: Boolean? = null): DuplicateEventDetectionEventProcessor {
+        fun getSut(enableDeduplication: Boolean? = null): DuplicateEventDetectionEventProcessor {
             val options = SentryOptions().apply {
                 if (enableDeduplication != null) {
                     this.setEnableDeduplication(enableDeduplication)
                 }
             }
-            return if (bufferSize != null) {
-                DuplicateEventDetectionEventProcessor(options, bufferSize)
-            } else {
-                DuplicateEventDetectionEventProcessor(options)
-            }
+            return DuplicateEventDetectionEventProcessor(options)
         }
     }
 
@@ -88,16 +83,6 @@ class DuplicateEventDetectionEventProcessorTest {
         val result = processor.process(SentryEvent(RuntimeException(RuntimeException(event.throwable))), null)
 
         assertNull(result)
-    }
-
-    @Test
-    fun `does not keep in memory more items than the buffer size`() {
-        val processor = fixture.getSut(50)
-        for (i in 1..100) {
-            val event = SentryEvent(RuntimeException())
-            processor.process(event, null)
-        }
-        assertEquals(50, processor.size())
     }
 
     @Test

@@ -2,27 +2,21 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Map;
+import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /** Deduplicates events containing throwable that has been already processed. */
 public final class DuplicateEventDetectionEventProcessor implements EventProcessor {
-  private final ConcurrentLinkedQueue<Throwable> capturedObjects = new ConcurrentLinkedQueue<>();
+  private final Map<Throwable, Object> capturedObjects =
+      Collections.synchronizedMap(new WeakHashMap<>());
   private final SentryOptions options;
-  private final int bufferSize;
 
   public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options) {
-    this(options, 100);
-  }
-
-  public DuplicateEventDetectionEventProcessor(
-      final @NotNull SentryOptions options, int bufferSize) {
     this.options = Objects.requireNonNull(options, "options are required");
-    this.bufferSize = bufferSize;
   }
 
   @Override
@@ -30,7 +24,7 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
     if (options.isEnableDeduplication()) {
       final Throwable throwable = event.getOriginThrowable();
       if (throwable != null) {
-        if (capturedObjects.contains(throwable)
+        if (capturedObjects.containsKey(throwable)
             || containsAnyKey(capturedObjects, allCauses(throwable))) {
           options
               .getLogger()
@@ -40,25 +34,17 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
                   event.getEventId());
           return null;
         } else {
-          capturedObjects.add(throwable);
-          if (capturedObjects.size() > bufferSize) {
-            capturedObjects.poll();
-          }
+          capturedObjects.put(throwable, null);
         }
       }
     }
     return event;
   }
 
-  @TestOnly
-  int size() {
-    return capturedObjects.size();
-  }
-
   private static <T> boolean containsAnyKey(
-      final @NotNull Collection<T> map, final @NotNull List<T> list) {
+      final @NotNull Map<T, Object> map, final @NotNull List<T> list) {
     for (T entry : list) {
-      if (map.contains(entry)) {
+      if (map.containsKey(entry)) {
         return true;
       }
     }
