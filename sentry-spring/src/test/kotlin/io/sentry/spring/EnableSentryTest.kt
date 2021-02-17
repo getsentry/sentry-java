@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.EventProcessor
 import io.sentry.IHub
 import io.sentry.ITransportFactory
+import io.sentry.Integration
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import kotlin.test.Test
@@ -146,6 +147,17 @@ class EnableSentryTest {
             }
     }
 
+    @Test
+    fun `configures custom integrations`() {
+        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomIntegrations::class.java))
+            .run {
+                val firstIntegration = it.getBean("firstIntegration", Integration::class.java)
+                val secondIntegration = it.getBean("secondIntegration", Integration::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.integrations).contains(firstIntegration, secondIntegration)
+            }
+    }
+
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfig
 
@@ -207,5 +219,15 @@ class EnableSentryTest {
 
         @Bean
         fun secondProcessor() = mock<EventProcessor>()
+    }
+
+    @EnableSentry(dsn = "http://key@localhost/proj")
+    class AppConfigWithCustomIntegrations {
+
+        @Bean
+        fun firstIntegration() = mock<Integration>()
+
+        @Bean
+        fun secondIntegration() = mock<Integration>()
     }
 }

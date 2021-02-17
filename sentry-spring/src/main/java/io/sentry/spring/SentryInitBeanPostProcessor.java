@@ -3,6 +3,7 @@ package io.sentry.spring;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
 import io.sentry.ITransportFactory;
+import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
@@ -49,6 +50,10 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
             .getBeansOfType(EventProcessor.class)
             .values()
             .forEach(options::addEventProcessor);
+        applicationContext
+            .getBeansOfType(Integration.class)
+            .values()
+            .forEach(options::addIntegration);
         applicationContext
             .getBeanProvider(Sentry.OptionsConfiguration.class)
             .ifAvailable(optionsConfiguration -> optionsConfiguration.configure(options));
