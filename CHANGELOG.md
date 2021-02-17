@@ -9,6 +9,7 @@
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 * Enchancement: Do not serialize empty collections and maps (#1245)
 * Ref: Simplify RestTemplate instrumentation (#1246)
+* Fix: Make the ANR Atomic flags immutable
 * Enchancement: Integration interface better compatibility with Kotlin null-safety
 
 Breaking Changes:
