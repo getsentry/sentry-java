@@ -15,6 +15,7 @@
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
+* Enchancement: Add overloads for startTransaction taking op and description (#1244)
 
 
 # 4.1.0

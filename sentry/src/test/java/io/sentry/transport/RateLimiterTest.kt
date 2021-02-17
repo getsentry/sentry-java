@@ -47,7 +47,7 @@ class RateLimiterTest {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryTransaction("", SpanContext(), mock()))
+        val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryTransaction("", SpanContext("op"), mock()))
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 
         rateLimiter.updateRetryAfterLimits("50:transaction:key, 2700:default;error;security:organization", null, 1)
@@ -61,7 +61,7 @@ class RateLimiterTest {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryTransaction("", SpanContext(), mock()))
+        val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryTransaction("", SpanContext("op"), mock()))
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 
         rateLimiter.updateRetryAfterLimits("1:transaction:key, 1:default;error;security:organization", null, 1)

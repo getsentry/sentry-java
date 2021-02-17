@@ -28,8 +28,9 @@ public final class Span extends SpanContext implements ISpan {
       final @NotNull SentryId traceId,
       final @NotNull SpanId parentSpanId,
       final @NotNull SentryTransaction transaction,
+      final @NotNull String operation,
       final @NotNull IHub hub) {
-    super(traceId, new SpanId(), parentSpanId, transaction.isSampled());
+    super(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");

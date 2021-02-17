@@ -499,17 +499,36 @@ public final class Sentry {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance.
+   * Creates a Transaction and returns the instance.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @return created transaction
    */
-  public static @NotNull ITransaction startTransaction(final @NotNull String name) {
-    return getCurrentHub().startTransaction(name);
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation) {
+    return getCurrentHub().startTransaction(name, operation);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance.
+   * Creates a Transaction and returns the instance.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param description the description
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @Nullable String description) {
+    final ITransaction transaction = getCurrentHub().startTransaction(name, operation);
+    transaction.setDescription(description);
+    return transaction;
+  }
+
+  /**
+   * Creates a Transaction and returns the instance.
    *
    * @param transactionContexts the transaction contexts
    * @return created transaction
@@ -520,22 +539,24 @@ public final class Sentry {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed sampling context the
+   * decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
   public static @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
-    return getCurrentHub().startTransaction(name, customSamplingContext);
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(name, operation, customSamplingContext);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * transaction and sampling contexts the decision if transaction is sampled will be taken by
-   * {@link TracesSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
+   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
