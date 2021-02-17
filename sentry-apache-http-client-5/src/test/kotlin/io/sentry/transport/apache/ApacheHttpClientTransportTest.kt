@@ -112,7 +112,6 @@ class ApacheHttpClientTransportTest {
     @Test
     fun `flush waits till all requests are finished`() {
         for (i in 1..1000) {
-            println("Iteration $i")
             val fixture = Fixture()
             val sut = fixture.getSut()
             whenever(fixture.client.execute(any(), any())).then {
@@ -125,7 +124,7 @@ class ApacheHttpClientTransportTest {
             sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
             sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 
-            sut.flush(20)
+            sut.flush(50)
 
             verify(fixture.currentlyRunning, times(3)).decrement()
         }
