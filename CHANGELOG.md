@@ -1,5 +1,6 @@
 # vNext
 
+* Fix: Remove experimental annotation for Attachment #1257
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
 * Bump: sentry-native to 0.4.7
