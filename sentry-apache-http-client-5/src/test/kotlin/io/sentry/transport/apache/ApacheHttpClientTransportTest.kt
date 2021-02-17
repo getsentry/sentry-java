@@ -111,23 +111,20 @@ class ApacheHttpClientTransportTest {
 
     @Test
     fun `flush waits till all requests are finished`() {
-        for (i in 1..1000) {
-            val fixture = Fixture()
-            val sut = fixture.getSut()
-            whenever(fixture.client.execute(any(), any())).then {
-                CompletableFuture.runAsync {
-                    Thread.sleep(5)
-                    (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
-                }
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            CompletableFuture.runAsync {
+                Thread.sleep(5)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
-            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-
-            sut.flush(100)
-
-            verify(fixture.currentlyRunning, times(3)).decrement()
         }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+
+        sut.flush(100)
+
+        verify(fixture.currentlyRunning, times(3)).decrement()
     }
 
     @Test
