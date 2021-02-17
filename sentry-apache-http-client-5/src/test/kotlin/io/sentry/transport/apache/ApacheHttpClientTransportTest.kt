@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
@@ -111,20 +112,24 @@ class ApacheHttpClientTransportTest {
 
     @Test
     fun `flush waits till all requests are finished`() {
-        val sut = fixture.getSut()
-        whenever(fixture.client.execute(any(), any())).then {
-            CompletableFuture.runAsync {
-                Thread.sleep(5)
-                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+        for (i in 1..1000) {
+            println("Iteration $i")
+            val fixture = Fixture()
+            val sut = fixture.getSut()
+            whenever(fixture.client.execute(any(), any())).then {
+                CompletableFuture.runAsync {
+                    Thread.sleep(5)
+                    (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+                }
             }
+            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+
+            sut.flush(20)
+
+            verify(fixture.currentlyRunning, times(3)).decrement()
         }
-        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-
-        sut.flush(20)
-
-        verify(fixture.currentlyRunning, times(3)).decrement()
     }
 
     @Test
