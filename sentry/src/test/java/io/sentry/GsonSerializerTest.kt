@@ -376,7 +376,7 @@ class GsonSerializerTest {
         assertNotNull(sdkInfo.packages)
 
         assertTrue(sdkInfo.packages!!.any {
-            it.name == "maven:sentry-android-core"
+            it.name == "maven:io.sentry:sentry-android-core"
             it.version == "4.5.6"
         })
     }
@@ -434,8 +434,7 @@ class GsonSerializerTest {
 
     @Test
     fun `serializes transaction`() {
-        val trace = SpanContext()
-        trace.op = "http"
+        val trace = SpanContext("http")
         trace.description = "some request"
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
@@ -555,7 +554,7 @@ class GsonSerializerTest {
 
     @Test
     fun `empty lists are serialized to null`() {
-        val transaction = SentryTransaction("tx")
+        val transaction = SentryTransaction("tx", "op")
         val stringWriter = StringWriter()
         fixture.serializer.serialize(transaction, stringWriter)
         val element = JsonParser().parse(stringWriter.toString()).asJsonObject

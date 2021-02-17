@@ -23,7 +23,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplate()
         var mockServer = MockRestServiceServer.createServer(restTemplate)
-        val transaction = SentryTransaction("aTransaction", SpanContext(true), hub)
+        val transaction = SentryTransaction("aTransaction", SpanContext("op", true), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK): RestTemplate {

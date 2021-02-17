@@ -312,7 +312,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val exception = RuntimeException()
         val span = mock<Span>()
-        whenever(span.spanContext).thenReturn(SpanContext())
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(exception, span)
 
         val event = SentryEvent(exception)
@@ -328,11 +328,11 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val exception = RuntimeException()
         val span = mock<Span>()
-        whenever(span.spanContext).thenReturn(SpanContext())
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(exception, span)
 
         val event = SentryEvent(exception)
-        val originalSpanContext = SpanContext()
+        val originalSpanContext = SpanContext("op")
         event.contexts.trace = originalSpanContext
 
         val hint = { }
@@ -433,7 +433,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val throwable = Throwable()
         val span = mock<Span>()
-        whenever(span.spanContext).thenReturn(SpanContext())
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(throwable, span)
 
         sut.captureException(throwable)
@@ -446,7 +446,7 @@ class HubTest {
     fun `when captureException is called with an exception which has not been previously attached with span context, span context should not be set on the event before capturing`() {
         val (sut, mockClient) = getEnabledHub()
         val span = mock<Span>()
-        whenever(span.spanContext).thenReturn(SpanContext())
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(Throwable(), span)
 
         sut.captureException(Throwable())
@@ -647,7 +647,7 @@ class HubTest {
             scope = it
         }
 
-        val tx = hub.startTransaction("test")
+        val tx = hub.startTransaction("test", "op")
         hub.configureScope { it.setTransaction(tx) }
 
         assertEquals("test", scope?.transactionName)
@@ -995,7 +995,7 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureTransaction(SentryTransaction("name"), null)
+        sut.captureTransaction(SentryTransaction("name", "op"), null)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
     }
 
@@ -1009,7 +1009,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", SpanContext(true), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction("name", SpanContext("op", true), NoOpHub.getInstance()), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
 
@@ -1023,7 +1023,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", SpanContext(false), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction("name", SpanContext("op", false), NoOpHub.getInstance()), null)
         verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
     }
 
@@ -1035,7 +1035,7 @@ class HubTest {
         options.setSerializer(mock())
         val sut = Hub(options)
 
-        sut.captureTransaction(SentryTransaction("name"), null)
+        sut.captureTransaction(SentryTransaction("name", "op"), null)
         sut.configureScope {
             assertNull(it.transaction)
         }
@@ -1046,7 +1046,7 @@ class HubTest {
     @Test
     fun `when startTransaction, creates transaction`() {
         val hub = generateHub()
-        val contexts = TransactionContext("name")
+        val contexts = TransactionContext("name", "op")
 
         val transaction = hub.startTransaction(contexts)
         assertTrue(transaction is SentryTransaction)
@@ -1057,7 +1057,7 @@ class HubTest {
     fun `when startTransaction, transaction is not attached to the scope`() {
         val hub = generateHub()
 
-        hub.startTransaction("name")
+        hub.startTransaction("name", "op")
 
         hub.configureScope {
             assertNull(it.span)
@@ -1068,14 +1068,14 @@ class HubTest {
     fun `when startTransaction and no tracing sampling is configured, event is not sampled`() {
         val hub = generateHub()
 
-        val transaction = hub.startTransaction("name")
+        val transaction = hub.startTransaction("name", "op")
         assertFalse(transaction.isSampled!!)
     }
 
     @Test
     fun `when startTransaction with parent sampled and no traces sampler provided, transaction inherits sampling decision`() {
         val hub = generateHub()
-        val transactionContext = TransactionContext("name")
+        val transactionContext = TransactionContext("name", "op")
         transactionContext.parentSampled = true
         val transaction = hub.startTransaction(transactionContext)
         assertNotNull(transaction)
@@ -1108,7 +1108,7 @@ class HubTest {
     @Test
     fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
         val hub = generateHub()
-        val tx = hub.startTransaction("aTransaction")
+        val tx = hub.startTransaction("aTransaction", "op")
         hub.configureScope { it.setTransaction(tx) }
 
         assertNotNull(hub.traceHeaders())
@@ -1125,7 +1125,7 @@ class HubTest {
     @Test
     fun `when there is active transaction bound to the scope, getSpan returns active transaction`() {
         val hub = generateHub()
-        val tx = hub.startTransaction("aTransaction")
+        val tx = hub.startTransaction("aTransaction", "op")
         hub.configureScope { it.setTransaction(tx) }
         assertEquals(tx, hub.getSpan())
     }
@@ -1133,7 +1133,7 @@ class HubTest {
     @Test
     fun `when there is active span within a transaction bound to the scope, getSpan returns active span`() {
         val hub = generateHub()
-        val tx = hub.startTransaction("aTransaction")
+        val tx = hub.startTransaction("aTransaction", "op")
         hub.configureScope { it.setTransaction(tx) }
         hub.configureScope { it.setTransaction(tx) }
         val span = tx.startChild("op")
@@ -1145,7 +1145,7 @@ class HubTest {
     @Test
     fun `associates span context with throwable`() {
         val hub = generateHub() as Hub
-        val transaction = hub.startTransaction("aTransaction")
+        val transaction = hub.startTransaction("aTransaction", "op")
         val span = transaction.startChild("op")
         val exception = RuntimeException()
         hub.setSpanContext(exception, span)

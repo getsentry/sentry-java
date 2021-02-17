@@ -171,8 +171,8 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull ITransaction startTransaction(
-      String name, CustomSamplingContext customSamplingContext) {
-    return Sentry.startTransaction(name, customSamplingContext);
+      String name, String operation, CustomSamplingContext customSamplingContext) {
+    return Sentry.startTransaction(name, operation, customSamplingContext);
   }
 
   @Override

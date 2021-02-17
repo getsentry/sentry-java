@@ -51,11 +51,15 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       // transaction is already active, we do not start new transaction
       return invocation.proceed();
     } else {
-      final ITransaction transaction = hub.startTransaction(name);
-      hub.configureScope(scope -> scope.setTransaction(transaction));
+      String operation;
       if (sentryTransaction != null && !StringUtils.isEmpty(sentryTransaction.operation())) {
-        transaction.setOperation(sentryTransaction.operation());
+        operation = sentryTransaction.operation();
+      } else {
+        operation = "bean";
       }
+      final ITransaction transaction = hub.startTransaction(name, operation);
+      hub.configureScope(scope -> scope.setTransaction(transaction));
+
       try {
         return invocation.proceed();
       } finally {
