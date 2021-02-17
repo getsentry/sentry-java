@@ -296,8 +296,8 @@ public interface IHub {
    * @return created transaction.
    */
   default @NotNull ITransaction startTransaction(
-      String name, CustomSamplingContext customSamplingContext) {
-    return startTransaction(new TransactionContext(name), customSamplingContext);
+      String name, String operation, CustomSamplingContext customSamplingContext) {
+    return startTransaction(new TransactionContext(name, operation), customSamplingContext);
   }
 
   /**
@@ -321,8 +321,9 @@ public interface IHub {
    * @param name the transaction name
    * @return created transaction
    */
-  default @NotNull ITransaction startTransaction(final @NotNull String name) {
-    return startTransaction(name, null);
+  default @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation) {
+    return startTransaction(name, operation, null);
   }
 
   /**

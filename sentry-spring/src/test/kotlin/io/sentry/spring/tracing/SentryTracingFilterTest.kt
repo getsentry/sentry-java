@@ -44,7 +44,7 @@ class SentryTracingFilterTest {
                 whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any<String>(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(), hub) }
+            whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
             return SentryTracingFilter(hub)
         }
     }
@@ -57,7 +57,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).startTransaction(eq("POST /product/12"), check {
+        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check {
             assertNotNull(it["request"])
             assertTrue(it["request"] is HttpServletRequest)
         })

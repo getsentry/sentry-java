@@ -144,7 +144,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
     final String version = BuildConfig.VERSION_NAME;
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-    sdkVersion.addPackage("maven:sentry-logback", version);
+    sdkVersion.addPackage("maven:io.sentry:sentry-logback", version);
 
     return sdkVersion;
   }

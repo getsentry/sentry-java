@@ -1,12 +1,10 @@
 package io.sentry;
 
 import java.io.File;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** You can use an attachment to store additional files alongside an event or transaction. */
-@ApiStatus.Experimental
 public final class Attachment {
 
   private @Nullable byte[] bytes;

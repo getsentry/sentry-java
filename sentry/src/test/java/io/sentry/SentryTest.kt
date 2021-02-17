@@ -153,6 +153,16 @@ class SentryTest {
         })
     }
 
+    @Test
+    fun `startTransaction sets operation and description`() {
+        Sentry.init { it.dsn = dsn }
+
+        val transaction = Sentry.startTransaction("name", "op", "desc")
+        assertEquals("name", transaction.name)
+        assertEquals("op", transaction.operation)
+        assertEquals("desc", transaction.description)
+    }
+
     private fun getTempPath(): String {
         val tempFile = Files.createTempDirectory("cache").toFile()
         tempFile.delete()

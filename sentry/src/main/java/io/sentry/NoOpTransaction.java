@@ -125,7 +125,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    return new SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, null, null);
+    return new SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null);
   }
 
   @Override
