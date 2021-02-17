@@ -581,9 +581,9 @@ class HubTest {
         doAnswer {
             val hub = it.arguments[0] as IHub
             assertTrue(hub.isEnabled)
-        }.whenever(mock).register(any(), eq(options))
+        }.whenever(mock).register(any(), eq(options!!))
 
-        verify(mock).register(any(), eq(options))
+        verify(mock).register(any(), eq(options!!))
     }
 
     //region setLevel tests

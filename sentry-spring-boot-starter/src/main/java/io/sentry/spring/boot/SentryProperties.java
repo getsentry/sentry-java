@@ -19,7 +19,7 @@ public class SentryProperties extends SentryOptions {
   private boolean enableTracing;
 
   /** Report all or only uncaught web exceptions. */
-  private int exceptionResolverOrder = Integer.MIN_VALUE;
+  private int exceptionResolverOrder = 1;
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();

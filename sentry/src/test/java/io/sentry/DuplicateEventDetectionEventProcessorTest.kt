@@ -34,13 +34,13 @@ class DuplicateEventDetectionEventProcessorTest {
         val event = SentryEvent(RuntimeException())
         processor.process(event, null)
 
-        val result = processor.process(SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable, null)), null)
+        val result = processor.process(SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())), null)
         assertNull(result)
     }
 
     @Test
     fun `drops event with exception that has already been processed with event with mechanism exception`() {
-        val sentryEvent = SentryEvent(ExceptionMechanismException(Mechanism(), RuntimeException(), null))
+        val sentryEvent = SentryEvent(ExceptionMechanismException(Mechanism(), RuntimeException(), Thread.currentThread()))
         processor.process(sentryEvent, null)
 
         val result = processor.process(SentryEvent((sentryEvent.throwable as ExceptionMechanismException).throwable), null)

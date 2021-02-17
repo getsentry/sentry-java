@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /** Sends cached events over when your App. is starting. */
 public final class SendCachedEnvelopeFireAndForgetIntegration implements Integration {
 
-  private final SendFireAndForgetFactory factory;
+  private final @NotNull SendFireAndForgetFactory factory;
 
   public interface SendFireAndForget {
     void send();
@@ -21,7 +21,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
 
   public interface SendFireAndForgetFactory {
     @Nullable
-    SendFireAndForget create(IHub hub, SentryOptions options);
+    SendFireAndForget create(@NotNull IHub hub, @NotNull SentryOptions options);
 
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
       if (dirPath == null || dirPath.isEmpty()) {

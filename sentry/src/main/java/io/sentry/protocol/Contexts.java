@@ -10,8 +10,8 @@ import org.jetbrains.annotations.Nullable;
 public final class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
   private static final long serialVersionUID = 252445813254943011L;
 
-  private <T> T toContextType(String key, Class<T> clazz) {
-    Object item = get(key);
+  private @Nullable <T> T toContextType(final @NotNull String key, final @NotNull Class<T> clazz) {
+    final Object item = get(key);
     return clazz.isInstance(item) ? clazz.cast(item) : null;
   }
 
@@ -24,51 +24,51 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
     this.put(SpanContext.TYPE, traceContext);
   }
 
-  public App getApp() {
+  public @Nullable App getApp() {
     return toContextType(App.TYPE, App.class);
   }
 
-  public void setApp(App app) {
+  public void setApp(final @NotNull App app) {
     this.put(App.TYPE, app);
   }
 
-  public Browser getBrowser() {
+  public @Nullable Browser getBrowser() {
     return toContextType(Browser.TYPE, Browser.class);
   }
 
-  public void setBrowser(Browser browser) {
+  public void setBrowser(final @NotNull Browser browser) {
     this.put(Browser.TYPE, browser);
   }
 
-  public Device getDevice() {
+  public @Nullable Device getDevice() {
     return toContextType(Device.TYPE, Device.class);
   }
 
-  public void setDevice(Device device) {
+  public void setDevice(final @NotNull Device device) {
     this.put(Device.TYPE, device);
   }
 
-  public OperatingSystem getOperatingSystem() {
+  public @Nullable OperatingSystem getOperatingSystem() {
     return toContextType(OperatingSystem.TYPE, OperatingSystem.class);
   }
 
-  public void setOperatingSystem(OperatingSystem operatingSystem) {
+  public void setOperatingSystem(final @NotNull OperatingSystem operatingSystem) {
     this.put(OperatingSystem.TYPE, operatingSystem);
   }
 
-  public SentryRuntime getRuntime() {
+  public @Nullable SentryRuntime getRuntime() {
     return toContextType(SentryRuntime.TYPE, SentryRuntime.class);
   }
 
-  public void setRuntime(SentryRuntime runtime) {
+  public void setRuntime(final @NotNull SentryRuntime runtime) {
     this.put(SentryRuntime.TYPE, runtime);
   }
 
-  public Gpu getGpu() {
+  public @Nullable Gpu getGpu() {
     return toContextType(Gpu.TYPE, Gpu.class);
   }
 
-  public void setGpu(Gpu gpu) {
+  public void setGpu(final @NotNull Gpu gpu) {
     this.put(Gpu.TYPE, gpu);
   }
 
