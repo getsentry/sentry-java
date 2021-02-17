@@ -159,13 +159,31 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (event.getContexts().getDevice() == null) {
       event.getContexts().setDevice(getDevice());
     }
-    if (event.getContexts().getOperatingSystem() == null) {
-      event.getContexts().setOperatingSystem(getOperatingSystem());
-    }
+
+    mergeOS(event);
 
     setSideLoadedInfo(event);
 
     return event;
+  }
+
+  private void mergeOS(final @NotNull SentryEvent event) {
+    final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
+    final OperatingSystem androidOS = getOperatingSystem();
+
+    // make Android OS the main OS using the 'os' key
+    event.getContexts().setOperatingSystem(androidOS);
+
+    if (currentOS != null) {
+      // add additional OS which was already part of the SentryEvent (eg Linux read from NDK)
+      String osNameKey = currentOS.getName();
+      if (osNameKey != null && !osNameKey.isEmpty()) {
+        osNameKey = "os_" + osNameKey.trim().toLowerCase(Locale.ROOT);
+      } else {
+        osNameKey = "os_1";
+      }
+      event.getContexts().put(osNameKey, currentOS);
+    }
   }
 
   // Data to be applied to events that was created in the running process

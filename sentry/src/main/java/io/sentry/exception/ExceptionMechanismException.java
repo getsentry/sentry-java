@@ -1,8 +1,9 @@
 package io.sentry.exception;
 
 import io.sentry.protocol.Mechanism;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A throwable decorator that holds an {@link io.sentry.protocol.Mechanism} related to the decorated
@@ -12,9 +13,29 @@ import org.jetbrains.annotations.Nullable;
 public final class ExceptionMechanismException extends RuntimeException {
   private static final long serialVersionUID = 142345454265713915L;
 
-  private final Mechanism exceptionMechanism;
-  private final Throwable throwable;
-  private final Thread thread;
+  private final @NotNull Mechanism exceptionMechanism;
+  private final @NotNull Throwable throwable;
+  private final @NotNull Thread thread;
+  private final boolean snapshot;
+
+  /**
+   * A {@link Throwable} that decorates another with a Sentry {@link Mechanism}.
+   *
+   * @param mechanism The {@link Mechanism}.
+   * @param throwable The {@link java.lang.Throwable}.
+   * @param thread The {@link java.lang.Thread}.
+   * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot.
+   */
+  public ExceptionMechanismException(
+      final @NotNull Mechanism mechanism,
+      final @NotNull Throwable throwable,
+      final @NotNull Thread thread,
+      final boolean snapshot) {
+    exceptionMechanism = Objects.requireNonNull(mechanism, "Mechanism is required.");
+    this.throwable = Objects.requireNonNull(throwable, "Throwable is required.");
+    this.thread = Objects.requireNonNull(thread, "Thread is required.");
+    this.snapshot = snapshot;
+  }
 
   /**
    * A {@link Throwable} that decorates another with a Sentry {@link Mechanism}.
@@ -24,21 +45,45 @@ public final class ExceptionMechanismException extends RuntimeException {
    * @param thread The {@link java.lang.Thread}.
    */
   public ExceptionMechanismException(
-      @Nullable Mechanism mechanism, @Nullable Throwable throwable, @Nullable Thread thread) {
-    this.exceptionMechanism = mechanism;
-    this.throwable = throwable;
-    this.thread = thread;
+      final @NotNull Mechanism mechanism,
+      final @NotNull Throwable throwable,
+      final @NotNull Thread thread) {
+    this(mechanism, throwable, thread, false);
   }
 
-  public Mechanism getExceptionMechanism() {
+  /**
+   * Returns the encapsulated Mechanism
+   *
+   * @return the Mechanism
+   */
+  public @NotNull Mechanism getExceptionMechanism() {
     return exceptionMechanism;
   }
 
-  public Throwable getThrowable() {
+  /**
+   * Returns the encapsulated Throwable
+   *
+   * @return the Throwable
+   */
+  public @NotNull Throwable getThrowable() {
     return throwable;
   }
 
-  public Thread getThread() {
+  /**
+   * Returns the encapsulated Thread
+   *
+   * @return the Thread
+   */
+  public @NotNull Thread getThread() {
     return thread;
+  }
+
+  /**
+   * Returns true if its a snapshot or false otherwise
+   *
+   * @return true or false
+   */
+  public boolean isSnapshot() {
+    return snapshot;
   }
 }

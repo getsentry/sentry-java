@@ -7,6 +7,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -33,7 +34,7 @@ class SentryExceptionFactoryTest {
         assertEquals("Exception", sentryExceptions[0].type)
         assertEquals("Exception", sentryExceptions[0].value)
         assertEquals("java.lang", sentryExceptions[0].module)
-        assertTrue(sentryExceptions[0].stacktrace.frames.isNotEmpty())
+        assertTrue(sentryExceptions[0].stacktrace.frames!!.isNotEmpty())
     }
 
     @Test
@@ -70,11 +71,22 @@ class SentryExceptionFactoryTest {
 
         val error = Exception("Exception")
 
-        val throwable = ExceptionMechanismException(mechanism, error, null)
+        val throwable = ExceptionMechanismException(mechanism, error, Thread.currentThread())
 
         val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
         assertEquals("anr", sentryExceptions[0].mechanism.type)
-        assertEquals(false, sentryExceptions[0].mechanism.isHandled)
+        assertFalse(sentryExceptions[0].mechanism.isHandled)
+        assertNull(sentryExceptions[0].stacktrace?.snapshot)
+    }
+
+    @Test
+    fun `When ExceptionMechanismException has threads snapshot, stack trace should set snapshot flag`() {
+        val error = Exception("Exception")
+
+        val throwable = ExceptionMechanismException(Mechanism(), error, Thread.currentThread(), true)
+        val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
+
+        assertTrue(sentryExceptions[0].stacktrace?.snapshot!!)
     }
 
     @Test

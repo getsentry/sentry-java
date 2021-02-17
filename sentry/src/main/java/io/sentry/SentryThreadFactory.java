@@ -126,7 +126,11 @@ final class SentryThreadFactory {
         sentryStackTraceFactory.getStackFrames(stackFramesElements);
 
     if (options.isAttachStacktrace() && frames != null && !frames.isEmpty()) {
-      sentryThread.setStacktrace(new SentryStackTrace(frames));
+      final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);
+      // threads are always gotten either via Thread.currentThread() or Thread.getAllStackTraces()
+      sentryStackTrace.setSnapshot(true);
+
+      sentryThread.setStacktrace(sentryStackTrace);
     }
 
     return sentryThread;

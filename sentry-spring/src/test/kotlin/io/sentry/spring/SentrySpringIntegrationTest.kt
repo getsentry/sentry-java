@@ -25,7 +25,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.Ordered
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -140,7 +139,7 @@ class SentrySpringIntegrationTest {
 }
 
 @SpringBootApplication
-@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, exceptionResolverOrder = Ordered.LOWEST_PRECEDENCE)
+@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
 open class App {
 
     private val transport = mock<ITransport>()
