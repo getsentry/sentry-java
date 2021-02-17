@@ -12,6 +12,7 @@
 * Ref: Prefix sdk.package names with io.sentry (#1249)
 * Fix: Make the ANR Atomic flags immutable
 * Enchancement: Integration interface better compatibility with Kotlin null-safety
+* Enchancement: Simplify Sentry configuration in Spring integration (#1259)
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
