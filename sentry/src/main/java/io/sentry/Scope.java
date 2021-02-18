@@ -309,6 +309,7 @@ public final class Scope implements Cloneable {
     level = null;
     transaction = null;
     user = null;
+    request = null;
     fingerprint.clear();
     breadcrumbs.clear();
     tags.clear();
@@ -510,6 +511,9 @@ public final class Scope implements Cloneable {
 
     final User userRef = user;
     clone.user = userRef != null ? userRef.clone() : null;
+
+    final Request requestRef = request;
+    clone.request = requestRef != null ? requestRef.clone() : null;
 
     clone.fingerprint = new ArrayList<>(fingerprint);
     clone.eventProcessors = new CopyOnWriteArrayList<>(eventProcessors);
