@@ -13,6 +13,7 @@
 * Fix: Make the ANR Atomic flags immutable
 * Enchancement: Integration interface better compatibility with Kotlin null-safety
 * Enchancement: Simplify Sentry configuration in Spring integration (#1259)
+* Fix: Fix SentryTransaction#getStatus NPE
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
