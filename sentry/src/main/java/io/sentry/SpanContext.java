@@ -45,7 +45,11 @@ public class SpanContext implements Cloneable {
     this(new SentryId(), new SpanId(), operation, null, sampled);
   }
 
-  /** Creates trace context with defered sampling decision. */
+  /**
+   * Creates trace context with defered sampling decision.
+   *
+   * @param operation the operation
+   */
   public SpanContext(final @NotNull String operation) {
     this(new SentryId(), new SpanId(), operation, null, null);
   }
