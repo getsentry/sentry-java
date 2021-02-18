@@ -158,14 +158,14 @@ class ApacheHttpClientTransportTest {
                 }
             }.then {
                 CompletableFuture.runAsync {
-                    Thread.sleep(5)
+                    Thread.sleep(20)
                     (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
                 }
             }
             sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
             sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 
-            sut.flush(100)
+            sut.flush(150)
 
             verify(fixture.currentlyRunning, times(1)).decrement()
             verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 100L)
