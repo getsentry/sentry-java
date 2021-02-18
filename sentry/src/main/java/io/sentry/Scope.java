@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.Request;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -28,6 +29,9 @@ public final class Scope implements Cloneable {
 
   /** Scope's user */
   private @Nullable User user;
+
+  /** Scope's request */
+  private @Nullable Request request;
 
   /** Scope's fingerprint */
   private @NotNull List<String> fingerprint = new ArrayList<>();
@@ -161,6 +165,24 @@ public final class Scope implements Cloneable {
         observer.setUser(user);
       }
     }
+  }
+
+  /**
+   * Returns the Scope's request
+   *
+   * @return the request
+   */
+  public @Nullable Request getRequest() {
+    return request;
+  }
+
+  /**
+   * Sets the Scope's request
+   *
+   * @param request the request
+   */
+  public void setRequest(final @Nullable Request request) {
+    this.request = request;
   }
 
   /**
