@@ -2,6 +2,7 @@ package io.sentry.logback
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.core.status.Status
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
@@ -29,7 +30,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 class SentryAppenderTest {
-    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
+    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -40,7 +41,7 @@ class SentryAppenderTest {
             whenever(this.transportFactory.create(any(), any())).thenReturn(transport)
             val appender = SentryAppender()
             val options = SentryOptions()
-            options.dsn = "http://key@localhost/proj"
+            options.dsn = dsn
             appender.setOptions(options)
             appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
             appender.setMinimumEventLevel(minimumEventLevel)
@@ -304,5 +305,12 @@ class SentryAppenderTest {
                 assertEquals("release from sentry.properties", event.release)
             }, anyOrNull())
         }
+    }
+
+    @Test
+    fun `does not initialize Sentry when DSN is null`() {
+        fixture = Fixture(dsn = "DSN_IS_UNDEFINED", minimumEventLevel = Level.DEBUG)
+
+        assertTrue(fixture.loggerContext.statusManager.copyOfStatusList.none { it.level == Status.WARN })
     }
 }
