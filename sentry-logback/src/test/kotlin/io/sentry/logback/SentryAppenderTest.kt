@@ -308,7 +308,8 @@ class SentryAppenderTest {
     }
 
     @Test
-    fun `does not initialize Sentry when DSN is null`() {
+    fun `does not initialize Sentry when environment variable with DSN is not set`() {
+        // environment variables referenced in the logback.xml that are not set in the OS, have value "ENV_NAME_IS_UNDEFINED"
         fixture = Fixture(dsn = "DSN_IS_UNDEFINED", minimumEventLevel = Level.DEBUG)
 
         assertTrue(fixture.loggerContext.statusManager.copyOfStatusList.none { it.level == Status.WARN })
