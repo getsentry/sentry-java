@@ -168,7 +168,6 @@ class ApacheHttpClientTransportTest {
             sut.flush(200)
 
             verify(fixture.currentlyRunning, times(1)).decrement()
-            verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 150L)
             sut.close()
         }
     }
