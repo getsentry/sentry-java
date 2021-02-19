@@ -19,13 +19,13 @@ import io.sentry.transport.RateLimiter
 import io.sentry.transport.ReusableCountLatch
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.io.CloseMode
-import kotlin.test.AfterTest
 
 class ApacheHttpClientTransportTest {
 
