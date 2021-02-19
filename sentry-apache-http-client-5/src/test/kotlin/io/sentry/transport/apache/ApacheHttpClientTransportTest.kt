@@ -153,7 +153,7 @@ class ApacheHttpClientTransportTest {
             val sut = fixture.getSut()
             whenever(fixture.client.execute(any(), any())).then {
                 CompletableFuture.runAsync {
-                    Thread.sleep(200)
+                    Thread.sleep(1000)
                     (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
                 }
             }.then {
@@ -165,7 +165,7 @@ class ApacheHttpClientTransportTest {
             sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
             sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 
-            sut.flush(150)
+            sut.flush(200)
 
             verify(fixture.currentlyRunning, times(1)).decrement()
             verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 150L)
