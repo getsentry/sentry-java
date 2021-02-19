@@ -33,6 +33,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
+  private boolean enableActivityLifecycleTracing = true;
+
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
@@ -170,5 +172,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setDebugImagesLoader(final @NotNull IDebugImagesLoader debugImagesLoader) {
     this.debugImagesLoader =
         debugImagesLoader != null ? debugImagesLoader : NoOpDebugImagesLoader.getInstance();
+  }
+
+  public boolean isEnableActivityLifecycleTracing() {
+    return enableActivityLifecycleTracing;
+  }
+
+  public void setEnableActivityLifecycleTracing(boolean enableActivityLifecycleTracing) {
+    this.enableActivityLifecycleTracing = enableActivityLifecycleTracing;
   }
 }

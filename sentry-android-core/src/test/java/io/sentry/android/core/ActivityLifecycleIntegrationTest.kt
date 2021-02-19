@@ -12,13 +12,13 @@ import io.sentry.SentryLevel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ActivityBreadcrumbsIntegrationTest {
+class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
 
-        fun getSut(): ActivityBreadcrumbsIntegration {
-            return ActivityBreadcrumbsIntegration(application)
+        fun getSut(): ActivityLifecycleIntegration {
+            return ActivityLifecycleIntegration(application)
         }
     }
 
