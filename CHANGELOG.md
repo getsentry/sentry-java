@@ -15,6 +15,7 @@
 * Enchancement: Simplify Sentry configuration in Spring integration (#1259)
 * Fix: Fix SentryTransaction#getStatus NPE (#1273)
 * Enchancement: Optimize SentryTracingFilter when hub is disabled.
+* Fix: SentryTransaction#finish should not clear another transaction from the scope (#1278)
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
