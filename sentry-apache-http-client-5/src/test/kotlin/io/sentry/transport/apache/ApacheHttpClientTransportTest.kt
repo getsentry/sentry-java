@@ -148,7 +148,7 @@ class ApacheHttpClientTransportTest {
 
     @Test
     fun `logs warning when flush timeout was lower than time needed to execute all events`() {
-        for (i in 1..1000) {
+        for (i in 1..100) {
             val fixture = Fixture()
             val sut = fixture.getSut()
             whenever(fixture.client.execute(any(), any())).then {
