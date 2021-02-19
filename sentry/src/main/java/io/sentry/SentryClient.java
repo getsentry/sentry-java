@@ -409,6 +409,13 @@ public final class SentryClient implements ISentryClient {
         }
       }
     }
+    final List<Span> unfinishedSpans = new ArrayList<>();
+    for (Span span : transaction.getSpans()) {
+      if (!span.isFinished()) {
+        unfinishedSpans.add(span);
+      }
+    }
+    transaction.getSpans().removeAll(unfinishedSpans);
     return transaction;
   }
 
