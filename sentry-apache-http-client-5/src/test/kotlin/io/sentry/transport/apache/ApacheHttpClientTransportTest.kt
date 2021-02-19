@@ -25,6 +25,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.io.CloseMode
+import kotlin.test.AfterTest
 
 class ApacheHttpClientTransportTest {
 
@@ -35,6 +36,7 @@ class ApacheHttpClientTransportTest {
         val requestDetails = RequestDetails("http://key@localhost/proj", mapOf("header-name" to "header-value"))
         val client = mock<CloseableHttpAsyncClient>()
         val currentlyRunning = spy<ReusableCountLatch>()
+        val executorService = Executors.newFixedThreadPool(2)
 
         init {
             whenever(rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
@@ -64,6 +66,11 @@ class ApacheHttpClientTransportTest {
     }
 
     private val fixture = Fixture()
+
+    @AfterTest
+    fun `shutdown executor`() {
+        fixture.executorService.shutdownNow()
+    }
 
     @Test
     fun `updates retry on rate limiter`() {
@@ -114,7 +121,7 @@ class ApacheHttpClientTransportTest {
     fun `flush waits till all requests are finished`() {
         val sut = fixture.getSut()
         whenever(fixture.client.execute(any(), any())).then {
-            CompletableFuture.runAsync {
+            fixture.executorService.submit {
                 Thread.sleep(5)
                 (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
@@ -132,7 +139,7 @@ class ApacheHttpClientTransportTest {
     fun `keeps sending events after flush`() {
         val sut = fixture.getSut()
         whenever(fixture.client.execute(any(), any())).then {
-            CompletableFuture.runAsync {
+            fixture.executorService.submit {
                 Thread.sleep(5)
                 (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
@@ -149,29 +156,24 @@ class ApacheHttpClientTransportTest {
 
     @Test
     fun `logs warning when flush timeout was lower than time needed to execute all events`() {
-        for (i in 1..100) {
-            val executorService = Executors.newFixedThreadPool(2)
-            val fixture = Fixture()
-            val sut = fixture.getSut()
-            whenever(fixture.client.execute(any(), any())).then {
-                executorService.submit {
-                    Thread.sleep(1000)
-                    (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
-                }
-            }.then {
-                executorService.submit {
-                    Thread.sleep(20)
-                    (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
-                }
+        val sut = fixture.getSut()
+        whenever(fixture.client.execute(any(), any())).then {
+            fixture.executorService.submit {
+                Thread.sleep(1000)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
             }
-            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-            sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
-
-            sut.flush(200)
-
-            verify(fixture.currentlyRunning, times(1)).decrement()
-            sut.close()
-            executorService.shutdownNow()
+        }.then {
+            fixture.executorService.submit {
+                Thread.sleep(20)
+                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+            }
         }
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+        sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
+
+        sut.flush(200)
+
+        verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 200L)
+        verify(fixture.currentlyRunning, times(1)).decrement()
     }
 }
