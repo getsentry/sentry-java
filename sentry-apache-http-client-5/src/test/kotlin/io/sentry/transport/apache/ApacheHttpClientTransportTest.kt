@@ -24,6 +24,8 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.io.CloseMode
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 
 class ApacheHttpClientTransportTest {
 
@@ -149,15 +151,16 @@ class ApacheHttpClientTransportTest {
     @Test
     fun `logs warning when flush timeout was lower than time needed to execute all events`() {
         for (i in 1..100) {
+            val executorService = Executors.newFixedThreadPool(2)
             val fixture = Fixture()
             val sut = fixture.getSut()
             whenever(fixture.client.execute(any(), any())).then {
-                CompletableFuture.runAsync {
+                executorService.submit {
                     Thread.sleep(1000)
                     (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
                 }
             }.then {
-                CompletableFuture.runAsync {
+                executorService.submit {
                     Thread.sleep(20)
                     (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
                 }
@@ -169,6 +172,7 @@ class ApacheHttpClientTransportTest {
 
             verify(fixture.currentlyRunning, times(1)).decrement()
             sut.close()
+            executorService.shutdownNow()
         }
     }
 }
