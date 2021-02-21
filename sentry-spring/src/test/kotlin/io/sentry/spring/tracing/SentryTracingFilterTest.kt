@@ -4,7 +4,10 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
@@ -14,6 +17,7 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
+import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
@@ -30,12 +34,14 @@ class SentryTracingFilterTest {
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
+        val sentryRequestResolver = spy(SentryRequestResolver(hub))
+        val transactionNameProvider = spy(TransactionNameProvider())
 
         init {
             whenever(hub.options).thenReturn(SentryOptions())
         }
 
-        fun getSut(sentryTraceHeader: String? = null): SentryTracingFilter {
+        fun getSut(isEnabled: Boolean = true, sentryTraceHeader: String? = null): SentryTracingFilter {
             request.requestURI = "/product/12"
             request.method = "POST"
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
@@ -45,7 +51,8 @@ class SentryTracingFilterTest {
             }
             response.status = 200
             whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
-            return SentryTracingFilter(hub)
+            whenever(hub.isEnabled).thenReturn(isEnabled)
+            return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
         }
     }
 
@@ -91,5 +98,19 @@ class SentryTracingFilterTest {
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
         }, eq(null))
+    }
+
+    @Test
+    fun `when hub is disabled, components are not invoked`() {
+        val filter = fixture.getSut(isEnabled = false)
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.hub).isEnabled
+        verifyNoMoreInteractions(fixture.hub)
+        verifyZeroInteractions(fixture.sentryRequestResolver)
+        verifyZeroInteractions(fixture.transactionNameProvider)
     }
 }
