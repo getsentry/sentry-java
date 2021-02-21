@@ -752,6 +752,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
+	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableScopeSync ()Z
@@ -771,6 +772,7 @@ public class io/sentry/SentryOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V

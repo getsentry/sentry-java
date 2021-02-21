@@ -238,7 +238,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   @Override
   @Nullable
   public SpanStatus getStatus() {
-    return this.getContexts().getTrace().getStatus();
+    return context.getStatus();
   }
 
   @Override
