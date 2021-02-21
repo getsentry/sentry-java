@@ -167,4 +167,17 @@ class SentryTransactionTest {
         transaction.name = "new name"
         assertEquals("new name", transaction.transaction)
     }
+
+    @Test
+    fun `when transaction is not finished, status is null`() {
+        val transaction = SentryTransaction("name", "op")
+        assertNull(transaction.status)
+    }
+
+    @Test
+    fun `when transaction is not finished, status can be read`() {
+        val transaction = SentryTransaction("name", "op")
+        transaction.status = SpanStatus.ABORTED
+        assertEquals(SpanStatus.ABORTED, transaction.status)
+    }
 }
