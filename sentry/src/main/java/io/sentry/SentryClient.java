@@ -415,6 +415,11 @@ public final class SentryClient implements ISentryClient {
         unfinishedSpans.add(span);
       }
     }
+    if (options.getLogger().isEnabled(SentryLevel.WARNING) && !unfinishedSpans.isEmpty()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
+    }
     transaction.getSpans().removeAll(unfinishedSpans);
     return transaction;
   }
