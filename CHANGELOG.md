@@ -16,6 +16,7 @@
 * Enchancement: Add Request to the Scope. #1270
 * Fix: Fix SentryTransaction#getStatus NPE (#1273)
 * Enchancement: Optimize SentryTracingFilter when hub is disabled.
+* Fix: Interrupt the thread in QueuedThreadPoolExecutor (#1276)
 * Fix: SentryTransaction#finish should not clear another transaction from the scope (#1278)
 
 Breaking Changes:
