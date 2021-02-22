@@ -1,5 +1,6 @@
 # vNext
 
+
 * Fix: Remove experimental annotation for Attachment #1257
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
@@ -18,6 +19,7 @@
 * Enchancement: Add Request to the Scope. #1270
 * Fix: Fix SentryTransaction#getStatus NPE (#1273)
 * Enchancement: Optimize SentryTracingFilter when hub is disabled.
+* Fix: Discard unfinished Spans before sending them over to Sentry (#1279)
 * Fix: Interrupt the thread in QueuedThreadPoolExecutor (#1276)
 * Fix: SentryTransaction#finish should not clear another transaction from the scope (#1278)
 
