@@ -1,5 +1,6 @@
 # vNext
 
+
 * Fix: Remove experimental annotation for Attachment #1257
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
@@ -15,6 +16,7 @@
 * Enchancement: Simplify Sentry configuration in Spring integration (#1259)
 * Fix: Fix SentryTransaction#getStatus NPE (#1273)
 * Enchancement: Optimize SentryTracingFilter when hub is disabled.
+* Fix: Discard unfinished Spans before sending them over to Sentry (#1279)
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
