@@ -1,5 +1,4 @@
-# vNext
-
+# 4.2.0
 
 * Fix: Remove experimental annotation for Attachment #1257
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
