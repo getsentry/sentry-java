@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClassName = "io.sentry.samples.log4j2.Main"
+    mainClass.set("io.sentry.samples.log4j2.Main")
 }
 
 configure<JavaPluginConvention> {

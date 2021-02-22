@@ -49,6 +49,9 @@ public final class SentryInitializer implements ServletContainerInitializer {
 
           // Enable SDK logging with Debug level
           options.setDebug(true);
+
+          // Include frames from our package
+          options.addInAppInclude("io.sentry.samples");
         });
   }
 }

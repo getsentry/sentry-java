@@ -7,7 +7,7 @@ plugins {
 }
 
 application {
-    mainClassName = "io.sentry.samples.jul.Main"
+    mainClass.set("io.sentry.samples.jul.Main")
     applicationDefaultJvmArgs = mutableListOf("-Djava.util.logging.config.file=${project.projectDir}/src/main/resources/logging.properties")
 }
 

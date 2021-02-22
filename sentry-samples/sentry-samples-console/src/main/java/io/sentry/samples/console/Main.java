@@ -64,6 +64,9 @@ public class Main {
           // UI:
           options.addInAppExclude("org.jboss");
 
+          // Include frames from our package
+          options.addInAppInclude("io.sentry.samples");
+
           // Performance configuration options
           // Set what percentage of traces should be collected
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces

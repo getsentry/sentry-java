@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClassName = "io.sentry.samples.logback.Main"
+    mainClass.set("io.sentry.samples.logback.Main")
 }
 
 configure<JavaPluginConvention> {
