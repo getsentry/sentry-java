@@ -1,8 +1,12 @@
 package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.util.CollectionUtils;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Http request information.
@@ -40,7 +44,7 @@ import org.jetbrains.annotations.ApiStatus;
  * csrftoken=u32t4o3tb3gg43; _gat=1;", "headers": { "content-type": "text/html" }, "env": {
  * "REMOTE_ADDR": "192.168.0.1" } } } ```
  */
-public final class Request implements IUnknownPropertiesConsumer {
+public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   /**
    * The URL of the request if available.
    *
@@ -159,9 +163,38 @@ public final class Request implements IUnknownPropertiesConsumer {
     this.other = other;
   }
 
+  /**
+   * the Request's unknown fields
+   *
+   * @return the unknown map
+   */
+  @TestOnly
+  @Nullable
+  Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  /**
+   * Clones an User aka deep copy
+   *
+   * @return the cloned User
+   * @throws CloneNotSupportedException if the User is not cloneable
+   */
+  @Override
+  public @NotNull Request clone() throws CloneNotSupportedException {
+    final Request clone = (Request) super.clone();
+
+    clone.headers = CollectionUtils.shallowCopy(headers);
+    clone.env = CollectionUtils.shallowCopy(env);
+    clone.other = CollectionUtils.shallowCopy(other);
+    clone.unknown = CollectionUtils.shallowCopy(unknown);
+
+    return clone;
   }
 }

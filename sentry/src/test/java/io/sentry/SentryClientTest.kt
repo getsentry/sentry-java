@@ -262,6 +262,9 @@ class SentryClientTest {
         assertEquals("fp", event.fingerprints[0])
         assertEquals("id", event.user.id)
         assertEquals(SentryLevel.FATAL, event.level)
+        assertNotNull(event.request) {
+            assertEquals("post", it.method)
+        }
     }
 
     @Test
@@ -854,6 +857,9 @@ class SentryClientTest {
             level = SentryLevel.FATAL
             user = User().apply {
                 id = "id"
+            }
+            request = Request().apply {
+                method = "post"
             }
         }
     }
