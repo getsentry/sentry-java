@@ -10,6 +10,8 @@ final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
 
+  private final @NotNull SentryOptions emptyOptions = SentryOptions.empty();
+
   private NoOpHub() {}
 
   public static NoOpHub getInstance() {
@@ -144,6 +146,6 @@ final class NoOpHub implements IHub {
 
   @Override
   public @NotNull SentryOptions getOptions() {
-    return new SentryOptions();
+    return emptyOptions;
   }
 }

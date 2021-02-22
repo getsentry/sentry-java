@@ -14,9 +14,14 @@
 * Fix: Make the ANR Atomic flags immutable
 * Enchancement: Integration interface better compatibility with Kotlin null-safety
 * Enchancement: Simplify Sentry configuration in Spring integration (#1259)
+* Enchancement: Simplify configuring Logback integration when environment variable with the DSN is not set (#1271)
+* Fix: Prevent NoOpHub from creating heavy SentryOptions objects (#1272)
+* Enchancement: Add Request to the Scope. #1270
 * Fix: Fix SentryTransaction#getStatus NPE (#1273)
 * Enchancement: Optimize SentryTracingFilter when hub is disabled.
 * Fix: Discard unfinished Spans before sending them over to Sentry (#1279)
+* Fix: Interrupt the thread in QueuedThreadPoolExecutor (#1276)
+* Fix: SentryTransaction#finish should not clear another transaction from the scope (#1278)
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).

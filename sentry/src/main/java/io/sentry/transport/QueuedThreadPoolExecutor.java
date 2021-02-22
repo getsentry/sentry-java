@@ -80,6 +80,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       unfinishedTasksCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       logger.log(SentryLevel.ERROR, "Failed to wait till idle", e);
+      Thread.currentThread().interrupt();
     }
   }
 

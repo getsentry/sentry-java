@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import java.util.concurrent.CopyOnWriteArrayList
@@ -33,6 +34,18 @@ class ScopeTest {
 
         scope.user = user
 
+        val request = Request()
+        request.method = "post"
+        request.cookies = "cookies"
+        request.data = "cookies"
+        request.envs = mapOf("env" to "value")
+        request.headers = mapOf("header" to "value")
+        request.others = mapOf("other" to "value")
+        request.queryString = "?foo=bar"
+        request.url = "http://localhost:8080/url"
+
+        scope.request = request
+
         val fingerprints = mutableListOf("abc", "def")
         scope.fingerprint = fingerprints
 
@@ -56,6 +69,7 @@ class ScopeTest {
         assertNotNull(clone)
         assertNotSame(scope, clone)
         assertNotSame(scope.user, clone.user)
+        assertNotSame(scope.request, clone.request)
         assertNotSame(scope.contexts, clone.contexts)
         assertNotSame(scope.fingerprint, clone.fingerprint)
         assertNotSame(scope.breadcrumbs, clone.breadcrumbs)
@@ -73,8 +87,11 @@ class ScopeTest {
 
         val user = User()
         user.id = "123"
-
         scope.user = user
+
+        val request = Request()
+        request.method = "get"
+        scope.request = request
 
         val fingerprints = mutableListOf("abc")
         scope.fingerprint = fingerprints
@@ -97,6 +114,8 @@ class ScopeTest {
         assertEquals(SentryLevel.DEBUG, clone.level)
 
         assertEquals("123", clone.user?.id)
+
+        assertEquals("get", clone.request?.method)
 
         assertEquals("abc", clone.fingerprint.first())
 
@@ -123,8 +142,11 @@ class ScopeTest {
 
         val user = User()
         user.id = "123"
-
         scope.user = user
+
+        val request = Request()
+        request.method = "get"
+        scope.request = request
 
         val fingerprints = mutableListOf("abc")
         scope.fingerprint = fingerprints
@@ -146,6 +168,7 @@ class ScopeTest {
 
         scope.level = SentryLevel.FATAL
         user.id = "456"
+        request.method = "post"
 
         scope.setTransaction(SentryTransaction("newTransaction", "op"))
 
@@ -165,6 +188,8 @@ class ScopeTest {
         assertEquals(SentryLevel.DEBUG, clone.level)
 
         assertEquals("123", clone.user?.id)
+
+        assertEquals("get", clone.request?.method)
 
         assertEquals("abc", clone.fingerprint.first())
         assertEquals(1, clone.fingerprint.size)
@@ -191,6 +216,7 @@ class ScopeTest {
         scope.level = SentryLevel.WARNING
         scope.setTransaction(SentryTransaction("", "op"))
         scope.user = User()
+        scope.request = Request()
         scope.fingerprint = mutableListOf("finger")
         scope.addBreadcrumb(Breadcrumb())
         scope.setTag("some", "tag")
@@ -202,6 +228,8 @@ class ScopeTest {
 
         assertNull(scope.level)
         assertNull(scope.transaction)
+        assertNull(scope.user)
+        assertNull(scope.request)
         assertEquals(0, scope.fingerprint.size)
         assertEquals(0, scope.breadcrumbs.size)
         assertEquals(0, scope.tags.size)
