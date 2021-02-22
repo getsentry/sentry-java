@@ -292,6 +292,7 @@ public interface IHub {
    * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
@@ -319,6 +320,7 @@ public interface IHub {
    * {@link TracesSampler}.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @return created transaction
    */
   default @NotNull ITransaction startTransaction(

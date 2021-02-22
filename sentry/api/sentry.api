@@ -436,6 +436,7 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
+	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun getTransactionName ()Ljava/lang/String;
@@ -450,6 +451,7 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
@@ -750,6 +752,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
+	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableScopeSync ()Z
@@ -769,6 +772,7 @@ public class io/sentry/SentryOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
@@ -1463,9 +1467,11 @@ public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownProper
 	public fun setVersion (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
+	public fun clone ()Lio/sentry/protocol/Request;
+	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getCookies ()Ljava/lang/String;
 	public fun getData ()Ljava/lang/Object;
 	public fun getEnvs ()Ljava/util/Map;

@@ -13,8 +13,6 @@ import org.jetbrains.annotations.NotNull;
  * <p>A synchronization aid that allows one or more threads to wait until a set of operations being
  * performed in other threads completes.
  *
- * <p>
- *
  * <p>A {@code ReusableCountLatch} is initialized with a given <em>count</em>. The {@link
  * #waitTillZero} methods block until the current count reaches zero due to invocations of the
  * {@link #decrement} method, after which all waiting threads are released. If zero has been reached
@@ -22,15 +20,11 @@ import org.jetbrains.annotations.NotNull;
  * calling the {@link #increment()} method and any subsequent thread calling the {@link
  * #waitTillZero} method will be block again until another zero is reached.
  *
- * <p>
- *
  * <p>{@code ReusableCountLatch} provides more versatility than {@link
  * java.util.concurrent.CountDownLatch CountDownLatch} as the count doesn't have to be known upfront
  * and you can reuse this class as many times as you want to. It is also better than a {@link
  * java.util.concurrent.Phaser Phaser} whose count is limited to 65_535. {@code ReusableCountLatch}
  * instead can count up to 2_147_483_647 (2^31-1).
- *
- * <p>
  *
  * <p>Great use case for {@code ReusableCountLatch} is when you wait for tasks on other threads to
  * finish, but these tasks could trigger more tasks and it is not know upfront how many will be
@@ -76,12 +70,8 @@ public final class ReusableCountLatch {
   /**
    * Decrements the count of the latch, releasing all waiting threads if the count reaches zero.
    *
-   * <p>
-   *
    * <p>If the current count is greater than zero then it is decremented. If the new count is zero
    * then all waiting threads are re-enabled for thread scheduling purposes.
-   *
-   * <p>
    *
    * <p>If the current count equals zero then nothing happens.
    */
@@ -101,11 +91,7 @@ public final class ReusableCountLatch {
    * Causes the current thread to wait until the latch has counted down to zero, unless the thread
    * is {@linkplain Thread#interrupt interrupted}.
    *
-   * <p>
-   *
    * <p>If the current count is zero then this method returns immediately.
-   *
-   * <p>
    *
    * <p>If the current count is greater than zero then the current thread becomes disabled for
    * thread scheduling purposes and lies dormant until one of two things happen:
@@ -114,8 +100,6 @@ public final class ReusableCountLatch {
    *   <li>The count reaches zero due to invocations of the {@link #decrement} method; or
    *   <li>Some other thread {@linkplain Thread#interrupt interrupts} the current thread.
    * </ul>
-   *
-   * <p>
    *
    * <p>If the current thread:
    *
@@ -137,12 +121,8 @@ public final class ReusableCountLatch {
    * Causes the current thread to wait until the latch has counted down to zero, unless the thread
    * is {@linkplain Thread#interrupt interrupted}, or the specified waiting time elapses.
    *
-   * <p>
-   *
    * <p>If the current count is zero then this method returns immediately with the value {@code
    * true}.
-   *
-   * <p>
    *
    * <p>If the current count is greater than zero then the current thread becomes disabled for
    * thread scheduling purposes and lies dormant until one of three things happen:
@@ -153,11 +133,7 @@ public final class ReusableCountLatch {
    *   <li>The specified waiting time elapses.
    * </ul>
    *
-   * <p>
-   *
    * <p>If the count reaches zero then the method returns with the value {@code true}.
-   *
-   * <p>
    *
    * <p>If the current thread:
    *
@@ -168,8 +144,6 @@ public final class ReusableCountLatch {
    *
    * then {@link InterruptedException} is thrown and the current thread's interrupted status is
    * cleared.
-   *
-   * <p>
    *
    * <p>If the specified waiting time elapses then the value {@code false} is returned. If the time
    * is less than or equal to zero, the method will not wait at all.

@@ -26,7 +26,7 @@ class StdoutTransportTest {
         val event = SentryEvent()
         val envelope = SentryEnvelope.from(fixture.serializer, event, null)
 
-        val result = transport.send(envelope)
+        transport.send(envelope)
 
         verify(fixture.serializer).serialize(eq(envelope), any())
     }
