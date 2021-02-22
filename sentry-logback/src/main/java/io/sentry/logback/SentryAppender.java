@@ -48,7 +48,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
       } else {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "DSN is null. SentryLogbackAppender is not being initialized");
+            .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
       }
     }
     super.start();
