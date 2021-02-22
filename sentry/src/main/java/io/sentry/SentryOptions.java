@@ -1301,22 +1301,45 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
+  /**
+   * Creates SentryOptions instance without initializing any of the internal parts.
+   *
+   * <p>Used by {@link NoOpHub}.
+   *
+   * @return SentryOptions
+   */
+  static @NotNull SentryOptions empty() {
+    return new SentryOptions(true);
+  }
+
   /** SentryOptions ctor It adds and set default things */
   public SentryOptions() {
-    // SentryExecutorService should be inited before any SendCachedEventFireAndForgetIntegration
-    executorService = new SentryExecutorService();
+    this(false);
+  }
 
-    // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
-    // if there's an error on the setup, we are able to capture it
-    integrations.add(new UncaughtExceptionHandlerIntegration());
+  /**
+   * Creates SentryOptions instance without initializing any of the internal parts.
+   *
+   * @param empty if options should be empty.
+   */
+  private SentryOptions(final boolean empty) {
+    if (!empty) {
+      // SentryExecutorService should be initialized before any
+      // SendCachedEventFireAndForgetIntegration
+      executorService = new SentryExecutorService();
 
-    integrations.add(new ShutdownHookIntegration());
+      // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
+      // if there's an error on the setup, we are able to capture it
+      integrations.add(new UncaughtExceptionHandlerIntegration());
 
-    eventProcessors.add(new MainEventProcessor(this));
-    eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
+      integrations.add(new ShutdownHookIntegration());
 
-    setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-    setSdkVersion(createSdkVersion());
+      eventProcessors.add(new MainEventProcessor(this));
+      eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
+
+      setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+      setSdkVersion(createSdkVersion());
+    }
   }
 
   /**
