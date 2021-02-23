@@ -16,7 +16,6 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.WeakHashMap;
-
 import org.jetbrains.annotations.NotNull;
 
 public final class ActivityLifecycleIntegration
@@ -25,6 +24,8 @@ public final class ActivityLifecycleIntegration
   private final @NotNull Application application;
   private @NotNull IHub hub;
   private @NotNull SentryAndroidOptions options;
+
+  //  private @NotNull final AtomicBoolean coldStart = new AtomicBoolean(true);
 
   // TODO maybe use a Set?
   // TODO make it thread safe?
@@ -50,7 +51,8 @@ public final class ActivityLifecycleIntegration
             "ActivityBreadcrumbsIntegration enabled: %s",
             this.options.isEnableActivityLifecycleBreadcrumbs());
 
-    if (this.options.isEnableActivityLifecycleBreadcrumbs() || this.options.isEnableActivityLifecycleTracing()) {
+    if (this.options.isEnableActivityLifecycleBreadcrumbs()
+        || this.options.isEnableActivityLifecycleTracing()) {
       application.registerActivityLifecycleCallbacks(this);
       options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration installed.");
     }
@@ -78,6 +80,11 @@ public final class ActivityLifecycleIntegration
   private void startTracing(@NonNull Activity activity) {
     if (options.isEnableActivityLifecycleTracing() && !isRunningTransaction(activity)) {
       final ITransaction transaction = hub.startTransaction("ActivityStart", "navigation");
+
+      // hot // cold // warm, how do we know?
+      //      final String state = coldStart.get() ? "cold" : "warm";
+
+      //      transaction.setTag("state", state);
       transaction.setDescription(activity.getClass().getSimpleName());
 
       // lets bind to the scope so we integrations can pick it up
@@ -106,12 +113,15 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+  public synchronized void onActivityCreated(
+      @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
     addBreadcrumb(activity, "created");
 
     // if activity has global fields being init. and
     // they are slow, this won't take the whole fields initialization time
     startTracing(activity);
+    // if its cold start (1st activity within App's lifecycle, set it to false now)
+    //    coldStart.compareAndSet(true, false);
 
     // we could create spans out of these methods, before/after loading like
     // onCreate span, onStarted span, onResume span
@@ -119,19 +129,20 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public void onActivityStarted(@NonNull Activity activity) {
+  public synchronized void onActivityStarted(@NonNull Activity activity) {
     addBreadcrumb(activity, "started");
   }
 
   @Override
-  public void onActivityResumed(@NonNull Activity activity) {
+  public synchronized void onActivityResumed(@NonNull Activity activity) {
     addBreadcrumb(activity, "resumed");
   }
 
   @Override
-  public void onActivityPostResumed(@NonNull Activity activity) {
+  public synchronized void onActivityPostResumed(@NonNull Activity activity) {
     // this should be replaced by idle transactions
-    // here probably we need to take the timestamp if no other spans happen to finish the transaction
+    // here probably we need to take the timestamp if no other spans happen to finish the
+    // transaction
 
     // this should be called only when we know onresumed has been executed already,
     // right now this is executed before the onresume, we need to force it
@@ -139,15 +150,16 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public void onActivityPaused(@NonNull Activity activity) {
+  public synchronized void onActivityPaused(@NonNull Activity activity) {
     addBreadcrumb(activity, "paused");
 
-    // we dont clean up here because the next run would start a new transaction for the same activity
+    // we dont clean up here because the next run would start a new transaction for the same
+    // activity
     // but then it'd be a hot reload, or should we have transactions for hot and cold loading?
   }
 
   @Override
-  public void onActivityStopped(@NonNull Activity activity) {
+  public synchronized void onActivityStopped(@NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
 
     // this should be replaced by idle transactions
@@ -161,12 +173,13 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+  public synchronized void onActivitySaveInstanceState(
+      @NonNull Activity activity, @NonNull Bundle outState) {
     addBreadcrumb(activity, "saveInstanceState");
   }
 
   @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {
+  public synchronized void onActivityDestroyed(@NonNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
   }
 }

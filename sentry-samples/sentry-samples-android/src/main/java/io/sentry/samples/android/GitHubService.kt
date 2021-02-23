@@ -10,6 +10,4 @@ interface GitHubService {
     fun listRepos(@Path("user") user: String): Call<List<Repo>>
 }
 
-class Repo {
-
-}
+class Repo
