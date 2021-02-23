@@ -516,8 +516,10 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull ITransaction transaction, final @Nullable Object hint) {
-    Objects.requireNonNull(transaction, "transaction is required");
+      final @NotNull SentryTracer tracer, final @Nullable Object hint) {
+    Objects.requireNonNull(tracer, "transaction is required");
+
+    SentryTransaction transaction = new SentryTransaction(tracer);
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
@@ -535,7 +537,7 @@ public final class Hub implements IHub {
                 "Capturing unfinished transaction: %s",
                 transaction.getEventId());
       }
-      if (!Boolean.TRUE.equals(transaction.isSampled())) {
+      if (!Boolean.TRUE.equals(tracer.isSampled())) {
         options
             .getLogger()
             .log(
@@ -557,7 +559,7 @@ public final class Hub implements IHub {
         } finally {
           if (item != null) {
             final Scope scope = item.getScope();
-            if (scope.getTransaction() == transaction) {
+            if (scope.getTransaction() == tracer) {
               scope.clearTransaction();
             }
           }
@@ -569,32 +571,30 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext) {
+  public @NotNull ISpan startTransaction(final @NotNull TransactionContext transactionContext) {
     return this.startTransaction(transactionContext, null);
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(
+  public @NotNull ISpan startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
-    ITransaction transaction;
+    ISpan transaction;
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
-      transaction = NoOpTransaction.getInstance();
+      transaction = NoOpSpan.getInstance();
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContext, customSamplingContext);
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
-
-      transaction = new SentryTransaction(transactionContext, this);
+      transaction = new SentryTracer(transactionContext, this);
     }
     return transaction;
   }

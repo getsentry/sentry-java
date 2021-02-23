@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class TransactionContext extends SpanContext {
-  private final @NotNull String name;
+  private @NotNull String name;
   private @Nullable Boolean parentSampled;
 
   /**
@@ -66,6 +66,10 @@ public final class TransactionContext extends SpanContext {
 
   public @NotNull String getName() {
     return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
   public @Nullable Boolean getParentSampled() {

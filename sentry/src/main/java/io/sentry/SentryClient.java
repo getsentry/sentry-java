@@ -341,7 +341,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull ITransaction transaction,
+      final @NotNull SentryTransaction transaction,
       final @NotNull Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -352,27 +352,24 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    if (transaction instanceof SentryTransaction) {
-      final SentryTransaction sentryTransaction =
-          processTransaction((SentryTransaction) transaction);
-      try {
-        final SentryEnvelope envelope =
-            buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
-        if (envelope != null) {
-          transport.send(envelope, hint);
-        } else {
-          sentryId = SentryId.EMPTY_ID;
-        }
-      } catch (IOException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
-        // if there was an error capturing the event, we return an emptyId
+    //    if (transaction instanceof SentryTransaction) {
+    final SentryTransaction sentryTransaction = processTransaction(transaction);
+    try {
+      final SentryEnvelope envelope =
+          buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
+      if (envelope != null) {
+        transport.send(envelope, hint);
+      } else {
         sentryId = SentryId.EMPTY_ID;
       }
-    } else {
-      options.getLogger().log(SentryLevel.DEBUG, "Captured a NoOpTransaction %s", sentryId);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
     }
+    //    } else {
+    //      options.getLogger().log(SentryLevel.DEBUG, "Captured a NoOpTransaction %s", sentryId);
+    //    }
 
     return sentryId;
   }

@@ -158,7 +158,7 @@ class SentryTest {
         Sentry.init { it.dsn = dsn }
 
         val transaction = Sentry.startTransaction("name", "op", "desc")
-        assertEquals("name", transaction.name)
+        assertEquals("name", transaction.getTag("sentry-name"))
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
     }

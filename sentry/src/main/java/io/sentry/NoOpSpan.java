@@ -15,6 +15,9 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
+  public void setName(String name) {}
+
+  @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
     return NoOpSpan.getInstance();
   }
@@ -77,7 +80,17 @@ public final class NoOpSpan implements ISpan {
   public void setTag(@NotNull String key, @NotNull String value) {}
 
   @Override
+  public @NotNull String getTag(@NotNull String key) {
+    return "";
+  }
+
+  @Override
   public boolean isFinished() {
     return false;
+  }
+
+  @Override
+  public @Nullable Boolean isSampled() {
+    return null;
   }
 }

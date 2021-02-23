@@ -4,13 +4,13 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
-import io.sentry.spring.SentryRequestResolver;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -38,29 +38,20 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
-  private final @NotNull SentryRequestResolver requestResolver;
 
   public SentryTracingFilter() {
     this(HubAdapter.getInstance());
   }
 
-  public SentryTracingFilter(
-      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
-    this(hub, requestResolver, new TransactionNameProvider());
+  public SentryTracingFilter(final @NotNull IHub hub) {
+    this(hub, new TransactionNameProvider());
   }
 
   public SentryTracingFilter(
-      final @NotNull IHub hub,
-      final @NotNull SentryRequestResolver requestResolver,
-      final @NotNull TransactionNameProvider transactionNameProvider) {
+      final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
-  }
-
-  SentryTracingFilter(final @NotNull IHub hub) {
-    this(hub, new SentryRequestResolver(hub), new TransactionNameProvider());
   }
 
   @Override
@@ -74,7 +65,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
       // at this stage we are not able to get real transaction name
-      final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
+      final ISpan transaction = startTransaction(httpRequest, sentryTraceHeader);
       try {
         filterChain.doFilter(httpRequest, httpResponse);
       } finally {
@@ -84,9 +75,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         // and
         // we should not report it to Sentry
         if (transactionName != null) {
-          transaction.setName(transactionName);
+          transaction.setTag("sentry-name", transactionName);
           transaction.setOperation(TRANSACTION_OP);
-          transaction.setRequest(requestResolver.resolveSentryRequest(httpRequest));
+          // TODO: should be set in the client
+          // transaction.setRequest(requestResolver.resolveSentryRequest(httpRequest));
           transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
           transaction.finish();
         }
@@ -96,7 +88,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     }
   }
 
-  private ITransaction startTransaction(
+  private ISpan startTransaction(
       final @NotNull HttpServletRequest request, final @Nullable String sentryTraceHeader) {
 
     final String name = request.getMethod() + " " + request.getRequestURI();
@@ -109,7 +101,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         final TransactionContext contexts =
             TransactionContext.fromSentryTrace(
                 name, "http.server", new SentryTraceHeader(sentryTraceHeader));
-        final ITransaction transaction = hub.startTransaction(contexts, customSamplingContext);
+        final ISpan transaction = hub.startTransaction(contexts, customSamplingContext);
         hub.configureScope(scope -> scope.setTransaction(transaction));
         return transaction;
       } catch (InvalidSentryTraceHeaderException e) {
@@ -118,8 +110,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    final ITransaction transaction =
-        hub.startTransaction(name, "http.server", customSamplingContext);
+    final ISpan transaction = hub.startTransaction(name, "http.server", customSamplingContext);
     hub.configureScope(scope -> scope.setTransaction(transaction));
     return transaction;
   }

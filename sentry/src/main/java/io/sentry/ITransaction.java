@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public interface ITransaction extends ISpan {
+public interface ITransaction {
 
   /**
    * Sets transaction name.
@@ -47,14 +47,6 @@ public interface ITransaction extends ISpan {
   @NotNull
   @TestOnly
   List<Span> getSpans();
-
-  /**
-   * Returns if transaction is sampled.
-   *
-   * @return is sampled
-   */
-  @Nullable
-  Boolean isSampled();
 
   /**
    * Returns the latest span that is not finished.

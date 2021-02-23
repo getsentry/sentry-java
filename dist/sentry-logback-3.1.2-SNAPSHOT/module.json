@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.sentry",
+    "module": "sentry-logback",
+    "version": "3.1.2-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.6.1",
+      "buildId": "7o2zgswoijbfjfu27q5253odhu"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.localToProject": "public",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.sentry",
+          "module": "sentry",
+          "version": {
+            "requires": "3.1.2-SNAPSHOT"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sentry-logback-3.1.2-SNAPSHOT.jar",
+          "url": "sentry-logback-3.1.2-SNAPSHOT.jar",
+          "size": 4987,
+          "sha512": "a7c145a3313ac50d4f9b1eef8d736ec5f2923136e0bda9109467c470122bbd89080a5cbbd2eff5ad3e32cd070f2e7ed636fa9591c77e770c7bacb2809a221d29",
+          "sha256": "41bc9372bcd6ee6026fe1acfc159023423e7bbf3701d4ff62f01990413fc10bd",
+          "sha1": "efbf1d9e2fb130e3e6a62b840d4b37e4069715a6",
+          "md5": "da6a281f6adb928b1a1f8f2bec70fdda"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.localToProject": "public",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "ch.qos.logback",
+          "module": "logback-classic",
+          "version": {
+            "requires": "1.2.3"
+          }
+        },
+        {
+          "group": "io.sentry",
+          "module": "sentry",
+          "version": {
+            "requires": "3.1.2-SNAPSHOT"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sentry-logback-3.1.2-SNAPSHOT.jar",
+          "url": "sentry-logback-3.1.2-SNAPSHOT.jar",
+          "size": 4987,
+          "sha512": "a7c145a3313ac50d4f9b1eef8d736ec5f2923136e0bda9109467c470122bbd89080a5cbbd2eff5ad3e32cd070f2e7ed636fa9591c77e770c7bacb2809a221d29",
+          "sha256": "41bc9372bcd6ee6026fe1acfc159023423e7bbf3701d4ff62f01990413fc10bd",
+          "sha1": "efbf1d9e2fb130e3e6a62b840d4b37e4069715a6",
+          "md5": "da6a281f6adb928b1a1f8f2bec70fdda"
+        }
+      ]
+    }
+  ]
+}

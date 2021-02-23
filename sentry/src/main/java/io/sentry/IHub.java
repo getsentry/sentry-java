@@ -266,7 +266,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  SentryId captureTransaction(ITransaction transaction, Object hint);
+  SentryId captureTransaction(SentryTracer transaction, Object hint);
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
@@ -275,7 +275,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  default SentryId captureTransaction(ITransaction transaction) {
+  default SentryId captureTransaction(SentryTracer transaction) {
     return captureTransaction(transaction, null);
   }
 
@@ -285,7 +285,7 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  ITransaction startTransaction(TransactionContext transactionContexts);
+  ISpan startTransaction(TransactionContext transactionContexts);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
@@ -296,7 +296,7 @@ public interface IHub {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  default @NotNull ITransaction startTransaction(
+  default @NotNull ISpan startTransaction(
       String name, String operation, CustomSamplingContext customSamplingContext) {
     return startTransaction(new TransactionContext(name, operation), customSamplingContext);
   }
@@ -311,7 +311,7 @@ public interface IHub {
    * @return created transaction.
    */
   @NotNull
-  ITransaction startTransaction(
+  ISpan startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
 
   /**
@@ -323,7 +323,7 @@ public interface IHub {
    * @param operation the operation
    * @return created transaction
    */
-  default @NotNull ITransaction startTransaction(
+  default @NotNull ISpan startTransaction(
       final @NotNull String name, final @NotNull String operation) {
     return startTransaction(name, operation, null);
   }

@@ -115,19 +115,19 @@ final class NoOpHub implements IHub {
 
   @Override
   public SentryId captureTransaction(
-      final @NotNull ITransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTracer transaction, final @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
-    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+  public @NotNull ISpan startTransaction(TransactionContext transactionContexts) {
+    return NoOpSpan.getInstance();
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(
+  public @NotNull ISpan startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+    return NoOpSpan.getInstance();
   }
 
   @Override

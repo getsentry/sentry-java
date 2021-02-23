@@ -22,7 +22,7 @@ public final class Scope implements Cloneable {
   private @Nullable SentryLevel level;
 
   /** Scope's {@link ITransaction}. */
-  private @Nullable ITransaction transaction;
+  private @Nullable ISpan transaction;
 
   /** Scope's transaction name. Used when using error reporting without the performance feature. */
   private @Nullable String transactionName;
@@ -99,8 +99,8 @@ public final class Scope implements Cloneable {
    * @return the transaction
    */
   public @Nullable String getTransactionName() {
-    final ITransaction tx = this.transaction;
-    return tx != null ? tx.getTransaction() : transactionName;
+    final ISpan tx = this.transaction;
+    return tx != null ? tx.getTag("sentry-name") : transactionName;
   }
 
   /**
@@ -109,9 +109,9 @@ public final class Scope implements Cloneable {
    * @param transaction the transaction
    */
   public void setTransaction(final @NotNull String transaction) {
-    final ITransaction tx = this.transaction;
+    final ISpan tx = this.transaction;
     if (tx != null) {
-      tx.setName(transaction);
+      tx.setTag("sentry-name", transaction);
     }
     this.transactionName = transaction;
   }
@@ -123,9 +123,9 @@ public final class Scope implements Cloneable {
    */
   @Nullable
   public ISpan getSpan() {
-    final ITransaction tx = transaction;
+    final ISpan tx = transaction;
     if (tx != null) {
-      final Span span = tx.getLatestActiveSpan();
+      final Span span = null; // TODO: tx.getLatestActiveSpan();
 
       if (span != null) {
         return span;
@@ -139,7 +139,7 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
-  public void setTransaction(final @NotNull ITransaction transaction) {
+  public void setTransaction(final @NotNull ISpan transaction) {
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
   }
 
@@ -300,7 +300,7 @@ public final class Scope implements Cloneable {
    * @return the transaction
    */
   @Nullable
-  public ITransaction getTransaction() {
+  public ISpan getTransaction() {
     return this.transaction;
   }
 

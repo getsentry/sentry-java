@@ -1,0 +1,83 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.sentry",
+    "module": "sentry-spring",
+    "version": "3.1.2-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.6.1",
+      "buildId": "7o2zgswoijbfjfu27q5253odhu"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.localToProject": "public",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.sentry",
+          "module": "sentry",
+          "version": {
+            "requires": "3.1.2-SNAPSHOT"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sentry-spring-3.1.2-SNAPSHOT.jar",
+          "url": "sentry-spring-3.1.2-SNAPSHOT.jar",
+          "size": 14417,
+          "sha512": "3e629cc6d6d6106812cf346cb1ed483fd2191b4c5007642c37ff41f965af152cb8fae9a57860304e00e477b953095f945de02d04a6bc1faf7a9ff9e01ec7f3c9",
+          "sha256": "af5bc52c92edd13541311532145e1e4e4f00aa33583ff712ea7247ed857826e3",
+          "sha1": "572cc26746741d3bdf5d4c9d78161af5f706b96c",
+          "md5": "523befb958179c4f52a2d88294e0cdde"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.localToProject": "public",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.sentry",
+          "module": "sentry",
+          "version": {
+            "requires": "3.1.2-SNAPSHOT"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sentry-spring-3.1.2-SNAPSHOT.jar",
+          "url": "sentry-spring-3.1.2-SNAPSHOT.jar",
+          "size": 14417,
+          "sha512": "3e629cc6d6d6106812cf346cb1ed483fd2191b4c5007642c37ff41f965af152cb8fae9a57860304e00e477b953095f945de02d04a6bc1faf7a9ff9e01ec7f3c9",
+          "sha256": "af5bc52c92edd13541311532145e1e4e4f00aa33583ff712ea7247ed857826e3",
+          "sha1": "572cc26746741d3bdf5d4c9d78161af5f706b96c",
+          "md5": "523befb958179c4f52a2d88294e0cdde"
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,6 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.ITransaction;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,7 +56,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       } else {
         operation = "bean";
       }
-      final ITransaction transaction = hub.startTransaction(name, operation);
+      final ISpan transaction = hub.startTransaction(name, operation);
       hub.configureScope(scope -> scope.setTransaction(transaction));
 
       try {

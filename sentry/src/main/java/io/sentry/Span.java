@@ -17,7 +17,7 @@ public final class Span extends SpanContext implements ISpan {
    * A transaction this span is attached to. Marked as transient to be ignored during JSON
    * serialization.
    */
-  private final transient @NotNull SentryTransaction transaction;
+  private final transient @NotNull SentryTracer transaction;
 
   /** A throwable thrown during the execution of the span. */
   private transient @Nullable Throwable throwable;
@@ -26,8 +26,21 @@ public final class Span extends SpanContext implements ISpan {
 
   Span(
       final @NotNull SentryId traceId,
-      final @NotNull SpanId parentSpanId,
-      final @NotNull SentryTransaction transaction,
+      final @Nullable SpanId parentSpanId,
+      final @Nullable Boolean isSampled,
+      final @NotNull SentryTracer transaction,
+      final @NotNull String operation,
+      final @NotNull IHub hub) {
+    super(traceId, new SpanId(), operation, parentSpanId, isSampled);
+    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+    this.startTimestamp = DateUtils.getCurrentDateTime();
+    this.hub = Objects.requireNonNull(hub, "hub is required");
+  }
+
+  Span(
+      final @NotNull SentryId traceId,
+      final @Nullable SpanId parentSpanId,
+      final @NotNull SentryTracer transaction,
       final @NotNull String operation,
       final @NotNull IHub hub) {
     super(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
@@ -42,6 +55,11 @@ public final class Span extends SpanContext implements ISpan {
 
   public @Nullable Date getTimestamp() {
     return timestamp;
+  }
+
+  @Override
+  public void setName(String name) {
+    this.setTag("sentry-name", name);
   }
 
   @Override
@@ -80,8 +98,18 @@ public final class Span extends SpanContext implements ISpan {
   }
 
   @Override
+  public @NotNull String getTag(@NotNull String key) {
+    return tags.get(key);
+  }
+
+  @Override
   public boolean isFinished() {
     return this.timestamp != null;
+  }
+
+  @Override
+  public @Nullable Boolean isSampled() {
+    return super.getSampled();
   }
 
   @Override
