@@ -6,12 +6,14 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Span extends SpanContext implements ISpan {
+public final class Span implements ISpan {
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;
   /** The moment in time when span has ended. */
   private @Nullable Date timestamp;
+
+  private final SpanContext context;
 
   /**
    * A transaction this span is attached to. Marked as transient to be ignored during JSON
@@ -27,26 +29,21 @@ public final class Span extends SpanContext implements ISpan {
   Span(
       final @NotNull SentryId traceId,
       final @Nullable SpanId parentSpanId,
-      final @Nullable Boolean isSampled,
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
       final @NotNull IHub hub) {
-    super(traceId, new SpanId(), operation, parentSpanId, isSampled);
+    this.context =
+        new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
-  Span(
-      final @NotNull SentryId traceId,
-      final @Nullable SpanId parentSpanId,
-      final @NotNull SentryTracer transaction,
-      final @NotNull String operation,
-      final @NotNull IHub hub) {
-    super(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
-    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+  public Span(TransactionContext context, SentryTracer sentryTracer, IHub hub) {
+    this.context = context;
+    this.transaction = sentryTracer;
+    this.hub = hub;
     this.startTimestamp = DateUtils.getCurrentDateTime();
-    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   public @NotNull Date getStartTimestamp() {
@@ -63,6 +60,11 @@ public final class Span extends SpanContext implements ISpan {
   }
 
   @Override
+  public String getName() {
+    return this.getTag("sentry-name");
+  }
+
+  @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
     return this.startChild(operation, null);
   }
@@ -70,12 +72,12 @@ public final class Span extends SpanContext implements ISpan {
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return transaction.startChild(super.getSpanId(), operation, description);
+    return transaction.startChild(context.getSpanId(), operation, description);
   }
 
   @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
-    return new SentryTraceHeader(getTraceId(), getSpanId(), getSampled());
+    return new SentryTraceHeader(context.getTraceId(), context.getSpanId(), context.getSampled());
   }
 
   @Override
@@ -88,18 +90,53 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    this.status = status;
+    this.context.status = status;
     this.finish();
   }
 
   @Override
+  public void setOperation(@Nullable String operation) {
+    this.context.setOperation(operation);
+  }
+
+  @Override
+  public @Nullable String getOperation() {
+    return this.context.getOperation();
+  }
+
+  @Override
+  public void setDescription(@Nullable String description) {
+    this.context.setDescription(description);
+  }
+
+  @Override
+  public @Nullable String getDescription() {
+    return this.context.getDescription();
+  }
+
+  @Override
+  public void setStatus(@Nullable SpanStatus status) {
+    this.context.setStatus(status);
+  }
+
+  @Override
+  public @Nullable SpanStatus getStatus() {
+    return this.context.getStatus();
+  }
+
+  @Override
   public @NotNull SpanContext getSpanContext() {
-    return this;
+    return context;
+  }
+
+  @Override
+  public void setTag(@NotNull String key, @NotNull String value) {
+    this.context.setTag(key, value);
   }
 
   @Override
   public @NotNull String getTag(@NotNull String key) {
-    return tags.get(key);
+    return context.tags.get(key);
   }
 
   @Override
@@ -109,7 +146,12 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public @Nullable Boolean isSampled() {
-    return super.getSampled();
+    return context.getSampled();
+  }
+
+  @Override
+  public ISpan getLatestActiveSpan() {
+    return this;
   }
 
   @Override
@@ -120,5 +162,9 @@ public final class Span extends SpanContext implements ISpan {
   @Override
   public @Nullable Throwable getThrowable() {
     return throwable;
+  }
+
+  SentryId getTraceId() {
+    return context.getTraceId();
   }
 }

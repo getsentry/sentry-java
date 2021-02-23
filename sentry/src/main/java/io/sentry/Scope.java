@@ -125,13 +125,10 @@ public final class Scope implements Cloneable {
   public ISpan getSpan() {
     final ISpan tx = transaction;
     if (tx != null) {
-      final Span span = null; // TODO: tx.getLatestActiveSpan();
-
-      if (span != null) {
-        return span;
-      }
+      return tx.getLatestActiveSpan();
+    } else {
+      return null;
     }
-    return tx;
   }
 
   /**

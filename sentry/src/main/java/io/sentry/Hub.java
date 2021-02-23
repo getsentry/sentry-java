@@ -519,8 +519,6 @@ public final class Hub implements IHub {
       final @NotNull SentryTracer tracer, final @Nullable Object hint) {
     Objects.requireNonNull(tracer, "transaction is required");
 
-    SentryTransaction transaction = new SentryTransaction(tracer);
-
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -529,6 +527,7 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
     } else {
+      final SentryTransaction transaction = new SentryTransaction(tracer);
       if (!transaction.isFinished()) {
         options
             .getLogger()

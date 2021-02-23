@@ -746,124 +746,124 @@ class SentryClientTest {
         sut.captureEvent(SentryEvent())
     }
 
-    @Test
-    fun `transactions are sent using connection`() {
-        val sut = fixture.getSut()
-        sut.captureTransaction(SentryTransaction("a-transaction", "op"), mock(), null)
-        verify(fixture.transport).send(check {
-            val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
-            assertNotNull(transaction)
-            assertEquals("a-transaction", transaction.transaction)
-        }, eq(null))
-    }
-
-    @Test
-    fun `when captureTransactions unfinished spans are removed`() {
-        val sut = fixture.getSut()
-        val transaction = SentryTransaction("a-transaction", "op")
-        val span1 = transaction.startChild("span1")
-        span1.finish()
-        val span2 = transaction.startChild("span2")
-
-        sut.captureTransaction(transaction, mock(), null)
-        verify(fixture.transport).send(check {
-            val sentTransaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
-                assertNotNull(sentTransaction) { tx ->
-                    val sentSpanIds = tx.spans.map { span -> span.spanId }
-                    assertTrue(sentSpanIds.contains(span1.spanContext.spanId))
-                    assertFalse(sentSpanIds.contains(span2.spanContext.spanId))
-                }
-        }, eq(null))
-    }
-
-    @Test
-    fun `when captureTransaction with attachments`() {
-        val transaction = SentryTransaction("a-transaction", "op")
-        fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
-
-        verifyAttachmentsInEnvelope(transaction.eventId)
-    }
-
-    @Test
-    fun `when captureTransaction with attachments not added to transaction`() {
-        val transaction = SentryTransaction("a-transaction", "op")
-        val scope = createScopeWithAttachments()
-        scope.addAttachment(Attachment("hello".toByteArray(), "application/octet-stream"))
-        fixture.getSut().captureTransaction(transaction, scope, null)
-
-        verifyAttachmentsInEnvelope(transaction.eventId)
-    }
-
-    @Test
-    fun `when scope's active span is a transaction, transaction context is applied to an event`() {
-        val event = SentryEvent()
-        val sut = fixture.getSut()
-        val scope = createScope()
-        val transaction = SentryTransaction("name", "op")
-        scope.setTransaction(transaction)
-        transaction.finish()
-        sut.captureEvent(event, scope)
-        assertNotNull(event.contexts.trace)
-        assertEquals(transaction.contexts.trace, event.contexts.trace)
-    }
-
-    @Test
-    fun `when scope's active span is a span, span is applied to an event`() {
-        val event = SentryEvent()
-        val sut = fixture.getSut()
-        val scope = createScope()
-        val transaction = SentryTransaction("name", "op")
-        scope.setTransaction(transaction)
-        val span = transaction.startChild("op")
-        sut.captureEvent(event, scope)
-        assertNotNull(event.contexts.trace)
-        assertEquals(span, event.contexts.trace)
-    }
-
-    @Test
-    fun `when transaction does not have environment and release set, and the environment is set on options, options values are applied to transactions`() {
-        fixture.sentryOptions.release = "optionsRelease"
-        fixture.sentryOptions.environment = "optionsEnvironment"
-        val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
-        sut.captureTransaction(transaction)
-        assertEquals("optionsRelease", transaction.release)
-        assertEquals("optionsEnvironment", transaction.environment)
-    }
-
-    @Test
-    fun `when transaction has environment and release set, and the environment is set on options, options values are not applied to transactions`() {
-        fixture.sentryOptions.release = "optionsRelease"
-        fixture.sentryOptions.environment = "optionsEnvironment"
-        val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
-        transaction.release = "transactionRelease"
-        transaction.environment = "transactionEnvironment"
-        sut.captureTransaction(transaction)
-        assertEquals("transactionRelease", transaction.release)
-        assertEquals("transactionEnvironment", transaction.environment)
-    }
-
-    @Test
-    fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
-        fixture.sentryOptions.setTag("tag1", "value1")
-        val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
-        sut.captureTransaction(transaction)
-        assertEquals(mapOf("tag1" to "value1"), transaction.tags)
-    }
-
-    @Test
-    fun `when transaction has tags, and tags are set on options, options tags are added to transactions`() {
-        fixture.sentryOptions.setTag("tag1", "value1")
-        fixture.sentryOptions.setTag("tag2", "value2")
-        val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
-        transaction.setTag("tag3", "value3")
-        transaction.setTag("tag2", "transaction-tag")
-        sut.captureTransaction(transaction)
-        assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
-    }
+//    @Test
+//    fun `transactions are sent using connection`() {
+//        val sut = fixture.getSut()
+//        sut.captureTransaction(SentryTransaction("a-transaction", "op"), mock(), null)
+//        verify(fixture.transport).send(check {
+//            val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
+//            assertNotNull(transaction)
+//            assertEquals("a-transaction", transaction.transaction)
+//        }, eq(null))
+//    }
+//
+//    @Test
+//    fun `when captureTransactions unfinished spans are removed`() {
+//        val sut = fixture.getSut()
+//        val transaction = SentryTransaction("a-transaction", "op")
+//        val span1 = transaction.startChild("span1")
+//        span1.finish()
+//        val span2 = transaction.startChild("span2")
+//
+//        sut.captureTransaction(transaction, mock(), null)
+//        verify(fixture.transport).send(check {
+//            val sentTransaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
+//                assertNotNull(sentTransaction) { tx ->
+//                    val sentSpanIds = tx.spans.map { span -> span.spanId }
+//                    assertTrue(sentSpanIds.contains(span1.spanContext.spanId))
+//                    assertFalse(sentSpanIds.contains(span2.spanContext.spanId))
+//                }
+//        }, eq(null))
+//    }
+//
+//    @Test
+//    fun `when captureTransaction with attachments`() {
+//        val transaction = SentryTransaction("a-transaction", "op")
+//        fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
+//
+//        verifyAttachmentsInEnvelope(transaction.eventId)
+//    }
+//
+//    @Test
+//    fun `when captureTransaction with attachments not added to transaction`() {
+//        val transaction = SentryTransaction("a-transaction", "op")
+//        val scope = createScopeWithAttachments()
+//        scope.addAttachment(Attachment("hello".toByteArray(), "application/octet-stream"))
+//        fixture.getSut().captureTransaction(transaction, scope, null)
+//
+//        verifyAttachmentsInEnvelope(transaction.eventId)
+//    }
+//
+//    @Test
+//    fun `when scope's active span is a transaction, transaction context is applied to an event`() {
+//        val event = SentryEvent()
+//        val sut = fixture.getSut()
+//        val scope = createScope()
+//        val transaction = SentryTransaction("name", "op")
+//        scope.setTransaction(transaction)
+//        transaction.finish()
+//        sut.captureEvent(event, scope)
+//        assertNotNull(event.contexts.trace)
+//        assertEquals(transaction.contexts.trace, event.contexts.trace)
+//    }
+//
+//    @Test
+//    fun `when scope's active span is a span, span is applied to an event`() {
+//        val event = SentryEvent()
+//        val sut = fixture.getSut()
+//        val scope = createScope()
+//        val transaction = SentryTransaction("name", "op")
+//        scope.setTransaction(transaction)
+//        val span = transaction.startChild("op")
+//        sut.captureEvent(event, scope)
+//        assertNotNull(event.contexts.trace)
+//        assertEquals(span, event.contexts.trace)
+//    }
+//
+//    @Test
+//    fun `when transaction does not have environment and release set, and the environment is set on options, options values are applied to transactions`() {
+//        fixture.sentryOptions.release = "optionsRelease"
+//        fixture.sentryOptions.environment = "optionsEnvironment"
+//        val sut = fixture.getSut()
+//        val transaction = SentryTransaction("name", "op")
+//        sut.captureTransaction(transaction)
+//        assertEquals("optionsRelease", transaction.release)
+//        assertEquals("optionsEnvironment", transaction.environment)
+//    }
+//
+//    @Test
+//    fun `when transaction has environment and release set, and the environment is set on options, options values are not applied to transactions`() {
+//        fixture.sentryOptions.release = "optionsRelease"
+//        fixture.sentryOptions.environment = "optionsEnvironment"
+//        val sut = fixture.getSut()
+//        val transaction = SentryTransaction("name", "op")
+//        transaction.release = "transactionRelease"
+//        transaction.environment = "transactionEnvironment"
+//        sut.captureTransaction(transaction)
+//        assertEquals("transactionRelease", transaction.release)
+//        assertEquals("transactionEnvironment", transaction.environment)
+//    }
+//
+//    @Test
+//    fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
+//        fixture.sentryOptions.setTag("tag1", "value1")
+//        val sut = fixture.getSut()
+//        val transaction = SentryTransaction("name", "op")
+//        sut.captureTransaction(transaction)
+//        assertEquals(mapOf("tag1" to "value1"), transaction.tags)
+//    }
+//
+//    @Test
+//    fun `when transaction has tags, and tags are set on options, options tags are added to transactions`() {
+//        fixture.sentryOptions.setTag("tag1", "value1")
+//        fixture.sentryOptions.setTag("tag2", "value2")
+//        val sut = fixture.getSut()
+//        val transaction = SentryTransaction("name", "op")
+//        transaction.setTag("tag3", "value3")
+//        transaction.setTag("tag2", "transaction-tag")
+//        sut.captureTransaction(transaction)
+//        assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
+//    }
 
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {

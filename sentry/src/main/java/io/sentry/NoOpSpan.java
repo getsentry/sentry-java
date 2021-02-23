@@ -18,6 +18,11 @@ public final class NoOpSpan implements ISpan {
   public void setName(String name) {}
 
   @Override
+  public String getName() {
+    return null;
+  }
+
+  @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
     return NoOpSpan.getInstance();
   }
@@ -92,5 +97,10 @@ public final class NoOpSpan implements ISpan {
   @Override
   public @Nullable Boolean isSampled() {
     return null;
+  }
+
+  @Override
+  public ISpan getLatestActiveSpan() {
+    return this;
   }
 }

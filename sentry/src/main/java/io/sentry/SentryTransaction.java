@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-final class SentryTransaction extends SentryBaseEvent {
+public final class SentryTransaction extends SentryBaseEvent {
   /** The transaction name. */
   @SuppressWarnings("UnusedVariable")
   private @NotNull String transaction;
@@ -41,5 +41,21 @@ final class SentryTransaction extends SentryBaseEvent {
 
   public boolean isFinished() {
     return this.timestamp != null;
+  }
+
+  public String getTransaction() {
+    return transaction;
+  }
+
+  public Date getStartTimestamp() {
+    return startTimestamp;
+  }
+
+  public Date getTimestamp() {
+    return timestamp;
+  }
+
+  public String getType() {
+    return type;
   }
 }

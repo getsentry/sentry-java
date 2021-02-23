@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -13,14 +14,7 @@ public final class SentryTracer implements ISpan {
   private final IHub hub;
 
   public SentryTracer(TransactionContext context, IHub hub) {
-    this.root =
-        new Span(
-            context.getTraceId(),
-            context.getParentSpanId(),
-            context.getSampled(),
-            this,
-            context.getOperation(),
-            hub);
+    this.root = new Span(context, this, hub);
     this.root.setName(context.getName());
     this.hub = hub;
   }
@@ -69,6 +63,11 @@ public final class SentryTracer implements ISpan {
   @Override
   public void setName(String name) {
     this.root.setName(name);
+  }
+
+  @Override
+  public String getName() {
+    return this.root.getName();
   }
 
   @Override
@@ -160,6 +159,19 @@ public final class SentryTracer implements ISpan {
   @Override
   public @Nullable Boolean isSampled() {
     return this.root.isSampled();
+  }
+
+  @Override
+  public @NotNull ISpan getLatestActiveSpan() {
+    final List<Span> spans = new ArrayList<>(this.children);
+    if (!spans.isEmpty()) {
+      for (int i = spans.size() - 1; i >= 0; i--) {
+        if (!spans.get(i).isFinished()) {
+          return spans.get(i);
+        }
+      }
+    }
+    return root;
   }
 
   public Span getRoot() {

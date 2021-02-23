@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 public interface ISpan {
 
   void setName(String name);
+
+  String getName();
   /**
    * Starts a child Span.
    *
@@ -137,4 +139,7 @@ public interface ISpan {
    */
   @Nullable
   Boolean isSampled();
+
+  @NotNull
+  ISpan getLatestActiveSpan();
 }
