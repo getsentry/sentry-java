@@ -255,6 +255,13 @@ public class SentryOptions {
   private long maxAttachmentSize = 20 * 1024 * 1024;
 
   /**
+   * Enables event deduplication with {@link DuplicateEventDetectionEventProcessor}. Event
+   * deduplication prevents from receiving the same exception multiple times when there is more than
+   * one framework active that captures errors, for example Logback and Spring Boot.
+   */
+  private Boolean enableDeduplication = true;
+
+  /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
    * @param propertiesProvider the properties provider
@@ -271,6 +278,7 @@ public class SentryOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
+    options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -1224,6 +1232,33 @@ public class SentryOptions {
     this.maxAttachmentSize = maxAttachmentSize;
   }
 
+  /**
+   * Returns if event deduplication is turned on.
+   *
+   * @return if event deduplication is turned on.
+   */
+  public boolean isEnableDeduplication() {
+    return Boolean.TRUE.equals(enableDeduplication);
+  }
+
+  /**
+   * Returns if event deduplication is turned on or of or {@code null} if not specified.
+   *
+   * @return if event deduplication is turned on or of or {@code null} if not specified.
+   */
+  private @Nullable Boolean getEnableDeduplication() {
+    return enableDeduplication;
+  }
+
+  /**
+   * Enables or disables event deduplication.
+   *
+   * @param enableDeduplication true if enabled false otherwise
+   */
+  public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
+    this.enableDeduplication = enableDeduplication;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1266,22 +1301,45 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
+  /**
+   * Creates SentryOptions instance without initializing any of the internal parts.
+   *
+   * <p>Used by {@link NoOpHub}.
+   *
+   * @return SentryOptions
+   */
+  static @NotNull SentryOptions empty() {
+    return new SentryOptions(true);
+  }
+
   /** SentryOptions ctor It adds and set default things */
   public SentryOptions() {
-    // SentryExecutorService should be inited before any SendCachedEventFireAndForgetIntegration
-    executorService = new SentryExecutorService();
+    this(false);
+  }
 
-    // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
-    // if there's an error on the setup, we are able to capture it
-    integrations.add(new UncaughtExceptionHandlerIntegration());
+  /**
+   * Creates SentryOptions instance without initializing any of the internal parts.
+   *
+   * @param empty if options should be empty.
+   */
+  private SentryOptions(final boolean empty) {
+    if (!empty) {
+      // SentryExecutorService should be initialized before any
+      // SendCachedEventFireAndForgetIntegration
+      executorService = new SentryExecutorService();
 
-    integrations.add(new ShutdownHookIntegration());
+      // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
+      // if there's an error on the setup, we are able to capture it
+      integrations.add(new UncaughtExceptionHandlerIntegration());
 
-    eventProcessors.add(new MainEventProcessor(this));
-    eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
+      integrations.add(new ShutdownHookIntegration());
 
-    setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-    setSdkVersion(createSdkVersion());
+      eventProcessors.add(new MainEventProcessor(this));
+      eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
+
+      setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+      setSdkVersion(createSdkVersion());
+    }
   }
 
   /**
@@ -1317,6 +1375,9 @@ public class SentryOptions {
     }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());
+    }
+    if (options.getEnableDeduplication() != null) {
+      setEnableDeduplication(options.getEnableDeduplication());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {

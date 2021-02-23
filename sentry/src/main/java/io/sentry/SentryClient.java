@@ -409,6 +409,18 @@ public final class SentryClient implements ISentryClient {
         }
       }
     }
+    final List<Span> unfinishedSpans = new ArrayList<>();
+    for (Span span : transaction.getSpans()) {
+      if (!span.isFinished()) {
+        unfinishedSpans.add(span);
+      }
+    }
+    if (!unfinishedSpans.isEmpty()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
+    }
+    transaction.getSpans().removeAll(unfinishedSpans);
     return transaction;
   }
 
@@ -420,6 +432,9 @@ public final class SentryClient implements ISentryClient {
       }
       if (event.getUser() == null) {
         event.setUser(scope.getUser());
+      }
+      if (event.getRequest() == null) {
+        event.setRequest(scope.getRequest());
       }
       if (event.getFingerprints() == null) {
         event.setFingerprints(scope.getFingerprint());

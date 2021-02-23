@@ -1,5 +1,7 @@
 # vNext
 
+# 4.2.0
+
 * Fix: Remove experimental annotation for Attachment #1257
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
 * Enchancement: Improve EventProcessor nullability annotations (#1229).
@@ -8,16 +10,24 @@
 * Fix: Disable Gson HTML escaping
 * Enchancement: Support @SentrySpan and @SentryTransaction on classes and interfaces. (#1243)
 * Enchancement: Do not serialize empty collections and maps (#1245)
-* Ref: Simplify RestTemplate instrumentation (#1246)
+* Ref: Optimize DuplicateEventDetectionEventProcessor performance (#1247).
 * Ref: Prefix sdk.package names with io.sentry (#1249)
 * Fix: Make the ANR Atomic flags immutable
 * Enchancement: Integration interface better compatibility with Kotlin null-safety
 * Enchancement: Simplify Sentry configuration in Spring integration (#1259)
+* Enchancement: Simplify configuring Logback integration when environment variable with the DSN is not set (#1271)
+* Fix: Prevent NoOpHub from creating heavy SentryOptions objects (#1272)
+* Enchancement: Add Request to the Scope. #1270
+* Fix: Fix SentryTransaction#getStatus NPE (#1273)
+* Enchancement: Optimize SentryTracingFilter when hub is disabled.
+* Fix: Discard unfinished Spans before sending them over to Sentry (#1279)
+* Fix: Interrupt the thread in QueuedThreadPoolExecutor (#1276)
+* Fix: SentryTransaction#finish should not clear another transaction from the scope (#1278)
 
 Breaking Changes:
 * Enchancement: SentryExceptionResolver should not send handled errors by default (#1248).
+* Ref: Simplify RestTemplate instrumentation (#1246)
 * Enchancement: Add overloads for startTransaction taking op and description (#1244)
-
 
 # 4.1.0
 

@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -10,7 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 /** Deduplicates events containing throwable that has been already processed. */
 public final class DuplicateEventDetectionEventProcessor implements EventProcessor {
-  private final WeakHashMap<Throwable, Object> capturedObjects = new WeakHashMap<>();
+  private final Map<Throwable, Object> capturedObjects =
+      Collections.synchronizedMap(new WeakHashMap<>());
   private final SentryOptions options;
 
   public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options) {
@@ -19,20 +21,24 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
 
   @Override
   public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
-    final Throwable throwable = event.getOriginThrowable();
-    if (throwable != null) {
-      if (capturedObjects.containsKey(throwable)
-          || containsAnyKey(capturedObjects, allCauses(throwable))) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Duplicate Exception detected. Event %s will be discarded.",
-                event.getEventId());
-        return null;
-      } else {
-        capturedObjects.put(throwable, null);
+    if (options.isEnableDeduplication()) {
+      final Throwable throwable = event.getOriginThrowable();
+      if (throwable != null) {
+        if (capturedObjects.containsKey(throwable)
+            || containsAnyKey(capturedObjects, allCauses(throwable))) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Duplicate Exception detected. Event %s will be discarded.",
+                  event.getEventId());
+          return null;
+        } else {
+          capturedObjects.put(throwable, null);
+        }
       }
+    } else {
+      options.getLogger().log(SentryLevel.DEBUG, "Event deduplication is disabled.");
     }
     return event;
   }

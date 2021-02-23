@@ -556,7 +556,10 @@ public final class Hub implements IHub {
                   e);
         } finally {
           if (item != null) {
-            item.getScope().clearTransaction();
+            final Scope scope = item.getScope();
+            if (scope.getTransaction() == transaction) {
+              scope.clearTransaction();
+            }
           }
         }
       }
