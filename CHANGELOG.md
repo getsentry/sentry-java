@@ -1,6 +1,5 @@
 # vNext
 
-* Enha: Add "io.sentry.mobile." as an exception when detecting own stack frames
 
 # 4.2.0
 
