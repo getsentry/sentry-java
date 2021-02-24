@@ -6,9 +6,19 @@ import org.jetbrains.annotations.Nullable;
 /** Represents performance monitoring Span. */
 public interface ISpan {
 
-  void setName(String name);
+  /**
+   * Sets the span name.
+   *
+   * @param name - span name
+   */
+  void setName(@Nullable String name);
 
-  String getName();
+  /**
+   * Gets the span name
+   *
+   * @return the name
+   */
+  @Nullable String getName();
   /**
    * Starts a child Span.
    *
@@ -51,14 +61,14 @@ public interface ISpan {
    *
    * @param operation - the operation
    */
-  void setOperation(@Nullable String operation);
+  void setOperation(@NotNull String operation);
 
   /**
    * Returns the span operation.
    *
    * @return the operation
    */
-  @Nullable
+  @NotNull
   String getOperation();
 
   /**
@@ -112,7 +122,7 @@ public interface ISpan {
    * @return the span context
    */
   @NotNull
-  SpanContext getSpanContext();
+  SpanContext getContext();
 
   /**
    * Sets the tag on span or transaction.
@@ -140,6 +150,11 @@ public interface ISpan {
   @Nullable
   Boolean isSampled();
 
-  @NotNull
+  /**
+   * Returns the last active span within the span hierarchy
+   *
+   * @return the last active span of {@code null} if not found
+   */
+  @Nullable
   ISpan getLatestActiveSpan();
 }

@@ -6,14 +6,14 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Span implements ISpan {
+final class Span implements ISpan {
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;
   /** The moment in time when span has ended. */
   private @Nullable Date timestamp;
 
-  private final SpanContext context;
+  private final @NotNull SpanContext context;
 
   /**
    * A transaction this span is attached to. Marked as transient to be ignored during JSON
@@ -39,10 +39,10 @@ public final class Span implements ISpan {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
-  public Span(TransactionContext context, SentryTracer sentryTracer, IHub hub) {
-    this.context = context;
-    this.transaction = sentryTracer;
-    this.hub = hub;
+  Span(final @NotNull TransactionContext context, final @NotNull SentryTracer sentryTracer, final @NotNull IHub hub) {
+    this.context = Objects.requireNonNull(context, "context is required");
+    this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
+    this.hub = Objects.requireNonNull(hub, "hub is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
   }
 
@@ -89,23 +89,23 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void finish(@Nullable SpanStatus status) {
-    this.context.status = status;
+  public void finish(final @Nullable SpanStatus status) {
+    this.context.setStatus(status);
     this.finish();
   }
 
   @Override
-  public void setOperation(@Nullable String operation) {
+  public void setOperation(final @NotNull String operation) {
     this.context.setOperation(operation);
   }
 
   @Override
-  public @Nullable String getOperation() {
+  public @NotNull String getOperation() {
     return this.context.getOperation();
   }
 
   @Override
-  public void setDescription(@Nullable String description) {
+  public void setDescription(final @Nullable String description) {
     this.context.setDescription(description);
   }
 
@@ -115,7 +115,7 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setStatus(@Nullable SpanStatus status) {
+  public void setStatus(final @Nullable SpanStatus status) {
     this.context.setStatus(status);
   }
 
@@ -125,18 +125,18 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @NotNull SpanContext getSpanContext() {
+  public @NotNull SpanContext getContext() {
     return context;
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(final @NotNull String key, final @NotNull String value) {
     this.context.setTag(key, value);
   }
 
   @Override
   public @NotNull String getTag(@NotNull String key) {
-    return context.tags.get(key);
+    return context.getTags().get(key);
   }
 
   @Override
@@ -151,7 +151,7 @@ public final class Span implements ISpan {
 
   @Override
   public ISpan getLatestActiveSpan() {
-    return this;
+    return isFinished() ? null : this;
   }
 
   @Override

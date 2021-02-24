@@ -68,8 +68,8 @@ public final class TransactionContext extends SpanContext {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setName(final @NotNull String name) {
+    this.name = Objects.requireNonNull(name, "name is required");
   }
 
   public @Nullable Boolean getParentSampled() {

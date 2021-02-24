@@ -173,7 +173,7 @@ public final class Hub implements IHub {
       final ISpan span = throwableToSpan.get(event.getThrowable());
       if (span != null) {
         if (event.getContexts().getTrace() == null) {
-          event.getContexts().setTrace(span.getSpanContext());
+          event.getContexts().setTrace(span.getContext());
         }
       }
     }
@@ -641,7 +641,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(throwable, "throwable is required");
     final ISpan span = this.throwableToSpan.get(throwable);
     if (span != null) {
-      return span.getSpanContext();
+      return span.getContext();
     }
     return null;
   }

@@ -31,7 +31,7 @@ public final class SentryTransaction extends SentryBaseEvent {
     this.spans.addAll(sentryTracer.getChildren());
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
-    this.getContexts().setTrace(sentryTracer.getSpanContext());
+    this.getContexts().setTrace(sentryTracer.getContext());
     this.transaction = sentryTracer.getRoot().getTag("sentry-name");
   }
 

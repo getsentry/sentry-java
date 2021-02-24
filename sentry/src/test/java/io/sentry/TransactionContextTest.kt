@@ -14,7 +14,7 @@ class TransactionContextTest {
         assertNull(context.sampled)
         assertNull(context.parentSampled)
         assertEquals("name", context.name)
-        assertEquals("op", context.op)
+        assertEquals("op", context.operation)
     }
 
     @Test

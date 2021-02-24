@@ -27,19 +27,19 @@ public class SpanContext implements Cloneable {
   private transient @Nullable Boolean sampled;
 
   /** Short code identifying the type of operation the span is measuring. */
-  protected @NotNull String op;
+  private @NotNull String op;
 
   /**
    * Longer description of the span's operation, which uniquely identifies the span but is
    * consistent across instances of the span.
    */
-  protected @Nullable String description;
+  private @Nullable String description;
 
   /** Describes the status of the Transaction. */
-  protected @Nullable SpanStatus status;
+  private @Nullable SpanStatus status;
 
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
-  protected @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+  private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
 
   public SpanContext(final @NotNull String operation, final @Nullable Boolean sampled) {
     this(new SentryId(), new SpanId(), operation, null, sampled);

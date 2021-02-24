@@ -77,7 +77,7 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull SpanContext getSpanContext() {
+  public @NotNull SpanContext getContext() {
     return new SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null);
   }
 

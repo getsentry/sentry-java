@@ -137,8 +137,8 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public @NotNull SpanContext getSpanContext() {
-    return this.root.getSpanContext();
+  public @NotNull SpanContext getContext() {
+    return this.root.getContext();
   }
 
   @Override
@@ -171,7 +171,7 @@ public final class SentryTracer implements ISpan {
         }
       }
     }
-    return root;
+    return root.getLatestActiveSpan();
   }
 
   public Span getRoot() {
