@@ -5,11 +5,13 @@ import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
+import io.sentry.spring.SentryRequestResolver;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -23,7 +25,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
 
 /**
- * Creates {@link ISpan} around HTTP request executions.
+ * Creates {@link ITransaction} around HTTP request executions.
  *
  * <p>Only requests that have {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} request
  * attribute set are turned into transactions. This attribute is set in {@link
@@ -38,19 +40,30 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
 
+  @SuppressWarnings("unused")
+  private final @NotNull SentryRequestResolver requestResolver;
+
   public SentryTracingFilter() {
     this(HubAdapter.getInstance());
   }
 
-  public SentryTracingFilter(final @NotNull IHub hub) {
-    this(hub, new TransactionNameProvider());
+  public SentryTracingFilter(
+      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+    this(hub, requestResolver, new TransactionNameProvider());
   }
 
   public SentryTracingFilter(
-      final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
+      final @NotNull IHub hub,
+      final @NotNull SentryRequestResolver requestResolver,
+      final @NotNull TransactionNameProvider transactionNameProvider) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
+  }
+
+  SentryTracingFilter(final @NotNull IHub hub) {
+    this(hub, new SentryRequestResolver(hub), new TransactionNameProvider());
   }
 
   @Override
@@ -74,7 +87,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         // and
         // we should not report it to Sentry
         if (transactionName != null) {
-          transaction.setTag("sentry-name", transactionName);
+          transaction.setName(transactionName);
           transaction.setOperation(TRANSACTION_OP);
           // TODO: should be set in the client
           // transaction.setRequest(requestResolver.resolveSentryRequest(httpRequest));

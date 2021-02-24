@@ -17,6 +17,7 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
+import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
@@ -33,6 +34,7 @@ class SentryTracingFilterTest {
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
+        val sentryRequestResolver = spy(SentryRequestResolver(hub))
         val transactionNameProvider = spy(TransactionNameProvider())
 
         init {
@@ -50,7 +52,7 @@ class SentryTracingFilterTest {
             response.status = 200
             whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
-            return SentryTracingFilter(hub, transactionNameProvider)
+            return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
         }
     }
 
@@ -108,6 +110,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).isEnabled
         verifyNoMoreInteractions(fixture.hub)
+        verifyZeroInteractions(fixture.sentryRequestResolver)
         verifyZeroInteractions(fixture.transactionNameProvider)
     }
 }
