@@ -12,48 +12,48 @@ targets:
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry"
+      canonical: "maven:io.sentry:sentry"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-spring"
+      canonical: "maven:io.sentry:sentry-spring"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-spring-boot-starter"
+      canonical: "maven:io.sentry:sentry-spring-boot-starter"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-servlet"
+      canonical: "maven:io.sentry:sentry-servlet"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-logback"
+      canonical: "maven:io.sentry:sentry-logback"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-log4j2"
+      canonical: "maven:io.sentry:sentry-log4j2"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-jul"
+      canonical: "maven:io.sentry:sentry-jul"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-apache-http-client-5"
+      canonical: "maven:io.sentry:sentry-apache-http-client-5"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-android"
+      canonical: "maven:io.sentry:sentry-android"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-android-core"
+      canonical: "maven:io.sentry:sentry-android-core"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-android-ndk"
+      canonical: "maven:io.sentry:sentry-android-ndk"
   - name: registry
     type: sdk
     config:
-      canonical: "maven:io.sentry/sentry-android-timber"
+      canonical: "maven:io.sentry:sentry-android-timber"
