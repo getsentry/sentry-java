@@ -6,7 +6,7 @@ include(
 //    "sentry-android-ndk",
 //    "sentry-android-core",
     "sentry",
-    "sentry-test-support")
+    "sentry-test-support",
 //    "sentry-log4j2",
 //    "sentry-logback",
 //    "sentry-jul",
@@ -16,7 +16,7 @@ include(
 //    "sentry-spring-boot-starter",
 //    "sentry-android-timber",
 //    "sentry-samples:sentry-samples-android",
-//    "sentry-samples:sentry-samples-console",
+    "sentry-samples:sentry-samples-console")
 //    "sentry-samples:sentry-samples-jul",
 //    "sentry-samples:sentry-samples-log4j2",
 //    "sentry-samples:sentry-samples-logback",

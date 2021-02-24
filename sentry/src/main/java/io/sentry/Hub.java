@@ -558,7 +558,7 @@ public final class Hub implements IHub {
         } finally {
           if (item != null) {
             final Scope scope = item.getScope();
-            if (scope.getTransaction() == tracer) {
+            if (scope.getSpan() == tracer) {
               scope.clearTransaction();
             }
           }
@@ -607,7 +607,7 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
-      final ISpan span = stack.peek().getScope().getSpan();
+      final ISpan span = stack.peek().getScope().getLatestActiveSpan();
       if (span != null) {
         traceHeader = span.toSentryTrace();
       }
@@ -623,7 +623,7 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      span = stack.peek().getScope().getSpan();
+      span = stack.peek().getScope().getLatestActiveSpan();
     }
     return span;
   }

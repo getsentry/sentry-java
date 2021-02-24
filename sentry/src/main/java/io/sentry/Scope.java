@@ -21,8 +21,8 @@ public final class Scope implements Cloneable {
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
 
-  /** Scope's {@link ITransaction}. */
-  private @Nullable ISpan transaction;
+  /** Scope's {@link ISpan}. */
+  private @Nullable ISpan span;
 
   /** Scope's transaction name. Used when using error reporting without the performance feature. */
   private @Nullable String transactionName;
@@ -99,18 +99,18 @@ public final class Scope implements Cloneable {
    * @return the transaction
    */
   public @Nullable String getTransactionName() {
-    final ISpan tx = this.transaction;
-    return tx != null ? tx.getTag("sentry-name") : transactionName;
+    final ISpan tx = this.span;
+    return tx != null ? tx.getName() : transactionName;
   }
 
   /**
-   * Sets the Scope's transaction.
+   * Sets the Scope's span.
    *
    * @param transaction the transaction
    */
-  public void setTransaction(final @NotNull String transaction) {
-    final ISpan tx = this.transaction;
-    if (tx != null) {
+  public void setTransaction(final @Nullable String transaction) {
+    final ISpan tx = this.span;
+    if (tx != null && transaction != null) {
       tx.setTag("sentry-name", transaction);
     }
     this.transactionName = transaction;
@@ -122,8 +122,8 @@ public final class Scope implements Cloneable {
    * @return current active Span or Transaction or null if transaction has not been set.
    */
   @Nullable
-  public ISpan getSpan() {
-    final ISpan tx = transaction;
+  public ISpan getLatestActiveSpan() {
+    final ISpan tx = span;
     if (tx != null) {
       return tx.getLatestActiveSpan();
     } else {
@@ -132,12 +132,12 @@ public final class Scope implements Cloneable {
   }
 
   /**
-   * Sets the current active transaction
+   * Sets the current active span
    *
-   * @param transaction the transaction
+   * @param span the span
    */
-  public void setTransaction(final @NotNull ISpan transaction) {
-    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+  public void setSpan(final @NotNull ISpan span) {
+    this.span = Objects.requireNonNull(span, "span is required");
   }
 
   /**
@@ -287,7 +287,7 @@ public final class Scope implements Cloneable {
 
   /** Clears the transaction. */
   public void clearTransaction() {
-    transaction = null;
+    span = null;
     transactionName = null;
   }
 
@@ -297,14 +297,14 @@ public final class Scope implements Cloneable {
    * @return the transaction
    */
   @Nullable
-  public ISpan getTransaction() {
-    return this.transaction;
+  public ISpan getSpan() {
+    return this.span;
   }
 
   /** Resets the Scope to its default state */
   public void clear() {
     level = null;
-    transaction = null;
+    span = null;
     user = null;
     request = null;
     fingerprint.clear();

@@ -66,7 +66,7 @@ class SentryTransactionAdviceTest {
     @Test
     fun `when transaction is already active, does not start new transaction`() {
         val scope = Scope(SentryOptions())
-        scope.setTransaction(io.sentry.SentryTransaction("aTransaction", SpanContext("op"), hub))
+        scope.setSpan(io.sentry.SentryTransaction("aTransaction", SpanContext("op"), hub))
 
         whenever(hub.configureScope(any())).thenAnswer {
             (it.arguments[0] as ScopeCallback).run(scope)

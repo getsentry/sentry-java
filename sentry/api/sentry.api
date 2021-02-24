@@ -414,10 +414,10 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun clone ()Lio/sentry/Scope;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getLatestActiveSpan ()Lio/sentry/ISpan;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpan ()Lio/sentry/ISpan;
-	public fun getTransaction ()Lio/sentry/ISpan;
 	public fun getTransactionName ()Ljava/lang/String;
 	public fun getUser ()Lio/sentry/protocol/User;
 	public fun removeContexts (Ljava/lang/String;)V
@@ -431,8 +431,8 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
+	public fun setSpan (Lio/sentry/ISpan;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setTransaction (Lio/sentry/ISpan;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 }

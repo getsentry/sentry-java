@@ -114,7 +114,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
             TransactionContext.fromSentryTrace(
                 name, "http.server", new SentryTraceHeader(sentryTraceHeader));
         final ISpan transaction = hub.startTransaction(contexts, customSamplingContext);
-        hub.configureScope(scope -> scope.setTransaction(transaction));
+        hub.configureScope(scope -> scope.setSpan(transaction));
         return transaction;
       } catch (InvalidSentryTraceHeaderException e) {
         hub.getOptions()
@@ -123,7 +123,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       }
     }
     final ISpan transaction = hub.startTransaction(name, "http.server", customSamplingContext);
-    hub.configureScope(scope -> scope.setTransaction(transaction));
+    hub.configureScope(scope -> scope.setSpan(transaction));
     return transaction;
   }
 }

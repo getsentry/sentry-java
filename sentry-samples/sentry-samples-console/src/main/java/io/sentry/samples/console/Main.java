@@ -3,7 +3,6 @@ package io.sentry.samples.console;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.ISpan;
-import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -138,7 +137,7 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    ITransaction transaction = Sentry.startTransaction("transaction name", "op");
+    ISpan transaction = Sentry.startTransaction("transaction name", "op");
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
     Thread.sleep(100);

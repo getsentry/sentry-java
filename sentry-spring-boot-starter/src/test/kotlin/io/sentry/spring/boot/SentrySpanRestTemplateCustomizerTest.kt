@@ -31,7 +31,7 @@ class SentrySpanRestTemplateCustomizerTest {
 
             if (isTransactionActive) {
                 val scope = Scope(SentryOptions())
-                scope.setTransaction(transaction)
+                scope.setSpan(transaction)
                 whenever(hub.span).thenReturn(transaction)
 
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))

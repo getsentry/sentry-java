@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryOptions
-import io.sentry.SentryTransaction
 import io.sentry.SpanContext
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
@@ -49,7 +48,7 @@ class SentrySpanAdviceTest {
     fun `when class is annotated with @SentrySpan, every method call attaches span to existing transaction`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext("op"), hub)
-        scope.setTransaction(tx)
+        scope.setSpan(tx)
 
         whenever(hub.span).thenReturn(tx)
         val result = classAnnotatedSampleService.hello()
@@ -63,7 +62,7 @@ class SentrySpanAdviceTest {
     fun `when class is annotated with @SentrySpan with operation set, every method call attaches span to existing transaction`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext("op"), hub)
-        scope.setTransaction(tx)
+        scope.setSpan(tx)
 
         whenever(hub.span).thenReturn(tx)
         val result = classAnnotatedWithOperationSampleService.hello()
@@ -77,7 +76,7 @@ class SentrySpanAdviceTest {
     fun `when method is annotated with @SentrySpan with properties set, attaches span to existing transaction`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext("op"), hub)
-        scope.setTransaction(tx)
+        scope.setSpan(tx)
 
         whenever(hub.span).thenReturn(tx)
         val result = sampleService.methodWithSpanDescriptionSet()
@@ -91,7 +90,7 @@ class SentrySpanAdviceTest {
     fun `when method is annotated with @SentrySpan without properties set, attaches span to existing transaction and sets Span description as className dot methodName`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext("op"), hub)
-        scope.setTransaction(tx)
+        scope.setSpan(tx)
 
         whenever(hub.span).thenReturn(tx)
         val result = sampleService.methodWithoutSpanDescriptionSet()
@@ -105,7 +104,7 @@ class SentrySpanAdviceTest {
     fun `when method is annotated with @SentrySpan and returns, attached span has status OK`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext("op"), hub)
-        scope.setTransaction(tx)
+        scope.setSpan(tx)
 
         whenever(hub.span).thenReturn(tx)
         sampleService.methodWithSpanDescriptionSet()
@@ -116,7 +115,7 @@ class SentrySpanAdviceTest {
     fun `when method is annotated with @SentrySpan and throws exception, attached span has throwable set and INTERNAL_ERROR status`() {
         val scope = Scope(SentryOptions())
         val tx = SentryTransaction("aTransaction", SpanContext("op"), hub)
-        scope.setTransaction(tx)
+        scope.setSpan(tx)
 
         whenever(hub.span).thenReturn(tx)
         var throwable: Throwable? = null

@@ -57,7 +57,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
         operation = "bean";
       }
       final ISpan transaction = hub.startTransaction(name, operation);
-      hub.configureScope(scope -> scope.setTransaction(transaction));
+      hub.configureScope(scope -> scope.setSpan(transaction));
 
       try {
         return invocation.proceed();
@@ -81,7 +81,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
 
     hub.configureScope(
         scope -> {
-          ISpan span = scope.getSpan();
+          ISpan span = scope.getLatestActiveSpan();
 
           if (span != null) {
             isTransactionActiveRef.set(true);

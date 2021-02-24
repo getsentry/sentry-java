@@ -613,9 +613,9 @@ class HubTest {
     }
     //endregion
 
-    //region setTransaction tests
+    //region setSpan tests
     @Test
-    fun `when setTransaction is called on disabled client, do nothing`() {
+    fun `when setSpan is called on disabled client, do nothing`() {
         val hub = generateHub()
         var scope: Scope? = null
         hub.configureScope {
@@ -628,7 +628,7 @@ class HubTest {
     }
 
     @Test
-    fun `when setTransaction is called, and transaction is not set, transaction name is changed`() {
+    fun `when setSpan is called, and span is not set, transaction name is changed`() {
         val hub = generateHub()
         var scope: Scope? = null
         hub.configureScope {
@@ -640,7 +640,7 @@ class HubTest {
     }
 
     @Test
-    fun `when setTransaction is called, and transaction is set, transaction name is changed`() {
+    fun `when setSpan is called, and span is set, transaction name is changed`() {
         val hub = generateHub()
         var scope: Scope? = null
         hub.configureScope {
@@ -648,7 +648,7 @@ class HubTest {
         }
 
         val tx = hub.startTransaction("test", "op")
-        hub.configureScope { it.setTransaction(tx) }
+        hub.configureScope { it.setSpan(tx) }
 
         assertEquals("test", scope?.transactionName)
     }
@@ -1028,7 +1028,7 @@ class HubTest {
     }
 
     @Test
-    fun `when transaction is set on scope, captureTransaction clears it from the scope`() {
+    fun `when span is set on scope, captureTransaction clears it from the scope`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
@@ -1036,15 +1036,15 @@ class HubTest {
         val sut = Hub(options)
 
         val transaction = SentryTracer(TransactionContext("name", "op", true), sut)
-        sut.configureScope { it.setTransaction(transaction) }
+        sut.configureScope { it.setSpan(transaction) }
         sut.captureTransaction(transaction, null)
         sut.configureScope {
-            assertNull(it.transaction)
+            assertNull(it.span)
         }
     }
 
     @Test
-    fun `when different transaction is set on scope, captureTransaction does not clear it from the scope`() {
+    fun `when different span is set on scope, captureTransaction does not clear it from the scope`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
@@ -1053,11 +1053,11 @@ class HubTest {
 
         val transaction = SentryTracer(TransactionContext("name", "op", true), sut)
         val anotherTransaction = SentryTracer(TransactionContext("name", "op", true), sut)
-        sut.configureScope { it.setTransaction(anotherTransaction) }
+        sut.configureScope { it.setSpan(anotherTransaction) }
         sut.captureTransaction(transaction, null)
         sut.configureScope {
-            assertNotNull(it.transaction)
-            assertEquals(anotherTransaction, it.transaction)
+            assertNotNull(it.span)
+            assertEquals(anotherTransaction, it.span)
         }
     }
     //endregion
@@ -1129,7 +1129,7 @@ class HubTest {
     fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
+        hub.configureScope { it.setSpan(tx) }
 
         assertNotNull(hub.traceHeaders())
     }
@@ -1146,7 +1146,7 @@ class HubTest {
     fun `when there is active transaction bound to the scope, getSpan returns active transaction`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
+        hub.configureScope { it.setSpan(tx) }
         assertEquals((tx as SentryTracer).root, hub.getSpan())
     }
 
@@ -1154,8 +1154,8 @@ class HubTest {
     fun `when there is active span within a transaction bound to the scope, getSpan returns active span`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
-        hub.configureScope { it.setTransaction(tx) }
+        hub.configureScope { it.setSpan(tx) }
+        hub.configureScope { it.setSpan(tx) }
         val span = tx.startChild("op")
         assertEquals(span, hub.span)
     }

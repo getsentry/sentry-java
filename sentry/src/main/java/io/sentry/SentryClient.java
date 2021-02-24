@@ -471,7 +471,7 @@ public final class SentryClient implements ISentryClient {
         event.setLevel(scope.getLevel());
       }
       // Set trace data from active span to connect events with transactions
-      final ISpan span = scope.getSpan();
+      final ISpan span = scope.getLatestActiveSpan();
       if (event.getContexts().getTrace() == null && span != null) {
         event.getContexts().setTrace(span.getContext());
       }
