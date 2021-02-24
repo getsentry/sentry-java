@@ -832,11 +832,11 @@ public final class io/sentry/SentryTracer : io/sentry/ISpan {
 	public fun getLatestActiveSpan ()Lio/sentry/ISpan;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
-	public fun getRoot ()Lio/sentry/Span;
 	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun getTimestamp ()Ljava/util/Date;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V

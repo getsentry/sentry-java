@@ -352,7 +352,6 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    //    if (transaction instanceof SentryTransaction) {
     final SentryTransaction sentryTransaction = processTransaction(transaction);
     try {
       final SentryEnvelope envelope =
@@ -367,9 +366,6 @@ public final class SentryClient implements ISentryClient {
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
-    //    } else {
-    //      options.getLogger().log(SentryLevel.DEBUG, "Captured a NoOpTransaction %s", sentryId);
-    //    }
 
     return sentryId;
   }

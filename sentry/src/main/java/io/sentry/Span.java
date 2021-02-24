@@ -173,4 +173,9 @@ final class Span implements ISpan {
   SpanId getSpanId() {
     return context.getSpanId();
   }
+
+  @Nullable
+  SpanId getParentSpanId() {
+    return context.getParentSpanId();
+  }
 }

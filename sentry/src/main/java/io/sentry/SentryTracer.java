@@ -5,26 +5,35 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class SentryTracer implements ISpan {
-  private final Span root;
-  private final List<Span> children = new CopyOnWriteArrayList<>();
-  private final IHub hub;
+  private final @NotNull Span root;
+  private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
+  private final @NotNull IHub hub;
 
-  public SentryTracer(TransactionContext context, IHub hub) {
+  public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
+    Objects.requireNonNull(context, "context is required");
+    Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub);
     this.root.setName(context.getName());
     this.hub = hub;
   }
 
-  public List<Span> getChildren() {
+  public @NotNull List<Span> getChildren() {
     return children;
   }
 
-  public Date getStartTimestamp() {
+  public @NotNull Date getStartTimestamp() {
     return this.root.getStartTimestamp();
+  }
+
+  public @Nullable Date getTimestamp() {
+    return this.root.getTimestamp();
   }
 
   /**
@@ -61,22 +70,22 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public void setName(String name) {
+  public void setName(final @Nullable String name) {
     this.root.setName(name);
   }
 
   @Override
-  public String getName() {
+  public @Nullable String getName() {
     return this.root.getName();
   }
 
   @Override
-  public @NotNull ISpan startChild(@NotNull String operation) {
+  public @NotNull ISpan startChild(final @NotNull String operation) {
     return root.startChild(operation);
   }
 
   @Override
-  public @NotNull ISpan startChild(@NotNull String operation, @Nullable String description) {
+  public @NotNull ISpan startChild(final @NotNull String operation, final @Nullable String description) {
     return root.startChild(operation, description);
   }
 
@@ -87,17 +96,17 @@ public final class SentryTracer implements ISpan {
 
   @Override
   public void finish() {
-    this.finish(SpanStatus.OK);
+    this.finish(this.getStatus());
   }
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    root.setStatus(status);
+    root.finish(status);
     hub.captureTransaction(this);
   }
 
   @Override
-  public void setOperation(@Nullable String operation) {
+  public void setOperation(final @NotNull String operation) {
     this.root.setOperation(operation);
   }
 
@@ -107,7 +116,7 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public void setDescription(@Nullable String description) {
+  public void setDescription(final @Nullable String description) {
     this.root.setDescription(description);
   }
 
@@ -117,7 +126,7 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public void setStatus(@Nullable SpanStatus status) {
+  public void setStatus(final @Nullable SpanStatus status) {
     this.root.setStatus(status);
   }
 
@@ -127,7 +136,7 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public void setThrowable(@Nullable Throwable throwable) {
+  public void setThrowable(final @Nullable Throwable throwable) {
     this.root.setThrowable(throwable);
   }
 
@@ -142,12 +151,12 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(final @NotNull String key, final @NotNull String value) {
     this.root.setTag(key, value);
   }
 
   @Override
-  public @NotNull String getTag(@NotNull String key) {
+  public @NotNull String getTag(final @NotNull String key) {
     return this.root.getTag(key);
   }
 
@@ -162,7 +171,7 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public @NotNull ISpan getLatestActiveSpan() {
+  public @Nullable ISpan getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
       for (int i = spans.size() - 1; i >= 0; i--) {
@@ -174,7 +183,7 @@ public final class SentryTracer implements ISpan {
     return root.getLatestActiveSpan();
   }
 
-  public Span getRoot() {
+  @NotNull Span getRoot() {
     return root;
   }
 }
