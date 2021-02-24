@@ -164,7 +164,13 @@ final class Span implements ISpan {
     return throwable;
   }
 
+  @NotNull
   SentryId getTraceId() {
     return context.getTraceId();
+  }
+
+  @NotNull
+  SpanId getSpanId() {
+    return context.getSpanId();
   }
 }
