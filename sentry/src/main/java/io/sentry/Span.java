@@ -39,7 +39,10 @@ final class Span implements ISpan {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
-  Span(final @NotNull TransactionContext context, final @NotNull SentryTracer sentryTracer, final @NotNull IHub hub) {
+  Span(
+      final @NotNull TransactionContext context,
+      final @NotNull SentryTracer sentryTracer,
+      final @NotNull IHub hub) {
     this.context = Objects.requireNonNull(context, "context is required");
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");

@@ -18,7 +18,8 @@ public interface ISpan {
    *
    * @return the name
    */
-  @Nullable String getName();
+  @Nullable
+  String getName();
   /**
    * Starts a child Span.
    *

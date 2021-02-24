@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,7 +84,8 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public @NotNull ISpan startChild(final @NotNull String operation, final @Nullable String description) {
+  public @NotNull ISpan startChild(
+      final @NotNull String operation, final @Nullable String description) {
     return root.startChild(operation, description);
   }
 
@@ -183,7 +183,8 @@ public final class SentryTracer implements ISpan {
     return root.getLatestActiveSpan();
   }
 
-  @NotNull Span getRoot() {
+  @NotNull
+  Span getRoot() {
     return root;
   }
 }
