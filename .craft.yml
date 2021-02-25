@@ -1,4 +1,4 @@
-minVersion: "0.13.2"
+minVersion: "0.18.0"
 github:
   owner: getsentry
   repo: sentry-java
@@ -6,7 +6,7 @@ changelogPolicy: simple
 statusProvider:
   name: github
 artifactProvider:
-  name: github
+  name: none
 targets:
   - name: github
   - name: registry
