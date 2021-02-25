@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
+import io.sentry.ITransaction;
 import io.sentry.Sentry;
+import io.sentry.SpanStatus;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -160,11 +162,23 @@ public class MainActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
     System.out.println("do some stuff resume");
+
+    finishTransaction(SpanStatus.OK);
   }
 
   @Override
   protected void onStart() {
     super.onStart();
     System.out.println("do some stuff start");
+  }
+
+  private void finishTransaction(SpanStatus status) {
+    Sentry.configureScope(
+        scope -> {
+          final ITransaction transaction = scope.getTransaction();
+          if (transaction != null) {
+            transaction.finish(status);
+          }
+        });
   }
 }

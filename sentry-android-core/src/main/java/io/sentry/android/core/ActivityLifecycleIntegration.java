@@ -25,11 +25,11 @@ public final class ActivityLifecycleIntegration
   private @NotNull IHub hub;
   private @NotNull SentryAndroidOptions options;
 
-  //  private @NotNull final AtomicBoolean coldStart = new AtomicBoolean(true);
+  private boolean performanceEnabled = false;
 
-  // TODO maybe use a Set?
-  // TODO make it thread safe?
-  private final WeakHashMap<Activity, ITransaction> activities = new WeakHashMap<>();
+  // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
+  // main-thread
+  private final @NotNull WeakHashMap<Activity, ITransaction> activities = new WeakHashMap<>();
 
   public ActivityLifecycleIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -51,11 +51,17 @@ public final class ActivityLifecycleIntegration
             "ActivityBreadcrumbsIntegration enabled: %s",
             this.options.isEnableActivityLifecycleBreadcrumbs());
 
-    if (this.options.isEnableActivityLifecycleBreadcrumbs()
-        || this.options.isEnableActivityLifecycleTracing()) {
+    performanceEnabled = isPerformanceEnabled(this.options);
+
+    if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
       options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration installed.");
     }
+  }
+
+  private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {
+    return ((options.getTracesSampleRate() != null || options.getTracesSampler() != null)
+        && options.isEnableAutoActivityLifecycleTracing());
   }
 
   @Override
@@ -70,45 +76,58 @@ public final class ActivityLifecycleIntegration
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("navigation");
       breadcrumb.setData("state", state);
-      breadcrumb.setData("screen", activity.getClass().getSimpleName());
+      breadcrumb.setData("screen", getActivityName(activity));
       breadcrumb.setCategory("ui.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
       hub.addBreadcrumb(breadcrumb);
     }
   }
 
-  private void startTracing(@NonNull Activity activity) {
-    if (options.isEnableActivityLifecycleTracing() && !isRunningTransaction(activity)) {
-      final ITransaction transaction = hub.startTransaction("ActivityStart", "navigation");
+  private @NotNull String getActivityName(final @NonNull Activity activity) {
+    return activity.getClass().getSimpleName();
+  }
 
-      // hot // cold // warm, how do we know?
-      //      final String state = coldStart.get() ? "cold" : "warm";
+  private void startTracing(final @NonNull Activity activity) {
+    if (performanceEnabled && !isRunningTransaction(activity)) {
+      final ITransaction transaction =
+          hub.startTransaction(getActivityName(activity), "navigation");
 
-      //      transaction.setTag("state", state);
-      transaction.setDescription(activity.getClass().getSimpleName());
+      // only available when used startActivityForResult instead of startActivity
+      // it'd also depend on androidxCore
+      //      ShareCompat.IntentReader from = ShareCompat.IntentReader.from(activity);
+      //      ComponentName callingActivity = from.getCallingActivity();
+      //      if (callingActivity != null) {
+      //        transaction.setTag("previousNavigation", callingActivity.getClassName());
+      //      }
 
-      // lets bind to the scope so we integrations can pick it up
-      // TODO: check if theres not one already running?
-      hub.configureScope(scope -> scope.setTransaction(transaction));
+      // lets bind to the scope so other integrations can pick it up
+      hub.configureScope(
+          scope -> {
+            // we we'd not like to overwrite existent transactions bound to the Scope manually.
+            if (scope.getTransaction() == null) {
+              scope.setTransaction(transaction);
+            }
+          });
 
       activities.put(activity, transaction);
     }
   }
 
-  private boolean isRunningTransaction(@NonNull Activity activity) {
+  private boolean isRunningTransaction(final @NonNull Activity activity) {
     return activities.containsKey(activity);
   }
 
-  private void stopTracing(@NonNull Activity activity) {
-    final ITransaction transaction = activities.get(activity);
-    if (options.isEnableActivityLifecycleTracing() && transaction != null) {
-
-      SpanStatus status = transaction.getStatus();
-      // status might be set by other integrations, let's not overwrite it
-      if (status == null) {
-        status = SpanStatus.OK;
+  private void stopTracing(final @NonNull Activity activity) {
+    if (performanceEnabled && options.isEnableActivityLifecycleTracingFinish()) {
+      final ITransaction transaction = activities.get(activity);
+      if (transaction != null) {
+        SpanStatus status = transaction.getStatus();
+        // status might be set by other integrations, let's not overwrite it
+        if (status == null) {
+          status = SpanStatus.OK;
+        }
+        transaction.finish(status);
       }
-      transaction.finish(status);
     }
   }
 
@@ -118,14 +137,9 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "created");
 
     // if activity has global fields being init. and
-    // they are slow, this won't take the whole fields initialization time
+    // they are slow, this won't count the whole fields/ctor initialization time, but only
+    // when onCreate is actually called.
     startTracing(activity);
-    // if its cold start (1st activity within App's lifecycle, set it to false now)
-    //    coldStart.compareAndSet(true, false);
-
-    // we could create spans out of these methods, before/after loading like
-    // onCreate span, onStarted span, onResume span
-    // or users do themselves
   }
 
   @Override
@@ -144,18 +158,14 @@ public final class ActivityLifecycleIntegration
     // here probably we need to take the timestamp if no other spans happen to finish the
     // transaction
 
-    // this should be called only when we know onresumed has been executed already,
-    // right now this is executed before the onresume, we need to force it
+    // this should be called only when onResume has been executed already, which means
+    // the UI is responsive at this moment.
     stopTracing(activity);
   }
 
   @Override
   public synchronized void onActivityPaused(@NonNull Activity activity) {
     addBreadcrumb(activity, "paused");
-
-    // we dont clean up here because the next run would start a new transaction for the same
-    // activity
-    // but then it'd be a hot reload, or should we have transactions for hot and cold loading?
   }
 
   @Override
@@ -167,7 +177,7 @@ public final class ActivityLifecycleIntegration
 
     // clear up so we dont start again for the same activity
     // TODO: should we do this on onActivityDestroyed?
-    if (options.isEnableActivityLifecycleTracing()) {
+    if (performanceEnabled) {
       activities.remove(activity);
     }
   }
