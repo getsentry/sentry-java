@@ -76,12 +76,9 @@ class SecondActivity : AppCompatActivity() {
     private fun updateRepos(finishTransaction: Boolean = false) {
         val span = Sentry.getSpan()?.startChild("updateRepos", javaClass.simpleName)
 
-        var status = SpanStatus.OK
-
         service.listRepos("getsentry").enqueue(object : Callback<List<Repo>> {
             override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
-                status = SpanStatus.INTERNAL_ERROR
-                span?.finish(status)
+                span?.finish(SpanStatus.INTERNAL_ERROR)
                 Sentry.captureException(t)
 
                 showText(false)
@@ -92,10 +89,11 @@ class SecondActivity : AppCompatActivity() {
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
                 repos = response.body() ?: emptyList()
 
-                span?.finish(status)
+                span?.finish(SpanStatus.OK)
 
                 showText()
 
+                // I opt out enableAutoActivityLifecycleTracingFinish so I when best when to end my transaction
                 finishTransaction(finishTransaction)
             }
         })

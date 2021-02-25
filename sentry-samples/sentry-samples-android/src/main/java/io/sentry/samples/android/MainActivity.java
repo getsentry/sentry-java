@@ -15,11 +15,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import org.jetbrains.annotations.NotNull;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,26 +31,26 @@ public class MainActivity extends AppCompatActivity {
 
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
-    //    File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
-    //    try (InputStream inputStream =
-    //            getApplicationContext().getResources().openRawResource(R.raw.sentry);
-    //        FileOutputStream outputStream = new FileOutputStream(imageFile)) {
-    //      byte[] bytes = new byte[1024];
-    //      while (inputStream.read(bytes) != -1) {
-    //        // To keep the sample code simple this happens on the main thread. Don't do this in a
-    //        // real app.
-    //        outputStream.write(bytes);
-    //      }
-    //      outputStream.flush();
-    //    } catch (IOException e) {
-    //      Sentry.captureException(e);
-    //    }
-    //
-    //    Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
-    //    Sentry.configureScope(
-    //        scope -> {
-    //          scope.addAttachment(image);
-    //        });
+    final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
+    try (final InputStream inputStream =
+            getApplicationContext().getResources().openRawResource(R.raw.sentry);
+        FileOutputStream outputStream = new FileOutputStream(imageFile)) {
+      final byte[] bytes = new byte[1024];
+      while (inputStream.read(bytes) != -1) {
+        // To keep the sample code simple this happens on the main thread. Don't do this in a
+        // real app.
+        outputStream.write(bytes);
+      }
+      outputStream.flush();
+    } catch (IOException e) {
+      Sentry.captureException(e);
+    }
+
+    final Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
+    Sentry.configureScope(
+        scope -> {
+          scope.addAttachment(image);
+        });
 
     binding.crashFromJava.setOnClickListener(
         view -> {
@@ -163,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
     super.onResume();
     System.out.println("do some stuff resume");
 
+    // I opt-out enableAutoActivityLifecycleTracingFinish so I have to finish manually
     finishTransaction(SpanStatus.OK);
   }
 
@@ -172,7 +175,8 @@ public class MainActivity extends AppCompatActivity {
     System.out.println("do some stuff start");
   }
 
-  private void finishTransaction(SpanStatus status) {
+  // TODO: this API should be ideally easier
+  private void finishTransaction(final @NotNull SpanStatus status) {
     Sentry.configureScope(
         scope -> {
           final ITransaction transaction = scope.getTransaction();
