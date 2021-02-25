@@ -177,6 +177,8 @@ class SentryOptionsTest {
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
         externalOptions.tracesSampleRate = 0.5
+        externalOptions.addInAppInclude("com.app")
+        externalOptions.addInAppExclude("io.off")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -192,6 +194,8 @@ class SentryOptionsTest {
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.enableUncaughtExceptionHandler!!)
         assertEquals(0.5, options.tracesSampleRate)
+        assertEquals(listOf("com.app"), options.inAppIncludes)
+        assertEquals(listOf("io.off"), options.inAppExcludes)
     }
 
     @Test

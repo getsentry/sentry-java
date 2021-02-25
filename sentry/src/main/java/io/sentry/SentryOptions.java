@@ -1383,6 +1383,14 @@ public class SentryOptions {
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());
     }
+    final List<String> inAppIncludes = new ArrayList<>(options.getInAppIncludes());
+    for (final String inAppInclude : inAppIncludes) {
+      addInAppInclude(inAppInclude);
+    }
+    final List<String> inAppExcludes = new ArrayList<>(options.getInAppExcludes());
+    for (final String inAppExclude : inAppExcludes) {
+      addInAppExclude(inAppExclude);
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
