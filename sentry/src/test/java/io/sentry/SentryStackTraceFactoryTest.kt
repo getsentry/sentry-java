@@ -165,6 +165,17 @@ class SentryStackTraceFactoryTest {
         })
     }
 
+    @Test
+    fun `when getStackFrames is called, does not remove sentry mobile classes`() {
+        var stacktrace = Thread.currentThread().stackTrace
+        val sentryElement = StackTraceElement("io.sentry.mobile.element", "test", "test.java", 1)
+        stacktrace = stacktrace.plusElement(sentryElement)
+
+        assertNotNull(sut.getStackFrames(stacktrace)!!.find {
+            it.module.startsWith("io.sentry")
+        })
+    }
+
     private fun generateStackTrace(className: String?) =
         StackTraceElement(className, "method", "fileName", 10)
 }
