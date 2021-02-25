@@ -1,5 +1,6 @@
 # vNext
 
+* Fix: Fix JUL integration SDK name (#1293)
 
 # 4.2.0
 

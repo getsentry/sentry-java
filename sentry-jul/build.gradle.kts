@@ -71,7 +71,7 @@ tasks {
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.logback")
-    buildConfigField("String", "SENTRY_JUL_SDK_NAME", "\"${Config.Sentry.SENTRY_LOGBACK_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_JUL_SDK_NAME", "\"${Config.Sentry.SENTRY_JUL_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
