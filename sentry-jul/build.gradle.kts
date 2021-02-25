@@ -70,7 +70,7 @@ tasks {
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry.logback")
+    packageName("io.sentry.jul")
     buildConfigField("String", "SENTRY_JUL_SDK_NAME", "\"${Config.Sentry.SENTRY_JUL_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
