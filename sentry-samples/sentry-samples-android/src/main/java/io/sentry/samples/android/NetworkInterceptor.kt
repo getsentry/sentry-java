@@ -14,11 +14,7 @@ class NetworkInterceptor : Interceptor {
 
         val response = chain.proceed(request)
 
-        if (response.isSuccessful) {
-            span?.finish(SpanStatus.OK)
-        } else {
-            span?.finish(SpanStatus.fromHttpStatusCode(response.code(), SpanStatus.INTERNAL_ERROR))
-        }
+        span?.finish(SpanStatus.fromHttpStatusCode(response.code(), SpanStatus.INTERNAL_ERROR))
 
         return response
     }

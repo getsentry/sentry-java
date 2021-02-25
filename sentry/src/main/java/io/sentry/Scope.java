@@ -142,7 +142,8 @@ public final class Scope implements Cloneable {
   public void setTransaction(final @NotNull ITransaction transaction) {
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
 
-    // double-check this
+    // TODO: double-check this
+    // setTransaction(String) replaces the transaction.name so I guess this makes sense too
     transactionName = this.transaction.getName();
   }
 

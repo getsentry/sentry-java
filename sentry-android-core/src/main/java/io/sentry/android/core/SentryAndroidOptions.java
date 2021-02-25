@@ -35,7 +35,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableAutoActivityLifecycleTracing = true;
 
-  private boolean enableActivityLifecycleTracingFinish = false;
+  private boolean enableAutoActivityLifecycleTracingFinish = false; // TODO: default is true
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
@@ -184,12 +184,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAutoActivityLifecycleTracing = enableAutoActivityLifecycleTracing;
   }
 
-  public boolean isEnableActivityLifecycleTracingFinish() {
-    return enableActivityLifecycleTracingFinish;
+  public boolean isEnableAutoActivityLifecycleTracingFinish() {
+    return enableAutoActivityLifecycleTracingFinish;
   }
 
-  public void setEnableActivityLifecycleTracingFinish(
-      boolean enableActivityLifecycleTracingFinish) {
-    this.enableActivityLifecycleTracingFinish = enableActivityLifecycleTracingFinish;
+  public void setEnableAutoActivityLifecycleTracingFinish(
+      boolean enableAutoActivityLifecycleTracingFinish) {
+    this.enableAutoActivityLifecycleTracingFinish = enableAutoActivityLifecycleTracingFinish;
   }
 }

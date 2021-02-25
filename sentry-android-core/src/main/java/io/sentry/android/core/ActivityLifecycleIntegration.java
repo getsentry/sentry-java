@@ -92,14 +92,6 @@ public final class ActivityLifecycleIntegration
       final ITransaction transaction =
           hub.startTransaction(getActivityName(activity), "navigation");
 
-      // only available when used startActivityForResult instead of startActivity
-      // it'd also depend on androidxCore
-      //      ShareCompat.IntentReader from = ShareCompat.IntentReader.from(activity);
-      //      ComponentName callingActivity = from.getCallingActivity();
-      //      if (callingActivity != null) {
-      //        transaction.setTag("previousNavigation", callingActivity.getClassName());
-      //      }
-
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
           scope -> {
@@ -118,7 +110,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private void stopTracing(final @NonNull Activity activity) {
-    if (performanceEnabled && options.isEnableActivityLifecycleTracingFinish()) {
+    if (performanceEnabled && options.isEnableAutoActivityLifecycleTracingFinish()) {
       final ITransaction transaction = activities.get(activity);
       if (transaction != null) {
         SpanStatus status = transaction.getStatus();
@@ -154,10 +146,6 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityPostResumed(@NonNull Activity activity) {
-    // this should be replaced by idle transactions
-    // here probably we need to take the timestamp if no other spans happen to finish the
-    // transaction
-
     // this should be called only when onResume has been executed already, which means
     // the UI is responsive at this moment.
     stopTracing(activity);
@@ -172,11 +160,9 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityStopped(@NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
 
-    // this should be replaced by idle transactions
-    // stopTracing(); only here if we'd like to track from beginning to the end
-
-    // clear up so we dont start again for the same activity
-    // TODO: should we do this on onActivityDestroyed?
+    // clear up so we dont start again for the same activity if the activity is in the acitvity
+    // stack still
+    // if the activity is opened again and not in memory, transactions will be created normally.
     if (performanceEnabled) {
       activities.remove(activity);
     }

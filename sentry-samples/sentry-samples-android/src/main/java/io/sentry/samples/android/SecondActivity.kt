@@ -38,9 +38,9 @@ class SecondActivity : AppCompatActivity() {
         binding = ActivitySecondBinding.inflate(layoutInflater)
 
         binding.doRequest.setOnClickListener {
-            // this wont create a transaction because the one in the scope is already finished
+            // this wont create a transaction because the one in the scope is already finished,
+            // unless you opt-out enableAutoActivityLifecycleTracingFinish
             updateRepos()
-            // finishing so its completely destroyed
 //            finish()
 //            startActivity(Intent(this, MainActivity::class.java))
         }

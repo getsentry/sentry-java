@@ -76,8 +76,6 @@ dependencies {
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
     implementation(Config.Libs.lifecycleCommonJava8)
-    implementation(Config.Libs.lifecycleCommonJava8)
-//    implementation(Config.TestLibs.androidxCoreKtx)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
