@@ -8,7 +8,7 @@
     <!-- Setting minimumBreadcrumbLevel modifies the default minimum level to add breadcrumbs from INFO to DEBUG  -->
     <!-- Setting minimumEventLevel the default minimum level to capture an event from ERROR to WARN  -->
     <Sentry name="Sentry"
-            dsn="https://9eda1857f9344d51821b656ba3557780@o420886.ingest.sentry.io/5339853"
+            dsn="https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
             minimumBreadcrumbLevel="DEBUG"
             minimumEventLevel="WARN"
     />
