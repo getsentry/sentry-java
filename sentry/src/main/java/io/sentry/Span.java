@@ -58,13 +58,13 @@ final class Span implements ISpan {
   }
 
   @Override
-  public void setName(String name) {
-    this.setTag("sentry-name", name);
+  public void setName(final @Nullable String name) {
+    this.setTag(ISpan.NAME_TAG, name);
   }
 
   @Override
-  public String getName() {
-    return this.getTag("sentry-name");
+  public @Nullable String getName() {
+    return this.getTag(ISpan.NAME_TAG);
   }
 
   @Override
@@ -138,7 +138,7 @@ final class Span implements ISpan {
   }
 
   @Override
-  public @NotNull String getTag(@NotNull String key) {
+  public @Nullable String getTag(@NotNull String key) {
     return context.getTags().get(key);
   }
 

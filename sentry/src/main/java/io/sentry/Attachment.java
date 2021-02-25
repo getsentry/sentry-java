@@ -55,7 +55,7 @@ public final class Attachment {
    * @param filename The name of the attachment to display in Sentry.
    * @param contentType The content type of the attachment.
    * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
-   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   *     transaction or set to <code>false</code> if it shouldn't.
    */
   public Attachment(
       final @NotNull byte[] bytes,
@@ -127,7 +127,7 @@ public final class Attachment {
    * @param filename The name of the attachment to display in Sentry.
    * @param contentType The content type of the attachment.
    * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
-   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   *     transaction or set to <code>false</code> if it shouldn't.
    */
   public Attachment(
       final @NotNull String pathname,
@@ -177,10 +177,10 @@ public final class Attachment {
   }
 
   /**
-   * Returns <code>true</code> if the SDK should add this attachment to every {@link ITransaction}
-   * and <code>false</code> if it shouldn't. Default is <code>false</code>.
+   * Returns <code>true</code> if the SDK should add this attachment to every transaction. and
+   * <code>false</code> if it shouldn't. Default is <code>false</code>.
    *
-   * @return <code>true</code> if attachment should be added to every {@link ITransaction}.
+   * @return <code>true</code> if attachment should be added to every transaction.
    */
   boolean isAddToTransactions() {
     return addToTransactions;

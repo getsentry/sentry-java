@@ -5,7 +5,6 @@ import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -25,7 +24,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
 
 /**
- * Creates {@link ITransaction} around HTTP request executions.
+ * Creates {@link ISpan} around HTTP request executions.
  *
  * <p>Only requests that have {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} request
  * attribute set are turned into transactions. This attribute is set in {@link

@@ -189,7 +189,7 @@ public interface ISentryClient {
   /**
    * Captures a transaction.
    *
-   * @param transaction the {@link ITransaction} to send
+   * @param transaction the {@link SentryTransaction} to send
    * @param scope An optional scope to be applied to the event.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
@@ -199,7 +199,7 @@ public interface ISentryClient {
   /**
    * Captures a transaction without scope nor hint.
    *
-   * @param transaction the {@link ITransaction} to send
+   * @param transaction the {@link SentryTransaction} to send
    * @return The Id (SentryId object) of the event
    */
   default SentryId captureTransaction(SentryTransaction transaction) {

@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Represents performance monitoring Span. */
 public interface ISpan {
+  String NAME_TAG = "sentry-name";
 
   /**
    * Sets the span name.
@@ -133,7 +134,7 @@ public interface ISpan {
    */
   void setTag(@NotNull String key, @NotNull String value);
 
-  @NotNull
+  @Nullable
   String getTag(@NotNull String key);
 
   /**

@@ -48,8 +48,8 @@ public final class NoOpSpan implements ISpan {
   public void setOperation(@Nullable String operation) {}
 
   @Override
-  public @Nullable String getOperation() {
-    return null;
+  public @NotNull String getOperation() {
+    return "op";
   }
 
   @Override
