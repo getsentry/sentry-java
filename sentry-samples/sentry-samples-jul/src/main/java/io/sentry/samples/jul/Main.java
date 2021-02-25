@@ -1,6 +1,5 @@
 package io.sentry.samples.jul;
 
-//import io.sentry.Sentry;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +23,5 @@ public class Main {
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, "Something went wrong", e);
     }
-    // it didn't help either, looks like SDK is not even initializing.
-//    Sentry.flush(5000);
   }
 }
