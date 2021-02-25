@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClassName = "io.sentry.samples.console.Main"
+    mainClass.set("io.sentry.samples.console.Main")
 }
 
 configure<JavaPluginConvention> {

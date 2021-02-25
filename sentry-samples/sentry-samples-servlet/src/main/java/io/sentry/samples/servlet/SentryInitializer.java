@@ -16,7 +16,7 @@ public final class SentryInitializer implements ServletContainerInitializer {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
           // your Sentry project/dashboard
           options.setDsn(
-              "https://2ca2c945dfb7451b8136480015b2aaf6@o420886.ingest.sentry.io/5433286");
+              "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
 
           // All events get assigned to the release. See more at
           // https://docs.sentry.io/workflow/releases/
@@ -49,6 +49,9 @@ public final class SentryInitializer implements ServletContainerInitializer {
 
           // Enable SDK logging with Debug level
           options.setDebug(true);
+
+          // Include frames from our package
+          options.addInAppInclude("io.sentry.samples");
         });
   }
 }
