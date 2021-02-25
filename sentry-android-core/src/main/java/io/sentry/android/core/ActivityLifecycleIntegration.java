@@ -112,7 +112,7 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NonNull Activity activity) {
     if (performanceEnabled && options.isEnableAutoActivityLifecycleTracingFinish()) {
       final ITransaction transaction = activities.get(activity);
-      if (transaction != null) {
+      if (transaction != null && !transaction.isFinished()) {
         SpanStatus status = transaction.getStatus();
         // status might be set by other integrations, let's not overwrite it
         if (status == null) {
