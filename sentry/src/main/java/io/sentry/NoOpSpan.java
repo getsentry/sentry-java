@@ -90,9 +90,4 @@ public final class NoOpSpan implements ISpan {
   public @Nullable Boolean isSampled() {
     return null;
   }
-
-  @Override
-  public ISpan getLatestActiveSpan() {
-    return this;
-  }
 }

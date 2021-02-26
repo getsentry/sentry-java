@@ -137,12 +137,4 @@ public interface ISpan {
    */
   @Nullable
   Boolean isSampled();
-
-  /**
-   * Returns the last active span within the span hierarchy
-   *
-   * @return the last active span of {@code null} if not found
-   */
-  @Nullable
-  ISpan getLatestActiveSpan();
 }

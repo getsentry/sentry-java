@@ -124,10 +124,10 @@ public final class Scope implements Cloneable {
   @Nullable
   public ISpan getLatestActiveSpan() {
     final ISpan tx = span;
-    if (tx != null) {
-      return tx.getLatestActiveSpan();
+    if (tx instanceof SentryTracer) {
+      return ((SentryTracer) tx).getLatestActiveSpan();
     } else {
-      return null;
+      return tx;
     }
   }
 

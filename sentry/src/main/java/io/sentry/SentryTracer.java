@@ -160,7 +160,6 @@ public final class SentryTracer implements ISpan {
     return this.root.isSampled();
   }
 
-  @Override
   public @Nullable ISpan getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
@@ -170,7 +169,7 @@ public final class SentryTracer implements ISpan {
         }
       }
     }
-    return root.getLatestActiveSpan();
+    return root.isFinished() ? null : root;
   }
 
   @NotNull

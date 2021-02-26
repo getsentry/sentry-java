@@ -143,11 +143,6 @@ final class Span implements ISpan {
   }
 
   @Override
-  public ISpan getLatestActiveSpan() {
-    return isFinished() ? null : this;
-  }
-
-  @Override
   public void setThrowable(final @Nullable Throwable throwable) {
     this.throwable = throwable;
   }
