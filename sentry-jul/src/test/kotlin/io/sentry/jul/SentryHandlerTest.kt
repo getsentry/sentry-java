@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.jul.BuildConfig
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
