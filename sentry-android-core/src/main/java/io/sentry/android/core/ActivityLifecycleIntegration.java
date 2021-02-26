@@ -68,7 +68,7 @@ public final class ActivityLifecycleIntegration
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
 
-    options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration removed.");
+    options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
   }
 
   private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
