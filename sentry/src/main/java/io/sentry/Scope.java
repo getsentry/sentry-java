@@ -100,7 +100,7 @@ public final class Scope implements Cloneable {
    */
   public @Nullable String getTransactionName() {
     final ISpan tx = this.span;
-    return tx != null ? tx.getName() : transactionName;
+    return tx != null ? tx.getTag(ISpan.NAME_TAG) : transactionName;
   }
 
   /**

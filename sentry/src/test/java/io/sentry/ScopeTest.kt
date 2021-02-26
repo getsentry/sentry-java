@@ -120,8 +120,7 @@ class ScopeTest {
         assertEquals("abc", clone.fingerprint.first())
 
         assertEquals("message", clone.breadcrumbs.first().message)
-        assertEquals("transaction-name", (clone.span as SentryTracer).name)
-
+        assertEquals("transaction-name", (clone.span as SentryTracer).getTag(ISpan.NAME_TAG))
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
         assertEquals(transaction, clone.span)
@@ -719,7 +718,7 @@ class ScopeTest {
         assertEquals("transaction-name", scope.transactionName)
         scope.setTransaction("new-name")
         assertEquals("new-name", scope.transactionName)
-        transaction.name = "another-name"
+        transaction.setTag(ISpan.NAME_TAG, "another-name")
         assertEquals("another-name", scope.transactionName)
     }
 

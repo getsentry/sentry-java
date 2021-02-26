@@ -58,16 +58,6 @@ final class Span implements ISpan {
   }
 
   @Override
-  public void setName(final @Nullable String name) {
-    this.setTag(ISpan.NAME_TAG, name);
-  }
-
-  @Override
-  public @Nullable String getName() {
-    return this.getTag(ISpan.NAME_TAG);
-  }
-
-  @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
     return this.startChild(operation, null);
   }

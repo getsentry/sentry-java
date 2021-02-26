@@ -19,7 +19,7 @@ public final class SentryTracer implements ISpan {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub);
-    this.root.setName(context.getName());
+    this.root.setTag(ISpan.NAME_TAG, context.getName());
     this.hub = hub;
   }
 
@@ -66,16 +66,6 @@ public final class SentryTracer implements ISpan {
     final Span span = new Span(root.getTraceId(), parentSpanId, this, operation, this.hub);
     this.children.add(span);
     return span;
-  }
-
-  @Override
-  public void setName(final @Nullable String name) {
-    this.root.setName(name);
-  }
-
-  @Override
-  public @Nullable String getName() {
-    return this.root.getName();
   }
 
   @Override

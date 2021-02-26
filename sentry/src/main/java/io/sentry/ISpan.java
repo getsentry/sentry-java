@@ -8,20 +8,6 @@ public interface ISpan {
   String NAME_TAG = "sentry-name";
 
   /**
-   * Sets the span name.
-   *
-   * @param name - span name
-   */
-  void setName(@Nullable String name);
-
-  /**
-   * Gets the span name
-   *
-   * @return the name
-   */
-  @Nullable
-  String getName();
-  /**
    * Starts a child Span.
    *
    * @param operation - new span operation name

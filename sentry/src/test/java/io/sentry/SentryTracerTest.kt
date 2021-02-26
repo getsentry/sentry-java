@@ -162,13 +162,6 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `setName overwrites the transaction name`() {
-        val tracer = createSentryTracer()
-        tracer.name = "new name"
-        assertEquals("new name", tracer.name)
-    }
-
-    @Test
     fun `when transaction is not finished, status is null`() {
         val tracer = createSentryTracer()
         assertNull(tracer.status)
