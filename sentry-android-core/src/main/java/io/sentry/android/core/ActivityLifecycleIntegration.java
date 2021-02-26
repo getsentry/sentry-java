@@ -48,7 +48,7 @@ public final class ActivityLifecycleIntegration
         .getLogger()
         .log(
             SentryLevel.DEBUG,
-            "ActivityBreadcrumbsIntegration enabled: %s",
+            "ActivityLifecycleIntegration enabled: %s",
             this.options.isEnableActivityLifecycleBreadcrumbs());
 
     performanceEnabled = isPerformanceEnabled(this.options);
