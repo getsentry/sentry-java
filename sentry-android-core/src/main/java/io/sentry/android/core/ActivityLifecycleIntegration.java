@@ -109,8 +109,9 @@ public final class ActivityLifecycleIntegration
     return activities.containsKey(activity);
   }
 
-  private void stopTracing(final @NonNull Activity activity) {
-    if (performanceEnabled && options.isEnableAutoActivityLifecycleTracingFinish()) {
+  private void stopTracing(
+      final @NonNull Activity activity, final boolean enableAutoActivityLifecycleTracingFinish) {
+    if (performanceEnabled && enableAutoActivityLifecycleTracingFinish) {
       final ITransaction transaction = activities.get(activity);
       if (transaction != null && !transaction.isFinished()) {
         SpanStatus status = transaction.getStatus();
@@ -125,7 +126,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityCreated(
-      @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+      final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
     addBreadcrumb(activity, "created");
 
     // if activity has global fields being init. and
@@ -135,29 +136,29 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityStarted(@NonNull Activity activity) {
+  public synchronized void onActivityStarted(final @NonNull Activity activity) {
     addBreadcrumb(activity, "started");
   }
 
   @Override
-  public synchronized void onActivityResumed(@NonNull Activity activity) {
+  public synchronized void onActivityResumed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "resumed");
   }
 
   @Override
-  public synchronized void onActivityPostResumed(@NonNull Activity activity) {
+  public synchronized void onActivityPostResumed(final @NonNull Activity activity) {
     // this should be called only when onResume has been executed already, which means
     // the UI is responsive at this moment.
-    stopTracing(activity);
+    stopTracing(activity, options.isEnableAutoActivityLifecycleTracingFinish());
   }
 
   @Override
-  public synchronized void onActivityPaused(@NonNull Activity activity) {
+  public synchronized void onActivityPaused(final @NonNull Activity activity) {
     addBreadcrumb(activity, "paused");
   }
 
   @Override
-  public synchronized void onActivityStopped(@NonNull Activity activity) {
+  public synchronized void onActivityStopped(final @NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
 
     // clear up so we dont start again for the same activity if the activity is in the acitvity
@@ -170,12 +171,19 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivitySaveInstanceState(
-      @NonNull Activity activity, @NonNull Bundle outState) {
+      final @NonNull Activity activity, final @NonNull Bundle outState) {
     addBreadcrumb(activity, "saveInstanceState");
   }
 
   @Override
-  public synchronized void onActivityDestroyed(@NonNull Activity activity) {
+  public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
+  }
+
+  @Override
+  public synchronized void onActivityPostDestroyed(final @NonNull Activity activity) {
+    // in case people opt-out enableAutoActivityLifecycleTracingFinish and forgot to finish it,
+    // we do it automatically before moving to a new Activity.
+    stopTracing(activity, true);
   }
 }
