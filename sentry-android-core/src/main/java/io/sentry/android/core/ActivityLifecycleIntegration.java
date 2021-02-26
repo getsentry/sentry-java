@@ -29,7 +29,8 @@ public final class ActivityLifecycleIntegration
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
-  private final @NotNull WeakHashMap<Activity, ITransaction> activities = new WeakHashMap<>();
+  private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
+      new WeakHashMap<>();
 
   public ActivityLifecycleIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -101,18 +102,18 @@ public final class ActivityLifecycleIntegration
             }
           });
 
-      activities.put(activity, transaction);
+      activitiesWithOngoingTransactions.put(activity, transaction);
     }
   }
 
   private boolean isRunningTransaction(final @NonNull Activity activity) {
-    return activities.containsKey(activity);
+    return activitiesWithOngoingTransactions.containsKey(activity);
   }
 
   private void stopTracing(
       final @NonNull Activity activity, final boolean enableAutoActivityLifecycleTracingFinish) {
     if (performanceEnabled && enableAutoActivityLifecycleTracingFinish) {
-      final ITransaction transaction = activities.get(activity);
+      final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
       if (transaction != null && !transaction.isFinished()) {
         SpanStatus status = transaction.getStatus();
         // status might be set by other integrations, let's not overwrite it
@@ -165,7 +166,7 @@ public final class ActivityLifecycleIntegration
     // stack still
     // if the activity is opened again and not in memory, transactions will be created normally.
     if (performanceEnabled) {
-      activities.remove(activity);
+      activitiesWithOngoingTransactions.remove(activity);
     }
   }
 
