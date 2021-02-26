@@ -55,7 +55,7 @@ public final class ActivityLifecycleIntegration
 
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
-      options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration installed.");
+      options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     }
   }
 
