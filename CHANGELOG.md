@@ -1,6 +1,7 @@
 # vNext
 
 * Fix: Fix setting in-app-includes from external properties (#1291)
+* Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
 
 
 # 4.2.0
