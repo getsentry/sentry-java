@@ -11,10 +11,9 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryTransaction extends SentryBaseEvent {
   /** The transaction name. */
   @SuppressWarnings("UnusedVariable")
-  private @NotNull String transaction;
+  private @Nullable String transaction;
 
   /** The moment in time when span was started. */
-  @SuppressWarnings("UnusedVariable")
   private final @NotNull Date startTimestamp;
 
   /** The moment in time when span has ended. */
@@ -31,11 +30,11 @@ public final class SentryTransaction extends SentryBaseEvent {
     this.spans.addAll(sentryTracer.getChildren());
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
+    this.transaction = sentryTracer.getTag(ISpan.NAME_TAG);
     this.getContexts().setTrace(sentryTracer.getContext());
-    this.transaction = sentryTracer.getRoot().getTag("sentry-name");
   }
 
-  public List<Span> getSpans() {
+  public @NotNull List<Span> getSpans() {
     return spans;
   }
 
@@ -43,19 +42,19 @@ public final class SentryTransaction extends SentryBaseEvent {
     return this.timestamp != null;
   }
 
-  public String getTransaction() {
+  public @Nullable String getTransaction() {
     return transaction;
   }
 
-  public Date getStartTimestamp() {
+  public @NotNull Date getStartTimestamp() {
     return startTimestamp;
   }
 
-  public Date getTimestamp() {
+  public @Nullable Date getTimestamp() {
     return timestamp;
   }
 
-  public String getType() {
+  public @NotNull String getType() {
     return type;
   }
 }

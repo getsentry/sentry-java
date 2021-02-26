@@ -92,6 +92,7 @@ public final class SentryTracer implements ISpan {
   @Override
   public void finish(@Nullable SpanStatus status) {
     root.finish(status);
+    // clear the transaction from the scope atomically
     hub.captureTransaction(this);
   }
 
@@ -146,7 +147,7 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public @NotNull String getTag(final @NotNull String key) {
+  public @Nullable String getTag(final @NotNull String key) {
     return this.root.getTag(key);
   }
 
