@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   private final transient @NotNull IHub hub;
 
   private final transient @NotNull SpanContext context;
+
+  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
@@ -155,6 +158,11 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   @Override
   public void finish() {
+    // the transaction can be finished only once
+    if (!finished.compareAndSet(false, true)) {
+      return;
+    }
+
     this.timestamp = DateUtils.getCurrentDateTime();
     if (this.throwable != null) {
       hub.setSpanContext(this.throwable, this);
@@ -172,15 +180,15 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   /**
    * Sets transaction operation.
    *
-   * @param op - operation
+   * @param operation - operation
    */
   @Override
-  public void setOperation(@Nullable String op) {
-    this.context.setOperation(op);
+  public void setOperation(final @NotNull String operation) {
+    this.context.setOperation(operation);
   }
 
   @Override
-  public @Nullable String getOperation() {
+  public @NotNull String getOperation() {
     return this.context.getOperation();
   }
 
@@ -268,6 +276,6 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   @Override
   public boolean isFinished() {
-    return this.timestamp != null;
+    return finished.get();
   }
 }

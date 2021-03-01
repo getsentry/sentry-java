@@ -96,10 +96,14 @@ public final class ActivityLifecycleIntegration
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
           scope -> {
-            // we we'd not like to overwrite existent transactions bound to the Scope manually.
-            if (scope.getTransaction() == null) {
-              scope.setTransaction(transaction);
-            }
+            scope.withTransaction(
+                scopeTransaction -> {
+                  // we we'd not like to overwrite existent transactions bound to the Scope
+                  // manually.
+                  if (scopeTransaction == null) {
+                    scope.setTransaction(transaction);
+                  }
+                });
           });
 
       activitiesWithOngoingTransactions.put(activity, transaction);
@@ -110,30 +114,34 @@ public final class ActivityLifecycleIntegration
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
 
-  private void stopTracing(
-      final @NonNull Activity activity, final boolean enableAutoActivityLifecycleTracingFinish) {
-    if (performanceEnabled && enableAutoActivityLifecycleTracingFinish) {
+  private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
+    if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      if (transaction != null && !transaction.isFinished()) {
+      if (transaction != null) {
         SpanStatus status = transaction.getStatus();
         // status might be set by other integrations, let's not overwrite it
         if (status == null) {
           status = SpanStatus.OK;
         }
+        //
         transaction.finish(status);
       }
     }
   }
 
   @Override
-  public synchronized void onActivityCreated(
+  public synchronized void onActivityPreCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    addBreadcrumb(activity, "created");
-
     // if activity has global fields being init. and
     // they are slow, this won't count the whole fields/ctor initialization time, but only
     // when onCreate is actually called.
     startTracing(activity);
+  }
+
+  @Override
+  public synchronized void onActivityCreated(
+      final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    addBreadcrumb(activity, "created");
   }
 
   @Override

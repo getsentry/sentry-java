@@ -47,7 +47,7 @@ public interface ISpan {
    *
    * @param operation - the operation
    */
-  void setOperation(@Nullable String operation);
+  void setOperation(@NotNull String operation);
 
   /**
    * Returns the span operation.
@@ -69,7 +69,7 @@ public interface ISpan {
    *
    * @return the description
    */
-  @Nullable
+  @NotNull
   String getDescription();
 
   /**

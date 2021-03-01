@@ -1,6 +1,9 @@
 package io.sentry.android.core;
 
+import io.sentry.ITransaction;
+import io.sentry.Scope;
 import io.sentry.SentryOptions;
+import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,9 +36,36 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
+  /**
+   * Enables the Auto instrumentation for Activity lifecycle tracing.
+   *   It also requires setting {@link SentryOptions#getTracesSampleRate()} or
+   *   {@link SentryOptions#getTracesSampler()}.
+   *
+   * It starts a transaction before each Activity's onCreate method is called (onActivityPreCreated).
+   *   The transaction's name is the Activity's name, e.g. MainActivity.
+   *   The transaction's operation is navigation.
+   * It finishes the transaction after each activity's onResume method is called (onActivityPostResumed),
+   *   this depends on {@link SentryAndroidOptions#enableAutoActivityLifecycleTracingFinish}.
+   *   If {@link SentryAndroidOptions#enableAutoActivityLifecycleTracingFinish} is disabled, you may
+   *   end the transaction manually.
+   *   If the transaction is not finished either automatically or manually, we end it automatically
+   *   after each Activity's onDestroy method is called (onActivityPostDestroyed).
+   * The transaction status will be {@link SpanStatus#OK} if none is set.
+   *
+   * The transaction is automatically set to the {@link Scope}, but only if there's no transaction
+   * already set to the Scope.
+   */
   private boolean enableAutoActivityLifecycleTracing = true;
 
-  private boolean enableAutoActivityLifecycleTracingFinish = false; // TODO: default is true
+  /**
+   * Enables the Auto instrumentation for Activity lifecycle tracing, but specifically when to
+   * finish the transaction, read {@link SentryAndroidOptions#enableAutoActivityLifecycleTracing}.
+   *
+   * If you require a specific lifecycle to finish a transaction or even after the Activity is
+   * fully rendered but still waiting for an IO operation, you could call
+   * {@link ITransaction#finish()} yourself on {@link Scope#getTransaction()}.
+   */
+  private boolean enableAutoActivityLifecycleTracingFinish = true;
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
