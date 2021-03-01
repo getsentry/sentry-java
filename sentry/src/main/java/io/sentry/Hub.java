@@ -173,7 +173,7 @@ public final class Hub implements IHub {
       final ISpan span = throwableToSpan.get(event.getThrowable());
       if (span != null) {
         if (event.getContexts().getTrace() == null) {
-          event.getContexts().setTrace(span.getContext());
+          event.getContexts().setTrace(span.getSpanContext());
         }
       }
     }
@@ -570,24 +570,25 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @NotNull ISpan startTransaction(final @NotNull TransactionContext transactionContext) {
+  public @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext) {
     return this.startTransaction(transactionContext, null);
   }
 
   @Override
-  public @NotNull ISpan startTransaction(
+  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
-    ISpan transaction;
+    ITransaction transaction;
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
-      transaction = NoOpSpan.getInstance();
+      transaction = NoOpTransaction.getInstance();
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContext, customSamplingContext);
@@ -641,7 +642,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(throwable, "throwable is required");
     final ISpan span = this.throwableToSpan.get(throwable);
     if (span != null) {
-      return span.getContext();
+      return span.getSpanContext();
     }
     return null;
   }

@@ -24,7 +24,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is created, context is set`() {
         val tracer = createSentryTracer()
-        assertNotNull(tracer.context)
+        assertNotNull(tracer.spanContext)
     }
 
     @Test
@@ -142,7 +142,7 @@ class SentryTracerTest {
         val tracer = createSentryTracer()
         tracer.operation = "op"
         tracer.finish()
-        assertEquals("op", tracer.context.operation)
+        assertEquals("op", tracer.spanContext.operation)
     }
 
     @Test
@@ -150,7 +150,7 @@ class SentryTracerTest {
         val tracer = createSentryTracer()
         tracer.description = "desc"
         tracer.finish()
-        assertEquals("desc", tracer.context.description)
+        assertEquals("desc", tracer.spanContext.description)
     }
 
     @Test
@@ -158,7 +158,7 @@ class SentryTracerTest {
         val tracer = createSentryTracer()
         tracer.status = SpanStatus.ALREADY_EXISTS
         tracer.finish()
-        assertEquals(SpanStatus.ALREADY_EXISTS, tracer.context.status)
+        assertEquals(SpanStatus.ALREADY_EXISTS, tracer.spanContext.status)
     }
 
     @Test

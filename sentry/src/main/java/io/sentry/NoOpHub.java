@@ -120,14 +120,14 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull ISpan startTransaction(TransactionContext transactionContexts) {
-    return NoOpSpan.getInstance();
+  public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
+    return NoOpTransaction.getInstance();
   }
 
   @Override
-  public @NotNull ISpan startTransaction(
+  public @NotNull ITransaction startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return NoOpSpan.getInstance();
+    return NoOpTransaction.getInstance();
   }
 
   @Override

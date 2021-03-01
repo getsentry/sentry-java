@@ -1,16 +1,20 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
+import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SentryTracer implements ISpan {
+public final class SentryTracer implements ITransaction {
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
@@ -137,8 +141,8 @@ public final class SentryTracer implements ISpan {
   }
 
   @Override
-  public @NotNull SpanContext getContext() {
-    return this.root.getContext();
+  public @NotNull SpanContext getSpanContext() {
+    return this.root.getSpanContext();
   }
 
   @Override
@@ -161,6 +165,41 @@ public final class SentryTracer implements ISpan {
     return this.root.isSampled();
   }
 
+  @Override
+  public void setName(@NotNull String name) {
+    this.root.setTag(ISpan.NAME_TAG, name);
+  }
+
+  @Override
+  public @NotNull String getName() {
+    return this.root.getTag(ISpan.NAME_TAG);
+  }
+
+  @Override
+  public void setRequest(@Nullable Request request) {
+    hub.configureScope(scope -> scope.setRequest(request));
+  }
+
+  @Override
+  public @Nullable Request getRequest() {
+    final AtomicReference<Request> contexts = new AtomicReference<>();
+    hub.configureScope(scope -> contexts.set(scope.getRequest()));
+    return contexts.get();
+  }
+
+  @Override
+  public @NotNull Contexts getContexts() {
+    final AtomicReference<Contexts> contexts = new AtomicReference<>();
+    hub.configureScope(scope -> contexts.set(scope.getContexts()));
+    return contexts.get();
+  }
+
+  @Override
+  public @NotNull List<Span> getSpans() {
+    return this.children;
+  }
+
+  @Override
   public @Nullable ISpan getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
@@ -171,6 +210,18 @@ public final class SentryTracer implements ISpan {
       }
     }
     return root.isFinished() ? null : root;
+  }
+
+  @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  public @Nullable SentryId getEventId() {
+    return null;
+  }
+
+  @Override
+  public @Nullable String getTransaction() {
+    return this.getName();
   }
 
   @NotNull

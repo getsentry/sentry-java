@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public interface ITransaction {
+public interface ITransaction extends ISpan {
 
   /**
    * Sets transaction name.
@@ -54,7 +54,7 @@ public interface ITransaction {
    * @return span or null if not found.
    */
   @Nullable
-  Span getLatestActiveSpan();
+  ISpan getLatestActiveSpan();
 
   /**
    * Returns transaction's event id.

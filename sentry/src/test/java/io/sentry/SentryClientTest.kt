@@ -770,8 +770,8 @@ class SentryClientTest {
             val sentTransaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
                 assertNotNull(sentTransaction) { tx ->
                     val sentSpanIds = tx.spans.map { span -> span.spanId }
-                    assertTrue(sentSpanIds.contains(span1.context.spanId))
-                    assertFalse(sentSpanIds.contains(span2.context.spanId))
+                    assertTrue(sentSpanIds.contains(span1.spanContext.spanId))
+                    assertFalse(sentSpanIds.contains(span2.spanContext.spanId))
                 }
         }, eq(null))
     }
@@ -804,7 +804,7 @@ class SentryClientTest {
         sut.captureEvent(event, scope)
         transaction.finish()
         assertNotNull(event.contexts.trace)
-        assertEquals(transaction.root.context, event.contexts.trace)
+        assertEquals(transaction.root.spanContext, event.contexts.trace)
     }
 
     @Test
@@ -817,7 +817,7 @@ class SentryClientTest {
         val span = transaction.startChild("op")
         sut.captureEvent(event, scope)
         assertNotNull(event.contexts.trace)
-        assertEquals(span.context, event.contexts.trace)
+        assertEquals(span.spanContext, event.contexts.trace)
     }
 
     @Test

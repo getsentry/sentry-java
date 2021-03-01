@@ -31,7 +31,7 @@ public final class SentryTransaction extends SentryBaseEvent {
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
     this.transaction = sentryTracer.getTag(ISpan.NAME_TAG);
-    this.getContexts().setTrace(sentryTracer.getContext());
+    this.getContexts().setTrace(sentryTracer.getSpanContext());
   }
 
   public @NotNull List<Span> getSpans() {

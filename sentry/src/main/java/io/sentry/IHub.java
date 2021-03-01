@@ -285,7 +285,7 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  ISpan startTransaction(TransactionContext transactionContexts);
+  ITransaction startTransaction(TransactionContext transactionContexts);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
@@ -296,7 +296,7 @@ public interface IHub {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  default @NotNull ISpan startTransaction(
+  default @NotNull ITransaction startTransaction(
       String name, String operation, CustomSamplingContext customSamplingContext) {
     return startTransaction(new TransactionContext(name, operation), customSamplingContext);
   }
@@ -311,7 +311,7 @@ public interface IHub {
    * @return created transaction.
    */
   @NotNull
-  ISpan startTransaction(
+  ITransaction startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
 
   /**
@@ -323,7 +323,7 @@ public interface IHub {
    * @param operation the operation
    * @return created transaction
    */
-  default @NotNull ISpan startTransaction(
+  default @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull String operation) {
     return startTransaction(name, operation, null);
   }

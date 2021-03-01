@@ -14,6 +14,8 @@ include(
     "sentry-apache-http-client-5",
 //    "sentry-spring",
 //    "sentry-spring-boot-starter",
+//    "sentry-spring",
+//    "sentry-spring-boot-starter",
 //    "sentry-android-timber",
 //    "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console")

@@ -5,6 +5,7 @@ import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -76,7 +77,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
       // at this stage we are not able to get real transaction name
-      final ISpan transaction = startTransaction(httpRequest, sentryTraceHeader);
+      final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
       try {
         filterChain.doFilter(httpRequest, httpResponse);
       } finally {
@@ -99,7 +100,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     }
   }
 
-  private ISpan startTransaction(
+  private ITransaction startTransaction(
       final @NotNull HttpServletRequest request, final @Nullable String sentryTraceHeader) {
 
     final String name = request.getMethod() + " " + request.getRequestURI();
@@ -112,7 +113,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         final TransactionContext contexts =
             TransactionContext.fromSentryTrace(
                 name, "http.server", new SentryTraceHeader(sentryTraceHeader));
-        final ISpan transaction = hub.startTransaction(contexts, customSamplingContext);
+        final ITransaction transaction = hub.startTransaction(contexts, customSamplingContext);
         hub.configureScope(scope -> scope.setSpan(transaction));
         return transaction;
       } catch (InvalidSentryTraceHeaderException e) {
@@ -121,7 +122,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    final ISpan transaction = hub.startTransaction(name, "http.server", customSamplingContext);
+    final ITransaction transaction =
+        hub.startTransaction(name, "http.server", customSamplingContext);
     hub.configureScope(scope -> scope.setSpan(transaction));
     return transaction;
   }

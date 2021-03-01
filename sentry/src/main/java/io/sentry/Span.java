@@ -118,7 +118,7 @@ final class Span implements ISpan {
   }
 
   @Override
-  public @NotNull SpanContext getContext() {
+  public @NotNull SpanContext getSpanContext() {
     return context;
   }
 

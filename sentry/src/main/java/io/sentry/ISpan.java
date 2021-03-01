@@ -110,7 +110,7 @@ public interface ISpan {
    * @return the span context
    */
   @NotNull
-  SpanContext getContext();
+  SpanContext getSpanContext();
 
   /**
    * Sets the tag on span or transaction.

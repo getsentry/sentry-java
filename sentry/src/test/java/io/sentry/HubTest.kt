@@ -312,14 +312,14 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val exception = RuntimeException()
         val span = mock<Span>()
-        whenever(span.context).thenReturn(SpanContext("op"))
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(exception, span)
 
         val event = SentryEvent(exception)
 
         val hint = { }
         sut.captureEvent(event, hint)
-        assertEquals(span.context, event.contexts.trace)
+        assertEquals(span.spanContext, event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hint))
     }
 
@@ -328,7 +328,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val exception = RuntimeException()
         val span = mock<Span>()
-        whenever(span.context).thenReturn(SpanContext("op"))
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(exception, span)
 
         val event = SentryEvent(exception)
@@ -433,12 +433,12 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val throwable = Throwable()
         val span = mock<Span>()
-        whenever(span.context).thenReturn(SpanContext("op"))
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(throwable, span)
 
         sut.captureException(throwable)
         verify(mockClient).captureEvent(check {
-            assertEquals(span.context, it.contexts.trace)
+            assertEquals(span.spanContext, it.contexts.trace)
         }, any(), anyOrNull())
     }
 
@@ -446,7 +446,7 @@ class HubTest {
     fun `when captureException is called with an exception which has not been previously attached with span context, span context should not be set on the event before capturing`() {
         val (sut, mockClient) = getEnabledHub()
         val span = mock<Span>()
-        whenever(span.context).thenReturn(SpanContext("op"))
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(Throwable(), span)
 
         sut.captureException(Throwable())
@@ -1070,7 +1070,7 @@ class HubTest {
 
         val transaction = hub.startTransaction(contexts)
         assertTrue(transaction is SentryTracer)
-        assertEquals(contexts, transaction.root.context)
+        assertEquals(contexts, transaction.root.spanContext)
     }
 
     @Test
@@ -1169,7 +1169,7 @@ class HubTest {
         val span = transaction.startChild("op")
         val exception = RuntimeException()
         hub.setSpanContext(exception, span)
-        assertEquals(span.context, hub.getSpanContext(exception))
+        assertEquals(span.spanContext, hub.getSpanContext(exception))
     }
 
     @Test
