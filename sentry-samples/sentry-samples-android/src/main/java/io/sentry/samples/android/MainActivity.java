@@ -4,9 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
-import io.sentry.ITransaction;
 import io.sentry.Sentry;
-import io.sentry.SpanStatus;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -21,7 +19,6 @@ import java.io.Writer;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
-import org.jetbrains.annotations.NotNull;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -158,31 +155,5 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
-  }
-
-  @Override
-  protected void onResume() {
-    super.onResume();
-    System.out.println("do some stuff resume");
-
-    // I opt-out enableAutoActivityLifecycleTracingFinish so I have to finish manually
-    finishTransaction(SpanStatus.OK);
-  }
-
-  @Override
-  protected void onStart() {
-    super.onStart();
-    System.out.println("do some stuff start");
-  }
-
-  // TODO: this API should be ideally easier
-  private void finishTransaction(final @NotNull SpanStatus status) {
-    Sentry.configureScope(
-        scope -> {
-          final ITransaction transaction = scope.getTransaction();
-          if (transaction != null) {
-            transaction.finish(status);
-          }
-        });
   }
 }

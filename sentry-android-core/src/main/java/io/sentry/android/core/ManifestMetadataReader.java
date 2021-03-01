@@ -172,18 +172,18 @@ final class ManifestMetadataReader {
         }
 
         options.setEnableAutoActivityLifecycleTracing(
-                readBool(
-                        metadata,
-                        logger,
-                        TRACES_ACTIVITY_ENABLE,
-                        options.isEnableAutoActivityLifecycleTracing()));
+            readBool(
+                metadata,
+                logger,
+                TRACES_ACTIVITY_ENABLE,
+                options.isEnableAutoActivityLifecycleTracing()));
 
         options.setEnableAutoActivityLifecycleTracingFinish(
-                readBool(
-                        metadata,
-                        logger,
-                        TRACES_ACTIVITY_FINISH_ENABLE,
-                        options.isEnableAutoActivityLifecycleTracingFinish()));
+            readBool(
+                metadata,
+                logger,
+                TRACES_ACTIVITY_FINISH_ENABLE,
+                options.isEnableAutoActivityLifecycleTracingFinish()));
       }
       options
           .getLogger()

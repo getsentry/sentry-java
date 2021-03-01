@@ -167,6 +167,13 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
+  public synchronized void onActivityPostPaused(final @NonNull Activity activity) {
+    // in case people opt-out enableAutoActivityLifecycleTracingFinish and forgot to finish it,
+    // we do it automatically before moving to a new Activity.
+    stopTracing(activity, true);
+  }
+
+  @Override
   public synchronized void onActivityStopped(final @NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
 
@@ -187,12 +194,5 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
-  }
-
-  @Override
-  public synchronized void onActivityPostDestroyed(final @NonNull Activity activity) {
-    // in case people opt-out enableAutoActivityLifecycleTracingFinish and forgot to finish it,
-    // we do it automatically before moving to a new Activity.
-    stopTracing(activity, true);
   }
 }

@@ -66,43 +66,46 @@ class SecondActivity : AppCompatActivity() {
 
         // do some stuff
 
-        updateRepos(true)
+        updateRepos()
 
         // do some stuff
 
         span?.finish(SpanStatus.OK)
     }
 
-    private fun updateRepos(finishTransaction: Boolean = false) {
-        val span = Sentry.getSpan()?.startChild("updateRepos", javaClass.simpleName)
+    private fun updateRepos() {
+        val currentSpan = Sentry.getSpan()
+        val span = currentSpan?.startChild("updateRepos", javaClass.simpleName)
+            ?: Sentry.startTransaction("updateRepos", "task")
 
         service.listRepos("getsentry").enqueue(object : Callback<List<Repo>> {
             override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
-                span?.finish(SpanStatus.INTERNAL_ERROR)
+                span.finish(SpanStatus.INTERNAL_ERROR)
                 Sentry.captureException(t)
 
                 showText(false)
 
-                finishTransaction(finishTransaction, SpanStatus.INTERNAL_ERROR)
+//                finishTransaction(finishTransaction, SpanStatus.INTERNAL_ERROR)
+
+                // be sure to finish all your spans before this
+                val transaction = Sentry.getSpan()
+                transaction?.finish(SpanStatus.INTERNAL_ERROR)
             }
 
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
                 repos = response.body() ?: emptyList()
 
-                span?.finish(SpanStatus.OK)
+                span.finish(SpanStatus.OK)
 
                 showText()
 
                 // I opt out enableAutoActivityLifecycleTracingFinish so I when best when to end my transaction
-                finishTransaction(finishTransaction)
+//                finishTransaction(finishTransaction)
+
+                // be sure to finish all your spans before this
+                val transaction = Sentry.getSpan()
+                transaction?.finish(SpanStatus.OK)
             }
         })
-    }
-
-    private fun finishTransaction(finishTransaction: Boolean, status: SpanStatus = SpanStatus.OK) {
-        if (!finishTransaction) return
-        Sentry.configureScope {
-            it.transaction?.finish(status)
-        }
     }
 }
