@@ -1,5 +1,9 @@
 # vNext
 
+* Fix: Fix setting in-app-includes from external properties (#1291)
+* Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
+* Fix: Fix JUL integration SDK name (#1293)
+
 # 4.2.0
 
 * Fix: Remove experimental annotation for Attachment #1257

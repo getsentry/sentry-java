@@ -308,10 +308,19 @@ class SentryAppenderTest {
     }
 
     @Test
-    fun `does not initialize Sentry when environment variable with DSN is not set`() {
+    fun `does not initialize Sentry when environment variable with DSN is passed through environment variable that is not set`() {
         // environment variables referenced in the logback.xml that are not set in the OS, have value "ENV_NAME_IS_UNDEFINED"
         fixture = Fixture(dsn = "DSN_IS_UNDEFINED", minimumEventLevel = Level.DEBUG)
 
         assertTrue(fixture.loggerContext.statusManager.copyOfStatusList.none { it.level == Status.WARN })
+    }
+
+    @Test
+    fun `does initialize Sentry when DSN is not set`() {
+        System.setProperty("sentry.dsn", "http://key@localhost/proj")
+        fixture = Fixture(dsn = null, minimumEventLevel = Level.DEBUG)
+
+        assertTrue(Sentry.isEnabled())
+        System.clearProperty("sentry.dsn")
     }
 }
