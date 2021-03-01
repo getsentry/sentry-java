@@ -43,7 +43,7 @@ class SecondActivity : AppCompatActivity() {
         }
 
         binding.backMain.setOnClickListener {
-                        finish()
+            finish()
             startActivity(Intent(this, MainActivity::class.java))
         }
 
@@ -54,8 +54,8 @@ class SecondActivity : AppCompatActivity() {
         span?.finish(SpanStatus.OK)
     }
 
-    private fun showText(visible: Boolean = true) {
-        binding.text.text = if (visible) "items: ${repos.size}" else ""
+    private fun showText(visible: Boolean = true, text: String = "") {
+        binding.text.text = if (visible) text else ""
         binding.text.visibility = if (visible) View.VISIBLE else View.GONE
 
         binding.indeterminateBar.visibility = if (visible) View.GONE else View.VISIBLE
@@ -76,16 +76,18 @@ class SecondActivity : AppCompatActivity() {
     }
 
     private fun updateRepos() {
+        showText(false)
+
         val currentSpan = Sentry.getSpan()
         val span = currentSpan?.startChild("updateRepos", javaClass.simpleName)
             ?: Sentry.startTransaction("updateRepos", "task")
 
-        service.listRepos("getsentry").enqueue(object : Callback<List<Repo>> {
+        service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
             override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
                 span.finish(SpanStatus.INTERNAL_ERROR)
                 Sentry.captureException(t)
 
-                showText(false)
+                showText(true, "error: ${t.message}")
 
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()
@@ -97,7 +99,7 @@ class SecondActivity : AppCompatActivity() {
 
                 span.finish(SpanStatus.OK)
 
-                showText()
+                showText(text = "items: ${repos.size}")
 
                 // I opt out enableAutoActivityLifecycleTracingFinish so I when best when to end my transaction
 

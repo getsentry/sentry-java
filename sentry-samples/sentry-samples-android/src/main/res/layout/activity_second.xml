@@ -7,15 +7,16 @@
     android:gravity="center"
     tools:context=".SecondActivity">
 
+    <EditText
+        android:layout_width="wrap_content"
+        android:text="getsentry"
+        android:id="@+id/edit_repo"
+        android:layout_height="wrap_content"/>
+
     <Button android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/do_request"
         android:text="@string/do_request"/>
-
-    <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/back_main"
-        android:text="@string/back_main"/>
 
     <ProgressBar
         android:id="@+id/indeterminateBar"
@@ -27,5 +28,11 @@
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
         android:visibility="gone" />
+
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/back_main"
+        android:text="@string/back_main"/>
 </LinearLayout>
