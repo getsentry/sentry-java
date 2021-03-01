@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import io.sentry.ISpan;
 import io.sentry.Scope;
+import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
@@ -56,14 +57,14 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   (onActivityPostResumed), this depends on {@link
    *   SentryAndroidOptions#enableAutoActivityLifecycleTracingFinish}.
    *   <li>If {@link SentryAndroidOptions#enableAutoActivityLifecycleTracingFinish} is disabled, you
-   *       may end the transaction manually.
-   *   <li>If the transaction is not finished either automatically or manually, we end it
+   *       may finish the transaction manually.
+   *   <li>If the transaction is not finished either automatically or manually, we finish it
    *       automatically after each Activity's onDestroy method is called (onActivityPostPaused).
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *
-   * The transaction is automatically set to the {@link Scope}, but only if there's no transaction
-   * already set to the Scope.
+   * The transaction is automatically bound to the {@link Scope}, but only if there's no transaction
+   * already bound to the Scope.
    */
   private boolean enableAutoActivityLifecycleTracing = true;
 
@@ -73,7 +74,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * <p>If you require a specific lifecycle to finish a transaction or even after the Activity is
    * fully rendered but still waiting for an IO operation, you could call {@link ISpan#finish()}
-   * yourself on {@link Scope#getSpan()}, be sure that you've finished all of your manually created
+   * yourself on {@link Sentry#getSpan()}, be sure that you've finished all of your manually created
    * Spans.
    */
   private boolean enableAutoActivityLifecycleTracingFinish = false;

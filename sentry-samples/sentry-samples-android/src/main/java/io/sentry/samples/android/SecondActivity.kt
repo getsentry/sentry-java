@@ -1,5 +1,6 @@
 package io.sentry.samples.android
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -38,11 +39,12 @@ class SecondActivity : AppCompatActivity() {
         binding = ActivitySecondBinding.inflate(layoutInflater)
 
         binding.doRequest.setOnClickListener {
-            // this wont create a transaction because the one in the scope is already finished,
-            // unless you opt-out enableAutoActivityLifecycleTracingFinish
             updateRepos()
-//            finish()
-//            startActivity(Intent(this, MainActivity::class.java))
+        }
+
+        binding.backMain.setOnClickListener {
+                        finish()
+            startActivity(Intent(this, MainActivity::class.java))
         }
 
         // do some stuff
@@ -85,8 +87,6 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(false)
 
-//                finishTransaction(finishTransaction, SpanStatus.INTERNAL_ERROR)
-
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()
                 transaction?.finish(SpanStatus.INTERNAL_ERROR)
@@ -100,7 +100,6 @@ class SecondActivity : AppCompatActivity() {
                 showText()
 
                 // I opt out enableAutoActivityLifecycleTracingFinish so I when best when to end my transaction
-//                finishTransaction(finishTransaction)
 
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()

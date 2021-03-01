@@ -12,6 +12,11 @@
         android:id="@+id/do_request"
         android:text="@string/do_request"/>
 
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/back_main"
+        android:text="@string/back_main"/>
+
     <ProgressBar
         android:id="@+id/indeterminateBar"
         android:layout_width="wrap_content"

@@ -177,8 +177,8 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityStopped(final @NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
 
-    // clear up so we dont start again for the same activity if the activity is in the acitvity
-    // stack still
+    // clear it up, so we don't start again for the same activity if the activity is in the activity
+    // stack still.
     // if the activity is opened again and not in memory, transactions will be created normally.
     if (performanceEnabled) {
       activitiesWithOngoingTransactions.remove(activity);
