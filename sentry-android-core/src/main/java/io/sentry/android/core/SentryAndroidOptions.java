@@ -59,7 +59,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>If {@link SentryAndroidOptions#enableActivityLifecycleTracingAutoFinish} is disabled, you
    *       may finish the transaction manually.
    *   <li>If the transaction is not finished either automatically or manually, we finish it
-   *       automatically after each Activity's onDestroy method is called (onActivityPostPaused).
+   *       automatically when each Activity's onDestroy method is called (onActivityDestroyed).
+   *   <li>If the previous transaction is not finished when a new Activity is being shown, we finish
+   *       it automatically before the new Activity's onCreate is called (onActivityPreCreated).
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *

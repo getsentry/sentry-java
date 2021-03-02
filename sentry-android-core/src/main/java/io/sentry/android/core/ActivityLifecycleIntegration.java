@@ -15,6 +15,7 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 
@@ -88,8 +89,19 @@ public final class ActivityLifecycleIntegration
     return activity.getClass().getSimpleName();
   }
 
+  private void stopPreviousTransactions() {
+    for (final Map.Entry<Activity, ITransaction> entry :
+        activitiesWithOngoingTransactions.entrySet()) {
+      final ITransaction transaction = entry.getValue();
+      finishTransaction(transaction);
+    }
+  }
+
   private void startTracing(final @NonNull Activity activity) {
     if (performanceEnabled && !isRunningTransaction(activity)) {
+      // as we allow a single transaction running on the bound Scope, we finish the previous ones
+      stopPreviousTransactions();
+
       final ITransaction transaction =
           hub.startTransaction(getActivityName(activity), "navigation");
 
@@ -124,15 +136,18 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      if (transaction != null) {
-        SpanStatus status = transaction.getStatus();
-        // status might be set by other integrations, let's not overwrite it
-        if (status == null) {
-          status = SpanStatus.OK;
-        }
-        //
-        transaction.finish(status);
+      finishTransaction(transaction);
+    }
+  }
+
+  private void finishTransaction(final @Nullable ITransaction transaction) {
+    if (transaction != null) {
+      SpanStatus status = transaction.getStatus();
+      // status might be set by other integrations, let's not overwrite it
+      if (status == null) {
+        status = SpanStatus.OK;
       }
+      transaction.finish(status);
     }
   }
 
@@ -174,22 +189,8 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPostPaused(final @NonNull Activity activity) {
-    // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
-    // we do it automatically before moving to a new Activity.
-    stopTracing(activity, true);
-  }
-
-  @Override
   public synchronized void onActivityStopped(final @NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
-
-    // clear it up, so we don't start again for the same activity if the activity is in the activity
-    // stack still.
-    // if the activity is opened again and not in memory, transactions will be created normally.
-    if (performanceEnabled) {
-      activitiesWithOngoingTransactions.remove(activity);
-    }
   }
 
   @Override
@@ -201,5 +202,16 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
+
+    // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
+    // we do it automatically before moving to a new Activity.
+    stopTracing(activity, true);
+
+    // clear it up, so we don't start again for the same activity if the activity is in the activity
+    // stack still.
+    // if the activity is opened again and not in memory, transactions will be created normally.
+    if (performanceEnabled) {
+      activitiesWithOngoingTransactions.remove(activity);
+    }
   }
 }
