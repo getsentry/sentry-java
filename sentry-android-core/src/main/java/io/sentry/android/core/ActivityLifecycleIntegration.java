@@ -204,7 +204,7 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "destroyed");
 
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
-    // we do it automatically before moving to a new Activity.
+    // we make sure to finish it when the activity gets destroyed.
     stopTracing(activity, true);
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
