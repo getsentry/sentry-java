@@ -4,7 +4,6 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
-	public fun onActivityPostPaused (Landroid/app/Activity;)V
 	public fun onActivityPostResumed (Landroid/app/Activity;)V
 	public fun onActivityPreCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityResumed (Landroid/app/Activity;)V
