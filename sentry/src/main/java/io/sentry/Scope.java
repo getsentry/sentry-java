@@ -75,8 +75,8 @@ public final class Scope implements Cloneable {
    * @param options the options
    */
   public Scope(final @NotNull SentryOptions options) {
-    this.options = options;
-    this.breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
+    this.options = Objects.requireNonNull(options, "SentryOptions is required.");
+    this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
   }
 
   /**
@@ -147,10 +147,6 @@ public final class Scope implements Cloneable {
     synchronized (transactionLock) {
       this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     }
-
-    // TODO: double-check this
-    // setTransaction(String) replaces the transaction.name so I guess this makes sense too
-    transactionName = this.transaction.getName();
   }
 
   /**

@@ -56,7 +56,7 @@ public final class ActivityLifecycleIntegration
 
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
-      options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
+      this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     }
   }
 
@@ -98,10 +98,17 @@ public final class ActivityLifecycleIntegration
           scope -> {
             scope.withTransaction(
                 scopeTransaction -> {
-                  // we we'd not like to overwrite existent transactions bound to the Scope
+                  // we'd not like to overwrite existent transactions bound to the Scope
                   // manually.
                   if (scopeTransaction == null) {
                     scope.setTransaction(transaction);
+                  } else {
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.DEBUG,
+                            "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                            transaction.getName());
                   }
                 });
           });
@@ -158,7 +165,7 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityPostResumed(final @NonNull Activity activity) {
     // this should be called only when onResume has been executed already, which means
     // the UI is responsive at this moment.
-    stopTracing(activity, options.isEnableAutoActivityLifecycleTracingFinish());
+    stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
   }
 
   @Override
@@ -168,7 +175,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityPostPaused(final @NonNull Activity activity) {
-    // in case people opt-out enableAutoActivityLifecycleTracingFinish and forgot to finish it,
+    // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
     // we do it automatically before moving to a new Activity.
     stopTracing(activity, true);
   }

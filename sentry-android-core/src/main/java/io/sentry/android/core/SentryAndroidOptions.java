@@ -55,8 +55,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * <ul>
    *   It finishes the transaction after each activity's onResume method is called
    *   (onActivityPostResumed), this depends on {@link
-   *   SentryAndroidOptions#enableAutoActivityLifecycleTracingFinish}.
-   *   <li>If {@link SentryAndroidOptions#enableAutoActivityLifecycleTracingFinish} is disabled, you
+   *   SentryAndroidOptions#enableActivityLifecycleTracingAutoFinish}.
+   *   <li>If {@link SentryAndroidOptions#enableActivityLifecycleTracingAutoFinish} is disabled, you
    *       may finish the transaction manually.
    *   <li>If the transaction is not finished either automatically or manually, we finish it
    *       automatically after each Activity's onDestroy method is called (onActivityPostPaused).
@@ -77,7 +77,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * yourself on {@link Sentry#getSpan()}, be sure that you've finished all of your manually created
    * Spans.
    */
-  private boolean enableAutoActivityLifecycleTracingFinish = false;
+  private boolean enableActivityLifecycleTracingAutoFinish = true;
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
@@ -226,12 +226,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAutoActivityLifecycleTracing = enableAutoActivityLifecycleTracing;
   }
 
-  public boolean isEnableAutoActivityLifecycleTracingFinish() {
-    return enableAutoActivityLifecycleTracingFinish;
+  public boolean isEnableActivityLifecycleTracingAutoFinish() {
+    return enableActivityLifecycleTracingAutoFinish;
   }
 
-  public void setEnableAutoActivityLifecycleTracingFinish(
-      boolean enableAutoActivityLifecycleTracingFinish) {
-    this.enableAutoActivityLifecycleTracingFinish = enableAutoActivityLifecycleTracingFinish;
+  public void setEnableActivityLifecycleTracingAutoFinish(
+      boolean enableActivityLifecycleTracingAutoFinish) {
+    this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
   }
 }
