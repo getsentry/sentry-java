@@ -456,6 +456,11 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun withTransaction (Lio/sentry/Scope$IWithTransaction;)V
+}
+
+public abstract interface class io/sentry/Scope$IWithTransaction {
+	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
 
 public abstract interface class io/sentry/ScopeCallback {
@@ -981,6 +986,7 @@ public final class io/sentry/SpanStatus : java/lang/Enum {
 	public static final field UNKNOWN Lio/sentry/SpanStatus;
 	public static final field UNKNOWN_ERROR Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (I)Lio/sentry/SpanStatus;
+	public static fun fromHttpStatusCode (ILio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SpanStatus;
 	public static fun values ()[Lio/sentry/SpanStatus;
 }
